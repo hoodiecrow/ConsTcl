@@ -117,13 +117,13 @@ source constcl.tcl
     set ::inputstr "99.99"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "99.99"
+} -output "99.99\n"
 
 ::tcltest::test write-1.1 {read and write a boolean} -body {
     set ::inputstr "#t"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "#t"
+} -output "#t\n"
 
 
 
@@ -131,7 +131,7 @@ source constcl.tcl
     set ::inputstr "(a b c)"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "(a b c)"
+} -output "(a b c)\n"
 
 
 

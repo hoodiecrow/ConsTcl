@@ -1,11 +1,25 @@
 
 CB
+proc ::constcl::write {obj args} {
+    ::constcl::write-value $obj
+    puts {}
+}
+CB
+
+CB
+proc ::constcl::write-value {obj} {
+    # take an object and print the value
+    $obj write
+}
+CB
+
+CB
 proc ::constcl::write-pair {obj} {
     # take an object and print the car and the cdr of the stored value
     set a [car $obj]
     set d [cdr $obj]
     # print car
-    write $a
+    write-value $a
     if {[pair? $d] eq "#t"} {
         # cdr is a cons pair
         puts -nonewline " "
@@ -16,29 +30,7 @@ proc ::constcl::write-pair {obj} {
     } else {
         # it is an atom
         puts -nonewline " . "
-        write $d
-    }
-}
-CB
-
-CB
-proc ::constcl::write {obj args} {
-    # take an object and print the value
-    if {[number? $obj] eq "#t"} {
-        puts -nonewline [$obj value]
-    } elseif {[boolean? [interp alias {} $obj]] eq "#t"} {
-        if {$obj eq "#t"} {
-            puts -nonewline "#t"
-        } else {
-            puts -nonewline "#f"
-        }
-    } elseif {[symbol? $obj] eq "#t"} {
-        puts -nonewline [$obj name]
-    } elseif {[pair? $obj] eq "#t"} {
-        # it is a cons pair
-        puts -nonewline "("
-        write-pair $obj
-        puts -nonewline ")"
+        write-value $d
     }
 }
 CB
@@ -49,13 +41,13 @@ TT(
     set ::inputstr "99.99"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "99.99"
+} -output "99.99\n"
 
 ::tcltest::test write-1.1 {read and write a boolean} -body {
     set ::inputstr "#t"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "#t"
+} -output "#t\n"
 
 TT)
 
@@ -65,7 +57,7 @@ TT(
     set ::inputstr "(a b c)"
     set obj [::constcl::read]
     ::constcl::write $obj
-} -output "(a b c)"
+} -output "(a b c)\n"
 
 TT)
 

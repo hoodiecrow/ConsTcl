@@ -62,6 +62,12 @@ CB
 
 CB
 proc ::constcl::read {args} {
+    ::constcl::read-value
+}
+CB
+
+CB
+proc ::constcl::read-value {} {
     if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     skip-whitespace
     switch -regexp [first] {
