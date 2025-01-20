@@ -1,4 +1,5 @@
 
+CB
 oo::class create NIL {
     constructor {} {}
     method truth {} {return #t}
@@ -9,7 +10,9 @@ oo::class create NIL {
     method numval {} {throw "Not a number"}
     method write {} {return "()"}
 }
+CB
 
+CB
 proc ::constcl::null? {obj} {
     if {[info object isa typeof $obj NIL]} {
         return #t
@@ -17,9 +20,12 @@ proc ::constcl::null? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create EndOfFile {}
 
+CB
 proc ::eof-object? {obj} {
     if {[info object isa typeof $obj EndOfFile]} {
         return #t
@@ -27,7 +33,9 @@ proc ::eof-object? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Cons {
     variable car cdr
     constructor {a d} {
@@ -43,7 +51,9 @@ oo::class create Cons {
     method set-cdr! {val} { set cdr $val }
     method write {} { return "([$car write] . [$cdr write])" }
 }
+CB
 
+CB
 proc ::constcl::pair? {obj} {
     if {[info object isa typeof $obj Cons]} {
         return #t
@@ -51,7 +61,9 @@ proc ::constcl::pair? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Boolean {
     superclass NIL
     variable truth
@@ -63,7 +75,9 @@ oo::class create Boolean {
     }
     method write {} {return $truth}
 }
+CB
 
+CB
 proc ::constcl::boolean? {obj} {
     if {[info object isa typeof $obj Boolean]} {
         return #t
@@ -71,7 +85,9 @@ proc ::constcl::boolean? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Number {
     superclass NIL
     variable value
@@ -92,7 +108,9 @@ oo::class create Number {
     method numval {} {set value}
     method write {} {return $value}
 }
+CB
 
+CB
 proc ::constcl::number? {obj} {
     if {[info object isa typeof $obj Number]} {
         return #t
@@ -100,7 +118,9 @@ proc ::constcl::number? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Symbol {
     superclass NIL
     variable name
@@ -112,7 +132,9 @@ oo::class create Symbol {
     method = {symname} {expr {$name eq $symname}}
     method write {} {return $name}
 }
+CB
 
+CB
 proc ::constcl::symbol? {obj} {
     if {[info object isa typeof $obj Symbol]} {
         return #t
@@ -120,7 +142,9 @@ proc ::constcl::symbol? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create String {
     superclass NIL
     variable s
@@ -136,7 +160,9 @@ oo::class create String {
     method value {} {return [lindex $::StrSto $s]}
     method write {} {return "\"[lindex $::StrSto $s]\""}
 }
+CB
 
+CB
 proc ::constcl::string? {obj} {
     if {[info object isa typeof $obj String]} {
         return #t
@@ -144,7 +170,9 @@ proc ::constcl::string? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Char {
     superclass NIL
     variable value
@@ -201,7 +229,9 @@ oo::class create Char {
     method value {} {return $value}
     method write {} {return "\"$value\""}
 }
+CB
 
+CB
 proc ::constcl::char? {obj} {
     if {[info object isa typeof $obj Char]} {
         return #t
@@ -209,19 +239,23 @@ proc ::constcl::char? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Vector {
     superclass NIL
     variable value
     constructor {v} {
         set value $v
     }
-    method length {} {[Number create Mem[incr ::M] [string length $value]}
+    method length {} {string length $value}
     method ref {i} {string index $value $i}
     method value {} {return $value}
     method write {} {return #($value)}
 }
+CB
 
+CB
 proc ::constcl::vector? {obj} {
     if {[info object isa typeof $obj Vector]} {
         return #t
@@ -229,7 +263,9 @@ proc ::constcl::vector? {obj} {
         return #f
     }
 }
+CB
 
+CB
 oo::class create Procedure {
     superclass NIL
     variable value
@@ -244,7 +280,9 @@ oo::class create Procedure {
         # TODO
     }
 }
+CB
 
+CB
 proc ::constcl::procedure? {obj} {
     if {[info object isa typeof $obj Procedure]} {
         return #t
@@ -252,4 +290,5 @@ proc ::constcl::procedure? {obj} {
         return #f
     }
 }
+CB
 
