@@ -1,31 +1,36 @@
 
 unset -nocomplain M
-set M 0 # memory cell number
+# memory cell number
+set M 0
 
 unset -nocomplain S
-set S 0 # string store number
+# string store number
+set S 0
 
 unset -nocomplain StrSto
 set StrSto [list]
 
-NIL create Mem0
-interp alias {} #NIL {} Mem0
+interp alias {} #NIL {} [NIL create Mem0]
 
-interp alias {} #t {} Mem1
-Boolean create Mem[incr ::M] #t
+interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
 
-interp alias {} #f {} Mem2
-Boolean create Mem[incr ::M] #f
+interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
 
-Number create Mem[incr ::M] -1
-interp alias {} #-1 {} Mem$::M
+interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
 
-Number create Mem[incr ::M] 0
-interp alias {} #0 {} Mem$::M
+interp alias {} #0 {} [Number create Mem[incr ::M] 0]
 
 Number create Mem[incr ::M] 1
 interp alias {} #1 {} Mem$::M
 
+Symbol create Mem[incr ::M] quote
+interp alias {} #Q {} Mem$::M
+
+Symbol create Mem[incr ::M] +
+interp alias {} #+ {} Mem$::M
+
+Symbol create Mem[incr ::M] -
+interp alias {} #- {} Mem$::M
 
 EndOfFile create Mem[incr ::M]
 interp alias {} #EOF {} Mem$::M
@@ -282,7 +287,7 @@ proc ::constcl::/ {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] [expr {1 / [$obj value]]
+            return [Number create Mem[incr ::M] [expr {1 / [$obj value]}]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -1286,7 +1291,7 @@ CB
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "t"} {
         if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
-            return {String create Mem[incr ::M] [$str substring [$start value] [$end value]]
+            return [String create Mem[incr ::M] [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str write] [$start write] [$end write])"
         }
@@ -1504,13 +1509,13 @@ proc ::constcl::interaction-environment {} {
 CB
 
 CB
-proc ::constcl::call-with-input-file string {proc} {
+proc ::constcl::call-with-input-file {string proc} {
     # TODO
 }
 CB
 
 CB
-proc ::constcl::call-with-output-file string {proc} {
+proc ::constcl::call-with-output-file {string proc} {
     # TODO
 }
 CB
@@ -1577,8 +1582,11 @@ proc ::constcl::close-output-port {port} {
 CB
 
 CB
+if no {
+    # defined in read.tcl
 proc ::constcl::read {args} {
     # TODO
+}
 }
 CB
 
@@ -1601,8 +1609,10 @@ proc ::constcl::char-ready? {args} {
 CB
 
 CB
+if no {
 proc ::constcl::write {obj args} {
     # TODO write [$obj write]
+}
 }
 CB
 

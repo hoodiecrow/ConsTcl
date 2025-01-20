@@ -1,0 +1,138 @@
+package require tcltest
+source constcl.tcl
+
+
+::tcltest::test read-1.0 {try reading a list} {
+    set ::inputstr "(a b c)"
+    set obj [::constcl::read]
+    [$obj car] name
+} "a"
+
+
+::tcltest::test read-2.0 {try reading a number} {
+    set ::inputstr "99.99"
+    set obj [::constcl::read]
+    $obj value
+} "99.99"
+
+::tcltest::test read-2.1 {try reading a number} {
+    set ::inputstr "     99.99"
+    set obj [::constcl::read]
+    $obj value
+} "99.99"
+
+::tcltest::test read-2.2 {try reading a number} {
+    set ::inputstr "     9"
+    set obj [::constcl::read]
+    $obj value
+} "9"
+
+::tcltest::test read-2.3 {try reading a number} {
+    set ::inputstr "     +9"
+    set obj [::constcl::read]
+    $obj value
+} "+9"
+
+::tcltest::test read-2.4 {try reading a number} {
+    set ::inputstr "     -9"
+    set obj [::constcl::read]
+    $obj value
+} "-9"
+
+::tcltest::test read-2.5 {try reading a number} {
+    set ::inputstr "     - "
+    set obj [::constcl::read]
+    $obj name
+} "-"
+
+::tcltest::test read-2.6 {try reading a number} {
+    set ::inputstr "     + "
+    set obj [::constcl::read]
+    $obj name
+} "+"
+
+
+
+::tcltest::test read-3.0 {try reading a character} {
+    set ::inputstr "#\\A"
+    set obj [::constcl::read]
+    $obj char
+} "A"
+
+::tcltest::test read-3.1 {try reading a character} {
+    set ::inputstr "#\\space"
+    set obj [::constcl::read]
+    $obj char
+} " "
+
+::tcltest::test read-3.2 {try reading a character} {
+    set ::inputstr "#\\newline"
+    set obj [::constcl::read]
+    $obj char
+} "\n"
+
+::tcltest::test read-3.3 {try reading a character} -body {
+    set ::inputstr "#\\foobar"
+    set obj [::constcl::read]
+    $obj char
+} -returnCodes error -result "Invalid character constant #\\foobar"
+
+
+
+::tcltest::test read-4.0 {try reading a string} {
+    set ::inputstr {"foo bar"}
+    set obj [::constcl::read]
+    $obj value
+} "foo bar"
+
+::tcltest::test read-4.1 {try reading a string} {
+    set ::inputstr {"\"foo\" \\ bar"}
+    set obj [::constcl::read]
+    $obj value
+} {\"foo\" \\ bar}
+
+
+
+::tcltest::test read-5.0 {try reading an identifier} {
+    set ::inputstr "foo"
+    set obj [::constcl::read]
+    $obj name
+} "foo"
+
+::tcltest::test read-5.1 {try reading an identifier} -body {
+    set ::inputstr "+foo"
+    set obj [::constcl::read-identifier]
+    $obj name
+} -returnCodes error -result "Identifier expected"
+
+::tcltest::test read-5.2 {try reading an identifier} -body {
+    set ::inputstr "let"
+    set obj [::constcl::read]
+    $obj name
+} -returnCodes error -result "Macro name can't be used as a variable: let"
+
+
+
+::tcltest::test write-1.0 {read and write a number} -body {
+    set ::inputstr "99.99"
+    set obj [::constcl::read]
+    ::constcl::write $obj
+} -output "99.99"
+
+::tcltest::test write-1.1 {read and write a boolean} -body {
+    set ::inputstr "#t"
+    set obj [::constcl::read]
+    ::constcl::write $obj
+} -output "#t"
+
+
+
+::tcltest::test write-2.0 {read and write a list} -body {
+    set ::inputstr "(a b c)"
+    set obj [::constcl::read]
+    ::constcl::write $obj
+} -output "(a b c)"
+
+
+
+::tcltest::cleanupTests

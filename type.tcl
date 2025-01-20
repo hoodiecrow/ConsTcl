@@ -13,6 +13,8 @@ oo::class create NIL {
 CB
 
 CB
+namespace eval ::constcl {}
+
 proc ::constcl::null? {obj} {
     if {[info object isa typeof $obj NIL]} {
         return #t
@@ -183,7 +185,7 @@ oo::class create Char {
     method char {} {
         if {[regexp {^#\\[A-Za-z]$} [my value]]} {
             return [string index [my value] 2]
-        } elseif {[regexp {^#\\([a-z]+)$} [my value] -> char_name]} {
+        } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
             # TODO
             switch $char_name {
                 space {return " "}
@@ -212,14 +214,14 @@ oo::class create Char {
             return #f
         }
     }
-    method upper-case? {
+    method upper-case? {} {
         if {[string is upper [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
-    method lower-case?
+    method lower-case? {} {
         if {[string is lower [$char char]]} {
             return #t
         } else {

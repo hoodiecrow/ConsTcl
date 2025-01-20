@@ -10,6 +10,8 @@ oo::class create NIL {
     method write {} {return "()"}
 }
 
+namespace eval ::constcl {}
+
 proc ::constcl::null? {obj} {
     if {[info object isa typeof $obj NIL]} {
         return #t
@@ -155,7 +157,7 @@ oo::class create Char {
     method char {} {
         if {[regexp {^#\\[A-Za-z]$} [my value]]} {
             return [string index [my value] 2]
-        } elseif {[regexp {^#\\([a-z]+)$} [my value] -> char_name]} {
+        } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
             # TODO
             switch $char_name {
                 space {return " "}
@@ -184,14 +186,14 @@ oo::class create Char {
             return #f
         }
     }
-    method upper-case? {
+    method upper-case? {} {
         if {[string is upper [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
-    method lower-case?
+    method lower-case? {} {
         if {[string is lower [$char char]]} {
             return #t
         } else {
@@ -255,32 +257,37 @@ proc ::constcl::procedure? {obj} {
 
 
 unset -nocomplain M
-set M 0 # memory cell number
+# memory cell number
+set M 0
 
 unset -nocomplain S
-set S 0 # string store number
+# string store number
+set S 0
 
 unset -nocomplain StrSto
 set StrSto [list]
 
-NIL create Mem0
-interp alias {} #NIL {} Mem0
+interp alias {} #NIL {} [NIL create Mem0]
 
-interp alias {} #t {} Mem1
-Boolean create Mem[incr ::M] #t
+interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
 
-interp alias {} #f {} Mem2
-Boolean create Mem[incr ::M] #f
+interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
 
-Number create Mem[incr ::M] -1
-interp alias {} #-1 {} Mem$::M
+interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
 
-Number create Mem[incr ::M] 0
-interp alias {} #0 {} Mem$::M
+interp alias {} #0 {} [Number create Mem[incr ::M] 0]
 
 Number create Mem[incr ::M] 1
 interp alias {} #1 {} Mem$::M
 
+Symbol create Mem[incr ::M] quote
+interp alias {} #Q {} Mem$::M
+
+Symbol create Mem[incr ::M] +
+interp alias {} #+ {} Mem$::M
+
+Symbol create Mem[incr ::M] -
+interp alias {} #- {} Mem$::M
 
 EndOfFile create Mem[incr ::M]
 interp alias {} #EOF {} Mem$::M
@@ -506,7 +513,7 @@ proc ::constcl::/ {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] [expr {1 / [$obj value]]
+            return [Number create Mem[incr ::M] [expr {1 / [$obj value]}]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -1326,7 +1333,7 @@ proc ::constcl::string-ci>=? {s1 s2} {
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "t"} {
         if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
-            return {String create Mem[incr ::M] [$str substring [$start value] [$end value]]
+            return [String create Mem[incr ::M] [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str write] [$start write] [$end write])"
         }
@@ -1492,11 +1499,11 @@ proc ::constcl::interaction-environment {} {
     # TODO
 }
 
-proc ::constcl::call-with-input-file string {proc} {
+proc ::constcl::call-with-input-file {string proc} {
     # TODO
 }
 
-proc ::constcl::call-with-output-file string {proc} {
+proc ::constcl::call-with-output-file {string proc} {
     # TODO
 }
 
@@ -1541,8 +1548,11 @@ proc ::constcl::close-output-port {port} {
     # TODO
 }
 
+if no {
+    # defined in read.tcl
 proc ::constcl::read {args} {
     # TODO
+}
 }
 
 proc ::constcl::read-char {args} {
@@ -1557,8 +1567,10 @@ proc ::constcl::char-ready? {args} {
     # TODO
 }
 
+if no {
 proc ::constcl::write {obj args} {
     # TODO write [$obj write]
+}
 }
 
 proc ::constcl::display {obj args} {
@@ -1584,4 +1596,315 @@ proc ::constcl::transcript-on {filename} {
 proc ::constcl::transcript-off {} {
     # TODO
 }
+
+
+
+set inputstr {}
+
+proc ::constcl::advance {args} {
+    if {[llength $args] == 1} {
+        set ::inputstr [::string range $::inputstr 1+$args end]
+    } else {
+        set ::inputstr [::string range $::inputstr 1 end]
+    }
+}
+
+proc ::constcl::first {} {
+    ::string index $::inputstr 0
+}
+
+proc ::constcl::second {} {
+    ::string index $::inputstr 1
+}
+
+proc ::constcl::read {args} {
+    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
+    skip-whitespace
+    switch -regexp [first] {
+        {\(} {
+            advance
+            skip-whitespace
+            set p [read-pair ")"]
+            skip-whitespace
+            if {[first] != ")"} {
+                error "Missing right parenthesis."
+            }
+            return $p
+        }
+        {\[} {
+            advance
+            skip-whitespace
+            set p [read-pair "\]"]
+            skip-whitespace
+            if {[first] != "\]"} {
+                error "Missing right bracket."
+            }
+            return $p
+        }
+        {\+} - {\-} {
+            # TODO check if + / - is a symbol
+            if {![::string is digit [second]]} {
+                if {[first] eq "+"} {
+                    return #+
+                } else {
+                    return #-
+                }
+            } else {
+                return [::constcl::read-number]
+            }
+        }
+        {\d} {
+            return [::constcl::read-number]
+        }
+        {#} {
+            advance
+            switch [first] {
+                ( {
+                    return [::constcl::read-vector]
+                }
+                t {
+                    advance
+                    return #t
+                }
+                f { 
+                    advance
+                    return #f
+                }
+                "\\" {
+                    return [::constcl::read-char]
+                }
+                default {
+                    error "Illegal #-literal"
+                }
+            }
+        }
+        {"} {
+            return [::constcl::read-string]
+        }
+        default {
+            return [::constcl::read-identifier]
+        }
+
+    }
+}
+
+
+proc ::constcl::read-number {} {
+    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+        ::append num [first]
+        advance
+    }
+    if {[::string length $num] && [::string is double $num]} {
+        return [Number create Mem[incr ::M] $num]
+    } else {
+        error "Invalid numeric constant $num"
+    }
+}
+
+
+proc ::constcl::character-check {name} {
+    regexp {^#\\([[:graph:]]|space|newline)$} $name
+}
+
+proc ::constcl::read-char {} {
+    set name "#"
+    while {$::inputstr ne {} && ![::string is space [first]]} {
+        ::append name [first]
+        advance
+    }
+    if {[::constcl::character-check $name]} {
+        return [Char create Mem[incr ::M] $name]
+    } else {
+        error "Invalid character constant $name"
+    }
+}
+
+
+proc ::constcl::read-string {} {
+    set str {}
+    advance
+    while {[first] ne {"}} {
+        set c [first]
+        if {$c eq "\\"} {
+            ::append str $c
+            advance
+            ::append str [first]
+        } else {
+            ::append str $c
+        }
+        advance
+    }
+    return [String create Mem[incr ::M] $str]
+}
+
+
+proc ::constcl::read-identifier {} {
+    set name {}
+    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+        ::append name [first]
+        advance
+    }
+    # idcheck throws error if invalid identifier
+    return [Symbol create Mem[incr ::M] [::constcl::idcheck $name]]
+}
+
+
+proc ::constcl::skip-whitespace {} {
+    # move the source pointer past whitespace and comments
+    # adapted from Robert Nystrom, Crafting Interpreters
+    while true {
+        set c [first]
+        switch $c {
+            " " -
+            "\r" -
+            "\t" -
+            "\n" {
+                advance
+            }
+            ";" {
+                # a comment goes on until the end of the line
+                while {[first] != "\n" && $::inputstr ne {}} {
+                    advance
+                }
+            }
+            default {
+                return
+            }
+        }
+    }
+}
+
+proc ::constcl::find-char {c} {
+    # take a character, peek beyond whitespace to find it
+    set cp 0
+    while {[::string is space [lindex $::inputstr $cp]]} {
+        incr cp
+    }
+    return [expr {[lindex $::inputstr $cp] eq $c}]
+}
+
+proc ::constcl::read-pair {c} {
+    # take a character, read a car and a cdr value, pass the char to findC
+    skip-whitespace
+    set a [read]
+    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+        advance 3
+        skip-whitespace
+        set d [read]
+    } elseif {[find-char $c]} {
+        skip-whitespace
+        set d #NIL
+    } else {
+        skip-whitespace
+        set d [read-pair $c]
+    }
+    skip-whitespace
+    return [Cons create Mem[incr ::M] $a $d]
+}
+
+proc ::constcl::read-v {} {
+    # take an input token, return a value (integer or cons cell)
+    skip-whitespace
+    if {[string is alpha [first]]} {
+        # return readOpcode();
+    } elseif {[first] eq "-" || [string is digit [first]]} {
+        # return readNumber();
+    } elseif {[first] eq "("} {
+        advance
+        skip-whitespace
+        set p [read-pair ")"]
+        skip-whitespace
+        if {[first] != ")"} {
+            error "Missing right parenthesis."
+        }
+        return $p
+    } elseif {[first] eq "\["} {
+        # same as above, but with [] instead of ()
+        advance
+        skip-whitespace
+        set p [read-pair "\]"]
+        skip-whitespace
+        if {[first] != "\]"} {
+            error "Missing right parenthesis."
+        }
+        return $p
+    }
+    return 0
+}
+
+
+
+
+proc ::constcl::idcheckinit {init} {
+    if {[::string is alpha $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+        return true
+    } else {
+        return false
+    }
+}
+
+proc ::constcl::idchecksubs {subs} {
+    foreach c [split $subs {}] {
+        if {!([::string is alnum $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+            return false
+        }
+    }
+    return true
+}
+
+proc ::constcl::idcheck {sym} {
+    if {(![idcheckinit [::string index $sym 0]] ||
+        ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
+        error "Identifier expected"
+    } else {
+        if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
+            cond and or case let let* letrec do delay quasiquote}} {
+            error "Macro name can't be used as a variable: $sym"
+        }
+    }
+    set sym
+}
+
+
+proc ::constcl::write-pair {obj} {
+    # take an object and print the car and the cdr of the stored value
+    set a [car $obj]
+    set d [cdr $obj]
+    # print car
+    write $a
+    if {[pair? $d] eq "#t"} {
+        # cdr is a cons pair
+        puts -nonewline " "
+        write-pair $d;
+    } elseif {$d eq "#NIL"} {
+        # cdr is nil
+        return
+    } else {
+        # it is an atom
+        puts -nonewline " . "
+        write $d
+    }
+}
+
+proc ::constcl::write {obj args} {
+    # take an object and print the value
+    if {[number? $obj] eq "#t"} {
+        puts -nonewline [$obj value]
+    } elseif {[boolean? [interp alias {} $obj]] eq "#t"} {
+        if {$obj eq "#t"} {
+            puts -nonewline "#t"
+        } else {
+            puts -nonewline "#f"
+        }
+    } elseif {[symbol? $obj] eq "#t"} {
+        puts -nonewline [$obj name]
+    } elseif {[pair? $obj] eq "#t"} {
+        # it is a cons pair
+        puts -nonewline "("
+        write-pair $obj
+        puts -nonewline ")"
+    }
+}
+
+
 
