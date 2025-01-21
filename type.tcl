@@ -1,6 +1,43 @@
 
 CB
-namespace eval ::constcl {}
+namespace eval ::constcl {
+    namespace unknown resolve
+
+    proc resolve {cmd args} {
+        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+            set obj [lindex $args 0]
+            foreach ad [lreverse [split $ads {}]] {
+                if {$ad eq "a"} {
+                    set obj [car $obj]
+                } else {
+                    set obj [cdr $obj]
+                }
+            }
+            return $obj
+        } elseif {no} {
+            uplevel 1 [dict get $scope $cmd] $args
+        } else {
+            return -code error "no such command: \"$cmd\""
+        }
+    }
+}
+
+dict set ::standard_env pi 3.1415926535897931
+
+proc reg {sym impl} {
+    dict set ::standard_env $sym $impl
+}
+
+CB
+
+CB
+# utility function
+proc ::pep {str} {
+    set ::inputstr $str
+    namespace eval ::constcl {
+        write [eval [read]]
+    }
+}
 CB
 
 CB

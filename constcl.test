@@ -8,6 +8,20 @@ source constcl.tcl
     [$obj car] name
 } "a"
 
+::tcltest::test read-1.1 {try reading quoted symbol} -body {
+    set ::inputstr "'foo"
+    set obj [::constcl::read]
+    ::constcl::write $obj
+} -output "(quote foo)\n"
+
+::tcltest::test read-1.2 {try reading a list} {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b))"
+        set obj [read]
+        [caadr $obj] name
+    }
+} "b"
+
 
 ::tcltest::test read-2.0 {try reading a number} {
     set ::inputstr "99.99"
@@ -114,15 +128,17 @@ source constcl.tcl
 
 
 ::tcltest::test write-1.0 {read and write a number} -body {
-    set ::inputstr "99.99"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    namespace eval ::constcl {
+        set ::inputstr "99.99"
+        write [eval [read]]
+    }
 } -output "99.99\n"
 
 ::tcltest::test write-1.1 {read and write a boolean} -body {
-    set ::inputstr "#t"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    namespace eval ::constcl {
+        set ::inputstr "#t"
+        write [eval [read]]
+    }
 } -output "#t\n"
 
 
@@ -133,6 +149,109 @@ source constcl.tcl
     ::constcl::write $obj
 } -output "(a b c)\n"
 
+::tcltest::test write-2.1 {read and write a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "'(a b c)"
+        write [eval [read]]
+    }
+} -output "(a b c)\n"
+
+
+
+::tcltest::test boolean-1.0 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "#t"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+::tcltest::test boolean-1.1 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "#f"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-1.2 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "'#f"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+
+
+::tcltest::test boolean-3.0 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not #t)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-3.1 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not 3)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-3.2 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not (list 3))"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-3.3 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not #f)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+::tcltest::test boolean-3.4 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not '())"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-3.5 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not (list))"
+        #write [eval [read]]
+        write [read]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-3.6 {not procedure} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(not 'nil)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+
+
+::tcltest::test eval-1.0 {try eval:ing an unbound symbol} -body {
+    set ::inputstr "foo"
+    ::constcl::eval [::constcl::read]
+} -returnCodes error -result "Unbound variable: foo"
+
+
+::tcltest::test global_env-1.0 {check for a symbol} {
+    set inputstr "pi"
+    set pi [::constcl::read]
+    ::constcl::lookup $pi ::global_env
+} 3.1415926535897931
+
+::tcltest::test global_env-2.0 {dereference an unbound symbol} -body {
+    pep "foo"
+} -returnCodes error -result "Unbound variable: foo"
+
+::tcltest::test global_env-2.1 {dereference an unbound symbol: procedure} -body {
+    pep "(foo)"
+} -returnCodes error -result "Unbound variable: foo"
 
 
 ::tcltest::cleanupTests

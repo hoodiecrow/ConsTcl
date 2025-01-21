@@ -18,9 +18,9 @@ oo::class create Cons {
     method set-car! {val} { set car $val }
     method set-cdr! {val} { set cdr $val }
     method write {} {
-        puts -nonewline (
+        puts -nonewline "("
         ::constcl::write-pair [self]
-        puts -nonewline )
+        puts -nonewline ")"
     }
 }
 CB
@@ -68,12 +68,18 @@ proc ::constcl::set-cdr! {obj val} {
 CB
 
 CB
+reg list ::constcl::list
+
 proc ::constcl::list {args} {
-    set prev #NIL
-    foreach obj [lreverse $args] {
-        set prev [::constcl::cons $obj $prev]
+    if {[llength $args] == 0} {
+        return #NIL
+    } else {
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
     }
-    return $prev
 }
 CB
 

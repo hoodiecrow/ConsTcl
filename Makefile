@@ -2,16 +2,16 @@
 .PHONY: all
 all: README.md constcl.tcl constcl.test
 
-
+source_files = type.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl cons.tcl environment.class procedure.class global_env.tcl
 README.md: top.md constcl.md
 	cat $^ |sed -e s/\\r//g >$@
-constcl.md: type.tcl cons.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl
+constcl.md: $(source_files)
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /MD/d -e /TT/,/TT/d >$@
 
-constcl.tcl: type.tcl cons.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl
+constcl.tcl: $(source_files)
 	cat $^ |sed -e /CB/d -e /MD/,/MD/d -e /TT/,/TT/d >$@
 
-constcl.test: type.tcl cons.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl
+constcl.test: $(source_files)
 	echo 'package require tcltest' >$@
 	echo 'source constcl.tcl\n' >>$@
 	cat $^ |sed -n '/TT/,// { //n ; p }' >>$@

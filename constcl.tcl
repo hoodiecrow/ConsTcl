@@ -1,5 +1,40 @@
 
-namespace eval ::constcl {}
+namespace eval ::constcl {
+    namespace unknown resolve
+
+    proc resolve {cmd args} {
+        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+            set obj [lindex $args 0]
+            foreach ad [lreverse [split $ads {}]] {
+                if {$ad eq "a"} {
+                    set obj [car $obj]
+                } else {
+                    set obj [cdr $obj]
+                }
+            }
+            return $obj
+        } elseif {no} {
+            uplevel 1 [dict get $scope $cmd] $args
+        } else {
+            return -code error "no such command: \"$cmd\""
+        }
+    }
+}
+
+dict set ::standard_env pi 3.1415926535897931
+
+proc reg {sym impl} {
+    dict set ::standard_env $sym $impl
+}
+
+
+# utility function
+proc ::pep {str} {
+    set ::inputstr $str
+    namespace eval ::constcl {
+        write [eval [read]]
+    }
+}
 
 oo::class create NIL {
     constructor {} {}
@@ -35,39 +70,6 @@ proc ::eof-object? {obj} {
 }
 
 
-unset -nocomplain M
-# memory cell number
-set M 0
-
-unset -nocomplain S
-# string store number
-set S 0
-
-unset -nocomplain StrSto
-set StrSto [list]
-
-interp alias {} #NIL {} [NIL create Mem0]
-
-interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
-
-interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
-
-interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
-
-interp alias {} #0 {} [Number create Mem[incr ::M] 0]
-
-interp alias {} #1 {} [Number create Mem[incr ::M] 1]
-
-interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
-
-interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
-
-interp alias {} #- {} [Symbol create Mem[incr ::M] -]
-
-interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
-
-
-
 
 set inputstr {}
 
@@ -92,8 +94,8 @@ proc ::constcl::read {args} {
 }
 
 proc ::constcl::read-value {} {
-    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     skip-whitespace
+    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     switch -regexp [first] {
         {\(} {
             advance
@@ -114,6 +116,11 @@ proc ::constcl::read-value {} {
                 error "Missing right bracket."
             }
             return $p
+        }
+        {'} {
+            advance
+            set p [read-value]
+            return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
             # TODO check if + / - is a symbol
@@ -145,7 +152,7 @@ proc ::constcl::read-value {} {
                     return #f
                 }
                 "\\" {
-                    return [::constcl::read-char]
+                    return [::constcl::read-character]
                 }
                 default {
                     error "Illegal #-literal"
@@ -180,7 +187,7 @@ proc ::constcl::character-check {name} {
     regexp {^#\\([[:graph:]]|space|newline)$} $name
 }
 
-proc ::constcl::read-char {} {
+proc ::constcl::read-character {} {
     set name "#"
     while {$::inputstr ne {} && ![::string is space [first]]} {
         ::append name [first]
@@ -258,6 +265,46 @@ proc ::constcl::find-char {c} {
 }
 
 proc ::constcl::read-pair {c} {
+    # ")"
+    # "foo . bar)"
+    # "foo)"
+    # "foo bar)"
+    skip-whitespace
+    if {[first] eq $c} {
+        return #NIL
+    }
+    set a [read]
+    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+        advance 3
+        skip-whitespace
+        set d [read]
+        skip-whitespace
+        if {[first] ne $c} {
+            error "extra elements in dotted pair"
+        }
+        return [Cons create Mem[incr ::M] $a $d]
+    } elseif {[find-char $c]} {
+        skip-whitespace
+        set d #NIL
+        return [Cons create Mem[incr ::M] $a $d]
+    } else {
+        lappend res $a
+        while {![find-char $c]} {
+            if {[llength $res] > 3} break
+            set p [read]
+            skip-whitespace
+            lappend res $p
+        }
+        set prev #NIL
+        foreach r [lreverse $res] {
+            set prev [Cons create Mem[incr ::M] $r $prev]
+        }
+        return $prev
+    }
+
+}
+
+proc ::constcl::__read-pair {c} {
     # take a character, read a car and a cdr value, pass the char to findC
     skip-whitespace
     set a [read]
@@ -359,7 +406,7 @@ proc ::constcl::write-pair {obj} {
     if {[pair? $d] eq "#t"} {
         # cdr is a cons pair
         puts -nonewline " "
-        write-pair $d;
+        write-pair $d
     } elseif {$d eq "#NIL"} {
         # cdr is nil
         return
@@ -868,6 +915,7 @@ oo::class create Boolean {
     }
 }
 
+
 # 
 proc ::constcl::boolean? {obj} {
     if {[info object isa typeof $obj Boolean]} {
@@ -879,6 +927,8 @@ proc ::constcl::boolean? {obj} {
     }
 }
 
+reg not ::constcl::not
+
 proc ::constcl::not {obj} {
     if {[$obj truth] eq "#f"} {
         return #t
@@ -886,6 +936,7 @@ proc ::constcl::not {obj} {
         return #f
     }
 }
+
 
 
 
@@ -903,9 +954,9 @@ oo::class create Cons {
     method set-car! {val} { set car $val }
     method set-cdr! {val} { set cdr $val }
     method write {} {
-        puts -nonewline (
+        puts -nonewline "("
         ::constcl::write-pair [self]
-        puts -nonewline )
+        puts -nonewline ")"
     }
 }
 
@@ -939,12 +990,18 @@ proc ::constcl::set-cdr! {obj val} {
     $obj set-cdr! $val
 }
 
+reg list ::constcl::list
+
 proc ::constcl::list {args} {
-    set prev #NIL
-    foreach obj [lreverse $args] {
-        set prev [::constcl::cons $obj $prev]
+    if {[llength $args] == 0} {
+        return #NIL
+    } else {
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
     }
-    return $prev
 }
 
 proc ::constcl::list? {obj} {
@@ -1182,8 +1239,8 @@ oo::class create Char {
         set value $v
     }
     method char {} {
-        if {[regexp {^#\\[A-Za-z]$} [my value]]} {
-            return [string index [my value] 2]
+        if {[regexp {^#\\[[:graph:]]$} [my value]]} {
+            return [::string index [my value] 2]
         } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
             # TODO
             switch $char_name {
@@ -1193,35 +1250,35 @@ oo::class create Char {
         }
     }
     method alphabetic? {} {
-        if {[string is alpha [$char char]]} {
+        if {[::string is alpha [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[string is digit [$char char]]} {
+        if {[::string is digit [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[string is space [$char char]]} {
+        if {[::string is space [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[string is upper [$char char]]} {
+        if {[::string is upper [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[string is lower [$char char]]} {
+        if {[::string is lower [$char char]]} {
             return #t
         } else {
             return #f
@@ -1834,9 +1891,80 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 
 
-proc ::constcl::eval {expression environment_specifier} {
+proc ::constcl::eval {e {env ::global_env}} {
     # TODO
+    if {[atom? $e] eq "#t"} {
+        if {[symbol? $e] eq "#t"} {
+            return [lookup $e $env]
+        } elseif {[number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+            return $e
+        } else {
+            error "cannot evaluate $e"
+        }
+    } else {
+        switch [[car $e] name] {
+            quote {
+                return [cadr $e]
+            }
+            if {
+                if {[eval [cadr $e] $env] ne "#f"} {
+                    return [eval [caddr $e] $env]]
+                } else {
+                    return [eval [cadddr $e] $env]]
+                }
+            }
+            begin {
+                return [eprogn [cdr $e] $env]
+            }
+            define {
+                declare [cadr $e] [eval [caddr $e] $env]
+                return {}
+            }
+            set! {
+                return [update! [cadr $e] $env [eval [caddr $e] $env]]
+            }
+            lambda {
+                return [make-function [cadr $e] [cddr $e] $env]
+            }
+            default {
+                return [invoke [eval [car $e] $env] [evlis [cdr $e] $env]]
+            }
+        }
+    }
 }
+
+proc ::constcl::lookup {sym env} {
+    set sym [$sym name]
+    [$env find $sym] get $sym
+}
+
+proc ::constcl::evlis {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+    } else {
+        return #NIL
+    }
+}
+
+proc ::constcl::invoke {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        $pr call {*}[splitlist $vals]
+    } elseif {[::string match "::constcl::*" $pr]} {
+        $pr {*}[splitlist $vals]
+    } else {
+        error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
+    }
+}
+
+proc ::constcl::splitlist {vals} {
+    set result {}
+    while {[pair? $vals] eq "#t"} {
+        lappend result [car $vals]
+        set vals [cdr $vals]
+    }
+    return $result
+}
+
 
 proc ::constcl::scheme-report-environment {version} {
     # TODO
@@ -1949,4 +2077,111 @@ proc ::constcl::transcript-on {filename} {
 proc ::constcl::transcript-off {} {
     # TODO
 }
+
+
+unset -nocomplain M
+# memory cell number
+set M 0
+
+unset -nocomplain S
+# string store number
+set S 0
+
+unset -nocomplain StrSto
+set StrSto [list]
+
+interp alias {} #NIL {} [NIL create Mem0]
+
+interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
+
+interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
+
+interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
+
+interp alias {} #0 {} [Number create Mem[incr ::M] 0]
+
+interp alias {} #1 {} [Number create Mem[incr ::M] 1]
+
+interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
+
+interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
+
+interp alias {} #- {} [Symbol create Mem[incr ::M] -]
+
+interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
+
+
+proc ::constcl::atom? {obj} {
+    if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
+catch { Environment destroy }
+
+oo::class create Environment {
+    variable bindings outer_env
+    constructor {syms vals {outer {}}} {
+	set bindings [dict create]
+        foreach sym $syms val $vals {
+            my set $sym $val
+        }
+        set outer_env $outer
+    }
+    method find {sym} {
+        if {$sym in [dict keys $bindings]} {
+            self
+        } else {
+            $outer_env find $sym
+        }
+    }
+    method get {sym} {
+        dict get $bindings $sym
+    }
+    method set {sym val} {
+        dict set bindings $sym $val
+    }
+}
+
+
+catch { Procedure destroy }
+
+oo::class create Procedure {
+    variable parms body env
+    constructor {p b e} {
+        set parms $p
+        set body $b
+        set env $e
+    }
+    method call {args} {
+	if {[llength $parms] != [llength $args]} {
+	    error "Wrong number of arguments passed to procedure"
+	}
+	set newenv [Environment new $parms $args $env]
+	set res {}
+	foreach expr $body {
+            set res [evaluate $expr $newenv]
+	}
+	set res
+    }
+}
+
+
+
+Environment create null_env {} {}
+
+oo::objdefine null_env {
+    method find {sym} {self}
+    method get {sym} {error "Unbound variable: $sym"}
+    method set {sym val} {error "Unbound variable: $sym"}
+}
+
+
+Environment create global_env [dict keys $standard_env] [dict values $standard_env] null_env
+
+
+
 

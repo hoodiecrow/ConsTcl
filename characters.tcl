@@ -12,8 +12,8 @@ oo::class create Char {
         set value $v
     }
     method char {} {
-        if {[regexp {^#\\[A-Za-z]$} [my value]]} {
-            return [string index [my value] 2]
+        if {[regexp {^#\\[[:graph:]]$} [my value]]} {
+            return [::string index [my value] 2]
         } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
             # TODO
             switch $char_name {
@@ -23,35 +23,35 @@ oo::class create Char {
         }
     }
     method alphabetic? {} {
-        if {[string is alpha [$char char]]} {
+        if {[::string is alpha [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[string is digit [$char char]]} {
+        if {[::string is digit [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[string is space [$char char]]} {
+        if {[::string is space [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[string is upper [$char char]]} {
+        if {[::string is upper [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[string is lower [$char char]]} {
+        if {[::string is lower [$char char]]} {
             return #t
         } else {
             return #f

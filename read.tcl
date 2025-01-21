@@ -68,8 +68,8 @@ CB
 
 CB
 proc ::constcl::read-value {} {
-    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     skip-whitespace
+    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     switch -regexp [first] {
         {\(} {
             advance
@@ -90,6 +90,11 @@ proc ::constcl::read-value {} {
                 error "Missing right bracket."
             }
             return $p
+        }
+        {'} {
+            advance
+            set p [read-value]
+            return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
             # TODO check if + / - is a symbol
@@ -121,7 +126,7 @@ proc ::constcl::read-value {} {
                     return #f
                 }
                 "\\" {
-                    return [::constcl::read-char]
+                    return [::constcl::read-character]
                 }
                 default {
                     error "Illegal #-literal"
@@ -146,6 +151,20 @@ TT(
     set obj [::constcl::read]
     [$obj car] name
 } "a"
+
+::tcltest::test read-1.1 {try reading quoted symbol} -body {
+    set ::inputstr "'foo"
+    set obj [::constcl::read]
+    ::constcl::write $obj
+} -output "(quote foo)\n"
+
+::tcltest::test read-1.2 {try reading a list} {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b))"
+        set obj [read]
+        [caadr $obj] name
+    }
+} "b"
 
 TT)
 
@@ -213,7 +232,7 @@ proc ::constcl::character-check {name} {
     regexp {^#\\([[:graph:]]|space|newline)$} $name
 }
 
-proc ::constcl::read-char {} {
+proc ::constcl::read-character {} {
     set name "#"
     while {$::inputstr ne {} && ![::string is space [first]]} {
         ::append name [first]
@@ -364,6 +383,46 @@ CB
 
 CB
 proc ::constcl::read-pair {c} {
+    # ")"
+    # "foo . bar)"
+    # "foo)"
+    # "foo bar)"
+    skip-whitespace
+    if {[first] eq $c} {
+        return #NIL
+    }
+    set a [read]
+    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+        advance 3
+        skip-whitespace
+        set d [read]
+        skip-whitespace
+        if {[first] ne $c} {
+            error "extra elements in dotted pair"
+        }
+        return [Cons create Mem[incr ::M] $a $d]
+    } elseif {[find-char $c]} {
+        skip-whitespace
+        set d #NIL
+        return [Cons create Mem[incr ::M] $a $d]
+    } else {
+        lappend res $a
+        while {![find-char $c]} {
+            if {[llength $res] > 3} break
+            set p [read]
+            skip-whitespace
+            lappend res $p
+        }
+        set prev #NIL
+        foreach r [lreverse $res] {
+            set prev [Cons create Mem[incr ::M] $r $prev]
+        }
+        return $prev
+    }
+
+}
+
+proc ::constcl::__read-pair {c} {
     # take a character, read a car and a cdr value, pass the char to findC
     skip-whitespace
     set a [read]

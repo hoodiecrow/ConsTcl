@@ -23,7 +23,7 @@ proc ::constcl::write-pair {obj} {
     if {[pair? $d] eq "#t"} {
         # cdr is a cons pair
         puts -nonewline " "
-        write-pair $d;
+        write-pair $d
     } elseif {$d eq "#NIL"} {
         # cdr is nil
         return
@@ -38,15 +38,17 @@ CB
 TT(
 
 ::tcltest::test write-1.0 {read and write a number} -body {
-    set ::inputstr "99.99"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    namespace eval ::constcl {
+        set ::inputstr "99.99"
+        write [eval [read]]
+    }
 } -output "99.99\n"
 
 ::tcltest::test write-1.1 {read and write a boolean} -body {
-    set ::inputstr "#t"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    namespace eval ::constcl {
+        set ::inputstr "#t"
+        write [eval [read]]
+    }
 } -output "#t\n"
 
 TT)
@@ -57,6 +59,13 @@ TT(
     set ::inputstr "(a b c)"
     set obj [::constcl::read]
     ::constcl::write $obj
+} -output "(a b c)\n"
+
+::tcltest::test write-2.1 {read and write a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "'(a b c)"
+        write [eval [read]]
+    }
 } -output "(a b c)\n"
 
 TT)

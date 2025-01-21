@@ -3,7 +3,44 @@ A second try at a Lisp interpreter written in Tcl, this time with a real Lisp-li
 
 
 ```
-namespace eval ::constcl {}
+namespace eval ::constcl {
+    namespace unknown resolve
+
+    proc resolve {cmd args} {
+        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+            set obj [lindex $args 0]
+            foreach ad [lreverse [split $ads {}]] {
+                if {$ad eq "a"} {
+                    set obj [car $obj]
+                } else {
+                    set obj [cdr $obj]
+                }
+            }
+            return $obj
+        } elseif {no} {
+            uplevel 1 [dict get $scope $cmd] $args
+        } else {
+            return -code error "no such command: \"$cmd\""
+        }
+    }
+}
+
+dict set ::standard_env pi 3.1415926535897931
+
+proc reg {sym impl} {
+    dict set ::standard_env $sym $impl
+}
+
+```
+
+```
+# utility function
+proc ::pep {str} {
+    set ::inputstr $str
+    namespace eval ::constcl {
+        write [eval [read]]
+    }
+}
 ```
 
 ```
@@ -46,39 +83,6 @@ proc ::eof-object? {obj} {
     }
 }
 ```
-
-
-unset -nocomplain M
-# memory cell number
-set M 0
-
-unset -nocomplain S
-# string store number
-set S 0
-
-unset -nocomplain StrSto
-set StrSto [list]
-
-interp alias {} #NIL {} [NIL create Mem0]
-
-interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
-
-interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
-
-interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
-
-interp alias {} #0 {} [Number create Mem[incr ::M] 0]
-
-interp alias {} #1 {} [Number create Mem[incr ::M] 1]
-
-interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
-
-interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
-
-interp alias {} #- {} [Symbol create Mem[incr ::M] -]
-
-interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
-
 
 
 The algorithm for reading a Lisp value in Constcl is as follows:
@@ -148,8 +152,8 @@ proc ::constcl::read {args} {
 
 ```
 proc ::constcl::read-value {} {
-    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     skip-whitespace
+    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     switch -regexp [first] {
         {\(} {
             advance
@@ -170,6 +174,11 @@ proc ::constcl::read-value {} {
                 error "Missing right bracket."
             }
             return $p
+        }
+        {'} {
+            advance
+            set p [read-value]
+            return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
             # TODO check if + / - is a symbol
@@ -201,7 +210,7 @@ proc ::constcl::read-value {} {
                     return #f
                 }
                 "\\" {
-                    return [::constcl::read-char]
+                    return [::constcl::read-character]
                 }
                 default {
                     error "Illegal #-literal"
@@ -240,7 +249,7 @@ proc ::constcl::character-check {name} {
     regexp {^#\\([[:graph:]]|space|newline)$} $name
 }
 
-proc ::constcl::read-char {} {
+proc ::constcl::read-character {} {
     set name "#"
     while {$::inputstr ne {} && ![::string is space [first]]} {
         ::append name [first]
@@ -328,6 +337,46 @@ proc ::constcl::find-char {c} {
 
 ```
 proc ::constcl::read-pair {c} {
+    # ")"
+    # "foo . bar)"
+    # "foo)"
+    # "foo bar)"
+    skip-whitespace
+    if {[first] eq $c} {
+        return #NIL
+    }
+    set a [read]
+    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+        advance 3
+        skip-whitespace
+        set d [read]
+        skip-whitespace
+        if {[first] ne $c} {
+            error "extra elements in dotted pair"
+        }
+        return [Cons create Mem[incr ::M] $a $d]
+    } elseif {[find-char $c]} {
+        skip-whitespace
+        set d #NIL
+        return [Cons create Mem[incr ::M] $a $d]
+    } else {
+        lappend res $a
+        while {![find-char $c]} {
+            if {[llength $res] > 3} break
+            set p [read]
+            skip-whitespace
+            lappend res $p
+        }
+        set prev #NIL
+        foreach r [lreverse $res] {
+            set prev [Cons create Mem[incr ::M] $r $prev]
+        }
+        return $prev
+    }
+
+}
+
+proc ::constcl::__read-pair {c} {
     # take a character, read a car and a cdr value, pass the char to findC
     skip-whitespace
     set a [read]
@@ -445,7 +494,7 @@ proc ::constcl::write-pair {obj} {
     if {[pair? $d] eq "#t"} {
         # cdr is a cons pair
         puts -nonewline " "
-        write-pair $d;
+        write-pair $d
     } elseif {$d eq "#NIL"} {
         # cdr is nil
         return
@@ -1061,6 +1110,7 @@ oo::class create Boolean {
 }
 ```
 
+
 ```
 # 
 proc ::constcl::boolean? {obj} {
@@ -1075,6 +1125,8 @@ proc ::constcl::boolean? {obj} {
 ```
 
 ```
+reg not ::constcl::not
+
 proc ::constcl::not {obj} {
     if {[$obj truth] eq "#f"} {
         return #t
@@ -1083,6 +1135,7 @@ proc ::constcl::not {obj} {
     }
 }
 ```
+
 
 
 ## Pairs and lists
@@ -1102,9 +1155,9 @@ oo::class create Cons {
     method set-car! {val} { set car $val }
     method set-cdr! {val} { set cdr $val }
     method write {} {
-        puts -nonewline (
+        puts -nonewline "("
         ::constcl::write-pair [self]
-        puts -nonewline )
+        puts -nonewline ")"
     }
 }
 ```
@@ -1152,12 +1205,18 @@ proc ::constcl::set-cdr! {obj val} {
 ```
 
 ```
+reg list ::constcl::list
+
 proc ::constcl::list {args} {
-    set prev #NIL
-    foreach obj [lreverse $args] {
-        set prev [::constcl::cons $obj $prev]
+    if {[llength $args] == 0} {
+        return #NIL
+    } else {
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
     }
-    return $prev
 }
 ```
 
@@ -1441,8 +1500,8 @@ oo::class create Char {
         set value $v
     }
     method char {} {
-        if {[regexp {^#\\[A-Za-z]$} [my value]]} {
-            return [string index [my value] 2]
+        if {[regexp {^#\\[[:graph:]]$} [my value]]} {
+            return [::string index [my value] 2]
         } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
             # TODO
             switch $char_name {
@@ -1452,35 +1511,35 @@ oo::class create Char {
         }
     }
     method alphabetic? {} {
-        if {[string is alpha [$char char]]} {
+        if {[::string is alpha [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[string is digit [$char char]]} {
+        if {[::string is digit [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[string is space [$char char]]} {
+        if {[::string is space [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[string is upper [$char char]]} {
+        if {[::string is upper [$char char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[string is lower [$char char]]} {
+        if {[::string is lower [$char char]]} {
             return #t
         } else {
             return #f
@@ -2225,10 +2284,89 @@ proc ::constcl::dynamic-wind {before thunk after} {
 ## Eval
 
 ```
-proc ::constcl::eval {expression environment_specifier} {
+proc ::constcl::eval {e {env ::global_env}} {
     # TODO
+    if {[atom? $e] eq "#t"} {
+        if {[symbol? $e] eq "#t"} {
+            return [lookup $e $env]
+        } elseif {[number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+            return $e
+        } else {
+            error "cannot evaluate $e"
+        }
+    } else {
+        switch [[car $e] name] {
+            quote {
+                return [cadr $e]
+            }
+            if {
+                if {[eval [cadr $e] $env] ne "#f"} {
+                    return [eval [caddr $e] $env]]
+                } else {
+                    return [eval [cadddr $e] $env]]
+                }
+            }
+            begin {
+                return [eprogn [cdr $e] $env]
+            }
+            define {
+                declare [cadr $e] [eval [caddr $e] $env]
+                return {}
+            }
+            set! {
+                return [update! [cadr $e] $env [eval [caddr $e] $env]]
+            }
+            lambda {
+                return [make-function [cadr $e] [cddr $e] $env]
+            }
+            default {
+                return [invoke [eval [car $e] $env] [evlis [cdr $e] $env]]
+            }
+        }
+    }
 }
 ```
+
+```
+proc ::constcl::lookup {sym env} {
+    set sym [$sym name]
+    [$env find $sym] get $sym
+}
+```
+
+```
+proc ::constcl::evlis {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+    } else {
+        return #NIL
+    }
+}
+```
+
+```
+proc ::constcl::invoke {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        $pr call {*}[splitlist $vals]
+    } elseif {[::string match "::constcl::*" $pr]} {
+        $pr {*}[splitlist $vals]
+    } else {
+        error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
+    }
+}
+```
+
+```
+proc ::constcl::splitlist {vals} {
+    set result {}
+    while {[pair? $vals] eq "#t"} {
+        lappend result [car $vals]
+        set vals [cdr $vals]
+    }
+    return $result
+}
+```
+
 
 ```
 proc ::constcl::scheme-report-environment {version} {
@@ -2394,4 +2532,180 @@ proc ::constcl::transcript-off {} {
     # TODO
 }
 ```
+
+
+unset -nocomplain M
+# memory cell number
+set M 0
+
+unset -nocomplain S
+# string store number
+set S 0
+
+unset -nocomplain StrSto
+set StrSto [list]
+
+interp alias {} #NIL {} [NIL create Mem0]
+
+interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
+
+interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
+
+interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
+
+interp alias {} #0 {} [Number create Mem[incr ::M] 0]
+
+interp alias {} #1 {} [Number create Mem[incr ::M] 1]
+
+interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
+
+interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
+
+interp alias {} #- {} [Symbol create Mem[incr ::M] -]
+
+interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
+
+
+proc ::constcl::atom? {obj} {
+    if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
+### Environment class and objects
+
+The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
+with the added finesse of keeping a link to the outer environment (starting a chain that goes all
+the way to the global environment and then stops at the null environment) which can be traversed
+by the find method to find which innermost environment a given symbol is bound in.
+
+```
+catch { Environment destroy }
+
+oo::class create Environment {
+    variable bindings outer_env
+    constructor {syms vals {outer {}}} {
+	set bindings [dict create]
+        foreach sym $syms val $vals {
+            my set $sym $val
+        }
+        set outer_env $outer
+    }
+    method find {sym} {
+        if {$sym in [dict keys $bindings]} {
+            self
+        } else {
+            $outer_env find $sym
+        }
+    }
+    method get {sym} {
+        dict get $bindings $sym
+    }
+    method set {sym val} {
+        dict set bindings $sym $val
+    }
+}
+```
+
+### Procedure class and objects
+
+A __Procedure__ object is basically a
+[closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
+storing the procedure's parameter list, the body, and the environment that is current
+when the object is created (when the procedure is defined).
+
+
+```
+catch { Procedure destroy }
+
+oo::class create Procedure {
+    variable parms body env
+    constructor {p b e} {
+        set parms $p
+        set body $b
+        set env $e
+    }
+    method call {args} {
+	if {[llength $parms] != [llength $args]} {
+	    error "Wrong number of arguments passed to procedure"
+	}
+	set newenv [Environment new $parms $args $env]
+	set res {}
+	foreach expr $body {
+            set res [evaluate $expr $newenv]
+	}
+	set res
+    }
+}
+```
+
+When a __Procedure__ object is called, the body is evaluated in a new environment
+where the parameters are given values from the argument list and the outer link
+goes to the closure environment.
+
+On startup, two __Environment__ objects called __null_env__ (the null environment, not the same
+as __null-environment__ in Scheme) and __global_env__ (the global environment) are created. 
+
+Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
+
+```
+Environment create null_env {} {}
+
+oo::objdefine null_env {
+    method find {sym} {self}
+    method get {sym} {error "Unbound variable: $sym"}
+    method set {sym val} {error "Unbound variable: $sym"}
+}
+```
+
+Meanwhile, __global_env__ is populated with all the definitions from __standard_env__. This is
+where top level evaluation happens.
+
+```
+Environment create global_env [dict keys $standard_env] [dict values $standard_env] null_env
+```
+
+Thereafter, each time a user-defined procedure is called, a new __Environment__ object is
+created to hold the bindings introduced by the call, and also a link to the outer environment
+(the one closed over when the procedure was defined).
+
+#### Lexical scoping
+
+A procedure definition form creates a new procedure. Example:
+
+```
+Thtcl> (define circle-area (lambda (r) (* pi (* r r))))
+Thtcl> (circle-area 10)
+314.1592653589793
+```
+
+During a call to the procedure `circle-area`, the symbol `r` is bound to the
+value 10. But we don't want the binding to go into the global environment,
+possibly clobbering an earlier definition of `r`. The solution is to use
+separate (but linked) environments, making `r`'s binding a
+_[local variable](https://en.wikipedia.org/wiki/Local_variable)_
+in its own environment, which the procedure will be evaluated in. The symbols
+`*` and `pi` will still be available through the local environment's link
+to the outer global environment. This is all part of
+_[lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)_.
+
+In the first image, we see the global environment before we call __circle-area__
+(and also the empty null environment which the global environment links to):
+
+![A global environment](/images/env1.png)
+
+During the call. Note how the global `r` is shadowed by the local one, and how
+the local environment links to the global one to find `*` and `pi`. 
+
+![A local environment shadows the global](/images/env2.png)
+
+After the call, we are back to the first state again.
+
+![A global environment](/images/env1.png)
+
+
+
 
