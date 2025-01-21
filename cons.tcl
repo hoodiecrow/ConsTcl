@@ -12,21 +12,21 @@ set StrSto [list]
 
 interp alias {} #NIL {} [NIL create Mem0]
 
-interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
+interp alias {} #t {} [::constcl::MkBoolean #t]
 
-interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
+interp alias {} #f {} [::constcl::MkBoolean #f]
 
-interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
+interp alias {} #-1 {} [::constcl::MkNumber -1]
 
-interp alias {} #0 {} [Number create Mem[incr ::M] 0]
+interp alias {} #0 {} [::constcl::MkNumber 0]
 
-interp alias {} #1 {} [Number create Mem[incr ::M] 1]
+interp alias {} #1 {} [::constcl::MkNumber 1]
 
-interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
+interp alias {} #Q {} [::constcl::MkSymbol quote]
 
-interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
+interp alias {} #+ {} [::constcl::MkSymbol +]
 
-interp alias {} #- {} [Symbol create Mem[incr ::M] -]
+interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
 

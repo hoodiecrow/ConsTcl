@@ -29,7 +29,7 @@ proc ::constcl::idchecksubs {subs} {
 proc ::constcl::idcheck {sym} {
     if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
-        error "Identifier expected"
+        error "Identifier expected ($sym)"
     } else {
         if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
             cond and or case let let* letrec do delay quasiquote}} {

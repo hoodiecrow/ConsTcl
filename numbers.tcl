@@ -24,6 +24,10 @@ oo::class create Number {
     method numval {} {set value}
     method write {} { puts -nonewline [my value] }
 }
+
+proc ::constcl::MkNumber {v} {
+    return [Number create Mem[incr ::M] $v]
+}
 CB
 
 CB
@@ -259,7 +263,7 @@ proc ::constcl::- {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] -[$obj value]]
+            return [MkNumber -[$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -289,7 +293,7 @@ proc ::constcl::/ {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] [expr {1 / [$obj value]}]
+            return [MkNumber [expr {1 / [$obj value]}]]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -316,7 +320,7 @@ CB
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq #t} {
         if {[$x negative]} {
-            return [Number create Mem[incr ::M] [expr {[$x value] * -1}]]
+            return [MkNumber [expr {[$x value] * -1}]]
         } else {
             return $x
         }
@@ -371,7 +375,7 @@ CB
 CB
 proc ::constcl::floor {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::floor [$x value]]
+        MkNumber [::tcl::mathfunc::floor [$x value]]
     } else {
         error "NUMBER expected\n(floor [$x write])"
     }
@@ -381,7 +385,7 @@ CB
 CB
 proc ::constcl::ceiling {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::ceil [$x value]]
+        MkNumber [::tcl::mathfunc::ceil [$x value]]
     } else {
         error "NUMBER expected\n(ceiling [$x write])"
     }
@@ -401,7 +405,7 @@ CB
 CB
 proc ::constcl::round {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::round [$x value]]
+        MkNumber [::tcl::mathfunc::round [$x value]]
     } else {
         error "NUMBER expected\n(round [$x write])"
     }
@@ -417,7 +421,7 @@ CB
 CB
 proc ::constcl::exp {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::exp [$z value]]
+        MkNumber [::tcl::mathfunc::exp [$z value]]
     } else {
         error "NUMBER expected\n(exp [$z write])"
     }
@@ -427,7 +431,7 @@ CB
 CB
 proc ::constcl::log {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::log [$z value]]
+        MkNumber [::tcl::mathfunc::log [$z value]]
     } else {
         error "NUMBER expected\n(log [$z write])"
     }
@@ -437,7 +441,7 @@ CB
 CB
 proc ::constcl::sin {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::sin [$z value]]
+        MkNumber [::tcl::mathfunc::sin [$z value]]
     } else {
         error "NUMBER expected\n(sin [$z write])"
     }
@@ -447,7 +451,7 @@ CB
 CB
 proc ::constcl::cos {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::cos [$z value]]
+        MkNumber [::tcl::mathfunc::cos [$z value]]
     } else {
         error "NUMBER expected\n(cos [$z write])"
     }
@@ -457,7 +461,7 @@ CB
 CB
 proc ::constcl::tan {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::tan [$z value]]
+        MkNumber [::tcl::mathfunc::tan [$z value]]
     } else {
         error "NUMBER expected\n(tan [$z write])"
     }
@@ -467,7 +471,7 @@ CB
 CB
 proc ::constcl::asin {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::asin [$z value]]
+        MkNumber [::tcl::mathfunc::asin [$z value]]
     } else {
         error "NUMBER expected\n(asin [$z write])"
     }
@@ -477,7 +481,7 @@ CB
 CB
 proc ::constcl::acos {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::acos [$z value]]
+        MkNumber [::tcl::mathfunc::acos [$z value]]
     } else {
         error "NUMBER expected\n(acos [$z write])"
     }
@@ -488,14 +492,14 @@ CB
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         if {[::constcl::number? $z] eq #t} {
-            Number create Mem[incr ::M] [::tcl::mathfunc::atan [$z value]]
+            MkNumber [::tcl::mathfunc::atan [$z value]]
         } else {
             error "NUMBER expected\n(atan [$z write])"
         }
     } else {
         lassign $args y x
         if {[::constcl::number? $y] eq #t && [::constcl::number $x]} {
-            Number create Mem[incr ::M] [::tcl::mathfunc::atan2 [$y value] [$x value]]
+            MkNumber [::tcl::mathfunc::atan2 [$y value] [$x value]]
         } else {
             error "NUMBER expected\n(atan [$y write] [$x write])"
         }
@@ -506,7 +510,7 @@ CB
 CB
 proc ::constcl::sqrt {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::sqrt [$z value]]
+        MkNumber [::tcl::mathfunc::sqrt [$z value]]
     } else {
         error "NUMBER expected\n(sqrt [$z write])"
     }
@@ -516,7 +520,7 @@ CB
 CB
 proc ::constcl::expt {z1 z2} {
     if {[::constcl::number? $z1] eq #t && [::constcl::number $z2]} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
+        MkNumber [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
     } else {
         error "NUMBER expected\n(expt [$z1 write] [$z2 write])"
     }

@@ -15,6 +15,15 @@ oo::class create Vector {
     method value {} {return $value}
     method write {} {return #($value)}
 }
+
+proc ::constcl::MkVector {v} {
+    foreach instance [info class instances Vector] {
+        if {[$instance value] eq $v} {
+            return $instance
+        }
+    }
+    return [Vector create Mem[incr ::M] $v]
+}
 CB
 
 CB
@@ -44,7 +53,7 @@ CB
 CB
 proc ::constcl::vector-length {vec} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        return [Number create Mem[incr ::M] [$str length]]]
+        return [MkNumber [$str length]]]
     } else {
         error "VECTOR expected\n(vector-length [$vec write])"
     }

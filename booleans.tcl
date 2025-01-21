@@ -8,6 +8,9 @@ oo::class create Boolean {
     superclass NIL
     variable truth
     constructor {v} {
+        if {$v ni {#t #f}} {
+            error "bad boolean value $v"
+        }
         set truth $v
     }
     method truth {} {
@@ -16,6 +19,15 @@ oo::class create Boolean {
     method write {} {
         puts -nonewline [my truth]
     }
+}
+
+proc ::constcl::MkBoolean {v} {
+    foreach instance [info class instances Boolean] {
+        if {[$instance truth] eq $v} {
+            return $instance
+        }
+    }
+    return [Boolean create Mem[incr ::M] $v]
 }
 CB
 
@@ -45,7 +57,9 @@ TT(
 TT)
 
 CB
-# 
+
+reg boolean? ::constcl::boolean?
+
 proc ::constcl::boolean? {obj} {
     if {[info object isa typeof $obj Boolean]} {
         return #t
@@ -56,6 +70,17 @@ proc ::constcl::boolean? {obj} {
     }
 }
 CB
+
+TT(
+
+::tcltest::test boolean-2.0 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? #f)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+TT)
 
 CB
 reg not ::constcl::not
@@ -109,8 +134,7 @@ TT(
 ::tcltest::test boolean-3.5 {not procedure} -body {
     namespace eval ::constcl {
         set ::inputstr "(not (list))"
-        #write [eval [read]]
-        write [read]
+        write [eval [read]]
     }
 } -output "#f\n"
 

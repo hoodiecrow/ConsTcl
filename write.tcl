@@ -9,7 +9,7 @@ CB
 CB
 proc ::constcl::write-value {obj} {
     # take an object and print the value
-    $obj write
+catch {    $obj write}
 }
 CB
 

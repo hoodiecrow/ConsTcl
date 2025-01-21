@@ -60,6 +60,15 @@ oo::class create Char {
     method value {} {return $value}
     method write {} { puts -nonewline "#\\$value" }
 }
+
+proc ::constcl::MkChar {v} {
+    foreach instance [info class instances Char] {
+        if {[$instance value] eq $v} {
+            return $instance
+        }
+    }
+    return [Char create Mem[incr ::M] $v]
+}
 CB
 
 CB
@@ -279,7 +288,7 @@ CB
 CB
 proc ::constcl::char-upcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [Char create Mem[incr ::M] [string toupper [$char char]]]
+        return [MkChar [string toupper [$char char]]]
     } else {
         error "CHAR expected\n(char-upcase [$char write])"
     }
@@ -290,7 +299,7 @@ CB
 CB
 proc ::constcl::char-downcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [Char create Mem[incr ::M] [string tolower [$char char]]]
+        return [MkChar [string tolower [$char char]]]
     } else {
         error "CHAR expected\n(char-downcase [$char write])"
     }

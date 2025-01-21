@@ -23,6 +23,10 @@ oo::class create Cons {
         puts -nonewline ")"
     }
 }
+
+proc ::constcl::MkCons {a d} {
+    return [Cons create Mem[incr ::M] $a $d]
+}
 CB
 
 CB
@@ -39,7 +43,7 @@ CB
 
 CB
 proc ::constcl::cons {car cdr} {
-    Cons create Mem[incr ::M] $car $cdr
+    MkCons $car $cdr
 }
 CB
 
@@ -305,7 +309,7 @@ CB
 CB
 proc ::constcl::string->symbol {str} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [Symbol create Mem[incr ::M] [$str value]]
+        return [MkSymbol [$str value]]
     } else {
         error "STRING expected\n(string->symbol [$obj write])"
     }

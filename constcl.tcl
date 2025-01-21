@@ -97,14 +97,18 @@ proc ::constcl::read-value {} {
     skip-whitespace
     if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     switch -regexp [first] {
+        {^$} {
+            return
+        }
         {\(} {
             advance
             skip-whitespace
             set p [read-pair ")"]
             skip-whitespace
-            if {[first] != ")"} {
+            if {[first] ne ")"} {
                 error "Missing right parenthesis."
             }
+            advance
             return $p
         }
         {\[} {
@@ -112,9 +116,10 @@ proc ::constcl::read-value {} {
             skip-whitespace
             set p [read-pair "\]"]
             skip-whitespace
-            if {[first] != "\]"} {
+            if {[first] ne "\]"} {
                 error "Missing right bracket."
             }
+            advance
             return $p
         }
         {'} {
@@ -162,8 +167,12 @@ proc ::constcl::read-value {} {
         {"} {
             return [::constcl::read-string]
         }
-        default {
+        {[[:space:]]} {advance}
+        {[[:graph:]]} {
             return [::constcl::read-identifier]
+        }
+        default {
+            error "unexpected char [first]"
         }
 
     }
@@ -176,7 +185,7 @@ proc ::constcl::read-number {} {
         advance
     }
     if {[::string length $num] && [::string is double $num]} {
-        return [Number create Mem[incr ::M] $num]
+        return [MkNumber $num]
     } else {
         error "Invalid numeric constant $num"
     }
@@ -194,7 +203,7 @@ proc ::constcl::read-character {} {
         advance
     }
     if {[::constcl::character-check $name]} {
-        return [Char create Mem[incr ::M] $name]
+        return [MkChar $name]
     } else {
         error "Invalid character constant $name"
     }
@@ -215,18 +224,19 @@ proc ::constcl::read-string {} {
         }
         advance
     }
-    return [String create Mem[incr ::M] $str]
+    return [MkString $str]
 }
 
 
 proc ::constcl::read-identifier {} {
-    set name {}
+        ::append name [first]
+        advance
     while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
     # idcheck throws error if invalid identifier
-    return [Symbol create Mem[incr ::M] [::constcl::idcheck $name]]
+    return [MkSymbol [::constcl::idcheck $name]]
 }
 
 
@@ -258,10 +268,10 @@ proc ::constcl::skip-whitespace {} {
 proc ::constcl::find-char {c} {
     # take a character, peek beyond whitespace to find it
     set cp 0
-    while {[::string is space [lindex $::inputstr $cp]]} {
+    while {[::string is space [::string index $::inputstr $cp]]} {
         incr cp
     }
-    return [expr {[lindex $::inputstr $cp] eq $c}]
+    return [expr {[::string index $::inputstr $cp] eq $c}]
 }
 
 proc ::constcl::read-pair {c} {
@@ -282,22 +292,22 @@ proc ::constcl::read-pair {c} {
         if {[first] ne $c} {
             error "extra elements in dotted pair"
         }
-        return [Cons create Mem[incr ::M] $a $d]
+        return [MkCons $a $d]
     } elseif {[find-char $c]} {
         skip-whitespace
         set d #NIL
-        return [Cons create Mem[incr ::M] $a $d]
+        return [MkCons $a $d]
     } else {
         lappend res $a
         while {![find-char $c]} {
-            if {[llength $res] > 3} break
+            if {[llength $res] > 4} break
             set p [read]
             skip-whitespace
             lappend res $p
         }
         set prev #NIL
         foreach r [lreverse $res] {
-            set prev [Cons create Mem[incr ::M] $r $prev]
+            set prev [MkCons $r $prev]
         }
         return $prev
     }
@@ -320,7 +330,7 @@ proc ::constcl::__read-pair {c} {
         set d [read-pair $c]
     }
     skip-whitespace
-    return [Cons create Mem[incr ::M] $a $d]
+    return [MkCons $a $d]
 }
 
 proc ::constcl::read-v {} {
@@ -376,7 +386,7 @@ proc ::constcl::idchecksubs {subs} {
 proc ::constcl::idcheck {sym} {
     if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
-        error "Identifier expected"
+        error "Identifier expected ($sym)"
     } else {
         if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
             cond and or case let let* letrec do delay quasiquote}} {
@@ -394,7 +404,7 @@ proc ::constcl::write {obj args} {
 
 proc ::constcl::write-value {obj} {
     # take an object and print the value
-    $obj write
+catch {    $obj write}
 }
 
 proc ::constcl::write-pair {obj} {
@@ -440,6 +450,10 @@ oo::class create Number {
     method value {} { set value }
     method numval {} {set value}
     method write {} { puts -nonewline [my value] }
+}
+
+proc ::constcl::MkNumber {v} {
+    return [Number create Mem[incr ::M] $v]
 }
 
 proc ::constcl::number? {obj} {
@@ -644,7 +658,7 @@ proc ::constcl::- {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] -[$obj value]]
+            return [MkNumber -[$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -672,7 +686,7 @@ proc ::constcl::/ {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj eq "#t"]} {
-            return [Number create Mem[incr ::M] [expr {1 / [$obj value]}]
+            return [MkNumber [expr {1 / [$obj value]}]]
         } else {
             error "NUMBER expected\n(- [$obj write])"
         }
@@ -697,7 +711,7 @@ proc ::constcl::/ {args} {
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq #t} {
         if {[$x negative]} {
-            return [Number create Mem[incr ::M] [expr {[$x value] * -1}]]
+            return [MkNumber [expr {[$x value] * -1}]]
         } else {
             return $x
         }
@@ -736,7 +750,7 @@ proc ::constcl::denominator {q} {
 
 proc ::constcl::floor {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::floor [$x value]]
+        MkNumber [::tcl::mathfunc::floor [$x value]]
     } else {
         error "NUMBER expected\n(floor [$x write])"
     }
@@ -744,7 +758,7 @@ proc ::constcl::floor {x} {
 
 proc ::constcl::ceiling {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::ceil [$x value]]
+        MkNumber [::tcl::mathfunc::ceil [$x value]]
     } else {
         error "NUMBER expected\n(ceiling [$x write])"
     }
@@ -760,7 +774,7 @@ proc ::constcl::truncate {x} {
 
 proc ::constcl::round {x} {
     if {[::constcl::number? $x] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::round [$x value]]
+        MkNumber [::tcl::mathfunc::round [$x value]]
     } else {
         error "NUMBER expected\n(round [$x write])"
     }
@@ -772,7 +786,7 @@ proc ::constcl::rationalize {x y} {
 
 proc ::constcl::exp {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::exp [$z value]]
+        MkNumber [::tcl::mathfunc::exp [$z value]]
     } else {
         error "NUMBER expected\n(exp [$z write])"
     }
@@ -780,7 +794,7 @@ proc ::constcl::exp {z} {
 
 proc ::constcl::log {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::log [$z value]]
+        MkNumber [::tcl::mathfunc::log [$z value]]
     } else {
         error "NUMBER expected\n(log [$z write])"
     }
@@ -788,7 +802,7 @@ proc ::constcl::log {z} {
 
 proc ::constcl::sin {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::sin [$z value]]
+        MkNumber [::tcl::mathfunc::sin [$z value]]
     } else {
         error "NUMBER expected\n(sin [$z write])"
     }
@@ -796,7 +810,7 @@ proc ::constcl::sin {z} {
 
 proc ::constcl::cos {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::cos [$z value]]
+        MkNumber [::tcl::mathfunc::cos [$z value]]
     } else {
         error "NUMBER expected\n(cos [$z write])"
     }
@@ -804,7 +818,7 @@ proc ::constcl::cos {z} {
 
 proc ::constcl::tan {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::tan [$z value]]
+        MkNumber [::tcl::mathfunc::tan [$z value]]
     } else {
         error "NUMBER expected\n(tan [$z write])"
     }
@@ -812,7 +826,7 @@ proc ::constcl::tan {z} {
 
 proc ::constcl::asin {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::asin [$z value]]
+        MkNumber [::tcl::mathfunc::asin [$z value]]
     } else {
         error "NUMBER expected\n(asin [$z write])"
     }
@@ -820,7 +834,7 @@ proc ::constcl::asin {z} {
 
 proc ::constcl::acos {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::acos [$z value]]
+        MkNumber [::tcl::mathfunc::acos [$z value]]
     } else {
         error "NUMBER expected\n(acos [$z write])"
     }
@@ -829,14 +843,14 @@ proc ::constcl::acos {z} {
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         if {[::constcl::number? $z] eq #t} {
-            Number create Mem[incr ::M] [::tcl::mathfunc::atan [$z value]]
+            MkNumber [::tcl::mathfunc::atan [$z value]]
         } else {
             error "NUMBER expected\n(atan [$z write])"
         }
     } else {
         lassign $args y x
         if {[::constcl::number? $y] eq #t && [::constcl::number $x]} {
-            Number create Mem[incr ::M] [::tcl::mathfunc::atan2 [$y value] [$x value]]
+            MkNumber [::tcl::mathfunc::atan2 [$y value] [$x value]]
         } else {
             error "NUMBER expected\n(atan [$y write] [$x write])"
         }
@@ -845,7 +859,7 @@ proc ::constcl::atan {args} {
 
 proc ::constcl::sqrt {z} {
     if {[::constcl::number? $z] eq #t} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::sqrt [$z value]]
+        MkNumber [::tcl::mathfunc::sqrt [$z value]]
     } else {
         error "NUMBER expected\n(sqrt [$z write])"
     }
@@ -853,7 +867,7 @@ proc ::constcl::sqrt {z} {
 
 proc ::constcl::expt {z1 z2} {
     if {[::constcl::number? $z1] eq #t && [::constcl::number $z2]} {
-        Number create Mem[incr ::M] [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
+        MkNumber [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
     } else {
         error "NUMBER expected\n(expt [$z1 write] [$z2 write])"
     }
@@ -905,6 +919,9 @@ oo::class create Boolean {
     superclass NIL
     variable truth
     constructor {v} {
+        if {$v ni {#t #f}} {
+            error "bad boolean value $v"
+        }
         set truth $v
     }
     method truth {} {
@@ -915,8 +932,19 @@ oo::class create Boolean {
     }
 }
 
+proc ::constcl::MkBoolean {v} {
+    foreach instance [info class instances Boolean] {
+        if {[$instance truth] eq $v} {
+            return $instance
+        }
+    }
+    return [Boolean create Mem[incr ::M] $v]
+}
 
-# 
+
+
+reg boolean? ::constcl::boolean?
+
 proc ::constcl::boolean? {obj} {
     if {[info object isa typeof $obj Boolean]} {
         return #t
@@ -926,6 +954,7 @@ proc ::constcl::boolean? {obj} {
         return #f
     }
 }
+
 
 reg not ::constcl::not
 
@@ -960,6 +989,10 @@ oo::class create Cons {
     }
 }
 
+proc ::constcl::MkCons {a d} {
+    return [Cons create Mem[incr ::M] $a $d]
+}
+
 proc ::constcl::pair? {obj} {
     if {[info object isa typeof $obj Cons]} {
         return #t
@@ -971,7 +1004,7 @@ proc ::constcl::pair? {obj} {
 }
 
 proc ::constcl::cons {car cdr} {
-    Cons create Mem[incr ::M] $car $cdr
+    MkCons $car $cdr
 }
 
 proc ::constcl::car {obj} {
@@ -1193,7 +1226,7 @@ proc ::constcl::symbol->string {obj} {
 
 proc ::constcl::string->symbol {str} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [Symbol create Mem[incr ::M] [$str value]]
+        return [MkSymbol [$str value]]
     } else {
         error "STRING expected\n(string->symbol [$obj write])"
     }
@@ -1211,6 +1244,18 @@ oo::class create Symbol {
     method name {} {set name}
     method = {symname} {expr {$name eq $symname}}
     method write {} { puts -nonewline [my name] }
+}
+
+proc ::constcl::MkSymbol {n} {
+    if {$n eq {}} {
+        error "a symbol must have a name"
+    }
+    foreach instance [info class instances Symbol] {
+        if {[$instance name] eq $n} {
+            return $instance
+        }
+    }
+    return [Symbol create Mem[incr ::M] $n]
 }
 
 proc ::constcl::symbol? {obj} {
@@ -1286,6 +1331,15 @@ oo::class create Char {
     }
     method value {} {return $value}
     method write {} { puts -nonewline "#\\$value" }
+}
+
+proc ::constcl::MkChar {v} {
+    foreach instance [info class instances Char] {
+        if {[$instance value] eq $v} {
+            return $instance
+        }
+    }
+    return [Char create Mem[incr ::M] $v]
 }
 
 proc ::constcl::char? {obj} {
@@ -1468,7 +1522,7 @@ proc ::constcl::integer->char {n} {
 
 proc ::constcl::char-upcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [Char create Mem[incr ::M] [string toupper [$char char]]]
+        return [MkChar [string toupper [$char char]]]
     } else {
         error "CHAR expected\n(char-upcase [$char write])"
     }
@@ -1477,7 +1531,7 @@ proc ::constcl::char-upcase {char} {
 
 proc ::constcl::char-downcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [Char create Mem[incr ::M] [string tolower [$char char]]]
+        return [MkChar [string tolower [$char char]]]
     } else {
         error "CHAR expected\n(char-downcase [$char write])"
     }
@@ -1489,9 +1543,17 @@ oo::class create String {
     superclass NIL
     variable s
     constructor {v} {
-        set s $::S
-        lset ::StrSto $s $v
-        incr ::S
+        set s -1
+        for {set i 0} {$i < $::S} {incr i} {
+            if {[::string equal [lindex $::StrSto $i] $v]} {
+                set s $i
+            }
+        }
+        if {$s == -1} {
+            set s $::S
+            lset ::StrSto $s $v
+            incr ::S
+        }
     }
     method index {} {set s}
     method = {str} {string equal [lindex $::StrSto $s] $str}
@@ -1499,6 +1561,10 @@ oo::class create String {
     method ref {i} {string index [lindex $::StrSto $s] $i}
     method value {} {return [lindex $::StrSto $s]}
     method write {} { puts -nonewline "\"[lindex $::StrSto $s]\"" }
+}
+
+proc ::constcl::MkString {v} {
+    return [String create Mem[incr ::M] $v]
 }
 
 proc ::constcl::string? {obj} {
@@ -1524,12 +1590,12 @@ proc ::constcl::string {args} {
             error "CHAR expected\n(string [$char write])"
         }
     }
-    return [String create Mem[incr ::M] $str]
+    return [MkString $str]
 }
 
 proc ::constcl::string-length {str} {
     if {[::constcl::str? $String] eq "#t"} {
-        return [Number create Mem[incr ::M] [$str length]]
+        return [MkNumber [$str length]]
     } else {
         error "STRING expected\n(string-length [$str write])"
     }
@@ -1688,7 +1754,7 @@ proc ::constcl::string-ci>=? {s1 s2} {
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "t"} {
         if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
-            return [String create Mem[incr ::M] [$str substring [$start value] [$end value]]]
+            return [MkString [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str write] [$start write] [$end write])"
         }
@@ -1711,7 +1777,7 @@ proc ::constcl::list->string {list} {
 
 proc ::constcl::string-copy {str} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [String create Mem[incr ::M] [$str value]]
+        return [MkString [$str value]]
     } else {
         error "STRING expected\n(string-copy [$str write])"
     }
@@ -1719,7 +1785,7 @@ proc ::constcl::string-copy {str} {
 
 proc ::constcl::string-fill! {str char} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [String create Mem[incr ::M] [$str fill [$char value]]]
+        return [MkString [$str fill [$char value]]]
     } else {
         error "STRING expected\n(string-fill [$str write] [$char write])"
     }
@@ -1737,6 +1803,15 @@ oo::class create Vector {
     method ref {i} {string index $value $i}
     method value {} {return $value}
     method write {} {return #($value)}
+}
+
+proc ::constcl::MkVector {v} {
+    foreach instance [info class instances Vector] {
+        if {[$instance value] eq $v} {
+            return $instance
+        }
+    }
+    return [Vector create Mem[incr ::M] $v]
 }
 
 proc ::constcl::vector? {obj} {
@@ -1759,7 +1834,7 @@ proc ::constcl::vector {args} {
 
 proc ::constcl::vector-length {vec} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        return [Number create Mem[incr ::M] [$str length]]]
+        return [MkNumber [$str length]]]
     } else {
         error "VECTOR expected\n(vector-length [$vec write])"
     }
@@ -1896,7 +1971,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]
-        } elseif {[number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
             return $e
         } else {
             error "cannot evaluate $e"
@@ -2092,21 +2167,21 @@ set StrSto [list]
 
 interp alias {} #NIL {} [NIL create Mem0]
 
-interp alias {} #t {} [Boolean create Mem[incr ::M] #t]
+interp alias {} #t {} [::constcl::MkBoolean #t]
 
-interp alias {} #f {} [Boolean create Mem[incr ::M] #f]
+interp alias {} #f {} [::constcl::MkBoolean #f]
 
-interp alias {} #-1 {} [Number create Mem[incr ::M] -1]
+interp alias {} #-1 {} [::constcl::MkNumber -1]
 
-interp alias {} #0 {} [Number create Mem[incr ::M] 0]
+interp alias {} #0 {} [::constcl::MkNumber 0]
 
-interp alias {} #1 {} [Number create Mem[incr ::M] 1]
+interp alias {} #1 {} [::constcl::MkNumber 1]
 
-interp alias {} #Q {} [Symbol create Mem[incr ::M] quote]
+interp alias {} #Q {} [::constcl::MkSymbol quote]
 
-interp alias {} #+ {} [Symbol create Mem[incr ::M] +]
+interp alias {} #+ {} [::constcl::MkSymbol +]
 
-interp alias {} #- {} [Symbol create Mem[incr ::M] -]
+interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
 

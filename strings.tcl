@@ -8,9 +8,17 @@ oo::class create String {
     superclass NIL
     variable s
     constructor {v} {
-        set s $::S
-        lset ::StrSto $s $v
-        incr ::S
+        set s -1
+        for {set i 0} {$i < $::S} {incr i} {
+            if {[::string equal [lindex $::StrSto $i] $v]} {
+                set s $i
+            }
+        }
+        if {$s == -1} {
+            set s $::S
+            lset ::StrSto $s $v
+            incr ::S
+        }
     }
     method index {} {set s}
     method = {str} {string equal [lindex $::StrSto $s] $str}
@@ -18,6 +26,10 @@ oo::class create String {
     method ref {i} {string index [lindex $::StrSto $s] $i}
     method value {} {return [lindex $::StrSto $s]}
     method write {} { puts -nonewline "\"[lindex $::StrSto $s]\"" }
+}
+
+proc ::constcl::MkString {v} {
+    return [String create Mem[incr ::M] $v]
 }
 CB
 
@@ -49,14 +61,14 @@ proc ::constcl::string {args} {
             error "CHAR expected\n(string [$char write])"
         }
     }
-    return [String create Mem[incr ::M] $str]
+    return [MkString $str]
 }
 CB
 
 CB
 proc ::constcl::string-length {str} {
     if {[::constcl::str? $String] eq "#t"} {
-        return [Number create Mem[incr ::M] [$str length]]
+        return [MkNumber [$str length]]
     } else {
         error "STRING expected\n(string-length [$str write])"
     }
@@ -241,7 +253,7 @@ CB
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "t"} {
         if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
-            return [String create Mem[incr ::M] [$str substring [$start value] [$end value]]]
+            return [MkString [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str write] [$start write] [$end write])"
         }
@@ -272,7 +284,7 @@ CB
 CB
 proc ::constcl::string-copy {str} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [String create Mem[incr ::M] [$str value]]
+        return [MkString [$str value]]
     } else {
         error "STRING expected\n(string-copy [$str write])"
     }
@@ -282,7 +294,7 @@ CB
 CB
 proc ::constcl::string-fill! {str char} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [String create Mem[incr ::M] [$str fill [$char value]]]
+        return [MkString [$str fill [$char value]]]
     } else {
         error "STRING expected\n(string-fill [$str write] [$char write])"
     }

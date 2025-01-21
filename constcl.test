@@ -2,25 +2,68 @@ package require tcltest
 source constcl.tcl
 
 
-::tcltest::test read-1.0 {try reading a list} {
-    set ::inputstr "(a b c)"
-    set obj [::constcl::read]
-    [$obj car] name
-} "a"
-
-::tcltest::test read-1.1 {try reading quoted symbol} -body {
+::tcltest::test read-1.0 {try reading quoted symbol} -body {
     set ::inputstr "'foo"
     set obj [::constcl::read]
     ::constcl::write $obj
 } -output "(quote foo)\n"
 
-::tcltest::test read-1.2 {try reading a list} {
+::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
         set ::inputstr "(a (b))"
         set obj [read]
         [caadr $obj] name
     }
-} "b"
+} -result "b"
+
+::tcltest::test read-1.2 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a)"
+        write [read]
+    }
+} -output "(a)\n"
+
+::tcltest::test read-1.3 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b)"
+        write [read]
+    }
+} -output "(a b)\n"
+
+::tcltest::test read-1.4 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c)"
+        write [read]
+    }
+} -output "(a b c)\n"
+
+::tcltest::test read-1.5 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c d)"
+        write [read]
+    }
+} -output "(a b c d)\n"
+
+::tcltest::test read-1.6 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c d e)"
+        write [read]
+    }
+} -output "(a b c d e)\n"
+
+::tcltest::test read-1.7 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b) )"
+        write [read]
+    }
+} -output "(a (b))\n"
+
+::tcltest::test read-1.8 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b))"
+        write [read]
+    }
+} -output "(a (b))\n"
 
 
 ::tcltest::test read-2.0 {try reading a number} {
@@ -117,7 +160,7 @@ source constcl.tcl
     set ::inputstr "+foo"
     set obj [::constcl::read-identifier]
     $obj name
-} -returnCodes error -result "Identifier expected"
+} -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
     set ::inputstr "let"
@@ -181,6 +224,15 @@ source constcl.tcl
 
 
 
+::tcltest::test boolean-2.0 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? #f)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
 ::tcltest::test boolean-3.0 {not procedure} -body {
     namespace eval ::constcl {
         set ::inputstr "(not #t)"
@@ -219,8 +271,7 @@ source constcl.tcl
 ::tcltest::test boolean-3.5 {not procedure} -body {
     namespace eval ::constcl {
         set ::inputstr "(not (list))"
-        #write [eval [read]]
-        write [read]
+        write [eval [read]]
     }
 } -output "#f\n"
 

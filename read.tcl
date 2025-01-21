@@ -71,14 +71,18 @@ proc ::constcl::read-value {} {
     skip-whitespace
     if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
     switch -regexp [first] {
+        {^$} {
+            return
+        }
         {\(} {
             advance
             skip-whitespace
             set p [read-pair ")"]
             skip-whitespace
-            if {[first] != ")"} {
+            if {[first] ne ")"} {
                 error "Missing right parenthesis."
             }
+            advance
             return $p
         }
         {\[} {
@@ -86,9 +90,10 @@ proc ::constcl::read-value {} {
             skip-whitespace
             set p [read-pair "\]"]
             skip-whitespace
-            if {[first] != "\]"} {
+            if {[first] ne "\]"} {
                 error "Missing right bracket."
             }
+            advance
             return $p
         }
         {'} {
@@ -136,8 +141,12 @@ proc ::constcl::read-value {} {
         {"} {
             return [::constcl::read-string]
         }
-        default {
+        {[[:space:]]} {advance}
+        {[[:graph:]]} {
             return [::constcl::read-identifier]
+        }
+        default {
+            error "unexpected char [first]"
         }
 
     }
@@ -146,25 +155,68 @@ CB
 
 TT(
 
-::tcltest::test read-1.0 {try reading a list} {
-    set ::inputstr "(a b c)"
-    set obj [::constcl::read]
-    [$obj car] name
-} "a"
-
-::tcltest::test read-1.1 {try reading quoted symbol} -body {
+::tcltest::test read-1.0 {try reading quoted symbol} -body {
     set ::inputstr "'foo"
     set obj [::constcl::read]
     ::constcl::write $obj
 } -output "(quote foo)\n"
 
-::tcltest::test read-1.2 {try reading a list} {
+::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
         set ::inputstr "(a (b))"
         set obj [read]
         [caadr $obj] name
     }
-} "b"
+} -result "b"
+
+::tcltest::test read-1.2 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a)"
+        write [read]
+    }
+} -output "(a)\n"
+
+::tcltest::test read-1.3 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b)"
+        write [read]
+    }
+} -output "(a b)\n"
+
+::tcltest::test read-1.4 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c)"
+        write [read]
+    }
+} -output "(a b c)\n"
+
+::tcltest::test read-1.5 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c d)"
+        write [read]
+    }
+} -output "(a b c d)\n"
+
+::tcltest::test read-1.6 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a b c d e)"
+        write [read]
+    }
+} -output "(a b c d e)\n"
+
+::tcltest::test read-1.7 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b) )"
+        write [read]
+    }
+} -output "(a (b))\n"
+
+::tcltest::test read-1.8 {try reading a list} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(a (b))"
+        write [read]
+    }
+} -output "(a (b))\n"
 
 TT)
 
@@ -175,7 +227,7 @@ proc ::constcl::read-number {} {
         advance
     }
     if {[::string length $num] && [::string is double $num]} {
-        return [Number create Mem[incr ::M] $num]
+        return [MkNumber $num]
     } else {
         error "Invalid numeric constant $num"
     }
@@ -239,7 +291,7 @@ proc ::constcl::read-character {} {
         advance
     }
     if {[::constcl::character-check $name]} {
-        return [Char create Mem[incr ::M] $name]
+        return [MkChar $name]
     } else {
         error "Invalid character constant $name"
     }
@@ -289,7 +341,7 @@ proc ::constcl::read-string {} {
         }
         advance
     }
-    return [String create Mem[incr ::M] $str]
+    return [MkString $str]
 }
 CB
 
@@ -311,13 +363,14 @@ TT)
 
 CB
 proc ::constcl::read-identifier {} {
-    set name {}
+        ::append name [first]
+        advance
     while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
     # idcheck throws error if invalid identifier
-    return [Symbol create Mem[incr ::M] [::constcl::idcheck $name]]
+    return [MkSymbol [::constcl::idcheck $name]]
 }
 CB
 
@@ -333,7 +386,7 @@ TT(
     set ::inputstr "+foo"
     set obj [::constcl::read-identifier]
     $obj name
-} -returnCodes error -result "Identifier expected"
+} -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
     set ::inputstr "let"
@@ -374,10 +427,10 @@ CB
 proc ::constcl::find-char {c} {
     # take a character, peek beyond whitespace to find it
     set cp 0
-    while {[::string is space [lindex $::inputstr $cp]]} {
+    while {[::string is space [::string index $::inputstr $cp]]} {
         incr cp
     }
-    return [expr {[lindex $::inputstr $cp] eq $c}]
+    return [expr {[::string index $::inputstr $cp] eq $c}]
 }
 CB
 
@@ -400,22 +453,22 @@ proc ::constcl::read-pair {c} {
         if {[first] ne $c} {
             error "extra elements in dotted pair"
         }
-        return [Cons create Mem[incr ::M] $a $d]
+        return [MkCons $a $d]
     } elseif {[find-char $c]} {
         skip-whitespace
         set d #NIL
-        return [Cons create Mem[incr ::M] $a $d]
+        return [MkCons $a $d]
     } else {
         lappend res $a
         while {![find-char $c]} {
-            if {[llength $res] > 3} break
+            if {[llength $res] > 4} break
             set p [read]
             skip-whitespace
             lappend res $p
         }
         set prev #NIL
         foreach r [lreverse $res] {
-            set prev [Cons create Mem[incr ::M] $r $prev]
+            set prev [MkCons $r $prev]
         }
         return $prev
     }
@@ -438,7 +491,7 @@ proc ::constcl::__read-pair {c} {
         set d [read-pair $c]
     }
     skip-whitespace
-    return [Cons create Mem[incr ::M] $a $d]
+    return [MkCons $a $d]
 }
 CB
 

@@ -9,7 +9,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]
-        } elseif {[number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
             return $e
         } else {
             error "cannot evaluate $e"

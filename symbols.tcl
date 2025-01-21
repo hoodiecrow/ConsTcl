@@ -15,6 +15,18 @@ oo::class create Symbol {
     method = {symname} {expr {$name eq $symname}}
     method write {} { puts -nonewline [my name] }
 }
+
+proc ::constcl::MkSymbol {n} {
+    if {$n eq {}} {
+        error "a symbol must have a name"
+    }
+    foreach instance [info class instances Symbol] {
+        if {[$instance name] eq $n} {
+            return $instance
+        }
+    }
+    return [Symbol create Mem[incr ::M] $n]
+}
 CB
 
 CB
