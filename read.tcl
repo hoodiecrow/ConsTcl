@@ -61,6 +61,8 @@ proc ::constcl::second {} {
 CB
 
 CB
+reg read ::constcl::read
+
 proc ::constcl::read {args} {
     ::constcl::read-value
 }
@@ -80,7 +82,7 @@ proc ::constcl::read-value {} {
             set p [read-pair ")"]
             skip-whitespace
             if {[first] ne ")"} {
-                error "Missing right parenthesis."
+                error "Missing right parenthesis (first=[first])."
             }
             advance
             return $p
@@ -91,7 +93,7 @@ proc ::constcl::read-value {} {
             set p [read-pair "\]"]
             skip-whitespace
             if {[first] ne "\]"} {
-                error "Missing right bracket."
+                error "Missing right bracket (first=[first])."
             }
             advance
             return $p
@@ -102,11 +104,12 @@ proc ::constcl::read-value {} {
             return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
-            # TODO check if + / - is a symbol
             if {![::string is digit [second]]} {
                 if {[first] eq "+"} {
+                    advance
                     return #+
                 } else {
+                    advance
                     return #-
                 }
             } else {
@@ -509,7 +512,7 @@ proc ::constcl::read-v {} {
         set p [read-pair ")"]
         skip-whitespace
         if {[first] != ")"} {
-            error "Missing right parenthesis."
+            error "Missing right parenthesis (first=[first])."
         }
         return $p
     } elseif {[first] eq "\["} {
@@ -519,7 +522,7 @@ proc ::constcl::read-v {} {
         set p [read-pair "\]"]
         skip-whitespace
         if {[first] != "\]"} {
-            error "Missing right parenthesis."
+            error "Missing right parenthesis (first=[first])."
         }
         return $p
     }

@@ -112,12 +112,16 @@ proc ::constcl::write {obj args} {
 CB
 
 CB
+reg display ::constcl::display
+
 proc ::constcl::display {obj args} {
     # TODO write [$obj display]
 }
 CB
 
 CB
+reg newline ::constcl::newline
+
 proc ::constcl::newline {args} {
     # TODO write newline
 }

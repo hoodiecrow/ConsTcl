@@ -201,6 +201,177 @@ source constcl.tcl
 
 
 
+::tcltest::test number-1.0 {try number?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(number? 99.99)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.1 {try =} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(= 9 9 9 9)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.2 {try <} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(< 1 2 4 7)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.3 {try >} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(> 7 4 2 1)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.4 {try <=} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(<= 1 4 4 7)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.5 {try >=} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(>= 7 4 4 1)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.6 {try zero?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(zero? 77)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+
+
+::tcltest::test number-1.7 {try positive?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(positive? 77)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.8 {try negative?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(negative? 77)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+
+
+::tcltest::test number-1.9 {try even?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(even? 77)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+
+
+::tcltest::test number-1.10 {try odd?} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(odd? 77)"
+        write [eval [read]]
+    }
+} -output "#t\n"
+
+
+
+::tcltest::test number-1.11 {try max} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(max 7 1 10 3)"
+        write [eval [read]]
+    }
+} -output "10\n"
+
+
+
+::tcltest::test number-1.12 {try min} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(min 7 1 10 3)"
+        write [eval [read]]
+    }
+} -output "1\n"
+
+
+
+::tcltest::test number-1.12 {try +} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(+ 7 1 10 3)"
+        write [eval [read]]
+    }
+} -output "21\n"
+
+
+
+::tcltest::test number-1.13 {try *} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(* 7 1 10 3)"
+        write [eval [read]]
+    }
+} -output "210\n"
+
+
+
+::tcltest::test number-1.14 {try -} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(- 7 1 10 3)"
+        write [eval [read]]
+    }
+} -output "-7\n"
+
+
+
+::tcltest::test number-1.15 {try /} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(/ 60 1 10 3)"
+        write [eval [read]]
+    }
+} -output "2\n"
+
+
+
+::tcltest::test number-1.16 {try abs} -body {
+    pep "(abs -99)"
+} -output "99\n"
+
+
+
+::tcltest::test number-1.16 {try floor} -body {
+    pep "(floor 99.9)"
+} -output "99.0\n"
+
+
+
+::tcltest::test number-1.16 {try ceiling} -body {
+    pep "(ceiling 99.9)"
+} -output "100.0\n"
+
+
+
 ::tcltest::test boolean-1.0 {evaluate boolean values} -body {
     namespace eval ::constcl {
         set ::inputstr "#t"
@@ -230,6 +401,20 @@ source constcl.tcl
         write [eval [read]]
     }
 } -output "#t\n"
+
+::tcltest::test boolean-2.1 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? 0)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-2.2 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? '())"
+        write [eval [read]]
+    }
+} -output "#f\n"
 
 
 

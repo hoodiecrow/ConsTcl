@@ -31,6 +31,8 @@ interp alias {} #- {} [::constcl::MkSymbol -]
 interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
 
 
+reg atom? ::constcl::atom?
+
 proc ::constcl::atom? {obj} {
     if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
         return #t

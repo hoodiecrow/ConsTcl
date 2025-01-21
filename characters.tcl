@@ -59,6 +59,7 @@ oo::class create Char {
     }
     method value {} {return $value}
     method write {} { puts -nonewline "#\\$value" }
+    method show {} {set value}
 }
 
 proc ::constcl::MkChar {v} {
@@ -72,6 +73,8 @@ proc ::constcl::MkChar {v} {
 CB
 
 CB
+reg char? ::constcl::char?
+
 proc ::constcl::char? {obj} {
     if {[info object isa typeof $obj Char]} {
         return #t
@@ -84,6 +87,8 @@ proc ::constcl::char? {obj} {
 CB
 
 CB
+reg char=? ::constcl::char=?
+
 proc ::constcl::char=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] eq [$c2 char]} {
@@ -92,12 +97,14 @@ proc ::constcl::char=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char<? ::constcl::char<?
+
 proc ::constcl::char<? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] < [$c2 char]} {
@@ -106,12 +113,14 @@ proc ::constcl::char<? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char>? ::constcl::char>?
+
 proc ::constcl::char>? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] > [$c2 char]} {
@@ -120,12 +129,14 @@ proc ::constcl::char>? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char<=? ::constcl::char<=?
+
 proc ::constcl::char<=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] <= [$c2 char]} {
@@ -134,12 +145,14 @@ proc ::constcl::char<=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char>=? ::constcl::char>=?
+
 proc ::constcl::char>=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] >= [$c2 char]} {
@@ -148,12 +161,14 @@ proc ::constcl::char>=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-ci=? ::constcl::char-ci=?
+
 proc ::constcl::char-ci=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[string tolower [$c1 char]] eq [string tolower [$c2 char]]} {
@@ -162,12 +177,14 @@ proc ::constcl::char-ci=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-ci<? ::constcl::char-ci<?
+
 proc ::constcl::char-ci<? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[string tolower [$c1 char]] < [string tolower [$c2 char]]} {
@@ -176,12 +193,14 @@ proc ::constcl::char-ci<? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-ci>? ::constcl::char-ci>?
+
 proc ::constcl::char-ci>? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[string tolower [$c1 char]] > [string tolower [$c2 char]]} {
@@ -190,12 +209,14 @@ proc ::constcl::char-ci>? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-ci<=? ::constcl::char-ci<=?
+
 proc ::constcl::char-ci<=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[string tolower [$c1 char]] <= [string tolower [$c2 char]]} {
@@ -204,12 +225,14 @@ proc ::constcl::char-ci<=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-ci>=? ::constcl::char-ci>=?
+
 proc ::constcl::char-ci>=? {c1 c2} {
     if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
         if {[string tolower [$c1 char]] >= [string tolower [$c2 char]]} {
@@ -218,57 +241,67 @@ proc ::constcl::char-ci>=? {c1 c2} {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 write] [$c2 write])"
+        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
     }
 }
 CB
 
 CB
+reg char-alphabetic? ::constcl::char-alphabetic?
+
 proc ::constcl::char-alphabetic? {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char alphabetic?]
     } else {
-        error "CHAR expected\n(char-alphabetic? [$char write])"
+        error "CHAR expected\n(char-alphabetic? [$char show])"
     }
 }
 CB
 
 CB
+reg char-numeric? ::constcl::char-numeric?
+
 proc ::constcl::char-numeric? {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char numeric?]
     } else {
-        error "CHAR expected\n(char-numeric? [$char write])"
+        error "CHAR expected\n(char-numeric? [$char show])"
     }
 }
 CB
 
 CB
+reg char-whitespace? ::constcl::char-whitespace?
+
 proc ::constcl::char-whitespace? {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char whitespace?]
     } else {
-        error "CHAR expected\n(char-whitespace? [$char write])"
+        error "CHAR expected\n(char-whitespace? [$char show])"
     }
 }
 CB
 
 CB
+reg char-upper-case? ::constcl::char-upper-case?
+
 proc ::constcl::char-upper-case? {letter} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char upper-case?]
     } else {
-        error "CHAR expected\n(char-upper-case? [$char write])"
+        error "CHAR expected\n(char-upper-case? [$char show])"
     }
 }
 CB
 
 CB
+reg char-lower-case? ::constcl::char-lower-case?
+
 proc ::constcl::char-lower-case? {letter} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char lower-case?]
     } else {
-        error "CHAR expected\n(char-lower-case? [$char write])"
+        error "CHAR expected\n(char-lower-case? [$char show])"
     }
 }
 CB
@@ -286,22 +319,26 @@ proc ::constcl::integer->char {n} {
 CB
 
 CB
+reg char-upcase ::constcl::char-upcase
+
 proc ::constcl::char-upcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [MkChar [string toupper [$char char]]]
     } else {
-        error "CHAR expected\n(char-upcase [$char write])"
+        error "CHAR expected\n(char-upcase [$char show])"
     }
 }
 CB
 
 
 CB
+reg char-downcase ::constcl::char-downcase
+
 proc ::constcl::char-downcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [MkChar [string tolower [$char char]]]
     } else {
-        error "CHAR expected\n(char-downcase [$char write])"
+        error "CHAR expected\n(char-downcase [$char show])"
     }
 }
 CB

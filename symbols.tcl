@@ -14,6 +14,7 @@ oo::class create Symbol {
     method name {} {set name}
     method = {symname} {expr {$name eq $symname}}
     method write {} { puts -nonewline [my name] }
+    method show {} {set name}
 }
 
 proc ::constcl::MkSymbol {n} {
@@ -30,6 +31,8 @@ proc ::constcl::MkSymbol {n} {
 CB
 
 CB
+reg symbol? ::constcl::symbol?
+
 proc ::constcl::symbol? {obj} {
     if {[info object isa typeof $obj Symbol]} {
         return #t
@@ -42,11 +45,15 @@ proc ::constcl::symbol? {obj} {
 CB
 
 CB
+reg symbol->string ::constcl::symbol->string
+
 proc ::constcl::symbol->string {symbol} {
 }
 CB
 
 CB
+reg string->symbol ::constcl::string->symbol
+
 proc ::constcl::string->symbol {string} {
 }
 CB

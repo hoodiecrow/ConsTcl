@@ -13,12 +13,9 @@ oo::class create Boolean {
         }
         set truth $v
     }
-    method truth {} {
-        set truth
-    }
-    method write {} {
-        puts -nonewline [my truth]
-    }
+    method truth {} { set truth }
+    method write {} { puts -nonewline [my truth] }
+    method show {} {set truth}
 }
 
 proc ::constcl::MkBoolean {v} {
@@ -79,6 +76,20 @@ TT(
         write [eval [read]]
     }
 } -output "#t\n"
+
+::tcltest::test boolean-2.1 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? 0)"
+        write [eval [read]]
+    }
+} -output "#f\n"
+
+::tcltest::test boolean-2.2 {evaluate boolean values} -body {
+    namespace eval ::constcl {
+        set ::inputstr "(boolean? '())"
+        write [eval [read]]
+    }
+} -output "#f\n"
 
 TT)
 

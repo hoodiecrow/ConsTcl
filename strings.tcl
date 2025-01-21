@@ -26,6 +26,7 @@ oo::class create String {
     method ref {i} {string index [lindex $::StrSto $s] $i}
     method value {} {return [lindex $::StrSto $s]}
     method write {} { puts -nonewline "\"[lindex $::StrSto $s]\"" }
+    method show {} {format "\"[lindex $::StrSto $s]\""}
 }
 
 proc ::constcl::MkString {v} {
@@ -34,6 +35,8 @@ proc ::constcl::MkString {v} {
 CB
 
 CB
+reg string? ::constcl::string?
+
 proc ::constcl::string? {obj} {
     if {[info object isa typeof $obj String]} {
         return #t
@@ -46,19 +49,23 @@ proc ::constcl::string? {obj} {
 CB
 
 CB
+reg make-string ::constcl::make-string
+
 proc ::constcl::make-string {args} {
     # TODO
 }
 CB
 
 CB
+reg string ::constcl::string
+
 proc ::constcl::string {args} {
     set str {}
     foreach char $args {
         if {[::constcl::char? $char] eq "#t"} {
             append str [$char char]
         } else {
-            error "CHAR expected\n(string [$char write])"
+            error "CHAR expected\n(string [$char show])"
         }
     }
     return [MkString $str]
@@ -66,50 +73,58 @@ proc ::constcl::string {args} {
 CB
 
 CB
+reg string-length ::constcl::string-length
+
 proc ::constcl::string-length {str} {
     if {[::constcl::str? $String] eq "#t"} {
         return [MkNumber [$str length]]
     } else {
-        error "STRING expected\n(string-length [$str write])"
+        error "STRING expected\n(string-length [$str show])"
     }
 }
 CB
 
 CB
+reg string-ref ::constcl::string-ref
+
 proc ::constcl::string-ref {str k} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
             set i [$k value]
         } else {
-            error "Exact INTEGER expected\n(string-ref [$str write] [$k write])"
+            error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
         return [$str ref $i]
     } else {
-        error "STRING expected\n(string-ref [$str write] [$k write])"
+        error "STRING expected\n(string-ref [$str show] [$k show])"
     }
 }
 CB
 
 CB
+reg string-set! ::constcl::string-set!
+
 proc ::constcl::string-set! {str k char} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
             set i [$k value]
         } else {
-            error "Exact INTEGER expected\n(string-set! [$str write] [$k write] [$char write])"
+            error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
         if {[::constcl::char? $char] eq "#t"} {
             return [$str set! $i [$char char]]
         } else {
-            error "CHAR expected\n(string-set! [$str write] [$k write] [$char write])"
+            error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
         }
     } else {
-        error "STRING expected\n(string-set! [$str write] [$k write] [$char write])"
+        error "STRING expected\n(string-set! [$str show] [$k show] [$char show])"
     }
 }
 CB
 
 CB
+reg string=? ::constcl::string=?
+
 proc ::constcl::string=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] eq [$s2 value]} {
@@ -118,12 +133,14 @@ proc ::constcl::string=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string-ci=? ::constcl::string-ci=?
+
 proc ::constcl::string-ci=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[string tolower [$s1 value]] eq [string tolower [$s2 value]]} {
@@ -132,12 +149,14 @@ proc ::constcl::string-ci=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string-ci=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string<? ::constcl::string<?
+
 proc ::constcl::string<? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] < [$s2 value]} {
@@ -146,12 +165,14 @@ proc ::constcl::string<? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string<? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string<? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string-ci<? ::constcl::string-ci<?
+
 proc ::constcl::string-ci<? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[string tolower [$s1 value]] < [string tolower [$s2 value]]} {
@@ -160,12 +181,14 @@ proc ::constcl::string-ci<? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string-ci<? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string>? ::constcl::string>?
+
 proc ::constcl::string>? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] > [$s2 value]} {
@@ -174,12 +197,14 @@ proc ::constcl::string>? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string>? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string>? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string-ci>? ::constcl::string-ci>?
+
 proc ::constcl::string-ci>? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[string tolower [$s1 value]] > [string tolower [$s2 value]]} {
@@ -188,12 +213,14 @@ proc ::constcl::string-ci>? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string-ci>? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string<=? ::constcl::string<=?
+
 proc ::constcl::string<=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] <= [$s2 value]} {
@@ -202,12 +229,14 @@ proc ::constcl::string<=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string<=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string<=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string-ci<=? ::constcl::string-ci<=?
+
 proc ::constcl::string-ci<=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[string tolower [$s1 value]] <= [string tolower [$s2 value]]} {
@@ -216,12 +245,14 @@ proc ::constcl::string-ci<=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string-ci<=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string>=? ::constcl::string>=?
+
 proc ::constcl::string>=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] >= [$s2 value]} {
@@ -230,12 +261,14 @@ proc ::constcl::string>=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string>=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string>=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg string-ci>=? ::constcl::string-ci>=?
+
 proc ::constcl::string-ci>=? {s1 s2} {
     if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
         if {[string tolower [$s1 value]] >= [string tolower [$s2 value]]} {
@@ -244,59 +277,71 @@ proc ::constcl::string-ci>=? {s1 s2} {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>=? [$s1 write] [$s2 write])"
+        error "STRING expected\n(string-ci>=? [$s1 show] [$s2 show])"
     }
 }
 CB
 
 CB
+reg substring ::constcl::substring
+
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "t"} {
         if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
             return [MkString [$str substring [$start value] [$end value]]]
         } else {
-            error "NUMBER expected\n(substring [$str write] [$start write] [$end write])"
+            error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
         }
     } else {
-        error "STRING expected\n(substring [$str write] [$start write] [$end write])"
+        error "STRING expected\n(substring [$str show] [$start show] [$end show])"
     }
 }
 CB
 
 CB
+reg string-append ::constcl::string-append
+
 proc ::constcl::string-append {args} {
     # TODO
 }
 CB
 
 CB
+reg string->list ::constcl::string->list
+
 proc ::constcl::string->list {str} {
     # TODO
 }
 CB
 
 CB
+reg list->string ::constcl::list->string
+
 proc ::constcl::list->string {list} {
     # TODO
 }
 CB
 
 CB
+reg string-copy ::constcl::string-copy
+
 proc ::constcl::string-copy {str} {
     if {[::constcl::string? $str] eq "#t"} {
         return [MkString [$str value]]
     } else {
-        error "STRING expected\n(string-copy [$str write])"
+        error "STRING expected\n(string-copy [$str show])"
     }
 }
 CB
 
 CB
+reg string-fill! ::constcl::string-fill!
+
 proc ::constcl::string-fill! {str char} {
     if {[::constcl::string? $str] eq "#t"} {
         return [MkString [$str fill [$char value]]]
     } else {
-        error "STRING expected\n(string-fill [$str write] [$char write])"
+        error "STRING expected\n(string-fill [$str show] [$char show])"
     }
 }
 CB

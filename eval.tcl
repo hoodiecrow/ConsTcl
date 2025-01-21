@@ -4,6 +4,8 @@ MD(
 MD)
 
 CB
+reg eval ::constcl::eval
+
 proc ::constcl::eval {e {env ::global_env}} {
     # TODO
     if {[atom? $e] eq "#t"} {

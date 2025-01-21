@@ -21,6 +21,8 @@ oo::class create Procedure {
 CB
 
 CB
+reg procedure? ::constcl::procedure?
+
 proc ::constcl::procedure? {obj} {
     if {[info object isa typeof $obj Procedure]} {
         return #t
@@ -33,6 +35,8 @@ proc ::constcl::procedure? {obj} {
 CB
 
 CB
+reg apply ::constcl::apply
+
 proc ::constcl::apply {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
@@ -47,6 +51,8 @@ proc ::constcl::apply {proc args} {
 CB
 
 CB
+reg map ::constcl::map
+
 proc ::constcl::map {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
@@ -61,6 +67,8 @@ proc ::constcl::map {proc args} {
 CB
 
 CB
+reg for-each ::constcl::for-each
+
 proc ::constcl::for-each {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {

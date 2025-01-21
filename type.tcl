@@ -31,16 +31,25 @@ proc reg {sym impl} {
 CB
 
 CB
-# utility function
+# utility functions
 proc ::pep {str} {
     set ::inputstr $str
     namespace eval ::constcl {
         write [eval [read]]
     }
 }
+
+proc ::pp {str} {
+    set ::inputstr $str
+    namespace eval ::constcl {
+        write [read]
+    }
+}
 CB
 
 CB
+catch { NIL destroy }
+
 oo::class create NIL {
     constructor {} {}
     method truth {} {return #t}
@@ -50,10 +59,13 @@ oo::class create NIL {
     method set-cdr! {v} {error "PAIR expected"}
     method numval {} {throw "Not a number"}
     method write {} {puts -nonewline "()"}
+    method show {} {format "()"}
 }
 CB
 
 CB
+reg null? ::constcl::null?
+
 proc ::constcl::null? {obj} {
     if {[info object isa typeof $obj NIL]} {
         return #t
@@ -66,6 +78,8 @@ proc ::constcl::null? {obj} {
 CB
 
 CB
+catch { EndOfFile destroy }
+
 oo::class create EndOfFile {}
 CB
 

@@ -1,5 +1,7 @@
 
 CB
+reg write ::constcl::write
+
 proc ::constcl::write {obj args} {
     ::constcl::write-value $obj
     puts {}
