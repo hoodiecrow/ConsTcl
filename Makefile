@@ -2,7 +2,7 @@
 .PHONY: all
 all: README.md constcl.tcl constcl.test
 
-source_files = type.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl cons.tcl environment.class procedure.class global_env.tcl
+source_files = type.tcl read.tcl idcheck.tcl write.tcl numbers.tcl booleans.tcl pairslists.tcl symbols.tcl characters.tcl strings.tcl vectors.tcl control.tcl eval.tcl io.tcl cons.tcl environment.class global_env.tcl
 README.md: top.md constcl.md
 	cat $^ |sed -e s/\\r//g >$@
 constcl.md: $(source_files)

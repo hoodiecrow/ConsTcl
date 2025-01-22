@@ -22,6 +22,8 @@ oo::class create Number {
     method div {val} {set value [expr {$value / $val}]}
     method value {} { set value }
     method numval {} {set value}
+    method mkconstant {} {}
+    method constant {} {return 1}
     method write {} { puts -nonewline [my value] }
     method show {} { set value }
 }
@@ -205,7 +207,7 @@ CB
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
+    if {[number? $obj] eq "#t"} {
         if {[$obj value] == 0} {
             return #t
         } else {

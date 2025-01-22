@@ -6,31 +6,50 @@ MD)
 CB
 oo::class create String {
     superclass NIL
-    variable s
+    variable s constant
     constructor {v} {
-        set s -1
-        for {set i 0} {$i < $::S} {incr i} {
-            if {[::string equal [lindex $::StrSto $i] $v]} {
-                set s $i
-            }
-        }
-        if {$s == -1} {
-            set s $::S
-            lset ::StrSto $s $v
-            incr ::S
-        }
+        set s [find-string-index $v]
+        set constant 0
     }
     method index {} {set s}
     method = {str} {string equal [my value] $str}
     method length {} {string length [my value]}
     method ref {i} {string index [my value] $i}
+    method set! {k c} {
+        if {[my constant]} {
+            error "string is constant"
+        } else {
+            set value [my value]
+            set value [::string replace $value $k $k [$c value]
+            set s [find-string-index $value]
+        }
+    }
     method value {} {return [lindex $::StrSto $s]}
+    method make-constant {} {set constant 1}
+    method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
     method show {} {format "\"[my value]\""}
 }
 
 proc ::constcl::MkString {v} {
     return [String create Mem[incr ::M] $v]
+}
+CB
+
+CB
+proc find-string-index {v} {
+    set s -1
+    for {set i 0} {$i < $::S} {incr i} {
+        if {[::string equal [lindex $::StrSto $i] $v]} {
+            set s $i
+        }
+    }
+    if {$s == -1} {
+        set s $::S
+        lset ::StrSto $s $v
+        incr ::S
+    }
+    set s
 }
 CB
 
@@ -112,7 +131,7 @@ proc ::constcl::string-set! {str k char} {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
         if {[::constcl::char? $char] eq "#t"} {
-            return [$str set! $i [$char char]]
+            return [$str set! [$i value] [$char char]]
         } else {
             error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
         }

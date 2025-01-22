@@ -123,7 +123,7 @@ source constcl.tcl
     set ::inputstr {"\"foo\" \\ bar"}
     set obj [::constcl::read]
     $obj value
-} {\"foo\" \\ bar}
+} {"foo" \ bar}
 
 
 
@@ -549,6 +549,153 @@ source constcl.tcl
     pep {(cons 'a 3)}
     pep {(cons '(a b) 'c)}
 } -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
+
+
+
+::tcltest::test pairslists-1.7 {try car} -body {
+    pep {(car '(a b c))}
+    pep {(car '((a) b c d))}
+    pep {(car '(1 . 2))}
+} -output "a\n(a)\n1\n"
+
+::tcltest::test pairslists-1.8 {try car} -body {
+    pep {(car '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+::tcltest::test pairslists-1.9 {try cdr} -body {
+    pep {(cdr '((a) b c d))}
+    pep {(cdr '(1 . 2))}
+} -output "(b c d)\n2\n"
+
+::tcltest::test pairslists-1.10 {try cdr} -body {
+    pep {(cdr '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+::tcltest::test pairslists-1.11 {try set-car!} -body {
+    pep {(define f (lambda () (list 'not-a-constant-list)))}
+    pep {(define g (lambda () '(constant-list)))}
+    pep {(set-car! (f) 3)}
+} -output "()\n()\n3\n"
+
+::tcltest::test pairslists-1.12 {try set-car!} -body {
+    pep {(set-car! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+::tcltest::test pairslists-1.13 {try set-cdr!} -body {
+    pep {(define f (lambda () (list 'not-a-constant-list)))}
+    pep {(define g (lambda () '(constant-list)))}
+    pep {(set-cdr! (f) 3)}
+} -output "()\n()\n3\n"
+
+::tcltest::test pairslists-1.14 {try set-cdr!} -body {
+    pep {(set-cdr! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+::tcltest::test pairslists-1.15 {try list?} -body {
+    pep {(list? '(a b c))}
+    pep {(list? '())}
+    pep {(list? '(a . b))}
+} -output "#t\n#t\n#f\n"
+
+::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body {
+    pep {(let ((x (list 'a)))
+          (set-cdr! x x)
+          (list? x))}
+} -output "#f"
+
+
+
+::tcltest::test pairslists-1.17 {try list} -body {
+    pep {(list 'a (+ 3 4) 'c)}
+    pep {(list)}
+} -output "(a 7 c)\n()\n"
+
+
+
+::tcltest::test pairslists-1.18 {try length} -body {
+    pep {(length '(a b c))}
+    pep {(length '(a (b) (c d e)))}
+    pep {(length '())}
+} -output "3\n3\n0\n"
+
+
+
+::tcltest::test pairslists-1.19 {try append} -body {
+    pep {(append '(x) '(y))}
+    pep {(append '(a) '(b c d))}
+    pep {(append '(a (b)) '((c)))}
+    pep {(append '(a b) '(c . d))}
+    pep {(append '() 'a)}
+} -output "(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+
+
+::tcltest::test pairslists-1.20 {try reverse} -body {
+    pep {(reverse '(a b c))}
+    pep {(reverse '(a (b c) d (e (f))))}
+} -output "(c b a)\n((e (f)) d (b c) a)\n"
+
+
+
+::tcltest::test pairslists-1.21 {try list-tail} -body {
+    pep {(list-tail '(a b c d) 2)}
+} -output "(c d)\n"
+
+
+
+::tcltest::test pairslists-1.22 {try list-ref} -body {
+    pep {(list-ref '(a b c d) 2)}
+} -output "c\n"
+
+
+
+::tcltest::test pairslists-1.23 {try memq, memv} -body {
+    pep {(memq 'a '(a b c))}
+    pep {(memq 'b '(a b c))}
+    pep {(memq 'a '(b c d))}
+    pep {(memq (list 'a) '(b (a) c))}
+    pep {(memq 101 '(100 101 102))}
+    pep {(memv 101 '(100 101 102))}
+} -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
+
+::tcltest::test pairslists-1.24 {try member} -body {
+    pep {(member (list 'a) '(b (a) c))}
+} -output "((a) c)\n"
+
+
+
+::tcltest::test symbols-1.0 {try symbol?} -body {
+    pep {(symbol? 'foo)}
+    pep {(symbol? (car '(a b)))}
+    pep {(symbol? "bar")}
+    pep {(symbol? 'nil)}
+    pep {(symbol? '())}
+    pep {(symbol? #f)}
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n"
+
+
+
+::tcltest::test symbols-1.1 {try symbol->string} -body {
+    pep {(symbol->string 'flying-fish)}
+    pep {(symbol->string 'Martin)}
+    pep {(symbol->string (string->symbol "Malvina"))}
+} -output {"flying-fish"
+"martin"
+"Malvina"
+}
+
+# hangs tkcon
+::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body {
+    pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
+} -returnCodes error -result ""
 
 
 

@@ -13,6 +13,8 @@ oo::class create Boolean {
         }
         set truth $v
     }
+    method mkconstant {} {}
+    method constant {} {return 1}
     method truth {} { set truth }
     method write {} { puts -nonewline [my truth] }
     method show {} {set truth}

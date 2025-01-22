@@ -140,6 +140,7 @@ proc ::constcl::read-value {} {
         {'} {
             advance
             set p [read-value]
+            make-constant $p
             return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
@@ -194,6 +195,18 @@ proc ::constcl::read-value {} {
     }
 }
 
+proc ::constcl::make-constant {obj} {
+    if {[pair? $obj] eq "#t"} {
+        $obj mkconstant
+        make-constant [car $obj]
+        make-constant [cdr $obj]
+    } elseif {[null? $obj] eq "#t"} {
+        return #NIL
+    } else {
+        $obj mkconstant
+    }
+}
+
 
 proc ::constcl::read-number {} {
     while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
@@ -232,7 +245,7 @@ proc ::constcl::read-string {} {
     while {[first] ne {"}} {
         set c [first]
         if {$c eq "\\"} {
-            ::append str $c
+            #::append str $c
             advance
             ::append str [first]
         } else {
@@ -469,6 +482,8 @@ oo::class create Number {
     method div {val} {set value [expr {$value / $val}]}
     method value {} { set value }
     method numval {} {set value}
+    method mkconstant {} {}
+    method constant {} {return 1}
     method write {} { puts -nonewline [my value] }
     method show {} { set value }
 }
@@ -578,7 +593,7 @@ proc ::constcl::>= {args} {
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
+    if {[number? $obj] eq "#t"} {
         if {[$obj value] == 0} {
             return #t
         } else {
@@ -1138,6 +1153,8 @@ oo::class create Boolean {
         }
         set truth $v
     }
+    method mkconstant {} {}
+    method constant {} {return 1}
     method truth {} { set truth }
     method write {} { puts -nonewline [my truth] }
     method show {} {set truth}
@@ -1183,18 +1200,33 @@ proc ::constcl::not {obj} {
 catch { Cons destroy }
 
 oo::class create Cons {
-    variable car cdr
+    variable car cdr constant
     constructor {a d} {
         set truth Mem1
         set car $a
         set cdr $d
+        set constant 0
     }
     method truth {} {return #t}
     method numval {} {throw "Not a number"}
     method car {} { set car }
     method cdr {} { set cdr }
-    method set-car! {val} { set car $val }
-    method set-cdr! {val} { set cdr $val }
+    method set-car! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set car $val
+        }
+    }
+    method set-cdr! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set cdr $val
+        }
+    }
+    method mkconstant {} {set constant 1}
+    method constant {} {return $constant}
     method write {} {
         puts -nonewline "("
         ::constcl::write-pair [self]
@@ -1233,11 +1265,13 @@ proc ::constcl::car {obj} {
     $obj car
 }
 
+
 reg cdr ::constcl::cdr
 
 proc ::constcl::cdr {obj} {
     $obj cdr
 }
+
 
 reg set-car! ::constcl::set-car!
 
@@ -1245,25 +1279,13 @@ proc ::constcl::set-car! {obj val} {
     $obj set-car! $val
 }
 
+
 reg set-cdr! ::constcl::set-cdr!
 
 proc ::constcl::set-cdr! {obj val} {
     $obj set-cdr! $val
 }
 
-reg list ::constcl::list
-
-proc ::constcl::list {args} {
-    if {[llength $args] == 0} {
-        return #NIL
-    } else {
-        set prev #NIL
-        foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
-        }
-        return $prev
-    }
-}
 
 reg list? ::constcl::list?
 
@@ -1281,41 +1303,72 @@ proc ::constcl::list? {obj} {
     }
 }
 
+
+reg list ::constcl::list
+
+proc ::constcl::list {args} {
+    if {[llength $args] == 0} {
+        return #NIL
+    } else {
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
+    }
+}
+
+
 reg length ::constcl::length
 
 proc ::constcl::length {obj} {
-    if {$obj eq "#NIL"} {
-        return #0
-    } elseif {[info object isa typeof $obj Cons]} {
-        if {[info object isa typeof [cdr $obj] Cons]} {
-            return [[::constcl::length [cdr $obj]] 1+]
-        } else {
-            error "Ill-formed procedure call"
-        }
+    if {[list? $obj] eq "#t"} {
+        MkNumber [llength [splitlist $obj]]
     } else {
-        error "LIST expected\n(length [$obj show])"
+        error "LIST expected\n(list lst)"
+    }
+}
+
+
+proc ::constcl::copy-list {obj next} {
+    # TODO only fresh conses in the direct chain to NIL
+    if {[null? $obj] eq "#t"} {
+        set next
+    } elseif {[null? [cdr $obj]] eq "#t"} {
+        MkCons [car $obj] $next
+    } else {
+        MkCons [car $obj] [copy-list [cdr $obj] $next]
     }
 }
 
 reg append ::constcl::append
 
 proc ::constcl::append {args} {
-    # TODO
+    set prev [lindex $args end]
+    foreach r [lreverse [lrange $args 0 end-1]] {
+        set prev [copy-list $r $prev]
+    }
+    set prev
 }
 
+
+reg reverse ::constcl::reverse
+
 proc ::constcl::reverse {obj} {
-    # TODO
+    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
 }
+
 
 reg list-tail ::constcl::list-tail
 
 proc ::constcl::list-tail {obj k} {
-    if {[::constcl::zero? $k]} {
+    if {[zero? $k] eq "#t"} {
         return $obj
     } else {
-        ::constcl::list-tail [::constcl::cdr $obj] [::constcl::- $k #1]
+        list-tail [cdr $obj] [- $k #1]
     }
 }
+
 
 reg list-ref ::constcl::list-ref
 
@@ -1323,17 +1376,18 @@ proc ::constcl::list-ref {obj k} {
     ::constcl::car [::constcl::list-tail $obj $k]
 }
 
+
 reg memq ::constcl::memq
 
 proc ::constcl::memq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eq? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [memq $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -1341,17 +1395,18 @@ proc ::constcl::memq {obj1 obj2} {
     }
 }
 
+
 reg eq? ::constcl::eq?
 
 proc ::constcl::eq? {obj1 obj2} {
     # TODO
     if {$obj1 eq $obj2} {
         return #t
-    } elseif {[::constcl::number? $obj1] && [::constcl::number? $obj] && [$obj = [$obj value]]} {
+    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] == [$obj2 value]} {
         return #t
-    } elseif {[::constcl::char? $obj1] && [::constcl::char? $obj] && [$obj1 = [$obj2 value]]} {
+    } elseif {[char? $obj1] eq "#t" && [char? $obj] eq "#t" && [$obj1 value] == [$obj2 value]} {
         return #t
-    } elseif {[::constcl::string? $obj1] && [::constcl::string? $obj2] && [$obj index] eq [$obj2 index]]} {
+    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj index] eq [$obj2 index]} {
         return #t
     } else {
         return #f
@@ -1361,14 +1416,14 @@ proc ::constcl::eq? {obj1 obj2} {
 reg memv ::constcl::memv
 
 proc ::constcl::memv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eqv? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::memv $obj1 [::constcl::cdr $obj2]]
+                return [memv $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -1389,14 +1444,14 @@ proc ::constcl::eqv? {obj1 obj2} {
 reg member ::constcl::member
 
 proc ::constcl::member {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[equal? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::member $obj1 [::constcl::cdr $obj2]]
+                return [member $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -1407,7 +1462,7 @@ proc ::constcl::member {obj1 obj2} {
 reg equal? ::constcl::equal?
 
 proc ::constcl::equal? {obj1 obj2} {
-    if {[::constcl::eqv? $obj1 $obj2]} {
+    if {[eqv? $obj1 $obj2] eq "#t"} {
         return #t
     } else {
         if {[$obj1 show] eq [$obj2 show]} {
@@ -1471,38 +1526,23 @@ proc ::constcl::assoc {obj1 obj2} {
     }
 }
 
-reg symbol->string ::constcl::symbol->string
-
-proc ::constcl::symbol->string {obj} {
-    if {[::constcl::symbol? $obj] eq "#t"} {
-        return [$obj name]
-    } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
-    }
-}
-
-reg string->symbol ::constcl::string->symbol
-
-proc ::constcl::string->symbol {str} {
-    if {[::constcl::string? $str] eq "#t"} {
-        return [MkSymbol [$str value]]
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
-}
-
 
 
 oo::class create Symbol {
     superclass NIL
-    variable name
+    variable name caseconstant
     constructor {n} {
         # TODO idcheck this
         set name $n
+        set caseconstant 0
     }
     method name {} {set name}
     method value {} {set name}
     method = {symname} {expr {$name eq $symname}}
+    method make-constant {} {}
+    method constant {} {return 1}
+    method make-case-constant {} {set caseconstant 1}
+    method case-constant {} {set caseconstant}
     method write {} { puts -nonewline [my name] }
     method show {} {set name}
 }
@@ -1531,14 +1571,34 @@ proc ::constcl::symbol? {obj} {
     }
 }
 
+
 reg symbol->string ::constcl::symbol->string
 
-proc ::constcl::symbol->string {symbol} {
+proc ::constcl::symbol->string {obj} {
+    if {[symbol? $obj] eq "#t"} {
+        if {![$obj case-constant]} {
+            set str [MkString [::string tolower [$obj name]]]
+        } else {
+            set str [MkString [$obj name]]
+        }
+        $str make-constant
+        return $str
+    } else {
+        error "SYMBOL expected\n(symbol->string [$obj show])"
+    }
 }
+
 
 reg string->symbol ::constcl::string->symbol
 
-proc ::constcl::string->symbol {string} {
+proc ::constcl::string->symbol {str} {
+    if {[string? $str] eq "#t"} {
+        set sym [MkSymbol [$str value]]
+        $sym make-case-constant
+        return $sym
+    } else {
+        error "STRING expected\n(string->symbol [$obj show])"
+    }
 }
 
 
@@ -1596,6 +1656,8 @@ oo::class create Char {
             return #f
         }
     }
+    method mkconstant {} {}
+    method constant {} {return 1}
     method value {} {return $value}
     method write {} { puts -nonewline "#\\$value" }
     method show {} {set value}
@@ -1845,31 +1907,48 @@ proc ::constcl::char-downcase {char} {
 
 oo::class create String {
     superclass NIL
-    variable s
+    variable s constant
     constructor {v} {
-        set s -1
-        for {set i 0} {$i < $::S} {incr i} {
-            if {[::string equal [lindex $::StrSto $i] $v]} {
-                set s $i
-            }
-        }
-        if {$s == -1} {
-            set s $::S
-            lset ::StrSto $s $v
-            incr ::S
-        }
+        set s [find-string-index $v]
+        set constant 0
     }
     method index {} {set s}
     method = {str} {string equal [my value] $str}
     method length {} {string length [my value]}
     method ref {i} {string index [my value] $i}
+    method set! {k c} {
+        if {[my constant]} {
+            error "string is constant"
+        } else {
+            set value [my value]
+            set value [::string replace $value $k $k [$c value]
+            set s [find-string-index $value]
+        }
+    }
     method value {} {return [lindex $::StrSto $s]}
+    method make-constant {} {set constant 1}
+    method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
     method show {} {format "\"[my value]\""}
 }
 
 proc ::constcl::MkString {v} {
     return [String create Mem[incr ::M] $v]
+}
+
+proc find-string-index {v} {
+    set s -1
+    for {set i 0} {$i < $::S} {incr i} {
+        if {[::string equal [lindex $::StrSto $i] $v]} {
+            set s $i
+        }
+    }
+    if {$s == -1} {
+        set s $::S
+        lset ::StrSto $s $v
+        incr ::S
+    }
+    set s
 }
 
 reg string? ::constcl::string?
@@ -1939,7 +2018,7 @@ proc ::constcl::string-set! {str k char} {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
         if {[::constcl::char? $char] eq "#t"} {
-            return [$str set! $i [$char char]]
+            return [$str set! [$i value] [$char char]]
         } else {
             error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
         }
@@ -2255,17 +2334,27 @@ catch { Procedure destroy }
 
 oo::class create Procedure {
     superclass NIL
-    variable value
-    constructor {v} {
-        set value $v
+    variable parms body env
+    constructor {p b e} {
+        set parms $p         ;# a Tcl list of parameter names
+        set body $b          ;# a Lisp llist of expressions under 'begin
+        set env $e           ;# an environment
     }
     method value {} {
         set value
     }
     method write {} { puts -nonewline Procedure[self] }
-    method call {vals} {
-        # TODO
+    method call {args} {
+        if {[llength $parms] != [llength $args]} {
+            error "Wrong number of arguments passed to procedure"
+        }
+        ::constcl::eval $body [Environment new $parms $args $env]
     }
+
+}
+
+proc MkProcedure {parms body env} {
+    Procedure create Mem[incr ::M] $parms $body $env
 }
 
 reg procedure? ::constcl::procedure?
@@ -2392,6 +2481,19 @@ proc ::constcl::lookup {sym env} {
     [$env find $sym] get $sym
 }
 
+proc ::constcl::eprogn {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        if {[pair? [cdr $exps]] eq "#t"} {
+            eval [car $exps] $env
+            return [eprogn [cdr $exps] $env]
+        } else {
+            return [eval [car $exps] $env]
+        }
+    } else {
+        return #NIL
+    }
+}
+
 proc ::constcl::declare {sym val env} {
     $env set [$sym name] $val
     return #NIL
@@ -2425,6 +2527,12 @@ proc ::constcl::splitlist {vals} {
 #puts result=$result
 #puts resval=[lmap res $result {$res show}]
     return $result
+}
+
+proc ::constcl::make-function {formals exps env} {
+    set parms [splitlist $formals]
+    set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 
 
@@ -2613,29 +2721,6 @@ oo::class create Environment {
     }
     method set {sym val} {
         dict set bindings $sym $val
-    }
-}
-
-
-catch { Procedure destroy }
-
-oo::class create Procedure {
-    variable parms body env
-    constructor {p b e} {
-        set parms $p
-        set body $b
-        set env $e
-    }
-    method call {args} {
-	if {[llength $parms] != [llength $args]} {
-	    error "Wrong number of arguments passed to procedure"
-	}
-	set newenv [Environment new $parms $args $env]
-	set res {}
-	foreach expr $body {
-            set res [evaluate $expr $newenv]
-	}
-	set res
     }
 }
 

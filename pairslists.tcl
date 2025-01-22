@@ -7,18 +7,33 @@ CB
 catch { Cons destroy }
 
 oo::class create Cons {
-    variable car cdr
+    variable car cdr constant
     constructor {a d} {
         set truth Mem1
         set car $a
         set cdr $d
+        set constant 0
     }
     method truth {} {return #t}
     method numval {} {throw "Not a number"}
     method car {} { set car }
     method cdr {} { set cdr }
-    method set-car! {val} { set car $val }
-    method set-cdr! {val} { set cdr $val }
+    method set-car! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set car $val
+        }
+    }
+    method set-cdr! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set cdr $val
+        }
+    }
+    method mkconstant {} {set constant 1}
+    method constant {} {return $constant}
     method write {} {
         puts -nonewline "("
         ::constcl::write-pair [self]
@@ -110,6 +125,20 @@ proc ::constcl::car {obj} {
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.7 {try car} -body {
+    pep {(car '(a b c))}
+    pep {(car '((a) b c d))}
+    pep {(car '(1 . 2))}
+} -output "a\n(a)\n1\n"
+
+::tcltest::test pairslists-1.8 {try car} -body {
+    pep {(car '())}
+} -returnCodes error -result "PAIR expected"
+
+TT)
+
 CB
 reg cdr ::constcl::cdr
 
@@ -117,6 +146,19 @@ proc ::constcl::cdr {obj} {
     $obj cdr
 }
 CB
+
+TT(
+
+::tcltest::test pairslists-1.9 {try cdr} -body {
+    pep {(cdr '((a) b c d))}
+    pep {(cdr '(1 . 2))}
+} -output "(b c d)\n2\n"
+
+::tcltest::test pairslists-1.10 {try cdr} -body {
+    pep {(cdr '())}
+} -returnCodes error -result "PAIR expected"
+
+TT)
 
 CB
 reg set-car! ::constcl::set-car!
@@ -126,6 +168,20 @@ proc ::constcl::set-car! {obj val} {
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.11 {try set-car!} -body {
+    pep {(define f (lambda () (list 'not-a-constant-list)))}
+    pep {(define g (lambda () '(constant-list)))}
+    pep {(set-car! (f) 3)}
+} -output "()\n()\n3\n"
+
+::tcltest::test pairslists-1.12 {try set-car!} -body {
+    pep {(set-car! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+TT)
+
 CB
 reg set-cdr! ::constcl::set-cdr!
 
@@ -134,21 +190,19 @@ proc ::constcl::set-cdr! {obj val} {
 }
 CB
 
-CB
-reg list ::constcl::list
+TT(
 
-proc ::constcl::list {args} {
-    if {[llength $args] == 0} {
-        return #NIL
-    } else {
-        set prev #NIL
-        foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
-        }
-        return $prev
-    }
-}
-CB
+::tcltest::test pairslists-1.13 {try set-cdr!} -body {
+    pep {(define f (lambda () (list 'not-a-constant-list)))}
+    pep {(define g (lambda () '(constant-list)))}
+    pep {(set-cdr! (f) 3)}
+} -output "()\n()\n3\n"
+
+::tcltest::test pairslists-1.14 {try set-cdr!} -body {
+    pep {(set-cdr! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+TT)
 
 CB
 reg list? ::constcl::list?
@@ -168,49 +222,140 @@ proc ::constcl::list? {obj} {
 }
 CB
 
-CB
-reg length ::constcl::length
+TT(
 
-proc ::constcl::length {obj} {
-    if {$obj eq "#NIL"} {
-        return #0
-    } elseif {[info object isa typeof $obj Cons]} {
-        if {[info object isa typeof [cdr $obj] Cons]} {
-            return [[::constcl::length [cdr $obj]] 1+]
-        } else {
-            error "Ill-formed procedure call"
-        }
+::tcltest::test pairslists-1.15 {try list?} -body {
+    pep {(list? '(a b c))}
+    pep {(list? '())}
+    pep {(list? '(a . b))}
+} -output "#t\n#t\n#f\n"
+
+::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body {
+    pep {(let ((x (list 'a)))
+          (set-cdr! x x)
+          (list? x))}
+} -output "#f"
+
+TT)
+
+CB
+reg list ::constcl::list
+
+proc ::constcl::list {args} {
+    if {[llength $args] == 0} {
+        return #NIL
     } else {
-        error "LIST expected\n(length [$obj show])"
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
     }
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.17 {try list} -body {
+    pep {(list 'a (+ 3 4) 'c)}
+    pep {(list)}
+} -output "(a 7 c)\n()\n"
+
+TT)
+
 CB
+reg length ::constcl::length
+
+proc ::constcl::length {obj} {
+    if {[list? $obj] eq "#t"} {
+        MkNumber [llength [splitlist $obj]]
+    } else {
+        error "LIST expected\n(list lst)"
+    }
+}
+CB
+
+TT(
+
+::tcltest::test pairslists-1.18 {try length} -body {
+    pep {(length '(a b c))}
+    pep {(length '(a (b) (c d e)))}
+    pep {(length '())}
+} -output "3\n3\n0\n"
+
+TT)
+
+CB
+proc ::constcl::copy-list {obj next} {
+    # TODO only fresh conses in the direct chain to NIL
+    if {[null? $obj] eq "#t"} {
+        set next
+    } elseif {[null? [cdr $obj]] eq "#t"} {
+        MkCons [car $obj] $next
+    } else {
+        MkCons [car $obj] [copy-list [cdr $obj] $next]
+    }
+}
+
 reg append ::constcl::append
 
 proc ::constcl::append {args} {
-    # TODO
+    set prev [lindex $args end]
+    foreach r [lreverse [lrange $args 0 end-1]] {
+        set prev [copy-list $r $prev]
+    }
+    set prev
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.19 {try append} -body {
+    pep {(append '(x) '(y))}
+    pep {(append '(a) '(b c d))}
+    pep {(append '(a (b)) '((c)))}
+    pep {(append '(a b) '(c . d))}
+    pep {(append '() 'a)}
+} -output "(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+TT)
+
 CB
+reg reverse ::constcl::reverse
+
 proc ::constcl::reverse {obj} {
-    # TODO
+    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
 }
 CB
+
+TT(
+
+::tcltest::test pairslists-1.20 {try reverse} -body {
+    pep {(reverse '(a b c))}
+    pep {(reverse '(a (b c) d (e (f))))}
+} -output "(c b a)\n((e (f)) d (b c) a)\n"
+
+TT)
 
 CB
 reg list-tail ::constcl::list-tail
 
 proc ::constcl::list-tail {obj k} {
-    if {[::constcl::zero? $k]} {
+    if {[zero? $k] eq "#t"} {
         return $obj
     } else {
-        ::constcl::list-tail [::constcl::cdr $obj] [::constcl::- $k #1]
+        list-tail [cdr $obj] [- $k #1]
     }
 }
 CB
+
+TT(
+
+::tcltest::test pairslists-1.21 {try list-tail} -body {
+    pep {(list-tail '(a b c d) 2)}
+} -output "(c d)\n"
+
+TT)
 
 CB
 reg list-ref ::constcl::list-ref
@@ -220,18 +365,26 @@ proc ::constcl::list-ref {obj k} {
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.22 {try list-ref} -body {
+    pep {(list-ref '(a b c d) 2)}
+} -output "c\n"
+
+TT)
+
 CB
 reg memq ::constcl::memq
 
 proc ::constcl::memq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eq? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [memq $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -240,6 +393,23 @@ proc ::constcl::memq {obj1 obj2} {
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.23 {try memq, memv} -body {
+    pep {(memq 'a '(a b c))}
+    pep {(memq 'b '(a b c))}
+    pep {(memq 'a '(b c d))}
+    pep {(memq (list 'a) '(b (a) c))}
+    pep {(memq 101 '(100 101 102))}
+    pep {(memv 101 '(100 101 102))}
+} -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
+
+::tcltest::test pairslists-1.24 {try member} -body {
+    pep {(member (list 'a) '(b (a) c))}
+} -output "((a) c)\n"
+
+TT)
+
 CB
 reg eq? ::constcl::eq?
 
@@ -247,11 +417,11 @@ proc ::constcl::eq? {obj1 obj2} {
     # TODO
     if {$obj1 eq $obj2} {
         return #t
-    } elseif {[::constcl::number? $obj1] && [::constcl::number? $obj] && [$obj = [$obj value]]} {
+    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] == [$obj2 value]} {
         return #t
-    } elseif {[::constcl::char? $obj1] && [::constcl::char? $obj] && [$obj1 = [$obj2 value]]} {
+    } elseif {[char? $obj1] eq "#t" && [char? $obj] eq "#t" && [$obj1 value] == [$obj2 value]} {
         return #t
-    } elseif {[::constcl::string? $obj1] && [::constcl::string? $obj2] && [$obj index] eq [$obj2 index]]} {
+    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj index] eq [$obj2 index]} {
         return #t
     } else {
         return #f
@@ -263,14 +433,14 @@ CB
 reg memv ::constcl::memv
 
 proc ::constcl::memv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eqv? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::memv $obj1 [::constcl::cdr $obj2]]
+                return [memv $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -295,14 +465,14 @@ CB
 reg member ::constcl::member
 
 proc ::constcl::member {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[equal? $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [::constcl::member $obj1 [::constcl::cdr $obj2]]
+                return [member $obj1 [cdr $obj2]]
             }
         }
     } else {
@@ -315,7 +485,7 @@ CB
 reg equal? ::constcl::equal?
 
 proc ::constcl::equal? {obj1 obj2} {
-    if {[::constcl::eqv? $obj1 $obj2]} {
+    if {[eqv? $obj1 $obj2] eq "#t"} {
         return #t
     } else {
         if {[$obj1 show] eq [$obj2 show]} {
@@ -382,30 +552,6 @@ proc ::constcl::assoc {obj1 obj2} {
         }
     } else {
         error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
-}
-CB
-
-CB
-reg symbol->string ::constcl::symbol->string
-
-proc ::constcl::symbol->string {obj} {
-    if {[::constcl::symbol? $obj] eq "#t"} {
-        return [$obj name]
-    } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
-    }
-}
-CB
-
-CB
-reg string->symbol ::constcl::string->symbol
-
-proc ::constcl::string->symbol {str} {
-    if {[::constcl::string? $str] eq "#t"} {
-        return [MkSymbol [$str value]]
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
     }
 }
 CB

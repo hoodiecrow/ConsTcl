@@ -8,17 +8,29 @@ catch { Procedure destroy }
 
 oo::class create Procedure {
     superclass NIL
-    variable value
-    constructor {v} {
-        set value $v
+    variable parms body env
+    constructor {p b e} {
+        set parms $p         ;# a Tcl list of parameter names
+        set body $b          ;# a Lisp llist of expressions under 'begin
+        set env $e           ;# an environment
     }
     method value {} {
         set value
     }
     method write {} { puts -nonewline Procedure[self] }
-    method call {vals} {
-        # TODO
+    method call {args} {
+        if {[llength $parms] != [llength $args]} {
+            error "Wrong number of arguments passed to procedure"
+        }
+        ::constcl::eval $body [Environment new $parms $args $env]
     }
+
+}
+CB
+
+CB
+proc MkProcedure {parms body env} {
+    Procedure create Mem[incr ::M] $parms $body $env
 }
 CB
 

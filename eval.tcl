@@ -56,6 +56,21 @@ proc ::constcl::lookup {sym env} {
 CB
 
 CB
+proc ::constcl::eprogn {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        if {[pair? [cdr $exps]] eq "#t"} {
+            eval [car $exps] $env
+            return [eprogn [cdr $exps] $env]
+        } else {
+            return [eval [car $exps] $env]
+        }
+    } else {
+        return #NIL
+    }
+}
+CB
+
+CB
 proc ::constcl::declare {sym val env} {
     $env set [$sym name] $val
     return #NIL
@@ -95,6 +110,14 @@ proc ::constcl::splitlist {vals} {
 #puts result=$result
 #puts resval=[lmap res $result {$res show}]
     return $result
+}
+CB
+
+CB
+proc ::constcl::make-function {formals exps env} {
+    set parms [splitlist $formals]
+    set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 CB
 

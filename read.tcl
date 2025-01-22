@@ -102,6 +102,7 @@ proc ::constcl::read-value {} {
         {'} {
             advance
             set p [read-value]
+            make-constant $p
             return [::constcl::list #Q $p]
         }
         {\+} - {\-} {
@@ -153,6 +154,20 @@ proc ::constcl::read-value {} {
             error "unexpected char [first]"
         }
 
+    }
+}
+CB
+
+CB
+proc ::constcl::make-constant {obj} {
+    if {[pair? $obj] eq "#t"} {
+        $obj mkconstant
+        make-constant [car $obj]
+        make-constant [cdr $obj]
+    } elseif {[null? $obj] eq "#t"} {
+        return #NIL
+    } else {
+        $obj mkconstant
     }
 }
 CB
@@ -314,7 +329,7 @@ proc ::constcl::read-string {} {
     while {[first] ne {"}} {
         set c [first]
         if {$c eq "\\"} {
-            ::append str $c
+            #::append str $c
             advance
             ::append str [first]
         } else {
@@ -339,7 +354,7 @@ TT(
     set ::inputstr {"\"foo\" \\ bar"}
     set obj [::constcl::read]
     $obj value
-} {\"foo\" \\ bar}
+} {"foo" \ bar}
 
 TT)
 

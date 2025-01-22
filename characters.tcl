@@ -57,6 +57,8 @@ oo::class create Char {
             return #f
         }
     }
+    method mkconstant {} {}
+    method constant {} {return 1}
     method value {} {return $value}
     method write {} { puts -nonewline "#\\$value" }
     method show {} {set value}
