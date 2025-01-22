@@ -41,6 +41,7 @@ set inputstr {}
 CB
 proc ::constcl::advance {args} {
     if {[llength $args] == 1} {
+        incr args -1
         set ::inputstr [::string range $::inputstr 1+$args end]
     } else {
         set ::inputstr [::string range $::inputstr 1 end]
@@ -159,9 +160,7 @@ CB
 TT(
 
 ::tcltest::test read-1.0 {try reading quoted symbol} -body {
-    set ::inputstr "'foo"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    pp "'foo"
 } -output "(quote foo)\n"
 
 ::tcltest::test read-1.1 {try reading a list} -body {
@@ -173,52 +172,31 @@ TT(
 } -result "b"
 
 ::tcltest::test read-1.2 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a)"
-        write [read]
-    }
+    pp "(a)"
 } -output "(a)\n"
 
 ::tcltest::test read-1.3 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b)"
-        write [read]
-    }
+    pp "(a b)"
 } -output "(a b)\n"
 
 ::tcltest::test read-1.4 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c)"
-        write [read]
-    }
+    pp "(a b c)"
 } -output "(a b c)\n"
 
 ::tcltest::test read-1.5 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c d)"
-        write [read]
-    }
+    pp "(a b c d)"
 } -output "(a b c d)\n"
 
 ::tcltest::test read-1.6 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c d e)"
-        write [read]
-    }
+    pp "(a b c d e)"
 } -output "(a b c d e)\n"
 
 ::tcltest::test read-1.7 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a (b) )"
-        write [read]
-    }
+    pp "(a (b) )"
 } -output "(a (b))\n"
 
 ::tcltest::test read-1.8 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a (b))"
-        write [read]
-    }
+    pp "(a (b))"
 } -output "(a (b))\n"
 
 TT)
@@ -344,6 +322,7 @@ proc ::constcl::read-string {} {
         }
         advance
     }
+    advance
     return [MkString $str]
 }
 CB
@@ -394,7 +373,7 @@ TT(
 ::tcltest::test read-5.2 {try reading an identifier} -body {
     set ::inputstr "let"
     set obj [::constcl::read]
-    $obj name
+    ::constcl::varcheck [$obj name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 TT)
@@ -448,7 +427,7 @@ proc ::constcl::read-pair {c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+    if {[::string equal [::string range $::inputstr 0 2] " . "]} {
         advance 3
         skip-whitespace
         set d [read]

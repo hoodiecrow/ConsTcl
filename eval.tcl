@@ -32,8 +32,7 @@ proc ::constcl::eval {e {env ::global_env}} {
                 return [eprogn [cdr $e] $env]
             }
             define {
-                declare [cadr $e] [eval [caddr $e] $env]
-                return {}
+                declare [cadr $e] [eval [caddr $e] $env] $env
             }
             set! {
                 return [update! [cadr $e] $env [eval [caddr $e] $env]]
@@ -53,6 +52,13 @@ CB
 proc ::constcl::lookup {sym env} {
     set sym [$sym name]
     [$env find $sym] get $sym
+}
+CB
+
+CB
+proc ::constcl::declare {sym val env} {
+    $env set [$sym name] $val
+    return #NIL
 }
 CB
 
@@ -80,11 +86,14 @@ CB
 
 CB
 proc ::constcl::splitlist {vals} {
+#puts [info level [info level]]
     set result {}
     while {[pair? $vals] eq "#t"} {
         lappend result [car $vals]
         set vals [cdr $vals]
     }
+#puts result=$result
+#puts resval=[lmap res $result {$res show}]
     return $result
 }
 CB

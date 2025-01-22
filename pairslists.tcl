@@ -24,7 +24,7 @@ oo::class create Cons {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
-    method show {} {format "%s . %s" [my car] [my cdr]}
+    method show {} {format "(%s . %s)" [my car] [my cdr]}
 }
 
 proc ::constcl::MkCons {a d} {
@@ -46,6 +46,42 @@ proc ::constcl::pair? {obj} {
 }
 CB
 
+TT(
+
+::tcltest::test pairslists-1.0 {playing with lists} -body {
+    pep {(define x (list 'a 'b 'c))}
+    pep {(define y x)}
+    pep {y}
+} -output "()\n()\n(a b c)\n"
+
+::tcltest::test pairslists-1.1 {playing with lists} -body {
+    pep {(list? y)}
+} -output "#t\n"
+
+::tcltest::test pairslists-1.2 {playing with lists} -body {
+    pep {(set-cdr! x 4)}
+    pep {x}
+} -output "4\n(a . 4)\n"
+
+::tcltest::test pairslists-1.3 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+} -output "#t\n(a . 4)\n"
+
+::tcltest::test pairslists-1.4 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+    pep {(list? y)}
+} -output "#t\n(a . 4)\n#f\n"
+
+::tcltest::test pairslists-1.5 {try pair?} -body {
+    pep {(pair? '(a . b))}
+    pep {(pair? '(a b c))}
+    pep {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+TT)
+
 CB
 reg cons ::constcl::cons
 
@@ -54,9 +90,21 @@ proc ::constcl::cons {car cdr} {
 }
 CB
 
-CB
 reg car ::constcl::car
 
+TT(
+
+::tcltest::test pairslists-1.6 {try cons} -body {
+    pep {(cons 'a '())}
+    pep {(cons '(a) '(b c d))}
+    pep {(cons "a" '(b c))}
+    pep {(cons 'a 3)}
+    pep {(cons '(a b) 'c)}
+} -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
+
+TT)
+
+CB
 proc ::constcl::car {obj} {
     $obj car
 }
@@ -106,9 +154,14 @@ CB
 reg list? ::constcl::list?
 
 proc ::constcl::list? {obj} {
-    # TODO need to work on this a bit more
-    if {[info object isa typeof $obj Cons] || $obj eq "Mem0"} {
+    if {$obj eq "#NIL"} {
         return #t
+    } elseif {[pair? $obj] eq "#t"} {
+        if {[cdr $obj] eq "#NIL"} {
+            return #t
+        } else {
+            return [list? [cdr $obj]]
+        }
     } else {
         return #f
     }
@@ -230,7 +283,7 @@ CB
 reg eqv? ::constcl::eqv?
 
 proc ::constcl::eqv? {obj1 obj2} {
-    if {[::constcl::eq? $obj1 $obj2]} {
+    if {[::constcl::eq? $obj1 $obj2] eq "#t"} {
         return #t
     } else {
         return #f

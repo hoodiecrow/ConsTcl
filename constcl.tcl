@@ -87,6 +87,7 @@ set inputstr {}
 
 proc ::constcl::advance {args} {
     if {[llength $args] == 1} {
+        incr args -1
         set ::inputstr [::string range $::inputstr 1+$args end]
     } else {
         set ::inputstr [::string range $::inputstr 1 end]
@@ -239,6 +240,7 @@ proc ::constcl::read-string {} {
         }
         advance
     }
+    advance
     return [MkString $str]
 }
 
@@ -299,7 +301,7 @@ proc ::constcl::read-pair {c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
+    if {[::string equal [::string range $::inputstr 0 2] " . "]} {
         advance 3
         skip-whitespace
         set d [read]
@@ -402,13 +404,15 @@ proc ::constcl::idcheck {sym} {
     if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
         error "Identifier expected ($sym)"
-    } else {
-        if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
-            cond and or case let let* letrec do delay quasiquote}} {
-            error "Macro name can't be used as a variable: $sym"
-        }
     }
     set sym
+}
+
+proc ::constcl::varcheck {sym} {
+    if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
+        cond and or case let let* letrec do delay quasiquote}} {
+            error "Macro name can't be used as a variable: $sym"
+    }
 }
 
 
@@ -421,7 +425,7 @@ proc ::constcl::write {obj args} {
 
 proc ::constcl::write-value {obj} {
     # take an object and print the value
-catch {    $obj write}
+    $obj write
 }
 
 proc ::constcl::write-pair {obj} {
@@ -443,7 +447,6 @@ proc ::constcl::write-pair {obj} {
         write-value $d
     }
 }
-
 
 
 
@@ -1040,13 +1043,89 @@ proc ::constcl::inexact->exact {z} {
     # TODO
 }
 
+reg number->string ::constcl::number->string
+
 proc ::constcl::number->string {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        set num [lindex $args 0]
+        if {[number? $num] eq "#t"} {
+            return [MkString [$num value]]
+        } else {
+            error "NUMBER expected\n(string->number [$num show])"
+        }
+    } else {
+        lassign $args num radix
+        if {[number? $num] eq "#t"} {
+            if {[$radix value] == 10} {
+                return [MkString [$num value]]
+            } elseif {[$radix value] in {2 8 16}} {
+                return [MkString [base [$radix value] [$num value]]]
+            } else {
+                error "radix not in 2, 8, 10, 16"
+            }
+        } else {
+            error "NUMBER expected\n(string->number [$num show])"
+        }
+    }
 }
 
-proc ::constcl::string->number {args} {
-    # TODO
+# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+proc base {base number} {
+    set negative [regexp ^-(.+) $number -> number]
+    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
+    set res {}
+    while {$number} {
+        set digit [expr {$number % $base}]
+        set res [lindex $digits $digit]$res
+        set number [expr {$number / $base}]
+    }
+    if $negative {set res -$res}
+    set res
 }
+
+
+reg string->number ::constcl::string->number
+
+proc ::constcl::string->number {args} {
+    if {[llength $args] == 1} {
+        set str [lindex $args 0]
+        if {[string? $str] eq "#t"} {
+            return [MkNumber [$str value]]
+        } else {
+            error "STRING expected\n(string->number [$str show])"
+        }
+    } else {
+        lassign $args str radix
+        if {[string? $str] eq "#t"} {
+            if {[$radix value] == 10} {
+                return [MkNumber [$str value]]
+            } elseif {[$radix value] in {2 8 16}} {
+                return [MkNumber [frombase [$radix value] [$str value]]]
+            } else {
+                error "radix not in 2, 8, 10, 16"
+            }
+        } else {
+            error "STRING expected\n(string->number [$str show])"
+        }
+    }
+}
+
+# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+proc frombase {base number} {
+    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
+    set negative [regexp ^-(.+) $number -> number]
+    set res 0
+    foreach digit [split $number {}] {
+        set decimalvalue [lsearch $digits $digit]
+        if {$decimalvalue < 0 || $decimalvalue >= $base} {
+            error "bad digit $decimalvalue for base $base"
+        }
+        set res [expr {$res * $base + $decimalvalue}]
+    }
+    if $negative {set res -$res}
+    set res
+}
+
 
 
 
@@ -1121,7 +1200,7 @@ oo::class create Cons {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
-    method show {} {format "%s . %s" [my car] [my cdr]}
+    method show {} {format "(%s . %s)" [my car] [my cdr]}
 }
 
 proc ::constcl::MkCons {a d} {
@@ -1140,6 +1219,7 @@ proc ::constcl::pair? {obj} {
     }
 }
 
+
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
@@ -1147,6 +1227,7 @@ proc ::constcl::cons {car cdr} {
 }
 
 reg car ::constcl::car
+
 
 proc ::constcl::car {obj} {
     $obj car
@@ -1187,9 +1268,14 @@ proc ::constcl::list {args} {
 reg list? ::constcl::list?
 
 proc ::constcl::list? {obj} {
-    # TODO need to work on this a bit more
-    if {[info object isa typeof $obj Cons] || $obj eq "Mem0"} {
+    if {$obj eq "#NIL"} {
         return #t
+    } elseif {[pair? $obj] eq "#t"} {
+        if {[cdr $obj] eq "#NIL"} {
+            return #t
+        } else {
+            return [list? [cdr $obj]]
+        }
     } else {
         return #f
     }
@@ -1293,7 +1379,7 @@ proc ::constcl::memv {obj1 obj2} {
 reg eqv? ::constcl::eqv?
 
 proc ::constcl::eqv? {obj1 obj2} {
-    if {[::constcl::eq? $obj1 $obj2]} {
+    if {[::constcl::eq? $obj1 $obj2] eq "#t"} {
         return #t
     } else {
         return #f
@@ -1415,6 +1501,7 @@ oo::class create Symbol {
         set name $n
     }
     method name {} {set name}
+    method value {} {set name}
     method = {symname} {expr {$name eq $symname}}
     method write {} { puts -nonewline [my name] }
     method show {} {set name}
@@ -1773,12 +1860,12 @@ oo::class create String {
         }
     }
     method index {} {set s}
-    method = {str} {string equal [lindex $::StrSto $s] $str}
-    method length {} {string length [lindex $::StrSto $s]}
-    method ref {i} {string index [lindex $::StrSto $s] $i}
+    method = {str} {string equal [my value] $str}
+    method length {} {string length [my value]}
+    method ref {i} {string index [my value] $i}
     method value {} {return [lindex $::StrSto $s]}
-    method write {} { puts -nonewline "\"[lindex $::StrSto $s]\"" }
-    method show {} {format "\"[lindex $::StrSto $s]\""}
+    method write {} { puts -nonewline "\"[my value]\"" }
+    method show {} {format "\"[my value]\""}
 }
 
 proc ::constcl::MkString {v} {
@@ -2285,8 +2372,7 @@ proc ::constcl::eval {e {env ::global_env}} {
                 return [eprogn [cdr $e] $env]
             }
             define {
-                declare [cadr $e] [eval [caddr $e] $env]
-                return {}
+                declare [cadr $e] [eval [caddr $e] $env] $env
             }
             set! {
                 return [update! [cadr $e] $env [eval [caddr $e] $env]]
@@ -2304,6 +2390,11 @@ proc ::constcl::eval {e {env ::global_env}} {
 proc ::constcl::lookup {sym env} {
     set sym [$sym name]
     [$env find $sym] get $sym
+}
+
+proc ::constcl::declare {sym val env} {
+    $env set [$sym name] $val
+    return #NIL
 }
 
 proc ::constcl::evlis {exps env} {
@@ -2325,11 +2416,14 @@ proc ::constcl::invoke {pr vals} {
 }
 
 proc ::constcl::splitlist {vals} {
+#puts [info level [info level]]
     set result {}
     while {[pair? $vals] eq "#t"} {
         lappend result [car $vals]
         set vals [cdr $vals]
     }
+#puts result=$result
+#puts resval=[lmap res $result {$res show}]
     return $result
 }
 

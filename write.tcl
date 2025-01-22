@@ -11,7 +11,7 @@ CB
 CB
 proc ::constcl::write-value {obj} {
     # take an object and print the value
-catch {    $obj write}
+    $obj write
 }
 CB
 
@@ -39,35 +39,16 @@ CB
 
 TT(
 
-::tcltest::test write-1.0 {read and write a number} -body {
-    namespace eval ::constcl {
-        set ::inputstr "99.99"
-        write [eval [read]]
-    }
+::tcltest::test write-1.0 {read, eval, and write a number} -body {
+    pep "99.99"
 } -output "99.99\n"
 
-::tcltest::test write-1.1 {read and write a boolean} -body {
-    namespace eval ::constcl {
-        set ::inputstr "#t"
-        write [eval [read]]
-    }
+::tcltest::test write-1.1 {read, eval, and write a boolean} -body {
+    pep "#t"
 } -output "#t\n"
 
-TT)
-
-TT(
-
-::tcltest::test write-2.0 {read and write a list} -body {
-    set ::inputstr "(a b c)"
-    set obj [::constcl::read]
-    ::constcl::write $obj
-} -output "(a b c)\n"
-
-::tcltest::test write-2.1 {read and write a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "'(a b c)"
-        write [eval [read]]
-    }
+::tcltest::test write-1.2 {read, eval, and write a list} -body {
+    pep "'(a b c)"
 } -output "(a b c)\n"
 
 TT)

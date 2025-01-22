@@ -3,9 +3,7 @@ source constcl.tcl
 
 
 ::tcltest::test read-1.0 {try reading quoted symbol} -body {
-    set ::inputstr "'foo"
-    set obj [::constcl::read]
-    ::constcl::write $obj
+    pp "'foo"
 } -output "(quote foo)\n"
 
 ::tcltest::test read-1.1 {try reading a list} -body {
@@ -17,52 +15,31 @@ source constcl.tcl
 } -result "b"
 
 ::tcltest::test read-1.2 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a)"
-        write [read]
-    }
+    pp "(a)"
 } -output "(a)\n"
 
 ::tcltest::test read-1.3 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b)"
-        write [read]
-    }
+    pp "(a b)"
 } -output "(a b)\n"
 
 ::tcltest::test read-1.4 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c)"
-        write [read]
-    }
+    pp "(a b c)"
 } -output "(a b c)\n"
 
 ::tcltest::test read-1.5 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c d)"
-        write [read]
-    }
+    pp "(a b c d)"
 } -output "(a b c d)\n"
 
 ::tcltest::test read-1.6 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a b c d e)"
-        write [read]
-    }
+    pp "(a b c d e)"
 } -output "(a b c d e)\n"
 
 ::tcltest::test read-1.7 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a (b) )"
-        write [read]
-    }
+    pp "(a (b) )"
 } -output "(a (b))\n"
 
 ::tcltest::test read-1.8 {try reading a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(a (b))"
-        write [read]
-    }
+    pp "(a (b))"
 } -output "(a (b))\n"
 
 
@@ -165,38 +142,21 @@ source constcl.tcl
 ::tcltest::test read-5.2 {try reading an identifier} -body {
     set ::inputstr "let"
     set obj [::constcl::read]
-    $obj name
+    ::constcl::varcheck [$obj name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 
 
-::tcltest::test write-1.0 {read and write a number} -body {
-    namespace eval ::constcl {
-        set ::inputstr "99.99"
-        write [eval [read]]
-    }
+::tcltest::test write-1.0 {read, eval, and write a number} -body {
+    pep "99.99"
 } -output "99.99\n"
 
-::tcltest::test write-1.1 {read and write a boolean} -body {
-    namespace eval ::constcl {
-        set ::inputstr "#t"
-        write [eval [read]]
-    }
+::tcltest::test write-1.1 {read, eval, and write a boolean} -body {
+    pep "#t"
 } -output "#t\n"
 
-
-
-::tcltest::test write-2.0 {read and write a list} -body {
-    set ::inputstr "(a b c)"
-    set obj [::constcl::read]
-    ::constcl::write $obj
-} -output "(a b c)\n"
-
-::tcltest::test write-2.1 {read and write a list} -body {
-    namespace eval ::constcl {
-        set ::inputstr "'(a b c)"
-        write [eval [read]]
-    }
+::tcltest::test write-1.2 {read, eval, and write a list} -body {
+    pep "'(a b c)"
 } -output "(a b c)\n"
 
 
@@ -429,7 +389,25 @@ source constcl.tcl
 
 ::tcltest::test number-1.25 {try expt} -body {
     pep "(expt 4 2)"
-} -output "16\n"
+} -output "16.0\n"
+
+
+
+::tcltest::test number-1.26 {try number->string} -body {
+    pep "(number->string 23)"
+    pep "(number->string 23 2)"
+    pep "(number->string 23 8)"
+    pep "(number->string 23 16)"
+} -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
+
+
+
+::tcltest::test number-1.27 {try string->number} -body {
+    pep {(string->number "23")}
+    pep {(string->number "10111" 2)}
+    pep {(string->number "27" 8)}
+    pep {(string->number "17" 16)}
+} -output "23\n23\n23\n23\n"
 
 
 
@@ -527,6 +505,50 @@ source constcl.tcl
         write [eval [read]]
     }
 } -output "#f\n"
+
+
+
+::tcltest::test pairslists-1.0 {playing with lists} -body {
+    pep {(define x (list 'a 'b 'c))}
+    pep {(define y x)}
+    pep {y}
+} -output "()\n()\n(a b c)\n"
+
+::tcltest::test pairslists-1.1 {playing with lists} -body {
+    pep {(list? y)}
+} -output "#t\n"
+
+::tcltest::test pairslists-1.2 {playing with lists} -body {
+    pep {(set-cdr! x 4)}
+    pep {x}
+} -output "4\n(a . 4)\n"
+
+::tcltest::test pairslists-1.3 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+} -output "#t\n(a . 4)\n"
+
+::tcltest::test pairslists-1.4 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+    pep {(list? y)}
+} -output "#t\n(a . 4)\n#f\n"
+
+::tcltest::test pairslists-1.5 {try pair?} -body {
+    pep {(pair? '(a . b))}
+    pep {(pair? '(a b c))}
+    pep {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test pairslists-1.6 {try cons} -body {
+    pep {(cons 'a '())}
+    pep {(cons '(a) '(b c d))}
+    pep {(cons "a" '(b c))}
+    pep {(cons 'a 3)}
+    pep {(cons '(a b) 'c)}
+} -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
 
 
 

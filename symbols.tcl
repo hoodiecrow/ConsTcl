@@ -12,6 +12,7 @@ oo::class create Symbol {
         set name $n
     }
     method name {} {set name}
+    method value {} {set name}
     method = {symname} {expr {$name eq $symname}}
     method write {} { puts -nonewline [my name] }
     method show {} {set name}

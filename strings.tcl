@@ -21,12 +21,12 @@ oo::class create String {
         }
     }
     method index {} {set s}
-    method = {str} {string equal [lindex $::StrSto $s] $str}
-    method length {} {string length [lindex $::StrSto $s]}
-    method ref {i} {string index [lindex $::StrSto $s] $i}
+    method = {str} {string equal [my value] $str}
+    method length {} {string length [my value]}
+    method ref {i} {string index [my value] $i}
     method value {} {return [lindex $::StrSto $s]}
-    method write {} { puts -nonewline "\"[lindex $::StrSto $s]\"" }
-    method show {} {format "\"[lindex $::StrSto $s]\""}
+    method write {} { puts -nonewline "\"[my value]\"" }
+    method show {} {format "\"[my value]\""}
 }
 
 proc ::constcl::MkString {v} {

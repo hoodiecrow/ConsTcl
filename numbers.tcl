@@ -954,14 +954,110 @@ proc ::constcl::inexact->exact {z} {
 CB
 
 CB
+reg number->string ::constcl::number->string
+
 proc ::constcl::number->string {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        set num [lindex $args 0]
+        if {[number? $num] eq "#t"} {
+            return [MkString [$num value]]
+        } else {
+            error "NUMBER expected\n(string->number [$num show])"
+        }
+    } else {
+        lassign $args num radix
+        if {[number? $num] eq "#t"} {
+            if {[$radix value] == 10} {
+                return [MkString [$num value]]
+            } elseif {[$radix value] in {2 8 16}} {
+                return [MkString [base [$radix value] [$num value]]]
+            } else {
+                error "radix not in 2, 8, 10, 16"
+            }
+        } else {
+            error "NUMBER expected\n(string->number [$num show])"
+        }
+    }
+}
+
+# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+proc base {base number} {
+    set negative [regexp ^-(.+) $number -> number]
+    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
+    set res {}
+    while {$number} {
+        set digit [expr {$number % $base}]
+        set res [lindex $digits $digit]$res
+        set number [expr {$number / $base}]
+    }
+    if $negative {set res -$res}
+    set res
 }
 CB
 
+TT(
+
+::tcltest::test number-1.26 {try number->string} -body {
+    pep "(number->string 23)"
+    pep "(number->string 23 2)"
+    pep "(number->string 23 8)"
+    pep "(number->string 23 16)"
+} -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
+
+TT)
+
 CB
+reg string->number ::constcl::string->number
+
 proc ::constcl::string->number {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        set str [lindex $args 0]
+        if {[string? $str] eq "#t"} {
+            return [MkNumber [$str value]]
+        } else {
+            error "STRING expected\n(string->number [$str show])"
+        }
+    } else {
+        lassign $args str radix
+        if {[string? $str] eq "#t"} {
+            if {[$radix value] == 10} {
+                return [MkNumber [$str value]]
+            } elseif {[$radix value] in {2 8 16}} {
+                return [MkNumber [frombase [$radix value] [$str value]]]
+            } else {
+                error "radix not in 2, 8, 10, 16"
+            }
+        } else {
+            error "STRING expected\n(string->number [$str show])"
+        }
+    }
+}
+
+# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+proc frombase {base number} {
+    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
+    set negative [regexp ^-(.+) $number -> number]
+    set res 0
+    foreach digit [split $number {}] {
+        set decimalvalue [lsearch $digits $digit]
+        if {$decimalvalue < 0 || $decimalvalue >= $base} {
+            error "bad digit $decimalvalue for base $base"
+        }
+        set res [expr {$res * $base + $decimalvalue}]
+    }
+    if $negative {set res -$res}
+    set res
 }
 CB
+
+TT(
+
+::tcltest::test number-1.27 {try string->number} -body {
+    pep {(string->number "23")}
+    pep {(string->number "10111" 2)}
+    pep {(string->number "27" 8)}
+    pep {(string->number "17" 16)}
+} -output "23\n23\n23\n23\n"
+
+TT)
 
