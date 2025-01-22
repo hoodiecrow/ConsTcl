@@ -67,11 +67,9 @@ After the call, we are back to the first state again.
 MD)
 
 TT(
-::tcltest::test global_env-1.0 {check for a symbol} {
-    set inputstr "pi"
-    set pi [::constcl::read]
-    ::constcl::lookup $pi ::global_env
-} 3.1415926535897931
+::tcltest::test global_env-1.0 {check for a symbol} -body {
+    pep "pi"
+} -output 3.1415926535897931\n
 TT)
 
 TT(

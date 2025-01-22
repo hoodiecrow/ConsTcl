@@ -22,8 +22,6 @@ namespace eval ::constcl {
     }
 }
 
-dict set ::standard_env pi 3.1415926535897931
-
 proc reg {sym impl} {
     dict set ::standard_env $sym $impl
 }

@@ -4,6 +4,8 @@ MD(
 MD)
 
 CB
+catch { Procedure destroy }
+
 oo::class create Procedure {
     superclass NIL
     variable value

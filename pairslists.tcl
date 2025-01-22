@@ -4,6 +4,8 @@ MD(
 MD)
 
 CB
+catch { Cons destroy }
+
 oo::class create Cons {
     variable car cdr
     constructor {a d} {

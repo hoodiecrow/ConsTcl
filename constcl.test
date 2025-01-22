@@ -360,15 +360,76 @@ source constcl.tcl
 
 
 
-::tcltest::test number-1.16 {try floor} -body {
+::tcltest::test number-1.17 {try floor} -body {
     pep "(floor 99.9)"
 } -output "99.0\n"
 
 
 
-::tcltest::test number-1.16 {try ceiling} -body {
+::tcltest::test number-1.18 {try ceiling} -body {
     pep "(ceiling 99.9)"
 } -output "100.0\n"
+
+
+
+::tcltest::test number-1.19 {try truncate} -body {
+    pep "(truncate 99.9)"
+    pep "(truncate -99.9)"
+} -output "99.0\n-99.0\n"
+
+
+
+::tcltest::test number-1.20 {try round} -body {
+    pep "(round 99.9)"
+    pep "(round 99.3)"
+} -output "100\n99\n"
+
+::tcltest::test number-1.21 {try various} -body {
+    pep "(floor 3.5)"
+    pep "(ceiling 3.5)"
+    pep "(truncate 3.5)"
+    pep "(round 3.5)"
+} -output "3.0\n4.0\n3.0\n4\n"
+
+
+
+::tcltest::test number-1.22 {try exp} -body {
+    pep "(exp 3)"
+} -output "20.085536923187668\n"
+
+
+
+::tcltest::test number-1.23 {try log} -body {
+    pep "(log 3)"
+} -output "1.0986122886681098\n"
+
+
+
+::tcltest::test number-1.24 {try trig} -body {
+    pep "(sin (/ pi 3))"
+    pep "(cos (/ pi 3))"
+    pep "(tan (/ pi 3))"
+} -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
+
+
+
+::tcltest::test number-1.25 {try trig} -body {
+    pep "(asin 0.3)"
+    pep "(acos 0.3)"
+    pep "(atan 0.3)"
+} -output "0.3046926540153975\n1.2661036727794992\n0.2914567944778671\n"
+
+
+
+::tcltest::test number-1.25 {try sqrt} -body {
+    pep "(sqrt 16)"
+} -output "4.0\n"
+
+
+
+::tcltest::test number-1.25 {try expt} -body {
+    pep "(expt 4 2)"
+} -output "16\n"
 
 
 
@@ -475,11 +536,9 @@ source constcl.tcl
 } -returnCodes error -result "Unbound variable: foo"
 
 
-::tcltest::test global_env-1.0 {check for a symbol} {
-    set inputstr "pi"
-    set pi [::constcl::read]
-    ::constcl::lookup $pi ::global_env
-} 3.1415926535897931
+::tcltest::test global_env-1.0 {check for a symbol} -body {
+    pep "pi"
+} -output 3.1415926535897931\n
 
 ::tcltest::test global_env-2.0 {dereference an unbound symbol} -body {
     pep "foo"

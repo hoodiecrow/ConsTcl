@@ -30,6 +30,10 @@ interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
 
+CB
+dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
+CB
+
 
 reg atom? ::constcl::atom?
 

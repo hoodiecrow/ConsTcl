@@ -402,7 +402,7 @@ proc ::constcl::+ {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(+ [$obj show])"
         }
@@ -445,7 +445,7 @@ proc ::constcl::* {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(+ [$obj show])"
         }
@@ -488,7 +488,7 @@ proc ::constcl::- {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
@@ -531,7 +531,7 @@ proc ::constcl::/ {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
@@ -638,7 +638,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.16 {try floor} -body {
+::tcltest::test number-1.17 {try floor} -body {
     pep "(floor 99.9)"
 } -output "99.0\n"
 
@@ -658,7 +658,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.16 {try ceiling} -body {
+::tcltest::test number-1.18 {try ceiling} -body {
     pep "(ceiling 99.9)"
 } -output "100.0\n"
 
@@ -668,25 +668,54 @@ CB
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
-    if {[::constcl::number? $x] eq #t} {
-        # TODO
+    if {[::constcl::number? $x] eq "#t"} {
+        if {[$x negative]} {
+            MkNumber [::tcl::mathfunc::ceil [$x value]]
+        } else {
+            MkNumber [::tcl::mathfunc::floor [$x value]]
+        }
     } else {
         error "NUMBER expected\n(truncate [$x show])"
     }
 }
 CB
 
+TT(
+
+::tcltest::test number-1.19 {try truncate} -body {
+    pep "(truncate 99.9)"
+    pep "(truncate -99.9)"
+} -output "99.0\n-99.0\n"
+
+TT)
+
 CB
 reg round ::constcl::round
 
 proc ::constcl::round {x} {
-    if {[::constcl::number? $x] eq #t} {
+    if {[::constcl::number? $x] eq "#t"} {
         MkNumber [::tcl::mathfunc::round [$x value]]
     } else {
         error "NUMBER expected\n(round [$x show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test number-1.20 {try round} -body {
+    pep "(round 99.9)"
+    pep "(round 99.3)"
+} -output "100\n99\n"
+
+::tcltest::test number-1.21 {try various} -body {
+    pep "(floor 3.5)"
+    pep "(ceiling 3.5)"
+    pep "(truncate 3.5)"
+    pep "(round 3.5)"
+} -output "3.0\n4.0\n3.0\n4\n"
+
+TT)
 
 CB
 proc ::constcl::rationalize {x y} {
@@ -698,7 +727,7 @@ CB
 reg exp ::constcl::exp
 
 proc ::constcl::exp {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::exp [$z value]]
     } else {
         error "NUMBER expected\n(exp [$z show])"
@@ -706,11 +735,19 @@ proc ::constcl::exp {z} {
 }
 CB
 
+TT(
+
+::tcltest::test number-1.22 {try exp} -body {
+    pep "(exp 3)"
+} -output "20.085536923187668\n"
+
+TT)
+
 CB
 reg log ::constcl::log
 
 proc ::constcl::log {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::log [$z value]]
     } else {
         error "NUMBER expected\n(log [$z show])"
@@ -718,11 +755,19 @@ proc ::constcl::log {z} {
 }
 CB
 
+TT(
+
+::tcltest::test number-1.23 {try log} -body {
+    pep "(log 3)"
+} -output "1.0986122886681098\n"
+
+TT)
+
 CB
 reg sin ::constcl::sin
 
 proc ::constcl::sin {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sin [$z value]]
     } else {
         error "NUMBER expected\n(sin [$z show])"
@@ -734,7 +779,7 @@ CB
 reg cos ::constcl::cos
 
 proc ::constcl::cos {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::cos [$z value]]
     } else {
         error "NUMBER expected\n(cos [$z show])"
@@ -746,7 +791,7 @@ CB
 reg tan ::constcl::tan
 
 proc ::constcl::tan {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::tan [$z value]]
     } else {
         error "NUMBER expected\n(tan [$z show])"
@@ -754,11 +799,21 @@ proc ::constcl::tan {z} {
 }
 CB
 
+TT(
+
+::tcltest::test number-1.24 {try trig} -body {
+    pep "(sin (/ pi 3))"
+    pep "(cos (/ pi 3))"
+    pep "(tan (/ pi 3))"
+} -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
+
+TT)
+
 CB
 reg asin ::constcl::asin
 
 proc ::constcl::asin {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::asin [$z value]]
     } else {
         error "NUMBER expected\n(asin [$z show])"
@@ -770,7 +825,7 @@ CB
 reg acos ::constcl::acos
 
 proc ::constcl::acos {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::acos [$z value]]
     } else {
         error "NUMBER expected\n(acos [$z show])"
@@ -783,14 +838,15 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
-        if {[::constcl::number? $z] eq #t} {
+        set z [lindex $args 0]
+        if {[::constcl::number? $z] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan [$z value]]
         } else {
             error "NUMBER expected\n(atan [$z show])"
         }
     } else {
         lassign $args y x
-        if {[::constcl::number? $y] eq #t && [::constcl::number $x]} {
+        if {[::constcl::number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan2 [$y value] [$x value]]
         } else {
             error "NUMBER expected\n(atan [$y show] [$x show])"
@@ -799,11 +855,21 @@ proc ::constcl::atan {args} {
 }
 CB
 
+TT(
+
+::tcltest::test number-1.25 {try trig} -body {
+    pep "(asin 0.3)"
+    pep "(acos 0.3)"
+    pep "(atan 0.3)"
+} -output "0.3046926540153975\n1.2661036727794992\n0.2914567944778671\n"
+
+TT)
+
 CB
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sqrt [$z value]]
     } else {
         error "NUMBER expected\n(sqrt [$z show])"
@@ -811,17 +877,33 @@ proc ::constcl::sqrt {z} {
 }
 CB
 
+TT(
+
+::tcltest::test number-1.25 {try sqrt} -body {
+    pep "(sqrt 16)"
+} -output "4.0\n"
+
+TT)
+
 CB
 reg expt ::constcl::expt
 
 proc ::constcl::expt {z1 z2} {
-    if {[::constcl::number? $z1] eq #t && [::constcl::number $z2]} {
+    if {[::constcl::number? $z1] eq "#t" && [::constcl::number? $z2] eq "#t"} {
         MkNumber [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
     } else {
         error "NUMBER expected\n(expt [$z1 show] [$z2 show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test number-1.25 {try expt} -body {
+    pep "(expt 4 2)"
+} -output "16.0\n"
+
+TT)
 
 CB
 proc ::constcl::make-rectangular {x1 x2} {

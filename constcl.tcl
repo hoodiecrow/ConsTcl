@@ -21,8 +21,6 @@ namespace eval ::constcl {
     }
 }
 
-dict set ::standard_env pi 3.1415926535897931
-
 proc reg {sym impl} {
     dict set ::standard_env $sym $impl
 }
@@ -690,7 +688,7 @@ proc ::constcl::+ {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(+ [$obj show])"
         }
@@ -721,7 +719,7 @@ proc ::constcl::* {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(+ [$obj show])"
         }
@@ -752,7 +750,7 @@ proc ::constcl::- {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
@@ -783,7 +781,7 @@ proc ::constcl::/ {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num $obj
+            set num [MkNumber [$obj value]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
@@ -867,22 +865,28 @@ proc ::constcl::ceiling {x} {
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
-    if {[::constcl::number? $x] eq #t} {
-        # TODO
+    if {[::constcl::number? $x] eq "#t"} {
+        if {[$x negative]} {
+            MkNumber [::tcl::mathfunc::ceil [$x value]]
+        } else {
+            MkNumber [::tcl::mathfunc::floor [$x value]]
+        }
     } else {
         error "NUMBER expected\n(truncate [$x show])"
     }
 }
 
+
 reg round ::constcl::round
 
 proc ::constcl::round {x} {
-    if {[::constcl::number? $x] eq #t} {
+    if {[::constcl::number? $x] eq "#t"} {
         MkNumber [::tcl::mathfunc::round [$x value]]
     } else {
         error "NUMBER expected\n(round [$x show])"
     }
 }
+
 
 proc ::constcl::rationalize {x y} {
     # TODO
@@ -891,27 +895,29 @@ proc ::constcl::rationalize {x y} {
 reg exp ::constcl::exp
 
 proc ::constcl::exp {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::exp [$z value]]
     } else {
         error "NUMBER expected\n(exp [$z show])"
     }
 }
 
+
 reg log ::constcl::log
 
 proc ::constcl::log {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::log [$z value]]
     } else {
         error "NUMBER expected\n(log [$z show])"
     }
 }
 
+
 reg sin ::constcl::sin
 
 proc ::constcl::sin {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sin [$z value]]
     } else {
         error "NUMBER expected\n(sin [$z show])"
@@ -921,7 +927,7 @@ proc ::constcl::sin {z} {
 reg cos ::constcl::cos
 
 proc ::constcl::cos {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::cos [$z value]]
     } else {
         error "NUMBER expected\n(cos [$z show])"
@@ -931,17 +937,18 @@ proc ::constcl::cos {z} {
 reg tan ::constcl::tan
 
 proc ::constcl::tan {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::tan [$z value]]
     } else {
         error "NUMBER expected\n(tan [$z show])"
     }
 }
 
+
 reg asin ::constcl::asin
 
 proc ::constcl::asin {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::asin [$z value]]
     } else {
         error "NUMBER expected\n(asin [$z show])"
@@ -951,7 +958,7 @@ proc ::constcl::asin {z} {
 reg acos ::constcl::acos
 
 proc ::constcl::acos {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::acos [$z value]]
     } else {
         error "NUMBER expected\n(acos [$z show])"
@@ -962,14 +969,15 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
-        if {[::constcl::number? $z] eq #t} {
+        set z [lindex $args 0]
+        if {[::constcl::number? $z] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan [$z value]]
         } else {
             error "NUMBER expected\n(atan [$z show])"
         }
     } else {
         lassign $args y x
-        if {[::constcl::number? $y] eq #t && [::constcl::number $x]} {
+        if {[::constcl::number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan2 [$y value] [$x value]]
         } else {
             error "NUMBER expected\n(atan [$y show] [$x show])"
@@ -977,25 +985,28 @@ proc ::constcl::atan {args} {
     }
 }
 
+
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {z} {
-    if {[::constcl::number? $z] eq #t} {
+    if {[::constcl::number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sqrt [$z value]]
     } else {
         error "NUMBER expected\n(sqrt [$z show])"
     }
 }
 
+
 reg expt ::constcl::expt
 
 proc ::constcl::expt {z1 z2} {
-    if {[::constcl::number? $z1] eq #t && [::constcl::number $z2]} {
+    if {[::constcl::number? $z1] eq "#t" && [::constcl::number? $z2] eq "#t"} {
         MkNumber [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
     } else {
         error "NUMBER expected\n(expt [$z1 show] [$z2 show])"
     }
 }
+
 
 proc ::constcl::make-rectangular {x1 x2} {
     # TODO
@@ -1089,6 +1100,8 @@ proc ::constcl::not {obj} {
 
 
 
+
+catch { Cons destroy }
 
 oo::class create Cons {
     variable car cdr
@@ -2151,6 +2164,8 @@ proc ::constcl::vector-fill {vec fill} {
 
 
 
+catch { Procedure destroy }
+
 oo::class create Procedure {
     superclass NIL
     variable value
@@ -2466,6 +2481,8 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
+
+dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
 
 
 reg atom? ::constcl::atom?
