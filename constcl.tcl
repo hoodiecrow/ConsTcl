@@ -2342,17 +2342,18 @@ oo::class create Vector {
     }
     method length {} {llength $value}
     method ref {i} {lindex $value $i}
-    method value {} {lmap val $value {$val value}}
+    method value {} {set value}
     method set! {i obj} {
         if {[my constant]} {
             error "vector is constant"
         } else {
             set value [::lreplace [my value] $i $i $obj]
         }
+        return [self]
     }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
-    method write {} {puts -nonewline #([lmap val [my value] {$val show}])}
+    method write {} {puts -nonewline [my show]}
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
