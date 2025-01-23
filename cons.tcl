@@ -22,7 +22,8 @@ interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
 
-interp alias {} #Q {} [::constcl::MkSymbol quote]
+set ::constcl::_quote [::constcl::MkSymbol quote]
+interp alias {} #Q {} $::constcl::_quote
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 

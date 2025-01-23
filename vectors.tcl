@@ -22,6 +22,14 @@ oo::class create Vector {
         }
         return [self]
     }
+    method fill! {c} {
+        if {[my constant]} {
+            error "vector is constant"
+        } else {
+            set value [::lrepeat [::llength [my value]] $c]
+        }
+        return [self]
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} {puts -nonewline [my show]}
@@ -167,27 +175,51 @@ CB
 reg vector->list ::constcl::vector->list
 
 proc ::constcl::vector->list {vec} {
-    # TODO
+    list {*}[$vec value]
 }
 CB
+
+TT(
+
+::tcltest::test vectors-1.5 {try vector->list} -body {
+    pep {(vector->list (vector 'a 'b 'c))}
+} -output "(a b c)\n"
+
+TT)
 
 CB
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
-    # TODO
+    vector {*}[splitlist $list]
 }
 CB
 
-CB
-reg vector-fill ::constcl::vector-fill
+TT(
 
-proc ::constcl::vector-fill {vec fill} {
+::tcltest::test vectors-1.6 {try list->vector} -body {
+    pep {(list->vector '(a b c))}
+} -output "#(a b c)\n"
+
+TT)
+
+CB
+reg vector-fill! ::constcl::vector-fill!
+
+proc ::constcl::vector-fill! {vec fill} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        $vec fill $fill
+        $vec fill! $fill
     } else {
         error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test vectors-1.7 {try vector-fill!} -body {
+    pep {(vector-fill! (vector 'a 'b 'c) 'x)}
+} -output "#(x x x)\n"
+
+TT)
 

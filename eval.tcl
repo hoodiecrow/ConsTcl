@@ -90,9 +90,11 @@ CB
 CB
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        $pr call {*}[splitlist $vals]
-    } elseif {[::string match "::constcl::*" $pr]} {
-        $pr {*}[splitlist $vals]
+        if {[::string match "::constcl::*" $pr]} {
+            $pr {*}[splitlist $vals]
+        } else {
+            $pr call {*}[splitlist $vals]
+        }
     } else {
         error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
     }

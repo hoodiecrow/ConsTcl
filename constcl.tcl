@@ -1231,6 +1231,7 @@ oo::class create Cons {
         set constant 0
     }
     method truth {} {return #t}
+    method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
     method car {} { set car }
@@ -1997,14 +1998,16 @@ oo::class create String {
             set value [::string replace [my value] $k $k $c]
             set s [find-string-index $value]
         }
+        return [self]
     }
     method fill! {c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string replace [my value] 0 end [::string repeat $c [::string length [my value]]]]
+            set value [::string repeat $c [::string length [my value]]]
             set s [find-string-index $value]
         }
+        return [self]
     }
     method substring {from to} {::string range [my value] $from $to}
     method value {} {return [lindex $::StrSto $s]}
@@ -2351,6 +2354,14 @@ oo::class create Vector {
         }
         return [self]
     }
+    method fill! {c} {
+        if {[my constant]} {
+            error "vector is constant"
+        } else {
+            set value [::lrepeat [::llength [my value]] $c]
+        }
+        return [self]
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} {puts -nonewline [my show]}
@@ -2443,24 +2454,27 @@ proc ::constcl::vector-set! {vec k obj} {
 reg vector->list ::constcl::vector->list
 
 proc ::constcl::vector->list {vec} {
-    # TODO
+    list {*}[$vec value]
 }
+
 
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
-    # TODO
+    vector {*}[splitlist $list]
 }
 
-reg vector-fill ::constcl::vector-fill
 
-proc ::constcl::vector-fill {vec fill} {
+reg vector-fill! ::constcl::vector-fill!
+
+proc ::constcl::vector-fill! {vec fill} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        $vec fill $fill
+        $vec fill! $fill
     } else {
         error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"
     }
 }
+
 
 
 
@@ -2498,17 +2512,20 @@ proc ::constcl::procedure? {obj} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
         return #t
+    } elseif {[::string match "::constcl::*" $obj] && ![::string match "::constcl::Mem*" $obj]} {
+        return #t
     } else {
         return #f
     }
 }
 
+
 reg apply ::constcl::apply
 
 proc ::constcl::apply {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+    if {[procedure? $proc] eq "#t"} {
+        if {[list? [lindex $args end]] eq "#t"} {
+           invoke $proc $args 
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }
@@ -2516,6 +2533,7 @@ proc ::constcl::apply {proc args} {
         error "PROCEDURE expected\n(apply [$proc write] ...)"
     }
 }
+
 
 reg map ::constcl::map
 
@@ -2643,9 +2661,11 @@ proc ::constcl::evlis {exps env} {
 
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        $pr call {*}[splitlist $vals]
-    } elseif {[::string match "::constcl::*" $pr]} {
-        $pr {*}[splitlist $vals]
+        if {[::string match "::constcl::*" $pr]} {
+            $pr {*}[splitlist $vals]
+        } else {
+            $pr call {*}[splitlist $vals]
+        }
     } else {
         error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
     }
@@ -2810,7 +2830,8 @@ interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
 
-interp alias {} #Q {} [::constcl::MkSymbol quote]
+set ::constcl::_quote [::constcl::MkSymbol quote]
+interp alias {} #Q {} $::constcl::_quote
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 

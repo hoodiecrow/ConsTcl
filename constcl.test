@@ -1057,6 +1057,43 @@ source constcl.tcl
 
 
 
+::tcltest::test vectors-1.5 {try vector->list} -body {
+    pep {(vector->list (vector 'a 'b 'c))}
+} -output "(a b c)\n"
+
+
+
+::tcltest::test vectors-1.6 {try list->vector} -body {
+    pep {(list->vector '(a b c))}
+} -output "#(a b c)\n"
+
+
+
+::tcltest::test vectors-1.7 {try vector-fill!} -body {
+    pep {(vector-fill! (vector 'a 'b 'c) 'x)}
+} -output "#(x x x)\n"
+
+
+
+::tcltest::test control-1.0 {try procedure?)} -body {
+    pep {(procedure? car)}
+    pep {(procedure? 'car)}
+    pep {(procedure? (lambda (x) (* x x)))}
+} -output "#t\n#f\n#t\n"
+
+
+
+::tcltest::test control-1.1 {try apply)} -body {
+    pep {(apply + (list 3 4))}
+    pep {(define compose
+  (lambda (f g)
+    (lambda (args)
+      (f (apply g args)))))}
+    pep {((compose sqrt *) (list 12 75))}
+} -output "7\n()\n30.0\n"
+
+
+
 ::tcltest::test eval-1.0 {try eval:ing an unbound symbol} -body {
     set ::inputstr "foo"
     ::constcl::eval [::constcl::read]

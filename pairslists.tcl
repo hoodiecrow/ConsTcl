@@ -15,6 +15,7 @@ oo::class create Cons {
         set constant 0
     }
     method truth {} {return #t}
+    method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
     method car {} { set car }

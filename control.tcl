@@ -42,19 +42,31 @@ proc ::constcl::procedure? {obj} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
         return #t
+    } elseif {[::string match "::constcl::*" $obj] && ![::string match "::constcl::Mem*" $obj]} {
+        return #t
     } else {
         return #f
     }
 }
 CB
 
+TT(
+
+::tcltest::test control-1.0 {try procedure?)} -body {
+    pep {(procedure? car)}
+    pep {(procedure? 'car)}
+    pep {(procedure? (lambda (x) (* x x)))}
+} -output "#t\n#f\n#t\n"
+
+TT)
+
 CB
 reg apply ::constcl::apply
 
 proc ::constcl::apply {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+    if {[procedure? $proc] eq "#t"} {
+        if {[list? [lindex $args end]] eq "#t"} {
+           invoke $proc $args 
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }
@@ -63,6 +75,19 @@ proc ::constcl::apply {proc args} {
     }
 }
 CB
+
+TT(
+
+::tcltest::test control-1.1 {try apply)} -body {
+    pep {(apply + (list 3 4))}
+    pep {(define compose
+  (lambda (f g)
+    (lambda (args)
+      (f (apply g args)))))}
+    pep {((compose sqrt *) (list 12 75))}
+} -output "7\n()\n30.0\n"
+
+TT)
 
 CB
 reg map ::constcl::map

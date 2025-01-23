@@ -22,14 +22,16 @@ oo::class create String {
             set value [::string replace [my value] $k $k $c]
             set s [find-string-index $value]
         }
+        return [self]
     }
     method fill! {c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string replace [my value] 0 end [::string repeat $c [::string length [my value]]]]
+            set value [::string repeat $c [::string length [my value]]]
             set s [find-string-index $value]
         }
+        return [self]
     }
     method substring {from to} {::string range [my value] $from $to}
     method value {} {return [lindex $::StrSto $s]}
