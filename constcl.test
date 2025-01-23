@@ -88,7 +88,7 @@ source constcl.tcl
 
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set ::inputstr "#\\A"
+    set ::inputstr {#\A}
     set obj [::constcl::read]
     $obj char
 } "A"
@@ -679,11 +679,12 @@ source constcl.tcl
     pep {(symbol? 'nil)}
     pep {(symbol? '())}
     pep {(symbol? #f)}
-} -output "#t\n#t\n#f\n#t\n#f\n#f\n"
+    puts [::constcl::symbol? #Q]
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
 
 
 
-::tcltest::test symbols-1.1 {try symbol->string} -body {
+::tcltest::test symbols-1.1 {try symbol->string (and string->symbol)} -body {
     pep {(symbol->string 'flying-fish)}
     pep {(symbol->string 'Martin)}
     pep {(symbol->string (string->symbol "Malvina"))}
@@ -696,6 +697,344 @@ source constcl.tcl
 ::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body {
     pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""
+
+
+
+::tcltest::test characters-1.0 {try char?} -body {
+    pep {(char? #\A)}
+} -output "#t\n"
+
+
+
+::tcltest::test characters-1.1 {try char=?} -body {
+    pep {(char=? #\A #\A)}
+    pep {(char=? #\A #\a)}
+    pep {(char=? #\Space #\space)}
+} -output "#t\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.2 {try char<?} -body {
+    pep {(char<? #\A #\A)}
+    pep {(char<? #\A #\B)}
+    pep {(char<? #\B #\A)}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.3 {try char>?} -body {
+    pep {(char>? #\A #\A)}
+    pep {(char>? #\A #\B)}
+    pep {(char>? #\B #\A)}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.4 {try char<=?} -body {
+    pep {(char<=? #\A #\A)}
+    pep {(char<=? #\A #\B)}
+    pep {(char<=? #\B #\A)}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.5 {try char>=?} -body {
+    pep {(char>=? #\A #\A)}
+    pep {(char>=? #\A #\B)}
+    pep {(char>=? #\B #\A)}
+} -output "#t\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.6 {try char-ci=?} -body {
+    pep {(char-ci=? #\A #\a)}
+    pep {(char-ci=? #\A #\b)}
+    pep {(char-ci=? #\B #\a)}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.7 {try char-ci<?} -body {
+    pep {(char-ci<? #\A #\a)}
+    pep {(char-ci<? #\A #\b)}
+    pep {(char-ci<? #\B #\a)}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.8 {try char-ci>?} -body {
+    pep {(char-ci>? #\A #\a)}
+    pep {(char-ci>? #\A #\b)}
+    pep {(char-ci>? #\B #\a)}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.9 {try char-ci<=?} -body {
+    pep {(char-ci<=? #\A #\a)}
+    pep {(char-ci<=? #\A #\b)}
+    pep {(char-ci<=? #\B #\a)}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.10 {try char-ci>=?} -body {
+    pep {(char-ci>=? #\A #\a)}
+    pep {(char-ci>=? #\A #\b)}
+    pep {(char-ci>=? #\B #\a)}
+    pep {(char-ci>=? #\A #\Space)}
+} -output "#t\n#f\n#t\n#t\n"
+
+
+
+::tcltest::test characters-1.11 {try char-alphabetic?} -body {
+    pep {(char-alphabetic? #\A)}
+    pep {(char-alphabetic? #\9)}
+    pep {(char-alphabetic? #\space)}
+    pep {(char-alphabetic? #\A)}
+    pep {(char-alphabetic? #\a)}
+    pep {(char-alphabetic? #\%)}
+} -output "#t\n#f\n#f\n#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.12 {try char-numeric?} -body {
+    pep {(char-numeric? #\A)}
+    pep {(char-numeric? #\9)}
+    pep {(char-numeric? #\space)}
+    pep {(char-numeric? #\A)}
+    pep {(char-numeric? #\a)}
+    pep {(char-numeric? #\%)}
+} -output "#f\n#t\n#f\n#f\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.13 {try char-whitespace?} -body {
+    pep {(char-whitespace? #\A)}
+    pep {(char-whitespace? #\9)}
+    pep {(char-whitespace? #\space)}
+    pep {(char-whitespace? #\A)}
+    pep {(char-whitespace? #\a)}
+    pep {(char-whitespace? #\%)}
+} -output "#f\n#f\n#t\n#f\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.14 {try char-upper-case?} -body {
+    pep {(char-upper-case? #\A)}
+    pep {(char-upper-case? #\9)}
+    pep {(char-upper-case? #\space)}
+    pep {(char-upper-case? #\A)}
+    pep {(char-upper-case? #\a)}
+    pep {(char-upper-case? #\%)}
+} -output "#t\n#f\n#f\n#t\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.15 {try char-lower-case?} -body {
+    pep {(char-lower-case? #\A)}
+    pep {(char-lower-case? #\9)}
+    pep {(char-lower-case? #\space)}
+    pep {(char-lower-case? #\A)}
+    pep {(char-lower-case? #\a)}
+    pep {(char-lower-case? #\%)}
+} -output "#f\n#f\n#f\n#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.16 {try char-upcase?} -body {
+    pep {(char-upcase #\A)}
+    pep {(char-upcase #\a)}
+    pep {(char-upcase #\space)}
+} -output "#\\A\n#\\A\n#\\space\n"
+
+
+
+::tcltest::test characters-1.17 {try char-downcase?} -body {
+    pep {(char-downcase #\A)}
+    pep {(char-downcase #\a)}
+    pep {(char-downcase #\space)}
+} -output "#\\a\n#\\a\n#\\space\n"
+
+
+
+::tcltest::test strings-1.0 {try string?} -body {
+    pep {(string? "foo bar")}
+    pep {(string? 'foo-bar)}
+} -output "#t\n#f\n"
+
+
+
+::tcltest::test strings-1.1 {try make-string} -body {
+    pep {(make-string 5 #\x)}
+} -output "\"xxxxx\"\n"
+
+
+
+::tcltest::test strings-1.2 {try string} -body {
+    pep {(string #\f #\o #\o)}
+} -output "\"foo\"\n"
+
+
+
+::tcltest::test strings-1.3 {try string-length} -body {
+    pep {(string-length "foo bar")}
+} -output "7\n"
+
+
+
+::tcltest::test strings-1.4 {try string-ref} -body {
+    pep {(string-ref "foo bar" 4)}
+} -output "#\\b\n"
+
+
+
+::tcltest::test strings-1.5 {try string-set!} -body {
+    pep {(string-set! (string #\f #\o #\o) 0 #\x)}
+} -output "\"xoo\"\n"
+
+::tcltest::test strings-1.6 {try string-set!} -body {
+    pep {(define f (lambda () (make-string 3 #\*)))}
+    pep {(define g (lambda () "***"))}
+    pep {(string-set! (f) 0 #\?)}
+} -output "()\n()\n\"?**\"\n"
+
+::tcltest::test strings-1.7 {try string-set!} -body {
+    pep {(string-set! (g) 0 #\?)}
+} -returnCodes error -result "string is constant"
+
+
+
+::tcltest::test strings-1.8 {try string=?} -body {
+    pep {(string=? "foo bar" "faa bor")}
+    pep {(string=? "foo bar" "foo bar")}
+    pep {(string=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test strings-1.9 {try string-ci=?} -body {
+    pep {(string-ci=? "foo bar" "faa bor")}
+    pep {(string-ci=? "foo bar" "foo bar")}
+    pep {(string-ci=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-1.10 {try string<?} -body {
+    pep {(string<? "bar" "car")}
+    pep {(string<? "bar" "bar")}
+    pep {(string<? "bar" "aar")}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test strings-1.11 {try string-ci<?} -body {
+    pep {(string-ci<? "bar" "Car")}
+    pep {(string-ci<? "bar" "Bar")}
+    pep {(string-ci<? "bar" "Aar")}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test strings-1.12 {try string>?} -body {
+    pep {(string>? "bar" "car")}
+    pep {(string>? "bar" "bar")}
+    pep {(string>? "bar" "aar")}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test strings-1.13 {try string-ci>?} -body {
+    pep {(string-ci>? "bar" "Car")}
+    pep {(string-ci>? "bar" "Bar")}
+    pep {(string-ci>? "bar" "Aar")}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test strings-1.14 {try string<=?} -body {
+    pep {(string<=? "bar" "car")}
+    pep {(string<=? "bar" "bar")}
+    pep {(string<=? "bar" "aar")}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test strings-1.15 {try string-ci<=?} -body {
+    pep {(string-ci<=? "bar" "Car")}
+    pep {(string-ci<=? "bar" "Bar")}
+    pep {(string-ci<=? "bar" "Aar")}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test strings-1.16 {try string>=?} -body {
+    pep {(string>=? "bar" "car")}
+    pep {(string>=? "bar" "bar")}
+    pep {(string>=? "bar" "aar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-1.17 {try string-ci>=?} -body {
+    pep {(string-ci>=? "bar" "Car")}
+    pep {(string-ci>=? "bar" "Bar")}
+    pep {(string-ci>=? "bar" "Aar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-1.18 {try substring} -body {
+    pep {(substring "foo bar" 0 2)}
+} -output "\"foo\"\n"
+
+
+
+::tcltest::test strings-1.19 {try string-append} -body {
+    pep {(string-append "foo" " bar")}
+} -output "\"foo bar\"\n"
+
+
+
+::tcltest::test strings-1.20 {try string->list} -body {
+    pep {(string->list "foo")}
+} -output "(#\\f #\\o #\\o)\n"
+
+
+
+::tcltest::test strings-1.21 {try list->string} -body {
+    pep {(list->string '(#\f #\o #\o))}
+} -output "\"foo\"\n"
+
+
+
+::tcltest::test strings-1.22 {try string-copy} -body {
+    pep {(define x (string-copy "foo"))}
+    pep {(string-set! x 0 #\x)}
+} -output "()\n\"xoo\"\n"
+
+
+
+::tcltest::test strings-1.23 {try string-fill!} -body {
+    pep {(define x (string-copy "foo"))}
+    pep {(string-fill! x #\x)}
+} -output "()\n\"xxx\"\n"
+
+
+
+::tcltest::test vectors-1.0 {try vector? (and make-vector, vector)} -body {
+    pep {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pep {(vector? (make-vector 3 #\X))}
+    pep {(vector? (vector 'a 'b 'c))}
+} -output "#t\n#t\n#t\n"
+
+
+
+::tcltest::test vectors-1.1 {try vector} -body {
+    pep {(vector 'a 'b 'c)}
+    pep {(vector 0 '(2 2 2 2) "Anna")}
+} -output "#(a b c)\n#(0 (2 2 2 2) \"Anna\")\n"
 
 
 

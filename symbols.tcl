@@ -15,7 +15,7 @@ oo::class create Symbol {
     method name {} {set name}
     method value {} {set name}
     method = {symname} {expr {$name eq $symname}}
-    method make-constant {} {}
+    method mkconstant {} {}
     method constant {} {return 1}
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
@@ -59,7 +59,8 @@ TT(
     pep {(symbol? 'nil)}
     pep {(symbol? '())}
     pep {(symbol? #f)}
-} -output "#t\n#t\n#f\n#t\n#f\n#f\n"
+    puts [::constcl::symbol? #Q]
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
 
 TT)
 
@@ -73,7 +74,7 @@ proc ::constcl::symbol->string {obj} {
         } else {
             set str [MkString [$obj name]]
         }
-        $str make-constant
+        $str mkconstant
         return $str
     } else {
         error "SYMBOL expected\n(symbol->string [$obj show])"
@@ -83,7 +84,7 @@ CB
 
 TT(
 
-::tcltest::test symbols-1.1 {try symbol->string} -body {
+::tcltest::test symbols-1.1 {try symbol->string (and string->symbol)} -body {
     pep {(symbol->string 'flying-fish)}
     pep {(symbol->string 'Martin)}
     pep {(symbol->string (string->symbol "Malvina"))}

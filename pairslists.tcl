@@ -16,6 +16,7 @@ oo::class create Cons {
     }
     method truth {} {return #t}
     method numval {} {throw "Not a number"}
+    method value {} {my show}
     method car {} { set car }
     method cdr {} { set cdr }
     method set-car! {val} {

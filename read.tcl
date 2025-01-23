@@ -125,7 +125,13 @@ proc ::constcl::read-value {} {
             advance
             switch [first] {
                 ( {
-                    return [::constcl::read-vector]
+                    advance
+                    set p [::constcl::read-vector]
+                    if {[first] ne ")"} {
+                        error "Missing right parenthesis (first=[first])."
+                    }
+                    advance
+                    return $p
                 }
                 t {
                     advance
@@ -277,16 +283,19 @@ TT)
 
 CB
 proc ::constcl::character-check {name} {
-    regexp {^#\\([[:graph:]]|space|newline)$} $name
+    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
 }
 
 proc ::constcl::read-character {} {
     set name "#"
-    while {$::inputstr ne {} && ![::string is space [first]]} {
+    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
     if {[::constcl::character-check $name]} {
+        if {[regexp -nocase {^#\\(space|newline)$} $name]} {
+            set name [::string tolower $name]
+        }
         return [MkChar $name]
     } else {
         error "Invalid character constant $name"
@@ -297,7 +306,7 @@ CB
 TT(
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set ::inputstr "#\\A"
+    set ::inputstr {#\A}
     set obj [::constcl::read]
     $obj char
 } "A"
@@ -323,6 +332,20 @@ TT(
 TT)
 
 CB
+proc ::constcl::read-vector {} {
+    set res {}
+    skip-whitespace
+    while {$::inputstr ne {} && [first] ne ")"} {
+        lappend res [read]
+        skip-whitespace
+    }
+    set vec [MkVector $res]
+    $vec mkconstant
+    return $vec
+}
+CB
+
+CB
 proc ::constcl::read-string {} {
     set str {}
     advance
@@ -338,7 +361,9 @@ proc ::constcl::read-string {} {
         advance
     }
     advance
-    return [MkString $str]
+    set str [MkString $str]
+    $str mkconstant
+    return $str
 }
 CB
 

@@ -163,7 +163,13 @@ proc ::constcl::read-value {} {
             advance
             switch [first] {
                 ( {
-                    return [::constcl::read-vector]
+                    advance
+                    set p [::constcl::read-vector]
+                    if {[first] ne ")"} {
+                        error "Missing right parenthesis (first=[first])."
+                    }
+                    advance
+                    return $p
                 }
                 t {
                     advance
@@ -222,22 +228,37 @@ proc ::constcl::read-number {} {
 
 
 proc ::constcl::character-check {name} {
-    regexp {^#\\([[:graph:]]|space|newline)$} $name
+    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
 }
 
 proc ::constcl::read-character {} {
     set name "#"
-    while {$::inputstr ne {} && ![::string is space [first]]} {
+    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
     if {[::constcl::character-check $name]} {
+        if {[regexp -nocase {^#\\(space|newline)$} $name]} {
+            set name [::string tolower $name]
+        }
         return [MkChar $name]
     } else {
         error "Invalid character constant $name"
     }
 }
 
+
+proc ::constcl::read-vector {} {
+    set res {}
+    skip-whitespace
+    while {$::inputstr ne {} && [first] ne ")"} {
+        lappend res [read]
+        skip-whitespace
+    }
+    set vec [MkVector $res]
+    $vec mkconstant
+    return $vec
+}
 
 proc ::constcl::read-string {} {
     set str {}
@@ -254,7 +275,9 @@ proc ::constcl::read-string {} {
         advance
     }
     advance
-    return [MkString $str]
+    set str [MkString $str]
+    $str mkconstant
+    return $str
 }
 
 
@@ -1209,6 +1232,7 @@ oo::class create Cons {
     }
     method truth {} {return #t}
     method numval {} {throw "Not a number"}
+    method value {} {my show}
     method car {} { set car }
     method cdr {} { set cdr }
     method set-car! {val} {
@@ -1539,7 +1563,7 @@ oo::class create Symbol {
     method name {} {set name}
     method value {} {set name}
     method = {symname} {expr {$name eq $symname}}
-    method make-constant {} {}
+    method mkconstant {} {}
     method constant {} {return 1}
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
@@ -1581,7 +1605,7 @@ proc ::constcl::symbol->string {obj} {
         } else {
             set str [MkString [$obj name]]
         }
-        $str make-constant
+        $str mkconstant
         return $str
     } else {
         error "SYMBOL expected\n(symbol->string [$obj show])"
@@ -1622,35 +1646,35 @@ oo::class create Char {
         }
     }
     method alphabetic? {} {
-        if {[::string is alpha [$char char]]} {
+        if {[::string is alpha [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[::string is digit [$char char]]} {
+        if {[::string is digit [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[::string is space [$char char]]} {
+        if {[::string is space [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[::string is upper [$char char]]} {
+        if {[::string is upper [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[::string is lower [$char char]]} {
+        if {[::string is lower [my char]]} {
             return #t
         } else {
             return #f
@@ -1659,7 +1683,7 @@ oo::class create Char {
     method mkconstant {} {}
     method constant {} {return 1}
     method value {} {return $value}
-    method write {} { puts -nonewline "#\\$value" }
+    method write {} { puts -nonewline $value }
     method show {} {set value}
 }
 
@@ -1684,11 +1708,12 @@ proc ::constcl::char? {obj} {
     }
 }
 
+
 reg char=? ::constcl::char=?
 
 proc ::constcl::char=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[$c1 char] eq [$c2 char]} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
+        if {$c1 eq $c2} {
             return #t
         } else {
             return #f
@@ -1698,10 +1723,11 @@ proc ::constcl::char=? {c1 c2} {
     }
 }
 
+
 reg char<? ::constcl::char<?
 
 proc ::constcl::char<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] < [$c2 char]} {
             return #t
         } else {
@@ -1712,10 +1738,11 @@ proc ::constcl::char<? {c1 c2} {
     }
 }
 
+
 reg char>? ::constcl::char>?
 
 proc ::constcl::char>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] > [$c2 char]} {
             return #t
         } else {
@@ -1726,10 +1753,11 @@ proc ::constcl::char>? {c1 c2} {
     }
 }
 
+
 reg char<=? ::constcl::char<=?
 
 proc ::constcl::char<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] <= [$c2 char]} {
             return #t
         } else {
@@ -1740,10 +1768,11 @@ proc ::constcl::char<=? {c1 c2} {
     }
 }
 
+
 reg char>=? ::constcl::char>=?
 
 proc ::constcl::char>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
         if {[$c1 char] >= [$c2 char]} {
             return #t
         } else {
@@ -1754,11 +1783,12 @@ proc ::constcl::char>=? {c1 c2} {
     }
 }
 
+
 reg char-ci=? ::constcl::char-ci=?
 
 proc ::constcl::char-ci=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[string tolower [$c1 char]] eq [string tolower [$c2 char]]} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+        if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
             return #t
         } else {
             return #f
@@ -1768,11 +1798,12 @@ proc ::constcl::char-ci=? {c1 c2} {
     }
 }
 
+
 reg char-ci<? ::constcl::char-ci<?
 
 proc ::constcl::char-ci<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[string tolower [$c1 char]] < [string tolower [$c2 char]]} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+        if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
             return #t
         } else {
             return #f
@@ -1782,11 +1813,12 @@ proc ::constcl::char-ci<? {c1 c2} {
     }
 }
 
+
 reg char-ci>? ::constcl::char-ci>?
 
 proc ::constcl::char-ci>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[string tolower [$c1 char]] > [string tolower [$c2 char]]} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+        if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
             return #t
         } else {
             return #f
@@ -1796,11 +1828,12 @@ proc ::constcl::char-ci>? {c1 c2} {
     }
 }
 
+
 reg char-ci<=? ::constcl::char-ci<=?
 
 proc ::constcl::char-ci<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[string tolower [$c1 char]] <= [string tolower [$c2 char]]} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+        if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
             return #t
         } else {
             return #f
@@ -1810,11 +1843,12 @@ proc ::constcl::char-ci<=? {c1 c2} {
     }
 }
 
+
 reg char-ci>=? ::constcl::char-ci>=?
 
 proc ::constcl::char-ci>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "t" && [::constcl::char? $c2] eq "#t"} {
-        if {[string tolower [$c1 char]] >= [string tolower [$c2 char]]} {
+    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+        if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
             return #t
         } else {
             return #f
@@ -1823,6 +1857,7 @@ proc ::constcl::char-ci>=? {c1 c2} {
         error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
     }
 }
+
 
 reg char-alphabetic? ::constcl::char-alphabetic?
 
@@ -1834,6 +1869,7 @@ proc ::constcl::char-alphabetic? {char} {
     }
 }
 
+
 reg char-numeric? ::constcl::char-numeric?
 
 proc ::constcl::char-numeric? {char} {
@@ -1843,6 +1879,7 @@ proc ::constcl::char-numeric? {char} {
         error "CHAR expected\n(char-numeric? [$char show])"
     }
 }
+
 
 reg char-whitespace? ::constcl::char-whitespace?
 
@@ -1854,9 +1891,10 @@ proc ::constcl::char-whitespace? {char} {
     }
 }
 
+
 reg char-upper-case? ::constcl::char-upper-case?
 
-proc ::constcl::char-upper-case? {letter} {
+proc ::constcl::char-upper-case? {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char upper-case?]
     } else {
@@ -1864,15 +1902,17 @@ proc ::constcl::char-upper-case? {letter} {
     }
 }
 
+
 reg char-lower-case? ::constcl::char-lower-case?
 
-proc ::constcl::char-lower-case? {letter} {
+proc ::constcl::char-lower-case? {char} {
     if {[::constcl::char? $char] eq "#t"} {
         return [$char lower-case?]
     } else {
         error "CHAR expected\n(char-lower-case? [$char show])"
     }
 }
+
 
 proc ::constcl::char->integer {char} {
     # TODO
@@ -1886,22 +1926,32 @@ reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [MkChar [string toupper [$char char]]]
+        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+            return [MkChar [::string toupper [$char value]]]
+        } else {
+            return $char
+        }
     } else {
         error "CHAR expected\n(char-upcase [$char show])"
     }
 }
 
 
+
 reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
     if {[::constcl::char? $char] eq "#t"} {
-        return [MkChar [string tolower [$char char]]]
+        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+            return [MkChar [::string tolower [$char value]]]
+        } else {
+            return $char
+        }
     } else {
         error "CHAR expected\n(char-downcase [$char show])"
     }
 }
+
 
 
 
@@ -1913,20 +1963,28 @@ oo::class create String {
         set constant 0
     }
     method index {} {set s}
-    method = {str} {string equal [my value] $str}
-    method length {} {string length [my value]}
-    method ref {i} {string index [my value] $i}
+    method = {str} {::string equal [my value] $str}
+    method length {} {::string length [my value]}
+    method ref {i} {::string index [my value] $i}
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [my value]
-            set value [::string replace $value $k $k [$c value]
+            set value [::string replace [my value] $k $k $c]
             set s [find-string-index $value]
         }
     }
+    method fill! {c} {
+        if {[my constant]} {
+            error "string is constant"
+        } else {
+            set value [::string replace [my value] 0 end [::string repeat $c [::string length [my value]]]]
+            set s [find-string-index $value]
+        }
+    }
+    method substring {from to} {::string range [my value] $from $to}
     method value {} {return [lindex $::StrSto $s]}
-    method make-constant {} {set constant 1}
+    method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
     method show {} {format "\"[my value]\""}
@@ -1963,11 +2021,19 @@ proc ::constcl::string? {obj} {
     }
 }
 
+
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        lassign $args k
+        return [MkString [::string repeat " " [$k value]]]
+    } else {
+        lassign $args k c
+        return [MkString [::string repeat [$c char] [$k value]]]
+    }
 }
+
 
 reg string ::constcl::string
 
@@ -1975,7 +2041,7 @@ proc ::constcl::string {args} {
     set str {}
     foreach char $args {
         if {[::constcl::char? $char] eq "#t"} {
-            append str [$char char]
+            ::append str [$char char]
         } else {
             error "CHAR expected\n(string [$char show])"
         }
@@ -1983,15 +2049,17 @@ proc ::constcl::string {args} {
     return [MkString $str]
 }
 
+
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    if {[::constcl::str? $String] eq "#t"} {
+    if {[::constcl::string? $str] eq "#t"} {
         return [MkNumber [$str length]]
     } else {
         error "STRING expected\n(string-length [$str show])"
     }
 }
+
 
 reg string-ref ::constcl::string-ref
 
@@ -2002,11 +2070,12 @@ proc ::constcl::string-ref {str k} {
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
-        return [$str ref $i]
+        return [MkChar "#\\[$str ref $i]"]
     } else {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
 }
+
 
 reg string-set! ::constcl::string-set!
 
@@ -2018,7 +2087,8 @@ proc ::constcl::string-set! {str k char} {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
         if {[::constcl::char? $char] eq "#t"} {
-            return [$str set! [$i value] [$char char]]
+            $str set! $i [$char char]
+            return $str
         } else {
             error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
         }
@@ -2027,10 +2097,11 @@ proc ::constcl::string-set! {str k char} {
     }
 }
 
+
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] eq [$s2 value]} {
             return #t
         } else {
@@ -2041,11 +2112,12 @@ proc ::constcl::string=? {s1 s2} {
     }
 }
 
+
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] eq [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] eq [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -2055,10 +2127,11 @@ proc ::constcl::string-ci=? {s1 s2} {
     }
 }
 
+
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] < [$s2 value]} {
             return #t
         } else {
@@ -2069,11 +2142,12 @@ proc ::constcl::string<? {s1 s2} {
     }
 }
 
+
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] < [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] < [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -2083,10 +2157,11 @@ proc ::constcl::string-ci<? {s1 s2} {
     }
 }
 
+
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] > [$s2 value]} {
             return #t
         } else {
@@ -2097,11 +2172,12 @@ proc ::constcl::string>? {s1 s2} {
     }
 }
 
+
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] > [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] > [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -2111,10 +2187,11 @@ proc ::constcl::string-ci>? {s1 s2} {
     }
 }
 
+
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] <= [$s2 value]} {
             return #t
         } else {
@@ -2125,11 +2202,12 @@ proc ::constcl::string<=? {s1 s2} {
     }
 }
 
+
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] <= [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] <= [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -2139,10 +2217,11 @@ proc ::constcl::string-ci<=? {s1 s2} {
     }
 }
 
+
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] >= [$s2 value]} {
             return #t
         } else {
@@ -2153,11 +2232,12 @@ proc ::constcl::string>=? {s1 s2} {
     }
 }
 
+
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] >= [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] >= [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -2167,11 +2247,12 @@ proc ::constcl::string-ci>=? {s1 s2} {
     }
 }
 
+
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    if {[::constcl::string? $str] eq "t"} {
-        if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
+    if {[::constcl::string? $str] eq "#t"} {
+        if {[::constcl::number? $start] eq "#t" && [::constcl::number? $end] eq "#t"} {
             return [MkString [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
@@ -2181,23 +2262,27 @@ proc ::constcl::substring {str start end} {
     }
 }
 
+
 reg string-append ::constcl::string-append
 
 proc ::constcl::string-append {args} {
-    # TODO
+    MkString [::append --> {*}[lmap arg $args {$arg value}]]
 }
+
 
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    # TODO
+    list {*}[lmap c [split [$str value] {}] {MkChar "#\\$c"}]
 }
+
 
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
-    # TODO
+    MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
+
 
 reg string-copy ::constcl::string-copy
 
@@ -2209,11 +2294,13 @@ proc ::constcl::string-copy {str} {
     }
 }
 
+
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [MkString [$str fill [$char value]]]
+        $str fill! [$char char]
+        return $str
     } else {
         error "STRING expected\n(string-fill [$str show] [$char show])"
     }
@@ -2221,22 +2308,26 @@ proc ::constcl::string-fill! {str char} {
 
 
 
+
 oo::class create Vector {
     superclass NIL
-    variable value
+    variable value constant
     constructor {v} {
         set value $v
+        set constant 0
     }
-    method length {} {string length $value}
-    method ref {i} {string index $value $i}
-    method value {} {return $value}
-    method write {} {puts -nonewline #($value)}
-    method show {} {return #($value)}
+    method length {} {llength $value}
+    method ref {i} {lindex $value $i}
+    method value {} {lmap val $value {$val value}}
+    method mkconstant {} {set constant 1}
+    method constant {} {set constant}
+    method write {} {puts -nonewline [my show]}
+    method show {} {return #([lmap val $value {$val show}])}
 }
 
 proc ::constcl::MkVector {v} {
     foreach instance [info class instances Vector] {
-        if {[$instance value] eq $v} {
+        if {$instance eq $v} {
             return $instance
         }
     }
@@ -2255,17 +2346,25 @@ proc ::constcl::vector? {obj} {
     }
 }
 
+
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        lassign $args k
+        set fill #NIL
+    } else {
+        lassign $args k fill
+    }
+    MkVector [lrepeat [$k value] $fill]
 }
 
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
-    # TODO
+    MkVector $args
 }
+
 
 reg vector-length ::constcl::vector-length
 

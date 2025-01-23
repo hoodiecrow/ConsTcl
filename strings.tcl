@@ -12,20 +12,28 @@ oo::class create String {
         set constant 0
     }
     method index {} {set s}
-    method = {str} {string equal [my value] $str}
-    method length {} {string length [my value]}
-    method ref {i} {string index [my value] $i}
+    method = {str} {::string equal [my value] $str}
+    method length {} {::string length [my value]}
+    method ref {i} {::string index [my value] $i}
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [my value]
-            set value [::string replace $value $k $k [$c value]
+            set value [::string replace [my value] $k $k $c]
             set s [find-string-index $value]
         }
     }
+    method fill! {c} {
+        if {[my constant]} {
+            error "string is constant"
+        } else {
+            set value [::string replace [my value] 0 end [::string repeat $c [::string length [my value]]]]
+            set s [find-string-index $value]
+        }
+    }
+    method substring {from to} {::string range [my value] $from $to}
     method value {} {return [lindex $::StrSto $s]}
-    method make-constant {} {set constant 1}
+    method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
     method show {} {format "\"[my value]\""}
@@ -67,13 +75,36 @@ proc ::constcl::string? {obj} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.0 {try string?} -body {
+    pep {(string? "foo bar")}
+    pep {(string? 'foo-bar)}
+} -output "#t\n#f\n"
+
+TT)
+
 CB
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {args} {
-    # TODO
+    if {[llength $args] == 1} {
+        lassign $args k
+        return [MkString [::string repeat " " [$k value]]]
+    } else {
+        lassign $args k c
+        return [MkString [::string repeat [$c char] [$k value]]]
+    }
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.1 {try make-string} -body {
+    pep {(make-string 5 #\x)}
+} -output "\"xxxxx\"\n"
+
+TT)
 
 CB
 reg string ::constcl::string
@@ -82,7 +113,7 @@ proc ::constcl::string {args} {
     set str {}
     foreach char $args {
         if {[::constcl::char? $char] eq "#t"} {
-            append str [$char char]
+            ::append str [$char char]
         } else {
             error "CHAR expected\n(string [$char show])"
         }
@@ -91,17 +122,33 @@ proc ::constcl::string {args} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.2 {try string} -body {
+    pep {(string #\f #\o #\o)}
+} -output "\"foo\"\n"
+
+TT)
+
 CB
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    if {[::constcl::str? $String] eq "#t"} {
+    if {[::constcl::string? $str] eq "#t"} {
         return [MkNumber [$str length]]
     } else {
         error "STRING expected\n(string-length [$str show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.3 {try string-length} -body {
+    pep {(string-length "foo bar")}
+} -output "7\n"
+
+TT)
 
 CB
 reg string-ref ::constcl::string-ref
@@ -113,12 +160,20 @@ proc ::constcl::string-ref {str k} {
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
-        return [$str ref $i]
+        return [MkChar "#\\[$str ref $i]"]
     } else {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.4 {try string-ref} -body {
+    pep {(string-ref "foo bar" 4)}
+} -output "#\\b\n"
+
+TT)
 
 CB
 reg string-set! ::constcl::string-set!
@@ -131,7 +186,8 @@ proc ::constcl::string-set! {str k char} {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
         if {[::constcl::char? $char] eq "#t"} {
-            return [$str set! [$i value] [$char char]]
+            $str set! $i [$char char]
+            return $str
         } else {
             error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
         }
@@ -141,11 +197,29 @@ proc ::constcl::string-set! {str k char} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.5 {try string-set!} -body {
+    pep {(string-set! (string #\f #\o #\o) 0 #\x)}
+} -output "\"xoo\"\n"
+
+::tcltest::test strings-1.6 {try string-set!} -body {
+    pep {(define f (lambda () (make-string 3 #\*)))}
+    pep {(define g (lambda () "***"))}
+    pep {(string-set! (f) 0 #\?)}
+} -output "()\n()\n\"?**\"\n"
+
+::tcltest::test strings-1.7 {try string-set!} -body {
+    pep {(string-set! (g) 0 #\?)}
+} -returnCodes error -result "string is constant"
+
+TT)
+
 CB
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] eq [$s2 value]} {
             return #t
         } else {
@@ -157,12 +231,22 @@ proc ::constcl::string=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.8 {try string=?} -body {
+    pep {(string=? "foo bar" "faa bor")}
+    pep {(string=? "foo bar" "foo bar")}
+    pep {(string=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#f\n"
+
+TT)
+
 CB
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] eq [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] eq [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -173,11 +257,21 @@ proc ::constcl::string-ci=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.9 {try string-ci=?} -body {
+    pep {(string-ci=? "foo bar" "faa bor")}
+    pep {(string-ci=? "foo bar" "foo bar")}
+    pep {(string-ci=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#t\n"
+
+TT)
+
 CB
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] < [$s2 value]} {
             return #t
         } else {
@@ -189,12 +283,22 @@ proc ::constcl::string<? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.10 {try string<?} -body {
+    pep {(string<? "bar" "car")}
+    pep {(string<? "bar" "bar")}
+    pep {(string<? "bar" "aar")}
+} -output "#t\n#f\n#f\n"
+
+TT)
+
 CB
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] < [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] < [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -205,11 +309,21 @@ proc ::constcl::string-ci<? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.11 {try string-ci<?} -body {
+    pep {(string-ci<? "bar" "Car")}
+    pep {(string-ci<? "bar" "Bar")}
+    pep {(string-ci<? "bar" "Aar")}
+} -output "#t\n#f\n#f\n"
+
+TT)
+
 CB
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] > [$s2 value]} {
             return #t
         } else {
@@ -221,12 +335,22 @@ proc ::constcl::string>? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.12 {try string>?} -body {
+    pep {(string>? "bar" "car")}
+    pep {(string>? "bar" "bar")}
+    pep {(string>? "bar" "aar")}
+} -output "#f\n#f\n#t\n"
+
+TT)
+
 CB
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] > [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] > [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -237,11 +361,21 @@ proc ::constcl::string-ci>? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.13 {try string-ci>?} -body {
+    pep {(string-ci>? "bar" "Car")}
+    pep {(string-ci>? "bar" "Bar")}
+    pep {(string-ci>? "bar" "Aar")}
+} -output "#f\n#f\n#t\n"
+
+TT)
+
 CB
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] <= [$s2 value]} {
             return #t
         } else {
@@ -253,12 +387,22 @@ proc ::constcl::string<=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.14 {try string<=?} -body {
+    pep {(string<=? "bar" "car")}
+    pep {(string<=? "bar" "bar")}
+    pep {(string<=? "bar" "aar")}
+} -output "#t\n#t\n#f\n"
+
+TT)
+
 CB
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] <= [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] <= [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -269,11 +413,21 @@ proc ::constcl::string-ci<=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.15 {try string-ci<=?} -body {
+    pep {(string-ci<=? "bar" "Car")}
+    pep {(string-ci<=? "bar" "Bar")}
+    pep {(string-ci<=? "bar" "Aar")}
+} -output "#t\n#t\n#f\n"
+
+TT)
+
 CB
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
         if {[$s1 value] >= [$s2 value]} {
             return #t
         } else {
@@ -285,12 +439,22 @@ proc ::constcl::string>=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.16 {try string>=?} -body {
+    pep {(string>=? "bar" "car")}
+    pep {(string>=? "bar" "bar")}
+    pep {(string>=? "bar" "aar")}
+} -output "#f\n#t\n#t\n"
+
+TT)
+
 CB
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "t" && [::constcl::string? $s2] eq "#t"} {
-        if {[string tolower [$s1 value]] >= [string tolower [$s2 value]]} {
+    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
+        if {[::string tolower [$s1 value]] >= [::string tolower [$s2 value]]} {
             return #t
         } else {
             return #f
@@ -301,12 +465,22 @@ proc ::constcl::string-ci>=? {s1 s2} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.17 {try string-ci>=?} -body {
+    pep {(string-ci>=? "bar" "Car")}
+    pep {(string-ci>=? "bar" "Bar")}
+    pep {(string-ci>=? "bar" "Aar")}
+} -output "#f\n#t\n#t\n"
+
+TT)
+
 CB
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    if {[::constcl::string? $str] eq "t"} {
-        if {[::constcl::number? $start] eq "t" && [::constcl::number? $end] eq "t"} {
+    if {[::constcl::string? $str] eq "#t"} {
+        if {[::constcl::number? $start] eq "#t" && [::constcl::number? $end] eq "#t"} {
             return [MkString [$str substring [$start value] [$end value]]]
         } else {
             error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
@@ -317,29 +491,61 @@ proc ::constcl::substring {str start end} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.18 {try substring} -body {
+    pep {(substring "foo bar" 0 2)}
+} -output "\"foo\"\n"
+
+TT)
+
 CB
 reg string-append ::constcl::string-append
 
 proc ::constcl::string-append {args} {
-    # TODO
+    MkString [::append --> {*}[lmap arg $args {$arg value}]]
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.19 {try string-append} -body {
+    pep {(string-append "foo" " bar")}
+} -output "\"foo bar\"\n"
+
+TT)
 
 CB
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    # TODO
+    list {*}[lmap c [split [$str value] {}] {MkChar "#\\$c"}]
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.20 {try string->list} -body {
+    pep {(string->list "foo")}
+} -output "(#\\f #\\o #\\o)\n"
+
+TT)
 
 CB
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
-    # TODO
+    MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.21 {try list->string} -body {
+    pep {(list->string '(#\f #\o #\o))}
+} -output "\"foo\"\n"
+
+TT)
 
 CB
 reg string-copy ::constcl::string-copy
@@ -353,15 +559,34 @@ proc ::constcl::string-copy {str} {
 }
 CB
 
+TT(
+
+::tcltest::test strings-1.22 {try string-copy} -body {
+    pep {(define x (string-copy "foo"))}
+    pep {(string-set! x 0 #\x)}
+} -output "()\n\"xoo\"\n"
+
+TT)
+
 CB
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
     if {[::constcl::string? $str] eq "#t"} {
-        return [MkString [$str fill [$char value]]]
+        $str fill! [$char char]
+        return $str
     } else {
         error "STRING expected\n(string-fill [$str show] [$char show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test strings-1.23 {try string-fill!} -body {
+    pep {(define x (string-copy "foo"))}
+    pep {(string-fill! x #\x)}
+} -output "()\n\"xxx\"\n"
+
+TT)
 
