@@ -1461,8 +1461,34 @@ oo::class create Cons {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
-    method show {} {format "(%s . %s)" [my car] [my cdr]}
+    method show {} {format "(%s)" [::constcl::show-pair [self]]}
 }
+
+
+```
+proc ::constcl::show-pair {obj} {
+    # take an object and print the car and the cdr of the stored value
+    set str {}
+    set a [car $obj]
+    set d [cdr $obj]
+    # print car
+    ::append str [$a show]
+    if {[pair? $d] eq "#t"} {
+        # cdr is a cons pair
+        ::append str " "
+        ::append str [show-pair $d]
+    } elseif {$d eq "#NIL"} {
+        # cdr is nil
+        return $str
+    } else {
+        # it is an atom
+        ::append str " . "
+        ::append str [$d show]
+    }
+    return $str
+}
+```
+
 
 proc ::constcl::MkCons {a d} {
     return [Cons create Mem[incr ::M] $a $d]
@@ -2672,10 +2698,17 @@ oo::class create Vector {
     method length {} {llength $value}
     method ref {i} {lindex $value $i}
     method value {} {lmap val $value {$val value}}
+    method set! {i obj} {
+        if {[my constant]} {
+            error "vector is constant"
+        } else {
+            set value [::lreplace [my value] $i $i $obj]
+        }
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
-    method write {} {puts -nonewline [my show]}
-    method show {} {return #([lmap val $value {$val show}])}
+    method write {} {puts -nonewline #([lmap val [my value] {$val show}])}
+    method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
 proc ::constcl::MkVector {v} {
@@ -2731,12 +2764,13 @@ reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        return [MkNumber [$str length]]]
+        return [MkNumber [$vec length]]
     } else {
         error "VECTOR expected\n(vector-length [$vec show])"
     }
 }
 ```
+
 
 ```
 reg vector-ref ::constcl::vector-ref
@@ -2744,7 +2778,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     if {[::constcl::vector? $vec] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            return [$str ref $k]]
+            return [$vec ref [$k value]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
         }
@@ -2755,13 +2789,14 @@ proc ::constcl::vector-ref {vec k} {
 ```
 
 
+
 ```
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k obj} {
     if {[::constcl::vector? $vec] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            return [$str set! $k $obj]]
+            return [$vec set! [$k value] $obj]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
         }
@@ -2770,6 +2805,7 @@ proc ::constcl::vector-set! {vec k obj} {
     }
 }
 ```
+
 
 ```
 reg vector->list ::constcl::vector->list

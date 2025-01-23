@@ -14,10 +14,17 @@ oo::class create Vector {
     method length {} {llength $value}
     method ref {i} {lindex $value $i}
     method value {} {lmap val $value {$val value}}
+    method set! {i obj} {
+        if {[my constant]} {
+            error "vector is constant"
+        } else {
+            set value [::lreplace [my value] $i $i $obj]
+        }
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
-    method write {} {puts -nonewline [my show]}
-    method show {} {return #([lmap val $value {$val show}])}
+    method write {} {puts -nonewline #([lmap val [my value] {$val show}])}
+    method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
 proc ::constcl::MkVector {v} {
@@ -90,12 +97,20 @@ reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
     if {[::constcl::vector? $vec] eq "#t"} {
-        return [MkNumber [$str length]]]
+        return [MkNumber [$vec length]]
     } else {
         error "VECTOR expected\n(vector-length [$vec show])"
     }
 }
 CB
+
+TT(
+
+::tcltest::test vectors-1.2 {try vector-length} -body {
+    pep {(vector-length (vector 'a 'b 'c))}
+} -output "3\n"
+
+TT)
 
 CB
 reg vector-ref ::constcl::vector-ref
@@ -103,7 +118,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     if {[::constcl::vector? $vec] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            return [$str ref $k]]
+            return [$vec ref [$k value]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
         }
@@ -113,6 +128,14 @@ proc ::constcl::vector-ref {vec k} {
 }
 CB
 
+TT(
+
+::tcltest::test vectors-1.3 {try vector-ref} -body {
+    pep {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+TT)
+
 
 CB
 reg vector-set! ::constcl::vector-set!
@@ -120,7 +143,7 @@ reg vector-set! ::constcl::vector-set!
 proc ::constcl::vector-set! {vec k obj} {
     if {[::constcl::vector? $vec] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            return [$str set! $k $obj]]
+            return [$vec set! [$k value] $obj]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
         }
@@ -129,6 +152,15 @@ proc ::constcl::vector-set! {vec k obj} {
     }
 }
 CB
+
+TT(
+
+::tcltest::test vectors-1.4 {try vector-set!} -body {
+    pep {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pep {(vector-set! (x) 1 '(foo bar))}
+} -output "()x\n"
+
+TT)
 
 CB
 reg vector->list ::constcl::vector->list

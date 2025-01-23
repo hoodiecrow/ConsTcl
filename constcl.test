@@ -1038,6 +1038,25 @@ source constcl.tcl
 
 
 
+::tcltest::test vectors-1.2 {try vector-length} -body {
+    pep {(vector-length (vector 'a 'b 'c))}
+} -output "3\n"
+
+
+
+::tcltest::test vectors-1.3 {try vector-ref} -body {
+    pep {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+
+
+::tcltest::test vectors-1.4 {try vector-set!} -body {
+    pep {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pep {(vector-set! (x) 1 '(foo bar))}
+} -output "()x\n"
+
+
+
 ::tcltest::test eval-1.0 {try eval:ing an unbound symbol} -body {
     set ::inputstr "foo"
     ::constcl::eval [::constcl::read]

@@ -40,8 +40,34 @@ oo::class create Cons {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
-    method show {} {format "(%s . %s)" [my car] [my cdr]}
+    method show {} {format "(%s)" [::constcl::show-pair [self]]}
 }
+
+
+CB
+proc ::constcl::show-pair {obj} {
+    # take an object and print the car and the cdr of the stored value
+    set str {}
+    set a [car $obj]
+    set d [cdr $obj]
+    # print car
+    ::append str [$a show]
+    if {[pair? $d] eq "#t"} {
+        # cdr is a cons pair
+        ::append str " "
+        ::append str [show-pair $d]
+    } elseif {$d eq "#NIL"} {
+        # cdr is nil
+        return $str
+    } else {
+        # it is an atom
+        ::append str " . "
+        ::append str [$d show]
+    }
+    return $str
+}
+CB
+
 
 proc ::constcl::MkCons {a d} {
     return [Cons create Mem[incr ::M] $a $d]
