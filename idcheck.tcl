@@ -39,6 +39,7 @@ proc ::constcl::varcheck {sym} {
         cond and or case let let* letrec do delay quasiquote}} {
             error "Macro name can't be used as a variable: $sym"
     }
+    return $sym
 }
 CB
 

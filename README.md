@@ -429,7 +429,7 @@ proc ::constcl::read-pair {c} {
     } else {
         lappend res $a
         while {![find-char $c]} {
-            if {[llength $res] > 4} break
+            if {[llength $res] > 99} break
             set p [read]
             skip-whitespace
             lappend res $p
@@ -535,6 +535,7 @@ proc ::constcl::varcheck {sym} {
         cond and or case let let* letrec do delay quasiquote}} {
             error "Macro name can't be used as a variable: $sym"
     }
+    return $sym
 }
 ```
 
@@ -860,7 +861,7 @@ proc ::constcl::+ {args} {
             if {[::constcl::number? $obj] eq "#t"} {
                 $num incr [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(+ [$obj show])"
             }
         }
         return $num
@@ -877,23 +878,23 @@ proc ::constcl::* {args} {
         return #1
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
+        if {[number? $obj] eq "#t"} {
             return $obj
         } else {
-            error "NUMBER expected\n(+ [$obj show])"
+            error "NUMBER expected\n(* [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
+        if {[number? $obj] eq "#t"} {
             set num [MkNumber [$obj value]]
         } else {
-            error "NUMBER expected\n(+ [$obj show])"
+            error "NUMBER expected\n(* [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
+            if {[number? $obj] eq "#t"} {
                 $num mult [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(* [$obj show])"
             }
         }
         return $num
@@ -946,20 +947,20 @@ proc ::constcl::/ {args} {
         if {[::constcl::number? $obj] eq "#t"} {
             return [MkNumber [expr {1 / [$obj value]}]]
         } else {
-            error "NUMBER expected\n(- [$obj show])"
+            error "NUMBER expected\n(/ [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
             set num [MkNumber [$obj value]]
         } else {
-            error "NUMBER expected\n(- [$obj show])"
+            error "NUMBER expected\n(/ [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[::constcl::number? $obj] eq "#t"} {
                 $num div [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(/ [$obj show])"
             }
         }
         return $num
@@ -2867,10 +2868,10 @@ oo::class create Procedure {
     method value {} {
         set value
     }
-    method write {} { puts -nonewline Procedure[self] }
+    method write {} { puts -nonewline [self] }
     method call {args} {
         if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure"
+            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
         }
         ::constcl::eval $body [Environment new $parms $args $env]
     }
@@ -2879,7 +2880,7 @@ oo::class create Procedure {
 ```
 
 ```
-proc MkProcedure {parms body env} {
+proc ::constcl::MkProcedure {parms body env} {
     Procedure create Mem[incr ::M] $parms $body $env
 }
 ```
@@ -2924,7 +2925,7 @@ reg map ::constcl::map
 proc ::constcl::map {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+            $proc call ;# TODO
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }
@@ -2940,7 +2941,7 @@ reg for-each ::constcl::for-each
 proc ::constcl::for-each {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+            $proc call ;# TODO
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }
@@ -3003,9 +3004,9 @@ proc ::constcl::eval {e {env ::global_env}} {
             }
             if {
                 if {[eval [cadr $e] $env] ne "#f"} {
-                    return [eval [caddr $e] $env]]
+                    return [eval [caddr $e] $env]
                 } else {
-                    return [eval [cadddr $e] $env]]
+                    return [eval [cadddr $e] $env]
                 }
             }
             begin {
@@ -3015,7 +3016,7 @@ proc ::constcl::eval {e {env ::global_env}} {
                 declare [cadr $e] [eval [caddr $e] $env] $env
             }
             set! {
-                return [update! [cadr $e] $env [eval [caddr $e] $env]]
+                return [update! [cadr $e] [eval [caddr $e] $env] $env]
             }
             lambda {
                 return [make-function [cadr $e] [cddr $e] $env]
@@ -3052,8 +3053,17 @@ proc ::constcl::eprogn {exps env} {
 
 ```
 proc ::constcl::declare {sym val env} {
+    set var [varcheck [idcheck [$sym name]]]
     $env set [$sym name] $val
     return #NIL
+}
+```
+
+```
+proc ::constcl::update! {var expr env} {
+    set var [varcheck [idcheck [$var name]]]
+    [$env find $var] set $var $expr
+    set expr
 }
 ```
 
@@ -3070,10 +3080,10 @@ proc ::constcl::evlis {exps env} {
 ```
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        if {[::string match "::constcl::*" $pr]} {
-            $pr {*}[splitlist $vals]
-        } else {
+        if {[::string match "::constcl::Mem*" $pr]} {
             $pr call {*}[splitlist $vals]
+        } else {
+            $pr {*}[splitlist $vals]
         }
     } else {
         error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
@@ -3098,7 +3108,8 @@ proc ::constcl::splitlist {vals} {
 ```
 proc ::constcl::make-function {formals exps env} {
     set parms [splitlist $formals]
-    set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    #set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    set body [cons [MkSymbol begin] $exps]
     return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 ```
@@ -3310,7 +3321,7 @@ interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
 dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
 ```
 
-
+```
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {obj} {
@@ -3320,6 +3331,9 @@ proc ::constcl::atom? {obj} {
         return #f
     }
 }
+```
+
+
 
 
 ### Environment class and objects

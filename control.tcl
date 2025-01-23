@@ -17,10 +17,10 @@ oo::class create Procedure {
     method value {} {
         set value
     }
-    method write {} { puts -nonewline Procedure[self] }
+    method write {} { puts -nonewline [self] }
     method call {args} {
         if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure"
+            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
         }
         ::constcl::eval $body [Environment new $parms $args $env]
     }
@@ -29,7 +29,7 @@ oo::class create Procedure {
 CB
 
 CB
-proc MkProcedure {parms body env} {
+proc ::constcl::MkProcedure {parms body env} {
     Procedure create Mem[incr ::M] $parms $body $env
 }
 CB
@@ -95,7 +95,7 @@ reg map ::constcl::map
 proc ::constcl::map {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+            $proc call ;# TODO
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }
@@ -111,7 +111,7 @@ reg for-each ::constcl::for-each
 proc ::constcl::for-each {proc args} {
     if {[::constcl::procedure? $proc] eq "#t"} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call # TODO
+            $proc call ;# TODO
         } else {
             error "LIST expected\n(apply [$proc write] ...)"
         }

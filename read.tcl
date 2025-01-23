@@ -483,7 +483,7 @@ proc ::constcl::read-pair {c} {
     } else {
         lappend res $a
         while {![find-char $c]} {
-            if {[llength $res] > 4} break
+            if {[llength $res] > 99} break
             set p [read]
             skip-whitespace
             lappend res $p

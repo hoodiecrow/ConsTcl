@@ -412,7 +412,7 @@ proc ::constcl::+ {args} {
             if {[::constcl::number? $obj] eq "#t"} {
                 $num incr [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(+ [$obj show])"
             }
         }
         return $num
@@ -439,23 +439,23 @@ proc ::constcl::* {args} {
         return #1
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
+        if {[number? $obj] eq "#t"} {
             return $obj
         } else {
-            error "NUMBER expected\n(+ [$obj show])"
+            error "NUMBER expected\n(* [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
+        if {[number? $obj] eq "#t"} {
             set num [MkNumber [$obj value]]
         } else {
-            error "NUMBER expected\n(+ [$obj show])"
+            error "NUMBER expected\n(* [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
+            if {[number? $obj] eq "#t"} {
                 $num mult [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(* [$obj show])"
             }
         }
         return $num
@@ -528,20 +528,20 @@ proc ::constcl::/ {args} {
         if {[::constcl::number? $obj] eq "#t"} {
             return [MkNumber [expr {1 / [$obj value]}]]
         } else {
-            error "NUMBER expected\n(- [$obj show])"
+            error "NUMBER expected\n(/ [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
             set num [MkNumber [$obj value]]
         } else {
-            error "NUMBER expected\n(- [$obj show])"
+            error "NUMBER expected\n(/ [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[::constcl::number? $obj] eq "#t"} {
                 $num div [$obj value]
             } else {
-                error "NUMBER expected\n(- [$obj show])"
+                error "NUMBER expected\n(/ [$obj show])"
             }
         }
         return $num

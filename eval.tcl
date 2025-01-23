@@ -23,9 +23,9 @@ proc ::constcl::eval {e {env ::global_env}} {
             }
             if {
                 if {[eval [cadr $e] $env] ne "#f"} {
-                    return [eval [caddr $e] $env]]
+                    return [eval [caddr $e] $env]
                 } else {
-                    return [eval [cadddr $e] $env]]
+                    return [eval [cadddr $e] $env]
                 }
             }
             begin {
@@ -35,7 +35,7 @@ proc ::constcl::eval {e {env ::global_env}} {
                 declare [cadr $e] [eval [caddr $e] $env] $env
             }
             set! {
-                return [update! [cadr $e] $env [eval [caddr $e] $env]]
+                return [update! [cadr $e] [eval [caddr $e] $env] $env]
             }
             lambda {
                 return [make-function [cadr $e] [cddr $e] $env]
@@ -72,8 +72,17 @@ CB
 
 CB
 proc ::constcl::declare {sym val env} {
+    set var [varcheck [idcheck [$sym name]]]
     $env set [$sym name] $val
     return #NIL
+}
+CB
+
+CB
+proc ::constcl::update! {var expr env} {
+    set var [varcheck [idcheck [$var name]]]
+    [$env find $var] set $var $expr
+    set expr
 }
 CB
 
@@ -90,10 +99,10 @@ CB
 CB
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        if {[::string match "::constcl::*" $pr]} {
-            $pr {*}[splitlist $vals]
-        } else {
+        if {[::string match "::constcl::Mem*" $pr]} {
             $pr call {*}[splitlist $vals]
+        } else {
+            $pr {*}[splitlist $vals]
         }
     } else {
         error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
@@ -118,7 +127,8 @@ CB
 CB
 proc ::constcl::make-function {formals exps env} {
     set parms [splitlist $formals]
-    set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    #set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    set body [cons [MkSymbol begin] $exps]
     return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 CB
