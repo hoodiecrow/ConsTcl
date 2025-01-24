@@ -98,9 +98,7 @@ oo::class create NIL {
 reg null? ::constcl::null?
 
 proc ::constcl::null? {obj} {
-    if {$obj eq "::constcl::Mem0"} {
-        return #t
-    } elseif {[interp alias {} $obj] eq "::constcl::Mem0"} {
+    if {$obj eq "#NIL"} {
         return #t
     } else {
         return #f
@@ -617,6 +615,9 @@ proc ::constcl::write-pair {obj} {
 ```
 
 
+## Built-in procedures
+
+###Equivalence predicates
 
 ```
 reg eq? ::constcl::eq?
@@ -688,7 +689,8 @@ proc ::constcl::equal? {obj1 obj2} {
 ```
 
 
-## Numbers
+### Numbers
+
 
 ```
 oo::class create Number {
@@ -715,9 +717,7 @@ oo::class create Number {
     method show {} { set value }
 }
 
-proc ::constcl::MkNumber {v} {
-    return [Number create Mem[incr ::M] $v]
-}
+interp alias {} ::constcl::MkNumber {} Number new
 ```
 
 ```
@@ -1471,7 +1471,7 @@ proc frombase {base number} {
 
 
 
-## Booleans
+### Booleans
 
 ```
 oo::class create Boolean {
@@ -1496,7 +1496,7 @@ proc ::constcl::MkBoolean {v} {
             return $instance
         }
     }
-    return [Boolean create Mem[incr ::M] $v]
+    return [Boolean new $v]
 }
 ```
 
@@ -1531,7 +1531,7 @@ proc ::constcl::not {obj} {
 
 
 
-## Pairs and lists
+### Pairs and lists
 
 ```
 catch { Pair destroy }
@@ -1599,10 +1599,7 @@ proc ::constcl::show-pair {obj} {
 }
 ```
 
-
-proc ::constcl::MkPair {a d} {
-    return [Pair create Mem[incr ::M] $a $d]
-}
+interp alias {} ::constcl::MkPair {} Pair new
 ```
 
 ```
@@ -1928,7 +1925,7 @@ proc ::constcl::MkSymbol {n} {
             return $instance
         }
     }
-    return [Symbol create Mem[incr ::M] $n]
+    return [Symbol new $n]
 }
 ```
 
@@ -1992,13 +1989,15 @@ oo::class create Char {
         set value $v
     }
     method char {} {
-        if {[regexp {^#\\[[:graph:]]$} [my value]]} {
-            return [::string index [my value] 2]
-        } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
-            # TODO
-            switch $char_name {
-                space {return " "}
-                newline {return "\n"}
+        switch $value {
+            "#\\space" {
+                return " "
+            }
+            "#\\newline" {
+                return "\n"
+            }
+            default {
+                return [::string index [my value] 2]
             }
         }
     }
@@ -2050,7 +2049,7 @@ proc ::constcl::MkChar {v} {
             return $instance
         }
     }
-    return [Char create Mem[incr ::M] $v]
+    return [Char new $v]
 }
 ```
 
@@ -2392,9 +2391,11 @@ oo::class create String {
     method show {} {format "\"[my value]\""}
 }
 
-proc ::constcl::MkString {v} {
+proc ::constcl::__MkString {v} {
     return [String create Mem[incr ::M] $v]
 }
+
+interp alias {} MkString {} String new
 ```
 
 ```
@@ -2798,7 +2799,7 @@ proc ::constcl::MkVector {v} {
             return $instance
         }
     }
-    return [Vector create Mem[incr ::M] $v]
+    return [Vector new $v]
 }
 ```
 
@@ -2920,7 +2921,7 @@ proc ::constcl::vector-fill! {vec fill} {
 
 
 
-## Control
+### Control
 
 ```
 catch { Procedure destroy }
@@ -2945,12 +2946,8 @@ oo::class create Procedure {
     }
 
 }
-```
 
-```
-proc ::constcl::MkProcedure {parms body env} {
-    Procedure create Mem[incr ::M] $parms $body $env
-}
+interp alias {} ::constcl::MkProcedure {} Procedure new
 ```
 
 ```
@@ -3153,7 +3150,7 @@ proc ::constcl::evlis {exps env} {
 ```
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        if {[::string match "::constcl::Mem*" $pr]} {
+        if {[info object isa object $pr]} {
             $pr call {*}[splitlist $vals]
         } else {
             $pr {*}[splitlist $vals]
@@ -3416,7 +3413,7 @@ proc ::constcl::interaction-environment {} {
 ```
 
 
-## Input and output
+### Input and output
 
 ```
 proc ::constcl::call-with-input-file {string proc} {
@@ -3578,7 +3575,7 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 
-interp alias {} #NIL {} [NIL create ::constcl::Mem0]
+interp alias {} #NIL {} [NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 
@@ -3610,7 +3607,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
+interp alias {} #EOF {} [EndOfFile new]
 
 ```
 dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
