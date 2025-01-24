@@ -292,11 +292,19 @@ TT(
 TT)
 
 CB
+proc ::constcl::length-helper {obj} {
+    if {$obj eq "#NIL"} {
+        return 0
+    } else {
+        return [expr {1 + [length-helper [cdr $obj]]}]
+    }
+}
+
 reg length ::constcl::length
 
 proc ::constcl::length {obj} {
     if {[list? $obj] eq "#t"} {
-        MkNumber [llength [splitlist $obj]]
+        MkNumber [length-helper $obj]
     } else {
         error "LIST expected\n(list lst)"
     }

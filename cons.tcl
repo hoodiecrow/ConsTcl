@@ -22,8 +22,17 @@ interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
 
-set ::constcl::_quote [::constcl::MkSymbol quote]
-interp alias {} #Q {} $::constcl::_quote
+interp alias {} #B {} [::constcl::MkSymbol begin]
+
+interp alias {} #I {} [::constcl::MkSymbol if]
+
+interp alias {} #L {} [::constcl::MkSymbol let]
+
+interp alias {} #Q {} [::constcl::MkSymbol quote]
+
+interp alias {} #S {} [::constcl::MkSymbol set!]
+
+interp alias {} #λ {} [::constcl::MkSymbol lambda]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 
@@ -151,48 +160,48 @@ TT(
 } -output "10\n"
 
 #-constraints knownBug 
-::tcltest::test thtcl2-11.0 {and} -constraints knownBug -body {
+::tcltest::test thtcl2-11.0 {and} -body {
     pep "(and (= 2 2) (> 2 1))"
-} -output "#t"
+} -output "#t\n"
 
-::tcltest::test thtcl2-11.1 {and} -constraints knownBug -body {
+::tcltest::test thtcl2-11.1 {and} -body {
     pep "(and (= 2 2) (< 2 1))"
-} -output "#f"
+} -output "#f\n"
 
-::tcltest::test thtcl2-11.2 {and :( } -constraints knownBug -body {
+::tcltest::test thtcl2-11.2 {and :( } -body {
     pep "(and)"
-} -output "#t"
+} -output "#t\n"
 
-::tcltest::test thtcl2-11.3 {and} -constraints knownBug -body {
+::tcltest::test thtcl2-11.3 {and} -body {
     pep "(and 1 2 (quote c) (quote (f g)))"
-} -output "(f g)"
+} -output "(f g)\n"
 
-::tcltest::test thtcl2-12.0 {or} -constraints knownBug -body {
+::tcltest::test thtcl2-12.0 {or} -body {
     pep "(or (= 2 2) (> 2 1))"
-} -output "#t"
+} -output "#t\n"
 
-::tcltest::test thtcl2-12.1 {or} -constraints knownBug -body {
+::tcltest::test thtcl2-12.1 {or} -body {
     pep "(or (= 2 2) (< 2 1))"
-} -output "#t"
+} -output "#t\n"
 
-::tcltest::test thtcl2-12.2 {or} -constraints knownBug -body {
+::tcltest::test thtcl2-12.2 {or} -body {
     pep "(or #f #f #f)"
-} -output "#f"
+} -output "#f\n"
 
-::tcltest::test thtcl2-12.3 {or} -constraints knownBug -body {
+::tcltest::test thtcl2-12.3 {or} -body {
     pep "(or)"
-} -output "#f"
+} -output "#f\n"
 
 ::tcltest::test thtcl2-13.0 {expandquotes} -body {
     pep "''foo"
 } -output "(quote foo)\n"
 
-::tcltest::test thtcl2-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -constraints knownBug -body {
+::tcltest::test thtcl2-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define every? (lambda (fn list)
   (or (null? list)
       (and (fn (car list)) (every? fn (cdr list))))))"
     pep "(every? number? '(1 2 3 4))"
-} -result "#t"
+} -output "()\n#t\n"
 
 ::tcltest::test thtcl2-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define adjoin (lambda (x a)
@@ -206,7 +215,7 @@ TT(
     pep "(adjoin 'c '(a b c))"
 } -output "(a b c)\n"
 
-::tcltest::test thtcl2-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -constraints knownBug -body {
+::tcltest::test thtcl2-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define list-index (lambda (fn list)
   (let iter ((list list) (index 0))
     (if (null? list)
@@ -217,9 +226,9 @@ TT(
               (iter (cdr list) (+ index 1))))))))"
     pep "(define >10 (lambda (x) (> x 10)))"
     pep "(list-index >10 '(1 2 3 4 10 11 12 13 14))"
-} -result "5"
+} -output "()\n()\n5\n"
 
-::tcltest::test thtcl2-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -constraints knownBug -body {
+::tcltest::test thtcl2-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define take (lambda (lst n)
   (let loop ((result '()) (i n) (lst lst))
     (if (or (null? lst) (<= i 0))
@@ -232,9 +241,9 @@ TT(
         (let ((next-list (take lst n)))
           (loop (cdr lst) (cons (apply fn next-list) result)))))))"
     pep "(sublist-map 2 < '(1 2 3 4))"
-} -result "(#t #t #t)"
+} -output "()\n()\n(#t #t #t)\n"
 
-::tcltest::test thtcl2-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -constraints knownBug -body {
+::tcltest::test thtcl2-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define remove (lambda (fn lst)
   (let loop ((lst lst) (result '()))
     (if (null? lst)
@@ -243,7 +252,7 @@ TT(
           (loop (cdr lst)
                 (if (fn item) result (cons item result))))))))"
     pep "(remove >10 '(1 2 3 4 10 11 12 13 14))"
-} -result "(1 2 3 4 10)"
+} -output "()\n(1 2 3 4 10)\n"
 
 ::tcltest::test thtcl2-14.6 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
     pep {(define group (lambda (n lst)
@@ -257,7 +266,7 @@ TT(
               (else
                (loop (cdr lst) (- m 1) (cons (car lst) g) gs)))))))}
     pep "(group 3 (in-range 11))"
-} -result "((0 1 2) (3 4 5) (6 7 8) (9 10))"
+} -output "()\n((0 1 2) (3 4 5) (6 7 8) (9 10))"
 
 ::tcltest::test thtcl2-14.7 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
     pep {(define group-by (lambda (f lst)

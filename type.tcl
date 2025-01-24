@@ -43,6 +43,36 @@ proc ::pp {str} {
         write [read]
     }
 }
+
+proc ::pxp {str} {
+    set ::inputstr $str
+    namespace eval ::constcl {
+        set p [read]
+        set op [car $p]
+        set args [cdr $p]
+        expand-macro op args ::global_env
+        set p [cons $op $args]
+        write $p
+    }
+}
+
+reg in-range ::constcl::in-range
+
+#started out as DKF's code
+proc ::constcl::in-range {args} {
+    set start 0
+    set step 1
+    switch [llength $args] {
+        1 { set end [lindex $args 0] }
+        2 { lassign $args start end }
+        3 { lassign $args start end step }
+    }
+    set res $start
+    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+        lappend res $start
+    }
+    return $res
+}
 CB
 
 CB
