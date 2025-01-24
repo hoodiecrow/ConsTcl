@@ -16,6 +16,14 @@ proc ::constcl::write-value {obj} {
 CB
 
 CB
+reg display ::constcl::display
+
+proc ::constcl::display {obj args} {
+    ::constcl::write-value $obj
+}
+CB
+
+CB
 proc ::constcl::write-pair {obj} {
     # take an object and print the car and the cdr of the stored value
     set a [car $obj]

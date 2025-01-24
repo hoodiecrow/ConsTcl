@@ -475,11 +475,11 @@ proc ::constcl::read-pair {c} {
         if {[first] ne $c} {
             error "extra elements in dotted pair"
         }
-        return [MkCons $a $d]
+        return [cons $a $d]
     } elseif {[find-char $c]} {
         skip-whitespace
         set d #NIL
-        return [MkCons $a $d]
+        return [cons $a $d]
     } else {
         lappend res $a
         while {![find-char $c]} {
@@ -490,7 +490,7 @@ proc ::constcl::read-pair {c} {
         }
         set prev #NIL
         foreach r [lreverse $res] {
-            set prev [MkCons $r $prev]
+            set prev [cons $r $prev]
         }
         return $prev
     }
@@ -513,7 +513,7 @@ proc ::constcl::__read-pair {c} {
         set d [read-pair $c]
     }
     skip-whitespace
-    return [MkCons $a $d]
+    return [cons $a $d]
 }
 CB
 

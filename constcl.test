@@ -1101,19 +1101,26 @@ source constcl.tcl
     pxp "(and (> 3 2) (= 7 8))"
 } -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
 
-::tcltest::test eval-1.1 {expand or macro} -body {
+::tcltest::test eval-1.1 {run and macro} -body {
     pep "(and)"
     pep "(and #t)"
     pep "(and (> 3 2))"
     pep "(and (> 3 2) (= 7 8))"
 } -output "#t\n#t\n#t\n#f\n"
 
-::tcltest::test eval-1.2 {expand let macro} -body {
+::tcltest::test eval-1.2 {expand or macro} -body {
+    pxp "(or)"
+    pxp "(or #f)"
+    pxp "(or (> 3 2))"
+    pxp "(or (> 3 2) (= 7 8))"
+} -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
+
+::tcltest::test eval-1.3 {expand let macro} -body {
     pxp "(let ((x 10)) (* x x))"
     pxp "(let ((x 10) (y 5)) (* x y))"
 } -output "((lambda (x) (begin (* x x))) 10)\n((lambda (x y) (begin (* x y))) 10 5)\n"
 
-::tcltest::test eval-1.3 {expand named let macro} -body {
+::tcltest::test eval-1.4 {expand named let macro} -body {
     pxp {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
@@ -1144,7 +1151,7 @@ source constcl.tcl
 
 ::tcltest::test eval-3.0 {expand case macro} -body {
     pxp "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
-} -output "(if (or (eqv? (quote 6) (quote 2)) (eqv? (quote 6) (quote 3)) (eqv? (quote 6) (quote 5)) (eqv? (quote 6) (quote 7))) (begin (quote prime)) (if (or (eqv? (quote 6) (quote 1)) (eqv? (quote 6) (quote 4)) (eqv? (quote 6) (quote 6)) (eqv? (quote 6) (quote 8)) (eqv? (quote 6) (quote 9))) (begin (quote composite)) (quote ())))"
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
 
 ::tcltest::test eval-3.1 {run case macro} -body {
     pep "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
@@ -1152,18 +1159,51 @@ source constcl.tcl
 
 ::tcltest::test eval-3.2 {expand case macro} -body {
     pxp "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
-} -output "(if (or (eqv? (quote c) (quote a)) (eqv? (quote c) (quote e)) (eqv? (quote c) (quote i)) (eqv? (quote c) (quote o)) (eqv? (quote c) (quote u))) (begin (quote vowel)) (if (or (eqv? (quote c) (quote w)) (eqv? (quote c) (quote y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))"
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
 
-::tcltest::test macro-3.3 {run case macro} {
+::tcltest::test eval-3.3 {run case macro} -body {
     pep "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
-} "consonant"
+} -output "consonant\n"
 
+::tcltest::test eval-4.0 {expand for macro} -body {
+    pxp "(for ((i (quote (1 2 3)))) (display i))"
+} -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
-if no {
-(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) ())))
+::tcltest::test eval-4.1 {run for macro} -body {
+    pep "(for ((i (quote (1 2 3)))) (write i))"
+} -result "" -output 1\n2\n3\n()\n
 
----- Output should have been (exact matching):
-(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))}
+::tcltest::test eval-4.2 {expand for macro} -body {
+    pxp "(for ((i 4)) (display i))"
+} -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
+
+::tcltest::test eval-4.3 {run for macro} -body {
+    pep "(for ((i 4)) (write i))"
+} -result "" -output "0\n1\n2\n3\n()\n"
+
+::tcltest::test macro-5.0 {expand for/list macro} -body {
+    pxp {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
+
+::tcltest::test macro-5.1 {run for/list macro} -body {
+    pep {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(1 4 9)\n"
+
+::tcltest::test macro-5.2 {expand for/list macro} -body {
+    pxp {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
+
+::tcltest::test macro-5.3 {run for/list macro} -body {
+    pep {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(#\\A #\\B #\\C)\n"
+
+::tcltest::test macro-5.4 {expand for/list macro} -constraints knownBug -body { ;# bug: in-range can't accept Lisp values
+    pxp {(for/list ([i (in-range 1 4)]) (* i i))}
+} -output "\n"
+
+::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
+    pep {(for/list ([i (in-range 1 4)]) (* i i))}
+} -result "(1 4 9)"
 
 
 

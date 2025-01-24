@@ -32,6 +32,10 @@ interp alias {} #Q {} [::constcl::MkSymbol quote]
 
 interp alias {} #S {} [::constcl::MkSymbol set!]
 
+interp alias {} #x {} [::constcl::MkSymbol x]
+
+interp alias {} #y {} [::constcl::MkSymbol y]
+
 interp alias {} #λ {} [::constcl::MkSymbol lambda]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]

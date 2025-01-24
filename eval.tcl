@@ -19,7 +19,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond let or}} {
+        while {[$op name] in {and case cond for for/and for/list for/or let or}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -139,6 +139,26 @@ proc ::constcl::make-function {formals exps env} {
 CB
 
 CB
+proc ::constcl::expand-and {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #t]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-and $exps #NIL]
+    }
+}
+
+proc ::constcl::do-and {exps prev} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return $prev
+    } else {
+        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+    }
+}
+CB
+
+CB
 proc ::constcl::do-case {keyexpr clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set keyl [caar $clauses]
@@ -158,7 +178,9 @@ proc ::constcl::do-case {keyexpr clauses} {
         return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
     }
 }
+CB
 
+CB
 proc ::constcl::do-cond {clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
@@ -177,12 +199,105 @@ proc ::constcl::do-cond {clauses} {
         return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
     }
 }
+CB
 
-proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return $prev
+CB
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [car $exps]
+    set body [cdr $exps]
+    set clause [car $clauses]
+    set id [car $clause]
+    set seq [cadr $clause]
+    if {[number? $seq] eq "#t"} {
+        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
     } else {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+        set seq [eval $seq $env]
+        if {[list? $seq] eq "#t"} {
+            set seq [splitlist $seq]
+        } elseif {[string? $seq] eq "#t"} {
+            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+        } elseif {[vector? $seq] eq "#t"} {
+            set seq [$seq value]
+        }
+    }
+    set res {}
+    foreach v $seq {
+        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    }
+    return $res
+}
+
+proc ::constcl::expand-for {exps env} {
+    set res [do-for $exps $env]
+    lappend res [list #Q #NIL]
+    return [list #B {*}$res]
+}
+CB
+
+CB
+proc ::constcl::expand-for/and {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "and"] {*}$res]
+}
+CB
+
+CB
+proc ::constcl::expand-for/list {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "list"] {*}$res]
+}
+CB
+
+CB
+proc ::constcl::expand-for/or {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "or"] {*}$res]
+}
+CB
+
+CB
+proc ::constcl::expand-let {exps} {
+    if {[symbol? [car $exps]] eq "#t"} {
+        # named let
+        set variable [car $exps]
+        set bindings [cadr $exps]
+        set body [cddr $exps]
+        set vars [dict create $variable #f]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        set decl [dict values [dict map {k v} $vars {list $k $v}]]
+        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
+        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
+        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+    } else {
+        # regular let
+        set bindings [car $exps]
+        set body [cdr $exps]
+        set vars [dict create]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
+    }
+}
+CB
+
+CB
+proc ::constcl::expand-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #f]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-or $exps]
     }
 }
 
@@ -190,7 +305,7 @@ proc ::constcl::do-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return #f
     } else {
-        return [list #L [list [list [MkSymbol x] [car $exps]]] [list #I [MkSymbol x] [MkSymbol x] [do-or [cdr $exps]]]]
+        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
     }
 }
 CB
@@ -200,73 +315,35 @@ proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
     switch [$op name] {
         and {
-            if {[eq? [length $args] #0] eq "#t"} {
-                set op #B
-                set args [list #t]
-            } elseif {[eq? [length $args] #1] eq "#t"} {
-                set op #B
-            } else {
-                set p [do-and $args #NIL]
-                set op [car $p]
-                set args [cdr $p]
-            }
+            set p [expand-and $args]
         }
         case {
             set p [do-case [car $args] [cdr $args]]
-            set op [car $p]
-            set args [cdr $p]
         }
         cond {
             set p [do-cond $args]
-            set op [car $p]
-            set args [cdr $p]
+        }
+        for {
+            set p [expand-for $args $env]
+        }
+        for/and {
+            set p [expand-for/and $args $env]
+        }
+        for/list {
+            set p [expand-for/list $args $env]
+        }
+        for/or {
+            set p [expand-for/or $args $env]
         }
         let {
-            if {[atom? [car $args]] eq "#t"} {
-                # named let
-                set variable [car $args]
-                set bindings [cadr $args]
-                set body [cddr $args]
-                set vars [dict create $variable #f]
-                foreach binding [splitlist $bindings] {
-                    set var [car $binding]
-                    set val [cadr $binding]
-                    if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-                    dict set vars $var $val
-                }
-                set op #L
-                set decl [dict values [dict map {k v} $vars {list $k $v}]]
-                set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-                set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
-                set args [list [list {*}$decl] [list #S $variable $func] $call]
-            } else {
-                # regular let
-                set bindings [car $args]
-                set body [cdr $args]
-                set vars [dict create]
-                foreach binding [splitlist $bindings] {
-                    set var [car $binding]
-                    set val [cadr $binding]
-                    if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-                    dict set vars $var $val
-                }
-                set op [list #λ [list {*}[dict keys $vars]] [cons #B $body]]
-                set args [list {*}[dict values $vars]]
-            }
+            set p [expand-let $args]
         }
         or {
-            if {[eq? [length $args] #0] eq "#t"} {
-                set op #B
-                set args [list #f]
-            } elseif {[eq? [length $args] #1] eq "#t"} {
-                set op #B
-            } else {
-                set p [do-or $args]
-                set op [car $p]
-                set args [cdr $p]
-            }
+            set p [expand-or $args]
         }
     }
+    set op [car $p]
+    set args [cdr $p]
 }
 CB
 
@@ -279,19 +356,26 @@ TT(
     pxp "(and (> 3 2) (= 7 8))"
 } -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
 
-::tcltest::test eval-1.1 {expand or macro} -body {
+::tcltest::test eval-1.1 {run and macro} -body {
     pep "(and)"
     pep "(and #t)"
     pep "(and (> 3 2))"
     pep "(and (> 3 2) (= 7 8))"
 } -output "#t\n#t\n#t\n#f\n"
 
-::tcltest::test eval-1.2 {expand let macro} -body {
+::tcltest::test eval-1.2 {expand or macro} -body {
+    pxp "(or)"
+    pxp "(or #f)"
+    pxp "(or (> 3 2))"
+    pxp "(or (> 3 2) (= 7 8))"
+} -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
+
+::tcltest::test eval-1.3 {expand let macro} -body {
     pxp "(let ((x 10)) (* x x))"
     pxp "(let ((x 10) (y 5)) (* x y))"
 } -output "((lambda (x) (begin (* x x))) 10)\n((lambda (x y) (begin (* x y))) 10 5)\n"
 
-::tcltest::test eval-1.3 {expand named let macro} -body {
+::tcltest::test eval-1.4 {expand named let macro} -body {
     pxp {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
@@ -322,7 +406,7 @@ TT(
 
 ::tcltest::test eval-3.0 {expand case macro} -body {
     pxp "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
-} -output "(if (or (eqv? (quote 6) (quote 2)) (eqv? (quote 6) (quote 3)) (eqv? (quote 6) (quote 5)) (eqv? (quote 6) (quote 7))) (begin (quote prime)) (if (or (eqv? (quote 6) (quote 1)) (eqv? (quote 6) (quote 4)) (eqv? (quote 6) (quote 6)) (eqv? (quote 6) (quote 8)) (eqv? (quote 6) (quote 9))) (begin (quote composite)) (quote ())))"
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
 
 ::tcltest::test eval-3.1 {run case macro} -body {
     pep "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
@@ -330,18 +414,51 @@ TT(
 
 ::tcltest::test eval-3.2 {expand case macro} -body {
     pxp "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
-} -output "(if (or (eqv? (quote c) (quote a)) (eqv? (quote c) (quote e)) (eqv? (quote c) (quote i)) (eqv? (quote c) (quote o)) (eqv? (quote c) (quote u))) (begin (quote vowel)) (if (or (eqv? (quote c) (quote w)) (eqv? (quote c) (quote y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))"
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
 
-::tcltest::test macro-3.3 {run case macro} {
+::tcltest::test eval-3.3 {run case macro} -body {
     pep "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
-} "consonant"
+} -output "consonant\n"
 
+::tcltest::test eval-4.0 {expand for macro} -body {
+    pxp "(for ((i (quote (1 2 3)))) (display i))"
+} -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
-if no {
-(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) ())))
+::tcltest::test eval-4.1 {run for macro} -body {
+    pep "(for ((i (quote (1 2 3)))) (write i))"
+} -result "" -output 1\n2\n3\n()\n
 
----- Output should have been (exact matching):
-(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))}
+::tcltest::test eval-4.2 {expand for macro} -body {
+    pxp "(for ((i 4)) (display i))"
+} -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
+
+::tcltest::test eval-4.3 {run for macro} -body {
+    pep "(for ((i 4)) (write i))"
+} -result "" -output "0\n1\n2\n3\n()\n"
+
+::tcltest::test macro-5.0 {expand for/list macro} -body {
+    pxp {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
+
+::tcltest::test macro-5.1 {run for/list macro} -body {
+    pep {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(1 4 9)\n"
+
+::tcltest::test macro-5.2 {expand for/list macro} -body {
+    pxp {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
+
+::tcltest::test macro-5.3 {run for/list macro} -body {
+    pep {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(#\\A #\\B #\\C)\n"
+
+::tcltest::test macro-5.4 {expand for/list macro} -constraints knownBug -body { ;# bug: in-range can't accept Lisp values
+    pxp {(for/list ([i (in-range 1 4)]) (* i i))}
+} -output "\n"
+
+::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
+    pep {(for/list ([i (in-range 1 4)]) (* i i))}
+} -result "(1 4 9)"
 
 
 TT)

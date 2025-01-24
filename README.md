@@ -451,11 +451,11 @@ proc ::constcl::read-pair {c} {
         if {[first] ne $c} {
             error "extra elements in dotted pair"
         }
-        return [MkCons $a $d]
+        return [cons $a $d]
     } elseif {[find-char $c]} {
         skip-whitespace
         set d #NIL
-        return [MkCons $a $d]
+        return [cons $a $d]
     } else {
         lappend res $a
         while {![find-char $c]} {
@@ -466,7 +466,7 @@ proc ::constcl::read-pair {c} {
         }
         set prev #NIL
         foreach r [lreverse $res] {
-            set prev [MkCons $r $prev]
+            set prev [cons $r $prev]
         }
         return $prev
     }
@@ -489,7 +489,7 @@ proc ::constcl::__read-pair {c} {
         set d [read-pair $c]
     }
     skip-whitespace
-    return [MkCons $a $d]
+    return [cons $a $d]
 }
 ```
 
@@ -583,6 +583,14 @@ proc ::constcl::write {obj args} {
 proc ::constcl::write-value {obj} {
     # take an object and print the value
     $obj write
+}
+```
+
+```
+reg display ::constcl::display
+
+proc ::constcl::display {obj args} {
+    ::constcl::write-value $obj
 }
 ```
 
@@ -1526,9 +1534,9 @@ proc ::constcl::not {obj} {
 ## Pairs and lists
 
 ```
-catch { Cons destroy }
+catch { Pair destroy }
 
-oo::class create Cons {
+oo::class create Pair {
     variable car cdr constant
     constructor {a d} {
         set truth Mem1
@@ -1592,8 +1600,8 @@ proc ::constcl::show-pair {obj} {
 ```
 
 
-proc ::constcl::MkCons {a d} {
-    return [Cons create Mem[incr ::M] $a $d]
+proc ::constcl::MkPair {a d} {
+    return [Pair create Mem[incr ::M] $a $d]
 }
 ```
 
@@ -1601,9 +1609,9 @@ proc ::constcl::MkCons {a d} {
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Cons]} {
+    if {[info object isa typeof $obj Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Cons]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
         return #t
     } else {
         return #f
@@ -1616,7 +1624,7 @@ proc ::constcl::pair? {obj} {
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
-    MkCons $car $cdr
+    MkPair $car $cdr
 }
 ```
 
@@ -1720,9 +1728,9 @@ proc ::constcl::copy-list {obj next} {
     if {[null? $obj] eq "#t"} {
         set next
     } elseif {[null? [cdr $obj]] eq "#t"} {
-        MkCons [car $obj] $next
+        cons [car $obj] $next
     } else {
-        MkCons [car $obj] [copy-list [cdr $obj] $next]
+        cons [car $obj] [copy-list [cdr $obj] $next]
     }
 }
 
@@ -3060,7 +3068,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond let or}} {
+        while {[$op name] in {and case cond for for/and for/list for/or let or}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -3180,6 +3188,26 @@ proc ::constcl::make-function {formals exps env} {
 ```
 
 ```
+proc ::constcl::expand-and {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #t]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-and $exps #NIL]
+    }
+}
+
+proc ::constcl::do-and {exps prev} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return $prev
+    } else {
+        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+    }
+}
+```
+
+```
 proc ::constcl::do-case {keyexpr clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set keyl [caar $clauses]
@@ -3199,7 +3227,9 @@ proc ::constcl::do-case {keyexpr clauses} {
         return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
     }
 }
+```
 
+```
 proc ::constcl::do-cond {clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
@@ -3218,12 +3248,105 @@ proc ::constcl::do-cond {clauses} {
         return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
     }
 }
+```
 
-proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return $prev
+```
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [car $exps]
+    set body [cdr $exps]
+    set clause [car $clauses]
+    set id [car $clause]
+    set seq [cadr $clause]
+    if {[number? $seq] eq "#t"} {
+        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
     } else {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+        set seq [eval $seq $env]
+        if {[list? $seq] eq "#t"} {
+            set seq [splitlist $seq]
+        } elseif {[string? $seq] eq "#t"} {
+            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+        } elseif {[vector? $seq] eq "#t"} {
+            set seq [$seq value]
+        }
+    }
+    set res {}
+    foreach v $seq {
+        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    }
+    return $res
+}
+
+proc ::constcl::expand-for {exps env} {
+    set res [do-for $exps $env]
+    lappend res [list #Q #NIL]
+    return [list #B {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/and {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "and"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/list {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "list"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/or {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "or"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-let {exps} {
+    if {[symbol? [car $exps]] eq "#t"} {
+        # named let
+        set variable [car $exps]
+        set bindings [cadr $exps]
+        set body [cddr $exps]
+        set vars [dict create $variable #f]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        set decl [dict values [dict map {k v} $vars {list $k $v}]]
+        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
+        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
+        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+    } else {
+        # regular let
+        set bindings [car $exps]
+        set body [cdr $exps]
+        set vars [dict create]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
+    }
+}
+```
+
+```
+proc ::constcl::expand-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #f]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-or $exps]
     }
 }
 
@@ -3231,7 +3354,7 @@ proc ::constcl::do-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return #f
     } else {
-        return [list #L [list [list [MkSymbol x] [car $exps]]] [list #I [MkSymbol x] [MkSymbol x] [do-or [cdr $exps]]]]
+        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
     }
 }
 ```
@@ -3241,73 +3364,35 @@ proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
     switch [$op name] {
         and {
-            if {[eq? [length $args] #0] eq "#t"} {
-                set op #B
-                set args [list #t]
-            } elseif {[eq? [length $args] #1] eq "#t"} {
-                set op #B
-            } else {
-                set p [do-and $args #NIL]
-                set op [car $p]
-                set args [cdr $p]
-            }
+            set p [expand-and $args]
         }
         case {
             set p [do-case [car $args] [cdr $args]]
-            set op [car $p]
-            set args [cdr $p]
         }
         cond {
             set p [do-cond $args]
-            set op [car $p]
-            set args [cdr $p]
+        }
+        for {
+            set p [expand-for $args $env]
+        }
+        for/and {
+            set p [expand-for/and $args $env]
+        }
+        for/list {
+            set p [expand-for/list $args $env]
+        }
+        for/or {
+            set p [expand-for/or $args $env]
         }
         let {
-            if {[atom? [car $args]] eq "#t"} {
-                # named let
-                set variable [car $args]
-                set bindings [cadr $args]
-                set body [cddr $args]
-                set vars [dict create $variable #f]
-                foreach binding [splitlist $bindings] {
-                    set var [car $binding]
-                    set val [cadr $binding]
-                    if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-                    dict set vars $var $val
-                }
-                set op #L
-                set decl [dict values [dict map {k v} $vars {list $k $v}]]
-                set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-                set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
-                set args [list [list {*}$decl] [list #S $variable $func] $call]
-            } else {
-                # regular let
-                set bindings [car $args]
-                set body [cdr $args]
-                set vars [dict create]
-                foreach binding [splitlist $bindings] {
-                    set var [car $binding]
-                    set val [cadr $binding]
-                    if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-                    dict set vars $var $val
-                }
-                set op [list #λ [list {*}[dict keys $vars]] [cons #B $body]]
-                set args [list {*}[dict values $vars]]
-            }
+            set p [expand-let $args]
         }
         or {
-            if {[eq? [length $args] #0] eq "#t"} {
-                set op #B
-                set args [list #f]
-            } elseif {[eq? [length $args] #1] eq "#t"} {
-                set op #B
-            } else {
-                set p [do-or $args]
-                set op [car $p]
-                set args [cdr $p]
-            }
+            set p [expand-or $args]
         }
     }
+    set op [car $p]
+    set args [cdr $p]
 }
 ```
 
@@ -3514,6 +3599,10 @@ interp alias {} #L {} [::constcl::MkSymbol let]
 interp alias {} #Q {} [::constcl::MkSymbol quote]
 
 interp alias {} #S {} [::constcl::MkSymbol set!]
+
+interp alias {} #x {} [::constcl::MkSymbol x]
+
+interp alias {} #y {} [::constcl::MkSymbol y]
 
 interp alias {} #λ {} [::constcl::MkSymbol lambda]
 

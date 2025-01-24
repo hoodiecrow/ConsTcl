@@ -4,9 +4,9 @@ MD(
 MD)
 
 CB
-catch { Cons destroy }
+catch { Pair destroy }
 
-oo::class create Cons {
+oo::class create Pair {
     variable car cdr constant
     constructor {a d} {
         set truth Mem1
@@ -70,8 +70,8 @@ proc ::constcl::show-pair {obj} {
 CB
 
 
-proc ::constcl::MkCons {a d} {
-    return [Cons create Mem[incr ::M] $a $d]
+proc ::constcl::MkPair {a d} {
+    return [Pair create Mem[incr ::M] $a $d]
 }
 CB
 
@@ -79,9 +79,9 @@ CB
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Cons]} {
+    if {[info object isa typeof $obj Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Cons]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
         return #t
     } else {
         return #f
@@ -129,7 +129,7 @@ CB
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
-    MkCons $car $cdr
+    MkPair $car $cdr
 }
 CB
 
@@ -327,9 +327,9 @@ proc ::constcl::copy-list {obj next} {
     if {[null? $obj] eq "#t"} {
         set next
     } elseif {[null? [cdr $obj]] eq "#t"} {
-        MkCons [car $obj] $next
+        cons [car $obj] $next
     } else {
-        MkCons [car $obj] [copy-list [cdr $obj] $next]
+        cons [car $obj] [copy-list [cdr $obj] $next]
     }
 }
 
