@@ -525,45 +525,368 @@ proc ::constcl::read-v {} {
 
 
 
-### Identifier validation
-
-Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
-first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises
-errors if they fail. A valid symbol is still an invalid identifier if has the name of
-some keyword, which idcheck also checks, for a set of keywords given in the standard.
+## Eval
 
 ```
-proc ::constcl::idcheckinit {init} {
-    if {[::string is alpha $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
-        return true
-    } else {
-        return false
-    }
-}
+reg eval ::constcl::eval
 
-proc ::constcl::idchecksubs {subs} {
-    foreach c [split $subs {}] {
-        if {!([::string is alnum $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
-            return false
+proc ::constcl::eval {e {env ::global_env}} {
+    # TODO
+    if {[atom? $e] eq "#t"} {
+        if {[symbol? $e] eq "#t"} {
+            return [lookup $e $env]
+        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+            return $e
+        } else {
+            error "cannot evaluate $e"
+        }
+    } else {
+        set op [car $e]
+        set args [cdr $e]
+        while {[$op name] in {and case cond for for/and for/list for/or let or}} {
+            expand-macro op args $env
+        }
+        switch [$op name] {
+            quote {
+                return [car $args]
+            }
+            if {
+                if {[eval [car $args] $env] ne "#f"} {
+                    return [eval [cadr $args] $env]
+                } else {
+                    return [eval [caddr $args] $env]
+                }
+            }
+            begin {
+                return [eprogn $args $env]
+            }
+            define {
+                return [declare [car $args] [eval [cadr $args] $env] $env]
+            }
+            set! {
+                return [update! [car $args] [eval [cadr $args] $env] $env]
+            }
+            lambda {
+                return [make-function [car $args] [cdr $args] $env]
+            }
+            default {
+                return [invoke [eval $op $env] [evlis $args $env]]
+            }
         }
     }
-    return true
+}
+```
+
+```
+proc ::constcl::lookup {sym env} {
+    set sym [$sym name]
+    [$env find $sym] get $sym
+}
+```
+
+```
+proc ::constcl::eprogn {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        if {[pair? [cdr $exps]] eq "#t"} {
+            eval [car $exps] $env
+            return [eprogn [cdr $exps] $env]
+        } else {
+            return [eval [car $exps] $env]
+        }
+    } else {
+        return #NIL
+    }
+}
+```
+
+```
+proc ::constcl::declare {sym val env} {
+    set var [varcheck [idcheck [$sym name]]]
+    $env set [$sym name] $val
+    return #NIL
+}
+```
+
+```
+proc ::constcl::update! {var expr env} {
+    set var [varcheck [idcheck [$var name]]]
+    [$env find $var] set $var $expr
+    set expr
+}
+```
+
+```
+proc ::constcl::evlis {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+    } else {
+        return #NIL
+    }
+}
+```
+
+```
+proc ::constcl::invoke {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        if {[info object isa object $pr]} {
+            $pr call {*}[splitlist $vals]
+        } else {
+            $pr {*}[splitlist $vals]
+        }
+    } else {
+        error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
+    }
+}
+```
+
+```
+proc ::constcl::splitlist {vals} {
+#puts [info level [info level]]
+    set result {}
+    while {[pair? $vals] eq "#t"} {
+        lappend result [car $vals]
+        set vals [cdr $vals]
+    }
+#puts result=$result
+#puts resval=[lmap res $result {$res show}]
+    return $result
+}
+```
+
+```
+proc ::constcl::make-function {formals exps env} {
+    set parms [splitlist $formals]
+    #set body [cons [MkSymbol begin] [list [splitlist $exps]]]
+    set body [cons [MkSymbol begin] $exps]
+    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
+}
+```
+
+```
+proc ::constcl::expand-and {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #t]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-and $exps #NIL]
+    }
 }
 
-proc ::constcl::idcheck {sym} {
-    if {(![idcheckinit [::string index $sym 0]] ||
-        ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
-        error "Identifier expected ($sym)"
+proc ::constcl::do-and {exps prev} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return $prev
+    } else {
+        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
     }
-    set sym
+}
+```
+
+```
+proc ::constcl::do-case {keyexpr clauses} {
+    if {[eq? [length $clauses] #1] eq "#t"} {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
+            set keyl #t
+        } else {
+            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        }
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    } elseif {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } else {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    }
+}
+```
+
+```
+proc ::constcl::do-cond {clauses} {
+    if {[eq? [length $clauses] #1] eq "#t"} {
+        set pred [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
+            set pred #t
+        }
+        if {[null? $body] eq "#t"} {set body $pred}
+        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
+    } elseif {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } else {
+        set pred [caar $clauses]
+        set body [cdar $clauses]
+        if {[null? $body] eq "#t"} {set body $pred}
+        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
+    }
+}
+```
+
+```
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [car $exps]
+    set body [cdr $exps]
+    set clause [car $clauses]
+    set id [car $clause]
+    set seq [cadr $clause]
+    if {[number? $seq] eq "#t"} {
+        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
+    } else {
+        set seq [eval $seq $env]
+        if {[list? $seq] eq "#t"} {
+            set seq [splitlist $seq]
+        } elseif {[string? $seq] eq "#t"} {
+            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+        } elseif {[vector? $seq] eq "#t"} {
+            set seq [$seq value]
+        }
+    }
+    set res {}
+    foreach v $seq {
+        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    }
+    return $res
 }
 
-proc ::constcl::varcheck {sym} {
-    if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
-        cond and or case let let* letrec do delay quasiquote}} {
-            error "Macro name can't be used as a variable: $sym"
+proc ::constcl::expand-for {exps env} {
+    set res [do-for $exps $env]
+    lappend res [list #Q #NIL]
+    return [list #B {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/and {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "and"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/list {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "list"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-for/or {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "or"] {*}$res]
+}
+```
+
+```
+proc ::constcl::expand-let {exps} {
+    if {[symbol? [car $exps]] eq "#t"} {
+        # named let
+        set variable [car $exps]
+        set bindings [cadr $exps]
+        set body [cddr $exps]
+        set vars [dict create $variable #f]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        set decl [dict values [dict map {k v} $vars {list $k $v}]]
+        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
+        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
+        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+    } else {
+        # regular let
+        set bindings [car $exps]
+        set body [cdr $exps]
+        set vars [dict create]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
     }
-    return $sym
+}
+```
+
+```
+proc ::constcl::expand-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #f]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-or $exps]
+    }
+}
+
+proc ::constcl::do-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return #f
+    } else {
+        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
+    }
+}
+```
+
+```
+proc ::constcl::expand-macro {n1 n2 env} {
+    upvar $n1 op $n2 args
+    switch [$op name] {
+        and {
+            set p [expand-and $args]
+        }
+        case {
+            set p [do-case [car $args] [cdr $args]]
+        }
+        cond {
+            set p [do-cond $args]
+        }
+        for {
+            set p [expand-for $args $env]
+        }
+        for/and {
+            set p [expand-for/and $args $env]
+        }
+        for/list {
+            set p [expand-for/list $args $env]
+        }
+        for/or {
+            set p [expand-for/or $args $env]
+        }
+        let {
+            set p [expand-let $args]
+        }
+        or {
+            set p [expand-or $args]
+        }
+    }
+    set op [car $p]
+    set args [cdr $p]
+}
+```
+
+
+```
+proc ::constcl::scheme-report-environment {version} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::null-environment {version} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::interaction-environment {} {
+    # TODO
 }
 ```
 
@@ -614,6 +937,42 @@ proc ::constcl::write-pair {obj} {
 }
 ```
 
+
+
+### Environment class and objects
+
+The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
+with the added finesse of keeping a link to the outer environment (starting a chain that goes all
+the way to the global environment and then stops at the null environment) which can be traversed
+by the find method to find which innermost environment a given symbol is bound in.
+
+```
+catch { Environment destroy }
+
+oo::class create Environment {
+    variable bindings outer_env
+    constructor {syms vals {outer {}}} {
+	set bindings [dict create]
+        foreach sym $syms val $vals {
+            my set $sym $val
+        }
+        set outer_env $outer
+    }
+    method find {sym} {
+        if {$sym in [dict keys $bindings]} {
+            self
+        } else {
+            $outer_env find $sym
+        }
+    }
+    method get {sym} {
+        dict get $bindings $sym
+    }
+    method set {sym val} {
+        dict set bindings $sym $val
+    }
+}
+```
 
 ## Built-in procedures
 
@@ -1531,453 +1890,6 @@ proc ::constcl::not {obj} {
 
 
 
-### Pairs and lists
-
-```
-catch { Pair destroy }
-
-oo::class create Pair {
-    variable car cdr constant
-    constructor {a d} {
-        set truth Mem1
-        set car $a
-        set cdr $d
-        set constant 0
-    }
-    method truth {} {return #t}
-    method name {} {} ;# for eval
-    method numval {} {throw "Not a number"}
-    method value {} {my show}
-    method car {} { set car }
-    method cdr {} { set cdr }
-    method set-car! {val} {
-        if {$constant} {
-            error "Can't modify a constant pair"
-        } else {
-            set car $val
-        }
-    }
-    method set-cdr! {val} {
-        if {$constant} {
-            error "Can't modify a constant pair"
-        } else {
-            set cdr $val
-        }
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {return $constant}
-    method write {} {
-        puts -nonewline "("
-        ::constcl::write-pair [self]
-        puts -nonewline ")"
-    }
-    method show {} {format "(%s)" [::constcl::show-pair [self]]}
-}
-
-
-```
-proc ::constcl::show-pair {obj} {
-    # take an object and print the car and the cdr of the stored value
-    set str {}
-    set a [car $obj]
-    set d [cdr $obj]
-    # print car
-    ::append str [$a show]
-    if {[pair? $d] eq "#t"} {
-        # cdr is a cons pair
-        ::append str " "
-        ::append str [show-pair $d]
-    } elseif {$d eq "#NIL"} {
-        # cdr is nil
-        return $str
-    } else {
-        # it is an atom
-        ::append str " . "
-        ::append str [$d show]
-    }
-    return $str
-}
-```
-
-interp alias {} ::constcl::MkPair {} Pair new
-```
-
-```
-reg pair? ::constcl::pair?
-
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-```
-
-
-```
-reg cons ::constcl::cons
-
-proc ::constcl::cons {car cdr} {
-    MkPair $car $cdr
-}
-```
-
-reg car ::constcl::car
-
-
-```
-proc ::constcl::car {obj} {
-    $obj car
-}
-```
-
-
-```
-reg cdr ::constcl::cdr
-
-proc ::constcl::cdr {obj} {
-    $obj cdr
-}
-```
-
-
-```
-reg set-car! ::constcl::set-car!
-
-proc ::constcl::set-car! {obj val} {
-    $obj set-car! $val
-}
-```
-
-
-```
-reg set-cdr! ::constcl::set-cdr!
-
-proc ::constcl::set-cdr! {obj val} {
-    $obj set-cdr! $val
-}
-```
-
-
-```
-reg list? ::constcl::list?
-
-proc ::constcl::list? {obj} {
-    if {$obj eq "#NIL"} {
-        return #t
-    } elseif {[pair? $obj] eq "#t"} {
-        if {[cdr $obj] eq "#NIL"} {
-            return #t
-        } else {
-            return [list? [cdr $obj]]
-        }
-    } else {
-        return #f
-    }
-}
-```
-
-
-```
-reg list ::constcl::list
-
-proc ::constcl::list {args} {
-    if {[llength $args] == 0} {
-        return #NIL
-    } else {
-        set prev #NIL
-        foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
-        }
-        return $prev
-    }
-}
-```
-
-
-```
-proc ::constcl::length-helper {obj} {
-    if {$obj eq "#NIL"} {
-        return 0
-    } else {
-        return [expr {1 + [length-helper [cdr $obj]]}]
-    }
-}
-
-reg length ::constcl::length
-
-proc ::constcl::length {obj} {
-    if {[list? $obj] eq "#t"} {
-        MkNumber [length-helper $obj]
-    } else {
-        error "LIST expected\n(list lst)"
-    }
-}
-```
-
-
-```
-proc ::constcl::copy-list {obj next} {
-    # TODO only fresh conses in the direct chain to NIL
-    if {[null? $obj] eq "#t"} {
-        set next
-    } elseif {[null? [cdr $obj]] eq "#t"} {
-        cons [car $obj] $next
-    } else {
-        cons [car $obj] [copy-list [cdr $obj] $next]
-    }
-}
-
-reg append ::constcl::append
-
-proc ::constcl::append {args} {
-    set prev [lindex $args end]
-    foreach r [lreverse [lrange $args 0 end-1]] {
-        set prev [copy-list $r $prev]
-    }
-    set prev
-}
-```
-
-
-```
-reg reverse ::constcl::reverse
-
-proc ::constcl::reverse {obj} {
-    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
-}
-```
-
-
-```
-reg list-tail ::constcl::list-tail
-
-proc ::constcl::list-tail {obj k} {
-    if {[zero? $k] eq "#t"} {
-        return $obj
-    } else {
-        list-tail [cdr $obj] [- $k #1]
-    }
-}
-```
-
-
-```
-reg list-ref ::constcl::list-ref
-
-proc ::constcl::list-ref {obj k} {
-    ::constcl::car [::constcl::list-tail $obj $k]
-}
-```
-
-
-```
-reg memq ::constcl::memq
-
-proc ::constcl::memq {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[eq? $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
-            } else {
-                return [memq $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-
-```
-reg memv ::constcl::memv
-
-proc ::constcl::memv {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[eqv? $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
-            } else {
-                return [memv $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memv [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-```
-reg member ::constcl::member
-
-proc ::constcl::member {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[equal? $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
-            } else {
-                return [member $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(member [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-```
-proc ::constcl::assq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-
-```
-proc ::constcl::assv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-```
-proc ::constcl::assoc {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
-}
-```
-
-
-## Symbols
-
-```
-oo::class create Symbol {
-    superclass NIL
-    variable name caseconstant
-    constructor {n} {
-        # TODO idcheck this
-        set name $n
-        set caseconstant 0
-    }
-    method name {} {set name}
-    method value {} {set name}
-    method = {symname} {expr {$name eq $symname}}
-    method mkconstant {} {}
-    method constant {} {return 1}
-    method make-case-constant {} {set caseconstant 1}
-    method case-constant {} {set caseconstant}
-    method write {} { puts -nonewline [my name] }
-    method show {} {set name}
-}
-
-proc ::constcl::MkSymbol {n} {
-    if {$n eq {}} {
-        error "a symbol must have a name"
-    }
-    foreach instance [info class instances Symbol] {
-        if {[$instance name] eq $n} {
-            return $instance
-        }
-    }
-    return [Symbol new $n]
-}
-```
-
-```
-reg symbol? ::constcl::symbol?
-
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-```
-
-
-```
-reg symbol->string ::constcl::symbol->string
-
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
-        } else {
-            set str [MkString [$obj name]]
-        }
-        $str mkconstant
-        return $str
-    } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
-    }
-}
-```
-
-
-```
-reg string->symbol ::constcl::string->symbol
-
-proc ::constcl::string->symbol {str} {
-    if {[string? $str] eq "#t"} {
-        set sym [MkSymbol [$str value]]
-        $sym make-case-constant
-        return $sym
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
-}
-```
-
-
 ## Characters
 
 ```
@@ -2351,7 +2263,730 @@ proc ::constcl::char-downcase {char} {
 
 
 
-## Strings
+### Control
+
+```
+catch { Procedure destroy }
+
+oo::class create Procedure {
+    superclass NIL
+    variable parms body env
+    constructor {p b e} {
+        set parms $p         ;# a Tcl list of parameter names
+        set body $b          ;# a Lisp llist of expressions under 'begin
+        set env $e           ;# an environment
+    }
+    method value {} {
+        set value
+    }
+    method write {} { puts -nonewline [self] }
+    method call {args} {
+        if {[llength $parms] != [llength $args]} {
+            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
+        }
+        ::constcl::eval $body [Environment new $parms $args $env]
+    }
+
+}
+
+interp alias {} ::constcl::MkProcedure {} Procedure new
+```
+
+```
+reg procedure? ::constcl::procedure?
+
+proc ::constcl::procedure? {obj} {
+    if {[info object isa typeof $obj Procedure]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
+        return #t
+    } elseif {[::string match "::constcl::*" $obj]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
+
+
+```
+reg apply ::constcl::apply
+
+proc ::constcl::apply {proc args} {
+    if {[procedure? $proc] eq "#t"} {
+        if {[list? [lindex $args end]] eq "#t"} {
+           invoke $proc $args 
+        } else {
+            error "LIST expected\n(apply [$proc write] ...)"
+        }
+    } else {
+        error "PROCEDURE expected\n(apply [$proc write] ...)"
+    }
+}
+```
+
+
+```
+reg map ::constcl::map
+
+proc ::constcl::map {proc args} {
+    if {[procedure? $proc] eq "#t"} {
+        if {[list? [lindex $args end]] eq "#t"} {
+            $proc call ;# TODO
+        } else {
+            error "LIST expected\n(apply [$proc write] ...)"
+        }
+    } else {
+        error "PROCEDURE expected\n(apply [$proc write] ...)"
+    }
+}
+```
+
+```
+reg for-each ::constcl::for-each
+
+proc ::constcl::for-each {proc args} {
+    if {[::constcl::procedure? $proc] eq "#t"} {
+        if {[::constcl::list? [lindex $args end]] eq "#t"} {
+            $proc call ;# TODO
+        } else {
+            error "LIST expected\n(apply [$proc write] ...)"
+        }
+    } else {
+        error "PROCEDURE expected\n(apply [$proc write] ...)"
+    }
+}
+```
+
+```
+proc ::constcl::force {promise} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::call-with-current-continuation {proc} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::values {args} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::call-with-values {producer consumer} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::dynamic-wind {before thunk after} {
+    # TODO
+}
+```
+
+
+### Input and output
+
+```
+proc ::constcl::call-with-input-file {string proc} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::call-with-output-file {string proc} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::input-port? {obj} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::output-port? {obj} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::current-input-port {} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::current-output-port {} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::with-input-from-file {string thunk} {
+    # TODO
+}
+```
+
+
+```
+proc ::constcl::with-output-to-file {string thunk} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::open-input-file {filename} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::open-output-file {filename} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::close-input-port {port} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::close-output-port {port} {
+    # TODO
+}
+```
+
+```
+if no {
+    # defined in read.tcl
+proc ::constcl::read {args} {
+    # TODO
+}
+}
+```
+
+```
+proc ::constcl::read-char {args} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::peek-char {args} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::char-ready? {args} {
+    # TODO
+}
+```
+
+```
+if no {
+proc ::constcl::write {obj args} {
+    # TODO write [$obj write]
+}
+}
+```
+
+```
+reg display ::constcl::display
+
+proc ::constcl::display {obj args} {
+    # TODO write [$obj display]
+}
+```
+
+```
+reg newline ::constcl::newline
+
+proc ::constcl::newline {args} {
+    # TODO write newline
+}
+```
+
+```
+proc ::constcl::write-char {args} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::load {filename} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::transcript-on {filename} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::transcript-off {} {
+    # TODO
+}
+```
+
+
+### Pairs and lists
+
+```
+catch { Pair destroy }
+
+oo::class create Pair {
+    variable car cdr constant
+    constructor {a d} {
+        set car $a
+        set cdr $d
+        set constant 0
+    }
+    method truth {} {return #t}
+    method name {} {} ;# for eval
+    method numval {} {throw "Not a number"}
+    method value {} {my show}
+    method car {} { set car }
+    method cdr {} { set cdr }
+    method set-car! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set car $val
+        }
+    }
+    method set-cdr! {val} {
+        if {$constant} {
+            error "Can't modify a constant pair"
+        } else {
+            set cdr $val
+        }
+    }
+    method mkconstant {} {set constant 1}
+    method constant {} {return $constant}
+    method write {} {
+        puts -nonewline "("
+        ::constcl::write-pair [self]
+        puts -nonewline ")"
+    }
+    method show {} {format "(%s)" [::constcl::show-pair [self]]}
+}
+
+
+```
+proc ::constcl::show-pair {obj} {
+    # take an object and print the car and the cdr of the stored value
+    set str {}
+    set a [car $obj]
+    set d [cdr $obj]
+    # print car
+    ::append str [$a show]
+    if {[pair? $d] eq "#t"} {
+        # cdr is a cons pair
+        ::append str " "
+        ::append str [show-pair $d]
+    } elseif {$d eq "#NIL"} {
+        # cdr is nil
+        return $str
+    } else {
+        # it is an atom
+        ::append str " . "
+        ::append str [$d show]
+    }
+    return $str
+}
+```
+
+interp alias {} ::constcl::MkPair {} Pair new
+```
+
+```
+reg pair? ::constcl::pair?
+
+proc ::constcl::pair? {obj} {
+    if {[info object isa typeof $obj Pair]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
+
+
+```
+reg cons ::constcl::cons
+
+proc ::constcl::cons {car cdr} {
+    MkPair $car $cdr
+}
+```
+
+reg car ::constcl::car
+
+
+```
+proc ::constcl::car {obj} {
+    $obj car
+}
+```
+
+
+```
+reg cdr ::constcl::cdr
+
+proc ::constcl::cdr {obj} {
+    $obj cdr
+}
+```
+
+
+```
+reg set-car! ::constcl::set-car!
+
+proc ::constcl::set-car! {obj val} {
+    $obj set-car! $val
+}
+```
+
+
+```
+reg set-cdr! ::constcl::set-cdr!
+
+proc ::constcl::set-cdr! {obj val} {
+    $obj set-cdr! $val
+}
+```
+
+
+```
+reg list? ::constcl::list?
+
+proc ::constcl::list? {obj} {
+    if {$obj eq "#NIL"} {
+        return #t
+    } elseif {[pair? $obj] eq "#t"} {
+        if {[cdr $obj] eq "#NIL"} {
+            return #t
+        } else {
+            return [list? [cdr $obj]]
+        }
+    } else {
+        return #f
+    }
+}
+```
+
+
+```
+reg list ::constcl::list
+
+proc ::constcl::list {args} {
+    if {[llength $args] == 0} {
+        return #NIL
+    } else {
+        set prev #NIL
+        foreach obj [lreverse $args] {
+            set prev [::constcl::cons $obj $prev]
+        }
+        return $prev
+    }
+}
+```
+
+
+```
+proc ::constcl::length-helper {obj} {
+    if {$obj eq "#NIL"} {
+        return 0
+    } else {
+        return [expr {1 + [length-helper [cdr $obj]]}]
+    }
+}
+
+reg length ::constcl::length
+
+proc ::constcl::length {obj} {
+    if {[list? $obj] eq "#t"} {
+        MkNumber [length-helper $obj]
+    } else {
+        error "LIST expected\n(list lst)"
+    }
+}
+```
+
+
+```
+proc ::constcl::copy-list {obj next} {
+    # TODO only fresh conses in the direct chain to NIL
+    if {[null? $obj] eq "#t"} {
+        set next
+    } elseif {[null? [cdr $obj]] eq "#t"} {
+        cons [car $obj] $next
+    } else {
+        cons [car $obj] [copy-list [cdr $obj] $next]
+    }
+}
+
+reg append ::constcl::append
+
+proc ::constcl::append {args} {
+    set prev [lindex $args end]
+    foreach r [lreverse [lrange $args 0 end-1]] {
+        set prev [copy-list $r $prev]
+    }
+    set prev
+}
+```
+
+
+```
+reg reverse ::constcl::reverse
+
+proc ::constcl::reverse {obj} {
+    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
+}
+```
+
+
+```
+reg list-tail ::constcl::list-tail
+
+proc ::constcl::list-tail {obj k} {
+    if {[zero? $k] eq "#t"} {
+        return $obj
+    } else {
+        list-tail [cdr $obj] [- $k #1]
+    }
+}
+```
+
+
+```
+reg list-ref ::constcl::list-ref
+
+proc ::constcl::list-ref {obj k} {
+    ::constcl::car [::constcl::list-tail $obj $k]
+}
+```
+
+
+```
+reg memq ::constcl::memq
+
+proc ::constcl::memq {obj1 obj2} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eq? $obj1 [car $obj2]] eq "#t"} {
+                return $obj2
+            } else {
+                return [memq $obj1 [cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+
+```
+reg memv ::constcl::memv
+
+proc ::constcl::memv {obj1 obj2} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[eqv? $obj1 [car $obj2]] eq "#t"} {
+                return $obj2
+            } else {
+                return [memv $obj1 [cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memv [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+```
+reg member ::constcl::member
+
+proc ::constcl::member {obj1 obj2} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[equal? $obj1 [car $obj2]] eq "#t"} {
+                return $obj2
+            } else {
+                return [member $obj1 [cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(member [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+```
+proc ::constcl::assq {obj1 obj2} {
+    if {[::constcl::list? $obj2] eq "#t"} {
+        if {[::constcl::null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[::constcl::pair? $obj2] eq "#t"} {
+            #TODO replace with a-list handling code
+            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
+                return $obj2
+            } else {
+                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+
+```
+proc ::constcl::assv {obj1 obj2} {
+    if {[::constcl::list? $obj2] eq "#t"} {
+        if {[::constcl::null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[::constcl::pair? $obj2] eq "#t"} {
+            #TODO replace with a-list handling code
+            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
+                return $obj2
+            } else {
+                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+```
+proc ::constcl::assoc {obj1 obj2} {
+    if {[::constcl::list? $obj2] eq "#t"} {
+        if {[::constcl::null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[::constcl::pair? $obj2] eq "#t"} {
+            #TODO replace with a-list handling code
+            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
+                return $obj2
+            } else {
+                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
+}
+```
+
+
+### Symbols
+
+```
+oo::class create Symbol {
+    superclass NIL
+    variable name caseconstant
+    constructor {n} {
+        # TODO idcheck this
+        set name $n
+        set caseconstant 0
+    }
+    method name {} {set name}
+    method value {} {set name}
+    method = {symname} {expr {$name eq $symname}}
+    method mkconstant {} {}
+    method constant {} {return 1}
+    method make-case-constant {} {set caseconstant 1}
+    method case-constant {} {set caseconstant}
+    method write {} { puts -nonewline [my name] }
+    method show {} {set name}
+}
+
+proc ::constcl::MkSymbol {n} {
+    if {$n eq {}} {
+        error "a symbol must have a name"
+    }
+    foreach instance [info class instances Symbol] {
+        if {[$instance name] eq $n} {
+            return $instance
+        }
+    }
+    return [Symbol new $n]
+}
+```
+
+```
+reg symbol? ::constcl::symbol?
+
+proc ::constcl::symbol? {obj} {
+    if {[info object isa typeof $obj Symbol]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
+
+
+```
+reg symbol->string ::constcl::symbol->string
+
+proc ::constcl::symbol->string {obj} {
+    if {[symbol? $obj] eq "#t"} {
+        if {![$obj case-constant]} {
+            set str [MkString [::string tolower [$obj name]]]
+        } else {
+            set str [MkString [$obj name]]
+        }
+        $str mkconstant
+        return $str
+    } else {
+        error "SYMBOL expected\n(symbol->string [$obj show])"
+    }
+}
+```
+
+
+```
+reg string->symbol ::constcl::string->symbol
+
+proc ::constcl::string->symbol {str} {
+    if {[string? $str] eq "#t"} {
+        set sym [MkSymbol [$str value]]
+        $sym make-case-constant
+        return $sym
+    } else {
+        error "STRING expected\n(string->symbol [$obj show])"
+    }
+}
+```
+
+
+### Strings
 
 ```
 oo::class create String {
@@ -2389,10 +3024,6 @@ oo::class create String {
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
     method show {} {format "\"[my value]\""}
-}
-
-proc ::constcl::__MkString {v} {
-    return [String create Mem[incr ::M] $v]
 }
 
 interp alias {} MkString {} String new
@@ -2758,7 +3389,7 @@ proc ::constcl::string-fill! {str char} {
 
 
 
-## Vectors
+### Vectors
 
 ```
 oo::class create Vector {
@@ -2921,660 +3552,58 @@ proc ::constcl::vector-fill! {vec fill} {
 
 
 
-### Control
+### Identifier validation
+
+Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
+first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises
+errors if they fail. A valid symbol is still an invalid identifier if has the name of
+some keyword, which idcheck also checks, for a set of keywords given in the standard.
 
 ```
-catch { Procedure destroy }
-
-oo::class create Procedure {
-    superclass NIL
-    variable parms body env
-    constructor {p b e} {
-        set parms $p         ;# a Tcl list of parameter names
-        set body $b          ;# a Lisp llist of expressions under 'begin
-        set env $e           ;# an environment
-    }
-    method value {} {
-        set value
-    }
-    method write {} { puts -nonewline [self] }
-    method call {args} {
-        if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
-        }
-        ::constcl::eval $body [Environment new $parms $args $env]
-    }
-
-}
-
-interp alias {} ::constcl::MkProcedure {} Procedure new
-```
-
-```
-reg procedure? ::constcl::procedure?
-
-proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj Procedure]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
-        return #t
-    } elseif {[::string match "::constcl::*" $obj] && ![::string match "::constcl::Mem*" $obj]} {
-        return #t
+proc ::constcl::idcheckinit {init} {
+    if {[::string is alpha $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+        return true
     } else {
-        return #f
-    }
-}
-```
-
-
-```
-reg apply ::constcl::apply
-
-proc ::constcl::apply {proc args} {
-    if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-           invoke $proc $args 
-        } else {
-            error "LIST expected\n(apply [$proc write] ...)"
-        }
-    } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
-    }
-}
-```
-
-
-```
-reg map ::constcl::map
-
-proc ::constcl::map {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc write] ...)"
-        }
-    } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
-    }
-}
-```
-
-```
-reg for-each ::constcl::for-each
-
-proc ::constcl::for-each {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc write] ...)"
-        }
-    } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
-    }
-}
-```
-
-```
-proc ::constcl::force {promise} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::call-with-current-continuation {proc} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::values {args} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::call-with-values {producer consumer} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::dynamic-wind {before thunk after} {
-    # TODO
-}
-```
-
-
-## Eval
-
-```
-reg eval ::constcl::eval
-
-proc ::constcl::eval {e {env ::global_env}} {
-    # TODO
-    if {[atom? $e] eq "#t"} {
-        if {[symbol? $e] eq "#t"} {
-            return [lookup $e $env]
-        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
-            return $e
-        } else {
-            error "cannot evaluate $e"
-        }
-    } else {
-        set op [car $e]
-        set args [cdr $e]
-        while {[$op name] in {and case cond for for/and for/list for/or let or}} {
-            expand-macro op args $env
-        }
-        switch [$op name] {
-            quote {
-                return [car $args]
-            }
-            if {
-                if {[eval [car $args] $env] ne "#f"} {
-                    return [eval [cadr $args] $env]
-                } else {
-                    return [eval [caddr $args] $env]
-                }
-            }
-            begin {
-                return [eprogn $args $env]
-            }
-            define {
-                return [declare [car $args] [eval [cadr $args] $env] $env]
-            }
-            set! {
-                return [update! [car $args] [eval [cadr $args] $env] $env]
-            }
-            lambda {
-                return [make-function [car $args] [cdr $args] $env]
-            }
-            default {
-                return [invoke [eval $op $env] [evlis $args $env]]
-            }
-        }
-    }
-}
-```
-
-```
-proc ::constcl::lookup {sym env} {
-    set sym [$sym name]
-    [$env find $sym] get $sym
-}
-```
-
-```
-proc ::constcl::eprogn {exps env} {
-    if {[pair? $exps] eq "#t"} {
-        if {[pair? [cdr $exps]] eq "#t"} {
-            eval [car $exps] $env
-            return [eprogn [cdr $exps] $env]
-        } else {
-            return [eval [car $exps] $env]
-        }
-    } else {
-        return #NIL
-    }
-}
-```
-
-```
-proc ::constcl::declare {sym val env} {
-    set var [varcheck [idcheck [$sym name]]]
-    $env set [$sym name] $val
-    return #NIL
-}
-```
-
-```
-proc ::constcl::update! {var expr env} {
-    set var [varcheck [idcheck [$var name]]]
-    [$env find $var] set $var $expr
-    set expr
-}
-```
-
-```
-proc ::constcl::evlis {exps env} {
-    if {[pair? $exps] eq "#t"} {
-        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
-    } else {
-        return #NIL
-    }
-}
-```
-
-```
-proc ::constcl::invoke {pr vals} {
-    if {[procedure? $pr] eq "#t"} {
-        if {[info object isa object $pr]} {
-            $pr call {*}[splitlist $vals]
-        } else {
-            $pr {*}[splitlist $vals]
-        }
-    } else {
-        error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
-    }
-}
-```
-
-```
-proc ::constcl::splitlist {vals} {
-#puts [info level [info level]]
-    set result {}
-    while {[pair? $vals] eq "#t"} {
-        lappend result [car $vals]
-        set vals [cdr $vals]
-    }
-#puts result=$result
-#puts resval=[lmap res $result {$res show}]
-    return $result
-}
-```
-
-```
-proc ::constcl::make-function {formals exps env} {
-    set parms [splitlist $formals]
-    #set body [cons [MkSymbol begin] [list [splitlist $exps]]]
-    set body [cons [MkSymbol begin] $exps]
-    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
-}
-```
-
-```
-proc ::constcl::expand-and {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #B #t]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
-        return [cons #B $exps]
-    } else {
-        return [do-and $exps #NIL]
+        return false
     }
 }
 
-proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return $prev
-    } else {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
-    }
-}
-```
-
-```
-proc ::constcl::do-case {keyexpr clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
-        set keyl [caar $clauses]
-        set body [cdar $clauses]
-        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
-            set keyl #t
-        } else {
-            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        }
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
-        set keyl [caar $clauses]
-        set body [cdar $clauses]
-        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
-    }
-}
-```
-
-```
-proc ::constcl::do-cond {clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
-        set pred [caar $clauses]
-        set body [cdar $clauses]
-        if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
-            set pred #t
-        }
-        if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
-        set pred [caar $clauses]
-        set body [cdar $clauses]
-        if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
-    }
-}
-```
-
-```
-proc ::constcl::do-for {exps env} {
-    #single-clause
-    set clauses [car $exps]
-    set body [cdr $exps]
-    set clause [car $clauses]
-    set id [car $clause]
-    set seq [cadr $clause]
-    if {[number? $seq] eq "#t"} {
-        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
-    } else {
-        set seq [eval $seq $env]
-        if {[list? $seq] eq "#t"} {
-            set seq [splitlist $seq]
-        } elseif {[string? $seq] eq "#t"} {
-            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-        } elseif {[vector? $seq] eq "#t"} {
-            set seq [$seq value]
+proc ::constcl::idchecksubs {subs} {
+    foreach c [split $subs {}] {
+        if {!([::string is alnum $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+            return false
         }
     }
-    set res {}
-    foreach v $seq {
-        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    return true
+}
+
+proc ::constcl::idcheck {sym} {
+    if {(![idcheckinit [::string index $sym 0]] ||
+        ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
+        error "Identifier expected ($sym)"
     }
-    return $res
+    set sym
 }
 
-proc ::constcl::expand-for {exps env} {
-    set res [do-for $exps $env]
-    lappend res [list #Q #NIL]
-    return [list #B {*}$res]
-}
-```
-
-```
-proc ::constcl::expand-for/and {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "and"] {*}$res]
-}
-```
-
-```
-proc ::constcl::expand-for/list {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "list"] {*}$res]
-}
-```
-
-```
-proc ::constcl::expand-for/or {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "or"] {*}$res]
-}
-```
-
-```
-proc ::constcl::expand-let {exps} {
-    if {[symbol? [car $exps]] eq "#t"} {
-        # named let
-        set variable [car $exps]
-        set bindings [cadr $exps]
-        set body [cddr $exps]
-        set vars [dict create $variable #f]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        set decl [dict values [dict map {k v} $vars {list $k $v}]]
-        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
-        return [list #L [list {*}$decl] [list #S $variable $func] $call]
-    } else {
-        # regular let
-        set bindings [car $exps]
-        set body [cdr $exps]
-        set vars [dict create]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
+proc ::constcl::varcheck {sym} {
+    if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
+        cond and or case let let* letrec do delay quasiquote}} {
+            error "Macro name can't be used as a variable: $sym"
     }
-}
-```
-
-```
-proc ::constcl::expand-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #B #f]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
-        return [cons #B $exps]
-    } else {
-        return [do-or $exps]
-    }
-}
-
-proc ::constcl::do-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return #f
-    } else {
-        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
-    }
-}
-```
-
-```
-proc ::constcl::expand-macro {n1 n2 env} {
-    upvar $n1 op $n2 args
-    switch [$op name] {
-        and {
-            set p [expand-and $args]
-        }
-        case {
-            set p [do-case [car $args] [cdr $args]]
-        }
-        cond {
-            set p [do-cond $args]
-        }
-        for {
-            set p [expand-for $args $env]
-        }
-        for/and {
-            set p [expand-for/and $args $env]
-        }
-        for/list {
-            set p [expand-for/list $args $env]
-        }
-        for/or {
-            set p [expand-for/or $args $env]
-        }
-        let {
-            set p [expand-let $args]
-        }
-        or {
-            set p [expand-or $args]
-        }
-    }
-    set op [car $p]
-    set args [cdr $p]
+    return $sym
 }
 ```
 
 
 ```
-proc ::constcl::scheme-report-environment {version} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::null-environment {version} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::interaction-environment {} {
-    # TODO
-}
-```
-
-
-### Input and output
-
-```
-proc ::constcl::call-with-input-file {string proc} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::call-with-output-file {string proc} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::input-port? {obj} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::output-port? {obj} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::current-input-port {} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::current-output-port {} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::with-input-from-file {string thunk} {
-    # TODO
-}
-```
-
-
-```
-proc ::constcl::with-output-to-file {string thunk} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::open-input-file {filename} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::open-output-file {filename} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::close-input-port {port} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::close-output-port {port} {
-    # TODO
-}
-```
-
-```
-if no {
-    # defined in read.tcl
-proc ::constcl::read {args} {
-    # TODO
-}
-}
-```
-
-```
-proc ::constcl::read-char {args} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::peek-char {args} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::char-ready? {args} {
-    # TODO
-}
-```
-
-```
-if no {
-proc ::constcl::write {obj args} {
-    # TODO write [$obj write]
-}
-}
-```
-
-```
-reg display ::constcl::display
-
-proc ::constcl::display {obj args} {
-    # TODO write [$obj display]
-}
-```
-
-```
-reg newline ::constcl::newline
-
-proc ::constcl::newline {args} {
-    # TODO write newline
-}
-```
-
-```
-proc ::constcl::write-char {args} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::load {filename} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::transcript-on {filename} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::transcript-off {} {
-    # TODO
-}
-```
-
-
-unset -nocomplain M
-# memory cell number
-set M 0
-
-unset -nocomplain S
-# string store number
+unset -nocomplain S ;# string store number
 set S 0
 
 unset -nocomplain StrSto
 set StrSto [list]
+```
 
+```
 interp alias {} #NIL {} [NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
@@ -3608,6 +3637,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #EOF {} [EndOfFile new]
+```
 
 ```
 dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
@@ -3626,42 +3656,6 @@ proc ::constcl::atom? {obj} {
 ```
 
 
-
-
-### Environment class and objects
-
-The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
-with the added finesse of keeping a link to the outer environment (starting a chain that goes all
-the way to the global environment and then stops at the null environment) which can be traversed
-by the find method to find which innermost environment a given symbol is bound in.
-
-```
-catch { Environment destroy }
-
-oo::class create Environment {
-    variable bindings outer_env
-    constructor {syms vals {outer {}}} {
-	set bindings [dict create]
-        foreach sym $syms val $vals {
-            my set $sym $val
-        }
-        set outer_env $outer
-    }
-    method find {sym} {
-        if {$sym in [dict keys $bindings]} {
-            self
-        } else {
-            $outer_env find $sym
-        }
-    }
-    method get {sym} {
-        dict get $bindings $sym
-    }
-    method set {sym val} {
-        dict set bindings $sym $val
-    }
-}
-```
 
 
 On startup, two __Environment__ objects called __null_env__ (the null environment, not the same
