@@ -19,7 +19,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and cond let or}} {
+        while {[$op name] in {and case cond let or}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -139,6 +139,26 @@ proc ::constcl::make-function {formals exps env} {
 CB
 
 CB
+proc ::constcl::do-case {keyexpr clauses} {
+    if {[eq? [length $clauses] #1] eq "#t"} {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
+            set keyl #t
+        } else {
+            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        }
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    } elseif {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } else {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    }
+}
+
 proc ::constcl::do-cond {clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
@@ -190,6 +210,11 @@ proc ::constcl::expand-macro {n1 n2 env} {
                 set op [car $p]
                 set args [cdr $p]
             }
+        }
+        case {
+            set p [do-case [car $args] [cdr $args]]
+            set op [car $p]
+            set args [cdr $p]
         }
         cond {
             set p [do-cond $args]
@@ -295,6 +320,21 @@ TT(
     pxp "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
+::tcltest::test eval-3.0 {expand case macro} -body {
+    pxp "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
+} -output "(if (or (eqv? (quote 6) (quote 2)) (eqv? (quote 6) (quote 3)) (eqv? (quote 6) (quote 5)) (eqv? (quote 6) (quote 7))) (begin (quote prime)) (if (or (eqv? (quote 6) (quote 1)) (eqv? (quote 6) (quote 4)) (eqv? (quote 6) (quote 6)) (eqv? (quote 6) (quote 8)) (eqv? (quote 6) (quote 9))) (begin (quote composite)) (quote ())))"
+
+::tcltest::test eval-3.1 {run case macro} -body {
+    pep "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
+} -output "composite\n"
+
+::tcltest::test eval-3.2 {expand case macro} -body {
+    pxp "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
+} -output "(if (or (eqv? (quote c) (quote a)) (eqv? (quote c) (quote e)) (eqv? (quote c) (quote i)) (eqv? (quote c) (quote o)) (eqv? (quote c) (quote u))) (begin (quote vowel)) (if (or (eqv? (quote c) (quote w)) (eqv? (quote c) (quote y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))"
+
+::tcltest::test macro-3.3 {run case macro} {
+    pep "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
+} "consonant"
 
 
 if no {

@@ -2661,7 +2661,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and cond let or}} {
+        while {[$op name] in {and case cond let or}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -2763,6 +2763,26 @@ proc ::constcl::make-function {formals exps env} {
     return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 
+proc ::constcl::do-case {keyexpr clauses} {
+    if {[eq? [length $clauses] #1] eq "#t"} {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
+            set keyl #t
+        } else {
+            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        }
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    } elseif {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } else {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+    }
+}
+
 proc ::constcl::do-cond {clauses} {
     if {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
@@ -2812,6 +2832,11 @@ proc ::constcl::expand-macro {n1 n2 env} {
                 set op [car $p]
                 set args [cdr $p]
             }
+        }
+        case {
+            set p [do-case [car $args] [cdr $args]]
+            set op [car $p]
+            set args [cdr $p]
         }
         cond {
             set p [do-cond $args]
