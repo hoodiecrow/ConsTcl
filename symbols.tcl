@@ -1,6 +1,6 @@
 
 MD(
-## Symbols
+### Symbols
 MD)
 
 CB
@@ -32,7 +32,7 @@ proc ::constcl::MkSymbol {n} {
             return $instance
         }
     }
-    return [Symbol create Mem[incr ::M] $n]
+    return [Symbol new $n]
 }
 CB
 

@@ -1,6 +1,6 @@
 
 MD(
-## Characters
+### Characters
 MD)
 
 CB
@@ -12,13 +12,15 @@ oo::class create Char {
         set value $v
     }
     method char {} {
-        if {[regexp {^#\\[[:graph:]]$} [my value]]} {
-            return [::string index [my value] 2]
-        } elseif {[regexp {^#\\([[:graph:]]+)$} [my value] -> char_name]} {
-            # TODO
-            switch $char_name {
-                space {return " "}
-                newline {return "\n"}
+        switch $value {
+            "#\\space" {
+                return " "
+            }
+            "#\\newline" {
+                return "\n"
+            }
+            default {
+                return [::string index [my value] 2]
             }
         }
     }
@@ -70,7 +72,7 @@ proc ::constcl::MkChar {v} {
             return $instance
         }
     }
-    return [Char create Mem[incr ::M] $v]
+    return [Char new $v]
 }
 CB
 

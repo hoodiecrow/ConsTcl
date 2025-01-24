@@ -1,16 +1,14 @@
 
-unset -nocomplain M
-# memory cell number
-set M 0
-
-unset -nocomplain S
-# string store number
+CB
+unset -nocomplain S ;# string store number
 set S 0
 
 unset -nocomplain StrSto
 set StrSto [list]
+CB
 
-interp alias {} #NIL {} [NIL create ::constcl::Mem0]
+CB
+interp alias {} #NIL {} [NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 
@@ -42,7 +40,8 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #EOF {} [EndOfFile create Mem[incr ::M]]
+interp alias {} #EOF {} [EndOfFile new]
+CB
 
 CB
 dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
@@ -148,7 +147,7 @@ TT(
 
 ::tcltest::test thtcl2-8.0 {procedure definition} -body {
     pep "(lambda (r) (* r r))"
-} -match regexp -output "::constcl::Mem\\d+\n"
+} -match regexp -output "::oo::Obj\\d+\n"
 
 ::tcltest::test thtcl2-8.1 {procedure with two expressions} -body {
     pep "(define f (lambda () (define r 20) (* r r)))"

@@ -1,6 +1,6 @@
 
 MD(
-## Pairs and lists
+### Pairs and lists
 MD)
 
 CB
@@ -9,7 +9,6 @@ catch { Pair destroy }
 oo::class create Pair {
     variable car cdr constant
     constructor {a d} {
-        set truth Mem1
         set car $a
         set cdr $d
         set constant 0
@@ -69,10 +68,7 @@ proc ::constcl::show-pair {obj} {
 }
 CB
 
-
-proc ::constcl::MkPair {a d} {
-    return [Pair create Mem[incr ::M] $a $d]
-}
+interp alias {} ::constcl::MkPair {} Pair new
 CB
 
 CB

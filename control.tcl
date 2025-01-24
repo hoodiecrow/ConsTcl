@@ -1,6 +1,6 @@
 
 MD(
-## Control
+### Control
 MD)
 
 CB
@@ -11,13 +11,12 @@ oo::class create Procedure {
     variable parms body env
     constructor {p b e} {
         set parms $p         ;# a Tcl list of parameter names
-        set body $b          ;# a Lisp llist of expressions under 'begin
+        set body $b          ;# a Lisp list of expressions under 'begin
         set env $e           ;# an environment
     }
-    method value {} {
-        set value
-    }
+    method value {} {}
     method write {} { puts -nonewline [self] }
+    method show {} { [self] }
     method call {args} {
         if {[llength $parms] != [llength $args]} {
             error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
@@ -26,12 +25,8 @@ oo::class create Procedure {
     }
 
 }
-CB
 
-CB
-proc ::constcl::MkProcedure {parms body env} {
-    Procedure create Mem[incr ::M] $parms $body $env
-}
+interp alias {} ::constcl::MkProcedure {} Procedure new
 CB
 
 CB
@@ -42,7 +37,7 @@ proc ::constcl::procedure? {obj} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
         return #t
-    } elseif {[::string match "::constcl::*" $obj] && ![::string match "::constcl::Mem*" $obj]} {
+    } elseif {[::string match "::constcl::*" $obj]} {
         return #t
     } else {
         return #f
@@ -68,10 +63,10 @@ proc ::constcl::apply {proc args} {
         if {[list? [lindex $args end]] eq "#t"} {
            invoke $proc $args 
         } else {
-            error "LIST expected\n(apply [$proc write] ...)"
+            error "LIST expected\n(apply [$proc show] ...)"
         }
     } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 CB
@@ -93,14 +88,14 @@ CB
 reg map ::constcl::map
 
 proc ::constcl::map {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
+    if {[procedure? $proc] eq "#t"} {
+        if {[list? [lindex $args end]] eq "#t"} {
             $proc call ;# TODO
         } else {
-            error "LIST expected\n(apply [$proc write] ...)"
+            error "LIST expected\n(apply [$proc show] ...)"
         }
     } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 CB
@@ -113,10 +108,10 @@ proc ::constcl::for-each {proc args} {
         if {[::constcl::list? [lindex $args end]] eq "#t"} {
             $proc call ;# TODO
         } else {
-            error "LIST expected\n(apply [$proc write] ...)"
+            error "LIST expected\n(apply [$proc show] ...)"
         }
     } else {
-        error "PROCEDURE expected\n(apply [$proc write] ...)"
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 CB

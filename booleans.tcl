@@ -1,6 +1,6 @@
 
 MD(
-## Booleans
+### Booleans
 MD)
 
 CB
@@ -26,7 +26,7 @@ proc ::constcl::MkBoolean {v} {
             return $instance
         }
     }
-    return [Boolean create Mem[incr ::M] $v]
+    return [Boolean new $v]
 }
 CB
 

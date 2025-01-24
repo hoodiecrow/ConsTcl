@@ -104,7 +104,7 @@ CB
 CB
 proc ::constcl::invoke {pr vals} {
     if {[procedure? $pr] eq "#t"} {
-        if {[::string match "::constcl::Mem*" $pr]} {
+        if {[info object isa object $pr]} {
             $pr call {*}[splitlist $vals]
         } else {
             $pr {*}[splitlist $vals]
@@ -132,8 +132,7 @@ CB
 CB
 proc ::constcl::make-function {formals exps env} {
     set parms [splitlist $formals]
-    #set body [cons [MkSymbol begin] [list [splitlist $exps]]]
-    set body [cons [MkSymbol begin] $exps]
+    set body [cons #B $exps]
     return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
 }
 CB

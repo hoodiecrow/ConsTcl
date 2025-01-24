@@ -1,6 +1,6 @@
 
 MD(
-## Vectors
+### Vectors
 MD)
 
 CB
@@ -42,7 +42,7 @@ proc ::constcl::MkVector {v} {
             return $instance
         }
     }
-    return [Vector create Mem[incr ::M] $v]
+    return [Vector new $v]
 }
 CB
 

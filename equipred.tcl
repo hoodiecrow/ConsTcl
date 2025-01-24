@@ -1,3 +1,8 @@
+MD(
+## Built-in procedures
+
+###Equivalence predicates
+MD)
 
 CB
 reg eq? ::constcl::eq?

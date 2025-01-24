@@ -1,6 +1,6 @@
 
 MD(
-## Strings
+### Strings
 MD)
 
 CB
@@ -41,9 +41,7 @@ oo::class create String {
     method show {} {format "\"[my value]\""}
 }
 
-proc ::constcl::MkString {v} {
-    return [String create Mem[incr ::M] $v]
-}
+interp alias {} MkString {} String new
 CB
 
 CB

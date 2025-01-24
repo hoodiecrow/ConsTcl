@@ -1,6 +1,7 @@
 
 MD(
-## Numbers
+### Numbers
+
 MD)
 
 CB
@@ -28,9 +29,7 @@ oo::class create Number {
     method show {} { set value }
 }
 
-proc ::constcl::MkNumber {v} {
-    return [Number create Mem[incr ::M] $v]
-}
+interp alias {} ::constcl::MkNumber {} Number new
 CB
 
 CB
