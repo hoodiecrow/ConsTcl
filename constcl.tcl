@@ -58,9 +58,9 @@ oo::class create NIL {
 reg null? ::constcl::null?
 
 proc ::constcl::null? {obj} {
-    if {[info object isa typeof $obj NIL]} {
+    if {$obj eq "::constcl::Mem0"} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] NIL]} {
+    } elseif {[interp alias {} $obj] eq "::constcl::Mem0"} {
         return #t
     } else {
         return #f
@@ -485,6 +485,70 @@ proc ::constcl::write-pair {obj} {
     }
 }
 
+
+
+reg eq? ::constcl::eq?
+
+proc ::constcl::eq? {obj1 obj2} {
+    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+        return #t
+    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+        return #t
+    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+        return #t
+    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+        return #t
+    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+reg eqv? ::constcl::eqv?
+
+proc ::constcl::eqv? {obj1 obj2} {
+    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && [$obj1 name] eq [$obj2 name]} {
+        return #t
+    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+        return #t
+    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && [$obj1 char] eq [$obj2 char]} {
+        return #t
+    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+        return #t
+    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && [$obj1 car] eq [$obj2 car] && [$obj1 cdr] eq [$obj2 cdr]} {
+        return #t
+    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+        return #t
+    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+        return #t
+    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+reg equal? ::constcl::equal?
+
+proc ::constcl::equal? {obj1 obj2} {
+    if {[$obj1 show] eq [$obj2 show]} {
+        return #t
+    } else {
+        return #f
+    }
+    # TODO
+}
 
 
 
@@ -1446,23 +1510,6 @@ proc ::constcl::memq {obj1 obj2} {
 }
 
 
-reg eq? ::constcl::eq?
-
-proc ::constcl::eq? {obj1 obj2} {
-    # TODO
-    if {$obj1 eq $obj2} {
-        return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] == [$obj2 value]} {
-        return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj] eq "#t" && [$obj1 value] == [$obj2 value]} {
-        return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj index] eq [$obj2 index]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-
 reg memv ::constcl::memv
 
 proc ::constcl::memv {obj1 obj2} {
@@ -1481,16 +1528,6 @@ proc ::constcl::memv {obj1 obj2} {
     }
 }
 
-reg eqv? ::constcl::eqv?
-
-proc ::constcl::eqv? {obj1 obj2} {
-    if {[::constcl::eq? $obj1 $obj2] eq "#t"} {
-        return #t
-    } else {
-        return #f
-    }
-}
-
 reg member ::constcl::member
 
 proc ::constcl::member {obj1 obj2} {
@@ -1506,21 +1543,6 @@ proc ::constcl::member {obj1 obj2} {
         }
     } else {
         error "LIST expected\n(member [$obj1 show] [$obj2 show])"
-    }
-}
-
-reg equal? ::constcl::equal?
-
-proc ::constcl::equal? {obj1 obj2} {
-    if {[eqv? $obj1 $obj2] eq "#t"} {
-        return #t
-    } else {
-        if {[$obj1 show] eq [$obj2 show]} {
-            return #t
-        } else {
-            return #f
-        }
-        # TODO
     }
 }
 
@@ -2827,7 +2849,7 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 
-interp alias {} #NIL {} [NIL create Mem0]
+interp alias {} #NIL {} [NIL create ::constcl::Mem0]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 

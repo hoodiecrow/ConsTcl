@@ -65,9 +65,9 @@ CB
 reg null? ::constcl::null?
 
 proc ::constcl::null? {obj} {
-    if {[info object isa typeof $obj NIL]} {
+    if {$obj eq "::constcl::Mem0"} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] NIL]} {
+    } elseif {[interp alias {} $obj] eq "::constcl::Mem0"} {
         return #t
     } else {
         return #f

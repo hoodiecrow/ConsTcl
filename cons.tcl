@@ -10,7 +10,7 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 
-interp alias {} #NIL {} [NIL create Mem0]
+interp alias {} #NIL {} [NIL create ::constcl::Mem0]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 

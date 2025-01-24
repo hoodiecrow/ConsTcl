@@ -439,25 +439,6 @@ TT(
 TT)
 
 CB
-reg eq? ::constcl::eq?
-
-proc ::constcl::eq? {obj1 obj2} {
-    # TODO
-    if {$obj1 eq $obj2} {
-        return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] == [$obj2 value]} {
-        return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj] eq "#t" && [$obj1 value] == [$obj2 value]} {
-        return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj index] eq [$obj2 index]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-CB
-
-CB
 reg memv ::constcl::memv
 
 proc ::constcl::memv {obj1 obj2} {
@@ -478,18 +459,6 @@ proc ::constcl::memv {obj1 obj2} {
 CB
 
 CB
-reg eqv? ::constcl::eqv?
-
-proc ::constcl::eqv? {obj1 obj2} {
-    if {[::constcl::eq? $obj1 $obj2] eq "#t"} {
-        return #t
-    } else {
-        return #f
-    }
-}
-CB
-
-CB
 reg member ::constcl::member
 
 proc ::constcl::member {obj1 obj2} {
@@ -505,23 +474,6 @@ proc ::constcl::member {obj1 obj2} {
         }
     } else {
         error "LIST expected\n(member [$obj1 show] [$obj2 show])"
-    }
-}
-CB
-
-CB
-reg equal? ::constcl::equal?
-
-proc ::constcl::equal? {obj1 obj2} {
-    if {[eqv? $obj1 $obj2] eq "#t"} {
-        return #t
-    } else {
-        if {[$obj1 show] eq [$obj2 show]} {
-            return #t
-        } else {
-            return #f
-        }
-        # TODO
     }
 }
 CB
