@@ -103,7 +103,7 @@ oo::class create NIL {
     method cdr {} {error "PAIR expected"}
     method set-car! {v} {error "PAIR expected"}
     method set-cdr! {v} {error "PAIR expected"}
-    method numval {} {throw "Not a number"}
+    method numval {} {error "Not a number"}
     method write {} {puts -nonewline "()"}
     method show {} {format "()"}
 }
@@ -355,9 +355,6 @@ proc ::constcl::read-character {} {
         advance
     }
     if {[::constcl::character-check $name]} {
-        if {[regexp -nocase {^#\\(space|newline)$} $name]} {
-            set name [::string tolower $name]
-        }
         return [MkChar $name]
     } else {
         error "Invalid character constant $name"
@@ -1117,10 +1114,10 @@ oo::class create Number {
     superclass NIL
     variable value
     constructor {v} {
-        if {[::string is double $num]} {
+        if {[::string is double $v]} {
             set value $v
         } else {
-            error "NUMBER expected\n$num"
+            error "NUMBER expected\n$v"
         }
     }
     method positive {} {expr {$value > 0}}
@@ -1887,7 +1884,7 @@ proc ::constcl::string->number {args} {
     if {[llength $args] == 1} {
         set str [lindex $args 0]
         if {[string? $str] eq "#t"} {
-            return [MkNumber [$str numval]]
+            return [MkNumber [$str value]]
         } else {
             error "STRING expected\n(string->number [$str show])"
         }
@@ -1895,9 +1892,9 @@ proc ::constcl::string->number {args} {
         lassign $args str radix
         if {[string? $str] eq "#t"} {
             if {[$radix numval] == 10} {
-                return [MkNumber [$str numval]]
+                return [MkNumber [$str value]]
             } elseif {[$radix numval] in {2 8 16}} {
-                return [MkNumber [frombase [$radix numval] [$str numval]]]
+                return [MkNumber [frombase [$radix numval] [$str value]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
@@ -1997,13 +1994,18 @@ proc ::constcl::not {obj} {
 
 ### Characters
 
+Characters are any Unicode printing character, and also space and newline space characters.
+
 ```
 oo::class create Char {
     superclass NIL
     variable value
     constructor {v} {
-        # TODO check for #\ and set character names to lowercase
-        set value $v
+        if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
+            set value $v
+        } else {
+            error "CHAR expected\n$v"
+        }
     }
     method char {} {
         switch $value {
@@ -2061,6 +2063,9 @@ oo::class create Char {
 }
 
 proc ::constcl::MkChar {v} {
+    if {[regexp -nocase {^#\\(space|newline)$} $v]} {
+        set v [::string tolower $v]
+    }
     foreach instance [info class instances Char] {
         if {[$instance value] eq $v} {
             return $instance
@@ -2069,6 +2074,8 @@ proc ::constcl::MkChar {v} {
     return [Char new $v]
 }
 ```
+
+`char?` recognizes Char objects by type.
 
 ```
 reg char? ::constcl::char?
@@ -2084,6 +2091,9 @@ proc ::constcl::char? {obj} {
 }
 ```
 
+
+`char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
+values. They only compare two characters at a time.
 
 ```
 reg char=? ::constcl::char=?
@@ -2170,6 +2180,9 @@ proc ::constcl::char>=? {c1 c2} {
 ```
 
 
+`char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
+values in a case insensitive manner. They only compare two characters at a time.
+
 ```
 reg char-ci=? ::constcl::char-ci=?
 
@@ -2255,6 +2268,10 @@ proc ::constcl::char-ci>=? {c1 c2} {
 ```
 
 
+The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
+`char-upper-case`, and `char-lower-case` test a character for these
+conditions.
+
 ```
 reg char-alphabetic? ::constcl::char-alphabetic?
 
@@ -2331,6 +2348,8 @@ proc ::constcl::integer->char {n} {
     # TODO
 }
 ```
+
+`char-upcase` and `char-downcase` alter the case of a character.
 
 ```
 reg char-upcase ::constcl::char-upcase
@@ -2656,7 +2675,7 @@ oo::class create Pair {
         set cdr $d
         set constant 0
     }
-    method truth {} {return #t}
+    method bvalue {} {return #t}
     method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
