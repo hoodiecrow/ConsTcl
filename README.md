@@ -218,30 +218,30 @@ proc ::constcl::read-value {} {
         {\(} {
             advance
             skip-whitespace
-            set p [read-pair ")"]
+            set val [read-pair ")"]
             skip-whitespace
             if {[first] ne ")"} {
                 error "Missing right parenthesis (first=[first])."
             }
             advance
-            return $p
+            return $val
         }
         {\[} {
             advance
             skip-whitespace
-            set p [read-pair "\]"]
+            set val [read-pair "\]"]
             skip-whitespace
             if {[first] ne "\]"} {
                 error "Missing right bracket (first=[first])."
             }
             advance
-            return $p
+            return $val
         }
         {'} {
             advance
-            set p [read-value]
-            make-constant $p
-            return [::constcl::list #Q $p]
+            set val [read-value]
+            make-constant $val
+            return [::constcl::list #Q $val]
         }
         {\+} - {\-} {
             if {![::string is digit [second]]} {
@@ -264,12 +264,12 @@ proc ::constcl::read-value {} {
             switch [first] {
                 ( {
                     advance
-                    set p [::constcl::read-vector]
+                    set val [::constcl::read-vector]
                     if {[first] ne ")"} {
                         error "Missing right parenthesis (first=[first])."
                     }
                     advance
-                    return $p
+                    return $val
                 }
                 t {
                     advance
@@ -319,7 +319,7 @@ proc ::constcl::make-constant {obj} {
 ```
 
 
-`read-number` reads a number and returns a Number object.
+`read-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 ```
 proc ::constcl::read-number {} {
@@ -345,7 +345,7 @@ proc ::constcl::character-check {name} {
 }
 ```
 
-`read-character` reads a character and returns a Char object.
+`read-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 ```
 proc ::constcl::read-character {} {
@@ -366,7 +366,7 @@ proc ::constcl::read-character {} {
 ```
 
 
-`read-vector` reads a vector value and returns a Vector object.
+`read-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 ```
 proc ::constcl::read-vector {} {
@@ -382,7 +382,7 @@ proc ::constcl::read-vector {} {
 }
 ```
 
-`read-string` reads a string value and returns a String object.
+`read-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 ```
 proc ::constcl::read-string {} {
@@ -406,7 +406,7 @@ proc ::constcl::read-string {} {
 ```
 
 
-`read-identifier` reads an identifier value and returns a Symbol object.
+`read-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 ```
 proc ::constcl::read-identifier {} {
@@ -435,7 +435,7 @@ proc ::constcl::find-char {c} {
 }
 ```
 
-The `read-pair` procedure reads values and returns a Pair object.
+The `read-pair` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
 
 ```
 proc ::constcl::read-pair {c} {
@@ -489,11 +489,11 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 | [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
 | [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
 | [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
-| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a [Procedure](https://github.com/hoodiecrow/thtcl#procedure-class-and-objects) object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj36010 |
+| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
 | [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
 
 The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
-See the part about [macros](https://github.com/hoodiecrow/thtcl?tab=readme-ov-file#macros) below.
+See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 
 ```
@@ -557,9 +557,9 @@ proc ::constcl::lookup {sym env} {
 ```
 
 The _conditional_ form evaluates a Lisp list of three expressions. The first, the _condition_,
-is evaluated first. If it evaluates to anything other than `#f`, the second expression, or
-_consequent_, is evaluated and the value returned. Otherwise, the third expression, or 
-_alternate_ is evaluated and the value returned.
+is evaluated first. If it evaluates to anything other than `#f`, the second expression (the
+_consequent_) is evaluated and the value returned. Otherwise, the third expression (the 
+_alternate_) is evaluated and the value returned.
 
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_.
@@ -591,19 +591,18 @@ proc ::constcl::declare {sym val env} {
 ```
 
 The `update!` helper modifies an existing variable that is bound somewhere in the 
-environment chain. It first checks that the symbol name is a valid identifier, then it
-finds the variable's environment and updates the binding. It returns the expression, so
-calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables to 99.
+environment chain. It finds the variable's environment and updates the binding. It
+returns the expression, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
+sets both variables to 99.
 
 ```
 proc ::constcl::update! {var expr env} {
-    set var [varcheck [idcheck [$var name]]]
-    [$env find $var] set $var $expr
+    [$env find [$var name]] set [$var name] $expr
     set expr
 }
 ```
 
-`make-function` makes a `Procedure` object. First it needs to convert the Lisp lists
+`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp lists
 `formals` and `body`. The former is reworked to a Tcl list of parameter names, and 
 the latter is packed inside a `begin` if it has more than one expression, and taken
 out of its list if not.
@@ -666,6 +665,10 @@ proc ::constcl::evlis {exps env} {
 
 ### Macros
 
+Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong
+points. This interpreter does macro expansion, but the user can't define new macros--the ones
+available are hardcoded in the code below.
+
 ```
 proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
@@ -703,6 +706,9 @@ proc ::constcl::expand-macro {n1 n2 env} {
 }
 ```
 
+`expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
+has 0 or 1 elements, and a nested `if` construct otherwise.
+
 ```
 proc ::constcl::expand-and {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
@@ -723,9 +729,14 @@ proc ::constcl::do-and {exps prev} {
 }
 ```
 
+The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses, 
+and nested `if` constructs if there are some.
+
 ```
 proc ::constcl::do-case {keyexpr clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
+    if {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } elseif {[eq? [length $clauses] #1] eq "#t"} {
         set keyl [caar $clauses]
         set body [cdar $clauses]
         if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
@@ -733,38 +744,43 @@ proc ::constcl::do-case {keyexpr clauses} {
         } else {
             set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
         }
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
+        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
     } else {
         set keyl [caar $clauses]
         set body [cdar $clauses]
         set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
+        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
     }
 }
 ```
 
+The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses, 
+and nested `if` constructs if there are some.
+
 ```
 proc ::constcl::do-cond {clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
+    if {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } elseif {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
         set body [cdar $clauses]
         if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
             set pred #t
         }
         if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
+        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
     } else {
         set pred [caar $clauses]
         set body [cdar $clauses]
         if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
+        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
     }
 }
 ```
+
+The `expand-for` procedure expands the `for` macro. It returns a `begin`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
 
 ```
 proc ::constcl::do-for {exps env} {
@@ -800,12 +816,20 @@ proc ::constcl::expand-for {exps env} {
 }
 ```
 
+The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+
 ```
 proc ::constcl::expand-for/and {exps env} {
     set res [do-for $exps $env]
     return [list [MkSymbol "and"] {*}$res]
 }
 ```
+
+The `expand-for/list` procedure expands the `for/list` macro. It returns a `list`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
 
 ```
 proc ::constcl::expand-for/list {exps env} {
@@ -814,12 +838,19 @@ proc ::constcl::expand-for/list {exps env} {
 }
 ```
 
+The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+
 ```
 proc ::constcl::expand-for/or {exps env} {
     set res [do-for $exps $env]
     return [list [MkSymbol "or"] {*}$res]
 }
 ```
+
+`expand-let` expands the named `let` and 'regular' `let` macros. The ultimately
+expand to ´lambda` constructs.
 
 ```
 proc ::constcl::expand-let {exps} {
@@ -854,6 +885,9 @@ proc ::constcl::expand-let {exps} {
     }
 }
 ```
+
+`expand-or` expands the `or` macro. It returns a `begin`-expression if the macro
+has 0 or 1 elements, and a nested `if` construct otherwise.
 
 ```
 proc ::constcl::expand-or {exps} {
