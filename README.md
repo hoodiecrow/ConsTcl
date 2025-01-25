@@ -619,8 +619,8 @@ proc ::constcl::make-function {formals body env} {
 }
 ```
 
-`invoke` arranges for a procedure to be called with a list of values. It checks if `pr`
-really is a procedure, and determines whether to call `pr` as an object or as a Tcl
+`invoke` arranges for a procedure to be called with a Tcl list of Lisp values. It checks
+if `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl
 command.
 
 ```
@@ -1107,6 +1107,10 @@ proc ::constcl::equal? {obj1 obj2} {
 
 ### Numbers
 
+I have only implemented a bare-bones version of Scheme's numerical
+library. The following is a reasonably complete framework for operations
+on integers and floating-point numbers. No rationals, no complex numbers,
+no gcd or lcm.
 
 ```
 oo::class create Number {
@@ -1115,7 +1119,6 @@ oo::class create Number {
     constructor {v} {
         set value $v
     }
-    method = {num} {expr {$value == $num}}
     method positive {} {expr {$value > 0}}
     method negative {} {expr {$value < 0}}
     method even {} {expr {$value % 2 == 0}}
@@ -1133,9 +1136,16 @@ oo::class create Number {
     method show {} { set value }
 }
 
-interp alias {} ::constcl::MkNumber {} Number new
+proc ::constcl::MkNumber {num} {
+    if {[::string is double $num]} {
+        return [Number new $num]
+    } else {
+        error "NUMBER expected\n$num"
+    }
+}
 ```
 
+`number?` recognizes a number by object type, not by content.
 ```
 reg number? ::constcl::number?
 
@@ -1150,6 +1160,8 @@ proc ::constcl::number? {obj} {
 }
 ```
 
+
+The operators ´=`, `<`, `>`, `<=`, and `>=` are implemented.
 
 ```
 reg = ::constcl::=
@@ -1246,12 +1258,14 @@ proc ::constcl::>= {args} {
 ```
 
 
+The `zero?` predicate tests if a given number is equal to zero.
+
 ```
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
     if {[number? $obj] eq "#t"} {
-        if {[$obj value] == 0} {
+        if {[$obj numval] == 0} {
             return #t
         } else {
             return #f
@@ -1262,6 +1276,9 @@ proc ::constcl::zero? {obj} {
 }
 ```
 
+
+The `positive`/`negative`/`even`/`odd` predicates test a number
+for those traits.
 
 ```
 reg positive? ::constcl::positive?
@@ -1331,6 +1348,9 @@ proc ::constcl::odd? {obj} {
 ```
 
 
+The `max` function selects the largest number, and the `min` function
+selects the smallest number.
+
 ```
 reg max ::constcl::max
 
@@ -1361,6 +1381,9 @@ proc ::constcl::min {args} {
 ```
 
 
+The operators `+`, `*`, `-`, and `/` stand for the respective
+mathematical operations.
+
 ```
 reg + ::constcl::+
 
@@ -1377,13 +1400,13 @@ proc ::constcl::+ {args} {
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj value]]
+            set num [MkNumber [$obj numval]]
         } else {
             error "NUMBER expected\n(+ [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[::constcl::number? $obj] eq "#t"} {
-                $num incr [$obj value]
+                $num incr [$obj numval]
             } else {
                 error "NUMBER expected\n(+ [$obj show])"
             }
@@ -1410,13 +1433,13 @@ proc ::constcl::* {args} {
     } else {
         set obj [lindex $args 0]
         if {[number? $obj] eq "#t"} {
-            set num [MkNumber [$obj value]]
+            set num [MkNumber [$obj numval]]
         } else {
             error "NUMBER expected\n(* [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[number? $obj] eq "#t"} {
-                $num mult [$obj value]
+                $num mult [$obj numval]
             } else {
                 error "NUMBER expected\n(* [$obj show])"
             }
@@ -1436,20 +1459,20 @@ proc ::constcl::- {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber -[$obj value]]
+            return [MkNumber -[$obj numval]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj value]]
+            set num [MkNumber [$obj numval]]
         } else {
             error "NUMBER expected\n(- [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[::constcl::number? $obj] eq "#t"} {
-                $num decr [$obj value]
+                $num decr [$obj numval]
             } else {
                 error "NUMBER expected\n(- [$obj show])"
             }
@@ -1469,20 +1492,20 @@ proc ::constcl::/ {args} {
     } elseif {[llength $args] == 1} {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber [expr {1 / [$obj value]}]]
+            return [MkNumber [expr {1 / [$obj numval]}]]
         } else {
             error "NUMBER expected\n(/ [$obj show])"
         }
     } else {
         set obj [lindex $args 0]
         if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj value]]
+            set num [MkNumber [$obj numval]]
         } else {
             error "NUMBER expected\n(/ [$obj show])"
         }
         foreach obj [lrange $args 1 end] {
             if {[::constcl::number? $obj] eq "#t"} {
-                $num div [$obj value]
+                $num div [$obj numval]
             } else {
                 error "NUMBER expected\n(/ [$obj show])"
             }
@@ -1493,13 +1516,15 @@ proc ::constcl::/ {args} {
 ```
 
 
+The `abs` function yields the absolute value of a number.
+
 ```
 reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq "#t"} {
         if {[$x negative]} {
-            return [MkNumber [expr {[$x value] * -1}]]
+            return [MkNumber [expr {[$x numval] * -1}]]
         } else {
             return $x
         }
@@ -1552,12 +1577,15 @@ proc ::constcl::denominator {q} {
 }
 ```
 
+`floor`, `ceiling`, `truncate`, and `round` are different methods for
+converting a real number to an integer.
+
 ```
 reg floor ::constcl::floor
 
 proc ::constcl::floor {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::floor [$x value]]
+        MkNumber [::tcl::mathfunc::floor [$x numval]]
     } else {
         error "NUMBER expected\n(floor [$x show])"
     }
@@ -1570,7 +1598,7 @@ reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::ceil [$x value]]
+        MkNumber [::tcl::mathfunc::ceil [$x numval]]
     } else {
         error "NUMBER expected\n(ceiling [$x show])"
     }
@@ -1584,9 +1612,9 @@ reg truncate ::constcl::truncate
 proc ::constcl::truncate {x} {
     if {[::constcl::number? $x] eq "#t"} {
         if {[$x negative]} {
-            MkNumber [::tcl::mathfunc::ceil [$x value]]
+            MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
-            MkNumber [::tcl::mathfunc::floor [$x value]]
+            MkNumber [::tcl::mathfunc::floor [$x numval]]
         }
     } else {
         error "NUMBER expected\n(truncate [$x show])"
@@ -1600,7 +1628,7 @@ reg round ::constcl::round
 
 proc ::constcl::round {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::round [$x value]]
+        MkNumber [::tcl::mathfunc::round [$x numval]]
     } else {
         error "NUMBER expected\n(round [$x show])"
     }
@@ -1614,12 +1642,17 @@ proc ::constcl::rationalize {x y} {
 }
 ```
 
+The mathematical functions _e<sup>x</sup>_, natural logarithm,
+sine, cosine, tangent, arcsine, arccosine, and arctangent are
+calculated by `exp`, `log`, `sin`, `cos`, `tan`, `asin`, `acos`,
+and `atan`, respectively.
+
 ```
 reg exp ::constcl::exp
 
 proc ::constcl::exp {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::exp [$z value]]
+        MkNumber [::tcl::mathfunc::exp [$z numval]]
     } else {
         error "NUMBER expected\n(exp [$z show])"
     }
@@ -1632,7 +1665,7 @@ reg log ::constcl::log
 
 proc ::constcl::log {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::log [$z value]]
+        MkNumber [::tcl::mathfunc::log [$z numval]]
     } else {
         error "NUMBER expected\n(log [$z show])"
     }
@@ -1645,7 +1678,7 @@ reg sin ::constcl::sin
 
 proc ::constcl::sin {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sin [$z value]]
+        MkNumber [::tcl::mathfunc::sin [$z numval]]
     } else {
         error "NUMBER expected\n(sin [$z show])"
     }
@@ -1657,7 +1690,7 @@ reg cos ::constcl::cos
 
 proc ::constcl::cos {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::cos [$z value]]
+        MkNumber [::tcl::mathfunc::cos [$z numval]]
     } else {
         error "NUMBER expected\n(cos [$z show])"
     }
@@ -1669,7 +1702,7 @@ reg tan ::constcl::tan
 
 proc ::constcl::tan {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::tan [$z value]]
+        MkNumber [::tcl::mathfunc::tan [$z numval]]
     } else {
         error "NUMBER expected\n(tan [$z show])"
     }
@@ -1682,7 +1715,7 @@ reg asin ::constcl::asin
 
 proc ::constcl::asin {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::asin [$z value]]
+        MkNumber [::tcl::mathfunc::asin [$z numval]]
     } else {
         error "NUMBER expected\n(asin [$z show])"
     }
@@ -1694,7 +1727,7 @@ reg acos ::constcl::acos
 
 proc ::constcl::acos {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::acos [$z value]]
+        MkNumber [::tcl::mathfunc::acos [$z numval]]
     } else {
         error "NUMBER expected\n(acos [$z show])"
     }
@@ -1708,14 +1741,14 @@ proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set z [lindex $args 0]
         if {[::constcl::number? $z] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan [$z value]]
+            MkNumber [::tcl::mathfunc::atan [$z numval]]
         } else {
             error "NUMBER expected\n(atan [$z show])"
         }
     } else {
         lassign $args y x
         if {[::constcl::number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan2 [$y value] [$x value]]
+            MkNumber [::tcl::mathfunc::atan2 [$y numval] [$x numval]]
         } else {
             error "NUMBER expected\n(atan [$y show] [$x show])"
         }
@@ -1724,12 +1757,14 @@ proc ::constcl::atan {args} {
 ```
 
 
+`sqrt` calculates the square root.
+
 ```
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {z} {
     if {[::constcl::number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sqrt [$z value]]
+        MkNumber [::tcl::mathfunc::sqrt [$z numval]]
     } else {
         error "NUMBER expected\n(sqrt [$z show])"
     }
@@ -1737,12 +1772,14 @@ proc ::constcl::sqrt {z} {
 ```
 
 
+`expt` calculates the _x_ to the power of _y_.
+
 ```
 reg expt ::constcl::expt
 
 proc ::constcl::expt {z1 z2} {
     if {[::constcl::number? $z1] eq "#t" && [::constcl::number? $z2] eq "#t"} {
-        MkNumber [::tcl::mathfunc::pow [$z1 value] [$z2 value]]
+        MkNumber [::tcl::mathfunc::pow [$z1 numval] [$z2 numval]]
     } else {
         error "NUMBER expected\n(expt [$z1 show] [$z2 show])"
     }
@@ -1798,6 +1835,9 @@ proc ::constcl::inexact->exact {z} {
 }
 ```
 
+The procedures `number->string` and `string->number` converts between
+number and string with optional radix conversion.
+
 ```
 reg number->string ::constcl::number->string
 
@@ -1805,17 +1845,17 @@ proc ::constcl::number->string {args} {
     if {[llength $args] == 1} {
         set num [lindex $args 0]
         if {[number? $num] eq "#t"} {
-            return [MkString [$num value]]
+            return [MkString [$num numval]]
         } else {
             error "NUMBER expected\n(string->number [$num show])"
         }
     } else {
         lassign $args num radix
         if {[number? $num] eq "#t"} {
-            if {[$radix value] == 10} {
-                return [MkString [$num value]]
-            } elseif {[$radix value] in {2 8 16}} {
-                return [MkString [base [$radix value] [$num value]]]
+            if {[$radix numval] == 10} {
+                return [MkString [$num numval]]
+            } elseif {[$radix numval] in {2 8 16}} {
+                return [MkString [base [$radix numval] [$num numval]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
@@ -1848,17 +1888,17 @@ proc ::constcl::string->number {args} {
     if {[llength $args] == 1} {
         set str [lindex $args 0]
         if {[string? $str] eq "#t"} {
-            return [MkNumber [$str value]]
+            return [MkNumber [$str numval]]
         } else {
             error "STRING expected\n(string->number [$str show])"
         }
     } else {
         lassign $args str radix
         if {[string? $str] eq "#t"} {
-            if {[$radix value] == 10} {
-                return [MkNumber [$str value]]
-            } elseif {[$radix value] in {2 8 16}} {
-                return [MkNumber [frombase [$radix value] [$str value]]]
+            if {[$radix numval] == 10} {
+                return [MkNumber [$str numval]]
+            } elseif {[$radix numval] in {2 8 16}} {
+                return [MkNumber [frombase [$radix numval] [$str numval]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
