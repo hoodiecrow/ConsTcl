@@ -928,7 +928,12 @@ proc ::constcl::interaction-environment {} {
 }
 ```
 
+
 ## write
+
+The third member in the great triad is `write`. As long as the object
+given to it isn't `#NONE`, it passes it to `write-value` and prints
+a newline.
 
 ```
 reg write ::constcl::write
@@ -941,20 +946,27 @@ proc ::constcl::write {obj args} {
 }
 ```
 
+`write-value` simply calls an object's `write` method, letting the object
+write itself.
+
 ```
 proc ::constcl::write-value {obj} {
-    # take an object and print the value
     $obj write
 }
 ```
+
+The `display` procedure is like `write` but doesn't print a newline.
 
 ```
 reg display ::constcl::display
 
 proc ::constcl::display {obj args} {
     ::constcl::write-value $obj
+    flush stdout
 }
 ```
+
+The `write-pair` procedure prints a Pair object.
 
 ```
 proc ::constcl::write-pair {obj} {
