@@ -2,6 +2,20 @@
 A second try at a Lisp interpreter written in Tcl, this time with a real Lisp-like type system.
 
 
+#### Benchmark
+
+On my cheap computer, the following code takes 0.024 seconds to run.
+
+```
+namespace eval ::constcl {
+    eval [parse "(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))"]
+    time {eval [parse "(fact 100)"]} 10
+}
+```
+
+Let's start off with a procedure to resolve calls to standard procedures `caar` - `cddddr`
+(I'm not going to write them all!).
+
 ```
 namespace eval ::constcl {
     namespace unknown resolve
@@ -9,56 +23,54 @@ namespace eval ::constcl {
     proc resolve {cmd args} {
         if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
             set obj [lindex $args 0]
-            foreach ad [lreverse [split $ads {}]] {
-                if {$ad eq "a"} {
+            foreach c [lreverse [split $ads {}]] {
+                if {$c eq "a"} {
                     set obj [car $obj]
                 } else {
                     set obj [cdr $obj]
                 }
             }
             return $obj
-        } elseif {no} {
-            uplevel 1 [dict get $scope $cmd] $args
         } else {
-            return -code error "no such command: \"$cmd\""
+            return -code error "no such command: '$cmd'"
         }
     }
 }
+```
 
+Next, some procedures that make my life as developer somewhat easier, but
+don't really matter to the interpreter (except the first one, `reg`, which
+registers built-in procedures in the standard environment.
+
+```
+# utility functions
 proc reg {sym impl} {
     dict set ::standard_env $sym $impl
 }
 
-```
-
-```
-# utility functions
 proc ::pep {str} {
-    set ::inputstr $str
-    namespace eval ::constcl {
-        write [eval [read]]
-    }
+    ::constcl::write [::constcl::eval [::constcl::parse $str]]
 }
 
 proc ::pp {str} {
-    set ::inputstr $str
-    namespace eval ::constcl {
-        write [read]
-    }
+    ::constcl::write [::constcl::parse $str]
 }
 
 proc ::pxp {str} {
-    set ::inputstr $str
-    namespace eval ::constcl {
-        set p [read]
-        set op [car $p]
-        set args [cdr $p]
-        expand-macro op args ::global_env
-        set p [cons $op $args]
-        write $p
-    }
+    set p [::constcl::parse $str]
+    set op [::constcl::car $p]
+    set args [::constcl::cdr $p]
+    ::constcl::expand-macro op args ::global_env
+    set p [::constcl::cons $op $args]
+    ::constcl::write $p
 }
+```
 
+This one is a little bit of both, a utility function that is also among the
+builtins in the library. It started out as a one-liner by Donal K. Fellows,
+but has grown a bit since then to suit my needs.
+
+```
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
@@ -66,17 +78,20 @@ proc ::constcl::in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
-        1 { set end [lindex $args 0] }
-        2 { lassign $args start end }
-        3 { lassign $args start end step }
+        1 { lassign $args e ; set end [$e value]}
+        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
+        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
     }
     set res $start
     while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
         lappend res $start
     }
-    return $res
+    return [lmap r $res {MkNumber $r}]
 }
 ```
+
+The `NIL` class has one object: the empty list called `#NIL`. It is also base class for many other
+type classes.
 
 ```
 catch { NIL destroy }
@@ -94,29 +109,15 @@ oo::class create NIL {
 }
 ```
 
+The `null?` standard predicate recognizes the empty list. Predicates
+in ConsTcl return #t or #f for true or false, so some care is necessary
+when calling them from Tcl code.
+
 ```
 reg null? ::constcl::null?
 
 proc ::constcl::null? {obj} {
     if {$obj eq "#NIL"} {
-        return #t
-    } else {
-        return #f
-    }
-}
-```
-
-```
-catch { EndOfFile destroy }
-
-oo::class create EndOfFile {}
-```
-
-```
-proc ::eof-object? {obj} {
-    if {[info object isa typeof $obj EndOfFile]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] EndOfFile]} {
         return #t
     } else {
         return #f
@@ -182,6 +183,13 @@ proc ::constcl::first {} {
 ```
 proc ::constcl::second {} {
     ::string index $::inputstr 1
+}
+```
+
+```
+proc ::constcl::parse {str} {
+    set ::inputstr $str
+    return [read]
 }
 ```
 
@@ -733,7 +741,7 @@ proc ::constcl::do-for {exps env} {
     set id [car $clause]
     set seq [cadr $clause]
     if {[number? $seq] eq "#t"} {
-        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
+        set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
         if {[list? $seq] eq "#t"} {
@@ -3634,7 +3642,6 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #EOF {} [EndOfFile new]
 ```
 
 ```
