@@ -125,6 +125,14 @@ proc ::constcl::null? {obj} {
 }
 ```
 
+The `None` class serves but one purpose: to avoid printing a result after `define`.
+
+```
+catch { None destroy}
+
+oo::class create None {}
+```
+
 
 ## read
 
@@ -468,7 +476,39 @@ proc ::constcl::read-pair {c} {
 ```
 
 
-## Eval
+## eval
+
+The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes it according to its form.
+
+| Syntactic form | Syntax | Semantics |
+|----------------|--------|-----------|
+| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of a identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_ | Numerical and boolean constants evaluate to themselves. Example: `99` ⇒ 99 |
+| [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
+| [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expression_ s are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
+| [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
+| [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
+| [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
+| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a [Procedure](https://github.com/hoodiecrow/thtcl#procedure-class-and-objects) object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj36010 |
+| [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
+
+The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
+See the part about [macros](https://github.com/hoodiecrow/thtcl?tab=readme-ov-file#macros) below.
+
+| Syntactic form | Syntax | Semantics |
+|----------------|--------|-----------|
+| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of a identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_ | Numerical and boolean constants evaluate to themselves. Example: `99` ⇒ 99 |
+| [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
+| [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
+| [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expression_ s are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
+| [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
+| [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
+| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a [Procedure](https://github.com/hoodiecrow/thtcl#procedure-class-and-objects) object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj36010 |
+| [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
+
+The evaluator also does a sort of macro expansion on `op` and `args` before processing them in the big `switch`. 
+
 
 ```
 reg eval ::constcl::eval
@@ -478,7 +518,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]
-        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+        } elseif {[null? $e] eq "#t" || [atom? $e] eq "#t"} {
             return $e
         } else {
             error "cannot evaluate $e"
@@ -520,12 +560,23 @@ proc ::constcl::eval {e {env ::global_env}} {
 }
 ```
 
+Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
+environment chain for the symbol's name, and returns the value it is bound to.
+
 ```
 proc ::constcl::lookup {sym env} {
-    set sym [$sym name]
-    [$env find $sym] get $sym
+    set name [$sym name]
+    [$env find $name] get $name
 }
 ```
+
+The _conditional_ form evaluates a Lisp list of three expressions. The first, the _condition_,
+is evaluated first. If it evaluates to anything other than `#f`, the second expression, or
+_consequent_, is evaluated and the value returned. Otherwise, the third expression, or 
+_alternate_ is evaluated and the value returned.
+
+The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
+_sequence_.
 
 ```
 proc ::constcl::eprogn {exps env} {
@@ -542,13 +593,21 @@ proc ::constcl::eprogn {exps env} {
 }
 ```
 
+The `declare` helper adds a variable to the current environment. It first checks that the
+symbol name is a valid identifier, then it updates the environment with the new binding.
+
 ```
 proc ::constcl::declare {sym val env} {
     set var [varcheck [idcheck [$sym name]]]
-    $env set [$sym name] $val
-    return #NIL
+    $env set $var $val
+    return #NONE
 }
 ```
+
+The `update!` helper modifies an existing variable that is bound somewhere in the 
+environment chain. It first checks that the symbol name is a valid identifier, then it
+finds the variable's environment and updates the binding. It returns the expression, so
+calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables to 99.
 
 ```
 proc ::constcl::update! {var expr env} {
@@ -558,15 +617,26 @@ proc ::constcl::update! {var expr env} {
 }
 ```
 
+`make-function` makes a `Procedure` object. First it needs to convert the Lisp lists
+`formals` and `body`. The former is reworked to a Tcl list of parameter names, and 
+the latter is packed inside a `begin` if it has more than one expression, and taken
+out of its list if not.
+
 ```
-proc ::constcl::evlis {exps env} {
-    if {[pair? $exps] eq "#t"} {
-        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+proc ::constcl::make-function {formals body env} {
+    set parms [lmap formal [splitlist $formals] {$formal name}]
+    if {[[length $body] value] > 1} {
+        set body [cons #B $body]
     } else {
-        return #NIL
+        set body [car $body]
     }
+    return [MkProcedure $parms $body $env]
 }
 ```
+
+`invoke` arranges for a procedure to be called with a list of values. It checks if `pr`
+really is a procedure, and determines whether to call `pr` as an object or as a Tcl
+command.
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -582,25 +652,29 @@ proc ::constcl::invoke {pr vals} {
 }
 ```
 
+`splitlist` converts a Lisp list to a Tcl list with Lisp objects.
+
 ```
 proc ::constcl::splitlist {vals} {
-#puts [info level [info level]]
     set result {}
     while {[pair? $vals] eq "#t"} {
         lappend result [car $vals]
         set vals [cdr $vals]
     }
-#puts result=$result
-#puts resval=[lmap res $result {$res show}]
     return $result
 }
 ```
 
+`evlis` successively evaluates the elements of a Lisp list and returns the results
+as a Lisp list.
+
 ```
-proc ::constcl::make-function {formals exps env} {
-    set parms [splitlist $formals]
-    set body [cons #B $exps]
-    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
+proc ::constcl::evlis {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+    } else {
+        return #NIL
+    }
 }
 ```
 
@@ -832,13 +906,16 @@ proc ::constcl::interaction-environment {} {
 }
 ```
 
+## write
 
 ```
 reg write ::constcl::write
 
 proc ::constcl::write {obj args} {
-    ::constcl::write-value $obj
-    puts {}
+    if {$obj ne "#NONE"} {
+        ::constcl::write-value $obj
+        puts {}
+    }
 }
 ```
 
@@ -3576,6 +3653,8 @@ interp alias {} #λ {} [::constcl::MkSymbol lambda]
 interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
+
+interp alias {} #NONE {} [None new]
 
 ```
 
