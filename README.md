@@ -1029,7 +1029,11 @@ oo::class create Environment {
 
 ## Built-in procedures
 
-###Equivalence predicates
+### Equivalence predicates
+
+Of the three equivalence predicates, `eq` generally tests for identity (with exceptions for numbers
+and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
+identity), and `equal` tests for whether the output strings are equal.
 
 ```
 reg eq? ::constcl::eq?
@@ -1049,7 +1053,7 @@ proc ::constcl::eq? {obj1 obj2} {
         return #t
     } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && $obj1 eq $obj2} {
         return #t
     } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
         return #t
