@@ -167,7 +167,7 @@ TT(
 ::tcltest::test vectors-1.4 {try vector-set!} -body {
     pep {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
     pep {(vector-set! (x) 1 '(foo bar))}
-} -output "()\n#(0 (foo bar) \"Anna\")\n"
+} -output "#(0 (foo bar) \"Anna\")\n"
 
 TT)
 

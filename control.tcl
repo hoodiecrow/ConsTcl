@@ -1,6 +1,8 @@
 
 MD(
 ### Control
+
+This section concerns itself with procedures and the application of the same.
 MD)
 
 CB
@@ -16,7 +18,7 @@ oo::class create Procedure {
     }
     method value {} {}
     method write {} { puts -nonewline [self] }
-    method show {} { [self] }
+    method show {} { return [self] }
     method call {args} {
         if {[llength $parms] != [llength $args]} {
             error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
@@ -27,9 +29,7 @@ oo::class create Procedure {
 }
 
 interp alias {} ::constcl::MkProcedure {} Procedure new
-CB
 
-CB
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {obj} {
@@ -55,16 +55,16 @@ TT(
 
 TT)
 
+MD(
+`apply` applies a procedure to a Tcl list of Lisp arguments.
+MD)
+
 CB
 reg apply ::constcl::apply
 
 proc ::constcl::apply {proc args} {
     if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-           invoke $proc $args 
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
-        }
+        invoke $proc $args 
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -80,7 +80,7 @@ TT(
     (lambda (args)
       (f (apply g args)))))}
     pep {((compose sqrt *) (list 12 75))}
-} -output "7\n()\n30.0\n"
+} -output "7\n30.0\n"
 
 TT)
 

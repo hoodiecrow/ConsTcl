@@ -13,7 +13,7 @@ oo::class create Pair {
         set cdr $d
         set constant 0
     }
-    method truth {} {return #t}
+    method bvalue {} {return #t}
     method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
@@ -91,7 +91,7 @@ TT(
     pep {(define x (list 'a 'b 'c))}
     pep {(define y x)}
     pep {y}
-} -output "()\n()\n(a b c)\n"
+} -output "(a b c)\n"
 
 ::tcltest::test pairslists-1.1 {playing with lists} -body {
     pep {(list? y)}
@@ -198,7 +198,7 @@ TT(
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-car! (f) 3)}
-} -output "()\n()\n3\n"
+} -output "3\n"
 
 ::tcltest::test pairslists-1.12 {try set-car!} -body {
     pep {(set-car! (g) 3)}
@@ -220,7 +220,7 @@ TT(
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-cdr! (f) 3)}
-} -output "()\n()\n3\n"
+} -output "3\n"
 
 ::tcltest::test pairslists-1.14 {try set-cdr!} -body {
     pep {(set-cdr! (g) 3)}

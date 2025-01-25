@@ -207,7 +207,7 @@ TT(
     pep {(define f (lambda () (make-string 3 #\*)))}
     pep {(define g (lambda () "***"))}
     pep {(string-set! (f) 0 #\?)}
-} -output "()\n()\n\"?**\"\n"
+} -output "\"?**\"\n"
 
 ::tcltest::test strings-1.7 {try string-set!} -body {
     pep {(string-set! (g) 0 #\?)}
@@ -564,7 +564,7 @@ TT(
 ::tcltest::test strings-1.22 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
-} -output "()\n\"xoo\"\n"
+} -output "\"xoo\"\n"
 
 TT)
 
@@ -586,7 +586,7 @@ TT(
 ::tcltest::test strings-1.23 {try string-fill!} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-fill! x #\x)}
-} -output "()\n\"xxx\"\n"
+} -output "\"xxx\"\n"
 
 TT)
 

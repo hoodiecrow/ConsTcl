@@ -1,6 +1,24 @@
 
 MD(
-## Eval
+## eval
+
+The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes it according to its form.
+
+| Syntactic form | Syntax | Semantics |
+|----------------|--------|-----------|
+| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of a identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_ | Numerical and boolean constants evaluate to themselves. Example: `99` ⇒ 99 |
+| [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
+| [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expression_ s are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
+| [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
+| [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
+| [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
+| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
+| [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
+
+The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
+See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+
 MD)
 
 CB
@@ -11,7 +29,7 @@ proc ::constcl::eval {e {env ::global_env}} {
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]
-        } elseif {[null? $e] eq "#t" || [number? $e] eq "#t" || [string? $e] eq "#t" || [char? $e] eq "#t" || [boolean? $e] eq "#t" || [vector? $e] eq "#t"} {
+        } elseif {[null? $e] eq "#t" || [atom? $e] eq "#t"} {
             return $e
         } else {
             error "cannot evaluate $e"
@@ -53,12 +71,29 @@ proc ::constcl::eval {e {env ::global_env}} {
 }
 CB
 
+MD(
+Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
+environment chain for the symbol's name, and returns the value it is bound to.
+MD)
+
 CB
 proc ::constcl::lookup {sym env} {
-    set sym [$sym name]
-    [$env find $sym] get $sym
+    set name [$sym name]
+    [$env find $name] get $name
 }
 CB
+
+MD(
+The _conditional_ form evaluates a Lisp list of three expressions. The first, the _condition_,
+is evaluated first. If it evaluates to anything other than `#f`, the second expression (the
+_consequent_) is evaluated and the value returned. Otherwise, the third expression (the 
+_alternate_) is evaluated and the value returned.
+MD)
+
+MD(
+The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
+_sequence_, returning the value of the last one.
+MD)
 
 CB
 proc ::constcl::eprogn {exps env} {
@@ -75,31 +110,57 @@ proc ::constcl::eprogn {exps env} {
 }
 CB
 
+MD(
+The `declare` helper adds a variable to the current environment. It first checks that the
+symbol name is a valid identifier, then it updates the environment with the new binding.
+MD)
+
 CB
 proc ::constcl::declare {sym val env} {
     set var [varcheck [idcheck [$sym name]]]
-    $env set [$sym name] $val
-    return #NIL
+    $env set $var $val
+    return #NONE
 }
 CB
 
+MD(
+The `update!` helper modifies an existing variable that is bound somewhere in the 
+environment chain. It finds the variable's environment and updates the binding. It
+returns the expression, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
+sets both variables to 99.
+MD)
+
 CB
 proc ::constcl::update! {var expr env} {
-    set var [varcheck [idcheck [$var name]]]
-    [$env find $var] set $var $expr
+    [$env find [$var name]] set [$var name] $expr
     set expr
 }
 CB
 
+MD(
+`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp lists
+`formals` and `body`. The former is reworked to a Tcl list of parameter names, and 
+the latter is packed inside a `begin` if it has more than one expression, and taken
+out of its list if not.
+MD)
+
 CB
-proc ::constcl::evlis {exps env} {
-    if {[pair? $exps] eq "#t"} {
-        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+proc ::constcl::make-function {formals body env} {
+    set parms [lmap formal [splitlist $formals] {$formal name}]
+    if {[[length $body] value] > 1} {
+        set body [cons #B $body]
     } else {
-        return #NIL
+        set body [car $body]
     }
+    return [MkProcedure $parms $body $env]
 }
 CB
+
+MD(
+`invoke` arranges for a procedure to be called with a Tcl list of Lisp values. It checks
+if `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl
+command.
+MD)
 
 CB
 proc ::constcl::invoke {pr vals} {
@@ -115,199 +176,43 @@ proc ::constcl::invoke {pr vals} {
 }
 CB
 
+MD(
+`splitlist` converts a Lisp list to a Tcl list with Lisp objects.
+MD)
+
 CB
 proc ::constcl::splitlist {vals} {
-#puts [info level [info level]]
     set result {}
     while {[pair? $vals] eq "#t"} {
         lappend result [car $vals]
         set vals [cdr $vals]
     }
-#puts result=$result
-#puts resval=[lmap res $result {$res show}]
     return $result
 }
 CB
 
-CB
-proc ::constcl::make-function {formals exps env} {
-    set parms [splitlist $formals]
-    set body [cons #B $exps]
-    return [MkProcedure [lmap parm $parms {$parm name}] $body $env]
-}
-CB
+MD(
+`evlis` successively evaluates the elements of a Lisp list and returns the results
+as a Lisp list.
+MD)
 
 CB
-proc ::constcl::expand-and {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #B #t]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
-        return [cons #B $exps]
+proc ::constcl::evlis {exps env} {
+    if {[pair? $exps] eq "#t"} {
+        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
     } else {
-        return [do-and $exps #NIL]
-    }
-}
-
-proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return $prev
-    } else {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+        return #NIL
     }
 }
 CB
 
-CB
-proc ::constcl::do-case {keyexpr clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
-        set keyl [caar $clauses]
-        set body [cdar $clauses]
-        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
-            set keyl #t
-        } else {
-            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        }
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
-        set keyl [caar $clauses]
-        set body [cdar $clauses]
-        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        return [list #I $keyl [list #B {*}[splitlist $body]] [do-case $keyexpr [cdr $clauses]]]
-    }
-}
-CB
+MD(
+### Macros
 
-CB
-proc ::constcl::do-cond {clauses} {
-    if {[eq? [length $clauses] #1] eq "#t"} {
-        set pred [caar $clauses]
-        set body [cdar $clauses]
-        if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
-            set pred #t
-        }
-        if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
-    } elseif {[eq? [length $clauses] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
-        set pred [caar $clauses]
-        set body [cdar $clauses]
-        if {[null? $body] eq "#t"} {set body $pred}
-        return [list #I $pred [list #B {*}[splitlist $body]] [do-cond [cdr $clauses]]]
-    }
-}
-CB
-
-CB
-proc ::constcl::do-for {exps env} {
-    #single-clause
-    set clauses [car $exps]
-    set body [cdr $exps]
-    set clause [car $clauses]
-    set id [car $clause]
-    set seq [cadr $clause]
-    if {[number? $seq] eq "#t"} {
-        set seq [lmap i [in-range [$seq value]] {MkNumber $i}]
-    } else {
-        set seq [eval $seq $env]
-        if {[list? $seq] eq "#t"} {
-            set seq [splitlist $seq]
-        } elseif {[string? $seq] eq "#t"} {
-            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-        } elseif {[vector? $seq] eq "#t"} {
-            set seq [$seq value]
-        }
-    }
-    set res {}
-    foreach v $seq {
-        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
-    }
-    return $res
-}
-
-proc ::constcl::expand-for {exps env} {
-    set res [do-for $exps $env]
-    lappend res [list #Q #NIL]
-    return [list #B {*}$res]
-}
-CB
-
-CB
-proc ::constcl::expand-for/and {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "and"] {*}$res]
-}
-CB
-
-CB
-proc ::constcl::expand-for/list {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "list"] {*}$res]
-}
-CB
-
-CB
-proc ::constcl::expand-for/or {exps env} {
-    set res [do-for $exps $env]
-    return [list [MkSymbol "or"] {*}$res]
-}
-CB
-
-CB
-proc ::constcl::expand-let {exps} {
-    if {[symbol? [car $exps]] eq "#t"} {
-        # named let
-        set variable [car $exps]
-        set bindings [cadr $exps]
-        set body [cddr $exps]
-        set vars [dict create $variable #f]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        set decl [dict values [dict map {k v} $vars {list $k $v}]]
-        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
-        return [list #L [list {*}$decl] [list #S $variable $func] $call]
-    } else {
-        # regular let
-        set bindings [car $exps]
-        set body [cdr $exps]
-        set vars [dict create]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
-    }
-}
-CB
-
-CB
-proc ::constcl::expand-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #B #f]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
-        return [cons #B $exps]
-    } else {
-        return [do-or $exps]
-    }
-}
-
-proc ::constcl::do-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return #f
-    } else {
-        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
-    }
-}
-CB
+Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong
+points. This interpreter does macro expansion, but the user can't define new macros--the ones
+available are hardcoded in the code below.
+MD)
 
 CB
 proc ::constcl::expand-macro {n1 n2 env} {
@@ -343,6 +248,227 @@ proc ::constcl::expand-macro {n1 n2 env} {
     }
     set op [car $p]
     set args [cdr $p]
+}
+CB
+
+MD(
+`expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
+has 0 or 1 elements, and a nested `if` construct otherwise.
+MD)
+
+CB
+proc ::constcl::expand-and {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #t]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-and $exps #NIL]
+    }
+}
+
+proc ::constcl::do-and {exps prev} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return $prev
+    } else {
+        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+    }
+}
+CB
+
+MD(
+The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses, 
+and nested `if` constructs if there are some.
+MD)
+
+CB
+proc ::constcl::do-case {keyexpr clauses} {
+    if {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } elseif {[eq? [length $clauses] #1] eq "#t"} {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
+            set keyl #t
+        } else {
+            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        }
+        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+    } else {
+        set keyl [caar $clauses]
+        set body [cdar $clauses]
+        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+    }
+}
+CB
+
+MD(
+The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses, 
+and nested `if` constructs if there are some.
+MD)
+
+CB
+proc ::constcl::do-cond {clauses} {
+    if {[eq? [length $clauses] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } elseif {[eq? [length $clauses] #1] eq "#t"} {
+        set pred [caar $clauses]
+        set body [cdar $clauses]
+        if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
+            set pred #t
+        }
+        if {[null? $body] eq "#t"} {set body $pred}
+        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
+    } else {
+        set pred [caar $clauses]
+        set body [cdar $clauses]
+        if {[null? $body] eq "#t"} {set body $pred}
+        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
+    }
+}
+CB
+
+MD(
+The `expand-for` procedure expands the `for` macro. It returns a `begin`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+MD)
+
+CB
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [car $exps]
+    set body [cdr $exps]
+    set clause [car $clauses]
+    set id [car $clause]
+    set seq [cadr $clause]
+    if {[number? $seq] eq "#t"} {
+        set seq [in-range $seq]
+    } else {
+        set seq [eval $seq $env]
+        if {[list? $seq] eq "#t"} {
+            set seq [splitlist $seq]
+        } elseif {[string? $seq] eq "#t"} {
+            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+        } elseif {[vector? $seq] eq "#t"} {
+            set seq [$seq value]
+        }
+    }
+    set res {}
+    foreach v $seq {
+        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    }
+    return $res
+}
+
+proc ::constcl::expand-for {exps env} {
+    set res [do-for $exps $env]
+    lappend res [list #Q #NIL]
+    return [list #B {*}$res]
+}
+CB
+
+MD(
+The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+MD)
+
+CB
+proc ::constcl::expand-for/and {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "and"] {*}$res]
+}
+CB
+
+MD(
+The `expand-for/list` procedure expands the `for/list` macro. It returns a `list`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+MD)
+
+CB
+proc ::constcl::expand-for/list {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "list"] {*}$res]
+}
+CB
+
+MD(
+The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
+construct containing the iterations of the first clause (multiple clauses
+isn't implemented yet).
+MD)
+
+CB
+proc ::constcl::expand-for/or {exps env} {
+    set res [do-for $exps $env]
+    return [list [MkSymbol "or"] {*}$res]
+}
+CB
+
+MD(
+`expand-let` expands the named `let` and 'regular' `let` macros. The ultimately
+expand to ´lambda` constructs.
+MD)
+
+CB
+proc ::constcl::expand-let {exps} {
+    if {[symbol? [car $exps]] eq "#t"} {
+        # named let
+        set variable [car $exps]
+        set bindings [cadr $exps]
+        set body [cddr $exps]
+        set vars [dict create $variable #f]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        set decl [dict values [dict map {k v} $vars {list $k $v}]]
+        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
+        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
+        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+    } else {
+        # regular let
+        set bindings [car $exps]
+        set body [cdr $exps]
+        set vars [dict create]
+        foreach binding [splitlist $bindings] {
+            set var [car $binding]
+            set val [cadr $binding]
+            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            dict set vars $var $val
+        }
+        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
+    }
+}
+CB
+
+MD(
+`expand-or` expands the `or` macro. It returns a `begin`-expression if the macro
+has 0 or 1 elements, and a nested `if` construct otherwise.
+MD)
+
+CB
+proc ::constcl::expand-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #B #f]
+    } elseif {[eq? [length $exps] #1] eq "#t"} {
+        return [cons #B $exps]
+    } else {
+        return [do-or $exps]
+    }
+}
+
+proc ::constcl::do-or {exps} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return #f
+    } else {
+        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
+    }
 }
 CB
 

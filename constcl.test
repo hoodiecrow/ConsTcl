@@ -8,7 +8,7 @@ source constcl.tcl
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
-        set ::inputstr "(a (b))"
+        set ::inputbuffer "(a (b))"
         set obj [read]
         [caadr $obj] name
     }
@@ -44,43 +44,43 @@ source constcl.tcl
 
 
 ::tcltest::test read-2.0 {try reading a number} {
-    set ::inputstr "99.99"
+    set ::inputbuffer "99.99"
     set obj [::constcl::read]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.1 {try reading a number} {
-    set ::inputstr "     99.99"
+    set ::inputbuffer "     99.99"
     set obj [::constcl::read]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.2 {try reading a number} {
-    set ::inputstr "     9"
+    set ::inputbuffer "     9"
     set obj [::constcl::read]
     $obj value
 } "9"
 
 ::tcltest::test read-2.3 {try reading a number} {
-    set ::inputstr "     +9"
+    set ::inputbuffer "     +9"
     set obj [::constcl::read]
     $obj value
 } "+9"
 
 ::tcltest::test read-2.4 {try reading a number} {
-    set ::inputstr "     -9"
+    set ::inputbuffer "     -9"
     set obj [::constcl::read]
     $obj value
 } "-9"
 
 ::tcltest::test read-2.5 {try reading a number} {
-    set ::inputstr "     - "
+    set ::inputbuffer "     - "
     set obj [::constcl::read]
     $obj name
 } "-"
 
 ::tcltest::test read-2.6 {try reading a number} {
-    set ::inputstr "     + "
+    set ::inputbuffer "     + "
     set obj [::constcl::read]
     $obj name
 } "+"
@@ -88,25 +88,25 @@ source constcl.tcl
 
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set ::inputstr {#\A}
+    set ::inputbuffer {#\A}
     set obj [::constcl::read]
     $obj char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set ::inputstr "#\\space"
+    set ::inputbuffer "#\\space"
     set obj [::constcl::read]
     $obj char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set ::inputstr "#\\newline"
+    set ::inputbuffer "#\\newline"
     set obj [::constcl::read]
     $obj char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set ::inputstr "#\\foobar"
+    set ::inputbuffer "#\\foobar"
     set obj [::constcl::read]
     $obj char
 } -returnCodes error -result "Invalid character constant #\\foobar"
@@ -114,13 +114,13 @@ source constcl.tcl
 
 
 ::tcltest::test read-4.0 {try reading a string} {
-    set ::inputstr {"foo bar"}
+    set ::inputbuffer {"foo bar"}
     set obj [::constcl::read]
     $obj value
 } "foo bar"
 
 ::tcltest::test read-4.1 {try reading a string} {
-    set ::inputstr {"\"foo\" \\ bar"}
+    set ::inputbuffer {"\"foo\" \\ bar"}
     set obj [::constcl::read]
     $obj value
 } {"foo" \ bar}
@@ -128,19 +128,19 @@ source constcl.tcl
 
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set ::inputstr "foo"
+    set ::inputbuffer "foo"
     set obj [::constcl::read]
     $obj name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    set ::inputstr "+foo"
+    set ::inputbuffer "+foo"
     set obj [::constcl::read-identifier]
     $obj name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set ::inputstr "let"
+    set ::inputbuffer "let"
     set obj [::constcl::read]
     ::constcl::varcheck [$obj name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
@@ -276,189 +276,190 @@ source constcl.tcl
 
 
 ::tcltest::test number-1.0 {try number?} -body {
+    pep "(number? 99.99)"
+} -output "#t\n"
+
+::tcltest::test number-1.1 {try number?} -body {
+    ::constcl::MkNumber foo
+} -returnCodes error -result "NUMBER expected\nfoo"
+
+
+
+::tcltest::test number-1.2 {try =} -body {
     namespace eval ::constcl {
-        set ::inputstr "(number? 99.99)"
+        set ::inputbuffer "(= 9 9 9 9)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.1 {try =} -body {
+::tcltest::test number-1.3 {try <} -body {
     namespace eval ::constcl {
-        set ::inputstr "(= 9 9 9 9)"
+        set ::inputbuffer "(< 1 2 4 7)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.2 {try <} -body {
+::tcltest::test number-1.4 {try >} -body {
     namespace eval ::constcl {
-        set ::inputstr "(< 1 2 4 7)"
+        set ::inputbuffer "(> 7 4 2 1)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.3 {try >} -body {
+::tcltest::test number-1.5 {try <=} -body {
     namespace eval ::constcl {
-        set ::inputstr "(> 7 4 2 1)"
+        set ::inputbuffer "(<= 1 4 4 7)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.4 {try <=} -body {
+::tcltest::test number-1.6 {try >=} -body {
     namespace eval ::constcl {
-        set ::inputstr "(<= 1 4 4 7)"
+        set ::inputbuffer "(>= 7 4 4 1)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.5 {try >=} -body {
+::tcltest::test number-1.7 {try zero?} -body {
     namespace eval ::constcl {
-        set ::inputstr "(>= 7 4 4 1)"
-        write [eval [read]]
-    }
-} -output "#t\n"
-
-
-
-::tcltest::test number-1.6 {try zero?} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(zero? 77)"
+        set ::inputbuffer "(zero? 77)"
         write [eval [read]]
     }
 } -output "#f\n"
 
 
 
-::tcltest::test number-1.7 {try positive?} -body {
+::tcltest::test number-1.8 {try positive?} -body {
     namespace eval ::constcl {
-        set ::inputstr "(positive? 77)"
+        set ::inputbuffer "(positive? 77)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.8 {try negative?} -body {
+::tcltest::test number-1.9 {try negative?} -body {
     namespace eval ::constcl {
-        set ::inputstr "(negative? 77)"
+        set ::inputbuffer "(negative? 77)"
         write [eval [read]]
     }
 } -output "#f\n"
 
 
 
-::tcltest::test number-1.9 {try even?} -body {
+::tcltest::test number-1.10 {try even?} -body {
     namespace eval ::constcl {
-        set ::inputstr "(even? 77)"
+        set ::inputbuffer "(even? 77)"
         write [eval [read]]
     }
 } -output "#f\n"
 
 
 
-::tcltest::test number-1.10 {try odd?} -body {
+::tcltest::test number-1.11 {try odd?} -body {
     namespace eval ::constcl {
-        set ::inputstr "(odd? 77)"
+        set ::inputbuffer "(odd? 77)"
         write [eval [read]]
     }
 } -output "#t\n"
 
 
 
-::tcltest::test number-1.11 {try max} -body {
+::tcltest::test number-1.12 {try max} -body {
     namespace eval ::constcl {
-        set ::inputstr "(max 7 1 10 3)"
+        set ::inputbuffer "(max 7 1 10 3)"
         write [eval [read]]
     }
 } -output "10\n"
 
 
 
-::tcltest::test number-1.12 {try min} -body {
+::tcltest::test number-1.13 {try min} -body {
     namespace eval ::constcl {
-        set ::inputstr "(min 7 1 10 3)"
+        set ::inputbuffer "(min 7 1 10 3)"
         write [eval [read]]
     }
 } -output "1\n"
 
 
 
-::tcltest::test number-1.12 {try +} -body {
+::tcltest::test number-1.14 {try +} -body {
     namespace eval ::constcl {
-        set ::inputstr "(+ 7 1 10 3)"
+        set ::inputbuffer "(+ 7 1 10 3)"
         write [eval [read]]
     }
 } -output "21\n"
 
 
 
-::tcltest::test number-1.13 {try *} -body {
+::tcltest::test number-1.15 {try *} -body {
     namespace eval ::constcl {
-        set ::inputstr "(* 7 1 10 3)"
+        set ::inputbuffer "(* 7 1 10 3)"
         write [eval [read]]
     }
 } -output "210\n"
 
 
 
-::tcltest::test number-1.14 {try -} -body {
+::tcltest::test number-1.16 {try -} -body {
     namespace eval ::constcl {
-        set ::inputstr "(- 7 1 10 3)"
+        set ::inputbuffer "(- 7 1 10 3)"
         write [eval [read]]
     }
 } -output "-7\n"
 
 
 
-::tcltest::test number-1.15 {try /} -body {
+::tcltest::test number-1.17 {try /} -body {
     namespace eval ::constcl {
-        set ::inputstr "(/ 60 1 10 3)"
+        set ::inputbuffer "(/ 60 1 10 3)"
         write [eval [read]]
     }
 } -output "2\n"
 
 
 
-::tcltest::test number-1.16 {try abs} -body {
+::tcltest::test number-1.18 {try abs} -body {
     pep "(abs -99)"
 } -output "99\n"
 
 
 
-::tcltest::test number-1.17 {try floor} -body {
+::tcltest::test number-1.19 {try floor} -body {
     pep "(floor 99.9)"
 } -output "99.0\n"
 
 
 
-::tcltest::test number-1.18 {try ceiling} -body {
+::tcltest::test number-1.20 {try ceiling} -body {
     pep "(ceiling 99.9)"
 } -output "100.0\n"
 
 
 
-::tcltest::test number-1.19 {try truncate} -body {
+::tcltest::test number-1.21 {try truncate} -body {
     pep "(truncate 99.9)"
     pep "(truncate -99.9)"
 } -output "99.0\n-99.0\n"
 
 
 
-::tcltest::test number-1.20 {try round} -body {
+::tcltest::test number-1.22 {try round} -body {
     pep "(round 99.9)"
     pep "(round 99.3)"
 } -output "100\n99\n"
 
-::tcltest::test number-1.21 {try various} -body {
+::tcltest::test number-1.23 {try various} -body {
     pep "(floor 3.5)"
     pep "(ceiling 3.5)"
     pep "(truncate 3.5)"
@@ -467,19 +468,19 @@ source constcl.tcl
 
 
 
-::tcltest::test number-1.22 {try exp} -body {
+::tcltest::test number-1.24 {try exp} -body {
     pep "(exp 3)"
 } -output "20.085536923187668\n"
 
 
 
-::tcltest::test number-1.23 {try log} -body {
+::tcltest::test number-1.25 {try log} -body {
     pep "(log 3)"
 } -output "1.0986122886681098\n"
 
 
 
-::tcltest::test number-1.24 {try trig} -body {
+::tcltest::test number-1.26 {try trig} -body {
     pep "(sin (/ pi 3))"
     pep "(cos (/ pi 3))"
     pep "(tan (/ pi 3))"
@@ -487,7 +488,7 @@ source constcl.tcl
 
 
 
-::tcltest::test number-1.25 {try trig} -body {
+::tcltest::test number-1.27 {try trig} -body {
     pep "(asin 0.3)"
     pep "(acos 0.3)"
     pep "(atan 0.3)"
@@ -495,19 +496,19 @@ source constcl.tcl
 
 
 
-::tcltest::test number-1.25 {try sqrt} -body {
+::tcltest::test number-1.28 {try sqrt} -body {
     pep "(sqrt 16)"
 } -output "4.0\n"
 
 
 
-::tcltest::test number-1.25 {try expt} -body {
+::tcltest::test number-1.29 {try expt} -body {
     pep "(expt 4 2)"
 } -output "16.0\n"
 
 
 
-::tcltest::test number-1.26 {try number->string} -body {
+::tcltest::test number-1.30 {try number->string} -body {
     pep "(number->string 23)"
     pep "(number->string 23 2)"
     pep "(number->string 23 8)"
@@ -516,7 +517,7 @@ source constcl.tcl
 
 
 
-::tcltest::test number-1.27 {try string->number} -body {
+::tcltest::test number-1.31 {try string->number} -body {
     pep {(string->number "23")}
     pep {(string->number "10111" 2)}
     pep {(string->number "27" 8)}
@@ -526,98 +527,59 @@ source constcl.tcl
 
 
 ::tcltest::test boolean-1.0 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "#t"
-        write [eval [read]]
-    }
+        pep "#t"
 } -output "#t\n"
 
 ::tcltest::test boolean-1.1 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "#f"
-        write [eval [read]]
-    }
+        pep "#f"
 } -output "#f\n"
 
 ::tcltest::test boolean-1.2 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "'#f"
-        write [eval [read]]
-    }
+        pep "'#f"
 } -output "#f\n"
 
 
 
 ::tcltest::test boolean-2.0 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(boolean? #f)"
-        write [eval [read]]
-    }
+        pep "(boolean? #f)"
 } -output "#t\n"
 
 ::tcltest::test boolean-2.1 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(boolean? 0)"
-        write [eval [read]]
-    }
+        pep "(boolean? 0)"
 } -output "#f\n"
 
 ::tcltest::test boolean-2.2 {evaluate boolean values} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(boolean? '())"
-        write [eval [read]]
-    }
+        pep "(boolean? '())"
 } -output "#f\n"
 
 
 
 ::tcltest::test boolean-3.0 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not #t)"
-        write [eval [read]]
-    }
+        pep "(not #t)"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.1 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not 3)"
-        write [eval [read]]
-    }
+        pep "(not 3)"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.2 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not (list 3))"
-        write [eval [read]]
-    }
+        pep "(not (list 3))"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.3 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not #f)"
-        write [eval [read]]
-    }
+        pep "(not #f)"
 } -output "#t\n"
 
 ::tcltest::test boolean-3.4 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not '())"
-        write [eval [read]]
-    }
+        pep "(not '())"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.5 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not (list))"
-        write [eval [read]]
-    }
+        pep "(not (list))"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.6 {not procedure} -body {
-    namespace eval ::constcl {
-        set ::inputstr "(not 'nil)"
-        write [eval [read]]
-    }
+        pep "(not 'nil)"
 } -output "#f\n"
 
 
@@ -795,7 +757,7 @@ source constcl.tcl
     (lambda (args)
       (f (apply g args)))))}
     pep {((compose sqrt *) (list 12 75))}
-} -output "7\n()\n30.0\n"
+} -output "7\n30.0\n"
 
 
 
@@ -803,7 +765,7 @@ source constcl.tcl
     pep {(define x (list 'a 'b 'c))}
     pep {(define y x)}
     pep {y}
-} -output "()\n()\n(a b c)\n"
+} -output "(a b c)\n"
 
 ::tcltest::test pairslists-1.1 {playing with lists} -body {
     pep {(list? y)}
@@ -870,7 +832,7 @@ source constcl.tcl
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-car! (f) 3)}
-} -output "()\n()\n3\n"
+} -output "3\n"
 
 ::tcltest::test pairslists-1.12 {try set-car!} -body {
     pep {(set-car! (g) 3)}
@@ -882,7 +844,7 @@ source constcl.tcl
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-cdr! (f) 3)}
-} -output "()\n()\n3\n"
+} -output "3\n"
 
 ::tcltest::test pairslists-1.14 {try set-cdr!} -body {
     pep {(set-cdr! (g) 3)}
@@ -1030,7 +992,7 @@ source constcl.tcl
     pep {(define f (lambda () (make-string 3 #\*)))}
     pep {(define g (lambda () "***"))}
     pep {(string-set! (f) 0 #\?)}
-} -output "()\n()\n\"?**\"\n"
+} -output "\"?**\"\n"
 
 ::tcltest::test strings-1.7 {try string-set!} -body {
     pep {(string-set! (g) 0 #\?)}
@@ -1145,14 +1107,14 @@ source constcl.tcl
 ::tcltest::test strings-1.22 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
-} -output "()\n\"xoo\"\n"
+} -output "\"xoo\"\n"
 
 
 
 ::tcltest::test strings-1.23 {try string-fill!} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-fill! x #\x)}
-} -output "()\n\"xxx\"\n"
+} -output "\"xxx\"\n"
 
 
 
@@ -1186,7 +1148,7 @@ source constcl.tcl
 ::tcltest::test vectors-1.4 {try vector-set!} -body {
     pep {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
     pep {(vector-set! (x) 1 '(foo bar))}
-} -output "()\n#(0 (foo bar) \"Anna\")\n"
+} -output "#(0 (foo bar) \"Anna\")\n"
 
 
 
@@ -1207,165 +1169,165 @@ source constcl.tcl
 } -output "#(x x x)\n"
 
 
-::tcltest::test thtcl2-1.0 {calculate circle area} -body {
+::tcltest::test cons-1.0 {calculate circle area} -body {
     pep "(define circle-area (lambda (r) (* pi (* r r))))"
     pep "(circle-area 3)"
-} -output ()\n28.274333882308138\n
+} -output 28.274333882308138\n
 
-::tcltest::test thtcl2-2.0 {calculate factorial} -body {
+::tcltest::test cons-2.0 {calculate factorial} -body {
     pep "(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))"
     pep "(fact 10)"
-} -output ()\n3628800\n
+} -output 3628800\n
 
-::tcltest::test thtcl2-2.1 {calculate factorial} -body {
+::tcltest::test cons-2.1 {calculate factorial} -body {
     pep "(fact 100)"
 } -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
 
-::tcltest::test thtcl2-2.2 {calculate factorial} -body {
+::tcltest::test cons-2.2 {calculate factorial} -body {
     pep "(circle-area (fact 10))"
 } -output 41369087205782.695\n
 
-::tcltest::test thtcl2-3.0 {count} -body {
+::tcltest::test cons-3.0 {count} -body {
     pep "(define first car)"
     pep "(define rest cdr)"
     pep "(define truthtoint (lambda (val) (if val 1 0)))"
     pep "(define count (lambda (item L) (if (not (eqv? L '())) (+ (truthtoint (equal? item (first L))) (count item (rest L))) 0)))"
-} -output "()\n()\n()\n()\n"
+} -output ""
 
-::tcltest::test thtcl2-3.0 {count} -body {
+::tcltest::test cons-3.0 {count} -body {
     pep "(count 0 (list 0 1 2 3 0 0))"
 } -output 3\n
 
-::tcltest::test thtcl2-3.1 {count} -body {
+::tcltest::test cons-3.1 {count} -body {
     pep "(count (quote the) (quote (the more the merrier the bigger the better)))"
 } -output 4\n
 
-::tcltest::test thtcl2-4.0 {twice} -body {
+::tcltest::test cons-4.0 {twice} -body {
     pep "(define twice (lambda (x) (* 2 x)))"
     pep "(twice 5)"
-} -output ()\n10\n
+} -output 10\n
 
-::tcltest::test thtcl2-4.1 {twice} -body {
+::tcltest::test cons-4.1 {twice} -body {
     pep "(define repeat (lambda (f) (lambda (x) (f (f x)))))"
     pep "((repeat twice) 10)"
-} -output ()\n40\n
+} -output 40\n
 
-::tcltest::test thtcl2-4.2 {twice} -body {
+::tcltest::test cons-4.2 {twice} -body {
     pep "((repeat (repeat twice)) 10)"
 } -output 160\n
 
-::tcltest::test thtcl2-4.3 {twice} -body {
+::tcltest::test cons-4.3 {twice} -body {
     pep "((repeat (repeat (repeat twice))) 10)"
 } -output 2560\n
 
-::tcltest::test thtcl2-4.4 {twice} -body {
+::tcltest::test cons-4.4 {twice} -body {
     pep "((repeat (repeat (repeat (repeat twice)))) 10)"
 } -output 655360\n
 
-::tcltest::test thtcl2-5.0 {fib-range} -body {
+::tcltest::test cons-5.0 {fib-range} -body {
     pep "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))"
     pep "(define range (lambda (a b) (if (= a b) (quote ()) (cons a (range (+ a 1) b)))))"
     pep "(range 0 10)"
-} -output "()\n()\n(0 1 2 3 4 5 6 7 8 9)\n"
+} -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
-::tcltest::test thtcl2-5.1 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { # no map
     pep "(map fib (range 0 10))"
 } -output "(1 1 2 3 5 8 13 21 34 55)"
 
-::tcltest::test thtcl2-5.2 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { # no map
     pep "(map fib (range 0 20))"
 } -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)"
 
-::tcltest::test thtcl2-6.0 {procedure call with a list operator} -body {
+::tcltest::test cons-6.0 {procedure call with a list operator} -body {
     pep "((if #t + *) 2 3)"
 } -output "5\n"
 
-::tcltest::test thtcl2-7.0 {assignment} -body {
+::tcltest::test cons-7.0 {assignment} -body {
     pep "(begin (define r 10) (set! r 20) r)"
 } -output "20\n"
 
-::tcltest::test thtcl2-7.1 {assignment returns a value} -body {
+::tcltest::test cons-7.1 {assignment returns a value} -body {
     pep "(begin (define r 10) (set! r 20))"
 } -output "20\n"
 
-::tcltest::test thtcl2-7.2 {assignment to an unbound symbol} -body {
+::tcltest::test cons-7.2 {assignment to an unbound symbol} -body {
     pep "(begin (set! XX 20))"
 } -returnCodes error -result "Unbound variable: XX"
 
-::tcltest::test thtcl2-8.0 {procedure definition} -body {
+::tcltest::test cons-8.0 {procedure definition} -body {
     pep "(lambda (r) (* r r))"
 } -match regexp -output "::oo::Obj\\d+\n"
 
-::tcltest::test thtcl2-8.1 {procedure with two expressions} -body {
+::tcltest::test cons-8.1 {procedure with two expressions} -body {
     pep "(define f (lambda () (define r 20) (* r r)))"
     pep "(f)"
-} -output "()\n400\n"
+} -output "400\n"
 
-::tcltest::test thtcl2-9.0 {symbol?} -body {
+::tcltest::test cons-9.0 {symbol?} -body {
     pep "(symbol? (quote foo99))"
 } -output "#t\n"
 
-::tcltest::test thtcl2-10.0 {shadowing} -body {
+::tcltest::test cons-10.0 {shadowing} -body {
     pep "(begin (define r 10) (define f (lambda (r) (set! r 20))) (f 30) r)"
 } -output "10\n"
 
 #-constraints knownBug 
-::tcltest::test thtcl2-11.0 {and} -body {
+::tcltest::test cons-11.0 {and} -body {
     pep "(and (= 2 2) (> 2 1))"
 } -output "#t\n"
 
-::tcltest::test thtcl2-11.1 {and} -body {
+::tcltest::test cons-11.1 {and} -body {
     pep "(and (= 2 2) (< 2 1))"
 } -output "#f\n"
 
-::tcltest::test thtcl2-11.2 {and :( } -body {
+::tcltest::test cons-11.2 {and :( } -body {
     pep "(and)"
 } -output "#t\n"
 
-::tcltest::test thtcl2-11.3 {and} -body {
+::tcltest::test cons-11.3 {and} -body {
     pep "(and 1 2 (quote c) (quote (f g)))"
 } -output "(f g)\n"
 
-::tcltest::test thtcl2-12.0 {or} -body {
+::tcltest::test cons-12.0 {or} -body {
     pep "(or (= 2 2) (> 2 1))"
 } -output "#t\n"
 
-::tcltest::test thtcl2-12.1 {or} -body {
+::tcltest::test cons-12.1 {or} -body {
     pep "(or (= 2 2) (< 2 1))"
 } -output "#t\n"
 
-::tcltest::test thtcl2-12.2 {or} -body {
+::tcltest::test cons-12.2 {or} -body {
     pep "(or #f #f #f)"
 } -output "#f\n"
 
-::tcltest::test thtcl2-12.3 {or} -body {
+::tcltest::test cons-12.3 {or} -body {
     pep "(or)"
 } -output "#f\n"
 
-::tcltest::test thtcl2-13.0 {expandquotes} -body {
+::tcltest::test cons-13.0 {expandquotes} -body {
     pep "''foo"
 } -output "(quote foo)\n"
 
-::tcltest::test thtcl2-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+::tcltest::test cons-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define every? (lambda (fn list)
   (or (null? list)
       (and (fn (car list)) (every? fn (cdr list))))))"
     pep "(every? number? '(1 2 3 4))"
-} -output "()\n#t\n"
+} -output "#t\n"
 
-::tcltest::test thtcl2-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+::tcltest::test cons-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define adjoin (lambda (x a)
   (if (member x a)
       a
       (cons x a))))"
     pep "(adjoin 'x '(a b c))"
-} -output "()\n(x a b c)\n"
+} -output "(x a b c)\n"
 
-::tcltest::test thtcl2-14.2 {Scheme cookbook, due to Nils M Holm} -body {
+::tcltest::test cons-14.2 {Scheme cookbook, due to Nils M Holm} -body {
     pep "(adjoin 'c '(a b c))"
 } -output "(a b c)\n"
 
-::tcltest::test thtcl2-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+::tcltest::test cons-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define list-index (lambda (fn list)
   (let iter ((list list) (index 0))
     (if (null? list)
@@ -1376,9 +1338,9 @@ source constcl.tcl
               (iter (cdr list) (+ index 1))))))))"
     pep "(define >10 (lambda (x) (> x 10)))"
     pep "(list-index >10 '(1 2 3 4 10 11 12 13 14))"
-} -output "()\n()\n5\n"
+} -output "5\n"
 
-::tcltest::test thtcl2-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+::tcltest::test cons-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define take (lambda (lst n)
   (let loop ((result '()) (i n) (lst lst))
     (if (or (null? lst) (<= i 0))
@@ -1391,9 +1353,9 @@ source constcl.tcl
         (let ((next-list (take lst n)))
           (loop (cdr lst) (cons (apply fn next-list) result)))))))"
     pep "(sublist-map 2 < '(1 2 3 4))"
-} -output "()\n()\n(#t #t #t)\n"
+} -output "(#t #t #t)\n"
 
-::tcltest::test thtcl2-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+::tcltest::test cons-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
     pep "(define remove (lambda (fn lst)
   (let loop ((lst lst) (result '()))
     (if (null? lst)
@@ -1402,9 +1364,9 @@ source constcl.tcl
           (loop (cdr lst)
                 (if (fn item) result (cons item result))))))))"
     pep "(remove >10 '(1 2 3 4 10 11 12 13 14))"
-} -output "()\n(1 2 3 4 10)\n"
+} -output "(1 2 3 4 10)\n"
 
-::tcltest::test thtcl2-14.6 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
     pep {(define group (lambda (n lst)
   (if (< n 1)
       (error "group: n must be positive")
@@ -1418,7 +1380,7 @@ source constcl.tcl
     pep "(group 3 (in-range 11))"
 } -output "()\n((0 1 2) (3 4 5) (6 7 8) (9 10))"
 
-::tcltest::test thtcl2-14.7 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
     pep {(define group-by (lambda (f lst)
   (if (null? lst) '()
       (let ((first (car lst)))

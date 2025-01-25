@@ -559,7 +559,7 @@ _consequent_) is evaluated and the value returned. Otherwise, the third expressi
 _alternate_) is evaluated and the value returned.
 
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
-_sequence_.
+_sequence_, returning the value of the last one.
 
 ```
 proc ::constcl::eprogn {exps env} {
@@ -2116,7 +2116,7 @@ proc ::constcl::char=? {c1 c2} {
 reg char<? ::constcl::char<?
 
 proc ::constcl::char<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] < [$c2 char]} {
             return #t
         } else {
@@ -2133,7 +2133,7 @@ proc ::constcl::char<? {c1 c2} {
 reg char>? ::constcl::char>?
 
 proc ::constcl::char>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] > [$c2 char]} {
             return #t
         } else {
@@ -2150,7 +2150,7 @@ proc ::constcl::char>? {c1 c2} {
 reg char<=? ::constcl::char<=?
 
 proc ::constcl::char<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] <= [$c2 char]} {
             return #t
         } else {
@@ -2167,7 +2167,7 @@ proc ::constcl::char<=? {c1 c2} {
 reg char>=? ::constcl::char>=?
 
 proc ::constcl::char>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] >= [$c2 char]} {
             return #t
         } else {
@@ -2187,7 +2187,7 @@ values in a case insensitive manner. They only compare two characters at a time.
 reg char-ci=? ::constcl::char-ci=?
 
 proc ::constcl::char-ci=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -2204,7 +2204,7 @@ proc ::constcl::char-ci=? {c1 c2} {
 reg char-ci<? ::constcl::char-ci<?
 
 proc ::constcl::char-ci<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -2221,7 +2221,7 @@ proc ::constcl::char-ci<? {c1 c2} {
 reg char-ci>? ::constcl::char-ci>?
 
 proc ::constcl::char-ci>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -2238,7 +2238,7 @@ proc ::constcl::char-ci>? {c1 c2} {
 reg char-ci<=? ::constcl::char-ci<=?
 
 proc ::constcl::char-ci<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -2255,7 +2255,7 @@ proc ::constcl::char-ci<=? {c1 c2} {
 reg char-ci>=? ::constcl::char-ci>=?
 
 proc ::constcl::char-ci>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -2276,7 +2276,7 @@ conditions.
 reg char-alphabetic? ::constcl::char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char alphabetic?]
     } else {
         error "CHAR expected\n(char-alphabetic? [$char show])"
@@ -2289,7 +2289,7 @@ proc ::constcl::char-alphabetic? {char} {
 reg char-numeric? ::constcl::char-numeric?
 
 proc ::constcl::char-numeric? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char numeric?]
     } else {
         error "CHAR expected\n(char-numeric? [$char show])"
@@ -2302,7 +2302,7 @@ proc ::constcl::char-numeric? {char} {
 reg char-whitespace? ::constcl::char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char whitespace?]
     } else {
         error "CHAR expected\n(char-whitespace? [$char show])"
@@ -2315,7 +2315,7 @@ proc ::constcl::char-whitespace? {char} {
 reg char-upper-case? ::constcl::char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char upper-case?]
     } else {
         error "CHAR expected\n(char-upper-case? [$char show])"
@@ -2328,7 +2328,7 @@ proc ::constcl::char-upper-case? {char} {
 reg char-lower-case? ::constcl::char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char lower-case?]
     } else {
         error "CHAR expected\n(char-lower-case? [$char show])"
@@ -2355,7 +2355,7 @@ proc ::constcl::integer->char {n} {
 reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
             return [MkChar [::string toupper [$char value]]]
         } else {
@@ -2373,7 +2373,7 @@ proc ::constcl::char-upcase {char} {
 reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
             return [MkChar [::string tolower [$char value]]]
         } else {
@@ -2389,6 +2389,8 @@ proc ::constcl::char-downcase {char} {
 
 ### Control
 
+This section concerns itself with procedures and the application of the same.
+
 ```
 catch { Procedure destroy }
 
@@ -2402,7 +2404,7 @@ oo::class create Procedure {
     }
     method value {} {}
     method write {} { puts -nonewline [self] }
-    method show {} { [self] }
+    method show {} { return [self] }
     method call {args} {
         if {[llength $parms] != [llength $args]} {
             error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
@@ -2413,9 +2415,7 @@ oo::class create Procedure {
 }
 
 interp alias {} ::constcl::MkProcedure {} Procedure new
-```
 
-```
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {obj} {
@@ -2432,16 +2432,14 @@ proc ::constcl::procedure? {obj} {
 ```
 
 
+`apply` applies a procedure to a Tcl list of Lisp arguments.
+
 ```
 reg apply ::constcl::apply
 
 proc ::constcl::apply {proc args} {
     if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-           invoke $proc $args 
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
-        }
+        invoke $proc $args 
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }

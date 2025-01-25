@@ -1,6 +1,8 @@
 
 MD(
 ### Characters
+
+Characters are any Unicode printing character, and also space and newline space characters.
 MD)
 
 CB
@@ -8,8 +10,11 @@ oo::class create Char {
     superclass NIL
     variable value
     constructor {v} {
-        # TODO check for #\ and set character names to lowercase
-        set value $v
+        if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
+            set value $v
+        } else {
+            error "CHAR expected\n$v"
+        }
     }
     method char {} {
         switch $value {
@@ -67,6 +72,9 @@ oo::class create Char {
 }
 
 proc ::constcl::MkChar {v} {
+    if {[regexp -nocase {^#\\(space|newline)$} $v]} {
+        set v [::string tolower $v]
+    }
     foreach instance [info class instances Char] {
         if {[$instance value] eq $v} {
             return $instance
@@ -75,6 +83,10 @@ proc ::constcl::MkChar {v} {
     return [Char new $v]
 }
 CB
+
+MD(
+`char?` recognizes Char objects by type.
+MD)
 
 CB
 reg char? ::constcl::char?
@@ -97,6 +109,11 @@ TT(
 } -output "#t\n"
 
 TT)
+
+MD(
+`char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
+values. They only compare two characters at a time.
+MD)
 
 CB
 reg char=? ::constcl::char=?
@@ -128,7 +145,7 @@ CB
 reg char<? ::constcl::char<?
 
 proc ::constcl::char<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] < [$c2 char]} {
             return #t
         } else {
@@ -154,7 +171,7 @@ CB
 reg char>? ::constcl::char>?
 
 proc ::constcl::char>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] > [$c2 char]} {
             return #t
         } else {
@@ -180,7 +197,7 @@ CB
 reg char<=? ::constcl::char<=?
 
 proc ::constcl::char<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] <= [$c2 char]} {
             return #t
         } else {
@@ -206,7 +223,7 @@ CB
 reg char>=? ::constcl::char>=?
 
 proc ::constcl::char>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[$c1 char] >= [$c2 char]} {
             return #t
         } else {
@@ -228,11 +245,16 @@ TT(
 
 TT)
 
+MD(
+`char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
+values in a case insensitive manner. They only compare two characters at a time.
+MD)
+
 CB
 reg char-ci=? ::constcl::char-ci=?
 
 proc ::constcl::char-ci=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -258,7 +280,7 @@ CB
 reg char-ci<? ::constcl::char-ci<?
 
 proc ::constcl::char-ci<? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -284,7 +306,7 @@ CB
 reg char-ci>? ::constcl::char-ci>?
 
 proc ::constcl::char-ci>? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -310,7 +332,7 @@ CB
 reg char-ci<=? ::constcl::char-ci<=?
 
 proc ::constcl::char-ci<=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -336,7 +358,7 @@ CB
 reg char-ci>=? ::constcl::char-ci>=?
 
 proc ::constcl::char-ci>=? {c1 c2} {
-    if {[::constcl::char? $c1] eq "#t" && [::constcl::char? $c2] eq "#t"} {
+    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
         if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
             return #t
         } else {
@@ -359,11 +381,17 @@ TT(
 
 TT)
 
+MD(
+The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
+`char-upper-case`, and `char-lower-case` test a character for these
+conditions.
+MD)
+
 CB
 reg char-alphabetic? ::constcl::char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char alphabetic?]
     } else {
         error "CHAR expected\n(char-alphabetic? [$char show])"
@@ -388,7 +416,7 @@ CB
 reg char-numeric? ::constcl::char-numeric?
 
 proc ::constcl::char-numeric? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char numeric?]
     } else {
         error "CHAR expected\n(char-numeric? [$char show])"
@@ -413,7 +441,7 @@ CB
 reg char-whitespace? ::constcl::char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char whitespace?]
     } else {
         error "CHAR expected\n(char-whitespace? [$char show])"
@@ -438,7 +466,7 @@ CB
 reg char-upper-case? ::constcl::char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char upper-case?]
     } else {
         error "CHAR expected\n(char-upper-case? [$char show])"
@@ -463,7 +491,7 @@ CB
 reg char-lower-case? ::constcl::char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         return [$char lower-case?]
     } else {
         error "CHAR expected\n(char-lower-case? [$char show])"
@@ -496,11 +524,15 @@ proc ::constcl::integer->char {n} {
 }
 CB
 
+MD(
+`char-upcase` and `char-downcase` alter the case of a character.
+MD)
+
 CB
 reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
             return [MkChar [::string toupper [$char value]]]
         } else {
@@ -527,7 +559,7 @@ CB
 reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
-    if {[::constcl::char? $char] eq "#t"} {
+    if {[char? $char] eq "#t"} {
         if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
             return [MkChar [::string tolower [$char value]]]
         } else {
