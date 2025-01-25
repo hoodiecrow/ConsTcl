@@ -98,7 +98,7 @@ catch { NIL destroy }
 
 oo::class create NIL {
     constructor {} {}
-    method truth {} {return #t}
+    method bvalue {} {return #t}
     method car {} {error "PAIR expected"}
     method cdr {} {error "PAIR expected"}
     method set-car! {v} {error "PAIR expected"}
@@ -1117,7 +1117,11 @@ oo::class create Number {
     superclass NIL
     variable value
     constructor {v} {
-        set value $v
+        if {[::string is double $num]} {
+            set value $v
+        } else {
+            error "NUMBER expected\n$num"
+        }
     }
     method positive {} {expr {$value > 0}}
     method negative {} {expr {$value < 0}}
@@ -1136,13 +1140,8 @@ oo::class create Number {
     method show {} { set value }
 }
 
-proc ::constcl::MkNumber {num} {
-    if {[::string is double $num]} {
-        return [Number new $num]
-    } else {
-        error "NUMBER expected\n$num"
-    }
-}
+interp alias {} ::constcl::MkNumber {} Number new
+
 ```
 
 `number?` recognizes a number by object type, not by content.
@@ -1161,7 +1160,7 @@ proc ::constcl::number? {obj} {
 ```
 
 
-The operators ´=`, `<`, `>`, `<=`, and `>=` are implemented.
+The operators `=`, `<`, `>`, `<=`, and `>=` are implemented.
 
 ```
 reg = ::constcl::=
@@ -1277,7 +1276,7 @@ proc ::constcl::zero? {obj} {
 ```
 
 
-The `positive`/`negative`/`even`/`odd` predicates test a number
+The `positive?`/`negative?`/`even?`/`odd?` predicates test a number
 for those traits.
 
 ```
@@ -1929,26 +1928,32 @@ proc frombase {base number} {
 
 ### Booleans
 
+Booleans are logic values, either true (`#t`) or false (`#f`).
+All predicates (procedures whose name end with -?) return
+boolean values. The conditional `if` operator considers all
+values except for `#f` to be true.
+
 ```
 oo::class create Boolean {
     superclass NIL
-    variable truth
+    variable bvalue
     constructor {v} {
         if {$v ni {#t #f}} {
             error "bad boolean value $v"
         }
-        set truth $v
+        set bvalue $v
     }
     method mkconstant {} {}
     method constant {} {return 1}
-    method truth {} { set truth }
-    method write {} { puts -nonewline [my truth] }
-    method show {} {set truth}
+    method bvalue {} { set bvalue }
+    method value {} { set bvalue }
+    method write {} { puts -nonewline [my bvalue] }
+    method show {} {set bvalue}
 }
 
 proc ::constcl::MkBoolean {v} {
     foreach instance [info class instances Boolean] {
-        if {[$instance truth] eq $v} {
+        if {[$instance bvalue] eq $v} {
             return $instance
         }
     }
@@ -1957,8 +1962,9 @@ proc ::constcl::MkBoolean {v} {
 ```
 
 
-```
+The `boolean?` predicate recognizes a Boolean by type.
 
+```
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {obj} {
@@ -1973,11 +1979,13 @@ proc ::constcl::boolean? {obj} {
 ```
 
 
+The only operation on booleans: `not`, or logical negation.
+
 ```
 reg not ::constcl::not
 
 proc ::constcl::not {obj} {
-    if {[$obj truth] eq "#f"} {
+    if {[$obj bvalue] eq "#f"} {
         return #t
     } else {
         return #f
