@@ -40,7 +40,7 @@ namespace eval ::constcl {
 
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the standard environment.
+registers built-in procedures in the standard environment).
 
 ```
 # utility functions
@@ -126,72 +126,68 @@ proc ::constcl::null? {obj} {
 ```
 
 
-The algorithm for reading a Lisp value in Constcl is as follows:
+## read
 
-1. Get a string through `[gets stdin]`.
-2. Test the first character. If it is `(`, read a list. If it is `+`, `-`, or a digit, disambiguate symbols and otherwise read a number. If it is `#`, test the second character and either read a boolean or a vector. If it is `"`, read a string. Otherwise read an identifier.
+A quick-and-dirty input simulator, using an input buffer variable to hold characters
+to be read. The `advance` command consumes one character from the buffer. The `first`
+command peeks at the first (next) character in the buffer; `second` peeks at the 
+second. `skip-whitespace` advances past whitespace and comments.
 
-The algorithm for reading a list is:
-
-1. Read two Lisp values and cons the first to the second.
-2. Return the cons.
-
-The algorithm for reading a number is:
-
-1. Read characters until space, and add to the number.
-2. Validate the number as double, throw error if false.
-3. Return a Number object.
-
-The algorithm for reading a boolean is:
-
-1. Look at the second character.
-2. If it is `t`, return #t
-3. If it is `f`, return #f
-
-The algorithm for reading a string is:
-
-1. Read a character. If it is `\`, add it to the string and immediately add the next character to the string. If it is `"`, terminate the string. Otherwise, add the character to the string.
-2. Repeat #1.
-3. Intern the string in the string store and return a String object.
-
-The algorithm for reading an identifier is:
-
-1. Read a character. If it is a space character, terminate the symbol. Otherwise add the character to the symbol's name.
-2. Repeat #1.
-3. Return a Symbol object.
-
-
-set inputstr {}
 
 ```
+set inputbuffer {}
+
 proc ::constcl::advance {args} {
     if {[llength $args] == 1} {
         incr args -1
-        set ::inputstr [::string range $::inputstr 1+$args end]
+        set ::inputbuffer [::string range $::inputbuffer 1+$args end]
     } else {
-        set ::inputstr [::string range $::inputstr 1 end]
+        set ::inputbuffer [::string range $::inputbuffer 1 end]
+    }
+}
+
+proc ::constcl::first {} {
+    ::string index $::inputbuffer 0
+}
+
+proc ::constcl::second {} {
+    ::string index $::inputbuffer 1
+}
+
+proc ::constcl::skip-whitespace {} {
+    # move the source pointer past whitespace and comments
+    # adapted from Robert Nystrom, 'Crafting Interpreters'
+    while true {
+        set c [first]
+        switch $c {
+            " " - "\r" - "\t" -
+            "\n" {
+                advance
+            }
+            ";" {
+                # a comment goes on until the end of the line
+                while {[first] != "\n" && $::inputbuffer ne {}} {
+                    advance
+                }
+            }
+            default {
+                return
+            }
+        }
     }
 }
 ```
 
-```
-proc ::constcl::first {} {
-    ::string index $::inputstr 0
-}
-```
-
-```
-proc ::constcl::second {} {
-    ::string index $::inputstr 1
-}
-```
+`parse` fills the input buffer and then reads and parses the input.
 
 ```
 proc ::constcl::parse {str} {
-    set ::inputstr $str
+    set ::inputbuffer $str
     return [read]
 }
 ```
+
+The standard builtin `read` consumes and parses input into a Lisp expression.
 
 ```
 reg read ::constcl::read
@@ -201,10 +197,12 @@ proc ::constcl::read {args} {
 }
 ```
 
+The helper procedure `read-value` reads a value of any kind.
+
 ```
 proc ::constcl::read-value {} {
     skip-whitespace
-    if {$::inputstr eq {}} {set ::inputstr [gets stdin]}
+    if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
         {^$} {
             return
@@ -291,10 +289,12 @@ proc ::constcl::read-value {} {
         default {
             error "unexpected char [first]"
         }
-
     }
 }
 ```
+
+The `make-constant` helper procedure is called to set objects to
+constants when read as a quoted literal.
 
 ```
 proc ::constcl::make-constant {obj} {
@@ -311,13 +311,15 @@ proc ::constcl::make-constant {obj} {
 ```
 
 
+`read-number` reads a number and returns a Number object.
+
 ```
 proc ::constcl::read-number {} {
-    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append num [first]
         advance
     }
-    if {[::string length $num] && [::string is double $num]} {
+    if {[::string is double $num]} {
         return [MkNumber $num]
     } else {
         error "Invalid numeric constant $num"
@@ -326,14 +328,21 @@ proc ::constcl::read-number {} {
 ```
 
 
+The `character-check` helper procedure compares a potential
+character constant to the valid kinds. Returns Tcl truth (1/0).
+
 ```
 proc ::constcl::character-check {name} {
     regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
 }
+```
 
+`read-character` reads a character and returns a Char object.
+
+```
 proc ::constcl::read-character {} {
     set name "#"
-    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) ]}} {
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
@@ -349,11 +358,13 @@ proc ::constcl::read-character {} {
 ```
 
 
+`read-vector` reads a vector value and returns a Vector object.
+
 ```
 proc ::constcl::read-vector {} {
     set res {}
     skip-whitespace
-    while {$::inputstr ne {} && [first] ne ")"} {
+    while {$::inputbuffer ne {} && [first] ne ")"} {
         lappend res [read]
         skip-whitespace
     }
@@ -363,6 +374,8 @@ proc ::constcl::read-vector {} {
 }
 ```
 
+`read-string` reads a string value and returns a String object.
+
 ```
 proc ::constcl::read-string {} {
     set str {}
@@ -370,7 +383,6 @@ proc ::constcl::read-string {} {
     while {[first] ne {"}} {
         set c [first]
         if {$c eq "\\"} {
-            #::append str $c
             advance
             ::append str [first]
         } else {
@@ -386,11 +398,13 @@ proc ::constcl::read-string {} {
 ```
 
 
+`read-identifier` reads an identifier value and returns a Symbol object.
+
 ```
 proc ::constcl::read-identifier {} {
-        ::append name [first]
-        advance
-    while {$::inputstr ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+    ::append name [first]
+    advance
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
@@ -400,56 +414,29 @@ proc ::constcl::read-identifier {} {
 ```
 
 
-```
-proc ::constcl::skip-whitespace {} {
-    # move the source pointer past whitespace and comments
-    # adapted from Robert Nystrom, Crafting Interpreters
-    while true {
-        set c [first]
-        switch $c {
-            " " -
-            "\r" -
-            "\t" -
-            "\n" {
-                advance
-            }
-            ";" {
-                # a comment goes on until the end of the line
-                while {[first] != "\n" && $::inputstr ne {}} {
-                    advance
-                }
-            }
-            default {
-                return
-            }
-        }
-    }
-}
-```
+The `find-char` helper procedure reads past whitespace to find a given character.
+Returns Tcl truth if it is found.
 
 ```
 proc ::constcl::find-char {c} {
-    # take a character, peek beyond whitespace to find it
     set cp 0
-    while {[::string is space [::string index $::inputstr $cp]]} {
+    while {[::string is space [::string index $::inputbuffer $cp]]} {
         incr cp
     }
-    return [expr {[::string index $::inputstr $cp] eq $c}]
+    return [expr {[::string index $::inputbuffer $cp] eq $c}]
 }
 ```
 
+The `read-pair` procedure reads values and returns a Pair object.
+
 ```
 proc ::constcl::read-pair {c} {
-    # ")"
-    # "foo . bar)"
-    # "foo)"
-    # "foo bar)"
     skip-whitespace
     if {[first] eq $c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputstr 0 2] " . "]} {
+    if {[::string equal [::string range $::inputbuffer 0 2] " . "]} {
         advance 3
         skip-whitespace
         set d [read]
@@ -465,7 +452,7 @@ proc ::constcl::read-pair {c} {
     } else {
         lappend res $a
         while {![find-char $c]} {
-            if {[llength $res] > 99} break
+            #if {[llength $res] > 99} break
             set p [read]
             skip-whitespace
             lappend res $p
@@ -478,59 +465,7 @@ proc ::constcl::read-pair {c} {
     }
 
 }
-
-proc ::constcl::__read-pair {c} {
-    # take a character, read a car and a cdr value, pass the char to findC
-    skip-whitespace
-    set a [read]
-    if {[::string equal [::string range $::inputstr 0 3] " . "]} {
-        advance 3
-        skip-whitespace
-        set d [read]
-    } elseif {[find-char $c]} {
-        skip-whitespace
-        set d #NIL
-    } else {
-        skip-whitespace
-        set d [read-pair $c]
-    }
-    skip-whitespace
-    return [cons $a $d]
-}
 ```
-
-```
-proc ::constcl::read-v {} {
-    # take an input token, return a value (integer or cons cell)
-    skip-whitespace
-    if {[string is alpha [first]]} {
-        # return readOpcode();
-    } elseif {[first] eq "-" || [string is digit [first]]} {
-        # return readNumber();
-    } elseif {[first] eq "("} {
-        advance
-        skip-whitespace
-        set p [read-pair ")"]
-        skip-whitespace
-        if {[first] != ")"} {
-            error "Missing right parenthesis (first=[first])."
-        }
-        return $p
-    } elseif {[first] eq "\["} {
-        # same as above, but with [] instead of ()
-        advance
-        skip-whitespace
-        set p [read-pair "\]"]
-        skip-whitespace
-        if {[first] != "\]"} {
-            error "Missing right parenthesis (first=[first])."
-        }
-        return $p
-    }
-    return 0
-}
-```
-
 
 
 ## Eval
