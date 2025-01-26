@@ -2966,18 +2966,18 @@ proc ::constcl::append {args} {
 ```
 
 
-`reverse` produces a reversed copy of a list.
+`reverse` produces a reversed copy of a Lisp list.
 
 ```
 reg reverse ::constcl::reverse
 
 proc ::constcl::reverse {obj} {
-    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
+    list {*}[lreverse [splitlist $obj]]
 }
 ```
 
 
-Given a list index, `list-tail` yields the sublist from that index.
+Given a list index, `list-tail` yields the sublist starting from that index.
 
 ```
 reg list-tail ::constcl::list-tail
@@ -3068,114 +3068,71 @@ proc ::constcl::member {obj1 obj2} {
 }
 ```
 
-`assq`, `assv`, and `assoc` return the associative sublist marked with a given
+`assq`, `assv`, and `assoc` return the associative item marked with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
 respectively, for the comparison.
 
-Not implemented yet.
-
 ```
+reg assq ::constcl::assq
+
 proc ::constcl::assq {obj1 obj2} {
-    # TODO
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eq? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
+            } else {
+                return [assq $obj1 [cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
 }
 ```
 
 
 ```
+reg assv ::constcl::assv
+
 proc ::constcl::assv {obj1 obj2} {
-    # TODO
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eqv? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
+            } else {
+                return [assq $obj1 [cdr $obj2]]
+            }
+        }
+    } else {
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+    }
 }
 ```
 
 ```
+reg assoc ::constcl::assoc
+
 proc ::constcl::assoc {obj1 obj2} {
-    # TODO
-}
-```
-
-
-### Symbols
-
-```
-oo::class create Symbol {
-    superclass NIL
-    variable name caseconstant
-    constructor {n} {
-        # TODO idcheck this
-        set name $n
-        set caseconstant 0
-    }
-    method name {} {set name}
-    method value {} {set name}
-    method = {symname} {expr {$name eq $symname}}
-    method mkconstant {} {}
-    method constant {} {return 1}
-    method make-case-constant {} {set caseconstant 1}
-    method case-constant {} {set caseconstant}
-    method write {} { puts -nonewline [my name] }
-    method show {} {set name}
-}
-
-proc ::constcl::MkSymbol {n} {
-    if {$n eq {}} {
-        error "a symbol must have a name"
-    }
-    foreach instance [info class instances Symbol] {
-        if {[$instance name] eq $n} {
-            return $instance
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
+            return #f
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [equal? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
+            } else {
+                return [assq $obj1 [cdr $obj2]]
+            }
         }
-    }
-    return [Symbol new $n]
-}
-```
-
-```
-reg symbol? ::constcl::symbol?
-
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
-        return #t
     } else {
-        return #f
+        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
     }
 }
 ```
 
-
-```
-reg symbol->string ::constcl::symbol->string
-
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
-        } else {
-            set str [MkString [$obj name]]
-        }
-        $str mkconstant
-        return $str
-    } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
-    }
-}
-```
-
-
-```
-reg string->symbol ::constcl::string->symbol
-
-proc ::constcl::string->symbol {str} {
-    if {[string? $str] eq "#t"} {
-        set sym [MkSymbol [$str value]]
-        $sym make-case-constant
-        return $sym
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
-}
-```
 
 
 ### Strings
@@ -3579,6 +3536,90 @@ proc ::constcl::string-fill! {str char} {
 }
 ```
 
+
+
+### Symbols
+
+```
+oo::class create Symbol {
+    superclass NIL
+    variable name caseconstant
+    constructor {n} {
+        # TODO idcheck this
+        set name $n
+        set caseconstant 0
+    }
+    method name {} {set name}
+    method value {} {set name}
+    method = {symname} {expr {$name eq $symname}}
+    method mkconstant {} {}
+    method constant {} {return 1}
+    method make-case-constant {} {set caseconstant 1}
+    method case-constant {} {set caseconstant}
+    method write {} { puts -nonewline [my name] }
+    method show {} {set name}
+}
+
+proc ::constcl::MkSymbol {n} {
+    if {$n eq {}} {
+        error "a symbol must have a name"
+    }
+    foreach instance [info class instances Symbol] {
+        if {[$instance name] eq $n} {
+            return $instance
+        }
+    }
+    return [Symbol new $n]
+}
+```
+
+```
+reg symbol? ::constcl::symbol?
+
+proc ::constcl::symbol? {obj} {
+    if {[info object isa typeof $obj Symbol]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
+
+
+```
+reg symbol->string ::constcl::symbol->string
+
+proc ::constcl::symbol->string {obj} {
+    if {[symbol? $obj] eq "#t"} {
+        if {![$obj case-constant]} {
+            set str [MkString [::string tolower [$obj name]]]
+        } else {
+            set str [MkString [$obj name]]
+        }
+        $str mkconstant
+        return $str
+    } else {
+        error "SYMBOL expected\n(symbol->string [$obj show])"
+    }
+}
+```
+
+
+```
+reg string->symbol ::constcl::string->symbol
+
+proc ::constcl::string->symbol {str} {
+    if {[string? $str] eq "#t"} {
+        set sym [MkSymbol [$str value]]
+        $sym make-case-constant
+        return $sym
+    } else {
+        error "STRING expected\n(string->symbol [$obj show])"
+    }
+}
+```
 
 
 ### Vectors
