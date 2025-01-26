@@ -145,6 +145,7 @@ catch { Dot destroy }
 oo::class create Dot {
     method mkconstant {} {}
 }
+```
 
 
 ## read
@@ -2587,6 +2588,8 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 
 ### Input and output
+
+I may never get around to implementing these.
 
 ```
 proc ::constcl::call-with-input-file {string proc} {
