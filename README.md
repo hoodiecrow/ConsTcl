@@ -2699,13 +2699,7 @@ proc ::constcl::write {obj args} {
 }
 ```
 
-```
-reg display ::constcl::display
-
-proc ::constcl::display {obj args} {
-    # TODO write [$obj display]
-}
-```
+`display` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
 
 ```
 reg newline ::constcl::newline
@@ -2741,6 +2735,8 @@ proc ::constcl::transcript-off {} {
 
 
 ### Pairs and lists
+
+List processing is another of Lisp's great strengths.
 
 ```
 catch { Pair destroy }
@@ -2783,6 +2779,23 @@ oo::class create Pair {
 }
 
 
+interp alias {} ::constcl::MkPair {} Pair new
+
+reg pair? ::constcl::pair?
+
+proc ::constcl::pair? {obj} {
+    if {[info object isa typeof $obj Pair]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
+
+Helper procedure to make a string representation of a list.
+
 ```
 proc ::constcl::show-pair {obj} {
     # take an object and print the car and the cdr of the stored value
@@ -2807,23 +2820,8 @@ proc ::constcl::show-pair {obj} {
 }
 ```
 
-interp alias {} ::constcl::MkPair {} Pair new
-```
 
-```
-reg pair? ::constcl::pair?
-
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-```
-
+`cons` adds a pair to a list.
 
 ```
 reg cons ::constcl::cons
@@ -2833,15 +2831,19 @@ proc ::constcl::cons {car cdr} {
 }
 ```
 
-reg car ::constcl::car
 
+`car` gets the contents of the first cell in a pair.
 
 ```
+reg car ::constcl::car
+
 proc ::constcl::car {obj} {
     $obj car
 }
 ```
 
+
+`cdr` gets the contents of the second cell in a pair.
 
 ```
 reg cdr ::constcl::cdr
@@ -2852,6 +2854,8 @@ proc ::constcl::cdr {obj} {
 ```
 
 
+`set-car!` sets the contents of the first cell in a pair.
+
 ```
 reg set-car! ::constcl::set-car!
 
@@ -2861,6 +2865,8 @@ proc ::constcl::set-car! {obj val} {
 ```
 
 
+`set-cdr!` sets the contents of the second cell in a pair.
+
 ```
 reg set-cdr! ::constcl::set-cdr!
 
@@ -2869,6 +2875,9 @@ proc ::constcl::set-cdr! {obj val} {
 }
 ```
 
+
+The `list?` predicate tests if a pair is part of a proper list, one that
+ends with NIL.
 
 ```
 reg list? ::constcl::list?
@@ -2889,6 +2898,8 @@ proc ::constcl::list? {obj} {
 ```
 
 
+`list` constructs a Lisp list from a Tcl list of items.
+
 ```
 reg list ::constcl::list
 
@@ -2898,13 +2909,15 @@ proc ::constcl::list {args} {
     } else {
         set prev #NIL
         foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
+            set prev [cons $obj $prev]
         }
         return $prev
     }
 }
 ```
 
+
+`length` reports the length of a Lisp list of items.
 
 ```
 proc ::constcl::length-helper {obj} {
@@ -2926,6 +2939,8 @@ proc ::constcl::length {obj} {
 }
 ```
 
+
+`append` joins lists together.
 
 ```
 proc ::constcl::copy-list {obj next} {
@@ -2951,6 +2966,8 @@ proc ::constcl::append {args} {
 ```
 
 
+`reverse` produces a reversed copy of a list.
+
 ```
 reg reverse ::constcl::reverse
 
@@ -2959,6 +2976,8 @@ proc ::constcl::reverse {obj} {
 }
 ```
 
+
+Given a list index, `list-tail` yields the sublist from that index.
 
 ```
 reg list-tail ::constcl::list-tail
@@ -2973,14 +2992,20 @@ proc ::constcl::list-tail {obj k} {
 ```
 
 
+`list-ref` yields the list item at a given index.
+
 ```
 reg list-ref ::constcl::list-ref
 
 proc ::constcl::list-ref {obj k} {
-    ::constcl::car [::constcl::list-tail $obj $k]
+    car [list-tail $obj $k]
 }
 ```
 
+
+`memq`, `memv`, and `member` return the sublist starting with a given
+item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
+respectively, for the comparison.
 
 ```
 reg memq ::constcl::memq
@@ -3043,61 +3068,28 @@ proc ::constcl::member {obj1 obj2} {
 }
 ```
 
+`assq`, `assv`, and `assoc` return the associative sublist marked with a given
+item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
+respectively, for the comparison.
+
+Not implemented yet.
+
 ```
 proc ::constcl::assq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
+    # TODO
 }
 ```
 
 
 ```
 proc ::constcl::assv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
+    # TODO
 }
 ```
 
 ```
 proc ::constcl::assoc {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
-            } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
-    }
+    # TODO
 }
 ```
 
