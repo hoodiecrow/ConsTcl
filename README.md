@@ -1048,62 +1048,6 @@ proc ::constcl::write-pair {obj} {
 ```
 
 
-
-## Environment class and objects
-
-The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
-with the added finesse of keeping a link to the outer environment (starting a chain that goes all
-the way to the global environment and then stops at the null environment) which can be traversed
-by the find method to find which innermost environment a given symbol is bound in.
-
-```
-catch { Environment destroy }
-
-oo::class create Environment {
-    variable bindings outer_env
-    constructor {syms vals {outer {}}} {
-        set bindings [dict create]
-        if {$syms eq "#NIL"} {
-            if {[llength $vals]} { error "too many arguments" }
-        } elseif {[::constcl::list? $syms] eq "#t"} {
-            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
-            foreach sym $syms val $vals {
-                my set $sym $val
-            }
-        } elseif {[::constcl::symbol? $syms] eq "#t"} {
-            my set [$syms name] [::constcl::list {*}$vals]
-        } else {
-            while {[::constcl::null? $syms] ne "#t"} {
-                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
-                    break
-                } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    set syms [::constcl::cdr $syms]
-                }
-                #if {[llength $vals] < 1} { error "too few arguments" }
-            }
-            if {[llength $vals] > 0} { error "too many arguments $vals" }
-        }
-        set outer_env $outer
-    }
-    method find {sym} {
-        if {$sym in [dict keys $bindings]} {
-            self
-        } else {
-            $outer_env find $sym
-        }
-    }
-    method get {sym} {
-        dict get $bindings $sym
-    }
-    method set {sym val} {
-        dict set bindings $sym $val
-    }
-}
-```
-
 ## Built-in procedures
 
 ### Equivalence predicates
@@ -3570,12 +3514,18 @@ proc ::constcl::string-fill! {str char} {
 
 ### Symbols
 
+Symbols are like little strings that are used to refer to things (variables, including
+procedure names, etc) or for comparing against each other.
+
 ```
 oo::class create Symbol {
     superclass NIL
     variable name caseconstant
     constructor {n} {
-        # TODO idcheck this
+        if {$n eq {}} {
+            error "a symbol must have a name"
+        }
+        ::constcl::idcheck $n
         set name $n
         set caseconstant 0
     }
@@ -3591,9 +3541,6 @@ oo::class create Symbol {
 }
 
 proc ::constcl::MkSymbol {n} {
-    if {$n eq {}} {
-        error "a symbol must have a name"
-    }
     foreach instance [info class instances Symbol] {
         if {[$instance name] eq $n} {
             return $instance
@@ -3618,6 +3565,9 @@ proc ::constcl::symbol? {obj} {
 ```
 
 
+`symbol->string` yields a string consisting of the symbol name, usually
+lower-cased.
+
 ```
 reg symbol->string ::constcl::symbol->string
 
@@ -3636,6 +3586,9 @@ proc ::constcl::symbol->string {obj} {
 }
 ```
 
+
+`string->symbol` creates a symbol with the name given by the string. The symbol
+is 'case-constant', i.e. it will not be lower-cased.
 
 ```
 reg string->symbol ::constcl::string->symbol
@@ -3920,6 +3873,62 @@ proc ::constcl::atom? {obj} {
 ```
 
 
+
+
+## Environment class and objects
+
+The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
+with the added finesse of keeping a link to the outer environment (starting a chain that goes all
+the way to the global environment and then stops at the null environment) which can be traversed
+by the find method to find which innermost environment a given symbol is bound in.
+
+```
+catch { Environment destroy }
+
+oo::class create Environment {
+    variable bindings outer_env
+    constructor {syms vals {outer {}}} {
+        set bindings [dict create]
+        if {$syms eq "#NIL"} {
+            if {[llength $vals]} { error "too many arguments" }
+        } elseif {[::constcl::list? $syms] eq "#t"} {
+            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            foreach sym $syms val $vals {
+                my set $sym $val
+            }
+        } elseif {[::constcl::symbol? $syms] eq "#t"} {
+            my set [$syms name] [::constcl::list {*}$vals]
+        } else {
+            while {[::constcl::null? $syms] ne "#t"} {
+                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    break
+                } else {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    set syms [::constcl::cdr $syms]
+                }
+                #if {[llength $vals] < 1} { error "too few arguments" }
+            }
+            if {[llength $vals] > 0} { error "too many arguments $vals" }
+        }
+        set outer_env $outer
+    }
+    method find {sym} {
+        if {$sym in [dict keys $bindings]} {
+            self
+        } else {
+            $outer_env find $sym
+        }
+    }
+    method get {sym} {
+        dict get $bindings $sym
+    }
+    method set {sym val} {
+        dict set bindings $sym $val
+    }
+}
+```
 
 
 On startup, two __Environment__ objects called __null_env__ (the null environment, not the same
