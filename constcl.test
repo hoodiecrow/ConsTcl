@@ -258,13 +258,21 @@ source constcl.tcl
     pep {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(#\\A #\\B #\\C)\n"
 
-::tcltest::test macro-5.4 {expand for/list macro} -constraints knownBug -body { ;# bug: in-range can't accept Lisp values
+::tcltest::test macro-5.4 {expand for/list macro} -body {
     pxp {(for/list ([i (in-range 1 4)]) (* i i))}
-} -output "\n"
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
-::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
+::tcltest::test macro-5.5 {run for/list macro} -body {
     pep {(for/list ([i (in-range 1 4)]) (* i i))}
-} -result "(1 4 9)"
+} -output "(1 4 9)\n"
+
+::tcltest::test macro-5.6 {expand for/list macro} -body {
+    pxp {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
+
+::tcltest::test macro-5.7 {run for/list macro} -body {
+    pep {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "((1 #\\a) (2 #\\b) (3 #\\c))\n"
 
 
 ::tcltest::test eval-5.0 {lambda parameter lists} -body {
@@ -392,10 +400,7 @@ source constcl.tcl
 
 
 ::tcltest::test number-1.12 {try max} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(max 7 1 10 3)"
-        write [eval [read]]
-    }
+    pep "(max 7 1 10 3)"
 } -output "10\n"
 
 
@@ -410,38 +415,40 @@ source constcl.tcl
 
 
 ::tcltest::test number-1.14 {try +} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(+ 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "21\n"
+    pep "(+)"
+    pep "(+ 5)"
+    pep "(+ 7 1 10 3)"
+} -output "0\n5\n21\n"
 
 
 
 ::tcltest::test number-1.15 {try *} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(* 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "210\n"
+    pep "(*)"
+    pep "(* 5)"
+    pep "(* 7 1 10 3)"
+} -output "1\n5\n210\n"
 
 
 
 ::tcltest::test number-1.16 {try -} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(- 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "-7\n"
+    pep "(-)"
+} -returnCodes error -result {wrong # args: should be "::tcl::mathop::- value ?value ...?"}
+
+::tcltest::test number-1.16 {try -} -body {
+    pep "(- 5)"
+    pep "(- 7 1 10 3)"
+} -output "-5\n-7\n"
 
 
 
 ::tcltest::test number-1.17 {try /} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(/ 60 1 10 3)"
-        write [eval [read]]
-    }
-} -output "2\n"
+    pep "(/)"
+} -returnCodes error -result {wrong # args: should be "::tcl::mathop::/ value ?value ...?"}
+
+::tcltest::test number-1.17 {try /} -body {
+    pep "(/ 5)"
+    pep "(/ 21 7 3)"
+} -output "0.2\n1\n"
 
 
 
@@ -1254,11 +1261,11 @@ source constcl.tcl
     pep "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
-::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { ;# no map
     pep "(map fib (range 0 10))"
 } -output "(1 1 2 3 5 8 13 21 34 55)"
 
-::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { ;# no map
     pep "(map fib (range 0 20))"
 } -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)"
 
@@ -1390,7 +1397,7 @@ source constcl.tcl
     pep "(remove >10 '(1 2 3 4 10 11 12 13 14))"
 } -output "(1 2 3 4 10)\n"
 
-::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -body {
     pep {(define group (lambda (n lst)
   (if (< n 1)
       (error "group: n must be positive")
@@ -1401,10 +1408,10 @@ source constcl.tcl
                (loop lst n '() (cons (reverse g) gs)))
               (else
                (loop (cdr lst) (- m 1) (cons (car lst) g) gs)))))))}
-    pep "(group 3 (in-range 11))"
-} -output "()\n((0 1 2) (3 4 5) (6 7 8) (9 10))"
+    pep "(group 3 (in-range 10))"
+} -output "((0 1 2) (3 4 5) (6 7 8) (9))\n"
 
-::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -body {
     pep {(define group-by (lambda (f lst)
   (if (null? lst) '()
       (let ((first (car lst)))
@@ -1422,8 +1429,8 @@ source constcl.tcl
                     (loop (cdr lst) newkey
                           (list (car lst))
                           (cons (reverse group) groups))))))))))}
-    pep "(group-by odd? '(1 3 5 2 4 1 3 6 4 1 7))"
-} -result "((1 3 5) (2 4) (1 3) (6 4) (1 7))"
+    pep "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
+} -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
 
 
 ::tcltest::test global_env-1.0 {check for a symbol} -body {

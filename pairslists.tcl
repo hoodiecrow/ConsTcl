@@ -6,9 +6,9 @@ List processing is another of Lisp's great strengths.
 MD)
 
 CB
-catch { Pair destroy }
+catch { ::constcl::Pair destroy }
 
-oo::class create Pair {
+oo::class create ::constcl::Pair {
     variable car cdr constant
     constructor {a d} {
         set car $a
@@ -46,14 +46,14 @@ oo::class create Pair {
 }
 
 
-interp alias {} ::constcl::MkPair {} Pair new
+interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
+    if {[info object isa typeof $obj ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
         return #t
     } else {
         return #f

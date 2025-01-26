@@ -9,8 +9,8 @@ values except for `#f` to be true.
 MD)
 
 CB
-oo::class create Boolean {
-    superclass NIL
+oo::class create ::constcl::Boolean {
+    superclass ::constcl::NIL
     variable bvalue
     constructor {v} {
         if {$v ni {#t #f}} {
@@ -27,12 +27,12 @@ oo::class create Boolean {
 }
 
 proc ::constcl::MkBoolean {v} {
-    foreach instance [info class instances Boolean] {
+    foreach instance [info class instances ::constcl::Boolean] {
         if {[$instance bvalue] eq $v} {
             return $instance
         }
     }
-    return [Boolean new $v]
+    return [::constcl::Boolean new $v]
 }
 CB
 
@@ -60,9 +60,9 @@ CB
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {obj} {
-    if {[info object isa typeof $obj Boolean]} {
+    if {[info object isa typeof $obj ::constcl::Boolean]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Boolean]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Boolean]} {
         return #t
     } else {
         return #f

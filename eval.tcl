@@ -335,28 +335,39 @@ isn't implemented yet).
 MD)
 
 CB
-proc ::constcl::do-for {exps env} {
-    #single-clause
-    set clauses [car $exps]
-    set body [cdr $exps]
-    set clause [car $clauses]
-    set id [car $clause]
-    set seq [cadr $clause]
+proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
         set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
-        if {[list? $seq] eq "#t"} {
-            set seq [splitlist $seq]
-        } elseif {[string? $seq] eq "#t"} {
-            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-        } elseif {[vector? $seq] eq "#t"} {
-            set seq [$seq value]
-        }
+    }
+    if {[list? $seq] eq "#t"} {
+        set seq [splitlist $seq]
+    } elseif {[string? $seq] eq "#t"} { 
+        set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+    } elseif {[vector? $seq] eq "#t"} {
+        set seq [$seq value]
+    }
+}
+
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [splitlist [car $exps]]
+    set body [cdr $exps]
+    set ids {}
+    set seqs {}
+    for {set i 0} {$i < [llength $clauses]} {incr i} {
+        set clause [lindex $clauses $i]
+        lset ids $i [car $clause]
+        lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
-    foreach v $seq {
-        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
+        set x {}
+        for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
+            lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
+        }
+        lappend res [list #L [list {*}$x] {*}[splitlist $body]]
     }
     return $res
 }
@@ -576,13 +587,21 @@ TT(
     pep {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(#\\A #\\B #\\C)\n"
 
-::tcltest::test macro-5.4 {expand for/list macro} -constraints knownBug -body { ;# bug: in-range can't accept Lisp values
+::tcltest::test macro-5.4 {expand for/list macro} -body {
     pxp {(for/list ([i (in-range 1 4)]) (* i i))}
-} -output "\n"
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
-::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
+::tcltest::test macro-5.5 {run for/list macro} -body {
     pep {(for/list ([i (in-range 1 4)]) (* i i))}
-} -result "(1 4 9)"
+} -output "(1 4 9)\n"
+
+::tcltest::test macro-5.6 {expand for/list macro} -body {
+    pxp {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
+
+::tcltest::test macro-5.7 {run for/list macro} -body {
+    pep {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "((1 #\\a) (2 #\\b) (3 #\\c))\n"
 
 
 ::tcltest::test eval-5.0 {lambda parameter lists} -body {

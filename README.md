@@ -78,7 +78,7 @@ but has grown a bit since then to suit my needs.
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::tcl-in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
@@ -91,6 +91,21 @@ proc ::constcl::in-range {args} {
         lappend res $start
     }
     return [lmap r $res {MkNumber $r}]
+}
+
+proc ::constcl::in-range {args} {
+    set start 0
+    set step 1
+    switch [llength $args] {
+        1 { lassign $args e ; set end [$e value]}
+        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
+        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+    }
+    set res $start
+    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+        lappend res $start
+    }
+    return [list {*}[lmap r $res {MkNumber $r}]]
 }
 ```
 
@@ -840,28 +855,39 @@ construct containing the iterations of the first clause (multiple clauses
 isn't implemented yet).
 
 ```
-proc ::constcl::do-for {exps env} {
-    #single-clause
-    set clauses [car $exps]
-    set body [cdr $exps]
-    set clause [car $clauses]
-    set id [car $clause]
-    set seq [cadr $clause]
+proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
         set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
-        if {[list? $seq] eq "#t"} {
-            set seq [splitlist $seq]
-        } elseif {[string? $seq] eq "#t"} {
-            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-        } elseif {[vector? $seq] eq "#t"} {
-            set seq [$seq value]
-        }
+    }
+    if {[list? $seq] eq "#t"} {
+        set seq [splitlist $seq]
+    } elseif {[string? $seq] eq "#t"} { 
+        set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+    } elseif {[vector? $seq] eq "#t"} {
+        set seq [$seq value]
+    }
+}
+
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [splitlist [car $exps]]
+    set body [cdr $exps]
+    set ids {}
+    set seqs {}
+    for {set i 0} {$i < [llength $clauses]} {incr i} {
+        set clause [lindex $clauses $i]
+        lset ids $i [car $clause]
+        lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
-    foreach v $seq {
-        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
+        set x {}
+        for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
+            lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
+        }
+        lappend res [list #L [list {*}$x] {*}[splitlist $body]]
     }
     return $res
 }
@@ -1148,7 +1174,6 @@ oo::class create ::constcl::Number {
     method negative {} {expr {$value < 0}}
     method even {} {expr {$value % 2 == 0}}
     method odd {} {expr {$value % 2 == 1}}
-    method 1+ {} {incr value}
     method incr {val} {incr value $val}
     method mult {val} {set value [expr {$value * $val}]}
     method decr {val} {incr value -$val}
@@ -1408,31 +1433,12 @@ mathematical operations.
 reg + ::constcl::+
 
 proc ::constcl::+ {args} {
-    if {[llength $args] == 0} {
-        return #0
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num incr [$obj numval]
-            } else {
-                error "NUMBER expected\n(+ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(+ num...)"
     }
+    MkNumber [::tcl::mathop::+ {*}$vals]
 }
 ```
 
@@ -1441,31 +1447,12 @@ proc ::constcl::+ {args} {
 reg * ::constcl::*
 
 proc ::constcl::* {args} {
-    if {[llength $args] == 0} {
-        return #1
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[number? $obj] eq "#t"} {
-                $num mult [$obj numval]
-            } else {
-                error "NUMBER expected\n(* [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(* num...)"
     }
+    MkNumber [::tcl::mathop::* {*}$vals]
 }
 ```
 
@@ -1474,31 +1461,12 @@ proc ::constcl::* {args} {
 reg - ::constcl::-
 
 proc ::constcl::- {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber -[$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num decr [$obj numval]
-            } else {
-                error "NUMBER expected\n(- [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(- num...)"
     }
+    MkNumber [::tcl::mathop::- {*}$vals]
 }
 ```
 
@@ -1507,31 +1475,12 @@ proc ::constcl::- {args} {
 reg / ::constcl::/
 
 proc ::constcl::/ {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber [expr {1 / [$obj numval]}]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num div [$obj numval]
-            } else {
-                error "NUMBER expected\n(/ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(/ num...)"
     }
+    MkNumber [::tcl::mathop::/ {*}$vals]
 }
 ```
 
@@ -3918,26 +3867,28 @@ catch { ::constcl::Environment destroy }
 oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
-        namespace path { ::constcl }
         set bindings [dict create]
         if {$syms eq "#NIL"} {
             if {[llength $vals]} { error "too many arguments" }
-        } elseif {[list? $syms] eq "#t"} {
-            set syms [lmap sym [splitlist $syms] {$sym name}]
+        } elseif {[::constcl::list? $syms] eq "#t"} {
+            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
             foreach sym $syms val $vals {
                 my set $sym $val
             }
-        } elseif {[symbol? $syms] eq "#t"} {
-            my set [$syms name] [list {*}$vals]
+        } elseif {[::constcl::symbol? $syms] eq "#t"} {
+            my set [$syms name] [::constcl::list {*}$vals]
         } else {
-            while {[null? $syms] ne "#t"} {
-                if {[symbol? [cdr $syms]] eq "#t"} {
-                    my set [[car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[cdr $syms] name] [list {*}$vals] ; set vals {}
+            while {[::constcl::null? $syms] ne "#t"} {
+                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals]
+                    set vals {}
                     break
                 } else {
-                    my set [[car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    set syms [cdr $syms]
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
+                    set syms [::constcl::cdr $syms]
                 }
                 #if {[llength $vals] < 1} { error "too few arguments" }
             }
@@ -3947,7 +3898,7 @@ oo::class create ::constcl::Environment {
     }
     method find {sym} {
         if {$sym in [dict keys $bindings]} {
-            self object
+            self
         } else {
             $outer_env find $sym
         }

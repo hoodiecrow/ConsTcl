@@ -9,9 +9,9 @@ by the find method to find which innermost environment a given symbol is bound i
 MD)
 
 CB
-catch { Environment destroy }
+catch { ::constcl::Environment destroy }
 
-oo::class create Environment {
+oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
         set bindings [dict create]
@@ -27,11 +27,14 @@ oo::class create Environment {
         } else {
             while {[::constcl::null? $syms] ne "#t"} {
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals]
+                    set vals {}
                     break
                 } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
                     set syms [::constcl::cdr $syms]
                 }
                 #if {[llength $vals] < 1} { error "too few arguments" }

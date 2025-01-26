@@ -6,8 +6,8 @@ Procedures for dealing with strings of characters.
 MD)
 
 CB
-oo::class create String {
-    superclass NIL
+oo::class create ::constcl::String {
+    superclass ::constcl::NIL
     variable s constant
     constructor {v} {
         set s [find-string-index $v]
@@ -43,14 +43,14 @@ oo::class create String {
     method show {} {format "\"[my value]\""}
 }
 
-interp alias {} MkString {} String new
+interp alias {} MkString {} ::constcl::String new
 
 reg string? ::constcl::string?
 
 proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
+    if {[info object isa typeof $obj ::constcl::String]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::String]} {
         return #t
     } else {
         return #f

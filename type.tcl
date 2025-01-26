@@ -81,7 +81,7 @@ CB
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::tcl-in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
@@ -95,6 +95,21 @@ proc ::constcl::in-range {args} {
     }
     return [lmap r $res {MkNumber $r}]
 }
+
+proc ::constcl::in-range {args} {
+    set start 0
+    set step 1
+    switch [llength $args] {
+        1 { lassign $args e ; set end [$e value]}
+        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
+        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+    }
+    set res $start
+    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+        lappend res $start
+    }
+    return [list {*}[lmap r $res {MkNumber $r}]]
+}
 CB
 
 MD(
@@ -103,9 +118,9 @@ type classes.
 MD)
 
 CB
-catch { NIL destroy }
+catch { ::constcl::NIL destroy }
 
-oo::class create NIL {
+oo::class create ::constcl::NIL {
     constructor {} {}
     method bvalue {} {return #t}
     method car {} {error "PAIR expected"}
@@ -141,9 +156,9 @@ The `None` class serves but one purpose: to avoid printing a result after `defin
 MD)
 
 CB
-catch { None destroy}
+catch { ::constcl::None destroy}
 
-oo::class create None {}
+oo::class create ::constcl::None {}
 CB
 
 MD(
@@ -151,9 +166,9 @@ The `Dot` class is a helper class for the parser.
 MD)
 
 CB
-catch { Dot destroy }
+catch { ::constcl::Dot destroy }
 
-oo::class create Dot {
+oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
 CB

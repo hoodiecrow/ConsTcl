@@ -7,8 +7,8 @@ procedure names, etc) or for comparing against each other.
 MD)
 
 CB
-oo::class create Symbol {
-    superclass NIL
+oo::class create ::constcl::Symbol {
+    superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
         if {$n eq {}} {
@@ -30,12 +30,12 @@ oo::class create Symbol {
 }
 
 proc ::constcl::MkSymbol {n} {
-    foreach instance [info class instances Symbol] {
+    foreach instance [info class instances ::constcl::Symbol] {
         if {[$instance name] eq $n} {
             return $instance
         }
     }
-    return [Symbol new $n]
+    return [::constcl::Symbol new $n]
 }
 CB
 
@@ -43,9 +43,9 @@ CB
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
+    if {[info object isa typeof $obj ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
         return #t
     } else {
         return #f

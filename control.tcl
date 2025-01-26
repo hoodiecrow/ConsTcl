@@ -6,13 +6,13 @@ This section concerns itself with procedures and the application of the same.
 MD)
 
 CB
-catch { Procedure destroy }
+catch { ::constcl::Procedure destroy }
 
-oo::class create Procedure {
-    superclass NIL
+oo::class create ::constcl::Procedure {
+    superclass ::constcl::NIL
     variable parms body env
     constructor {p b e} {
-        set parms $p         ;# a Tcl list of parameter names
+        set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
         set body $b          ;# a Lisp list of expressions under 'begin
         set env $e           ;# an environment
     }
@@ -20,22 +20,19 @@ oo::class create Procedure {
     method write {} { puts -nonewline [self] }
     method show {} { return [self] }
     method call {args} {
-        if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
-        }
-        ::constcl::eval $body [Environment new $parms $args $env]
+        ::constcl::eval $body [::constcl::Environment new $parms $args $env]
     }
 
 }
 
-interp alias {} ::constcl::MkProcedure {} Procedure new
+interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj Procedure]} {
+    if {[info object isa typeof $obj ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
         return #t
     } elseif {[::string match "::constcl::*" $obj]} {
         return #t
@@ -77,9 +74,9 @@ TT(
     pep {(apply + (list 3 4))}
     pep {(define compose
   (lambda (f g)
-    (lambda (args)
+    (lambda args
       (f (apply g args)))))}
-    pep {((compose sqrt *) (list 12 75))}
+    pep {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
 
 TT)

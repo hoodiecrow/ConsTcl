@@ -51,7 +51,7 @@ proc mksymlist {tcllist} {
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::tcl-in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
@@ -66,10 +66,25 @@ proc ::constcl::in-range {args} {
     return [lmap r $res {MkNumber $r}]
 }
 
+proc ::constcl::in-range {args} {
+    set start 0
+    set step 1
+    switch [llength $args] {
+        1 { lassign $args e ; set end [$e value]}
+        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
+        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+    }
+    set res $start
+    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+        lappend res $start
+    }
+    return [list {*}[lmap r $res {MkNumber $r}]]
+}
 
-catch { NIL destroy }
 
-oo::class create NIL {
+catch { ::constcl::NIL destroy }
+
+oo::class create ::constcl::NIL {
     constructor {} {}
     method bvalue {} {return #t}
     method car {} {error "PAIR expected"}
@@ -93,14 +108,14 @@ proc ::constcl::null? {obj} {
 }
 
 
-catch { None destroy}
+catch { ::constcl::None destroy}
 
-oo::class create None {}
+oo::class create ::constcl::None {}
 
 
-catch { Dot destroy }
+catch { ::constcl::Dot destroy }
 
-oo::class create Dot {
+oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
 
@@ -666,28 +681,39 @@ proc ::constcl::do-cond {clauses} {
 }
 
 
-proc ::constcl::do-for {exps env} {
-    #single-clause
-    set clauses [car $exps]
-    set body [cdr $exps]
-    set clause [car $clauses]
-    set id [car $clause]
-    set seq [cadr $clause]
+proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
         set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
-        if {[list? $seq] eq "#t"} {
-            set seq [splitlist $seq]
-        } elseif {[string? $seq] eq "#t"} {
-            set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-        } elseif {[vector? $seq] eq "#t"} {
-            set seq [$seq value]
-        }
+    }
+    if {[list? $seq] eq "#t"} {
+        set seq [splitlist $seq]
+    } elseif {[string? $seq] eq "#t"} { 
+        set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+    } elseif {[vector? $seq] eq "#t"} {
+        set seq [$seq value]
+    }
+}
+
+proc ::constcl::do-for {exps env} {
+    #single-clause
+    set clauses [splitlist [car $exps]]
+    set body [cdr $exps]
+    set ids {}
+    set seqs {}
+    for {set i 0} {$i < [llength $clauses]} {incr i} {
+        set clause [lindex $clauses $i]
+        lset ids $i [car $clause]
+        lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
-    foreach v $seq {
-        lappend res [list #L [list [list $id $v]] {*}[splitlist $body]]
+    for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
+        set x {}
+        for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
+            lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
+        }
+        lappend res [list #L [list {*}$x] {*}[splitlist $body]]
     }
     return $res
 }
@@ -893,8 +919,8 @@ proc ::constcl::equal? {obj1 obj2} {
 
 
 
-oo::class create Number {
-    superclass NIL
+oo::class create ::constcl::Number {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[::string is double $v]} {
@@ -907,7 +933,6 @@ oo::class create Number {
     method negative {} {expr {$value < 0}}
     method even {} {expr {$value % 2 == 0}}
     method odd {} {expr {$value % 2 == 1}}
-    method 1+ {} {incr value}
     method incr {val} {incr value $val}
     method mult {val} {set value [expr {$value * $val}]}
     method decr {val} {incr value -$val}
@@ -920,15 +945,15 @@ oo::class create Number {
     method show {} { set value }
 }
 
-interp alias {} ::constcl::MkNumber {} Number new
+interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 
 reg number? ::constcl::number?
 
 proc ::constcl::number? {obj} {
-    if {[info object isa typeof $obj Number]} {
+    if {[info object isa typeof $obj ::constcl::Number]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Number]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Number]} {
         return #t
     } else {
         return #f
@@ -1130,124 +1155,48 @@ proc ::constcl::min {args} {
 reg + ::constcl::+
 
 proc ::constcl::+ {args} {
-    if {[llength $args] == 0} {
-        return #0
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num incr [$obj numval]
-            } else {
-                error "NUMBER expected\n(+ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(+ num...)"
     }
+    MkNumber [::tcl::mathop::+ {*}$vals]
 }
 
 
 reg * ::constcl::*
 
 proc ::constcl::* {args} {
-    if {[llength $args] == 0} {
-        return #1
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[number? $obj] eq "#t"} {
-                $num mult [$obj numval]
-            } else {
-                error "NUMBER expected\n(* [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(* num...)"
     }
+    MkNumber [::tcl::mathop::* {*}$vals]
 }
 
 
 reg - ::constcl::-
 
 proc ::constcl::- {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber -[$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num decr [$obj numval]
-            } else {
-                error "NUMBER expected\n(- [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(- num...)"
     }
+    MkNumber [::tcl::mathop::- {*}$vals]
 }
 
 
 reg / ::constcl::/
 
 proc ::constcl::/ {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber [expr {1 / [$obj numval]}]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num div [$obj numval]
-            } else {
-                error "NUMBER expected\n(/ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(/ num...)"
     }
+    MkNumber [::tcl::mathop::/ {*}$vals]
 }
 
 
@@ -1586,8 +1535,8 @@ proc frombase {base number} {
 
 
 
-oo::class create Boolean {
-    superclass NIL
+oo::class create ::constcl::Boolean {
+    superclass ::constcl::NIL
     variable bvalue
     constructor {v} {
         if {$v ni {#t #f}} {
@@ -1604,12 +1553,12 @@ oo::class create Boolean {
 }
 
 proc ::constcl::MkBoolean {v} {
-    foreach instance [info class instances Boolean] {
+    foreach instance [info class instances ::constcl::Boolean] {
         if {[$instance bvalue] eq $v} {
             return $instance
         }
     }
-    return [Boolean new $v]
+    return [::constcl::Boolean new $v]
 }
 
 
@@ -1617,9 +1566,9 @@ proc ::constcl::MkBoolean {v} {
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {obj} {
-    if {[info object isa typeof $obj Boolean]} {
+    if {[info object isa typeof $obj ::constcl::Boolean]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Boolean]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Boolean]} {
         return #t
     } else {
         return #f
@@ -1641,8 +1590,8 @@ proc ::constcl::not {obj} {
 
 
 
-oo::class create Char {
-    superclass NIL
+oo::class create ::constcl::Char {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
@@ -1710,21 +1659,21 @@ proc ::constcl::MkChar {v} {
     if {[regexp -nocase {^#\\(space|newline)$} $v]} {
         set v [::string tolower $v]
     }
-    foreach instance [info class instances Char] {
+    foreach instance [info class instances ::constcl::Char] {
         if {[$instance value] eq $v} {
             return $instance
         }
     }
-    return [Char new $v]
+    return [::constcl::Char new $v]
 }
 
 
 reg char? ::constcl::char?
 
 proc ::constcl::char? {obj} {
-    if {[info object isa typeof $obj Char]} {
+    if {[info object isa typeof $obj ::constcl::Char]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Char]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Char]} {
         return #t
     } else {
         return #f
@@ -1982,10 +1931,10 @@ proc ::constcl::char-downcase {char} {
 
 
 
-catch { Procedure destroy }
+catch { ::constcl::Procedure destroy }
 
-oo::class create Procedure {
-    superclass NIL
+oo::class create ::constcl::Procedure {
+    superclass ::constcl::NIL
     variable parms body env
     constructor {p b e} {
         set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
@@ -1996,19 +1945,19 @@ oo::class create Procedure {
     method write {} { puts -nonewline [self] }
     method show {} { return [self] }
     method call {args} {
-        ::constcl::eval $body [Environment new $parms $args $env]
+        ::constcl::eval $body [::constcl::Environment new $parms $args $env]
     }
 
 }
 
-interp alias {} ::constcl::MkProcedure {} Procedure new
+interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj Procedure]} {
+    if {[info object isa typeof $obj ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
         return #t
     } elseif {[::string match "::constcl::*" $obj]} {
         return #t
@@ -2179,9 +2128,9 @@ proc ::constcl::transcript-off {} {
 
 
 
-catch { Pair destroy }
+catch { ::constcl::Pair destroy }
 
-oo::class create Pair {
+oo::class create ::constcl::Pair {
     variable car cdr constant
     constructor {a d} {
         set car $a
@@ -2219,14 +2168,14 @@ oo::class create Pair {
 }
 
 
-interp alias {} ::constcl::MkPair {} Pair new
+interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
+    if {[info object isa typeof $obj ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
         return #t
     } else {
         return #f
@@ -2517,8 +2466,8 @@ proc ::constcl::assoc {obj1 obj2} {
 
 
 
-oo::class create String {
-    superclass NIL
+oo::class create ::constcl::String {
+    superclass ::constcl::NIL
     variable s constant
     constructor {v} {
         set s [find-string-index $v]
@@ -2554,14 +2503,14 @@ oo::class create String {
     method show {} {format "\"[my value]\""}
 }
 
-interp alias {} MkString {} String new
+interp alias {} MkString {} ::constcl::String new
 
 reg string? ::constcl::string?
 
 proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
+    if {[info object isa typeof $obj ::constcl::String]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::String]} {
         return #t
     } else {
         return #f
@@ -2884,8 +2833,8 @@ proc ::constcl::string-fill! {str char} {
 
 
 
-oo::class create Symbol {
-    superclass NIL
+oo::class create ::constcl::Symbol {
+    superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
         if {$n eq {}} {
@@ -2907,20 +2856,20 @@ oo::class create Symbol {
 }
 
 proc ::constcl::MkSymbol {n} {
-    foreach instance [info class instances Symbol] {
+    foreach instance [info class instances ::constcl::Symbol] {
         if {[$instance name] eq $n} {
             return $instance
         }
     }
-    return [Symbol new $n]
+    return [::constcl::Symbol new $n]
 }
 
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
+    if {[info object isa typeof $obj ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
         return #t
     } else {
         return #f
@@ -2961,8 +2910,8 @@ proc ::constcl::string->symbol {str} {
 
 
 
-oo::class create Vector {
-    superclass NIL
+oo::class create ::constcl::Vector {
+    superclass ::constcl::NIL
     variable value constant
     constructor {v} {
         set value $v
@@ -2994,20 +2943,20 @@ oo::class create Vector {
 }
 
 proc ::constcl::MkVector {v} {
-    foreach instance [info class instances Vector] {
+    foreach instance [info class instances ::constcl::Vector] {
         if {$instance eq $v} {
             return $instance
         }
     }
-    return [Vector new $v]
+    return [::constcl::Vector new $v]
 }
 
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj Vector]} {
+    if {[info object isa typeof $obj ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
         return #t
     } else {
         return #f
@@ -3143,7 +3092,7 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 
-interp alias {} #NIL {} [NIL new]
+interp alias {} #NIL {} [::constcl::NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 
@@ -3175,7 +3124,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #NONE {} [None new]
+interp alias {} #NONE {} [::constcl::None new]
 
 
 dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
@@ -3193,9 +3142,26 @@ proc ::constcl::atom? {obj} {
 
 
 
-catch { Environment destroy }
 
-oo::class create Environment {
+
+
+proc ::constcl::input {prompt} {
+    puts -nonewline $prompt
+    gets stdin
+}
+
+
+proc ::constcl::repl {{prompt "ConsTcl> "}} {
+    set str [input $prompt]
+    while {$str ne ""} {
+        write [eval [parse $str]]
+        set str [input $prompt]
+    }
+}
+
+catch { ::constcl::Environment destroy }
+
+oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
         set bindings [dict create]
@@ -3211,11 +3177,14 @@ oo::class create Environment {
         } else {
             while {[::constcl::null? $syms] ne "#t"} {
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals]
+                    set vals {}
                     break
                 } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    set vals [lrange $vals 1 end]
                     set syms [::constcl::cdr $syms]
                 }
                 #if {[llength $vals] < 1} { error "too few arguments" }
@@ -3241,7 +3210,7 @@ oo::class create Environment {
 
 
 
-Environment create null_env #NIL {}
+::constcl::Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -3250,7 +3219,7 @@ oo::objdefine null_env {
 }
 
 
-Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
+::constcl::Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 
 
 

@@ -7,7 +7,7 @@ Make __null_env__ empty and unresponsive: this is where searches for unbound sym
 MD)
 
 CB
-Environment create null_env #NIL {}
+::constcl::Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -22,7 +22,7 @@ __defreg__. This is where top level evaluation happens.
 MD)
 
 CB
-Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
+::constcl::Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 CB
 
 MD(
@@ -35,8 +35,8 @@ created to hold the bindings introduced by the call, and also a link to the oute
 A procedure definition form creates a new procedure. Example:
 
 ```
-Thtcl> (define circle-area (lambda (r) (* pi (* r r))))
-Thtcl> (circle-area 10)
+ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))
+ConsTcl> (circle-area 10)
 314.1592653589793
 ```
 

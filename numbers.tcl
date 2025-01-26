@@ -9,8 +9,8 @@ no gcd or lcm.
 MD)
 
 CB
-oo::class create Number {
-    superclass NIL
+oo::class create ::constcl::Number {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[::string is double $v]} {
@@ -23,7 +23,6 @@ oo::class create Number {
     method negative {} {expr {$value < 0}}
     method even {} {expr {$value % 2 == 0}}
     method odd {} {expr {$value % 2 == 1}}
-    method 1+ {} {incr value}
     method incr {val} {incr value $val}
     method mult {val} {set value [expr {$value * $val}]}
     method decr {val} {incr value -$val}
@@ -36,7 +35,7 @@ oo::class create Number {
     method show {} { set value }
 }
 
-interp alias {} ::constcl::MkNumber {} Number new
+interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 CB
 
@@ -47,9 +46,9 @@ CB
 reg number? ::constcl::number?
 
 proc ::constcl::number? {obj} {
-    if {[info object isa typeof $obj Number]} {
+    if {[info object isa typeof $obj ::constcl::Number]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Number]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Number]} {
         return #t
     } else {
         return #f
@@ -384,10 +383,7 @@ CB
 TT(
 
 ::tcltest::test number-1.12 {try max} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(max 7 1 10 3)"
-        write [eval [read]]
-    }
+    pep "(max 7 1 10 3)"
 } -output "10\n"
 
 TT)
@@ -426,42 +422,22 @@ CB
 reg + ::constcl::+
 
 proc ::constcl::+ {args} {
-    if {[llength $args] == 0} {
-        return #0
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(+ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num incr [$obj numval]
-            } else {
-                error "NUMBER expected\n(+ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(+ num...)"
     }
+    MkNumber [::tcl::mathop::+ {*}$vals]
 }
 CB
 
 TT(
 
 ::tcltest::test number-1.14 {try +} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(+ 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "21\n"
+    pep "(+)"
+    pep "(+ 5)"
+    pep "(+ 7 1 10 3)"
+} -output "0\n5\n21\n"
 
 TT)
 
@@ -469,42 +445,22 @@ CB
 reg * ::constcl::*
 
 proc ::constcl::* {args} {
-    if {[llength $args] == 0} {
-        return #1
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            return $obj
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(* [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[number? $obj] eq "#t"} {
-                $num mult [$obj numval]
-            } else {
-                error "NUMBER expected\n(* [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(* num...)"
     }
+    MkNumber [::tcl::mathop::* {*}$vals]
 }
 CB
 
 TT(
 
 ::tcltest::test number-1.15 {try *} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(* 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "210\n"
+    pep "(*)"
+    pep "(* 5)"
+    pep "(* 7 1 10 3)"
+} -output "1\n5\n210\n"
 
 TT)
 
@@ -512,42 +468,25 @@ CB
 reg - ::constcl::-
 
 proc ::constcl::- {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber -[$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(- [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num decr [$obj numval]
-            } else {
-                error "NUMBER expected\n(- [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(- num...)"
     }
+    MkNumber [::tcl::mathop::- {*}$vals]
 }
 CB
 
 TT(
 
 ::tcltest::test number-1.16 {try -} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(- 7 1 10 3)"
-        write [eval [read]]
-    }
-} -output "-7\n"
+    pep "(-)"
+} -returnCodes error -result {wrong # args: should be "::tcl::mathop::- value ?value ...?"}
+
+::tcltest::test number-1.16 {try -} -body {
+    pep "(- 5)"
+    pep "(- 7 1 10 3)"
+} -output "-5\n-7\n"
 
 TT)
 
@@ -555,42 +494,25 @@ CB
 reg / ::constcl::/
 
 proc ::constcl::/ {args} {
-    if {[llength $args] == 0} {
-        error "expected arguments"
-    } elseif {[llength $args] == 1} {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            return [MkNumber [expr {1 / [$obj numval]}]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-    } else {
-        set obj [lindex $args 0]
-        if {[::constcl::number? $obj] eq "#t"} {
-            set num [MkNumber [$obj numval]]
-        } else {
-            error "NUMBER expected\n(/ [$obj show])"
-        }
-        foreach obj [lrange $args 1 end] {
-            if {[::constcl::number? $obj] eq "#t"} {
-                $num div [$obj numval]
-            } else {
-                error "NUMBER expected\n(/ [$obj show])"
-            }
-        }
-        return $num
+    try {
+        set vals [lmap arg $args {$arg numval}]
+    } on error {} {
+        error "NUMBER expected\n(/ num...)"
     }
+    MkNumber [::tcl::mathop::/ {*}$vals]
 }
 CB
 
 TT(
 
 ::tcltest::test number-1.17 {try /} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(/ 60 1 10 3)"
-        write [eval [read]]
-    }
-} -output "2\n"
+    pep "(/)"
+} -returnCodes error -result {wrong # args: should be "::tcl::mathop::/ value ?value ...?"}
+
+::tcltest::test number-1.17 {try /} -body {
+    pep "(/ 5)"
+    pep "(/ 21 7 3)"
+} -output "0.2\n1\n"
 
 TT)
 

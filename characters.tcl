@@ -6,8 +6,8 @@ Characters are any Unicode printing character, and also space and newline space 
 MD)
 
 CB
-oo::class create Char {
-    superclass NIL
+oo::class create ::constcl::Char {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
@@ -75,12 +75,12 @@ proc ::constcl::MkChar {v} {
     if {[regexp -nocase {^#\\(space|newline)$} $v]} {
         set v [::string tolower $v]
     }
-    foreach instance [info class instances Char] {
+    foreach instance [info class instances ::constcl::Char] {
         if {[$instance value] eq $v} {
             return $instance
         }
     }
-    return [Char new $v]
+    return [::constcl::Char new $v]
 }
 CB
 
@@ -92,9 +92,9 @@ CB
 reg char? ::constcl::char?
 
 proc ::constcl::char? {obj} {
-    if {[info object isa typeof $obj Char]} {
+    if {[info object isa typeof $obj ::constcl::Char]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Char]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Char]} {
         return #t
     } else {
         return #f

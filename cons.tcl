@@ -8,7 +8,7 @@ set StrSto [list]
 CB
 
 CB
-interp alias {} #NIL {} [NIL new]
+interp alias {} #NIL {} [::constcl::NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 
@@ -40,7 +40,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #NONE {} [None new]
+interp alias {} #NONE {} [::constcl::None new]
 
 CB
 
@@ -122,11 +122,11 @@ TT(
     pep "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
-::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { ;# no map
     pep "(map fib (range 0 10))"
 } -output "(1 1 2 3 5 8 13 21 34 55)"
 
-::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { # no map
+::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { ;# no map
     pep "(map fib (range 0 20))"
 } -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)"
 
@@ -258,7 +258,7 @@ TT(
     pep "(remove >10 '(1 2 3 4 10 11 12 13 14))"
 } -output "(1 2 3 4 10)\n"
 
-::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -body {
     pep {(define group (lambda (n lst)
   (if (< n 1)
       (error "group: n must be positive")
@@ -269,10 +269,10 @@ TT(
                (loop lst n '() (cons (reverse g) gs)))
               (else
                (loop (cdr lst) (- m 1) (cons (car lst) g) gs)))))))}
-    pep "(group 3 (in-range 11))"
-} -output "()\n((0 1 2) (3 4 5) (6 7 8) (9 10))"
+    pep "(group 3 (in-range 10))"
+} -output "((0 1 2) (3 4 5) (6 7 8) (9))\n"
 
-::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -constraints knownBug -body {
+::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -body {
     pep {(define group-by (lambda (f lst)
   (if (null? lst) '()
       (let ((first (car lst)))
@@ -290,8 +290,8 @@ TT(
                     (loop (cdr lst) newkey
                           (list (car lst))
                           (cons (reverse group) groups))))))))))}
-    pep "(group-by odd? '(1 3 5 2 4 1 3 6 4 1 7))"
-} -result "((1 3 5) (2 4) (1 3) (6 4) (1 7))"
+    pep "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
+} -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
 
 TT)
 

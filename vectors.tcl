@@ -4,8 +4,8 @@ MD(
 MD)
 
 CB
-oo::class create Vector {
-    superclass NIL
+oo::class create ::constcl::Vector {
+    superclass ::constcl::NIL
     variable value constant
     constructor {v} {
         set value $v
@@ -37,12 +37,12 @@ oo::class create Vector {
 }
 
 proc ::constcl::MkVector {v} {
-    foreach instance [info class instances Vector] {
+    foreach instance [info class instances ::constcl::Vector] {
         if {$instance eq $v} {
             return $instance
         }
     }
-    return [Vector new $v]
+    return [::constcl::Vector new $v]
 }
 CB
 
@@ -50,9 +50,9 @@ CB
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj Vector]} {
+    if {[info object isa typeof $obj ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
         return #t
     } else {
         return #f
