@@ -906,8 +906,8 @@ proc ::constcl::expand-for/or {exps env} {
 }
 ```
 
-`expand-let` expands the named `let` and 'regular' `let` macros. The ultimately
-expand to ´lambda` constructs.
+`expand-let` expands the named `let` and 'regular' `let` macros. They ultimately
+expand to `lambda` constructs.
 
 ```
 proc ::constcl::expand-let {exps} {
@@ -3087,7 +3087,7 @@ proc ::constcl::assq {obj1 obj2} {
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assq [$obj1 show] [$obj2 show])"
     }
 }
 ```
@@ -3108,7 +3108,7 @@ proc ::constcl::assv {obj1 obj2} {
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assv [$obj1 show] [$obj2 show])"
     }
 }
 ```
@@ -3128,7 +3128,7 @@ proc ::constcl::assoc {obj1 obj2} {
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assoc [$obj1 show] [$obj2 show])"
     }
 }
 ```
@@ -3136,6 +3136,8 @@ proc ::constcl::assoc {obj1 obj2} {
 
 
 ### Strings
+
+Procedures for dealing with strings of characters.
 
 ```
 oo::class create String {
@@ -3176,7 +3178,21 @@ oo::class create String {
 }
 
 interp alias {} MkString {} String new
+
+reg string? ::constcl::string?
+
+proc ::constcl::string? {obj} {
+    if {[info object isa typeof $obj String]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+        return #t
+    } else {
+        return #f
+    }
+}
 ```
+
+Helper function for finding a string in the string store.
 
 ```
 proc find-string-index {v} {
@@ -3195,20 +3211,9 @@ proc find-string-index {v} {
 }
 ```
 
-```
-reg string? ::constcl::string?
 
-proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-```
-
+`make-string` _k_ _?c?_ creates a string of _k_ characters, optionally
+filled with _c_ characters.
 
 ```
 reg make-string ::constcl::make-string
@@ -3224,6 +3229,8 @@ proc ::constcl::make-string {args} {
 }
 ```
 
+
+`string` constructs a string from a Tcl list of Lisp characters.
 
 ```
 reg string ::constcl::string
@@ -3242,6 +3249,8 @@ proc ::constcl::string {args} {
 ```
 
 
+`string-length` reports a string's length.
+
 ```
 reg string-length ::constcl::string-length
 
@@ -3254,6 +3263,8 @@ proc ::constcl::string-length {str} {
 }
 ```
 
+
+`string-ref` _str_ _k_ yields the _k_-th character (0-based) in _str_.
 
 ```
 reg string-ref ::constcl::string-ref
@@ -3272,6 +3283,8 @@ proc ::constcl::string-ref {str k} {
 }
 ```
 
+
+`string-set!` _str_ _k_ _char_ replaces the character at _k_ with _char_.
 
 ```
 reg string-set! ::constcl::string-set!
@@ -3295,6 +3308,10 @@ proc ::constcl::string-set! {str k char} {
 }
 ```
 
+
+`string=?`, `string<?`, `string>?`, `string<=?`, `string>=?` and their
+case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
+`string-ci<=?`, `string-ci>=?` compare strings.
 
 ```
 reg string=? ::constcl::string=?
@@ -3466,6 +3483,9 @@ proc ::constcl::string-ci>=? {s1 s2} {
 ```
 
 
+`substring` _str_ _start_ _end_ yields the substring of _str_ that starts at _start_
+and ends at _end_.
+
 ```
 reg substring ::constcl::substring
 
@@ -3483,6 +3503,8 @@ proc ::constcl::substring {str start end} {
 ```
 
 
+`string-append` joins strings together.
+
 ```
 reg string-append ::constcl::string-append
 
@@ -3491,6 +3513,8 @@ proc ::constcl::string-append {args} {
 }
 ```
 
+
+`string->list` converts a string to a Lisp list of characters.
 
 ```
 reg string->list ::constcl::string->list
@@ -3501,6 +3525,8 @@ proc ::constcl::string->list {str} {
 ```
 
 
+`list->string` converts a Lisp list of characters to a string.
+
 ```
 reg list->string ::constcl::list->string
 
@@ -3509,6 +3535,8 @@ proc ::constcl::list->string {list} {
 }
 ```
 
+
+`string-copy` makes a copy of a string.
 
 ```
 reg string-copy ::constcl::string-copy
@@ -3522,6 +3550,8 @@ proc ::constcl::string-copy {str} {
 }
 ```
 
+
+`string-fill!` _str_ _char_ fills a non-constant string with _char_.
 
 ```
 reg string-fill! ::constcl::string-fill!
