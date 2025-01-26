@@ -1,6 +1,9 @@
 
 MD(
 ### Symbols
+
+Symbols are like little strings that are used to refer to things (variables, including
+procedure names, etc) or for comparing against each other.
 MD)
 
 CB
@@ -8,7 +11,10 @@ oo::class create Symbol {
     superclass NIL
     variable name caseconstant
     constructor {n} {
-        # TODO idcheck this
+        if {$n eq {}} {
+            error "a symbol must have a name"
+        }
+        ::constcl::idcheck $n
         set name $n
         set caseconstant 0
     }
@@ -24,9 +30,6 @@ oo::class create Symbol {
 }
 
 proc ::constcl::MkSymbol {n} {
-    if {$n eq {}} {
-        error "a symbol must have a name"
-    }
     foreach instance [info class instances Symbol] {
         if {[$instance name] eq $n} {
             return $instance
@@ -64,6 +67,11 @@ TT(
 
 TT)
 
+MD(
+`symbol->string` yields a string consisting of the symbol name, usually
+lower-cased.
+MD)
+
 CB
 reg symbol->string ::constcl::symbol->string
 
@@ -99,6 +107,11 @@ TT(
 } -returnCodes error -result ""
 
 TT)
+
+MD(
+`string->symbol` creates a symbol with the name given by the string. The symbol
+is 'case-constant', i.e. it will not be lower-cased.
+MD)
 
 CB
 reg string->symbol ::constcl::string->symbol

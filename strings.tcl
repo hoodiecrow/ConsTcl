@@ -1,6 +1,8 @@
 
 MD(
 ### Strings
+
+Procedures for dealing with strings of characters.
 MD)
 
 CB
@@ -42,7 +44,23 @@ oo::class create String {
 }
 
 interp alias {} MkString {} String new
+
+reg string? ::constcl::string?
+
+proc ::constcl::string? {obj} {
+    if {[info object isa typeof $obj String]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+        return #t
+    } else {
+        return #f
+    }
+}
 CB
+
+MD(
+Helper function for finding a string in the string store.
+MD)
 
 CB
 proc find-string-index {v} {
@@ -61,20 +79,6 @@ proc find-string-index {v} {
 }
 CB
 
-CB
-reg string? ::constcl::string?
-
-proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-CB
-
 TT(
 
 ::tcltest::test strings-1.0 {try string?} -body {
@@ -83,6 +87,11 @@ TT(
 } -output "#t\n#f\n"
 
 TT)
+
+MD(
+`make-string` _k_ _?c?_ creates a string of _k_ characters, optionally
+filled with _c_ characters.
+MD)
 
 CB
 reg make-string ::constcl::make-string
@@ -105,6 +114,10 @@ TT(
 } -output "\"xxxxx\"\n"
 
 TT)
+
+MD(
+`string` constructs a string from a Tcl list of Lisp characters.
+MD)
 
 CB
 reg string ::constcl::string
@@ -130,6 +143,10 @@ TT(
 
 TT)
 
+MD(
+`string-length` reports a string's length.
+MD)
+
 CB
 reg string-length ::constcl::string-length
 
@@ -149,6 +166,10 @@ TT(
 } -output "7\n"
 
 TT)
+
+MD(
+`string-ref` _str_ _k_ yields the _k_-th character (0-based) in _str_.
+MD)
 
 CB
 reg string-ref ::constcl::string-ref
@@ -174,6 +195,10 @@ TT(
 } -output "#\\b\n"
 
 TT)
+
+MD(
+`string-set!` _str_ _k_ _char_ replaces the character at _k_ with _char_.
+MD)
 
 CB
 reg string-set! ::constcl::string-set!
@@ -214,6 +239,12 @@ TT(
 } -returnCodes error -result "string is constant"
 
 TT)
+
+MD(
+`string=?`, `string<?`, `string>?`, `string<=?`, `string>=?` and their
+case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
+`string-ci<=?`, `string-ci>=?` compare strings.
+MD)
 
 CB
 reg string=? ::constcl::string=?
@@ -475,6 +506,11 @@ TT(
 
 TT)
 
+MD(
+`substring` _str_ _start_ _end_ yields the substring of _str_ that starts at _start_
+and ends at _end_.
+MD)
+
 CB
 reg substring ::constcl::substring
 
@@ -499,6 +535,10 @@ TT(
 
 TT)
 
+MD(
+`string-append` joins strings together.
+MD)
+
 CB
 reg string-append ::constcl::string-append
 
@@ -514,6 +554,10 @@ TT(
 } -output "\"foo bar\"\n"
 
 TT)
+
+MD(
+`string->list` converts a string to a Lisp list of characters.
+MD)
 
 CB
 reg string->list ::constcl::string->list
@@ -531,6 +575,10 @@ TT(
 
 TT)
 
+MD(
+`list->string` converts a Lisp list of characters to a string.
+MD)
+
 CB
 reg list->string ::constcl::list->string
 
@@ -546,6 +594,10 @@ TT(
 } -output "\"foo\"\n"
 
 TT)
+
+MD(
+`string-copy` makes a copy of a string.
+MD)
 
 CB
 reg string-copy ::constcl::string-copy
@@ -567,6 +619,10 @@ TT(
 } -output "\"xoo\"\n"
 
 TT)
+
+MD(
+`string-fill!` _str_ _char_ fills a non-constant string with _char_.
+MD)
 
 CB
 reg string-fill! ::constcl::string-fill!

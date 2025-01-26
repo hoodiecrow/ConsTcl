@@ -7,7 +7,7 @@ Make __null_env__ empty and unresponsive: this is where searches for unbound sym
 MD)
 
 CB
-Environment create null_env {} {}
+Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -17,12 +17,12 @@ oo::objdefine null_env {
 CB
 
 MD(
-Meanwhile, __global_env__ is populated with all the definitions from __standard_env__. This is
-where top level evaluation happens.
+Meanwhile, __global_env__ is populated with all the definitions from the definitions register,
+__defreg__. This is where top level evaluation happens.
 MD)
 
 CB
-Environment create global_env [dict keys $standard_env] [dict values $standard_env] null_env
+Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 CB
 
 MD(

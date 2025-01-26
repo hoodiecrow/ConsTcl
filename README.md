@@ -40,12 +40,12 @@ namespace eval ::constcl {
 
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the standard environment).
+registers built-in procedures in the definitions register).
 
 ```
 # utility functions
 proc reg {sym impl} {
-    dict set ::standard_env $sym $impl
+    dict set ::defreg $sym $impl
 }
 
 proc ::pep {str} {
@@ -3857,7 +3857,7 @@ interp alias {} #NONE {} [None new]
 ```
 
 ```
-dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
 ```
 
 ```
@@ -3946,11 +3946,11 @@ oo::objdefine null_env {
 }
 ```
 
-Meanwhile, __global_env__ is populated with all the definitions from __standard_env__. This is
-where top level evaluation happens.
+Meanwhile, __global_env__ is populated with all the definitions from the definitions register,
+__defreg__. This is where top level evaluation happens.
 
 ```
-Environment create global_env [mksymlist [dict keys $standard_env]] [dict values $standard_env] null_env
+Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 ```
 
 Thereafter, each time a user-defined procedure is called, a new __Environment__ object is

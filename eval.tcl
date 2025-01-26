@@ -408,8 +408,8 @@ proc ::constcl::expand-for/or {exps env} {
 CB
 
 MD(
-`expand-let` expands the named `let` and 'regular' `let` macros. The ultimately
-expand to ´lambda` constructs.
+`expand-let` expands the named `let` and 'regular' `let` macros. They ultimately
+expand to `lambda` constructs.
 MD)
 
 CB
@@ -549,16 +549,16 @@ TT(
 } -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test eval-4.1 {run for macro} -body {
-    pep "(for ((i (quote (1 2 3)))) (write i))"
-} -result "" -output 1\n2\n3\n()\n
+    pep "(for ((i (quote (1 2 3)))) (display i))"
+} -result "" -output 123()\n
 
 ::tcltest::test eval-4.2 {expand for macro} -body {
     pxp "(for ((i 4)) (display i))"
 } -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test eval-4.3 {run for macro} -body {
-    pep "(for ((i 4)) (write i))"
-} -result "" -output "0\n1\n2\n3\n()\n"
+    pep "(for ((i 4)) (display i))"
+} -result "" -output "0123()\n"
 
 ::tcltest::test macro-5.0 {expand for/list macro} -body {
     pxp {(for/list ([i (quote (1 2 3))]) (* i i))}

@@ -1,6 +1,8 @@
 
 MD(
 ### Pairs and lists
+
+List processing is another of Lisp's great strengths.
 MD)
 
 CB
@@ -44,6 +46,25 @@ oo::class create Pair {
 }
 
 
+interp alias {} ::constcl::MkPair {} Pair new
+
+reg pair? ::constcl::pair?
+
+proc ::constcl::pair? {obj} {
+    if {[info object isa typeof $obj Pair]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+CB
+
+MD(
+Helper procedure to make a string representation of a list.
+MD)
+
 CB
 proc ::constcl::show-pair {obj} {
     # take an object and print the car and the cdr of the stored value
@@ -68,34 +89,14 @@ proc ::constcl::show-pair {obj} {
 }
 CB
 
-interp alias {} ::constcl::MkPair {} Pair new
-CB
-
-CB
-reg pair? ::constcl::pair?
-
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-CB
-
 TT(
 
 ::tcltest::test pairslists-1.0 {playing with lists} -body {
     pep {(define x (list 'a 'b 'c))}
     pep {(define y x)}
     pep {y}
-} -output "(a b c)\n"
-
-::tcltest::test pairslists-1.1 {playing with lists} -body {
     pep {(list? y)}
-} -output "#t\n"
+} -output "(a b c)\n#t\n"
 
 ::tcltest::test pairslists-1.2 {playing with lists} -body {
     pep {(set-cdr! x 4)}
@@ -121,6 +122,10 @@ TT(
 
 TT)
 
+MD(
+`cons` adds a pair to a list.
+MD)
+
 CB
 reg cons ::constcl::cons
 
@@ -128,8 +133,6 @@ proc ::constcl::cons {car cdr} {
     MkPair $car $cdr
 }
 CB
-
-reg car ::constcl::car
 
 TT(
 
@@ -143,7 +146,13 @@ TT(
 
 TT)
 
+MD(
+`car` gets the contents of the first cell in a pair.
+MD)
+
 CB
+reg car ::constcl::car
+
 proc ::constcl::car {obj} {
     $obj car
 }
@@ -162,6 +171,10 @@ TT(
 } -returnCodes error -result "PAIR expected"
 
 TT)
+
+MD(
+`cdr` gets the contents of the second cell in a pair.
+MD)
 
 CB
 reg cdr ::constcl::cdr
@@ -183,6 +196,10 @@ TT(
 } -returnCodes error -result "PAIR expected"
 
 TT)
+
+MD(
+`set-car!` sets the contents of the first cell in a pair.
+MD)
 
 CB
 reg set-car! ::constcl::set-car!
@@ -206,6 +223,10 @@ TT(
 
 TT)
 
+MD(
+`set-cdr!` sets the contents of the second cell in a pair.
+MD)
+
 CB
 reg set-cdr! ::constcl::set-cdr!
 
@@ -227,6 +248,11 @@ TT(
 } -returnCodes error -result "Can't modify a constant pair"
 
 TT)
+
+MD(
+The `list?` predicate tests if a pair is part of a proper list, one that
+ends with NIL.
+MD)
 
 CB
 reg list? ::constcl::list?
@@ -262,6 +288,10 @@ TT(
 
 TT)
 
+MD(
+`list` constructs a Lisp list from a Tcl list of items.
+MD)
+
 CB
 reg list ::constcl::list
 
@@ -271,7 +301,7 @@ proc ::constcl::list {args} {
     } else {
         set prev #NIL
         foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
+            set prev [cons $obj $prev]
         }
         return $prev
     }
@@ -286,6 +316,10 @@ TT(
 } -output "(a 7 c)\n()\n"
 
 TT)
+
+MD(
+`length` reports the length of a Lisp list of items.
+MD)
 
 CB
 proc ::constcl::length-helper {obj} {
@@ -316,6 +350,10 @@ TT(
 } -output "3\n3\n0\n"
 
 TT)
+
+MD(
+`append` joins lists together.
+MD)
 
 CB
 proc ::constcl::copy-list {obj next} {
@@ -352,11 +390,15 @@ TT(
 
 TT)
 
+MD(
+`reverse` produces a reversed copy of a Lisp list.
+MD)
+
 CB
 reg reverse ::constcl::reverse
 
 proc ::constcl::reverse {obj} {
-    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
+    list {*}[lreverse [splitlist $obj]]
 }
 CB
 
@@ -368,6 +410,10 @@ TT(
 } -output "(c b a)\n((e (f)) d (b c) a)\n"
 
 TT)
+
+MD(
+Given a list index, `list-tail` yields the sublist starting from that index.
+MD)
 
 CB
 reg list-tail ::constcl::list-tail
@@ -389,11 +435,15 @@ TT(
 
 TT)
 
+MD(
+`list-ref` yields the list item at a given index.
+MD)
+
 CB
 reg list-ref ::constcl::list-ref
 
 proc ::constcl::list-ref {obj k} {
-    ::constcl::car [::constcl::list-tail $obj $k]
+    car [list-tail $obj $k]
 }
 CB
 
@@ -404,6 +454,12 @@ TT(
 } -output "c\n"
 
 TT)
+
+MD(
+`memq`, `memv`, and `member` return the sublist starting with a given
+item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
+respectively, for the comparison.
+MD)
 
 CB
 reg memq ::constcl::memq
@@ -482,61 +538,83 @@ proc ::constcl::member {obj1 obj2} {
 }
 CB
 
+MD(
+`assq`, `assv`, and `assoc` return the associative item marked with a given
+item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
+respectively, for the comparison.
+MD)
+
 CB
+reg assq ::constcl::assq
+
 proc ::constcl::assq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eq? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assq [$obj1 show] [$obj2 show])"
     }
 }
 CB
 
 
 CB
+reg assv ::constcl::assv
+
 proc ::constcl::assv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eqv? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assv [$obj1 show] [$obj2 show])"
     }
 }
 CB
 
 CB
+reg assoc ::constcl::assoc
+
 proc ::constcl::assoc {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [equal? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assoc [$obj1 show] [$obj2 show])"
     }
 }
 CB
+
+TT(
+::tcltest::test pairslists-1.25 {try member} -body {
+    pep {(define e '((a 1) (b 2) (c 3)))}
+    pep {(assq 'a e)}
+    pep {(assq 'b e)}
+    pep {(assq 'd e)}
+    pep {(assq (list 'a) '(((a)) ((b)) ((c))))}
+    pep {(assoc (list 'a) '(((a)) ((b)) ((c))))}
+    pep {(assq 5 '((2 3) (5 7) (11 13)))}
+    pep {(assv 5 '((2 3) (5 7) (11 13)))}
+} -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
+TT)
 

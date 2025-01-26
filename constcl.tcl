@@ -23,7 +23,7 @@ namespace eval ::constcl {
 
 # utility functions
 proc reg {sym impl} {
-    dict set ::standard_env $sym $impl
+    dict set ::defreg $sym $impl
 }
 
 proc ::pep {str} {
@@ -826,53 +826,6 @@ proc ::constcl::write-pair {obj} {
     }
 }
 
-
-
-catch { Environment destroy }
-
-oo::class create Environment {
-    variable bindings outer_env
-    constructor {syms vals {outer {}}} {
-        set bindings [dict create]
-        if {$syms eq "#NIL"} {
-            if {[llength $vals]} { error "too many arguments" }
-        } elseif {[::constcl::list? $syms] eq "#t"} {
-            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
-            foreach sym $syms val $vals {
-                my set $sym $val
-            }
-        } elseif {[::constcl::symbol? $syms] eq "#t"} {
-            my set [$syms name] [::constcl::list {*}$vals]
-        } else {
-            while {[::constcl::null? $syms] ne "#t"} {
-                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
-                    break
-                } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    set syms [::constcl::cdr $syms]
-                }
-                #if {[llength $vals] < 1} { error "too few arguments" }
-            }
-            if {[llength $vals] > 0} { error "too many arguments $vals" }
-        }
-        set outer_env $outer
-    }
-    method find {sym} {
-        if {$sym in [dict keys $bindings]} {
-            self
-        } else {
-            $outer_env find $sym
-        }
-    }
-    method get {sym} {
-        dict get $bindings $sym
-    }
-    method set {sym val} {
-        dict set bindings $sym $val
-    }
-}
 
 
 reg eq? ::constcl::eq?
@@ -2201,11 +2154,6 @@ proc ::constcl::write {obj args} {
 }
 }
 
-reg display ::constcl::display
-
-proc ::constcl::display {obj args} {
-    # TODO write [$obj display]
-}
 
 reg newline ::constcl::newline
 
@@ -2271,6 +2219,21 @@ oo::class create Pair {
 }
 
 
+interp alias {} ::constcl::MkPair {} Pair new
+
+reg pair? ::constcl::pair?
+
+proc ::constcl::pair? {obj} {
+    if {[info object isa typeof $obj Pair]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
 proc ::constcl::show-pair {obj} {
     # take an object and print the car and the cdr of the stored value
     set str {}
@@ -2293,19 +2256,6 @@ proc ::constcl::show-pair {obj} {
     return $str
 }
 
-interp alias {} ::constcl::MkPair {} Pair new
-
-reg pair? ::constcl::pair?
-
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
-        return #t
-    } else {
-        return #f
-    }
-}
 
 
 reg cons ::constcl::cons
@@ -2314,12 +2264,14 @@ proc ::constcl::cons {car cdr} {
     MkPair $car $cdr
 }
 
-reg car ::constcl::car
 
+
+reg car ::constcl::car
 
 proc ::constcl::car {obj} {
     $obj car
 }
+
 
 
 reg cdr ::constcl::cdr
@@ -2329,6 +2281,7 @@ proc ::constcl::cdr {obj} {
 }
 
 
+
 reg set-car! ::constcl::set-car!
 
 proc ::constcl::set-car! {obj val} {
@@ -2336,11 +2289,13 @@ proc ::constcl::set-car! {obj val} {
 }
 
 
+
 reg set-cdr! ::constcl::set-cdr!
 
 proc ::constcl::set-cdr! {obj val} {
     $obj set-cdr! $val
 }
+
 
 
 reg list? ::constcl::list?
@@ -2360,6 +2315,7 @@ proc ::constcl::list? {obj} {
 }
 
 
+
 reg list ::constcl::list
 
 proc ::constcl::list {args} {
@@ -2368,11 +2324,12 @@ proc ::constcl::list {args} {
     } else {
         set prev #NIL
         foreach obj [lreverse $args] {
-            set prev [::constcl::cons $obj $prev]
+            set prev [cons $obj $prev]
         }
         return $prev
     }
 }
+
 
 
 proc ::constcl::length-helper {obj} {
@@ -2392,6 +2349,7 @@ proc ::constcl::length {obj} {
         error "LIST expected\n(list lst)"
     }
 }
+
 
 
 proc ::constcl::copy-list {obj next} {
@@ -2416,11 +2374,13 @@ proc ::constcl::append {args} {
 }
 
 
+
 reg reverse ::constcl::reverse
 
 proc ::constcl::reverse {obj} {
-    append {*}[lmap o [lreverse [splitlist $obj]] {list $o}]
+    list {*}[lreverse [splitlist $obj]]
 }
+
 
 
 reg list-tail ::constcl::list-tail
@@ -2434,11 +2394,13 @@ proc ::constcl::list-tail {obj k} {
 }
 
 
+
 reg list-ref ::constcl::list-ref
 
 proc ::constcl::list-ref {obj k} {
-    ::constcl::car [::constcl::list-tail $obj $k]
+    car [list-tail $obj $k]
 }
+
 
 
 reg memq ::constcl::memq
@@ -2496,132 +2458,62 @@ proc ::constcl::member {obj1 obj2} {
     }
 }
 
+
+reg assq ::constcl::assq
+
 proc ::constcl::assq {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eq? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eq? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assq [$obj1 show] [$obj2 show])"
     }
 }
 
+
+reg assv ::constcl::assv
 
 proc ::constcl::assv {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::eqv? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [eqv? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assv [$obj1 show] [$obj2 show])"
     }
 }
+
+reg assoc ::constcl::assoc
 
 proc ::constcl::assoc {obj1 obj2} {
-    if {[::constcl::list? $obj2] eq "#t"} {
-        if {[::constcl::null? $obj2] eq "#t"} {
+    if {[list? $obj2] eq "#t"} {
+        if {[null? $obj2] eq "#t"} {
             return #f
-        } elseif {[::constcl::pair? $obj2] eq "#t"} {
-            #TODO replace with a-list handling code
-            if {[::constcl::equal? $obj1 [::constcl::car $obj2]]} {
-                return $obj2
+        } elseif {[pair? $obj2] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [equal? $obj1 [caar $obj2]] eq "#t"} {
+                return [car $obj2]
             } else {
-                return [::constcl::memq $obj1 [::constcl::cdr $obj2]]
+                return [assq $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        error "LIST expected\n(assoc [$obj1 show] [$obj2 show])"
     }
 }
 
-
-
-oo::class create Symbol {
-    superclass NIL
-    variable name caseconstant
-    constructor {n} {
-        # TODO idcheck this
-        set name $n
-        set caseconstant 0
-    }
-    method name {} {set name}
-    method value {} {set name}
-    method = {symname} {expr {$name eq $symname}}
-    method mkconstant {} {}
-    method constant {} {return 1}
-    method make-case-constant {} {set caseconstant 1}
-    method case-constant {} {set caseconstant}
-    method write {} { puts -nonewline [my name] }
-    method show {} {set name}
-}
-
-proc ::constcl::MkSymbol {n} {
-    if {$n eq {}} {
-        error "a symbol must have a name"
-    }
-    foreach instance [info class instances Symbol] {
-        if {[$instance name] eq $n} {
-            return $instance
-        }
-    }
-    return [Symbol new $n]
-}
-
-reg symbol? ::constcl::symbol?
-
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-
-
-reg symbol->string ::constcl::symbol->string
-
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
-        } else {
-            set str [MkString [$obj name]]
-        }
-        $str mkconstant
-        return $str
-    } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
-    }
-}
-
-
-reg string->symbol ::constcl::string->symbol
-
-proc ::constcl::string->symbol {str} {
-    if {[string? $str] eq "#t"} {
-        set sym [MkSymbol [$str value]]
-        $sym make-case-constant
-        return $sym
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
-}
 
 
 
@@ -2664,6 +2556,19 @@ oo::class create String {
 
 interp alias {} MkString {} String new
 
+reg string? ::constcl::string?
+
+proc ::constcl::string? {obj} {
+    if {[info object isa typeof $obj String]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
 proc find-string-index {v} {
     set s -1
     for {set i 0} {$i < $::S} {incr i} {
@@ -2679,17 +2584,6 @@ proc find-string-index {v} {
     set s
 }
 
-reg string? ::constcl::string?
-
-proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
-        return #t
-    } else {
-        return #f
-    }
-}
 
 
 reg make-string ::constcl::make-string
@@ -2703,6 +2597,7 @@ proc ::constcl::make-string {args} {
         return [MkString [::string repeat [$c char] [$k value]]]
     }
 }
+
 
 
 reg string ::constcl::string
@@ -2720,6 +2615,7 @@ proc ::constcl::string {args} {
 }
 
 
+
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
@@ -2729,6 +2625,7 @@ proc ::constcl::string-length {str} {
         error "STRING expected\n(string-length [$str show])"
     }
 }
+
 
 
 reg string-ref ::constcl::string-ref
@@ -2745,6 +2642,7 @@ proc ::constcl::string-ref {str k} {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
 }
+
 
 
 reg string-set! ::constcl::string-set!
@@ -2766,6 +2664,7 @@ proc ::constcl::string-set! {str k char} {
         error "STRING expected\n(string-set! [$str show] [$k show] [$char show])"
     }
 }
+
 
 
 reg string=? ::constcl::string=?
@@ -2918,6 +2817,7 @@ proc ::constcl::string-ci>=? {s1 s2} {
 }
 
 
+
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
@@ -2933,11 +2833,13 @@ proc ::constcl::substring {str start end} {
 }
 
 
+
 reg string-append ::constcl::string-append
 
 proc ::constcl::string-append {args} {
     MkString [::append --> {*}[lmap arg $args {$arg value}]]
 }
+
 
 
 reg string->list ::constcl::string->list
@@ -2947,11 +2849,13 @@ proc ::constcl::string->list {str} {
 }
 
 
+
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
     MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
+
 
 
 reg string-copy ::constcl::string-copy
@@ -2965,6 +2869,7 @@ proc ::constcl::string-copy {str} {
 }
 
 
+
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
@@ -2976,6 +2881,83 @@ proc ::constcl::string-fill! {str char} {
     }
 }
 
+
+
+
+oo::class create Symbol {
+    superclass NIL
+    variable name caseconstant
+    constructor {n} {
+        if {$n eq {}} {
+            error "a symbol must have a name"
+        }
+        ::constcl::idcheck $n
+        set name $n
+        set caseconstant 0
+    }
+    method name {} {set name}
+    method value {} {set name}
+    method = {symname} {expr {$name eq $symname}}
+    method mkconstant {} {}
+    method constant {} {return 1}
+    method make-case-constant {} {set caseconstant 1}
+    method case-constant {} {set caseconstant}
+    method write {} { puts -nonewline [my name] }
+    method show {} {set name}
+}
+
+proc ::constcl::MkSymbol {n} {
+    foreach instance [info class instances Symbol] {
+        if {[$instance name] eq $n} {
+            return $instance
+        }
+    }
+    return [Symbol new $n]
+}
+
+reg symbol? ::constcl::symbol?
+
+proc ::constcl::symbol? {obj} {
+    if {[info object isa typeof $obj Symbol]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
+
+reg symbol->string ::constcl::symbol->string
+
+proc ::constcl::symbol->string {obj} {
+    if {[symbol? $obj] eq "#t"} {
+        if {![$obj case-constant]} {
+            set str [MkString [::string tolower [$obj name]]]
+        } else {
+            set str [MkString [$obj name]]
+        }
+        $str mkconstant
+        return $str
+    } else {
+        error "SYMBOL expected\n(symbol->string [$obj show])"
+    }
+}
+
+
+
+reg string->symbol ::constcl::string->symbol
+
+proc ::constcl::string->symbol {str} {
+    if {[string? $str] eq "#t"} {
+        set sym [MkSymbol [$str value]]
+        $sym make-case-constant
+        return $sym
+    } else {
+        error "STRING expected\n(string->symbol [$obj show])"
+    }
+}
 
 
 
@@ -3196,7 +3178,7 @@ interp alias {} #- {} [::constcl::MkSymbol -]
 interp alias {} #NONE {} [None new]
 
 
-dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
 
 reg atom? ::constcl::atom?
 
@@ -3211,6 +3193,53 @@ proc ::constcl::atom? {obj} {
 
 
 
+catch { Environment destroy }
+
+oo::class create Environment {
+    variable bindings outer_env
+    constructor {syms vals {outer {}}} {
+        set bindings [dict create]
+        if {$syms eq "#NIL"} {
+            if {[llength $vals]} { error "too many arguments" }
+        } elseif {[::constcl::list? $syms] eq "#t"} {
+            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            foreach sym $syms val $vals {
+                my set $sym $val
+            }
+        } elseif {[::constcl::symbol? $syms] eq "#t"} {
+            my set [$syms name] [::constcl::list {*}$vals]
+        } else {
+            while {[::constcl::null? $syms] ne "#t"} {
+                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    break
+                } else {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    set syms [::constcl::cdr $syms]
+                }
+                #if {[llength $vals] < 1} { error "too few arguments" }
+            }
+            if {[llength $vals] > 0} { error "too many arguments $vals" }
+        }
+        set outer_env $outer
+    }
+    method find {sym} {
+        if {$sym in [dict keys $bindings]} {
+            self
+        } else {
+            $outer_env find $sym
+        }
+    }
+    method get {sym} {
+        dict get $bindings $sym
+    }
+    method set {sym val} {
+        dict set bindings $sym $val
+    }
+}
+
+
 
 Environment create null_env #NIL {}
 
@@ -3221,7 +3250,7 @@ oo::objdefine null_env {
 }
 
 
-Environment create global_env [mksymlist [dict keys $standard_env]] [dict values $standard_env] null_env
+Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 
 
 

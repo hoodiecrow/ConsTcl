@@ -45,7 +45,7 @@ interp alias {} #NONE {} [None new]
 CB
 
 CB
-dict set ::standard_env pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
 CB
 
 CB

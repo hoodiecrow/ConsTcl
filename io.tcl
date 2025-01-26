@@ -1,6 +1,8 @@
 
 MD(
 ### Input and output
+
+I may never get around to implementing these.
 MD)
 
 CB
@@ -111,13 +113,9 @@ proc ::constcl::write {obj args} {
 }
 CB
 
-CB
-reg display ::constcl::display
-
-proc ::constcl::display {obj args} {
-    # TODO write [$obj display]
-}
-CB
+MD(
+`display` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+MD)
 
 CB
 reg newline ::constcl::newline

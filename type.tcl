@@ -40,13 +40,13 @@ CB
 MD(
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the standard environment).
+registers built-in procedures in the definitions register).
 MD)
 
 CB
 # utility functions
 proc reg {sym impl} {
-    dict set ::standard_env $sym $impl
+    dict set ::defreg $sym $impl
 }
 
 proc ::pep {str} {
@@ -64,6 +64,10 @@ proc ::pxp {str} {
     ::constcl::expand-macro op args ::global_env
     set p [::constcl::cons $op $args]
     ::constcl::write $p
+}
+
+proc mksymlist {tcllist} {
+    return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
 }
 CB
 
@@ -140,5 +144,17 @@ CB
 catch { None destroy}
 
 oo::class create None {}
+CB
+
+MD(
+The `Dot` class is a helper class for the parser.
+MD)
+
+CB
+catch { Dot destroy }
+
+oo::class create Dot {
+    method mkconstant {} {}
+}
 CB
 
