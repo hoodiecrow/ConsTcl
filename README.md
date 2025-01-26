@@ -325,10 +325,6 @@ proc ::constcl::read-value {} {
         }
         {[[:space:]]} {advance}
         {[[:graph:]]} {
-            if {[first] eq "."} {
-                advance
-                return [Dot new]
-            }
             return [::constcl::read-identifier]
         }
         default {
@@ -451,7 +447,7 @@ proc ::constcl::read-identifier {} {
         advance
     }
     # idcheck throws error if invalid identifier
-    return [MkSymbol [::constcl::idcheck $name]]
+    return [MkSymbol [idcheck $name]]
 }
 ```
 
@@ -851,8 +847,9 @@ proc ::constcl::do-cond {clauses} {
 ```
 
 The `expand-for` procedure expands the `for` macro. It returns a `begin`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause (multiple clauses
+weren't implemented, but I brought up my strongest brain cells and they
+did it).
 
 ```
 proc ::constcl::for-seq {seq env} {

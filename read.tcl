@@ -171,10 +171,6 @@ proc ::constcl::read-value {} {
         }
         {[[:space:]]} {advance}
         {[[:graph:]]} {
-            if {[first] eq "."} {
-                advance
-                return [Dot new]
-            }
             return [::constcl::read-identifier]
         }
         default {
@@ -440,7 +436,7 @@ proc ::constcl::read-identifier {} {
         advance
     }
     # idcheck throws error if invalid identifier
-    return [MkSymbol [::constcl::idcheck $name]]
+    return [MkSymbol [idcheck $name]]
 }
 CB
 

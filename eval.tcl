@@ -330,8 +330,9 @@ CB
 
 MD(
 The `expand-for` procedure expands the `for` macro. It returns a `begin`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause (multiple clauses
+weren't implemented, but I brought up my strongest brain cells and they
+did it).
 MD)
 
 CB
