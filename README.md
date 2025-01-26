@@ -64,6 +64,10 @@ proc ::pxp {str} {
     set p [::constcl::cons $op $args]
     ::constcl::write $p
 }
+
+proc mksymlist {tcllist} {
+    return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
+}
 ```
 
 This one is a little bit of both, a utility function that is also among the
@@ -132,6 +136,15 @@ catch { None destroy}
 
 oo::class create None {}
 ```
+
+The `Dot` class is a helper class for the parser.
+
+```
+catch { Dot destroy }
+
+oo::class create Dot {
+    method mkconstant {} {}
+}
 
 
 ## read
@@ -215,6 +228,10 @@ proc ::constcl::read-value {} {
         {^$} {
             return
         }
+        {\.} {
+            advance
+            return [Dot new]
+        }
         {\(} {
             advance
             skip-whitespace
@@ -292,6 +309,10 @@ proc ::constcl::read-value {} {
         }
         {[[:space:]]} {advance}
         {[[:graph:]]} {
+            if {[first] eq "."} {
+                advance
+                return [Dot new]
+            }
             return [::constcl::read-identifier]
         }
         default {
@@ -435,14 +456,52 @@ proc ::constcl::find-char {c} {
 The `read-pair` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
 
 ```
+
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
 proc ::constcl::read-pair {c} {
+    skip-whitespace
+    if {[find-char $c]} {
+        return #NIL
+    }
+    set a [read]
+    skip-whitespace
+    set res $a
+    set prev #NIL
+    while {![find-char $c]} {
+        set x [read]
+        skip-whitespace
+        if {[dot? $x] eq "#t"} {
+            set prev [read]
+            skip-whitespace
+        } else {
+            lappend res $x
+        }
+        if {[llength $res] > 99} break
+    }
+    foreach r [lreverse $res] {
+        set prev [cons $r $prev]
+    }
+    return $prev
+}
+
+proc ::constcl::__read-pair {c} {
     skip-whitespace
     if {[first] eq $c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputbuffer 0 2] " . "]} {
-        advance 3
+    skip-whitespace
+    if {[first] eq "."} {
+        advance
         skip-whitespace
         set d [read]
         skip-whitespace
@@ -471,6 +530,7 @@ proc ::constcl::read-pair {c} {
 
 }
 ```
+
 
 
 ## eval
@@ -599,20 +659,19 @@ proc ::constcl::update! {var expr env} {
 }
 ```
 
-`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp lists
-`formals` and `body`. The former is reworked to a Tcl list of parameter names, and 
-the latter is packed inside a `begin` if it has more than one expression, and taken
-out of its list if not.
+`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control)
+object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
+if it has more than one expression, and taken out of its list if not. The Lisp list
+`formals` is passed on as is.
 
 ```
 proc ::constcl::make-function {formals body env} {
-    set parms [lmap formal [splitlist $formals] {$formal name}]
     if {[[length $body] value] > 1} {
         set body [cons #B $body]
     } else {
         set body [car $body]
     }
-    return [MkProcedure $parms $body $env]
+    return [MkProcedure $formals $body $env]
 }
 ```
 
@@ -1002,9 +1061,29 @@ catch { Environment destroy }
 oo::class create Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
-	set bindings [dict create]
-        foreach sym $syms val $vals {
-            my set $sym $val
+        set bindings [dict create]
+        if {$syms eq "#NIL"} {
+            if {[llength $vals]} { error "too many arguments" }
+        } elseif {[::constcl::list? $syms] eq "#t"} {
+            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            foreach sym $syms val $vals {
+                my set $sym $val
+            }
+        } elseif {[::constcl::symbol? $syms] eq "#t"} {
+            my set [$syms name] [::constcl::list {*}$vals]
+        } else {
+            while {[::constcl::null? $syms] ne "#t"} {
+                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    break
+                } else {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    set syms [::constcl::cdr $syms]
+                }
+                #if {[llength $vals] < 1} { error "too few arguments" }
+            }
+            if {[llength $vals] > 0} { error "too many arguments $vals" }
         }
         set outer_env $outer
     }
@@ -2398,7 +2477,7 @@ oo::class create Procedure {
     superclass NIL
     variable parms body env
     constructor {p b e} {
-        set parms $p         ;# a Tcl list of parameter names
+        set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
         set body $b          ;# a Lisp list of expressions under 'begin
         set env $e           ;# an environment
     }
@@ -2406,9 +2485,6 @@ oo::class create Procedure {
     method write {} { puts -nonewline [self] }
     method show {} { return [self] }
     method call {args} {
-        if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
-        }
         ::constcl::eval $body [Environment new $parms $args $env]
     }
 
@@ -3786,7 +3862,7 @@ as __null-environment__ in Scheme) and __global_env__ (the global environment) a
 Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
 
 ```
-Environment create null_env {} {}
+Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -3799,7 +3875,7 @@ Meanwhile, __global_env__ is populated with all the definitions from __standard_
 where top level evaluation happens.
 
 ```
-Environment create global_env [dict keys $standard_env] [dict values $standard_env] null_env
+Environment create global_env [mksymlist [dict keys $standard_env]] [dict values $standard_env] null_env
 ```
 
 Thereafter, each time a user-defined procedure is called, a new __Environment__ object is

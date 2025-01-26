@@ -146,6 +146,14 @@ source constcl.tcl
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 
+::tcltest::test read-6.0 {try reading an improper list} -body {
+    pp "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-6.1 {try reading an improper list} -body {
+    pp "(a b . c)"
+} -output "(a b . c)\n"
+
 
 ::tcltest::test eval-1.0 {expand and macro} -body {
     pxp "(and)"
@@ -257,6 +265,14 @@ source constcl.tcl
 ::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
     pep {(for/list ([i (in-range 1 4)]) (* i i))}
 } -result "(1 4 9)"
+
+
+::tcltest::test eval-5.0 {lambda parameter lists} -body {
+    pep {((lambda (x y z) (list x y z)) 3 4 5)}
+    pep {((lambda x x) 3 4 5 6)}
+    pep {((lambda (x y . z) (list x y)) 3 4 5 6)}
+    pep {((lambda (x y . z) z) 3 4 5 6)}
+} -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
 
@@ -754,9 +770,9 @@ source constcl.tcl
     pep {(apply + (list 3 4))}
     pep {(define compose
   (lambda (f g)
-    (lambda (args)
+    (lambda args
       (f (apply g args)))))}
-    pep {((compose sqrt *) (list 12 75))}
+    pep {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
 
 

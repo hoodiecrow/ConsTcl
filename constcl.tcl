@@ -43,6 +43,10 @@ proc ::pxp {str} {
     ::constcl::write $p
 }
 
+proc mksymlist {tcllist} {
+    return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
+}
+
 
 reg in-range ::constcl::in-range
 
@@ -92,6 +96,13 @@ proc ::constcl::null? {obj} {
 catch { None destroy}
 
 oo::class create None {}
+
+
+catch { Dot destroy }
+
+oo::class create Dot {
+    method mkconstant {} {}
+}
 
 
 
@@ -158,6 +169,10 @@ proc ::constcl::read-value {} {
     switch -regexp [first] {
         {^$} {
             return
+        }
+        {\.} {
+            advance
+            return [Dot new]
         }
         {\(} {
             advance
@@ -236,6 +251,10 @@ proc ::constcl::read-value {} {
         }
         {[[:space:]]} {advance}
         {[[:graph:]]} {
+            if {[first] eq "."} {
+                advance
+                return [Dot new]
+            }
             return [::constcl::read-identifier]
         }
         default {
@@ -349,14 +368,52 @@ proc ::constcl::find-char {c} {
 }
 
 
+
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
 proc ::constcl::read-pair {c} {
+    skip-whitespace
+    if {[find-char $c]} {
+        return #NIL
+    }
+    set a [read]
+    skip-whitespace
+    set res $a
+    set prev #NIL
+    while {![find-char $c]} {
+        set x [read]
+        skip-whitespace
+        if {[dot? $x] eq "#t"} {
+            set prev [read]
+            skip-whitespace
+        } else {
+            lappend res $x
+        }
+        if {[llength $res] > 99} break
+    }
+    foreach r [lreverse $res] {
+        set prev [cons $r $prev]
+    }
+    return $prev
+}
+
+proc ::constcl::__read-pair {c} {
     skip-whitespace
     if {[first] eq $c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputbuffer 0 2] " . "]} {
-        advance 3
+    skip-whitespace
+    if {[first] eq "."} {
+        advance
         skip-whitespace
         set d [read]
         skip-whitespace
@@ -384,6 +441,7 @@ proc ::constcl::read-pair {c} {
     }
 
 }
+
 
 
 
@@ -471,13 +529,12 @@ proc ::constcl::update! {var expr env} {
 
 
 proc ::constcl::make-function {formals body env} {
-    set parms [lmap formal [splitlist $formals] {$formal name}]
     if {[[length $body] value] > 1} {
         set body [cons #B $body]
     } else {
         set body [car $body]
     }
-    return [MkProcedure $parms $body $env]
+    return [MkProcedure $formals $body $env]
 }
 
 
@@ -776,9 +833,29 @@ catch { Environment destroy }
 oo::class create Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
-	set bindings [dict create]
-        foreach sym $syms val $vals {
-            my set $sym $val
+        set bindings [dict create]
+        if {$syms eq "#NIL"} {
+            if {[llength $vals]} { error "too many arguments" }
+        } elseif {[::constcl::list? $syms] eq "#t"} {
+            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            foreach sym $syms val $vals {
+                my set $sym $val
+            }
+        } elseif {[::constcl::symbol? $syms] eq "#t"} {
+            my set [$syms name] [::constcl::list {*}$vals]
+        } else {
+            while {[::constcl::null? $syms] ne "#t"} {
+                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+                    break
+                } else {
+                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    set syms [::constcl::cdr $syms]
+                }
+                #if {[llength $vals] < 1} { error "too few arguments" }
+            }
+            if {[llength $vals] > 0} { error "too many arguments $vals" }
         }
         set outer_env $outer
     }
@@ -1958,7 +2035,7 @@ oo::class create Procedure {
     superclass NIL
     variable parms body env
     constructor {p b e} {
-        set parms $p         ;# a Tcl list of parameter names
+        set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
         set body $b          ;# a Lisp list of expressions under 'begin
         set env $e           ;# an environment
     }
@@ -1966,9 +2043,6 @@ oo::class create Procedure {
     method write {} { puts -nonewline [self] }
     method show {} { return [self] }
     method call {args} {
-        if {[llength $parms] != [llength $args]} {
-            error "Wrong number of arguments passed to procedure, [llength $args] of [llength $parms]"
-        }
         ::constcl::eval $body [Environment new $parms $args $env]
     }
 
@@ -3138,7 +3212,7 @@ proc ::constcl::atom? {obj} {
 
 
 
-Environment create null_env {} {}
+Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -3147,7 +3221,7 @@ oo::objdefine null_env {
 }
 
 
-Environment create global_env [dict keys $standard_env] [dict values $standard_env] null_env
+Environment create global_env [mksymlist [dict keys $standard_env]] [dict values $standard_env] null_env
 
 
 

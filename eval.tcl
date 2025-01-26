@@ -138,21 +138,20 @@ proc ::constcl::update! {var expr env} {
 CB
 
 MD(
-`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp lists
-`formals` and `body`. The former is reworked to a Tcl list of parameter names, and 
-the latter is packed inside a `begin` if it has more than one expression, and taken
-out of its list if not.
+`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control)
+object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
+if it has more than one expression, and taken out of its list if not. The Lisp list
+`formals` is passed on as is.
 MD)
 
 CB
 proc ::constcl::make-function {formals body env} {
-    set parms [lmap formal [splitlist $formals] {$formal name}]
     if {[[length $body] value] > 1} {
         set body [cons #B $body]
     } else {
         set body [car $body]
     }
-    return [MkProcedure $parms $body $env]
+    return [MkProcedure $formals $body $env]
 }
 CB
 
@@ -584,6 +583,14 @@ TT(
 ::tcltest::test macro-5.5 {run for/list macro} -constraints knownBug -body {
     pep {(for/list ([i (in-range 1 4)]) (* i i))}
 } -result "(1 4 9)"
+
+
+::tcltest::test eval-5.0 {lambda parameter lists} -body {
+    pep {((lambda (x y z) (list x y z)) 3 4 5)}
+    pep {((lambda x x) 3 4 5 6)}
+    pep {((lambda (x y . z) (list x y)) 3 4 5 6)}
+    pep {((lambda (x y . z) z) 3 4 5 6)}
+} -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
 TT)

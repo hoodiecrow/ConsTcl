@@ -90,6 +90,10 @@ proc ::constcl::read-value {} {
         {^$} {
             return
         }
+        {\.} {
+            advance
+            return [Dot new]
+        }
         {\(} {
             advance
             skip-whitespace
@@ -167,6 +171,10 @@ proc ::constcl::read-value {} {
         }
         {[[:space:]]} {advance}
         {[[:graph:]]} {
+            if {[first] eq "."} {
+                advance
+                return [Dot new]
+            }
             return [::constcl::read-identifier]
         }
         default {
@@ -478,14 +486,52 @@ The `read-pair` procedure reads values and returns a [Pair](https://github.com/h
 MD)
 
 CB
+
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
 proc ::constcl::read-pair {c} {
+    skip-whitespace
+    if {[find-char $c]} {
+        return #NIL
+    }
+    set a [read]
+    skip-whitespace
+    set res $a
+    set prev #NIL
+    while {![find-char $c]} {
+        set x [read]
+        skip-whitespace
+        if {[dot? $x] eq "#t"} {
+            set prev [read]
+            skip-whitespace
+        } else {
+            lappend res $x
+        }
+        if {[llength $res] > 99} break
+    }
+    foreach r [lreverse $res] {
+        set prev [cons $r $prev]
+    }
+    return $prev
+}
+
+proc ::constcl::__read-pair {c} {
     skip-whitespace
     if {[first] eq $c} {
         return #NIL
     }
     set a [read]
-    if {[::string equal [::string range $::inputbuffer 0 2] " . "]} {
-        advance 3
+    skip-whitespace
+    if {[first] eq "."} {
+        advance
         skip-whitespace
         set d [read]
         skip-whitespace
@@ -514,4 +560,14 @@ proc ::constcl::read-pair {c} {
 
 }
 CB
+
+TT(
+::tcltest::test read-6.0 {try reading an improper list} -body {
+    pp "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-6.1 {try reading an improper list} -body {
+    pp "(a b . c)"
+} -output "(a b . c)\n"
+TT)
 
