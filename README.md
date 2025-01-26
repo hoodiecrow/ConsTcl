@@ -98,9 +98,9 @@ The `NIL` class has one object: the empty list called `#NIL`. It is also base cl
 type classes.
 
 ```
-catch { NIL destroy }
+catch { ::constcl::NIL destroy }
 
-oo::class create NIL {
+oo::class create ::constcl::NIL {
     constructor {} {}
     method bvalue {} {return #t}
     method car {} {error "PAIR expected"}
@@ -132,17 +132,17 @@ proc ::constcl::null? {obj} {
 The `None` class serves but one purpose: to avoid printing a result after `define`.
 
 ```
-catch { None destroy}
+catch { ::constcl::None destroy}
 
-oo::class create None {}
+oo::class create ::constcl::None {}
 ```
 
 The `Dot` class is a helper class for the parser.
 
 ```
-catch { Dot destroy }
+catch { ::constcl::Dot destroy }
 
-oo::class create Dot {
+oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
 ```
@@ -1134,8 +1134,8 @@ on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
 
 ```
-oo::class create Number {
-    superclass NIL
+oo::class create ::constcl::Number {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[::string is double $v]} {
@@ -1161,7 +1161,7 @@ oo::class create Number {
     method show {} { set value }
 }
 
-interp alias {} ::constcl::MkNumber {} Number new
+interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 ```
 
@@ -1170,9 +1170,9 @@ interp alias {} ::constcl::MkNumber {} Number new
 reg number? ::constcl::number?
 
 proc ::constcl::number? {obj} {
-    if {[info object isa typeof $obj Number]} {
+    if {[info object isa typeof $obj ::constcl::Number]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Number]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Number]} {
         return #t
     } else {
         return #f
@@ -1955,8 +1955,8 @@ boolean values. The conditional `if` operator considers all
 values except for `#f` to be true.
 
 ```
-oo::class create Boolean {
-    superclass NIL
+oo::class create ::constcl::Boolean {
+    superclass ::constcl::NIL
     variable bvalue
     constructor {v} {
         if {$v ni {#t #f}} {
@@ -1973,12 +1973,12 @@ oo::class create Boolean {
 }
 
 proc ::constcl::MkBoolean {v} {
-    foreach instance [info class instances Boolean] {
+    foreach instance [info class instances ::constcl::Boolean] {
         if {[$instance bvalue] eq $v} {
             return $instance
         }
     }
-    return [Boolean new $v]
+    return [::constcl::Boolean new $v]
 }
 ```
 
@@ -1989,9 +1989,9 @@ The `boolean?` predicate recognizes a Boolean by type.
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {obj} {
-    if {[info object isa typeof $obj Boolean]} {
+    if {[info object isa typeof $obj ::constcl::Boolean]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Boolean]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Boolean]} {
         return #t
     } else {
         return #f
@@ -2021,8 +2021,8 @@ proc ::constcl::not {obj} {
 Characters are any Unicode printing character, and also space and newline space characters.
 
 ```
-oo::class create Char {
-    superclass NIL
+oo::class create ::constcl::Char {
+    superclass ::constcl::NIL
     variable value
     constructor {v} {
         if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
@@ -2090,12 +2090,12 @@ proc ::constcl::MkChar {v} {
     if {[regexp -nocase {^#\\(space|newline)$} $v]} {
         set v [::string tolower $v]
     }
-    foreach instance [info class instances Char] {
+    foreach instance [info class instances ::constcl::Char] {
         if {[$instance value] eq $v} {
             return $instance
         }
     }
-    return [Char new $v]
+    return [::constcl::Char new $v]
 }
 ```
 
@@ -2105,9 +2105,9 @@ proc ::constcl::MkChar {v} {
 reg char? ::constcl::char?
 
 proc ::constcl::char? {obj} {
-    if {[info object isa typeof $obj Char]} {
+    if {[info object isa typeof $obj ::constcl::Char]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Char]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Char]} {
         return #t
     } else {
         return #f
@@ -2416,10 +2416,10 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 ```
-catch { Procedure destroy }
+catch { ::constcl::Procedure destroy }
 
-oo::class create Procedure {
-    superclass NIL
+oo::class create ::constcl::Procedure {
+    superclass ::constcl::NIL
     variable parms body env
     constructor {p b e} {
         set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
@@ -2430,19 +2430,19 @@ oo::class create Procedure {
     method write {} { puts -nonewline [self] }
     method show {} { return [self] }
     method call {args} {
-        ::constcl::eval $body [Environment new $parms $args $env]
+        ::constcl::eval $body [::constcl::Environment new $parms $args $env]
     }
 
 }
 
-interp alias {} ::constcl::MkProcedure {} Procedure new
+interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj Procedure]} {
+    if {[info object isa typeof $obj ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
         return #t
     } elseif {[::string match "::constcl::*" $obj]} {
         return #t
@@ -2683,9 +2683,9 @@ proc ::constcl::transcript-off {} {
 List processing is another of Lisp's great strengths.
 
 ```
-catch { Pair destroy }
+catch { ::constcl::Pair destroy }
 
-oo::class create Pair {
+oo::class create ::constcl::Pair {
     variable car cdr constant
     constructor {a d} {
         set car $a
@@ -2723,14 +2723,14 @@ oo::class create Pair {
 }
 
 
-interp alias {} ::constcl::MkPair {} Pair new
+interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj Pair]} {
+    if {[info object isa typeof $obj ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
         return #t
     } else {
         return #f
@@ -3084,8 +3084,8 @@ proc ::constcl::assoc {obj1 obj2} {
 Procedures for dealing with strings of characters.
 
 ```
-oo::class create String {
-    superclass NIL
+oo::class create ::constcl::String {
+    superclass ::constcl::NIL
     variable s constant
     constructor {v} {
         set s [find-string-index $v]
@@ -3121,14 +3121,14 @@ oo::class create String {
     method show {} {format "\"[my value]\""}
 }
 
-interp alias {} MkString {} String new
+interp alias {} MkString {} ::constcl::String new
 
 reg string? ::constcl::string?
 
 proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj String]} {
+    if {[info object isa typeof $obj ::constcl::String]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] String]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::String]} {
         return #t
     } else {
         return #f
@@ -3518,8 +3518,8 @@ Symbols are like little strings that are used to refer to things (variables, inc
 procedure names, etc) or for comparing against each other.
 
 ```
-oo::class create Symbol {
-    superclass NIL
+oo::class create ::constcl::Symbol {
+    superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
         if {$n eq {}} {
@@ -3541,12 +3541,12 @@ oo::class create Symbol {
 }
 
 proc ::constcl::MkSymbol {n} {
-    foreach instance [info class instances Symbol] {
+    foreach instance [info class instances ::constcl::Symbol] {
         if {[$instance name] eq $n} {
             return $instance
         }
     }
-    return [Symbol new $n]
+    return [::constcl::Symbol new $n]
 }
 ```
 
@@ -3554,9 +3554,9 @@ proc ::constcl::MkSymbol {n} {
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj Symbol]} {
+    if {[info object isa typeof $obj ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
         return #t
     } else {
         return #f
@@ -3608,8 +3608,8 @@ proc ::constcl::string->symbol {str} {
 ### Vectors
 
 ```
-oo::class create Vector {
-    superclass NIL
+oo::class create ::constcl::Vector {
+    superclass ::constcl::NIL
     variable value constant
     constructor {v} {
         set value $v
@@ -3641,12 +3641,12 @@ oo::class create Vector {
 }
 
 proc ::constcl::MkVector {v} {
-    foreach instance [info class instances Vector] {
+    foreach instance [info class instances ::constcl::Vector] {
         if {$instance eq $v} {
             return $instance
         }
     }
-    return [Vector new $v]
+    return [::constcl::Vector new $v]
 }
 ```
 
@@ -3654,9 +3654,9 @@ proc ::constcl::MkVector {v} {
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj Vector]} {
+    if {[info object isa typeof $obj ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
         return #t
     } else {
         return #f
@@ -3820,7 +3820,7 @@ set StrSto [list]
 ```
 
 ```
-interp alias {} #NIL {} [NIL new]
+interp alias {} #NIL {} [::constcl::NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
 
@@ -3852,7 +3852,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #NONE {} [None new]
+interp alias {} #NONE {} [::constcl::None new]
 
 ```
 
@@ -3875,6 +3875,36 @@ proc ::constcl::atom? {obj} {
 
 
 
+
+### The REPL
+
+The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop))
+is a loop that repeatedly _reads_ a Scheme source string from the user through the command
+`input` (breaking the loop if given an empty line) and `::constcl::parse`, _evaluates_ it using
+`::constcl::eval`, and _prints_ using `::constcl::write`.
+
+`input` is modelled after the Python 3 function. It displays a prompt and reads a string.
+
+```
+proc ::constcl::input {prompt} {
+    puts -nonewline $prompt
+    gets stdin
+}
+```
+
+`repl` puts the loop in the read-eval-print loop. It repeats prompting for a string until given
+a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+
+```
+proc ::constcl::repl {{prompt "ConsTcl> "}} {
+    set str [input $prompt]
+    while {$str ne ""} {
+        write [eval [parse $str]]
+        set str [input $prompt]
+    }
+}
+```
+
 ## Environment class and objects
 
 The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
@@ -3883,30 +3913,31 @@ the way to the global environment and then stops at the null environment) which 
 by the find method to find which innermost environment a given symbol is bound in.
 
 ```
-catch { Environment destroy }
+catch { ::constcl::Environment destroy }
 
-oo::class create Environment {
+oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
+        namespace path { ::constcl }
         set bindings [dict create]
         if {$syms eq "#NIL"} {
             if {[llength $vals]} { error "too many arguments" }
-        } elseif {[::constcl::list? $syms] eq "#t"} {
-            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+        } elseif {[list? $syms] eq "#t"} {
+            set syms [lmap sym [splitlist $syms] {$sym name}]
             foreach sym $syms val $vals {
                 my set $sym $val
             }
-        } elseif {[::constcl::symbol? $syms] eq "#t"} {
-            my set [$syms name] [::constcl::list {*}$vals]
+        } elseif {[symbol? $syms] eq "#t"} {
+            my set [$syms name] [list {*}$vals]
         } else {
-            while {[::constcl::null? $syms] ne "#t"} {
-                if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals] ; set vals {}
+            while {[null? $syms] ne "#t"} {
+                if {[symbol? [cdr $syms]] eq "#t"} {
+                    my set [[car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    my set [[cdr $syms] name] [list {*}$vals] ; set vals {}
                     break
                 } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
-                    set syms [::constcl::cdr $syms]
+                    my set [[car $syms] name] [lindex $vals 0] ; set vals [lrange $vals 1 end]
+                    set syms [cdr $syms]
                 }
                 #if {[llength $vals] < 1} { error "too few arguments" }
             }
@@ -3916,7 +3947,7 @@ oo::class create Environment {
     }
     method find {sym} {
         if {$sym in [dict keys $bindings]} {
-            self
+            self object
         } else {
             $outer_env find $sym
         }
@@ -3937,7 +3968,7 @@ as __null-environment__ in Scheme) and __global_env__ (the global environment) a
 Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
 
 ```
-Environment create null_env #NIL {}
+::constcl::Environment create null_env #NIL {}
 
 oo::objdefine null_env {
     method find {sym} {self}
@@ -3950,7 +3981,7 @@ Meanwhile, __global_env__ is populated with all the definitions from the definit
 __defreg__. This is where top level evaluation happens.
 
 ```
-Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
+::constcl::Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
 ```
 
 Thereafter, each time a user-defined procedure is called, a new __Environment__ object is
@@ -3962,8 +3993,8 @@ created to hold the bindings introduced by the call, and also a link to the oute
 A procedure definition form creates a new procedure. Example:
 
 ```
-Thtcl> (define circle-area (lambda (r) (* pi (* r r))))
-Thtcl> (circle-area 10)
+ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))
+ConsTcl> (circle-area 10)
 314.1592653589793
 ```
 
