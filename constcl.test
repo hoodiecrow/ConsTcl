@@ -798,6 +798,12 @@ source constcl.tcl
 
 
 
+::tcltest::test control-1.3 {try for-each)} -body {
+    pep {(for-each display '(1 2 3))}
+} -output "123()\n"
+
+
+
 ::tcltest::test pairslists-1.0 {playing with lists} -body {
     pep {(define x (list 'a 'b 'c))}
     pep {(define y x)}
@@ -892,11 +898,11 @@ source constcl.tcl
     pep {(list? '(a . b))}
 } -output "#t\n#t\n#f\n"
 
-::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body { ;# "bug": list is infinite and list? must detect that
+::tcltest::test pairslists-1.16 {try list?} -body { ;# "bug": list is infinite and list? must detect that
     pep {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}
-} -output "#f"
+} -output "#f\n"
 
 
 

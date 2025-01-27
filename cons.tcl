@@ -6,11 +6,11 @@ storage variable `StrSto`.
 MD)
 
 CB
-unset -nocomplain S ;# string store number
-set S 0
+unset -nocomplain ::constcl::S ;# string store number
+set ::constcl::S 0
 
-unset -nocomplain StrSto
-set StrSto [list]
+unset -nocomplain ::constcl::StrSto
+set ::constcl::StrSto [list]
 CB
 
 MD(
@@ -61,7 +61,7 @@ a double floating point approximation).
 MD)
 
 CB
-dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 CB
 
 MD(

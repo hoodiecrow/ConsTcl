@@ -10,7 +10,7 @@ oo::class create ::constcl::String {
     superclass ::constcl::NIL
     variable s constant
     constructor {v} {
-        set s [find-string-index $v]
+        set s [::constcl::find-string-index $v]
         set constant 0
     }
     method index {} {set s}
@@ -22,7 +22,7 @@ oo::class create ::constcl::String {
             error "string is constant"
         } else {
             set value [::string replace [my value] $k $k $c]
-            set s [find-string-index $value]
+            set s [::constcl::find-string-index $value]
         }
         return [self]
     }
@@ -31,12 +31,12 @@ oo::class create ::constcl::String {
             error "string is constant"
         } else {
             set value [::string repeat $c [::string length [my value]]]
-            set s [find-string-index $value]
+            set s [::constcl::find-string-index $value]
         }
         return [self]
     }
     method substring {from to} {::string range [my value] $from $to}
-    method value {} {return [lindex $::StrSto $s]}
+    method value {} {return [lindex $::constcl::StrSto $s]}
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
@@ -63,17 +63,17 @@ Helper function for finding a string in the string store.
 MD)
 
 CB
-proc find-string-index {v} {
+proc ::constcl::find-string-index {v} {
     set s -1
-    for {set i 0} {$i < $::S} {incr i} {
-        if {[::string equal [lindex $::StrSto $i] $v]} {
+    for {set i 0} {$i < $::constcl::S} {incr i} {
+        if {[::string equal [lindex $::constcl::StrSto $i] $v]} {
             set s $i
         }
     }
     if {$s == -1} {
-        set s $::S
-        lset ::StrSto $s $v
-        incr ::S
+        set s $::constcl::S
+        lset ::constcl::StrSto $s $v
+        incr ::constcl::S
     }
     set s
 }

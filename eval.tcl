@@ -24,7 +24,7 @@ MD)
 CB
 reg eval ::constcl::eval
 
-proc ::constcl::eval {e {env ::global_env}} {
+proc ::constcl::eval {e {env ::constcl::global_env}} {
     # TODO
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
@@ -157,7 +157,7 @@ CB
 
 MD(
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
-arranges for a procedure to be called with a each of the values in _vals. It checks if
+arranges for a procedure to be called with each of the values in _vals. It checks if
 `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
 MD)
 

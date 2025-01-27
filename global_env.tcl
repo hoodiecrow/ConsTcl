@@ -7,9 +7,9 @@ Make __null_env__ empty and unresponsive: this is where searches for unbound sym
 MD)
 
 CB
-::constcl::Environment create null_env #NIL {}
+::constcl::Environment create ::constcl::null_env #NIL {}
 
-oo::objdefine null_env {
+oo::objdefine ::constcl::null_env {
     method find {sym} {self}
     method get {sym} {error "Unbound variable: $sym"}
     method set {sym val} {error "Unbound variable: $sym"}
@@ -22,7 +22,11 @@ __defreg__. This is where top level evaluation happens.
 MD)
 
 CB
-::constcl::Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
+namespace eval ::constcl:: {
+    set keys [dict keys $defreg]
+    set vals [dict values $defreg]
+    Environment create global_env [mksymlist $keys] $vals ::constcl::null_env
+}
 CB
 
 MD(

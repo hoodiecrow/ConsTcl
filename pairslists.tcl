@@ -300,20 +300,30 @@ ends with NIL.
 MD)
 
 CB
-reg list? ::constcl::list?
-
-proc ::constcl::list? {obj} {
+proc ::constcl::listp {obj} {
+    upvar visited visited
+    if {$obj in $visited} {
+        return #f
+    }
+    lappend visited $obj
     if {$obj eq "#NIL"} {
         return #t
     } elseif {[pair? $obj] eq "#t"} {
         if {[cdr $obj] eq "#NIL"} {
             return #t
         } else {
-            return [list? [cdr $obj]]
+            return [listp [cdr $obj]]
         }
     } else {
         return #f
     }
+}
+
+reg list? ::constcl::list?
+
+proc ::constcl::list? {obj} {
+    set visited {}
+    return [listp $obj]
 }
 CB
 
@@ -325,11 +335,11 @@ TT(
     pep {(list? '(a . b))}
 } -output "#t\n#t\n#f\n"
 
-::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body { ;# "bug": list is infinite and list? must detect that
+::tcltest::test pairslists-1.16 {try list?} -body { ;# "bug": list is infinite and list? must detect that
     pep {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}
-} -output "#f"
+} -output "#f\n"
 
 TT)
 
@@ -363,7 +373,7 @@ TT(
 TT)
 
 MD(
-`length` reports the length of a Lisp list of items.
+`length` reports the length of a Lisp list.
 MD)
 
 CB

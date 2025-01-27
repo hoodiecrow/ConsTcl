@@ -36,8 +36,13 @@ MD)
 
 CB
 # utility functions
-proc reg {sym impl} {
-    dict set ::defreg $sym $impl
+proc reg {sym args} {
+    if {[llength $args] == 0} {
+        set impl ::constcl::$sym
+    } else {
+        set impl [lindex $args 0]
+    }
+    dict set ::constcl::defreg $sym $impl
 }
 
 proc ::pep {str} {
@@ -49,15 +54,15 @@ proc ::pp {str} {
 }
 
 proc ::pxp {str} {
-    set p [::constcl::parse $str]
-    set op [::constcl::car $p]
-    set args [::constcl::cdr $p]
-    ::constcl::expand-macro op args ::global_env
-    set p [::constcl::cons $op $args]
-    ::constcl::write $p
+    set val [::constcl::parse $str]
+    set op [::constcl::car $val]
+    set args [::constcl::cdr $val]
+    ::constcl::expand-macro op args ::constcl::global_env
+    set val [::constcl::cons $op $args]
+    ::constcl::write $val
 }
 
-proc mksymlist {tcllist} {
+proc ::constcl::mksymlist {tcllist} {
     return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
 }
 CB

@@ -154,9 +154,13 @@ proc ::constcl::for-each {proc args} {
 }
 CB
 
+TT(
+
 ::tcltest::test control-1.3 {try for-each)} -body {
     pep {(for-each display '(1 2 3))}
 } -output "123()\n"
+
+TT)
 
 CB
 proc ::constcl::force {promise} {

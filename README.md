@@ -35,8 +35,13 @@ registers built-in procedures in the definitions register).
 
 ```
 # utility functions
-proc reg {sym impl} {
-    dict set ::defreg $sym $impl
+proc reg {sym args} {
+    if {[llength $args] == 0} {
+        set impl ::constcl::$sym
+    } else {
+        set impl [lindex $args 0]
+    }
+    dict set ::constcl::defreg $sym $impl
 }
 
 proc ::pep {str} {
@@ -48,15 +53,15 @@ proc ::pp {str} {
 }
 
 proc ::pxp {str} {
-    set p [::constcl::parse $str]
-    set op [::constcl::car $p]
-    set args [::constcl::cdr $p]
-    ::constcl::expand-macro op args ::global_env
-    set p [::constcl::cons $op $args]
-    ::constcl::write $p
+    set val [::constcl::parse $str]
+    set op [::constcl::car $val]
+    set args [::constcl::cdr $val]
+    ::constcl::expand-macro op args ::constcl::global_env
+    set val [::constcl::cons $op $args]
+    ::constcl::write $val
 }
 
-proc mksymlist {tcllist} {
+proc ::constcl::mksymlist {tcllist} {
     return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
 }
 ```
@@ -559,7 +564,7 @@ See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 ```
 reg eval ::constcl::eval
 
-proc ::constcl::eval {e {env ::global_env}} {
+proc ::constcl::eval {e {env ::constcl::global_env}} {
     # TODO
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
@@ -679,7 +684,7 @@ proc ::constcl::make-function {formals body env} {
 ```
 
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
-arranges for a procedure to be called with a each of the values in _vals. It checks if
+arranges for a procedure to be called with each of the values in _vals. It checks if
 `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
 
 ```
@@ -2469,9 +2474,6 @@ proc ::constcl::for-each {proc args} {
 }
 ```
 
-::tcltest::test control-1.3 {try for-each)} -body {
-    pep {(for-each display '(1 2 3))}
-} -output "123()\n"
 
 ```
 proc ::constcl::force {promise} {
@@ -2842,20 +2844,30 @@ The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 
 ```
-reg list? ::constcl::list?
-
-proc ::constcl::list? {obj} {
+proc ::constcl::listp {obj} {
+    upvar visited visited
+    if {$obj in $visited} {
+        return #f
+    }
+    lappend visited $obj
     if {$obj eq "#NIL"} {
         return #t
     } elseif {[pair? $obj] eq "#t"} {
         if {[cdr $obj] eq "#NIL"} {
             return #t
         } else {
-            return [list? [cdr $obj]]
+            return [listp [cdr $obj]]
         }
     } else {
         return #f
     }
+}
+
+reg list? ::constcl::list?
+
+proc ::constcl::list? {obj} {
+    set visited {}
+    return [listp $obj]
 }
 ```
 
@@ -2879,7 +2891,7 @@ proc ::constcl::list {args} {
 ```
 
 
-`length` reports the length of a Lisp list of items.
+`length` reports the length of a Lisp list.
 
 ```
 proc ::constcl::length-helper {obj} {
@@ -3106,7 +3118,7 @@ oo::class create ::constcl::String {
     superclass ::constcl::NIL
     variable s constant
     constructor {v} {
-        set s [find-string-index $v]
+        set s [::constcl::find-string-index $v]
         set constant 0
     }
     method index {} {set s}
@@ -3118,7 +3130,7 @@ oo::class create ::constcl::String {
             error "string is constant"
         } else {
             set value [::string replace [my value] $k $k $c]
-            set s [find-string-index $value]
+            set s [::constcl::find-string-index $value]
         }
         return [self]
     }
@@ -3127,12 +3139,12 @@ oo::class create ::constcl::String {
             error "string is constant"
         } else {
             set value [::string repeat $c [::string length [my value]]]
-            set s [find-string-index $value]
+            set s [::constcl::find-string-index $value]
         }
         return [self]
     }
     method substring {from to} {::string range [my value] $from $to}
-    method value {} {return [lindex $::StrSto $s]}
+    method value {} {return [lindex $::constcl::StrSto $s]}
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
@@ -3157,17 +3169,17 @@ proc ::constcl::string? {obj} {
 Helper function for finding a string in the string store.
 
 ```
-proc find-string-index {v} {
+proc ::constcl::find-string-index {v} {
     set s -1
-    for {set i 0} {$i < $::S} {incr i} {
-        if {[::string equal [lindex $::StrSto $i] $v]} {
+    for {set i 0} {$i < $::constcl::S} {incr i} {
+        if {[::string equal [lindex $::constcl::StrSto $i] $v]} {
             set s $i
         }
     }
     if {$s == -1} {
-        set s $::S
-        lset ::StrSto $s $v
-        incr ::S
+        set s $::constcl::S
+        lset ::constcl::StrSto $s $v
+        incr ::constcl::S
     }
     set s
 }
@@ -3858,11 +3870,11 @@ Initialize the string store with the running index `S` and the
 storage variable `StrSto`.
 
 ```
-unset -nocomplain S ;# string store number
-set S 0
+unset -nocomplain ::constcl::S ;# string store number
+set ::constcl::S 0
 
-unset -nocomplain StrSto
-set StrSto [list]
+unset -nocomplain ::constcl::StrSto
+set ::constcl::StrSto [list]
 ```
 
 Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
@@ -3909,7 +3921,7 @@ Initialize the definition register with the queen of numbers (or at least
 a double floating point approximation).
 
 ```
-dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 ```
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
@@ -4024,9 +4036,9 @@ as __null-environment__ in Scheme) and __global_env__ (the global environment) a
 Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
 
 ```
-::constcl::Environment create null_env #NIL {}
+::constcl::Environment create ::constcl::null_env #NIL {}
 
-oo::objdefine null_env {
+oo::objdefine ::constcl::null_env {
     method find {sym} {self}
     method get {sym} {error "Unbound variable: $sym"}
     method set {sym val} {error "Unbound variable: $sym"}
@@ -4037,7 +4049,11 @@ Meanwhile, __global_env__ is populated with all the definitions from the definit
 __defreg__. This is where top level evaluation happens.
 
 ```
-::constcl::Environment create global_env [mksymlist [dict keys $defreg]] [dict values $defreg] null_env
+namespace eval ::constcl:: {
+    set keys [dict keys $defreg]
+    set vals [dict values $defreg]
+    Environment create global_env [mksymlist $keys] $vals ::constcl::null_env
+}
 ```
 
 Thereafter, each time a user-defined procedure is called, a new __Environment__ object is
