@@ -388,7 +388,7 @@ proc ::constcl::read-pair-value {char} {
 
 
 `read-plus-minus` reacts to a plus or minus in the input buffer, and either
-returns a #+ or #- symbol, or a number.
+returns a `#+` or `#-` symbol, or a number.
 
 ```
 proc ::constcl::read-plus-minus {} {
@@ -685,41 +685,35 @@ proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
     switch [$op name] {
         and {
-            set p [expand-and $args]
+            set val [expand-and $args]
         }
         case {
-            set p [do-case [car $args] [cdr $args]]
+            set val [do-case [car $args] [cdr $args]]
         }
         cond {
-            set p [do-cond $args]
+            set val [do-cond $args]
         }
         for {
-            set p [expand-for $args $env]
+            set val [expand-for $args $env]
         }
         for/and {
-            set p [expand-for/and $args $env]
+            set val [expand-for/and $args $env]
         }
         for/list {
-            set p [expand-for/list $args $env]
+            set val [expand-for/list $args $env]
         }
         for/or {
-            set p [expand-for/or $args $env]
+            set val [expand-for/or $args $env]
         }
         let {
-            set p [expand-let $args]
+            set val [expand-let $args]
         }
         or {
-            set p [expand-or $args]
-        }
-        default {
-            if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
-                set obj [lindex $args 0]
-                set p [expand-cadr $ads $obj]
-            }
+            set val [expand-or $args]
         }
     }
-    set op [car $p]
-    set args [cdr $p]
+    set op [car $val]
+    set args [cdr $val]
 }
 ```
 

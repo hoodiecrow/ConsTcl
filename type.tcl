@@ -10,33 +10,30 @@ namespace eval ::constcl {
     time {eval [parse "(fact 100)"]} 10
 }
 ```
+MD)
 
-Let's start off with a procedure to resolve calls to standard procedures `caar` - `cddddr`
-(I'm not going to write them all!).
+MD(
+## Initial declarations
+MD)
+
+MD(
+First, I need to create the namespace that will be used for most identifiers:
 MD)
 
 CB
-namespace eval ::constcl {
-    namespace unknown resolve
-
-    proc resolve {cmd args} {
-        if {no} {
-        } else {
-            return -code error "no such command: '$cmd'"
-        }
-    }
-}
+namespace eval ::constcl {}
 CB
 
 MD(
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the definitions register).
+registers built-in procedures in the definitions register). The other ones
+will show up a lot in the test cases.
 MD)
 
 CB
 # utility functions
-proc reg {key args} {
+proc ::reg {key args} {
     if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
@@ -163,5 +160,16 @@ catch { ::constcl::Dot destroy }
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
+
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
 CB
 

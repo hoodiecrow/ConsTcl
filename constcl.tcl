@@ -1,19 +1,12 @@
 
 
-namespace eval ::constcl {
-    namespace unknown resolve
 
-    proc resolve {cmd args} {
-        if {no} {
-        } else {
-            return -code error "no such command: '$cmd'"
-        }
-    }
-}
+
+namespace eval ::constcl {}
 
 
 # utility functions
-proc reg {key args} {
+proc ::reg {key args} {
     if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
@@ -111,6 +104,17 @@ oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
 
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
 
 
 
@@ -174,157 +178,21 @@ proc ::constcl::read-value {} {
     skip-whitespace
     if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
-        {^$} {
-            return
-        }
-        {\.} {
-            advance
-            return [Dot new]
-        }
-        {\(} {
-            advance
-            skip-whitespace
-            set val [read-pair ")"]
-            skip-whitespace
-            if {[first] ne ")"} {
-                error "Missing right parenthesis (first=[first])."
-            }
-            advance
-            return $val
-        }
-        {\[} {
-            advance
-            skip-whitespace
-            set val [read-pair "\]"]
-            skip-whitespace
-            if {[first] ne "\]"} {
-                error "Missing right bracket (first=[first])."
-            }
-            advance
-            return $val
-        }
-        {'} {
-            advance
-            set val [read-value]
-            make-constant $val
-            return [::constcl::list #Q $val]
-        }
-        {\+} - {\-} {
-            if {![::string is digit [second]]} {
-                if {[first] eq "+"} {
-                    advance
-                    return #+
-                } else {
-                    advance
-                    return #-
-                }
-            } else {
-                return [::constcl::read-number]
-            }
-        }
-        {\d} {
-            return [::constcl::read-number]
-        }
-        {#} {
-            advance
-            switch [first] {
-                ( {
-                    advance
-                    set val [::constcl::read-vector]
-                    if {[first] ne ")"} {
-                        error "Missing right parenthesis (first=[first])."
-                    }
-                    advance
-                    return $val
-                }
-                t {
-                    advance
-                    return #t
-                }
-                f { 
-                    advance
-                    return #f
-                }
-                "\\" {
-                    return [::constcl::read-character]
-                }
-                default {
-                    error "Illegal #-literal"
-                }
-            }
-        }
-        {"} {
-            return [::constcl::read-string]
-        }
-        {[[:space:]]} {advance}
-        {[[:graph:]]} {
-            return [::constcl::read-identifier]
-        }
+        {^$}          { return }
+        {\"}          { return [read-string] }
+        {\#}          { return [read-sharp] }
+        {\'}          { return [read-quoted-value] }
+        {\(}          { return [read-pair-value ")"] }
+        {\+} - {\-}   { return [read-plus-minus] }
+        {\.}          { advance ; return [Dot new] }
+        {\[}          { return [read-pair-value "\]"] }
+        {\d}          { return [read-number] }
+        {[[:space:]]} { advance }
+        {[[:graph:]]} { return [read-identifier] }
         default {
             error "unexpected char [first]"
         }
     }
-}
-
-
-proc ::constcl::make-constant {obj} {
-    if {[pair? $obj] eq "#t"} {
-        $obj mkconstant
-        make-constant [car $obj]
-        make-constant [cdr $obj]
-    } elseif {[null? $obj] eq "#t"} {
-        return #NIL
-    } else {
-        $obj mkconstant
-    }
-}
-
-
-
-proc ::constcl::read-number {} {
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
-        ::append num [first]
-        advance
-    }
-    if {[::string is double $num]} {
-        return [MkNumber $num]
-    } else {
-        error "Invalid numeric constant $num"
-    }
-}
-
-
-
-proc ::constcl::character-check {name} {
-    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
-}
-
-
-proc ::constcl::read-character {} {
-    set name "#"
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
-        ::append name [first]
-        advance
-    }
-    if {[::constcl::character-check $name]} {
-        return [MkChar $name]
-    } else {
-        error "Invalid character constant $name"
-    }
-}
-
-
-
-proc ::constcl::read-vector {} {
-    set res {}
-    skip-whitespace
-    while {$::inputbuffer ne {} && [first] ne ")"} {
-        lappend res [read]
-        skip-whitespace
-    }
-    set vec [MkVector $res]
-    $vec mkconstant
-    return $vec
 }
 
 
@@ -349,15 +217,38 @@ proc ::constcl::read-string {} {
 
 
 
-proc ::constcl::read-identifier {} {
-    ::append name [first]
+proc ::constcl::read-sharp {} {
     advance
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
-        ::append name [first]
-        advance
+    switch [first] {
+        (    { return [read-vector] }
+        t    { advance ; return #t }
+        f    { advance ; return #f }
+        "\\" { return [read-character] }
+        default {
+            error "Illegal #-literal"
+        }
     }
-    # idcheck throws error if invalid identifier
-    return [MkSymbol [idcheck $name]]
+}
+
+
+proc ::constcl::make-constant {obj} {
+    if {[pair? $obj] eq "#t"} {
+        $obj mkconstant
+        make-constant [car $obj]
+        make-constant [cdr $obj]
+    } elseif {[null? $obj] eq "#t"} {
+        return #NIL
+    } else {
+        $obj mkconstant
+    }
+}
+
+
+proc ::constcl::read-quoted-value {} {
+    advance
+    set val [read]
+    make-constant $val
+    return [::constcl::list #Q $val]
 }
 
 
@@ -371,16 +262,6 @@ proc ::constcl::find-char {c} {
 }
 
 
-
-proc ::constcl::dot? {obj} {
-    if {[info object isa typeof $obj Dot]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
-        return #t
-    } else {
-        return #f
-    }
-}
 
 proc ::constcl::read-pair {c} {
     skip-whitespace
@@ -408,43 +289,102 @@ proc ::constcl::read-pair {c} {
     return $prev
 }
 
-proc ::constcl::__read-pair {c} {
+proc ::constcl::read-pair-value {char} {
+    advance
     skip-whitespace
-    if {[first] eq $c} {
-        return #NIL
-    }
-    set a [read]
+    set val [read-pair $char]
     skip-whitespace
-    if {[first] eq "."} {
-        advance
-        skip-whitespace
-        set d [read]
-        skip-whitespace
-        if {[first] ne $c} {
-            error "extra elements in dotted pair"
+    if {[first] ne $char} {
+        if {$char eq ")"} {
+            error "Missing right parenthesis (first=[first])."
+        } else {
+            error "Missing right bracket (first=[first])."
         }
-        return [cons $a $d]
-    } elseif {[find-char $c]} {
-        skip-whitespace
-        set d #NIL
-        return [cons $a $d]
-    } else {
-        lappend res $a
-        while {![find-char $c]} {
-            #if {[llength $res] > 99} break
-            set p [read]
-            skip-whitespace
-            lappend res $p
-        }
-        set prev #NIL
-        foreach r [lreverse $res] {
-            set prev [cons $r $prev]
-        }
-        return $prev
     }
-
+    advance
+    return $val
 }
 
+
+
+proc ::constcl::read-plus-minus {} {
+    if {![::string is digit [second]]} {
+        if {[first] eq "+"} {
+            advance
+            return #+
+        } else {
+            advance
+            return #-
+        }
+    } else {
+        return [::constcl::read-number]
+    }
+}
+
+
+proc ::constcl::read-number {} {
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+        ::append num [first]
+        advance
+    }
+    if {[::string is double $num]} {
+        return [MkNumber $num]
+    } else {
+        error "Invalid numeric constant $num"
+    }
+}
+
+
+
+proc ::constcl::read-identifier {} {
+    ::append name [first]
+    advance
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+        ::append name [first]
+        advance
+    }
+    # idcheck throws error if invalid identifier
+    return [MkSymbol [idcheck $name]]
+}
+
+
+
+proc ::constcl::character-check {name} {
+    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
+}
+
+
+proc ::constcl::read-character {} {
+    set name "#"
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
+        ::append name [first]
+        advance
+    }
+    if {[::constcl::character-check $name]} {
+        return [MkChar $name]
+    } else {
+        error "Invalid character constant $name"
+    }
+}
+
+
+
+proc ::constcl::read-vector {} {
+    advance
+    skip-whitespace
+    set res {}
+    while {$::inputbuffer ne {} && [first] ne ")"} {
+        lappend res [read]
+        skip-whitespace
+    }
+    set vec [MkVector $res]
+    $vec mkconstant
+    if {[first] ne ")"} {
+        error "Missing right parenthesis (first=[first])."
+    }
+    advance
+    return $vec
+}
 
 
 
@@ -577,41 +517,35 @@ proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
     switch [$op name] {
         and {
-            set p [expand-and $args]
+            set val [expand-and $args]
         }
         case {
-            set p [do-case [car $args] [cdr $args]]
+            set val [do-case [car $args] [cdr $args]]
         }
         cond {
-            set p [do-cond $args]
+            set val [do-cond $args]
         }
         for {
-            set p [expand-for $args $env]
+            set val [expand-for $args $env]
         }
         for/and {
-            set p [expand-for/and $args $env]
+            set val [expand-for/and $args $env]
         }
         for/list {
-            set p [expand-for/list $args $env]
+            set val [expand-for/list $args $env]
         }
         for/or {
-            set p [expand-for/or $args $env]
+            set val [expand-for/or $args $env]
         }
         let {
-            set p [expand-let $args]
+            set val [expand-let $args]
         }
         or {
-            set p [expand-or $args]
-        }
-        default {
-            if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
-                set obj [lindex $args 0]
-                set p [expand-cadr $ads $obj]
-            }
+            set val [expand-or $args]
         }
     }
-    set op [car $p]
-    set args [cdr $p]
+    set op [car $val]
+    set args [cdr $val]
 }
 
 
@@ -2479,7 +2413,7 @@ proc ::constcl::member {obj1 obj2} {
 }
 
 
-reg assq ::constcl::assq
+reg assq
 
 proc ::constcl::assq {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -2498,7 +2432,7 @@ proc ::constcl::assq {obj1 obj2} {
 }
 
 
-reg assv ::constcl::assv
+reg assv
 
 proc ::constcl::assv {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -2516,7 +2450,7 @@ proc ::constcl::assv {obj1 obj2} {
     }
 }
 
-reg assoc ::constcl::assoc
+reg assoc
 
 proc ::constcl::assoc {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -3304,8 +3238,8 @@ oo::objdefine ::constcl::null_env {
 }
 
 
-namespace eval ::constcl:: {
-    set keys [::constcl::list {*}[lmap k [dict keys $defreg] {::constcl::MkSymbol $k}]]
+namespace eval ::constcl {
+    set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
 }

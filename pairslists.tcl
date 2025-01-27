@@ -600,7 +600,7 @@ respectively, for the comparison.
 MD)
 
 CB
-reg assq ::constcl::assq
+reg assq
 
 proc ::constcl::assq {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -621,7 +621,7 @@ CB
 
 
 CB
-reg assv ::constcl::assv
+reg assv
 
 proc ::constcl::assv {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -641,7 +641,7 @@ proc ::constcl::assv {obj1 obj2} {
 CB
 
 CB
-reg assoc ::constcl::assoc
+reg assoc
 
 proc ::constcl::assoc {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
