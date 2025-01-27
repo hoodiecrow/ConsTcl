@@ -4,7 +4,7 @@ A second try at a Lisp interpreter written in Tcl, this time with a real Lisp-li
 
 #### Benchmark
 
-On my cheap computer, the following code takes 0.024 seconds to run.
+On my cheap computer, the following code takes 0.025 seconds to run.
 
 ```
 namespace eval ::constcl {
@@ -1971,7 +1971,7 @@ oo::class create ::constcl::Char {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
+        if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
             error "CHAR expected\n$v"
@@ -3553,6 +3553,12 @@ proc ::constcl::string->symbol {str} {
 
 ### Vectors
 
+Vectors are heterogenous structures whose elements are indexed by integers. They are implemented
+as Tcl lists of Lisp values.
+
+The number of elements that a vector contains (the _length_) is set when the vector is created.
+Elements can be indexed by integers from zero to length minus one.
+
 ```
 oo::class create ::constcl::Vector {
     superclass ::constcl::NIL
@@ -3568,7 +3574,11 @@ oo::class create ::constcl::Vector {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            set value [::lreplace [my value] $i $i $obj]
+            if {$i < 0 || $i >= [my length]} {
+                error "index out of range\n$i"
+            } else {
+                set value [::lreplace [my value] $i $i $obj]
+            }
         }
         return [self]
     }
@@ -3594,9 +3604,7 @@ proc ::constcl::MkVector {v} {
     }
     return [::constcl::Vector new $v]
 }
-```
 
-```
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {obj} {
@@ -3610,6 +3618,8 @@ proc ::constcl::vector? {obj} {
 }
 ```
 
+
+`make-vector` creates a vector with a given length and optionally a fill value.
 
 ```
 reg make-vector ::constcl::make-vector
@@ -3625,6 +3635,8 @@ proc ::constcl::make-vector {args} {
 }
 ```
 
+Given a number of Lisp values, `vector` creates a vector containing them.
+
 ```
 reg vector ::constcl::vector
 
@@ -3634,11 +3646,13 @@ proc ::constcl::vector {args} {
 ```
 
 
+`vector-length` returns the length of a vector.
+
 ```
 reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
-    if {[::constcl::vector? $vec] eq "#t"} {
+    if {[vector? $vec] eq "#t"} {
         return [MkNumber [$vec length]]
     } else {
         error "VECTOR expected\n(vector-length [$vec show])"
@@ -3646,6 +3660,8 @@ proc ::constcl::vector-length {vec} {
 }
 ```
 
+
+`vector-ref` _vector_ _k_ returns the element of _vector_ at index _k_.
 
 ```
 reg vector-ref ::constcl::vector-ref
@@ -3664,6 +3680,8 @@ proc ::constcl::vector-ref {vec k} {
 ```
 
 
+`vector-set!` _vector_ _k_ _obj_, for a non-constant vector, sets the element at
+index _k_ to _obj_.
 
 ```
 reg vector-set! ::constcl::vector-set!
@@ -3682,6 +3700,8 @@ proc ::constcl::vector-set! {vec k obj} {
 ```
 
 
+`vector->list` converts a vector value to a Lisp list.
+
 ```
 reg vector->list ::constcl::vector->list
 
@@ -3691,6 +3711,8 @@ proc ::constcl::vector->list {vec} {
 ```
 
 
+`list->vector` converts a Lisp list value to a vector.
+
 ```
 reg list->vector ::constcl::list->vector
 
@@ -3699,6 +3721,8 @@ proc ::constcl::list->vector {list} {
 }
 ```
 
+
+`vector-fill!` fills a non-constant vector with a given value.
 
 ```
 reg vector-fill! ::constcl::vector-fill!

@@ -1590,7 +1590,7 @@ oo::class create ::constcl::Char {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
+        if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
             error "CHAR expected\n$v"
@@ -2920,7 +2920,11 @@ oo::class create ::constcl::Vector {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            set value [::lreplace [my value] $i $i $obj]
+            if {$i < 0 || $i >= [my length]} {
+                error "index out of range\n$i"
+            } else {
+                set value [::lreplace [my value] $i $i $obj]
+            }
         }
         return [self]
     }
@@ -2960,6 +2964,7 @@ proc ::constcl::vector? {obj} {
 }
 
 
+
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {args} {
@@ -2972,6 +2977,7 @@ proc ::constcl::make-vector {args} {
     MkVector [lrepeat [$k value] $fill]
 }
 
+
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
@@ -2979,15 +2985,17 @@ proc ::constcl::vector {args} {
 }
 
 
+
 reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
-    if {[::constcl::vector? $vec] eq "#t"} {
+    if {[vector? $vec] eq "#t"} {
         return [MkNumber [$vec length]]
     } else {
         error "VECTOR expected\n(vector-length [$vec show])"
     }
 }
+
 
 
 reg vector-ref ::constcl::vector-ref
@@ -3021,6 +3029,7 @@ proc ::constcl::vector-set! {vec k obj} {
 }
 
 
+
 reg vector->list ::constcl::vector->list
 
 proc ::constcl::vector->list {vec} {
@@ -3028,11 +3037,13 @@ proc ::constcl::vector->list {vec} {
 }
 
 
+
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
     vector {*}[splitlist $list]
 }
+
 
 
 reg vector-fill! ::constcl::vector-fill!
