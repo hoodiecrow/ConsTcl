@@ -10,7 +10,7 @@ oo::class create ::constcl::Char {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[regexp {#\\([[:graph:]]|space|newline)} $v]} {
+        if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
             error "CHAR expected\n$v"
