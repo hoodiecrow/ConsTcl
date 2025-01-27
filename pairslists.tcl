@@ -197,6 +197,51 @@ TT(
 
 TT)
 
+foreach ads {
+    aa
+    ad
+    da
+    dd
+    aaa
+    ada
+    daa
+    dda
+    aad
+    add
+    dad
+    ddd
+    aaaa
+    adaa
+    daaa
+    ddaa
+    aada
+    adda
+    dada
+    ddda
+    aaad
+    adad
+    daad
+    ddad
+    aadd
+    addd
+    dadd
+    dddd
+} {
+    reg c${ads}r ::constcl::c${ads}r
+
+    proc ::constcl::c${ads}r {obj} "
+        foreach c \[lreverse \[split $ads {}\]\] {
+            if {\$c eq \"a\"} {
+                set obj \[car \$obj\]
+            } else {
+                set obj \[cdr \$obj\]
+            }
+        }
+        return \$obj
+    "
+
+}
+
 MD(
 `set-car!` sets the contents of the first cell in a pair.
 MD)
@@ -280,7 +325,7 @@ TT(
     pep {(list? '(a . b))}
 } -output "#t\n#t\n#f\n"
 
-::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body {
+::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body { ;# "bug": list is infinite and list? must detect that
     pep {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}

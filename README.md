@@ -21,16 +21,7 @@ namespace eval ::constcl {
     namespace unknown resolve
 
     proc resolve {cmd args} {
-        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
-            set obj [lindex $args 0]
-            foreach c [lreverse [split $ads {}]] {
-                if {$c eq "a"} {
-                    set obj [car $obj]
-                } else {
-                    set obj [cdr $obj]
-                }
-            }
-            return $obj
+        if {no} {
         } else {
             return -code error "no such command: '$cmd'"
         }
@@ -687,9 +678,9 @@ proc ::constcl::make-function {formals body env} {
 }
 ```
 
-`invoke` arranges for a procedure to be called with a Tcl list of Lisp values. It checks
-if `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl
-command.
+`invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
+arranges for a procedure to be called with a each of the values in _vals. It checks if
+`pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -767,6 +758,12 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set p [expand-or $args]
+        }
+        default {
+            if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+                set obj [lindex $args 0]
+                set p [expand-cadr $ads $obj]
+            }
         }
     }
     set op [car $p]
@@ -2417,37 +2414,64 @@ proc ::constcl::apply {proc args} {
 ```
 
 
+`map` iterates over one or more lists, taking an element from each list to pass to
+a procedure as an argument. The Lisp list of the results of the invocations is 
+returned.
+
 ```
 reg map ::constcl::map
 
 proc ::constcl::map {proc args} {
     if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        set res {}
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            lappend res [invoke $proc [list {*}$arguments]]
+        }
+        return [list {*}$res]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
+
+
+`for-each` iterates over one or more lists, taking an element from each list to pass to
+a procedure as an argument. The empty list is returned.
 
 ```
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+    if {[procedure? $proc] eq "#t"} {
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            invoke $proc [list {*}$arguments]
+        }
+        return [list]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
+
+::tcltest::test control-1.3 {try for-each)} -body {
+    pep {(for-each display '(1 2 3))}
+} -output "123()\n"
 
 ```
 proc ::constcl::force {promise} {
@@ -2746,6 +2770,51 @@ proc ::constcl::cdr {obj} {
 }
 ```
 
+
+foreach ads {
+    aa
+    ad
+    da
+    dd
+    aaa
+    ada
+    daa
+    dda
+    aad
+    add
+    dad
+    ddd
+    aaaa
+    adaa
+    daaa
+    ddaa
+    aada
+    adda
+    dada
+    ddda
+    aaad
+    adad
+    daad
+    ddad
+    aadd
+    addd
+    dadd
+    dddd
+} {
+    reg c${ads}r ::constcl::c${ads}r
+
+    proc ::constcl::c${ads}r {obj} "
+        foreach c \[lreverse \[split $ads {}\]\] {
+            if {\$c eq \"a\"} {
+                set obj \[car \$obj\]
+            } else {
+                set obj \[cdr \$obj\]
+            }
+        }
+        return \$obj
+    "
+
+}
 
 `set-car!` sets the contents of the first cell in a pair.
 
@@ -3865,7 +3934,7 @@ proc ::constcl::atom? {obj} {
 
 The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop))
 is a loop that repeatedly _reads_ a Scheme source string from the user through the command
-`input` (breaking the loop if given an empty line) and `::constcl::parse`, _evaluates_ it using
+`::constcl::input` (breaking the loop if given an empty line) and `::constcl::parse`, _evaluates_ it using
 `::constcl::eval`, and _prints_ using `::constcl::write`.
 
 `input` is modelled after the Python 3 function. It displays a prompt and reads a string.

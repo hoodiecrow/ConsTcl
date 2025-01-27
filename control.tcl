@@ -81,37 +81,82 @@ TT(
 
 TT)
 
+MD(
+`map` iterates over one or more lists, taking an element from each list to pass to
+a procedure as an argument. The Lisp list of the results of the invocations is 
+returned.
+MD)
+
 CB
 reg map ::constcl::map
 
 proc ::constcl::map {proc args} {
     if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        set res {}
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            lappend res [invoke $proc [list {*}$arguments]]
+        }
+        return [list {*}$res]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 CB
+
+TT(
+
+::tcltest::test control-1.2 {try map)} -body {
+    pep {(map cadr '((a b) (d e) (g h)))}
+    pep {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
+    pep {(map + '(1 2 3) '(4 5 6))}
+    pep {(let ((count 0))
+  (map (lambda (ignored)
+         (set! count (+ count 1))
+         count)
+       '(a b)))}
+} -output "(b e h)\n(1.0 4.0 27.0 256.0 3125.0)\n(5 7 9)\n(1 2)\n"
+
+TT)
+
+MD(
+`for-each` iterates over one or more lists, taking an element from each list to pass to
+a procedure as an argument. The empty list is returned.
+MD)
 
 CB
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+    if {[procedure? $proc] eq "#t"} {
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            invoke $proc [list {*}$arguments]
+        }
+        return [list]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 CB
+
+::tcltest::test control-1.3 {try for-each)} -body {
+    pep {(for-each display '(1 2 3))}
+} -output "123()\n"
 
 CB
 proc ::constcl::force {promise} {

@@ -2,7 +2,7 @@
 MD(
 #### Benchmark
 
-On my cheap computer, the following code takes 0.024 seconds to run.
+On my cheap computer, the following code takes 0.025 seconds to run.
 
 ```
 namespace eval ::constcl {
@@ -20,16 +20,7 @@ namespace eval ::constcl {
     namespace unknown resolve
 
     proc resolve {cmd args} {
-        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
-            set obj [lindex $args 0]
-            foreach c [lreverse [split $ads {}]] {
-                if {$c eq "a"} {
-                    set obj [car $obj]
-                } else {
-                    set obj [cdr $obj]
-                }
-            }
-            return $obj
+        if {no} {
         } else {
             return -code error "no such command: '$cmd'"
         }

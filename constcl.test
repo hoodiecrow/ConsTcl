@@ -785,6 +785,19 @@ source constcl.tcl
 
 
 
+::tcltest::test control-1.2 {try map)} -body {
+    pep {(map cadr '((a b) (d e) (g h)))}
+    pep {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
+    pep {(map + '(1 2 3) '(4 5 6))}
+    pep {(let ((count 0))
+  (map (lambda (ignored)
+         (set! count (+ count 1))
+         count)
+       '(a b)))}
+} -output "(b e h)\n(1.0 4.0 27.0 256.0 3125.0)\n(5 7 9)\n(1 2)\n"
+
+
+
 ::tcltest::test pairslists-1.0 {playing with lists} -body {
     pep {(define x (list 'a 'b 'c))}
     pep {(define y x)}
@@ -879,7 +892,7 @@ source constcl.tcl
     pep {(list? '(a . b))}
 } -output "#t\n#t\n#f\n"
 
-::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body {
+::tcltest::test pairslists-1.16 {try list?} -constraints knownBug -body { ;# "bug": list is infinite and list? must detect that
     pep {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}
@@ -1144,7 +1157,7 @@ source constcl.tcl
 }
 
 # hangs tkcon
-::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body {
+::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
     pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""
 
@@ -1262,13 +1275,13 @@ source constcl.tcl
     pep "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
-::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { ;# no map
+::tcltest::test cons-5.1 {fib-range} -body {
     pep "(map fib (range 0 10))"
-} -output "(1 1 2 3 5 8 13 21 34 55)"
+} -output "(1 1 2 3 5 8 13 21 34 55)\n"
 
-::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { ;# no map
+::tcltest::test cons-5.2 {fib-range} -body {
     pep "(map fib (range 0 20))"
-} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)"
+} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)\n"
 
 ::tcltest::test cons-6.0 {procedure call with a list operator} -body {
     pep "((if #t + *) 2 3)"

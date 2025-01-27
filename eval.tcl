@@ -156,9 +156,9 @@ proc ::constcl::make-function {formals body env} {
 CB
 
 MD(
-`invoke` arranges for a procedure to be called with a Tcl list of Lisp values. It checks
-if `pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl
-command.
+`invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
+arranges for a procedure to be called with a each of the values in _vals. It checks if
+`pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
 MD)
 
 CB
@@ -243,6 +243,12 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set p [expand-or $args]
+        }
+        default {
+            if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+                set obj [lindex $args 0]
+                set p [expand-cadr $ads $obj]
+            }
         }
     }
     set op [car $p]

@@ -4,16 +4,7 @@ namespace eval ::constcl {
     namespace unknown resolve
 
     proc resolve {cmd args} {
-        if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
-            set obj [lindex $args 0]
-            foreach c [lreverse [split $ads {}]] {
-                if {$c eq "a"} {
-                    set obj [car $obj]
-                } else {
-                    set obj [cdr $obj]
-                }
-            }
-            return $obj
+        if {no} {
         } else {
             return -code error "no such command: '$cmd'"
         }
@@ -610,6 +601,12 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set p [expand-or $args]
+        }
+        default {
+            if {[regexp {^c([ad]{2,4})r$} $cmd -> ads]} {
+                set obj [lindex $args 0]
+                set p [expand-cadr $ads $obj]
+            }
         }
     }
     set op [car $p]
@@ -1978,33 +1975,55 @@ proc ::constcl::apply {proc args} {
 }
 
 
+
 reg map ::constcl::map
 
 proc ::constcl::map {proc args} {
     if {[procedure? $proc] eq "#t"} {
-        if {[list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        set res {}
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            lappend res [invoke $proc [list {*}$arguments]]
+        }
+        return [list {*}$res]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
+
+
 
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[::constcl::procedure? $proc] eq "#t"} {
-        if {[::constcl::list? [lindex $args end]] eq "#t"} {
-            $proc call ;# TODO
-        } else {
-            error "LIST expected\n(apply [$proc show] ...)"
+    if {[procedure? $proc] eq "#t"} {
+        set arglists $args
+        for {set i 0} {$i < [llength $arglists]} {incr i} {
+            lset arglists $i [splitlist [lindex $arglists $i]]
         }
+        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+            set arguments {}
+            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+                lappend arguments [lindex $arglists $arg $item]
+            }
+            invoke $proc [list {*}$arguments]
+        }
+        return [list]
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
+
+::tcltest::test control-1.3 {try for-each)} -body {
+    pep {(for-each display '(1 2 3))}
+} -output "123()\n"
 
 proc ::constcl::force {promise} {
     # TODO
@@ -2228,6 +2247,51 @@ proc ::constcl::cdr {obj} {
     $obj cdr
 }
 
+
+foreach ads {
+    aa
+    ad
+    da
+    dd
+    aaa
+    ada
+    daa
+    dda
+    aad
+    add
+    dad
+    ddd
+    aaaa
+    adaa
+    daaa
+    ddaa
+    aada
+    adda
+    dada
+    ddda
+    aaad
+    adad
+    daad
+    ddad
+    aadd
+    addd
+    dadd
+    dddd
+} {
+    reg c${ads}r ::constcl::c${ads}r
+
+    proc ::constcl::c${ads}r {obj} "
+        foreach c \[lreverse \[split $ads {}\]\] {
+            if {\$c eq \"a\"} {
+                set obj \[car \$obj\]
+            } else {
+                set obj \[cdr \$obj\]
+            }
+        }
+        return \$obj
+    "
+
+}
 
 
 reg set-car! ::constcl::set-car!

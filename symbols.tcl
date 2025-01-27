@@ -102,7 +102,7 @@ TT(
 }
 
 # hangs tkcon
-::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body {
+::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
     pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""
 

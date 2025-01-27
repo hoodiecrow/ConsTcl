@@ -142,13 +142,13 @@ TT(
     pep "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
-::tcltest::test cons-5.1 {fib-range} -constraints knownBug -body { ;# no map
+::tcltest::test cons-5.1 {fib-range} -body {
     pep "(map fib (range 0 10))"
-} -output "(1 1 2 3 5 8 13 21 34 55)"
+} -output "(1 1 2 3 5 8 13 21 34 55)\n"
 
-::tcltest::test cons-5.2 {fib-range} -constraints knownBug -body { ;# no map
+::tcltest::test cons-5.2 {fib-range} -body {
     pep "(map fib (range 0 20))"
-} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)"
+} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)\n"
 
 ::tcltest::test cons-6.0 {procedure call with a list operator} -body {
     pep "((if #t + *) 2 3)"
