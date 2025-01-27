@@ -4045,8 +4045,8 @@ Meanwhile, __global_env__ is populated with all the definitions from the definit
 __defreg__. This is where top level evaluation happens.
 
 ```
-namespace eval ::constcl:: {
-    set keys [::constcl::list {*}[lmap k [dict keys $defreg] {::constcl::MkSymbol $k}]]
+namespace eval ::constcl {
+    set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
 }
