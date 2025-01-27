@@ -13,20 +13,10 @@ namespace eval ::constcl {
 }
 ```
 
-Let's start off with a procedure to resolve calls to standard procedures `caar` - `cddddr`
-(I'm not going to write them all!).
+First, I need to create the namespace that will be used for most identifiers:
 
 ```
-namespace eval ::constcl {
-    namespace unknown resolve
-
-    proc resolve {cmd args} {
-        if {no} {
-        } else {
-            return -code error "no such command: '$cmd'"
-        }
-    }
-}
+namespace eval ::constcl {}
 ```
 
 Next, some procedures that make my life as developer somewhat easier, but
@@ -35,7 +25,7 @@ registers built-in procedures in the definitions register).
 
 ```
 # utility functions
-proc reg {key args} {
+proc ::reg {key args} {
     if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
@@ -3043,7 +3033,7 @@ item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`,
 respectively, for the comparison.
 
 ```
-reg assq ::constcl::assq
+reg assq
 
 proc ::constcl::assq {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -3064,7 +3054,7 @@ proc ::constcl::assq {obj1 obj2} {
 
 
 ```
-reg assv ::constcl::assv
+reg assv
 
 proc ::constcl::assv {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
@@ -3084,7 +3074,7 @@ proc ::constcl::assv {obj1 obj2} {
 ```
 
 ```
-reg assoc ::constcl::assoc
+reg assoc
 
 proc ::constcl::assoc {obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
