@@ -35,13 +35,13 @@ registers built-in procedures in the definitions register).
 
 ```
 # utility functions
-proc reg {sym args} {
+proc reg {key args} {
     if {[llength $args] == 0} {
-        set impl ::constcl::$sym
+        set val ::constcl::$key
     } else {
-        set impl [lindex $args 0]
+        set val [lindex $args 0]
     }
-    dict set ::constcl::defreg $sym $impl
+    dict set ::constcl::defreg $key $val
 }
 
 proc ::pep {str} {
@@ -59,10 +59,6 @@ proc ::pxp {str} {
     ::constcl::expand-macro op args ::constcl::global_env
     set val [::constcl::cons $op $args]
     ::constcl::write $val
-}
-
-proc ::constcl::mksymlist {tcllist} {
-    return [::constcl::list {*}[lmap s $tcllist {::constcl::MkSymbol $s}]]
 }
 ```
 
@@ -4050,9 +4046,9 @@ __defreg__. This is where top level evaluation happens.
 
 ```
 namespace eval ::constcl:: {
-    set keys [dict keys $defreg]
+    set keys [::constcl::list {*}[lmap k [dict keys $defreg] {::constcl::MkSymbol $k}]]
     set vals [dict values $defreg]
-    Environment create global_env [mksymlist $keys] $vals ::constcl::null_env
+    Environment create global_env $keys $vals ::constcl::null_env
 }
 ```
 

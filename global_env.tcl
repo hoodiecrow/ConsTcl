@@ -23,9 +23,9 @@ MD)
 
 CB
 namespace eval ::constcl:: {
-    set keys [dict keys $defreg]
+    set keys [::constcl::list {*}[lmap k [dict keys $defreg] {::constcl::MkSymbol $k}]]
     set vals [dict values $defreg]
-    Environment create global_env [mksymlist $keys] $vals ::constcl::null_env
+    Environment create global_env $keys $vals ::constcl::null_env
 }
 CB
 
