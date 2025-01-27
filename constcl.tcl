@@ -663,6 +663,9 @@ proc ::constcl::do-cond {clauses} {
     } elseif {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
         set body [cdar $clauses]
+        if {[symbol? [car $body]] eq "#t" && [$body name] eq "=>"} {
+            set body [cddar $clauses]
+        }
         if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
             set pred #t
         }
@@ -3001,8 +3004,8 @@ proc ::constcl::vector-length {vec} {
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    if {[::constcl::vector? $vec] eq "#t"} {
-        if {[::constcl::number? $k] eq "#t"} {
+    if {[vector? $vec] eq "#t"} {
+        if {[number? $k] eq "#t"} {
             return [$vec ref [$k value]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
@@ -3017,8 +3020,8 @@ proc ::constcl::vector-ref {vec k} {
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k obj} {
-    if {[::constcl::vector? $vec] eq "#t"} {
-        if {[::constcl::number? $k] eq "#t"} {
+    if {[vector? $vec] eq "#t"} {
+        if {[number? $k] eq "#t"} {
             return [$vec set! [$k value] $obj]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
@@ -3049,7 +3052,7 @@ proc ::constcl::list->vector {list} {
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    if {[::constcl::vector? $vec] eq "#t"} {
+    if {[vector? $vec] eq "#t"} {
         $vec fill! $fill
     } else {
         error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"

@@ -5,7 +5,7 @@ MD(
 Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
 first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises
 errors if they fail. A valid symbol is still an invalid identifier if has the name of
-some keyword, which idcheck also checks, for a set of keywords given in the standard.
+some keyword, which varcheck checks, for a set of keywords given in the standard.
 MD)
 
 CB

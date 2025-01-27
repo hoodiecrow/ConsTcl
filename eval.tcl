@@ -314,6 +314,9 @@ proc ::constcl::do-cond {clauses} {
     } elseif {[eq? [length $clauses] #1] eq "#t"} {
         set pred [caar $clauses]
         set body [cdar $clauses]
+        if {[symbol? [car $body]] eq "#t" && [$body name] eq "=>"} {
+            set body [cddar $clauses]
+        }
         if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
             set pred #t
         }
@@ -526,7 +529,8 @@ TT(
 
 ::tcltest::test eval-2.1 {run cond macro} -body {
     pep "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-} -output "3\n"
+    pep "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
+} -output "3\n3\n"
 
 ::tcltest::test eval-2.2 {expand cond macro} -body {
     pxp "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
