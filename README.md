@@ -13,6 +13,8 @@ namespace eval ::constcl {
 }
 ```
 
+## Initial declarations
+
 First, I need to create the namespace that will be used for most identifiers:
 
 ```
@@ -21,7 +23,8 @@ namespace eval ::constcl {}
 
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the definitions register).
+registers built-in procedures in the definitions register). The other ones
+will show up a lot in the test cases.
 
 ```
 # utility functions
@@ -142,6 +145,17 @@ catch { ::constcl::Dot destroy }
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
 }
+
+proc ::constcl::dot? {obj} {
+    if {[info object isa typeof $obj Dot]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
 ```
 
 
@@ -223,94 +237,61 @@ proc ::constcl::read-value {} {
     skip-whitespace
     if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
-        {^$} {
-            return
-        }
-        {\.} {
-            advance
-            return [Dot new]
-        }
-        {\(} {
-            advance
-            skip-whitespace
-            set val [read-pair ")"]
-            skip-whitespace
-            if {[first] ne ")"} {
-                error "Missing right parenthesis (first=[first])."
-            }
-            advance
-            return $val
-        }
-        {\[} {
-            advance
-            skip-whitespace
-            set val [read-pair "\]"]
-            skip-whitespace
-            if {[first] ne "\]"} {
-                error "Missing right bracket (first=[first])."
-            }
-            advance
-            return $val
-        }
-        {'} {
-            advance
-            set val [read-value]
-            make-constant $val
-            return [::constcl::list #Q $val]
-        }
-        {\+} - {\-} {
-            if {![::string is digit [second]]} {
-                if {[first] eq "+"} {
-                    advance
-                    return #+
-                } else {
-                    advance
-                    return #-
-                }
-            } else {
-                return [::constcl::read-number]
-            }
-        }
-        {\d} {
-            return [::constcl::read-number]
-        }
-        {#} {
-            advance
-            switch [first] {
-                ( {
-                    advance
-                    set val [::constcl::read-vector]
-                    if {[first] ne ")"} {
-                        error "Missing right parenthesis (first=[first])."
-                    }
-                    advance
-                    return $val
-                }
-                t {
-                    advance
-                    return #t
-                }
-                f { 
-                    advance
-                    return #f
-                }
-                "\\" {
-                    return [::constcl::read-character]
-                }
-                default {
-                    error "Illegal #-literal"
-                }
-            }
-        }
-        {"} {
-            return [::constcl::read-string]
-        }
-        {[[:space:]]} {advance}
-        {[[:graph:]]} {
-            return [::constcl::read-identifier]
-        }
+        {^$}          { return }
+        {\"}          { return [read-string] }
+        {\#}          { return [read-sharp] }
+        {\'}          { return [read-quoted-value] }
+        {\(}          { return [read-pair-value ")"] }
+        {\+} - {\-}   { return [read-plus-minus] }
+        {\.}          { advance ; return [Dot new] }
+        {\[}          { return [read-pair-value "\]"] }
+        {\d}          { return [read-number] }
+        {[[:space:]]} { advance }
+        {[[:graph:]]} { return [read-identifier] }
         default {
             error "unexpected char [first]"
+        }
+    }
+}
+```
+
+`read-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+
+```
+proc ::constcl::read-string {} {
+    set str {}
+    advance
+    while {[first] ne {"}} {
+        set c [first]
+        if {$c eq "\\"} {
+            advance
+            ::append str [first]
+        } else {
+            ::append str $c
+        }
+        advance
+    }
+    advance
+    set str [MkString $str]
+    $str mkconstant
+    return $str
+}
+```
+
+
+`read-sharp` reads the various kinds of values whose literal begins with
+a sharp sign (#).
+
+```
+proc ::constcl::read-sharp {} {
+    advance
+    switch [first] {
+        (    { return [read-vector] }
+        t    { advance ; return #t }
+        f    { advance ; return #f }
+        "\\" { return [read-character] }
+        default {
+            error "Illegal #-literal"
         }
     }
 }
@@ -333,6 +314,97 @@ proc ::constcl::make-constant {obj} {
 }
 ```
 
+`read-quoted-value` reads a value and returns it wrapped in `quote`.
+
+```
+proc ::constcl::read-quoted-value {} {
+    advance
+    set val [read]
+    make-constant $val
+    return [::constcl::list #Q $val]
+}
+```
+
+
+The `find-char` helper procedure reads past whitespace to find a given character.
+Returns Tcl truth if it is found.
+
+```
+proc ::constcl::find-char {c} {
+    set cp 0
+    while {[::string is space [::string index $::inputbuffer $cp]]} {
+        incr cp
+    }
+    return [expr {[::string index $::inputbuffer $cp] eq $c}]
+}
+```
+
+The `read-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
+
+```
+
+proc ::constcl::read-pair {c} {
+    skip-whitespace
+    if {[find-char $c]} {
+        return #NIL
+    }
+    set a [read]
+    skip-whitespace
+    set res $a
+    set prev #NIL
+    while {![find-char $c]} {
+        set x [read]
+        skip-whitespace
+        if {[dot? $x] eq "#t"} {
+            set prev [read]
+            skip-whitespace
+        } else {
+            lappend res $x
+        }
+        if {[llength $res] > 99} break
+    }
+    foreach r [lreverse $res] {
+        set prev [cons $r $prev]
+    }
+    return $prev
+}
+
+proc ::constcl::read-pair-value {char} {
+    advance
+    skip-whitespace
+    set val [read-pair $char]
+    skip-whitespace
+    if {[first] ne $char} {
+        if {$char eq ")"} {
+            error "Missing right parenthesis (first=[first])."
+        } else {
+            error "Missing right bracket (first=[first])."
+        }
+    }
+    advance
+    return $val
+}
+```
+
+
+`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+returns a #+ or #- symbol, or a number.
+
+```
+proc ::constcl::read-plus-minus {} {
+    if {![::string is digit [second]]} {
+        if {[first] eq "+"} {
+            advance
+            return #+
+        } else {
+            advance
+            return #-
+        }
+    } else {
+        return [::constcl::read-number]
+    }
+}
+```
 
 `read-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
@@ -347,6 +419,22 @@ proc ::constcl::read-number {} {
     } else {
         error "Invalid numeric constant $num"
     }
+}
+```
+
+
+`read-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+
+```
+proc ::constcl::read-identifier {} {
+    ::append name [first]
+    advance
+    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+        ::append name [first]
+        advance
+    }
+    # idcheck throws error if invalid identifier
+    return [MkSymbol [idcheck $name]]
 }
 ```
 
@@ -382,149 +470,22 @@ proc ::constcl::read-character {} {
 
 ```
 proc ::constcl::read-vector {} {
-    set res {}
+    advance
     skip-whitespace
+    set res {}
     while {$::inputbuffer ne {} && [first] ne ")"} {
         lappend res [read]
         skip-whitespace
     }
     set vec [MkVector $res]
     $vec mkconstant
+    if {[first] ne ")"} {
+        error "Missing right parenthesis (first=[first])."
+    }
+    advance
     return $vec
 }
 ```
-
-`read-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
-
-```
-proc ::constcl::read-string {} {
-    set str {}
-    advance
-    while {[first] ne {"}} {
-        set c [first]
-        if {$c eq "\\"} {
-            advance
-            ::append str [first]
-        } else {
-            ::append str $c
-        }
-        advance
-    }
-    advance
-    set str [MkString $str]
-    $str mkconstant
-    return $str
-}
-```
-
-
-`read-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
-
-```
-proc ::constcl::read-identifier {} {
-    ::append name [first]
-    advance
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
-        ::append name [first]
-        advance
-    }
-    # idcheck throws error if invalid identifier
-    return [MkSymbol [idcheck $name]]
-}
-```
-
-
-The `find-char` helper procedure reads past whitespace to find a given character.
-Returns Tcl truth if it is found.
-
-```
-proc ::constcl::find-char {c} {
-    set cp 0
-    while {[::string is space [::string index $::inputbuffer $cp]]} {
-        incr cp
-    }
-    return [expr {[::string index $::inputbuffer $cp] eq $c}]
-}
-```
-
-The `read-pair` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
-
-```
-
-proc ::constcl::dot? {obj} {
-    if {[info object isa typeof $obj Dot]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
-        return #t
-    } else {
-        return #f
-    }
-}
-
-proc ::constcl::read-pair {c} {
-    skip-whitespace
-    if {[find-char $c]} {
-        return #NIL
-    }
-    set a [read]
-    skip-whitespace
-    set res $a
-    set prev #NIL
-    while {![find-char $c]} {
-        set x [read]
-        skip-whitespace
-        if {[dot? $x] eq "#t"} {
-            set prev [read]
-            skip-whitespace
-        } else {
-            lappend res $x
-        }
-        if {[llength $res] > 99} break
-    }
-    foreach r [lreverse $res] {
-        set prev [cons $r $prev]
-    }
-    return $prev
-}
-
-proc ::constcl::__read-pair {c} {
-    skip-whitespace
-    if {[first] eq $c} {
-        return #NIL
-    }
-    set a [read]
-    skip-whitespace
-    if {[first] eq "."} {
-        advance
-        skip-whitespace
-        set d [read]
-        skip-whitespace
-        if {[first] ne $c} {
-            error "extra elements in dotted pair"
-        }
-        return [cons $a $d]
-    } elseif {[find-char $c]} {
-        skip-whitespace
-        set d #NIL
-        return [cons $a $d]
-    } else {
-        lappend res $a
-        while {![find-char $c]} {
-            #if {[llength $res] > 99} break
-            set p [read]
-            skip-whitespace
-            lappend res $p
-        }
-        set prev #NIL
-        foreach r [lreverse $res] {
-            set prev [cons $r $prev]
-        }
-        return $prev
-    }
-
-}
-```
-
 
 
 ## eval
