@@ -1,7 +1,7 @@
 
 
 MD(
-### The REPL
+## The REPL
 
 The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop))
 is a loop that repeatedly _reads_ a Scheme source string from the user through the command

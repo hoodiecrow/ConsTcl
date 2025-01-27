@@ -1,6 +1,6 @@
 
 MD(
-### Identifier validation
+## Identifier validation
 
 Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
 first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises

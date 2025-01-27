@@ -3102,6 +3102,7 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 
+
 interp alias {} #NIL {} [::constcl::NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
@@ -3137,7 +3138,9 @@ interp alias {} #- {} [::constcl::MkSymbol -]
 interp alias {} #NONE {} [::constcl::None new]
 
 
+
 dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
+
 
 reg atom? ::constcl::atom?
 

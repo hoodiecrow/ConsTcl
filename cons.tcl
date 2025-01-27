@@ -1,3 +1,9 @@
+MD(
+## Initialization
+
+Initialize the string store with the running index `S` and the
+storage variable `StrSto`.
+MD)
 
 CB
 unset -nocomplain S ;# string store number
@@ -6,6 +12,11 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 CB
+
+MD(
+Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
+and give them aliases for use in source text.
+MD)
 
 CB
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -44,9 +55,18 @@ interp alias {} #NONE {} [::constcl::None new]
 
 CB
 
+MD(
+Initialize the definition register with the queen of numbers (or at least
+a double floating point approximation).
+MD)
+
 CB
 dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
 CB
+
+MD(
+`atom?` recognizes an atom by checking for membership in one of the atomic types.
+MD)
 
 CB
 reg atom? ::constcl::atom?

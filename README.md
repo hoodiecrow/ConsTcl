@@ -3741,7 +3741,7 @@ proc ::constcl::vector-fill! {vec fill} {
 
 
 
-### Identifier validation
+## Identifier validation
 
 Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
 first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises
@@ -3783,6 +3783,10 @@ proc ::constcl::varcheck {sym} {
 }
 ```
 
+## Initialization
+
+Initialize the string store with the running index `S` and the
+storage variable `StrSto`.
 
 ```
 unset -nocomplain S ;# string store number
@@ -3791,6 +3795,9 @@ set S 0
 unset -nocomplain StrSto
 set StrSto [list]
 ```
+
+Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
+and give them aliases for use in source text.
 
 ```
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -3829,9 +3836,14 @@ interp alias {} #NONE {} [::constcl::None new]
 
 ```
 
+Initialize the definition register with the queen of numbers (or at least
+a double floating point approximation).
+
 ```
 dict set ::defreg pi [::constcl::MkNumber 3.1415926535897931]
 ```
+
+`atom?` recognizes an atom by checking for membership in one of the atomic types.
 
 ```
 reg atom? ::constcl::atom?
@@ -3849,7 +3861,7 @@ proc ::constcl::atom? {obj} {
 
 
 
-### The REPL
+## The REPL
 
 The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop))
 is a loop that repeatedly _reads_ a Scheme source string from the user through the command
