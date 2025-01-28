@@ -161,6 +161,9 @@ proc ::constcl::dot? {obj} {
 
 ## read
 
+`read` represents the interpreter's input facility. Currently input is faked with input
+strings.
+
 A quick-and-dirty input simulator, using an input buffer variable to hold characters
 to be read. The `advance` command consumes one character from the buffer. The `first`
 command peeks at the first (next) character in the buffer; `second` peeks at the 
@@ -1109,14 +1112,11 @@ oo::class create ::constcl::Number {
             error "NUMBER expected\n$v"
         }
     }
-    method positive {} {expr {$value > 0}}
-    method negative {} {expr {$value < 0}}
-    method even {} {expr {$value % 2 == 0}}
-    method odd {} {expr {$value % 2 == 1}}
-    method incr {val} {incr value $val}
-    method mult {val} {set value [expr {$value * $val}]}
-    method decr {val} {incr value -$val}
-    method div {val} {set value [expr {$value / $val}]}
+    method zero {} {if {$value == 0} then {return #t} else {return #f}}
+    method positive {} {if {$value > 0} then {return #t} else {return #f}}
+    method negative {} {if {$value < 0} then {return #t} else {return #f}}
+    method even {} {if {$value % 2 == 0} then {return #t} else {return #f}}
+    method odd {} {if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
     method mkconstant {} {}
@@ -1249,11 +1249,7 @@ reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
     if {[number? $obj] eq "#t"} {
-        if {[$obj numval] == 0} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj zero]
     } else {
         error "NUMBER expected\n(zero? [$obj show])"
     }
@@ -1269,11 +1265,7 @@ reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj positive]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj positive]
     } else {
         error "NUMBER expected\n(positive? [$obj show])"
     }
@@ -1286,11 +1278,7 @@ reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj negative]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj negative]
     } else {
         error "NUMBER expected\n(negative? [$obj show])"
     }
@@ -1303,11 +1291,7 @@ reg even? ::constcl::even?
 
 proc ::constcl::even? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj even]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj even]
     } else {
         error "NUMBER expected\n(even? [$obj show])"
     }
@@ -1320,11 +1304,7 @@ reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj odd]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj odd]
     } else {
         error "NUMBER expected\n(odd? [$obj show])"
     }
@@ -1438,7 +1418,7 @@ reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             return [MkNumber [expr {[$x numval] * -1}]]
         } else {
             return $x
@@ -1526,7 +1506,7 @@ reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
             MkNumber [::tcl::mathfunc::floor [$x numval]]
