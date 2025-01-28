@@ -631,8 +631,8 @@ proc ::constcl::make-function {formals body env} {
 ```
 
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
-arranges for a procedure to be called with each of the values in _vals. It checks if
-`pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
+arranges for a procedure to be called with each of the values in _vals_. It checks if
+_pr_really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
 ```
 proc ::constcl::invoke {pr vals} {
