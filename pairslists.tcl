@@ -15,7 +15,7 @@ oo::class create ::constcl::Pair {
         set cdr $d
         set constant 0
     }
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
@@ -197,6 +197,7 @@ TT(
 
 TT)
 
+CB
 foreach ads {
     aa
     ad
@@ -241,6 +242,7 @@ foreach ads {
     "
 
 }
+CB
 
 MD(
 `set-car!` sets the contents of the first cell in a pair.

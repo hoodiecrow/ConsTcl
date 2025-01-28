@@ -37,9 +37,7 @@ proc ::constcl::MkSymbol {n} {
     }
     return [::constcl::Symbol new $n]
 }
-CB
 
-CB
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {obj} {

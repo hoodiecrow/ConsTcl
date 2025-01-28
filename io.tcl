@@ -78,14 +78,9 @@ proc ::constcl::close-output-port {port} {
 }
 CB
 
-CB
-if no {
-    # defined in read.tcl
-proc ::constcl::read {args} {
-    # TODO
-}
-}
-CB
+MD(
+`read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
+MD)
 
 CB
 proc ::constcl::read-char {args} {

@@ -9,7 +9,7 @@ MD)
 MD(
 A quick-and-dirty input simulator, using an input buffer object to hold characters to be
 read. The `fill` method fills the buffer and sets the first character in the peek position.
-The `advance` command consumes one character from the buffer. `first` peeks at the next
+The `advance` method consumes one character from the buffer. `first` peeks at the next
 character to be read. `skip-ws` advances past whitespace and comments.  `unget` backs up
 one position and sets a given character in the peek position. The `find` method looks past
 whitespace and comments to find a given character. It returns Tcl truth if it is found.
@@ -181,8 +181,8 @@ proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
         (    { return [parse-vector] }
-        t    { ib advance ; return #t }
-        f    { ib advance ; return #f }
+        t    { ib advance ; ib skip-ws ; return #t }
+        f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"

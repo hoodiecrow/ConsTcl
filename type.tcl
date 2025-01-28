@@ -111,7 +111,7 @@ catch { ::constcl::NIL destroy }
 
 oo::class create ::constcl::NIL {
     constructor {} {}
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method car {} {error "PAIR expected"}
     method cdr {} {error "PAIR expected"}
     method set-car! {v} {error "PAIR expected"}

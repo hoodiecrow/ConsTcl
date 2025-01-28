@@ -71,7 +71,7 @@ catch { ::constcl::NIL destroy }
 
 oo::class create ::constcl::NIL {
     constructor {} {}
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method car {} {error "PAIR expected"}
     method cdr {} {error "PAIR expected"}
     method set-car! {v} {error "PAIR expected"}
@@ -242,8 +242,8 @@ proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
         (    { return [parse-vector] }
-        t    { ib advance ; return #t }
-        f    { ib advance ; return #f }
+        t    { ib advance ; ib skip-ws ; return #t }
+        f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
@@ -1904,9 +1904,9 @@ proc ::constcl::procedure? {obj} {
 
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc args} {
+proc ::constcl::apply {proc vals} {
     if {[procedure? $proc] eq "#t"} {
-        invoke $proc $args 
+        invoke $proc $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -2031,12 +2031,6 @@ proc ::constcl::close-output-port {port} {
     # TODO
 }
 
-if no {
-    # defined in read.tcl
-proc ::constcl::read {args} {
-    # TODO
-}
-}
 
 proc ::constcl::read-char {args} {
     # TODO
@@ -2090,7 +2084,7 @@ oo::class create ::constcl::Pair {
         set cdr $d
         set constant 0
     }
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}

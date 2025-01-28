@@ -53,15 +53,15 @@ TT(
 TT)
 
 MD(
-`apply` applies a procedure to a Tcl list of Lisp arguments.
+`apply` applies a procedure to a Lisp list of Lisp arguments.
 MD)
 
 CB
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc args} {
+proc ::constcl::apply {proc vals} {
     if {[procedure? $proc] eq "#t"} {
-        invoke $proc $args 
+        invoke $proc $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }

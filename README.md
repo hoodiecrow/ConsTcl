@@ -102,7 +102,7 @@ catch { ::constcl::NIL destroy }
 
 oo::class create ::constcl::NIL {
     constructor {} {}
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method car {} {error "PAIR expected"}
     method cdr {} {error "PAIR expected"}
     method set-car! {v} {error "PAIR expected"}
@@ -166,7 +166,7 @@ strings.
 
 A quick-and-dirty input simulator, using an input buffer object to hold characters to be
 read. The `fill` method fills the buffer and sets the first character in the peek position.
-The `advance` command consumes one character from the buffer. `first` peeks at the next
+The `advance` method consumes one character from the buffer. `first` peeks at the next
 character to be read. `skip-ws` advances past whitespace and comments.  `unget` backs up
 one position and sets a given character in the peek position. The `find` method looks past
 whitespace and comments to find a given character. It returns Tcl truth if it is found.
@@ -314,8 +314,8 @@ proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
         (    { return [parse-vector] }
-        t    { ib advance ; return #t }
-        f    { ib advance ; return #f }
+        t    { ib advance ; ib skip-ws ; return #t }
+        f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
@@ -2349,14 +2349,14 @@ proc ::constcl::procedure? {obj} {
 ```
 
 
-`apply` applies a procedure to a Tcl list of Lisp arguments.
+`apply` applies a procedure to a Lisp list of Lisp arguments.
 
 ```
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc args} {
+proc ::constcl::apply {proc vals} {
     if {[procedure? $proc] eq "#t"} {
-        invoke $proc $args 
+        invoke $proc $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -2528,14 +2528,7 @@ proc ::constcl::close-output-port {port} {
 }
 ```
 
-```
-if no {
-    # defined in read.tcl
-proc ::constcl::read {args} {
-    # TODO
-}
-}
-```
+`read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
 
 ```
 proc ::constcl::read-char {args} {
@@ -2612,7 +2605,7 @@ oo::class create ::constcl::Pair {
         set cdr $d
         set constant 0
     }
-    method bvalue {} {return #t}
+    method bvalue {} {return #NIL}
     method name {} {} ;# for eval
     method numval {} {throw "Not a number"}
     method value {} {my show}
@@ -2718,6 +2711,7 @@ proc ::constcl::cdr {obj} {
 ```
 
 
+```
 foreach ads {
     aa
     ad
@@ -2762,6 +2756,7 @@ foreach ads {
     "
 
 }
+```
 
 `set-car!` sets the contents of the first cell in a pair.
 
@@ -3523,9 +3518,7 @@ proc ::constcl::MkSymbol {n} {
     }
     return [::constcl::Symbol new $n]
 }
-```
 
-```
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {obj} {
@@ -3582,8 +3575,8 @@ proc ::constcl::string->symbol {str} {
 
 ### Vectors
 
-Vectors are heterogenous structures whose elements are indexed by integers. They are implemented
-as Tcl lists of Lisp values.
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. 
+They are implemented as Tcl lists of Lisp values.
 
 The number of elements that a vector contains (the _length_) is set when the vector is created.
 Elements can be indexed by integers from zero to length minus one.
