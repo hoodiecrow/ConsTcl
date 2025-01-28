@@ -740,7 +740,7 @@ proc ::constcl::do-and {exps prev} {
 }
 ```
 
-The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses, 
+The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 
 ```
@@ -765,7 +765,7 @@ proc ::constcl::do-case {keyexpr clauses} {
 }
 ```
 
-The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses, 
+The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 
 ```
@@ -843,8 +843,7 @@ proc ::constcl::expand-for {exps env} {
 ```
 
 The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of the clauses.
 
 ```
 proc ::constcl::expand-for/and {exps env} {
@@ -854,8 +853,7 @@ proc ::constcl::expand-for/and {exps env} {
 ```
 
 The `expand-for/list` procedure expands the `for/list` macro. It returns a `list`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause.
 
 ```
 proc ::constcl::expand-for/list {exps env} {
@@ -865,8 +863,7 @@ proc ::constcl::expand-for/list {exps env} {
 ```
 
 The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause.
 
 ```
 proc ::constcl::expand-for/or {exps env} {
