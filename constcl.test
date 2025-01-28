@@ -106,7 +106,7 @@ source constcl.tcl
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    set ::constcl::inputbuffer "+foo"
+    ::constcl::ib fill "+foo"
     set obj [::constcl::parse-identifier]
     $obj name
 } -returnCodes error -result "Identifier expected (+foo)"

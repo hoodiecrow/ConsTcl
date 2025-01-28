@@ -118,81 +118,71 @@ proc ::constcl::dot? {obj} {
 
 
 
-set ::constcl::peekchar __
-set ::constcl::inputbuffer {}
+catch { ib destroy }
 
-proc ::constcl::fill-buffer {str} {
-    variable inputbuffer
-    set inputbuffer $str
-    advance
-}
-
-proc ::constcl::advance {} {
-    variable peekchar
-    variable inputbuffer
-    if {$inputbuffer eq {}} {
-        set peekchar {}
-    } else {
-        set peekchar [::string index $inputbuffer 0]
-        set inputbuffer [::string range $inputbuffer 1 end]
+oo::class create ::constcl::IB {
+    variable peekc buffer
+    constructor {} {
+        set peekc {}
+        set buffer {}
     }
-}
-
-proc ::constcl::first {} {
-    variable peekchar
-    if {$peekchar == "__"} {
-        advance
+    method fill {str} {
+        set buffer $str
+        my advance
     }
-    return $peekchar
-}
-
-proc ::constcl::unget {c} {
-    variable peekchar
-    variable inputbuffer
-    set inputbuffer [first]$inputbuffer
-    set peekchar $c
-}
-
-proc ::constcl::find-char {c} {
-    if {[::string is space [first]]} {
-        for {set cp 0} {$cp < [::string length $::constcl::inputbuffer]} {incr cp} {
-            if {![::string is space [::string index $::constcl::inputbuffer $cp]]} {
-                break
-            }
+    method advance {} {
+        if {$buffer eq {}} {
+            set peekc {}
+        } else {
+            set peekc [::string index $buffer 0]
+            set buffer [::string range $buffer 1 end]
         }
-        return [expr {[::string index $::constcl::inputbuffer $cp] eq $c}]
-    } else {
-        return [expr {[first] eq $c}]
     }
-}
-
-proc ::constcl::skip-whitespace {} {
-    # move the source pointer past whitespace and comments
-    # adapted from Robert Nystrom, 'Crafting Interpreters'
-    while true {
-        set c [first]
-        switch $c {
-            " " - "\r" - "\t" -
-            "\n" {
-                advance
-            }
-            ";" {
-                # a comment goes on until the end of the line
-                while {[first] != "\n" && [first] ne {}} {
-                    advance
+    method first {} {
+        return $peekc
+    }
+    method unget {char} {
+        set buffer $peekc$buffer
+        set peekc $char
+    }
+    method find {char} {
+        if {[::string is space $peekc]} {
+            for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
+                if {![::string is space [::string index $buffer $cp]]} {
+                    break
                 }
             }
-            default {
-                return
+            return [expr {[::string index $buffer $cp] eq $char}]
+        } else {
+            return [expr {$peekc eq $char}]
+        }
+    }
+    method skip-ws {} {
+        while true {
+            set c $peekc
+            switch -regexp $c {
+                {[[:space:]]} {
+                    my advance
+                }
+                {;} {
+                    while {$peekc != "\n" && $peekc ne {}}  {
+                        my advance
+                    }
+                }
+                default {
+                    return
+                }
             }
         }
     }
 }
+
+::constcl::IB create ::constcl::ib
 
 
 proc ::constcl::parse {args} {
     if {[llength $args]} {
-        fill-buffer [lindex $args 0]
+        ib fill [lindex $args 0]
     }
     return [parse-value]
 }
@@ -206,21 +196,21 @@ proc ::constcl::read {args} {
 
 
 proc ::constcl::parse-value {} {
-    skip-whitespace
-    switch -regexp [first] {
+    ib skip-ws
+    switch -regexp [ib first] {
         {^$}          { return }
         {\"}          { return [parse-string] }
         {\#}          { return [parse-sharp] }
         {\'}          { return [parse-quoted-value] }
         {\(}          { return [parse-pair-value ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\.}          { advance ; return [Dot new] }
+        {\.}          { ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-value "\]"] }
         {\d}          { return [parse-number] }
-        {[[:space:]]} { advance }
+        {[[:space:]]} { ib advance }
         {[[:graph:]]} { return [parse-identifier] }
         default {
-            error "unexpected char [first]"
+            error "unexpected char [ib first]"
         }
     }
 }
@@ -228,18 +218,19 @@ proc ::constcl::parse-value {} {
 
 proc ::constcl::parse-string {} {
     set str {}
-    advance
-    while {[first] ne {"}} {
-        set c [first]
+    ib advance
+    while {[ib first] ne {"}} {
+        set c [ib first]
         if {$c eq "\\"} {
-            advance
-            ::append str [first]
+            ib advance
+            ::append str [ib first]
         } else {
             ::append str $c
         }
-        advance
+        ib advance
     }
-    advance
+    ib advance
+    ib skip-ws
     set obj [MkString $str]
     $obj mkconstant
     return $obj
@@ -248,11 +239,11 @@ proc ::constcl::parse-string {} {
 
 
 proc ::constcl::parse-sharp {} {
-    advance
-    switch [first] {
+    ib advance
+    switch [ib first] {
         (    { return [parse-vector] }
-        t    { advance ; return #t }
-        f    { advance ; return #f }
+        t    { ib advance ; return #t }
+        f    { ib advance ; return #f }
         "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
@@ -275,8 +266,9 @@ proc ::constcl::make-constant {obj} {
 
 
 proc ::constcl::parse-quoted-value {} {
-    advance
+    ib advance
     set val [parse-value]
+    ib skip-ws
     make-constant $val
     return [list #Q $val]
 }
@@ -285,20 +277,20 @@ proc ::constcl::parse-quoted-value {} {
 
 
 proc ::constcl::parse-pair {c} {
-    skip-whitespace
-    if {[find-char $c]} {
+    ib skip-ws
+    if {[ib find $c]} {
         return #NIL
     }
     set a [parse-value]
-    skip-whitespace
+    ib skip-ws
     set res $a
     set prev #NIL
-    while {![find-char $c]} {
+    while {![ib find $c]} {
         set x [parse-value]
-        skip-whitespace
+        ib skip-ws
         if {[dot? $x] eq "#t"} {
             set prev [parse-value]
-            skip-whitespace
+            ib skip-ws
         } else {
             lappend res $x
         }
@@ -311,46 +303,48 @@ proc ::constcl::parse-pair {c} {
 }
 
 proc ::constcl::parse-pair-value {char} {
-    advance
-    skip-whitespace
+    ib advance
+    ib skip-ws
     set val [parse-pair $char]
-    skip-whitespace
-    if {[first] ne $char} {
+    ib skip-ws
+    if {[ib first] ne $char} {
         if {$char eq ")"} {
-            error "Missing right parenthesis (first=[first])."
+            error "Missing right parenthesis (first=[ib first])."
         } else {
-            error "Missing right bracket (first=[first])."
+            error "Missing right bracket (first=[ib first])."
         }
     }
-    advance
+    ib advance
+    ib skip-ws
     return $val
 }
 
 
 
 proc ::constcl::parse-plus-minus {} {
-    set c [first]
-    advance
-    if {[::string is digit [first]]} {
-        return [::constcl::parse-number $c]
+    set c [ib first]
+    ib advance
+    if {[::string is digit [ib first]]} {
+        ib unget $c
+        return [::constcl::parse-number]
     } else {
         if {$c eq "+"} {
+            ib skip-ws
             return [MkSymbol +]
         } else {
+            ib skip-ws
             return [MkSymbol -]
         }
     }
 }
 
 
-proc ::constcl::parse-number {args} {
-    if {[llength $args] > 0} {
-        unget [lindex $args 0]
+proc ::constcl::parse-number {} {
+    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) \]}} {
+        ::append num [ib first]
+        ib advance
     }
-    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
-        ::append num [first]
-        advance
-    }
+    ib skip-ws
     if {[::string is double $num]} {
         return [MkNumber $num]
     } else {
@@ -361,12 +355,13 @@ proc ::constcl::parse-number {args} {
 
 
 proc ::constcl::parse-identifier {} {
-    ::append name [first]
-    advance
-    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
-        ::append name [first]
-        advance
+    ::append name [ib first]
+    ib advance
+    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) \]}} {
+        ::append name [ib first]
+        ib advance
     }
+    ib skip-ws
     # idcheck throws error if invalid identifier
     return [MkSymbol [idcheck $name]]
 }
@@ -380,33 +375,35 @@ proc ::constcl::character-check {name} {
 
 proc ::constcl::parse-character {} {
     set name "#"
-    while {[first] ne {} && ![::string is space [first]] && [first] ni {) ]}} {
-        ::append name [first]
-        advance
+    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) ]}} {
+        ::append name [ib first]
+        ib advance
     }
     if {[::constcl::character-check $name]} {
         return [MkChar $name]
     } else {
         error "Invalid character constant $name"
     }
+    ib skip-ws
 }
 
 
 
 proc ::constcl::parse-vector {} {
-    advance
-    skip-whitespace
+    ib advance
+    ib skip-ws
     set res {}
-    while {[first] ne {} && [first] ne ")"} {
+    while {[ib first] ne {} && [ib first] ne ")"} {
         lappend res [parse-value]
-        skip-whitespace
+        ib skip-ws
     }
     set vec [MkVector $res]
     $vec mkconstant
-    if {[first] ne ")"} {
-        error "Missing right parenthesis (first=[first])."
+    if {[ib first] ne ")"} {
+        error "Missing right parenthesis (first=[ib first])."
     }
-    advance
+    ib advance
+    ib skip-ws
     return $vec
 }
 
