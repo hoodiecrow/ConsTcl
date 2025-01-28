@@ -74,7 +74,6 @@ CB
 reg = ::constcl::=
 
 proc ::constcl::= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -100,7 +99,6 @@ CB
 reg < ::constcl::<
 
 proc ::constcl::< {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -126,7 +124,6 @@ CB
 reg > ::constcl::>
 
 proc ::constcl::> {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -152,7 +149,6 @@ CB
 reg <= ::constcl::<=
 
 proc ::constcl::<= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -178,7 +174,6 @@ CB
 reg >= ::constcl::>=
 
 proc ::constcl::>= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -318,7 +313,6 @@ CB
 reg max ::constcl::max
 
 proc ::constcl::max {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -340,7 +334,6 @@ CB
 reg min ::constcl::min
 
 proc ::constcl::min {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -497,8 +490,17 @@ TT(
 TT)
 
 CB
+reg quotient
+
 proc ::constcl::quotient {n1 n2} {
-    # TODO
+    set q [::tcl::mathop::/ [$n1 numval] [$n2 numval]]
+    if {$q > 0} {
+        return [MkNumber [::tcl::mathfunc::floor $q]]
+    } elseif {$q < 0} {
+        return [MkNumber [::tcl::mathfunc::ceil $q]]
+    } else {
+        return #0
+    }
 }
 CB
 
@@ -513,6 +515,14 @@ proc ::constcl::modulo {n1 n2} {
     # TODO
 }
 CB
+
+TT(
+
+::tcltest::test number-1.19 {try quotient, remainder, modulo} -body {
+    pep "(quotient 13 4)"
+} -output "3.0\n"
+
+TT)
 
 CB
 proc ::constcl::gcd {args} {
@@ -557,7 +567,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.19 {try floor} -body {
+::tcltest::test number-1.20 {try floor} -body {
     pep "(floor 99.9)"
 } -output "99.0\n"
 
@@ -577,7 +587,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.20 {try ceiling} -body {
+::tcltest::test number-1.21 {try ceiling} -body {
     pep "(ceiling 99.9)"
 } -output "100.0\n"
 
@@ -601,7 +611,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.21 {try truncate} -body {
+::tcltest::test number-1.22 {try truncate} -body {
     pep "(truncate 99.9)"
     pep "(truncate -99.9)"
 } -output "99.0\n-99.0\n"
@@ -622,12 +632,12 @@ CB
 
 TT(
 
-::tcltest::test number-1.22 {try round} -body {
+::tcltest::test number-1.23 {try round} -body {
     pep "(round 99.9)"
     pep "(round 99.3)"
 } -output "100\n99\n"
 
-::tcltest::test number-1.23 {try various} -body {
+::tcltest::test number-1.24 {try various} -body {
     pep "(floor 3.5)"
     pep "(ceiling 3.5)"
     pep "(truncate 3.5)"
@@ -663,7 +673,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.24 {try exp} -body {
+::tcltest::test number-1.25 {try exp} -body {
     pep "(exp 3)"
 } -output "20.085536923187668\n"
 
@@ -683,7 +693,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.25 {try log} -body {
+::tcltest::test number-1.26 {try log} -body {
     pep "(log 3)"
 } -output "1.0986122886681098\n"
 
@@ -727,7 +737,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.26 {try trig} -body {
+::tcltest::test number-1.27 {try trig} -body {
     pep "(sin (/ pi 3))"
     pep "(cos (/ pi 3))"
     pep "(tan (/ pi 3))"
@@ -783,7 +793,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.27 {try trig} -body {
+::tcltest::test number-1.28 {try trig} -body {
     pep "(asin 0.3)"
     pep "(acos 0.3)"
     pep "(atan 0.3)"
@@ -809,7 +819,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.28 {try sqrt} -body {
+::tcltest::test number-1.29 {try sqrt} -body {
     pep "(sqrt 16)"
 } -output "4.0\n"
 
@@ -833,7 +843,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.29 {try expt} -body {
+::tcltest::test number-1.30 {try expt} -body {
     pep "(expt 4 2)"
 } -output "16.0\n"
 
@@ -936,7 +946,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.30 {try number->string} -body {
+::tcltest::test number-1.31 {try number->string} -body {
     pep "(number->string 23)"
     pep "(number->string 23 2)"
     pep "(number->string 23 8)"
@@ -991,7 +1001,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.31 {try string->number} -body {
+::tcltest::test number-1.32 {try string->number} -body {
     pep {(string->number "23")}
     pep {(string->number "10111" 2)}
     pep {(string->number "27" 8)}

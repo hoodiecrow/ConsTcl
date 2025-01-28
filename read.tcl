@@ -59,13 +59,12 @@ oo::class create ::constcl::IB {
     }
     method skip-ws {} {
         while true {
-            set c $peekc
-            switch -regexp $c {
+            switch -regexp $peekc {
                 {[[:space:]]} {
                     my advance
                 }
                 {;} {
-                    while {$peekc != "\n" && $peekc ne {}}  {
+                    while {$peekc ne "\n" && $peekc ne {}}  {
                         my advance
                     }
                 }
@@ -101,7 +100,7 @@ CB
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    ::constcl::parse-value
+    return [parse-value]
 }
 CB
 
@@ -233,21 +232,22 @@ TT(
 TT)
 
 MD(
-The `parse-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
+The `parse-pair-value` procedure reads values and returns a structure of
+[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 MD)
 
 CB
 
-proc ::constcl::parse-pair {c} {
-    ib skip-ws
-    if {[ib find $c]} {
+proc ::constcl::parse-pair {char} {
+    if {[ib find $char]} {
         return #NIL
     }
+    ib skip-ws
     set a [parse-value]
     ib skip-ws
     set res $a
     set prev #NIL
-    while {![ib find $c]} {
+    while {![ib find $char]} {
         set x [parse-value]
         ib skip-ws
         if {[dot? $x] eq "#t"} {
@@ -256,7 +256,7 @@ proc ::constcl::parse-pair {c} {
         } else {
             lappend res $x
         }
-        if {[llength $res] > 99} break
+        if {[llength $res] > 999} break
     }
     foreach r [lreverse $res] {
         set prev [cons $r $prev]

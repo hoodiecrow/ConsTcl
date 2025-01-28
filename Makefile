@@ -3,13 +3,15 @@
 all: README.md constcl.tcl constcl.test wiki/read.md
 
 source_files = type.tcl read.tcl eval.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl
+
 README.md: top.md constcl.md
 	cat $^ |sed -e s/\\r//g >$@
+
 constcl.md: $(source_files)
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /MD/d -e /TT/,/TT/d >$@
 
 constcl.tcl: $(source_files)
-	cat $^ |sed -e /CB/d -e /MD/,/MD/d -e /TT/,/TT/d >$@
+	cat $^ |sed -e /CB/d -e /MD/,/MD/d -e /TT/,/TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
 	echo 'package require tcltest' >$@

@@ -215,13 +215,12 @@ oo::class create ::constcl::IB {
     }
     method skip-ws {} {
         while true {
-            set c $peekc
-            switch -regexp $c {
+            switch -regexp $peekc {
                 {[[:space:]]} {
                     my advance
                 }
                 {;} {
-                    while {$peekc != "\n" && $peekc ne {}}  {
+                    while {$peekc ne "\n" && $peekc ne {}}  {
                         my advance
                     }
                 }
@@ -253,7 +252,7 @@ The standard builtin `read` consumes and parses input into a Lisp expression.
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    ::constcl::parse-value
+    return [parse-value]
 }
 ```
 
@@ -354,20 +353,21 @@ proc ::constcl::parse-quoted-value {} {
 ```
 
 
-The `parse-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
+The `parse-pair-value` procedure reads values and returns a structure of
+[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 
 ```
 
-proc ::constcl::parse-pair {c} {
-    ib skip-ws
-    if {[ib find $c]} {
+proc ::constcl::parse-pair {char} {
+    if {[ib find $char]} {
         return #NIL
     }
+    ib skip-ws
     set a [parse-value]
     ib skip-ws
     set res $a
     set prev #NIL
-    while {![ib find $c]} {
+    while {![ib find $char]} {
         set x [parse-value]
         ib skip-ws
         if {[dot? $x] eq "#t"} {
@@ -376,7 +376,7 @@ proc ::constcl::parse-pair {c} {
         } else {
             lappend res $x
         }
-        if {[llength $res] > 99} break
+        if {[llength $res] > 999} break
     }
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
@@ -535,7 +535,6 @@ See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 reg eval ::constcl::eval
 
 proc ::constcl::eval {e {env ::constcl::global_env}} {
-    # TODO
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]
@@ -1172,7 +1171,6 @@ not Tcl truth.
 reg = ::constcl::=
 
 proc ::constcl::= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1191,7 +1189,6 @@ proc ::constcl::= {args} {
 reg < ::constcl::<
 
 proc ::constcl::< {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1210,7 +1207,6 @@ proc ::constcl::< {args} {
 reg > ::constcl::>
 
 proc ::constcl::> {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1229,7 +1225,6 @@ proc ::constcl::> {args} {
 reg <= ::constcl::<=
 
 proc ::constcl::<= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1248,7 +1243,6 @@ proc ::constcl::<= {args} {
 reg >= ::constcl::>=
 
 proc ::constcl::>= {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1340,7 +1334,6 @@ selects the smallest number.
 reg max ::constcl::max
 
 proc ::constcl::max {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1355,7 +1348,6 @@ proc ::constcl::max {args} {
 reg min ::constcl::min
 
 proc ::constcl::min {args} {
-    # TODO type-check
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
@@ -1452,8 +1444,17 @@ proc ::constcl::abs {x} {
 
 
 ```
+reg quotient
+
 proc ::constcl::quotient {n1 n2} {
-    # TODO
+    set q [::tcl::mathop::/ [$n1 numval] [$n2 numval]]
+    if {$q > 0} {
+        return [MkNumber [::tcl::mathfunc::floor $q]]
+    } elseif {$q < 0} {
+        return [MkNumber [::tcl::mathfunc::ceil $q]]
+    } else {
+        return #0
+    }
 }
 ```
 
@@ -1468,6 +1469,7 @@ proc ::constcl::modulo {n1 n2} {
     # TODO
 }
 ```
+
 
 ```
 proc ::constcl::gcd {args} {
@@ -2257,17 +2259,31 @@ proc ::constcl::char-lower-case? {char} {
 ```
 
 
+`char->integer` and `integer->char` convert between characters and their
+16-bit numeric codes.
+
 ```
+reg char->integer
+
 proc ::constcl::char->integer {char} {
-    # TODO
+    return [MkNumber [scan [$char char] %c]]
 }
 ```
 
 ```
-proc ::constcl::integer->char {n} {
-    # TODO
+reg integer->char
+
+proc ::constcl::integer->char {int} {
+    if {$int == 10} {
+        return [MkChar #\\newline]
+    } elseif {$int == 32} {
+        return [MkChar #\\space]
+    } else {
+        return [MkChar #\\[format %c [$int numval]]]
+    }
 }
 ```
+
 
 `char-upcase` and `char-downcase` alter the case of a character.
 
@@ -3927,27 +3943,29 @@ oo::class create ::constcl::Environment {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
             set syms [::constcl::splitlist $syms]
+            set symsn [llength $syms]
+            set valsn [llength $vals]
+            if {$symsn != $valsn} {
+                error "wrong number of arguments, $valsn instead of $symsn"
+            }
             foreach sym $syms val $vals {
                 my set $sym $val
             }
         } elseif {[::constcl::symbol? $syms] eq "#t"} {
             my set $syms [::constcl::list {*}$vals]
         } else {
-            while {[::constcl::null? $syms] ne "#t"} {
+            while true {
+                if {[llength $vals] < 1} { error "too few arguments" }
+                my set [::constcl::car $syms] [lindex $vals 0]
+                set vals [lrange $vals 1 end]
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [::constcl::car $syms] [lindex $vals 0]
-                    set vals [lrange $vals 1 end]
                     my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
                     set vals {}
                     break
                 } else {
-                    my set [::constcl::car $syms] [lindex $vals 0]
-                    set vals [lrange $vals 1 end]
                     set syms [::constcl::cdr $syms]
                 }
-                #if {[llength $vals] < 1} { error "too few arguments" }
             }
-            if {[llength $vals] > 0} { error "too many arguments $vals" }
         }
         set outer_env $outer
     }

@@ -25,7 +25,6 @@ CB
 reg eval ::constcl::eval
 
 proc ::constcl::eval {e {env ::constcl::global_env}} {
-    # TODO
     if {[atom? $e] eq "#t"} {
         if {[symbol? $e] eq "#t"} {
             return [lookup $e $env]

@@ -18,28 +18,30 @@ oo::class create ::constcl::Environment {
         if {$syms eq "#NIL"} {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
-            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            set syms [::constcl::splitlist $syms]
+            set symsn [llength $syms]
+            set valsn [llength $vals]
+            if {$symsn != $valsn} {
+                error "wrong number of arguments, $valsn instead of $symsn"
+            }
             foreach sym $syms val $vals {
                 my set $sym $val
             }
         } elseif {[::constcl::symbol? $syms] eq "#t"} {
-            my set [$syms name] [::constcl::list {*}$vals]
+            my set $syms [::constcl::list {*}$vals]
         } else {
-            while {[::constcl::null? $syms] ne "#t"} {
+            while true {
+                if {[llength $vals] < 1} { error "too few arguments" }
+                my set [::constcl::car $syms] [lindex $vals 0]
+                set vals [lrange $vals 1 end]
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0]
-                    set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals]
+                    my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
                     set vals {}
                     break
                 } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0]
-                    set vals [lrange $vals 1 end]
                     set syms [::constcl::cdr $syms]
                 }
-                #if {[llength $vals] < 1} { error "too few arguments" }
             }
-            if {[llength $vals] > 0} { error "too many arguments $vals" }
         }
         set outer_env $outer
     }

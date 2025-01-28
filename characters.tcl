@@ -512,17 +512,41 @@ TT(
 
 TT)
 
+MD(
+`char->integer` and `integer->char` convert between characters and their
+16-bit numeric codes.
+MD)
+
 CB
+reg char->integer
+
 proc ::constcl::char->integer {char} {
-    # TODO
+    return [MkNumber [scan [$char char] %c]]
 }
 CB
 
 CB
-proc ::constcl::integer->char {n} {
-    # TODO
+reg integer->char
+
+proc ::constcl::integer->char {int} {
+    if {$int == 10} {
+        return [MkChar #\\newline]
+    } elseif {$int == 32} {
+        return [MkChar #\\space]
+    } else {
+        return [MkChar #\\[format %c [$int numval]]]
+    }
 }
 CB
+
+TT(
+
+::tcltest::test characters-1.16 {try char-upcase?} -body {
+    pep {(char->integer #\A)}
+    pep {(integer->char 97)}
+} -output "65\n#\\a\n"
+
+TT)
 
 MD(
 `char-upcase` and `char-downcase` alter the case of a character.
@@ -546,7 +570,7 @@ CB
 
 TT(
 
-::tcltest::test characters-1.16 {try char-upcase?} -body {
+::tcltest::test characters-1.17 {try char-upcase?} -body {
     pep {(char-upcase #\A)}
     pep {(char-upcase #\a)}
     pep {(char-upcase #\space)}
@@ -573,7 +597,7 @@ CB
 
 TT(
 
-::tcltest::test characters-1.17 {try char-downcase?} -body {
+::tcltest::test characters-1.18 {try char-downcase?} -body {
     pep {(char-downcase #\A)}
     pep {(char-downcase #\a)}
     pep {(char-downcase #\space)}
