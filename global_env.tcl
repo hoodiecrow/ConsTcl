@@ -11,8 +11,8 @@ CB
 
 oo::objdefine ::constcl::null_env {
     method find {sym} {self}
-    method get {sym} {error "Unbound variable: $sym"}
-    method set {sym val} {error "Unbound variable: $sym"}
+    method get {sym} {error "Unbound variable: [$sym name]"}
+    method set {sym val} {error "Unbound variable: [$sym name]"}
 }
 CB
 
@@ -26,6 +26,7 @@ namespace eval ::constcl {
     set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
+    format "[llength [dict keys $defreg]] built-in procedures in definition register"
 }
 CB
 

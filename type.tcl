@@ -2,7 +2,7 @@
 MD(
 #### Benchmark
 
-On my cheap computer, the following code takes 0.025 seconds to run.
+On my cheap computer, the following code takes 0.024 seconds to run.
 
 ```
 namespace eval ::constcl {

@@ -327,10 +327,10 @@ proc ::constcl::read-plus-minus {} {
     if {![::string is digit [second]]} {
         if {[first] eq "+"} {
             advance
-            return #+
+            return [MkSymbol +]
         } else {
             advance
-            return #-
+            return [MkSymbol -]
         }
     } else {
         return [::constcl::read-number]

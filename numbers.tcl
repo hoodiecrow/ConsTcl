@@ -415,7 +415,8 @@ TT)
 
 MD(
 The operators `+`, `*`, `-`, and `/` stand for the respective
-mathematical operations.
+mathematical operations. They take a number of operands, but
+at least one for `-` and `/`.
 MD)
 
 CB
@@ -425,7 +426,7 @@ proc ::constcl::+ {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(+ num...)"
+        error "NUMBER expected\n(+ num ...)"
     }
     MkNumber [::tcl::mathop::+ {*}$vals]
 }
@@ -448,7 +449,7 @@ proc ::constcl::* {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(* num...)"
+        error "NUMBER expected\n(* num ...)"
     }
     MkNumber [::tcl::mathop::* {*}$vals]
 }
@@ -471,7 +472,10 @@ proc ::constcl::- {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(- num...)"
+        error "NUMBER expected\n(- num ...)"
+    }
+    if {[llength $vals] == 0} {
+        error "wrong # args: should be \"- value ?value ...?\""
     }
     MkNumber [::tcl::mathop::- {*}$vals]
 }
@@ -481,7 +485,7 @@ TT(
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(-)"
-} -returnCodes error -result {wrong # args: should be "::tcl::mathop::- value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "- value ?value ...?"}
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(- 5)"
@@ -497,7 +501,10 @@ proc ::constcl::/ {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(/ num...)"
+        error "NUMBER expected\n(/ num ...)"
+    }
+    if {[llength $vals] == 0} {
+        error "wrong # args: should be \"/ value ?value ...?\""
     }
     MkNumber [::tcl::mathop::/ {*}$vals]
 }
@@ -507,7 +514,7 @@ TT(
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/)"
-} -returnCodes error -result {wrong # args: should be "::tcl::mathop::/ value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "/ value ?value ...?"}
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/ 5)"

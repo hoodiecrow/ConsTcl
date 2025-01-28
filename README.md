@@ -4,7 +4,7 @@ A second try at a Lisp interpreter written in Tcl, this time with a real Lisp-li
 
 #### Benchmark
 
-On my cheap computer, the following code takes 0.025 seconds to run.
+On my cheap computer, the following code takes 0.024 seconds to run.
 
 ```
 namespace eval ::constcl {
@@ -395,10 +395,10 @@ proc ::constcl::read-plus-minus {} {
     if {![::string is digit [second]]} {
         if {[first] eq "+"} {
             advance
-            return #+
+            return [MkSymbol +]
         } else {
             advance
-            return #-
+            return [MkSymbol -]
         }
     } else {
         return [::constcl::read-number]
@@ -563,8 +563,7 @@ environment chain for the symbol's name, and returns the value it is bound to.
 
 ```
 proc ::constcl::lookup {sym env} {
-    set name [$sym name]
-    [$env find $name] get $name
+    [$env find $sym] get $sym
 }
 ```
 
@@ -596,8 +595,8 @@ symbol name is a valid identifier, then it updates the environment with the new 
 
 ```
 proc ::constcl::declare {sym val env} {
-    set var [varcheck [idcheck [$sym name]]]
-    $env set $var $val
+    varcheck [idcheck [$sym name]]
+    $env set $sym $val
     return #NONE
 }
 ```
@@ -609,7 +608,7 @@ sets both variables to 99.
 
 ```
 proc ::constcl::update! {var expr env} {
-    [$env find [$var name]] set [$var name] $expr
+    [$env find $var] set $var $expr
     set expr
 }
 ```
@@ -632,7 +631,7 @@ proc ::constcl::make-function {formals body env} {
 
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
 arranges for a procedure to be called with each of the values in _vals_. It checks if
-_pr_really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+_pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -1367,7 +1366,8 @@ proc ::constcl::min {args} {
 
 
 The operators `+`, `*`, `-`, and `/` stand for the respective
-mathematical operations.
+mathematical operations. They take a number of operands, but
+at least one for `-` and `/`.
 
 ```
 reg + ::constcl::+
@@ -1376,7 +1376,7 @@ proc ::constcl::+ {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(+ num...)"
+        error "NUMBER expected\n(+ num ...)"
     }
     MkNumber [::tcl::mathop::+ {*}$vals]
 }
@@ -1390,7 +1390,7 @@ proc ::constcl::* {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(* num...)"
+        error "NUMBER expected\n(* num ...)"
     }
     MkNumber [::tcl::mathop::* {*}$vals]
 }
@@ -1404,7 +1404,10 @@ proc ::constcl::- {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(- num...)"
+        error "NUMBER expected\n(- num ...)"
+    }
+    if {[llength $vals] == 0} {
+        error "wrong # args: should be \"- value ?value ...?\""
     }
     MkNumber [::tcl::mathop::- {*}$vals]
 }
@@ -1418,7 +1421,10 @@ proc ::constcl::/ {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(/ num...)"
+        error "NUMBER expected\n(/ num ...)"
+    }
+    if {[llength $vals] == 0} {
+        error "wrong # args: should be \"/ value ?value ...?\""
     }
     MkNumber [::tcl::mathop::/ {*}$vals]
 }
@@ -3926,22 +3932,22 @@ oo::class create ::constcl::Environment {
         if {$syms eq "#NIL"} {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
-            set syms [lmap sym [::constcl::splitlist $syms] {$sym name}]
+            set syms [::constcl::splitlist $syms]
             foreach sym $syms val $vals {
                 my set $sym $val
             }
         } elseif {[::constcl::symbol? $syms] eq "#t"} {
-            my set [$syms name] [::constcl::list {*}$vals]
+            my set $syms [::constcl::list {*}$vals]
         } else {
             while {[::constcl::null? $syms] ne "#t"} {
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    my set [::constcl::car $syms] [lindex $vals 0]
                     set vals [lrange $vals 1 end]
-                    my set [[::constcl::cdr $syms] name] [::constcl::list {*}$vals]
+                    my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
                     set vals {}
                     break
                 } else {
-                    my set [[::constcl::car $syms] name] [lindex $vals 0]
+                    my set [::constcl::car $syms] [lindex $vals 0]
                     set vals [lrange $vals 1 end]
                     set syms [::constcl::cdr $syms]
                 }
@@ -3978,8 +3984,8 @@ Make __null_env__ empty and unresponsive: this is where searches for unbound sym
 
 oo::objdefine ::constcl::null_env {
     method find {sym} {self}
-    method get {sym} {error "Unbound variable: $sym"}
-    method set {sym val} {error "Unbound variable: $sym"}
+    method get {sym} {error "Unbound variable: [$sym name]"}
+    method set {sym val} {error "Unbound variable: [$sym name]"}
 }
 ```
 
@@ -3991,6 +3997,7 @@ namespace eval ::constcl {
     set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
+    format "[llength [dict keys $defreg]] built-in procedures in definition register"
 }
 ```
 

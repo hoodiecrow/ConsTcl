@@ -78,8 +78,7 @@ MD)
 
 CB
 proc ::constcl::lookup {sym env} {
-    set name [$sym name]
-    [$env find $name] get $name
+    [$env find $sym] get $sym
 }
 CB
 
@@ -117,8 +116,8 @@ MD)
 
 CB
 proc ::constcl::declare {sym val env} {
-    set var [varcheck [idcheck [$sym name]]]
-    $env set $var $val
+    varcheck [idcheck [$sym name]]
+    $env set $sym $val
     return #NONE
 }
 CB
@@ -132,7 +131,7 @@ MD)
 
 CB
 proc ::constcl::update! {var expr env} {
-    [$env find [$var name]] set [$var name] $expr
+    [$env find $var] set $var $expr
     set expr
 }
 CB
@@ -158,7 +157,7 @@ CB
 MD(
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
 arranges for a procedure to be called with each of the values in _vals_. It checks if
-_pr_really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+_pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 MD)
 
 CB

@@ -440,7 +440,7 @@ source constcl.tcl
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(-)"
-} -returnCodes error -result {wrong # args: should be "::tcl::mathop::- value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "- value ?value ...?"}
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(- 5)"
@@ -451,7 +451,7 @@ source constcl.tcl
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/)"
-} -returnCodes error -result {wrong # args: should be "::tcl::mathop::/ value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "/ value ?value ...?"}
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/ 5)"
