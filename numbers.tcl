@@ -19,14 +19,11 @@ oo::class create ::constcl::Number {
             error "NUMBER expected\n$v"
         }
     }
-    method positive {} {expr {$value > 0}}
-    method negative {} {expr {$value < 0}}
-    method even {} {expr {$value % 2 == 0}}
-    method odd {} {expr {$value % 2 == 1}}
-    method incr {val} {incr value $val}
-    method mult {val} {set value [expr {$value * $val}]}
-    method decr {val} {incr value -$val}
-    method div {val} {set value [expr {$value / $val}]}
+    method zero {} {if {$value == 0} then {return #t} else {return #f}}
+    method positive {} {if {$value > 0} then {return #t} else {return #f}}
+    method negative {} {if {$value < 0} then {return #t} else {return #f}}
+    method even {} {if {$value % 2 == 0} then {return #t} else {return #f}}
+    method odd {} {if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
     method mkconstant {} {}
@@ -69,7 +66,8 @@ TT(
 TT)
 
 MD(
-The operators `=`, `<`, `>`, `<=`, and `>=` are implemented.
+The operators `=`, `<`, `>`, `<=`, and `>=` are implemented. They return Lisp truth (#t / #f),
+not Tcl truth.
 MD)
 
 CB
@@ -80,7 +78,7 @@ proc ::constcl::= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(= num...)"
+        error "NUMBER expected\n(= num ...)"
     }
     if {[::tcl::mathop::== {*}$vals]} {
         return #t
@@ -93,10 +91,7 @@ CB
 TT(
 
 ::tcltest::test number-1.2 {try =} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(= 9 9 9 9)"
-        write [eval [read]]
-    }
+        pep "(= 9 9 9 9)"
 } -output "#t\n"
 
 TT)
@@ -109,7 +104,7 @@ proc ::constcl::< {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(< num...)"
+        error "NUMBER expected\n(< num ...)"
     }
     if {[::tcl::mathop::< {*}$vals]} {
         return #t
@@ -122,10 +117,7 @@ CB
 TT(
 
 ::tcltest::test number-1.3 {try <} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(< 1 2 4 7)"
-        write [eval [read]]
-    }
+        pep "(< 1 2 4 7)"
 } -output "#t\n"
 
 TT)
@@ -138,7 +130,7 @@ proc ::constcl::> {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(> num...)"
+        error "NUMBER expected\n(> num ...)"
     }
     if {[::tcl::mathop::> {*}$vals]} {
         return #t
@@ -151,10 +143,7 @@ CB
 TT(
 
 ::tcltest::test number-1.4 {try >} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(> 7 4 2 1)"
-        write [eval [read]]
-    }
+        pep "(> 7 4 2 1)"
 } -output "#t\n"
 
 TT)
@@ -167,7 +156,7 @@ proc ::constcl::<= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(<= num...)"
+        error "NUMBER expected\n(<= num ...)"
     }
     if {[::tcl::mathop::<= {*}$vals]} {
         return #t
@@ -180,10 +169,7 @@ CB
 TT(
 
 ::tcltest::test number-1.5 {try <=} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(<= 1 4 4 7)"
-        write [eval [read]]
-    }
+        pep "(<= 1 4 4 7)"
 } -output "#t\n"
 
 TT)
@@ -196,7 +182,7 @@ proc ::constcl::>= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(>= num...)"
+        error "NUMBER expected\n(>= num ...)"
     }
     if {[::tcl::mathop::>= {*}$vals]} {
         return #t
@@ -209,10 +195,7 @@ CB
 TT(
 
 ::tcltest::test number-1.6 {try >=} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(>= 7 4 4 1)"
-        write [eval [read]]
-    }
+        pep "(>= 7 4 4 1)"
 } -output "#t\n"
 
 TT)
@@ -226,11 +209,7 @@ reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
     if {[number? $obj] eq "#t"} {
-        if {[$obj numval] == 0} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj zero]
     } else {
         error "NUMBER expected\n(zero? [$obj show])"
     }
@@ -240,10 +219,7 @@ CB
 TT(
 
 ::tcltest::test number-1.7 {try zero?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(zero? 77)"
-        write [eval [read]]
-    }
+        pep "(zero? 77)"
 } -output "#f\n"
 
 TT)
@@ -258,11 +234,7 @@ reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj positive]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj positive]
     } else {
         error "NUMBER expected\n(positive? [$obj show])"
     }
@@ -272,10 +244,7 @@ CB
 TT(
 
 ::tcltest::test number-1.8 {try positive?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(positive? 77)"
-        write [eval [read]]
-    }
+        pep "(positive? 77)"
 } -output "#t\n"
 
 TT)
@@ -285,11 +254,7 @@ reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj negative]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj negative]
     } else {
         error "NUMBER expected\n(negative? [$obj show])"
     }
@@ -299,10 +264,7 @@ CB
 TT(
 
 ::tcltest::test number-1.9 {try negative?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(negative? 77)"
-        write [eval [read]]
-    }
+        pep "(negative? 77)"
 } -output "#f\n"
 
 TT)
@@ -312,11 +274,7 @@ reg even? ::constcl::even?
 
 proc ::constcl::even? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj even]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj even]
     } else {
         error "NUMBER expected\n(even? [$obj show])"
     }
@@ -326,10 +284,7 @@ CB
 TT(
 
 ::tcltest::test number-1.10 {try even?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(even? 77)"
-        write [eval [read]]
-    }
+        pep "(even? 77)"
 } -output "#f\n"
 
 TT)
@@ -339,11 +294,7 @@ reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj odd]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj odd]
     } else {
         error "NUMBER expected\n(odd? [$obj show])"
     }
@@ -353,10 +304,7 @@ CB
 TT(
 
 ::tcltest::test number-1.11 {try odd?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(odd? 77)"
-        write [eval [read]]
-    }
+        pep "(odd? 77)"
 } -output "#t\n"
 
 TT)
@@ -405,10 +353,7 @@ CB
 TT(
 
 ::tcltest::test number-1.13 {try min} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(min 7 1 10 3)"
-        write [eval [read]]
-    }
+        pep "(min 7 1 10 3)"
 } -output "1\n"
 
 TT)
@@ -532,7 +477,7 @@ reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             return [MkNumber [expr {[$x numval] * -1}]]
         } else {
             return $x
@@ -643,7 +588,7 @@ reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
             MkNumber [::tcl::mathfunc::floor [$x numval]]

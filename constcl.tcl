@@ -118,23 +118,52 @@ proc ::constcl::dot? {obj} {
 
 
 
-set inputbuffer {}
+set ::constcl::peekchar __
+set ::constcl::inputbuffer {}
 
-proc ::constcl::advance {args} {
-    if {[llength $args] == 1} {
-        incr args -1
-        set ::inputbuffer [::string range $::inputbuffer 1+$args end]
+proc ::constcl::fill-buffer {str} {
+    variable inputbuffer
+    set inputbuffer $str
+    advance
+}
+
+proc ::constcl::advance {} {
+    variable peekchar
+    variable inputbuffer
+    if {$inputbuffer eq {}} {
+        set peekchar {}
     } else {
-        set ::inputbuffer [::string range $::inputbuffer 1 end]
+        set peekchar [::string index $inputbuffer 0]
+        set inputbuffer [::string range $inputbuffer 1 end]
     }
 }
 
 proc ::constcl::first {} {
-    ::string index $::inputbuffer 0
+    variable peekchar
+    if {$peekchar == "__"} {
+        advance
+    }
+    return $peekchar
 }
 
-proc ::constcl::second {} {
-    ::string index $::inputbuffer 1
+proc ::constcl::unget {c} {
+    variable peekchar
+    variable inputbuffer
+    set inputbuffer [first]$inputbuffer
+    set peekchar $c
+}
+
+proc ::constcl::find-char {c} {
+    if {[::string is space [first]]} {
+        for {set cp 0} {$cp < [::string length $::constcl::inputbuffer]} {incr cp} {
+            if {![::string is space [::string index $::constcl::inputbuffer $cp]]} {
+                break
+            }
+        }
+        return [expr {[::string index $::constcl::inputbuffer $cp] eq $c}]
+    } else {
+        return [expr {[first] eq $c}]
+    }
 }
 
 proc ::constcl::skip-whitespace {} {
@@ -149,7 +178,7 @@ proc ::constcl::skip-whitespace {} {
             }
             ";" {
                 # a comment goes on until the end of the line
-                while {[first] != "\n" && $::inputbuffer ne {}} {
+                while {[first] != "\n" && [first] ne {}} {
                     advance
                 }
             }
@@ -161,34 +190,35 @@ proc ::constcl::skip-whitespace {} {
 }
 
 
-proc ::constcl::parse {str} {
-    set ::inputbuffer $str
-    return [read]
+proc ::constcl::parse {args} {
+    if {[llength $args]} {
+        fill-buffer [lindex $args 0]
+    }
+    return [parse-value]
 }
 
 
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    ::constcl::read-value
+    ::constcl::parse-value
 }
 
 
-proc ::constcl::read-value {} {
+proc ::constcl::parse-value {} {
     skip-whitespace
-    if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
         {^$}          { return }
-        {\"}          { return [read-string] }
-        {\#}          { return [read-sharp] }
-        {\'}          { return [read-quoted-value] }
-        {\(}          { return [read-pair-value ")"] }
-        {\+} - {\-}   { return [read-plus-minus] }
+        {\"}          { return [parse-string] }
+        {\#}          { return [parse-sharp] }
+        {\'}          { return [parse-quoted-value] }
+        {\(}          { return [parse-pair-value ")"] }
+        {\+} - {\-}   { return [parse-plus-minus] }
         {\.}          { advance ; return [Dot new] }
-        {\[}          { return [read-pair-value "\]"] }
-        {\d}          { return [read-number] }
+        {\[}          { return [parse-pair-value "\]"] }
+        {\d}          { return [parse-number] }
         {[[:space:]]} { advance }
-        {[[:graph:]]} { return [read-identifier] }
+        {[[:graph:]]} { return [parse-identifier] }
         default {
             error "unexpected char [first]"
         }
@@ -196,7 +226,7 @@ proc ::constcl::read-value {} {
 }
 
 
-proc ::constcl::read-string {} {
+proc ::constcl::parse-string {} {
     set str {}
     advance
     while {[first] ne {"}} {
@@ -210,20 +240,20 @@ proc ::constcl::read-string {} {
         advance
     }
     advance
-    set str [MkString $str]
-    $str mkconstant
-    return $str
+    set obj [MkString $str]
+    $obj mkconstant
+    return $obj
 }
 
 
 
-proc ::constcl::read-sharp {} {
+proc ::constcl::parse-sharp {} {
     advance
     switch [first] {
-        (    { return [read-vector] }
+        (    { return [parse-vector] }
         t    { advance ; return #t }
         f    { advance ; return #f }
-        "\\" { return [read-character] }
+        "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
         }
@@ -244,39 +274,30 @@ proc ::constcl::make-constant {obj} {
 }
 
 
-proc ::constcl::read-quoted-value {} {
+proc ::constcl::parse-quoted-value {} {
     advance
-    set val [read]
+    set val [parse-value]
     make-constant $val
-    return [::constcl::list #Q $val]
+    return [list #Q $val]
 }
 
 
 
-proc ::constcl::find-char {c} {
-    set cp 0
-    while {[::string is space [::string index $::inputbuffer $cp]]} {
-        incr cp
-    }
-    return [expr {[::string index $::inputbuffer $cp] eq $c}]
-}
 
-
-
-proc ::constcl::read-pair {c} {
+proc ::constcl::parse-pair {c} {
     skip-whitespace
     if {[find-char $c]} {
         return #NIL
     }
-    set a [read]
+    set a [parse-value]
     skip-whitespace
     set res $a
     set prev #NIL
     while {![find-char $c]} {
-        set x [read]
+        set x [parse-value]
         skip-whitespace
         if {[dot? $x] eq "#t"} {
-            set prev [read]
+            set prev [parse-value]
             skip-whitespace
         } else {
             lappend res $x
@@ -289,10 +310,10 @@ proc ::constcl::read-pair {c} {
     return $prev
 }
 
-proc ::constcl::read-pair-value {char} {
+proc ::constcl::parse-pair-value {char} {
     advance
     skip-whitespace
-    set val [read-pair $char]
+    set val [parse-pair $char]
     skip-whitespace
     if {[first] ne $char} {
         if {$char eq ")"} {
@@ -307,23 +328,26 @@ proc ::constcl::read-pair-value {char} {
 
 
 
-proc ::constcl::read-plus-minus {} {
-    if {![::string is digit [second]]} {
-        if {[first] eq "+"} {
-            advance
+proc ::constcl::parse-plus-minus {} {
+    set c [first]
+    advance
+    if {[::string is digit [first]]} {
+        return [::constcl::parse-number $c]
+    } else {
+        if {$c eq "+"} {
             return [MkSymbol +]
         } else {
-            advance
             return [MkSymbol -]
         }
-    } else {
-        return [::constcl::read-number]
     }
 }
 
 
-proc ::constcl::read-number {} {
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+proc ::constcl::parse-number {args} {
+    if {[llength $args] > 0} {
+        unget [lindex $args 0]
+    }
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append num [first]
         advance
     }
@@ -336,10 +360,10 @@ proc ::constcl::read-number {} {
 
 
 
-proc ::constcl::read-identifier {} {
+proc ::constcl::parse-identifier {} {
     ::append name [first]
     advance
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
@@ -354,9 +378,9 @@ proc ::constcl::character-check {name} {
 }
 
 
-proc ::constcl::read-character {} {
+proc ::constcl::parse-character {} {
     set name "#"
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
@@ -369,12 +393,12 @@ proc ::constcl::read-character {} {
 
 
 
-proc ::constcl::read-vector {} {
+proc ::constcl::parse-vector {} {
     advance
     skip-whitespace
     set res {}
-    while {$::inputbuffer ne {} && [first] ne ")"} {
-        lappend res [read]
+    while {[first] ne {} && [first] ne ")"} {
+        lappend res [parse-value]
         skip-whitespace
     }
     set vec [MkVector $res]
@@ -859,14 +883,11 @@ oo::class create ::constcl::Number {
             error "NUMBER expected\n$v"
         }
     }
-    method positive {} {expr {$value > 0}}
-    method negative {} {expr {$value < 0}}
-    method even {} {expr {$value % 2 == 0}}
-    method odd {} {expr {$value % 2 == 1}}
-    method incr {val} {incr value $val}
-    method mult {val} {set value [expr {$value * $val}]}
-    method decr {val} {incr value -$val}
-    method div {val} {set value [expr {$value / $val}]}
+    method zero {} {if {$value == 0} then {return #t} else {return #f}}
+    method positive {} {if {$value > 0} then {return #t} else {return #f}}
+    method negative {} {if {$value < 0} then {return #t} else {return #f}}
+    method even {} {if {$value % 2 == 0} then {return #t} else {return #f}}
+    method odd {} {if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
     method mkconstant {} {}
@@ -899,7 +920,7 @@ proc ::constcl::= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(= num...)"
+        error "NUMBER expected\n(= num ...)"
     }
     if {[::tcl::mathop::== {*}$vals]} {
         return #t
@@ -916,7 +937,7 @@ proc ::constcl::< {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(< num...)"
+        error "NUMBER expected\n(< num ...)"
     }
     if {[::tcl::mathop::< {*}$vals]} {
         return #t
@@ -933,7 +954,7 @@ proc ::constcl::> {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(> num...)"
+        error "NUMBER expected\n(> num ...)"
     }
     if {[::tcl::mathop::> {*}$vals]} {
         return #t
@@ -950,7 +971,7 @@ proc ::constcl::<= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(<= num...)"
+        error "NUMBER expected\n(<= num ...)"
     }
     if {[::tcl::mathop::<= {*}$vals]} {
         return #t
@@ -967,7 +988,7 @@ proc ::constcl::>= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(>= num...)"
+        error "NUMBER expected\n(>= num ...)"
     }
     if {[::tcl::mathop::>= {*}$vals]} {
         return #t
@@ -982,11 +1003,7 @@ reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
     if {[number? $obj] eq "#t"} {
-        if {[$obj numval] == 0} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj zero]
     } else {
         error "NUMBER expected\n(zero? [$obj show])"
     }
@@ -998,11 +1015,7 @@ reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj positive]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj positive]
     } else {
         error "NUMBER expected\n(positive? [$obj show])"
     }
@@ -1013,11 +1026,7 @@ reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj negative]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj negative]
     } else {
         error "NUMBER expected\n(negative? [$obj show])"
     }
@@ -1028,11 +1037,7 @@ reg even? ::constcl::even?
 
 proc ::constcl::even? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj even]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj even]
     } else {
         error "NUMBER expected\n(even? [$obj show])"
     }
@@ -1043,11 +1048,7 @@ reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        if {[$obj odd]} {
-            return #t
-        } else {
-            return #f
-        }
+        return [$obj odd]
     } else {
         error "NUMBER expected\n(odd? [$obj show])"
     }
@@ -1141,7 +1142,7 @@ reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             return [MkNumber [expr {[$x numval] * -1}]]
         } else {
             return $x
@@ -1207,7 +1208,7 @@ reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative]} {
+        if {[$x negative] eq "#t"} {
             MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
             MkNumber [::tcl::mathfunc::floor [$x numval]]

@@ -1,34 +1,69 @@
 
 MD(
 ## read
+
+`read` represents the interpreter's input facility. Currently input is faked with input
+strings.
 MD)
 
 MD(
 A quick-and-dirty input simulator, using an input buffer variable to hold characters
-to be read. The `advance` command consumes one character from the buffer. The `first`
-command peeks at the first (next) character in the buffer; `second` peeks at the 
-second. `skip-whitespace` advances past whitespace and comments.
+to be read. The `fill-buffer` command fills the buffer and sets the first character in the
+peek position. The `advance` command consumes one character from the buffer. `first` peeks
+at the next character to be read. `skip-whitespace` advances past whitespace and comments.
+`unget` backs up one position and sets a given character in the peek position.
+The `find-char` helper procedure reads past whitespace to find a given character.
+It returns Tcl truth if it is found.
 
 MD)
 
 CB
-set inputbuffer {}
+set ::constcl::peekchar __
+set ::constcl::inputbuffer {}
 
-proc ::constcl::advance {args} {
-    if {[llength $args] == 1} {
-        incr args -1
-        set ::inputbuffer [::string range $::inputbuffer 1+$args end]
+proc ::constcl::fill-buffer {str} {
+    variable inputbuffer
+    set inputbuffer $str
+    advance
+}
+
+proc ::constcl::advance {} {
+    variable peekchar
+    variable inputbuffer
+    if {$inputbuffer eq {}} {
+        set peekchar {}
     } else {
-        set ::inputbuffer [::string range $::inputbuffer 1 end]
+        set peekchar [::string index $inputbuffer 0]
+        set inputbuffer [::string range $inputbuffer 1 end]
     }
 }
 
 proc ::constcl::first {} {
-    ::string index $::inputbuffer 0
+    variable peekchar
+    if {$peekchar == "__"} {
+        advance
+    }
+    return $peekchar
 }
 
-proc ::constcl::second {} {
-    ::string index $::inputbuffer 1
+proc ::constcl::unget {c} {
+    variable peekchar
+    variable inputbuffer
+    set inputbuffer [first]$inputbuffer
+    set peekchar $c
+}
+
+proc ::constcl::find-char {c} {
+    if {[::string is space [first]]} {
+        for {set cp 0} {$cp < [::string length $::constcl::inputbuffer]} {incr cp} {
+            if {![::string is space [::string index $::constcl::inputbuffer $cp]]} {
+                break
+            }
+        }
+        return [expr {[::string index $::constcl::inputbuffer $cp] eq $c}]
+    } else {
+        return [expr {[first] eq $c}]
+    }
 }
 
 proc ::constcl::skip-whitespace {} {
@@ -43,7 +78,7 @@ proc ::constcl::skip-whitespace {} {
             }
             ";" {
                 # a comment goes on until the end of the line
-                while {[first] != "\n" && $::inputbuffer ne {}} {
+                while {[first] != "\n" && [first] ne {}} {
                     advance
                 }
             }
@@ -56,13 +91,15 @@ proc ::constcl::skip-whitespace {} {
 CB
 
 MD(
-`parse` fills the input buffer and then reads and parses the input.
+When given a string, `parse` fills the input buffer. It then reads and parses the input.
 MD)
 
 CB
-proc ::constcl::parse {str} {
-    set ::inputbuffer $str
-    return [read]
+proc ::constcl::parse {args} {
+    if {[llength $args]} {
+        fill-buffer [lindex $args 0]
+    }
+    return [parse-value]
 }
 CB
 
@@ -74,30 +111,29 @@ CB
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    ::constcl::read-value
+    ::constcl::parse-value
 }
 CB
 
 MD(
-The helper procedure `read-value` reads a value of any kind.
+The helper procedure `parse-value` reads a value of any kind.
 MD)
 
 CB
-proc ::constcl::read-value {} {
+proc ::constcl::parse-value {} {
     skip-whitespace
-    if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
         {^$}          { return }
-        {\"}          { return [read-string] }
-        {\#}          { return [read-sharp] }
-        {\'}          { return [read-quoted-value] }
-        {\(}          { return [read-pair-value ")"] }
-        {\+} - {\-}   { return [read-plus-minus] }
+        {\"}          { return [parse-string] }
+        {\#}          { return [parse-sharp] }
+        {\'}          { return [parse-quoted-value] }
+        {\(}          { return [parse-pair-value ")"] }
+        {\+} - {\-}   { return [parse-plus-minus] }
         {\.}          { advance ; return [Dot new] }
-        {\[}          { return [read-pair-value "\]"] }
-        {\d}          { return [read-number] }
+        {\[}          { return [parse-pair-value "\]"] }
+        {\d}          { return [parse-number] }
         {[[:space:]]} { advance }
-        {[[:graph:]]} { return [read-identifier] }
+        {[[:graph:]]} { return [parse-identifier] }
         default {
             error "unexpected char [first]"
         }
@@ -106,11 +142,11 @@ proc ::constcl::read-value {} {
 CB
 
 MD(
-`read-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 CB
-proc ::constcl::read-string {} {
+proc ::constcl::parse-string {} {
     set str {}
     advance
     while {[first] ne {"}} {
@@ -124,41 +160,39 @@ proc ::constcl::read-string {} {
         advance
     }
     advance
-    set str [MkString $str]
-    $str mkconstant
-    return $str
+    set obj [MkString $str]
+    $obj mkconstant
+    return $obj
 }
 CB
 
 TT(
 
 ::tcltest::test read-4.0 {try reading a string} {
-    set ::inputbuffer {"foo bar"}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {"foo bar"}]
     $obj value
 } "foo bar"
 
 ::tcltest::test read-4.1 {try reading a string} {
-    set ::inputbuffer {"\"foo\" \\ bar"}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {"\"foo\" \\ bar"}]
     $obj value
 } {"foo" \ bar}
 
 TT)
 
 MD(
-`read-sharp` reads the various kinds of values whose literal begins with
+`parse-sharp` reads the various kinds of values whose literal begins with
 a sharp sign (#).
 MD)
 
 CB
-proc ::constcl::read-sharp {} {
+proc ::constcl::parse-sharp {} {
     advance
     switch [first] {
-        (    { return [read-vector] }
+        (    { return [parse-vector] }
         t    { advance ; return #t }
         f    { advance ; return #f }
-        "\\" { return [read-character] }
+        "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
         }
@@ -186,15 +220,15 @@ proc ::constcl::make-constant {obj} {
 CB
 
 MD(
-`read-quoted-value` reads a value and returns it wrapped in `quote`.
+`parse-quoted-value` reads a value and returns it wrapped in `quote`.
 MD)
 
 CB
-proc ::constcl::read-quoted-value {} {
+proc ::constcl::parse-quoted-value {} {
     advance
-    set val [read]
+    set val [parse-value]
     make-constant $val
-    return [::constcl::list #Q $val]
+    return [list #Q $val]
 }
 CB
 
@@ -207,40 +241,25 @@ TT(
 TT)
 
 MD(
-The `find-char` helper procedure reads past whitespace to find a given character.
-Returns Tcl truth if it is found.
-MD)
-
-CB
-proc ::constcl::find-char {c} {
-    set cp 0
-    while {[::string is space [::string index $::inputbuffer $cp]]} {
-        incr cp
-    }
-    return [expr {[::string index $::inputbuffer $cp] eq $c}]
-}
-CB
-
-MD(
-The `read-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
+The `parse-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
 MD)
 
 CB
 
-proc ::constcl::read-pair {c} {
+proc ::constcl::parse-pair {c} {
     skip-whitespace
     if {[find-char $c]} {
         return #NIL
     }
-    set a [read]
+    set a [parse-value]
     skip-whitespace
     set res $a
     set prev #NIL
     while {![find-char $c]} {
-        set x [read]
+        set x [parse-value]
         skip-whitespace
         if {[dot? $x] eq "#t"} {
-            set prev [read]
+            set prev [parse-value]
             skip-whitespace
         } else {
             lappend res $x
@@ -253,10 +272,10 @@ proc ::constcl::read-pair {c} {
     return $prev
 }
 
-proc ::constcl::read-pair-value {char} {
+proc ::constcl::parse-pair-value {char} {
     advance
     skip-whitespace
-    set val [read-pair $char]
+    set val [parse-pair $char]
     skip-whitespace
     if {[first] ne $char} {
         if {$char eq ")"} {
@@ -281,8 +300,7 @@ TT(
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
-        set ::inputbuffer "(a (b))"
-        set obj [read]
+        set obj [::constcl::parse "(a (b))"]
         [caadr $obj] name
     }
 } -result "b"
@@ -318,33 +336,36 @@ TT(
 TT)
 
 MD(
-`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+`parse-plus-minus` reacts to a plus or minus in the input buffer, and either
 returns a `#+` or `#-` symbol, or a number.
 MD)
 
 CB
-proc ::constcl::read-plus-minus {} {
-    if {![::string is digit [second]]} {
-        if {[first] eq "+"} {
-            advance
+proc ::constcl::parse-plus-minus {} {
+    set c [first]
+    advance
+    if {[::string is digit [first]]} {
+        return [::constcl::parse-number $c]
+    } else {
+        if {$c eq "+"} {
             return [MkSymbol +]
         } else {
-            advance
             return [MkSymbol -]
         }
-    } else {
-        return [::constcl::read-number]
     }
 }
 CB
 
 MD(
-`read-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 CB
-proc ::constcl::read-number {} {
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+proc ::constcl::parse-number {args} {
+    if {[llength $args] > 0} {
+        unget [lindex $args 0]
+    }
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append num [first]
         advance
     }
@@ -358,58 +379,51 @@ CB
 
 TT(
 ::tcltest::test read-2.0 {try reading a number} {
-    set ::inputbuffer "99.99"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "99.99"]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.1 {try reading a number} {
-    set ::inputbuffer "     99.99"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     99.99"]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.2 {try reading a number} {
-    set ::inputbuffer "     9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     9"]
     $obj value
 } "9"
 
 ::tcltest::test read-2.3 {try reading a number} {
-    set ::inputbuffer "     +9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     +9"]
     $obj value
 } "+9"
 
 ::tcltest::test read-2.4 {try reading a number} {
-    set ::inputbuffer "     -9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     -9"]
     $obj value
 } "-9"
 
 ::tcltest::test read-2.5 {try reading a number} {
-    set ::inputbuffer "     - "
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
 ::tcltest::test read-2.6 {try reading a number} {
-    set ::inputbuffer "     + "
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     + "]
     $obj name
 } "+"
 
 TT)
 
 MD(
-`read-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 CB
-proc ::constcl::read-identifier {} {
+proc ::constcl::parse-identifier {} {
     ::append name [first]
     advance
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
@@ -421,20 +435,18 @@ CB
 TT(
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set ::inputbuffer "foo"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "foo"]
     $obj name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    set ::inputbuffer "+foo"
-    set obj [::constcl::read-identifier]
+    set ::constcl::inputbuffer "+foo"
+    set obj [::constcl::parse-identifier]
     $obj name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set ::inputbuffer "let"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "let"]
     ::constcl::varcheck [$obj name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
@@ -452,13 +464,13 @@ proc ::constcl::character-check {name} {
 CB
 
 MD(
-`read-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 CB
-proc ::constcl::read-character {} {
+proc ::constcl::parse-character {} {
     set name "#"
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
@@ -473,42 +485,38 @@ CB
 TT(
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set ::inputbuffer {#\A}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {#\A}]
     $obj char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set ::inputbuffer "#\\space"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\space"]
     $obj char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set ::inputbuffer "#\\newline"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\newline"]
     $obj char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set ::inputbuffer "#\\foobar"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\foobar"]
     $obj char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
 TT)
 
 MD(
-`read-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 CB
-proc ::constcl::read-vector {} {
+proc ::constcl::parse-vector {} {
     advance
     skip-whitespace
     set res {}
-    while {$::inputbuffer ne {} && [first] ne ")"} {
-        lappend res [read]
+    while {[first] ne {} && [first] ne ")"} {
+        lappend res [parse-value]
         skip-whitespace
     }
     set vec [MkVector $res]

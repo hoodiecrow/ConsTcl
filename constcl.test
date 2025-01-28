@@ -3,14 +3,12 @@ source constcl.tcl
 
 
 ::tcltest::test read-4.0 {try reading a string} {
-    set ::inputbuffer {"foo bar"}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {"foo bar"}]
     $obj value
 } "foo bar"
 
 ::tcltest::test read-4.1 {try reading a string} {
-    set ::inputbuffer {"\"foo\" \\ bar"}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {"\"foo\" \\ bar"}]
     $obj value
 } {"foo" \ bar}
 
@@ -31,8 +29,7 @@ source constcl.tcl
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
-        set ::inputbuffer "(a (b))"
-        set obj [read]
+        set obj [::constcl::parse "(a (b))"]
         [caadr $obj] name
     }
 } -result "b"
@@ -67,90 +64,77 @@ source constcl.tcl
 
 
 ::tcltest::test read-2.0 {try reading a number} {
-    set ::inputbuffer "99.99"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "99.99"]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.1 {try reading a number} {
-    set ::inputbuffer "     99.99"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     99.99"]
     $obj value
 } "99.99"
 
 ::tcltest::test read-2.2 {try reading a number} {
-    set ::inputbuffer "     9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     9"]
     $obj value
 } "9"
 
 ::tcltest::test read-2.3 {try reading a number} {
-    set ::inputbuffer "     +9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     +9"]
     $obj value
 } "+9"
 
 ::tcltest::test read-2.4 {try reading a number} {
-    set ::inputbuffer "     -9"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     -9"]
     $obj value
 } "-9"
 
 ::tcltest::test read-2.5 {try reading a number} {
-    set ::inputbuffer "     - "
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
 ::tcltest::test read-2.6 {try reading a number} {
-    set ::inputbuffer "     + "
-    set obj [::constcl::read]
+    set obj [::constcl::parse "     + "]
     $obj name
 } "+"
 
 
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set ::inputbuffer "foo"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "foo"]
     $obj name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    set ::inputbuffer "+foo"
-    set obj [::constcl::read-identifier]
+    set ::constcl::inputbuffer "+foo"
+    set obj [::constcl::parse-identifier]
     $obj name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set ::inputbuffer "let"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "let"]
     ::constcl::varcheck [$obj name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set ::inputbuffer {#\A}
-    set obj [::constcl::read]
+    set obj [::constcl::parse {#\A}]
     $obj char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set ::inputbuffer "#\\space"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\space"]
     $obj char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set ::inputbuffer "#\\newline"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\newline"]
     $obj char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set ::inputbuffer "#\\foobar"
-    set obj [::constcl::read]
+    set obj [::constcl::parse "#\\foobar"]
     $obj char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
@@ -318,91 +302,61 @@ source constcl.tcl
 
 
 ::tcltest::test number-1.2 {try =} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(= 9 9 9 9)"
-        write [eval [read]]
-    }
+        pep "(= 9 9 9 9)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.3 {try <} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(< 1 2 4 7)"
-        write [eval [read]]
-    }
+        pep "(< 1 2 4 7)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.4 {try >} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(> 7 4 2 1)"
-        write [eval [read]]
-    }
+        pep "(> 7 4 2 1)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.5 {try <=} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(<= 1 4 4 7)"
-        write [eval [read]]
-    }
+        pep "(<= 1 4 4 7)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.6 {try >=} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(>= 7 4 4 1)"
-        write [eval [read]]
-    }
+        pep "(>= 7 4 4 1)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.7 {try zero?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(zero? 77)"
-        write [eval [read]]
-    }
+        pep "(zero? 77)"
 } -output "#f\n"
 
 
 
 ::tcltest::test number-1.8 {try positive?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(positive? 77)"
-        write [eval [read]]
-    }
+        pep "(positive? 77)"
 } -output "#t\n"
 
 
 
 ::tcltest::test number-1.9 {try negative?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(negative? 77)"
-        write [eval [read]]
-    }
+        pep "(negative? 77)"
 } -output "#f\n"
 
 
 
 ::tcltest::test number-1.10 {try even?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(even? 77)"
-        write [eval [read]]
-    }
+        pep "(even? 77)"
 } -output "#f\n"
 
 
 
 ::tcltest::test number-1.11 {try odd?} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(odd? 77)"
-        write [eval [read]]
-    }
+        pep "(odd? 77)"
 } -output "#t\n"
 
 
@@ -414,10 +368,7 @@ source constcl.tcl
 
 
 ::tcltest::test number-1.13 {try min} -body {
-    namespace eval ::constcl {
-        set ::inputbuffer "(min 7 1 10 3)"
-        write [eval [read]]
-    }
+        pep "(min 7 1 10 3)"
 } -output "1\n"
 
 

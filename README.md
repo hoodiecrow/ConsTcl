@@ -165,29 +165,61 @@ proc ::constcl::dot? {obj} {
 strings.
 
 A quick-and-dirty input simulator, using an input buffer variable to hold characters
-to be read. The `advance` command consumes one character from the buffer. The `first`
-command peeks at the first (next) character in the buffer; `second` peeks at the 
-second. `skip-whitespace` advances past whitespace and comments.
+to be read. The `fill-buffer` command fills the buffer and sets the first character in the
+peek position. The `advance` command consumes one character from the buffer. `first` peeks
+at the next character to be read. `skip-whitespace` advances past whitespace and comments.
+`unget` backs up one position and sets a given character in the peek position.
+The `find-char` helper procedure reads past whitespace to find a given character.
+It returns Tcl truth if it is found.
 
 
 ```
-set inputbuffer {}
+set ::constcl::peekchar __
+set ::constcl::inputbuffer {}
 
-proc ::constcl::advance {args} {
-    if {[llength $args] == 1} {
-        incr args -1
-        set ::inputbuffer [::string range $::inputbuffer 1+$args end]
+proc ::constcl::fill-buffer {str} {
+    variable inputbuffer
+    set inputbuffer $str
+    advance
+}
+
+proc ::constcl::advance {} {
+    variable peekchar
+    variable inputbuffer
+    if {$inputbuffer eq {}} {
+        set peekchar {}
     } else {
-        set ::inputbuffer [::string range $::inputbuffer 1 end]
+        set peekchar [::string index $inputbuffer 0]
+        set inputbuffer [::string range $inputbuffer 1 end]
     }
 }
 
 proc ::constcl::first {} {
-    ::string index $::inputbuffer 0
+    variable peekchar
+    if {$peekchar == "__"} {
+        advance
+    }
+    return $peekchar
 }
 
-proc ::constcl::second {} {
-    ::string index $::inputbuffer 1
+proc ::constcl::unget {c} {
+    variable peekchar
+    variable inputbuffer
+    set inputbuffer [first]$inputbuffer
+    set peekchar $c
+}
+
+proc ::constcl::find-char {c} {
+    if {[::string is space [first]]} {
+        for {set cp 0} {$cp < [::string length $::constcl::inputbuffer]} {incr cp} {
+            if {![::string is space [::string index $::constcl::inputbuffer $cp]]} {
+                break
+            }
+        }
+        return [expr {[::string index $::constcl::inputbuffer $cp] eq $c}]
+    } else {
+        return [expr {[first] eq $c}]
+    }
 }
 
 proc ::constcl::skip-whitespace {} {
@@ -202,7 +234,7 @@ proc ::constcl::skip-whitespace {} {
             }
             ";" {
                 # a comment goes on until the end of the line
-                while {[first] != "\n" && $::inputbuffer ne {}} {
+                while {[first] != "\n" && [first] ne {}} {
                     advance
                 }
             }
@@ -214,12 +246,14 @@ proc ::constcl::skip-whitespace {} {
 }
 ```
 
-`parse` fills the input buffer and then reads and parses the input.
+When given a string, `parse` fills the input buffer. It then reads and parses the input.
 
 ```
-proc ::constcl::parse {str} {
-    set ::inputbuffer $str
-    return [read]
+proc ::constcl::parse {args} {
+    if {[llength $args]} {
+        fill-buffer [lindex $args 0]
+    }
+    return [parse-value]
 }
 ```
 
@@ -229,28 +263,27 @@ The standard builtin `read` consumes and parses input into a Lisp expression.
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    ::constcl::read-value
+    ::constcl::parse-value
 }
 ```
 
-The helper procedure `read-value` reads a value of any kind.
+The helper procedure `parse-value` reads a value of any kind.
 
 ```
-proc ::constcl::read-value {} {
+proc ::constcl::parse-value {} {
     skip-whitespace
-    if {$::inputbuffer eq {}} {set ::inputbuffer [gets stdin]}
     switch -regexp [first] {
         {^$}          { return }
-        {\"}          { return [read-string] }
-        {\#}          { return [read-sharp] }
-        {\'}          { return [read-quoted-value] }
-        {\(}          { return [read-pair-value ")"] }
-        {\+} - {\-}   { return [read-plus-minus] }
+        {\"}          { return [parse-string] }
+        {\#}          { return [parse-sharp] }
+        {\'}          { return [parse-quoted-value] }
+        {\(}          { return [parse-pair-value ")"] }
+        {\+} - {\-}   { return [parse-plus-minus] }
         {\.}          { advance ; return [Dot new] }
-        {\[}          { return [read-pair-value "\]"] }
-        {\d}          { return [read-number] }
+        {\[}          { return [parse-pair-value "\]"] }
+        {\d}          { return [parse-number] }
         {[[:space:]]} { advance }
-        {[[:graph:]]} { return [read-identifier] }
+        {[[:graph:]]} { return [parse-identifier] }
         default {
             error "unexpected char [first]"
         }
@@ -258,10 +291,10 @@ proc ::constcl::read-value {} {
 }
 ```
 
-`read-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 ```
-proc ::constcl::read-string {} {
+proc ::constcl::parse-string {} {
     set str {}
     advance
     while {[first] ne {"}} {
@@ -275,24 +308,24 @@ proc ::constcl::read-string {} {
         advance
     }
     advance
-    set str [MkString $str]
-    $str mkconstant
-    return $str
+    set obj [MkString $str]
+    $obj mkconstant
+    return $obj
 }
 ```
 
 
-`read-sharp` reads the various kinds of values whose literal begins with
+`parse-sharp` reads the various kinds of values whose literal begins with
 a sharp sign (#).
 
 ```
-proc ::constcl::read-sharp {} {
+proc ::constcl::parse-sharp {} {
     advance
     switch [first] {
-        (    { return [read-vector] }
+        (    { return [parse-vector] }
         t    { advance ; return #t }
         f    { advance ; return #f }
-        "\\" { return [read-character] }
+        "\\" { return [parse-character] }
         default {
             error "Illegal #-literal"
         }
@@ -317,49 +350,36 @@ proc ::constcl::make-constant {obj} {
 }
 ```
 
-`read-quoted-value` reads a value and returns it wrapped in `quote`.
+`parse-quoted-value` reads a value and returns it wrapped in `quote`.
 
 ```
-proc ::constcl::read-quoted-value {} {
+proc ::constcl::parse-quoted-value {} {
     advance
-    set val [read]
+    set val [parse-value]
     make-constant $val
-    return [::constcl::list #Q $val]
+    return [list #Q $val]
 }
 ```
 
 
-The `find-char` helper procedure reads past whitespace to find a given character.
-Returns Tcl truth if it is found.
-
-```
-proc ::constcl::find-char {c} {
-    set cp 0
-    while {[::string is space [::string index $::inputbuffer $cp]]} {
-        incr cp
-    }
-    return [expr {[::string index $::inputbuffer $cp] eq $c}]
-}
-```
-
-The `read-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
+The `parse-pair-value` procedure reads values and returns a [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) object.
 
 ```
 
-proc ::constcl::read-pair {c} {
+proc ::constcl::parse-pair {c} {
     skip-whitespace
     if {[find-char $c]} {
         return #NIL
     }
-    set a [read]
+    set a [parse-value]
     skip-whitespace
     set res $a
     set prev #NIL
     while {![find-char $c]} {
-        set x [read]
+        set x [parse-value]
         skip-whitespace
         if {[dot? $x] eq "#t"} {
-            set prev [read]
+            set prev [parse-value]
             skip-whitespace
         } else {
             lappend res $x
@@ -372,10 +392,10 @@ proc ::constcl::read-pair {c} {
     return $prev
 }
 
-proc ::constcl::read-pair-value {char} {
+proc ::constcl::parse-pair-value {char} {
     advance
     skip-whitespace
-    set val [read-pair $char]
+    set val [parse-pair $char]
     skip-whitespace
     if {[first] ne $char} {
         if {$char eq ")"} {
@@ -390,30 +410,33 @@ proc ::constcl::read-pair-value {char} {
 ```
 
 
-`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+`parse-plus-minus` reacts to a plus or minus in the input buffer, and either
 returns a `#+` or `#-` symbol, or a number.
 
 ```
-proc ::constcl::read-plus-minus {} {
-    if {![::string is digit [second]]} {
-        if {[first] eq "+"} {
-            advance
+proc ::constcl::parse-plus-minus {} {
+    set c [first]
+    advance
+    if {[::string is digit [first]]} {
+        return [::constcl::parse-number $c]
+    } else {
+        if {$c eq "+"} {
             return [MkSymbol +]
         } else {
-            advance
             return [MkSymbol -]
         }
-    } else {
-        return [::constcl::read-number]
     }
 }
 ```
 
-`read-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 ```
-proc ::constcl::read-number {} {
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+proc ::constcl::parse-number {args} {
+    if {[llength $args] > 0} {
+        unget [lindex $args 0]
+    }
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append num [first]
         advance
     }
@@ -426,13 +449,13 @@ proc ::constcl::read-number {} {
 ```
 
 
-`read-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 ```
-proc ::constcl::read-identifier {} {
+proc ::constcl::parse-identifier {} {
     ::append name [first]
     advance
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) \]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) \]}} {
         ::append name [first]
         advance
     }
@@ -451,12 +474,12 @@ proc ::constcl::character-check {name} {
 }
 ```
 
-`read-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 ```
-proc ::constcl::read-character {} {
+proc ::constcl::parse-character {} {
     set name "#"
-    while {$::inputbuffer ne {} && ![::string is space [first]] && [first] ni {) ]}} {
+    while {[first] ne {} && ![::string is space [first]] && [first] ni {) ]}} {
         ::append name [first]
         advance
     }
@@ -469,15 +492,15 @@ proc ::constcl::read-character {} {
 ```
 
 
-`read-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 ```
-proc ::constcl::read-vector {} {
+proc ::constcl::parse-vector {} {
     advance
     skip-whitespace
     set res {}
-    while {$::inputbuffer ne {} && [first] ne ")"} {
-        lappend res [read]
+    while {[first] ne {} && [first] ne ")"} {
+        lappend res [parse-value]
         skip-whitespace
     }
     set vec [MkVector $res]
@@ -1145,7 +1168,8 @@ proc ::constcl::number? {obj} {
 ```
 
 
-The operators `=`, `<`, `>`, `<=`, and `>=` are implemented.
+The operators `=`, `<`, `>`, `<=`, and `>=` are implemented. They return Lisp truth (#t / #f),
+not Tcl truth.
 
 ```
 reg = ::constcl::=
@@ -1155,7 +1179,7 @@ proc ::constcl::= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(= num...)"
+        error "NUMBER expected\n(= num ...)"
     }
     if {[::tcl::mathop::== {*}$vals]} {
         return #t
@@ -1174,7 +1198,7 @@ proc ::constcl::< {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(< num...)"
+        error "NUMBER expected\n(< num ...)"
     }
     if {[::tcl::mathop::< {*}$vals]} {
         return #t
@@ -1193,7 +1217,7 @@ proc ::constcl::> {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(> num...)"
+        error "NUMBER expected\n(> num ...)"
     }
     if {[::tcl::mathop::> {*}$vals]} {
         return #t
@@ -1212,7 +1236,7 @@ proc ::constcl::<= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(<= num...)"
+        error "NUMBER expected\n(<= num ...)"
     }
     if {[::tcl::mathop::<= {*}$vals]} {
         return #t
@@ -1231,7 +1255,7 @@ proc ::constcl::>= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(>= num...)"
+        error "NUMBER expected\n(>= num ...)"
     }
     if {[::tcl::mathop::>= {*}$vals]} {
         return #t
