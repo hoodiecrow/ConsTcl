@@ -174,7 +174,7 @@
            y="13.191244">Null environment</tspan></text>
     </g>
     <g
-       id="g7059"
+       id="g1006"
        inkscape:export-filename="C:\Users\plewe\code\constcl\images\env2.png"
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96">
@@ -213,26 +213,26 @@
          xml:space="preserve"
          style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
          x="96.186874"
-         y="53.073814"
+         y="51.485355"
          id="text6618"
          transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan6616"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
            x="96.186874"
-           y="53.073814">r: 12</tspan></text>
+           y="51.485355">r: 12</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
          x="96.101677"
-         y="57.405052"
+         y="55.816593"
          id="text6622"
          transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan6620"
            style="stroke-width:0.264583"
            x="96.101677"
-           y="57.405052"> </tspan></text>
+           y="55.816593"> </tspan></text>
       <text
          xml:space="preserve"
          style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
@@ -246,40 +246,47 @@
            x="94.896317"
            y="64.931717">⋮</tspan></text>
       <rect
+         style="fill:#000000;fill-opacity:0.5;stroke:none;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect906"
+         width="54.806282"
+         height="12.396502"
+         x="97.594635"
+         y="49.698208" />
+      <rect
          style="fill:#c9f5ff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect59737"
          width="54.806282"
          height="12.396502"
          x="95.874847"
-         y="49.169041" />
+         y="47.581539" />
       <path
          style="fill:none;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#DotL);marker-end:url(#Arrow2Lend)"
-         d="M 147.98106,52.165944 147.79465,35.885815"
+         d="M 147.98106,50.304542 147.79465,35.885815"
          id="path60282" />
       <text
          xml:space="preserve"
          style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
          x="101.28441"
-         y="60.21703"
+         y="58.628571"
          id="text59749"
          transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan59747"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
            x="101.28441"
-           y="60.21703">r: 10</tspan></text>
+           y="58.628571">r: 10</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
          x="128.02193"
-         y="59.501316"
+         y="57.912857"
          id="text60042"
          transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan60040"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
            x="128.02193"
-           y="59.501316">(* pi (* r r))</tspan></text>
+           y="57.912857">(* pi (* r r))</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
@@ -295,13 +302,13 @@
          xml:space="preserve"
          style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
          x="98.166176"
-         y="54.20166"
+         y="52.614159"
          id="text6639"><tspan
            sodipodi:role="line"
            id="tspan6637"
            style="stroke-width:0.264583"
            x="98.166176"
-           y="54.20166">Local environment</tspan></text>
+           y="52.614159">Local environment</tspan></text>
       <rect
          style="fill:#e6e6e6;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect6903"
