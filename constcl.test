@@ -2,9 +2,32 @@ package require tcltest
 source constcl.tcl
 
 
+::tcltest::test read-4.0 {try reading a string} {
+    set ::inputbuffer {"foo bar"}
+    set obj [::constcl::read]
+    $obj value
+} "foo bar"
+
+::tcltest::test read-4.1 {try reading a string} {
+    set ::inputbuffer {"\"foo\" \\ bar"}
+    set obj [::constcl::read]
+    $obj value
+} {"foo" \ bar}
+
+
+
 ::tcltest::test read-1.0 {try reading quoted symbol} -body {
     pp "'foo"
 } -output "(quote foo)\n"
+
+
+::tcltest::test read-6.0 {try reading an improper list} -body {
+    pp "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-6.1 {try reading an improper list} -body {
+    pp "(a b . c)"
+} -output "(a b . c)\n"
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
@@ -87,6 +110,26 @@ source constcl.tcl
 
 
 
+::tcltest::test read-5.0 {try reading an identifier} {
+    set ::inputbuffer "foo"
+    set obj [::constcl::read]
+    $obj name
+} "foo"
+
+::tcltest::test read-5.1 {try reading an identifier} -body {
+    set ::inputbuffer "+foo"
+    set obj [::constcl::read-identifier]
+    $obj name
+} -returnCodes error -result "Identifier expected (+foo)"
+
+::tcltest::test read-5.2 {try reading an identifier} -body {
+    set ::inputbuffer "let"
+    set obj [::constcl::read]
+    ::constcl::varcheck [$obj name]
+} -returnCodes error -result "Macro name can't be used as a variable: let"
+
+
+
 ::tcltest::test read-3.0 {try reading a character} {
     set ::inputbuffer {#\A}
     set obj [::constcl::read]
@@ -113,46 +156,10 @@ source constcl.tcl
 
 
 
-::tcltest::test read-4.0 {try reading a string} {
-    set ::inputbuffer {"foo bar"}
-    set obj [::constcl::read]
-    $obj value
-} "foo bar"
+::tcltest::test read-6.0 {try reading a vector} -body {
+    pp "#(1 2 3)"
+} -output "#(1 2 3)\n"
 
-::tcltest::test read-4.1 {try reading a string} {
-    set ::inputbuffer {"\"foo\" \\ bar"}
-    set obj [::constcl::read]
-    $obj value
-} {"foo" \ bar}
-
-
-
-::tcltest::test read-5.0 {try reading an identifier} {
-    set ::inputbuffer "foo"
-    set obj [::constcl::read]
-    $obj name
-} "foo"
-
-::tcltest::test read-5.1 {try reading an identifier} -body {
-    set ::inputbuffer "+foo"
-    set obj [::constcl::read-identifier]
-    $obj name
-} -returnCodes error -result "Identifier expected (+foo)"
-
-::tcltest::test read-5.2 {try reading an identifier} -body {
-    set ::inputbuffer "let"
-    set obj [::constcl::read]
-    ::constcl::varcheck [$obj name]
-} -returnCodes error -result "Macro name can't be used as a variable: let"
-
-
-::tcltest::test read-6.0 {try reading an improper list} -body {
-    pp "(a . b)"
-} -output "(a . b)\n"
-
-::tcltest::test read-6.1 {try reading an improper list} -body {
-    pp "(a b . c)"
-} -output "(a b . c)\n"
 
 
 ::tcltest::test eval-1.0 {expand and macro} -body {

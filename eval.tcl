@@ -157,8 +157,8 @@ CB
 
 MD(
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
-arranges for a procedure to be called with each of the values in _vals. It checks if
-`pr`really is a procedure, and determines whether to call `pr` as an object or as a Tcl command.
+arranges for a procedure to be called with each of the values in _vals_. It checks if
+_pr_really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 MD)
 
 CB
@@ -276,7 +276,7 @@ proc ::constcl::do-and {exps prev} {
 CB
 
 MD(
-The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses, 
+The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 MD)
 
@@ -303,7 +303,7 @@ proc ::constcl::do-case {keyexpr clauses} {
 CB
 
 MD(
-The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses, 
+The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 MD)
 
@@ -385,8 +385,7 @@ CB
 
 MD(
 The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of the clauses.
 MD)
 
 CB
@@ -398,8 +397,7 @@ CB
 
 MD(
 The `expand-for/list` procedure expands the `for/list` macro. It returns a `list`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause.
 MD)
 
 CB
@@ -411,8 +409,7 @@ CB
 
 MD(
 The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
-construct containing the iterations of the first clause (multiple clauses
-isn't implemented yet).
+construct containing the iterations of each clause.
 MD)
 
 CB
