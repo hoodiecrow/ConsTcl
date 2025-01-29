@@ -486,7 +486,8 @@ CB
 
 MD(
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
-traverses the quasi-quoted structure searching for unquote and unquote-splicing.
+traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
+fragile and sprawling.
 MD)
 
 CB

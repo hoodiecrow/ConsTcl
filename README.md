@@ -989,7 +989,8 @@ proc ::constcl::do-or {exps} {
 ```
 
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
-traverses the quasi-quoted structure searching for unquote and unquote-splicing.
+traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
+fragile and sprawling.
 
 ```
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -2431,6 +2432,16 @@ proc ::constcl::char-downcase {char} {
 ### Control
 
 This section concerns itself with procedures and the application of the same.
+
+A `Procedure` object is basically a
+[closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
+storing the procedure's parameter list, the body, and the environment that is current
+when the object is created (when the procedure is defined).
+
+When a `Procedure` object is called, the body is evaluated in a new environment
+where the parameters are given values from the argument list and the outer link
+goes to the closure environment.
+
 
 ```
 catch { ::constcl::Procedure destroy }

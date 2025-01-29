@@ -3,6 +3,16 @@ MD(
 ### Control
 
 This section concerns itself with procedures and the application of the same.
+
+A `Procedure` object is basically a
+[closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
+storing the procedure's parameter list, the body, and the environment that is current
+when the object is created (when the procedure is defined).
+
+When a `Procedure` object is called, the body is evaluated in a new environment
+where the parameters are given values from the argument list and the outer link
+goes to the closure environment.
+
 MD)
 
 CB
