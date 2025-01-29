@@ -490,52 +490,58 @@ traverses the quasi-quoted structure searching for unquote and unquote-splicing.
 MD)
 
 CB
-proc ::constcl::expand-quasiquote {exps env} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
+proc ::constcl::qq-visit-child {node qqlevel env} {
+    if {$qqlevel < 0} {
+        set qqlevel 0
+    }
+    if {[list? $node] eq "#t"} {
         set res {}
-        if {[list? [car $exps]] eq "#t"} {
-            foreach exp [splitlist [car $exps]] {
-                if {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote"]] eq "#t"} {
-write $exp
-                    set exp [eval [cadr $exp] $env]
-                    lappend res $exp
-                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote-splicing"]] eq "#t"} {
-                    set val [eval [cadr $exp] $env]
-                    if {[[length $val] numval] > 0} {
-                        lappend res {*}[splitlist $val]
-                    }
-                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "quasiquote"]] eq "#t"} {
-                    # do nothing
-                    lappend res $exp
-                } elseif {[list? $exp] eq "#t"} {
-                    set subres {}
-                    foreach subexp [splitlist $exp] {
-                        if {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote"]] eq "#t"} {
-                            set subexp [eval [cadr $subexp] $env]
-                            lappend subres $subexp
-                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "quasiquote"]] eq "#t"} {
-                            # do nothing
-                            lappend subres $subexp
-                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote-splicing"]] eq "#t"} {
-                            set val [eval [cadr $subexp] $env]
-                            if {[[length $val] numval] > 0} {
-                                lappend subres {*}[splitlist $val]
-                            }
-                        } else {
-                            lappend subres $subexp
-                        }
-                    }
-                    set exp [list {*}$subres]
-                    lappend res $exp
+        foreach child [splitlist $node] {
+            if {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res [eval [cadr $child] $env]
                 } else {
-                    lappend res $exp
+                    lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
+            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res {*}[splitlist [eval [cadr $child] $env]]
+                }
+            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "quasiquote"]] eq "#t"} {
+                lappend res [list [MkSymbol "quasiquote"] [car [qq-visit-child [cdr $child] [expr {$qqlevel + 1}] $env]]] 
+            } elseif {[atom? $child] eq "#t"} {
+                lappend res $child
+            } else {
+                lappend res [qq-visit-child $child $qqlevel $env]
             }
-        } elseif {[vector? [car $exps]] eq "#t"} {
         }
-        return [list #Q [list {*}$res]]
+    }
+    return [list {*}$res]
+}
+
+proc ::constcl::expand-quasiquote {exps env} {
+    set qqlevel 0
+    if {[list? [car $exps]] eq "#t"} {
+        set node [car $exps]
+        return [qq-visit-child $node 0 $env]
+    } elseif {[vector? [car $exps]] eq "#t"} {
+        set vect [car $exps]
+        set res {}
+        for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
+            if {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]
+                }
+            } elseif {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res {*}[splitlist [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]]
+                }
+            } elseif {[atom? [vector-ref $vect [MkNumber $i]]] eq "#t"} {
+                lappend res [vector-ref $vect [MkNumber $i]]
+            } else {
+            }
+        }
+        return [list [MkSymbol "vector"] {*}$res]
     }
 }
 CB
@@ -672,12 +678,32 @@ TT(
 
 
 ::tcltest::test eval-6.0 {quasiquotation} -body {
-    pep {`(list ,(+ 1 2) 4)}
-    pep {(let ((name 'a)) `(list ,name ',name))}
-    pep {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}
-    pep {`(( foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))}
-    pep {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}
-} -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) . cons)\n#(10 5 2 4 3 8)"
+    pp {`(list ,(+ 1 2) 4)}
+} -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
+
+::tcltest::test eval-6.1 {quasiquotation} -body {
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,(+ 1 2) 4)}]] ::constcl::global_env]
+    ::constcl::global_env set [::constcl::list [::constcl::MkSymbol "name"]] a
+    pep {(define name 'a)}
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,name ',name)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]] ::constcl::global_env]
+if no {
+}
+} -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
+
+::tcltest::test eval-6.2 {quasiquotation} -body {
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]] ::constcl::global_env]
+if no {
+    pep {(let ((name1 'x)
+      (name2 'y))
+  `(a `(b ,,name1 ,',name2 d) e))}
+    pep {'(quasiquote (list (unquote (+ 1 2)) 4))}
+}
+} -output "(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f)\n"
+
+#(a `(b (unquote x) (unquote (quote y)) d) e)\n(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 
 TT)

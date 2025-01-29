@@ -773,52 +773,58 @@ proc ::constcl::do-or {exps} {
 }
 
 
-proc ::constcl::expand-quasiquote {exps env} {
-    if {[eq? [length $exps] #0] eq "#t"} {
-        return [list #Q #NIL]
-    } else {
+proc ::constcl::qq-visit-child {node qqlevel env} {
+    if {$qqlevel < 0} {
+        set qqlevel 0
+    }
+    if {[list? $node] eq "#t"} {
         set res {}
-        if {[list? [car $exps]] eq "#t"} {
-            foreach exp [splitlist [car $exps]] {
-                if {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote"]] eq "#t"} {
-write $exp
-                    set exp [eval [cadr $exp] $env]
-                    lappend res $exp
-                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote-splicing"]] eq "#t"} {
-                    set val [eval [cadr $exp] $env]
-                    if {[[length $val] numval] > 0} {
-                        lappend res {*}[splitlist $val]
-                    }
-                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "quasiquote"]] eq "#t"} {
-                    # do nothing
-                    lappend res $exp
-                } elseif {[list? $exp] eq "#t"} {
-                    set subres {}
-                    foreach subexp [splitlist $exp] {
-                        if {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote"]] eq "#t"} {
-                            set subexp [eval [cadr $subexp] $env]
-                            lappend subres $subexp
-                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "quasiquote"]] eq "#t"} {
-                            # do nothing
-                            lappend subres $subexp
-                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote-splicing"]] eq "#t"} {
-                            set val [eval [cadr $subexp] $env]
-                            if {[[length $val] numval] > 0} {
-                                lappend subres {*}[splitlist $val]
-                            }
-                        } else {
-                            lappend subres $subexp
-                        }
-                    }
-                    set exp [list {*}$subres]
-                    lappend res $exp
+        foreach child [splitlist $node] {
+            if {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res [eval [cadr $child] $env]
                 } else {
-                    lappend res $exp
+                    lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
+            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res {*}[splitlist [eval [cadr $child] $env]]
+                }
+            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "quasiquote"]] eq "#t"} {
+                lappend res [list [MkSymbol "quasiquote"] [car [qq-visit-child [cdr $child] [expr {$qqlevel + 1}] $env]]] 
+            } elseif {[atom? $child] eq "#t"} {
+                lappend res $child
+            } else {
+                lappend res [qq-visit-child $child $qqlevel $env]
             }
-        } elseif {[vector? [car $exps]] eq "#t"} {
         }
-        return [list #Q [list {*}$res]]
+    }
+    return [list {*}$res]
+}
+
+proc ::constcl::expand-quasiquote {exps env} {
+    set qqlevel 0
+    if {[list? [car $exps]] eq "#t"} {
+        set node [car $exps]
+        return [qq-visit-child $node 0 $env]
+    } elseif {[vector? [car $exps]] eq "#t"} {
+        set vect [car $exps]
+        set res {}
+        for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
+            if {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]
+                }
+            } elseif {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                if {$qqlevel == 0} {
+                    lappend res {*}[splitlist [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]]
+                }
+            } elseif {[atom? [vector-ref $vect [MkNumber $i]]] eq "#t"} {
+                lappend res [vector-ref $vect [MkNumber $i]]
+            } else {
+            }
+        }
+        return [list [MkSymbol "vector"] {*}$res]
     }
 }
 
