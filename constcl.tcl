@@ -811,16 +811,18 @@ proc ::constcl::expand-quasiquote {exps env} {
         set vect [car $exps]
         set res {}
         for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
-            if {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote"]] eq "#t"} {
+            set idx [MkNumber $i]
+            set vecref [vector-ref $vect $idx]
+            if {[pair? $vecref] eq "#t" && [eq? [car $vecref] [MkSymbol "unquote"]] eq "#t"} {
                 if {$qqlevel == 0} {
-                    lappend res [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]
+                    lappend res [eval [cadr $vecref] $env]
                 }
-            } elseif {[pair? [vector-ref $vect [MkNumber $i]]] eq "#t" && [eq? [car [vector-ref $vect [MkNumber $i]]] [MkSymbol "unquote-splicing"]] eq "#t"} {
+            } elseif {[pair? $vecref] eq "#t" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] eq "#t"} {
                 if {$qqlevel == 0} {
-                    lappend res {*}[splitlist [eval [cadr [vector-ref $vect [MkNumber $i]]] $env]]
+                    lappend res {*}[splitlist [eval [cadr $vecref] $env]]
                 }
-            } elseif {[atom? [vector-ref $vect [MkNumber $i]]] eq "#t"} {
-                lappend res [vector-ref $vect [MkNumber $i]]
+            } elseif {[atom? $vecref] eq "#t"} {
+                lappend res $vecref
             } else {
             }
         }
