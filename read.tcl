@@ -118,8 +118,10 @@ proc ::constcl::parse-value {} {
         {\'}          { return [parse-quoted-value] }
         {\(}          { return [parse-pair-value ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
+        {\,}          { return [parse-unquoted-value] }
         {\.}          { ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-value "\]"] }
+        {\`}          { return [parse-quasiquoted-value] }
         {\d}          { return [parse-number] }
         {[[:space:]]} { ib advance }
         {[[:graph:]]} { return [parse-identifier] }
@@ -351,6 +353,54 @@ proc ::constcl::parse-plus-minus {} {
     }
 }
 CB
+
+MD(
+`parse-unquoted-value` reads a value and returns it wrapped in `unquote`.
+MD)
+
+CB
+proc ::constcl::parse-unquoted-value {} {
+    ib advance
+    set symbol "unquote"
+    if {[ib first] eq "@"} {
+        set symbol "unquote-splicing"
+        ib advance
+    }
+    set val [parse-value]
+    ib skip-ws
+    return [list [MkSymbol $symbol] $val]
+}
+CB
+
+TT(
+
+::tcltest::test read-1.9 {try reading unquoted symbol} -body {
+    pp ",foo"
+} -output "(unquote foo)\n"
+
+TT)
+
+MD(
+`parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
+MD)
+
+CB
+proc ::constcl::parse-quasiquoted-value {} {
+    ib advance
+    set val [parse-value]
+    ib skip-ws
+    make-constant $val
+    return [list [MkSymbol "quasiquote"] $val]
+}
+CB
+
+TT(
+
+::tcltest::test read-1.10 {try reading unquoted symbol} -body {
+    pp "`(list 1 2 ,@foo)"
+} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
+
+TT)
 
 MD(
 `parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.

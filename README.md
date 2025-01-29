@@ -268,8 +268,10 @@ proc ::constcl::parse-value {} {
         {\'}          { return [parse-quoted-value] }
         {\(}          { return [parse-pair-value ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
+        {\,}          { return [parse-unquoted-value] }
         {\.}          { ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-value "\]"] }
+        {\`}          { return [parse-quasiquoted-value] }
         {\d}          { return [parse-number] }
         {[[:space:]]} { ib advance }
         {[[:graph:]]} { return [parse-identifier] }
@@ -424,6 +426,36 @@ proc ::constcl::parse-plus-minus {} {
     }
 }
 ```
+
+`parse-unquoted-value` reads a value and returns it wrapped in `unquote`.
+
+```
+proc ::constcl::parse-unquoted-value {} {
+    ib advance
+    set symbol "unquote"
+    if {[ib first] eq "@"} {
+        set symbol "unquote-splicing"
+        ib advance
+    }
+    set val [parse-value]
+    ib skip-ws
+    return [list [MkSymbol $symbol] $val]
+}
+```
+
+
+`parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
+
+```
+proc ::constcl::parse-quasiquoted-value {} {
+    ib advance
+    set val [parse-value]
+    ib skip-ws
+    make-constant $val
+    return [list [MkSymbol "quasiquote"] $val]
+}
+```
+
 
 `parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 

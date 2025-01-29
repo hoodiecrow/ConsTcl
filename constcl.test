@@ -63,6 +63,18 @@ source constcl.tcl
 } -output "(a (b))\n"
 
 
+
+::tcltest::test read-1.9 {try reading unquoted symbol} -body {
+    pp ",foo"
+} -output "(unquote foo)\n"
+
+
+
+::tcltest::test read-1.10 {try reading unquoted symbol} -body {
+    pp "`(list 1 2 ,@foo)"
+} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
+
+
 ::tcltest::test read-2.0 {try reading a number} {
     set obj [::constcl::parse "99.99"]
     $obj value
