@@ -36,7 +36,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond for for/and for/list for/or let or}} {
+        while {[$op name] in {and case cond for for/and for/list for/or let or quasiquote}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -241,6 +241,9 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set val [expand-or $args]
+        }
+        quasiquote {
+            set val [expand-quasiquote $args $env]
         }
     }
     set op [car $val]
@@ -481,6 +484,62 @@ proc ::constcl::do-or {exps} {
 }
 CB
 
+MD(
+A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
+traverses the quasi-quoted structure searching for unquote and unquote-splicing.
+MD)
+
+CB
+proc ::constcl::expand-quasiquote {exps env} {
+    if {[eq? [length $exps] #0] eq "#t"} {
+        return [list #Q #NIL]
+    } else {
+        set res {}
+        if {[list? [car $exps]] eq "#t"} {
+            foreach exp [splitlist [car $exps]] {
+                if {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote"]] eq "#t"} {
+write $exp
+                    set exp [eval [cadr $exp] $env]
+                    lappend res $exp
+                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                    set val [eval [cadr $exp] $env]
+                    if {[[length $val] numval] > 0} {
+                        lappend res {*}[splitlist $val]
+                    }
+                } elseif {[list? $exp] eq "#t" && [eq? [car $exp] [MkSymbol "quasiquote"]] eq "#t"} {
+                    # do nothing
+                    lappend res $exp
+                } elseif {[list? $exp] eq "#t"} {
+                    set subres {}
+                    foreach subexp [splitlist $exp] {
+                        if {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote"]] eq "#t"} {
+                            set subexp [eval [cadr $subexp] $env]
+                            lappend subres $subexp
+                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "quasiquote"]] eq "#t"} {
+                            # do nothing
+                            lappend subres $subexp
+                        } elseif {[list? $subexp] eq "#t" && [eq? [car $subexp] [MkSymbol "unquote-splicing"]] eq "#t"} {
+                            set val [eval [cadr $subexp] $env]
+                            if {[[length $val] numval] > 0} {
+                                lappend subres {*}[splitlist $val]
+                            }
+                        } else {
+                            lappend subres $subexp
+                        }
+                    }
+                    set exp [list {*}$subres]
+                    lappend res $exp
+                } else {
+                    lappend res $exp
+                }
+            }
+        } elseif {[vector? [car $exps]] eq "#t"} {
+        }
+        return [list #Q [list {*}$res]]
+    }
+}
+CB
+
 TT(
 
 ::tcltest::test eval-1.0 {expand and macro} -body {
@@ -610,6 +669,15 @@ TT(
     pep {((lambda (x y . z) (list x y)) 3 4 5 6)}
     pep {((lambda (x y . z) z) 3 4 5 6)}
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
+
+
+::tcltest::test eval-6.0 {quasiquotation} -body {
+    pep {`(list ,(+ 1 2) 4)}
+    pep {(let ((name 'a)) `(list ,name ',name))}
+    pep {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}
+    pep {`(( foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))}
+    pep {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}
+} -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) . cons)\n#(10 5 2 4 3 8)"
 
 
 TT)

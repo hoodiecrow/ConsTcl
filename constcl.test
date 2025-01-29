@@ -287,6 +287,15 @@ source constcl.tcl
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
+::tcltest::test eval-6.0 {quasiquotation} -body {
+    pep {`(list ,(+ 1 2) 4)}
+    pep {(let ((name 'a)) `(list ,name ',name))}
+    pep {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}
+    pep {`(( foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))}
+    pep {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}
+} -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) . cons)\n#(10 5 2 4 3 8)"
+
+
 
 
 ::tcltest::test write-1.0 {read, eval, and write a number} -body {
