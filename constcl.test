@@ -419,7 +419,15 @@ source constcl.tcl
 
 ::tcltest::test number-1.19 {try quotient, remainder, modulo} -body {
     pep "(quotient 13 4)"
-} -output "3.0\n"
+    pep "(modulo 13 4)"
+    pep "(remainder 13 4)"
+    pep "(modulo -13 4)"
+    pep "(remainder -13 4)"
+    pep "(modulo 13 -4)"
+    pep "(remainder 13 -4)"
+    pep "(modulo -13 -4)"
+    pep "(remainder -13 -4)"
+} -output "3.0\n1\n1\n3\n-1\n-3\n1\n-1\n-1\n"
 
 
 

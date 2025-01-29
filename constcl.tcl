@@ -878,11 +878,11 @@ oo::class create ::constcl::Number {
             error "NUMBER expected\n$v"
         }
     }
-    method zero {} {if {$value == 0} then {return #t} else {return #f}}
-    method positive {} {if {$value > 0} then {return #t} else {return #f}}
-    method negative {} {if {$value < 0} then {return #t} else {return #f}}
-    method even {} {if {$value % 2 == 0} then {return #t} else {return #f}}
-    method odd {} {if {$value % 2 == 1} then {return #t} else {return #f}}
+    method zero? {} {if {$value == 0} then {return #t} else {return #f}}
+    method positive? {} {if {$value > 0} then {return #t} else {return #f}}
+    method negative? {} {if {$value < 0} then {return #t} else {return #f}}
+    method even? {} {if {$value % 2 == 0} then {return #t} else {return #f}}
+    method odd? {} {if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
     method mkconstant {} {}
@@ -993,7 +993,7 @@ reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {obj} {
     if {[number? $obj] eq "#t"} {
-        return [$obj zero]
+        return [$obj zero?]
     } else {
         error "NUMBER expected\n(zero? [$obj show])"
     }
@@ -1005,7 +1005,7 @@ reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj positive]
+        return [$obj positive?]
     } else {
         error "NUMBER expected\n(positive? [$obj show])"
     }
@@ -1016,7 +1016,7 @@ reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj negative]
+        return [$obj negative?]
     } else {
         error "NUMBER expected\n(negative? [$obj show])"
     }
@@ -1027,7 +1027,7 @@ reg even? ::constcl::even?
 
 proc ::constcl::even? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj even]
+        return [$obj even?]
     } else {
         error "NUMBER expected\n(even? [$obj show])"
     }
@@ -1038,7 +1038,7 @@ reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {obj} {
     if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj odd]
+        return [$obj odd?]
     } else {
         error "NUMBER expected\n(odd? [$obj show])"
     }
@@ -1130,7 +1130,7 @@ reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative] eq "#t"} {
+        if {[$x negative?] eq "#t"} {
             return [MkNumber [expr {[$x numval] * -1}]]
         } else {
             return $x
@@ -1154,12 +1154,20 @@ proc ::constcl::quotient {n1 n2} {
     }
 }
 
+reg remainder
+
 proc ::constcl::remainder {n1 n2} {
-    # TODO
+    set n [::tcl::mathop::% [[abs $n1] numval] [[abs $n2] numval]]
+    if {[$n1 negative?] eq "#t"} {
+        set n -$n
+    }
+    return [MkNumber $n]
 }
 
+reg modulo
+
 proc ::constcl::modulo {n1 n2} {
-    # TODO
+    return [MkNumber [::tcl::mathop::% [$n1 numval] [$n2 numval]]]
 }
 
 
@@ -1206,7 +1214,7 @@ reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
     if {[::constcl::number? $x] eq "#t"} {
-        if {[$x negative] eq "#t"} {
+        if {[$x negative?] eq "#t"} {
             MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
             MkNumber [::tcl::mathfunc::floor [$x numval]]
