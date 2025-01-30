@@ -1113,7 +1113,7 @@ proc ::constcl::write-pair {obj} {
         # cdr is a cons pair
         puts -nonewline " "
         write-pair $d
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return
     } else {
@@ -2783,7 +2783,7 @@ proc ::constcl::show-pair {obj} {
         # cdr is a cons pair
         ::append str " "
         ::append str [show-pair $d]
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return $str
     } else {
@@ -2953,7 +2953,7 @@ proc ::constcl::list {args} {
 
 ```
 proc ::constcl::length-helper {obj} {
-    if {$obj eq "#NIL"} {
+    if {[null? $obj] eq "#t"} {
         return 0
     } else {
         return [expr {1 + [length-helper [cdr $obj]]}]
@@ -3992,6 +3992,7 @@ is a loop that repeatedly _reads_ a Scheme source string from the user through t
 ```
 proc ::constcl::input {prompt} {
     puts -nonewline $prompt
+    flush stdout
     gets stdin
 }
 ```
@@ -4011,10 +4012,13 @@ proc ::constcl::repl {{prompt "ConsTcl> "}} {
 
 ## Environment class and objects
 
-The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
+The class for environments is called `Environment`. It is mostly a wrapper around a dictionary,
 with the added finesse of keeping a link to the outer environment (starting a chain that goes all
 the way to the global environment and then stops at the null environment) which can be traversed
 by the find method to find which innermost environment a given symbol is bound in.
+
+The long and complex constructor is to accomodate the variations of Scheme parameter lists, which 
+can be empty, a proper list, a symbol, or an improper list.
 
 ```
 catch { ::constcl::Environment destroy }
@@ -4023,7 +4027,7 @@ oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
         set bindings [dict create]
-        if {$syms eq "#NIL"} {
+        if {[::constcl::null? $syms] eq "#t"} {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
             set syms [::constcl::splitlist $syms]
@@ -4070,10 +4074,10 @@ oo::class create ::constcl::Environment {
 ```
 
 
-On startup, two __Environment__ objects called __null_env__ (the null environment, not the same
-as __null-environment__ in Scheme) and __global_env__ (the global environment) are created. 
+On startup, two `Environment` objects called `null_env` (the null environment, not the same
+as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
 
-Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
+Make `null_env` empty and unresponsive: this is where searches for unbound symbols end up.
 
 ```
 ::constcl::Environment create ::constcl::null_env #NIL {}
@@ -4085,8 +4089,8 @@ oo::objdefine ::constcl::null_env {
 }
 ```
 
-Meanwhile, __global_env__ is populated with all the definitions from the definitions register,
-__defreg__. This is where top level evaluation happens.
+Meanwhile, `global_env` is populated with all the definitions from the definitions register,
+`defreg`. This is where top level evaluation happens.
 
 ```
 namespace eval ::constcl {
@@ -4097,7 +4101,7 @@ namespace eval ::constcl {
 }
 ```
 
-Thereafter, each time a user-defined procedure is called, a new __Environment__ object is
+Thereafter, each time a user-defined procedure is called, a new `Environment` object is
 created to hold the bindings introduced by the call, and also a link to the outer environment
 (the one closed over when the procedure was defined).
 
@@ -4121,7 +4125,7 @@ in its own environment, which the procedure will be evaluated in. The symbols
 to the outer global environment. This is all part of
 _[lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)_.
 
-In the first image, we see the global environment before we call __circle-area__
+In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):
 
 ![A global environment](/images/env1.png)
