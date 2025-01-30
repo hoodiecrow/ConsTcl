@@ -607,6 +607,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 
 Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
 environment chain for the symbol's name, and returns the value it is bound to.
+![The lookup procedure](/images/lookup.png)
 
 ```
 proc ::constcl::lookup {sym env} {
@@ -621,6 +622,7 @@ _alternate_) is evaluated and the value returned.
 
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
+![The eprogn procedure](/images/eprogn.png)
 
 ```
 proc ::constcl::eprogn {exps env} {
@@ -639,6 +641,7 @@ proc ::constcl::eprogn {exps env} {
 
 The `declare` helper adds a variable to the current environment. It first checks that the
 symbol name is a valid identifier, then it updates the environment with the new binding.
+![The declare procedure](/images/declare.png)
 
 ```
 proc ::constcl::declare {sym val env} {
@@ -652,6 +655,7 @@ The `update!` helper does _assignment_: it modifies an existing variable that is
 somewhere in the environment chain. It finds the variable's environment and updates the
 binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
+![The update! procedure](/images/update!.png)
 
 ```
 proc ::constcl::update! {var val env} {
@@ -664,6 +668,7 @@ proc ::constcl::update! {var val env} {
 object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
+![The make-function procedure](/images/make-function.png)
 
 ```
 proc ::constcl::make-function {formals body env} {
@@ -679,6 +684,7 @@ proc ::constcl::make-function {formals body env} {
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
 arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+![The invoke procedure](/images/invoke.png)
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -709,6 +715,7 @@ proc ::constcl::splitlist {vals} {
 
 `eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
+![The eval-list procedure](/images/eval-list.png)
 
 ```
 proc ::constcl::eval-list {exps env} {
