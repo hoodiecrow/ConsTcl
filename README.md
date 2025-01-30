@@ -169,7 +169,7 @@ Or it gets the hose again.
 
 
 ```
-catch { ib destroy }
+catch { ::constcl::IB destroy }
 
 oo::class create ::constcl::IB {
     variable peekc buffer
@@ -230,13 +230,11 @@ oo::class create ::constcl::IB {
 ::constcl::IB create ::constcl::ib
 ```
 
-When given a string, `parse` fills the input buffer. It then reads and parses the input.
+Given a string, `parse` fills the input buffer. It then reads and parses the input.
 
 ```
-proc ::constcl::parse {args} {
-    if {[llength $args]} {
-        ib fill [lindex $args 0]
-    }
+proc ::constcl::parse {str} {
+    ib fill $str
     return [parse-value]
 }
 ```
@@ -267,9 +265,9 @@ proc ::constcl::parse-value {} {
         {\.}          { ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-value "\]"] }
         {\`}          { return [parse-quasiquoted-value] }
-        {\d}          { return [parse-number] }
+        {\d}          { return [parse-number-value] }
         {[[:space:]]} { ib advance }
-        {[[:graph:]]} { return [parse-identifier] }
+        {[[:graph:]]} { return [parse-identifier-value] }
         default {
             error "unexpected char [ib first]"
         }
@@ -309,10 +307,10 @@ a sharp sign (#).
 proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
-        (    { return [parse-vector] }
+        (    { return [parse-vector-value] }
         t    { ib advance ; ib skip-ws ; return #t }
         f    { ib advance ; ib skip-ws ; return #f }
-        "\\" { return [parse-character] }
+        "\\" { return [parse-character-value] }
         default {
             error "Illegal #-literal"
         }
@@ -409,7 +407,7 @@ proc ::constcl::parse-plus-minus {} {
     ib advance
     if {[::string is digit -strict [ib first]]} {
         ib unget $c
-        return [::constcl::parse-number]
+        return [::constcl::parse-number-value]
     } else {
         if {$c eq "+"} {
             ib skip-ws
@@ -452,10 +450,10 @@ proc ::constcl::parse-quasiquoted-value {} {
 ```
 
 
-`parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 ```
-proc ::constcl::parse-number {} {
+proc ::constcl::parse-number-value {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
@@ -470,10 +468,10 @@ proc ::constcl::parse-number {} {
 ```
 
 
-`parse-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 ```
-proc ::constcl::parse-identifier {} {
+proc ::constcl::parse-identifier-value {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
@@ -494,10 +492,10 @@ proc ::constcl::character-check {name} {
 }
 ```
 
-`parse-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 ```
-proc ::constcl::parse-character {} {
+proc ::constcl::parse-character-value {} {
     set name "#"
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
@@ -513,10 +511,10 @@ proc ::constcl::parse-character {} {
 ```
 
 
-`parse-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 ```
-proc ::constcl::parse-vector {} {
+proc ::constcl::parse-vector-value {} {
     ib advance
     ib skip-ws
     set res {}
@@ -554,7 +552,7 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
-
+[The eval procedure](/images/eval.png)
 
 ```
 reg eval ::constcl::eval
@@ -650,15 +648,15 @@ proc ::constcl::declare {sym val env} {
 }
 ```
 
-The `update!` helper modifies an existing variable that is bound somewhere in the 
-environment chain. It finds the variable's environment and updates the binding. It
-returns the expression, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
+The `update!` helper does _assignment_: it modifies an existing variable that is bound
+somewhere in the environment chain. It finds the variable's environment and updates the
+binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
 
 ```
-proc ::constcl::update! {var expr env} {
-    [$env find $var] set $var $expr
-    set expr
+proc ::constcl::update! {var val env} {
+    [$env find $var] set $var $val
+    set val
 }
 ```
 
@@ -771,6 +769,7 @@ proc ::constcl::expand-macro {n1 n2 env} {
     }
     set op [car $val]
     set args [cdr $val]
+    return #NIL
 }
 ```
 
@@ -1092,11 +1091,12 @@ a newline.
 ```
 reg write ::constcl::write
 
-proc ::constcl::write {obj args} {
-    if {$obj ne "#NONE"} {
-        ::constcl::write-value $obj
+proc ::constcl::write {val args} {
+    if {$val ne "#NONE"} {
+        ::constcl::write-value $val
         puts {}
     }
+    return #NONE
 }
 ```
 
@@ -1104,8 +1104,8 @@ proc ::constcl::write {obj args} {
 write itself.
 
 ```
-proc ::constcl::write-value {obj} {
-    $obj write
+proc ::constcl::write-value {val} {
+    $val write
 }
 ```
 
@@ -1114,19 +1114,20 @@ The `display` procedure is like `write` but doesn't print a newline.
 ```
 reg display ::constcl::display
 
-proc ::constcl::display {obj args} {
-    ::constcl::write-value $obj
+proc ::constcl::display {val args} {
+    ::constcl::write-value $val
     flush stdout
+    return #NONE
 }
 ```
 
 The `write-pair` procedure prints a Pair object.
 
 ```
-proc ::constcl::write-pair {obj} {
+proc ::constcl::write-pair {val} {
     # take an object and print the car and the cdr of the stored value
-    set a [car $obj]
-    set d [cdr $obj]
+    set a [car $val]
+    set d [cdr $val]
     # print car
     write-value $a
     if {[pair? $d] eq "#t"} {
@@ -1141,6 +1142,7 @@ proc ::constcl::write-pair {obj} {
         puts -nonewline " . "
         write-value $d
     }
+    return #NONE
 }
 ```
 
@@ -4093,6 +4095,7 @@ oo::class create ::constcl::Environment {
 }
 ```
 
+# vim: set filetype=tcl:
 
 On startup, two `Environment` objects called `null_env` (the null environment, not the same
 as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
