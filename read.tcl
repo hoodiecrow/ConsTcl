@@ -18,7 +18,7 @@ Or it gets the hose again.
 MD)
 
 CB
-catch { ib destroy }
+catch { ::constcl::IB destroy }
 
 oo::class create ::constcl::IB {
     variable peekc buffer

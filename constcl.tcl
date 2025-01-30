@@ -101,7 +101,7 @@ proc ::constcl::dot? {obj} {
 
 
 
-catch { ib destroy }
+catch { ::constcl::IB destroy }
 
 oo::class create ::constcl::IB {
     variable peekc buffer
