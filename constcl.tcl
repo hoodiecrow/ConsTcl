@@ -429,7 +429,9 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond for for/and for/list for/or let or quasiquote}} {
+        while {[$op name] in {
+                and case cond for for/and for/list
+                for/or let or define quasiquote}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -540,6 +542,9 @@ proc ::constcl::eval-list {exps env} {
 
 proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
+    if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
+        return -code break
+    }
     switch [$op name] {
         and {
             set val [expand-and $args]
@@ -567,6 +572,9 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set val [expand-or $args]
+        }
+        define {
+            set val [expand-define $args]
         }
         quasiquote {
             set val [expand-quasiquote $args $env]
@@ -753,6 +761,14 @@ proc ::constcl::do-or {exps} {
 }
 
 
+proc ::constcl::expand-define {exps} {
+    set symbol [caar $exps]
+    set formals [cdar $exps]
+    set body [cdr $exps]
+    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
+}
+
+
 proc ::constcl::qq-visit-child {node qqlevel env} {
     if {$qqlevel < 0} {
         set qqlevel 0
@@ -858,7 +874,7 @@ proc ::constcl::write-pair {obj} {
         # cdr is a cons pair
         puts -nonewline " "
         write-pair $d
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return
     } else {
@@ -2224,7 +2240,7 @@ proc ::constcl::show-pair {obj} {
         # cdr is a cons pair
         ::append str " "
         ::append str [show-pair $d]
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return $str
     } else {
@@ -2364,7 +2380,7 @@ proc ::constcl::list {args} {
 
 
 proc ::constcl::length-helper {obj} {
-    if {$obj eq "#NIL"} {
+    if {[null? $obj] eq "#t"} {
         return 0
     } else {
         return [expr {1 + [length-helper [cdr $obj]]}]
@@ -3216,6 +3232,7 @@ proc ::constcl::atom? {obj} {
 
 proc ::constcl::input {prompt} {
     puts -nonewline $prompt
+    flush stdout
     gets stdin
 }
 
@@ -3234,7 +3251,7 @@ oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
         set bindings [dict create]
-        if {$syms eq "#NIL"} {
+        if {[::constcl::null? $syms] eq "#t"} {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
             set syms [::constcl::splitlist $syms]
@@ -3294,7 +3311,6 @@ namespace eval ::constcl {
     set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
-    format "[llength [dict keys $defreg]] built-in procedures in definition register"
 }
 
 

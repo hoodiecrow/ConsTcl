@@ -571,7 +571,9 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond for for/and for/list for/or let or quasiquote}} {
+        while {[$op name] in {
+                and case cond for for/and for/list
+                for/or let or define quasiquote}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -729,6 +731,9 @@ available are hardcoded in the code below.
 ```
 proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
+    if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
+        return -code break
+    }
     switch [$op name] {
         and {
             set val [expand-and $args]
@@ -756,6 +761,9 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set val [expand-or $args]
+        }
+        define {
+            set val [expand-define $args]
         }
         quasiquote {
             set val [expand-quasiquote $args $env]
@@ -977,6 +985,18 @@ proc ::constcl::do-or {exps} {
     } else {
         return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
     }
+}
+```
+
+`define` has two variants, one of which requires some rewriting. It's the one with an implied `lambda`
+call, the one that defines a procedure.
+
+```
+proc ::constcl::expand-define {exps} {
+    set symbol [caar $exps]
+    set formals [cdar $exps]
+    set body [cdr $exps]
+    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
 }
 ```
 
@@ -4106,7 +4126,8 @@ created to hold the bindings introduced by the call, and also a link to the oute
 
 #### Lexical scoping
 
-A procedure definition form creates a new procedure. Example:
+
+Example:
 
 ```
 ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))

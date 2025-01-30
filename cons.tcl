@@ -139,8 +139,8 @@ TT(
 } -output 655360\n
 
 ::tcltest::test cons-5.0 {fib-range} -body {
-    pep "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))"
-    pep "(define range (lambda (a b) (if (= a b) (quote ()) (cons a (range (+ a 1) b)))))"
+    pep "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
+    pep "(define (range a b) (if (= a b) (quote ()) (cons a (range (+ a 1) b))))"
     pep "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 
@@ -173,7 +173,7 @@ TT(
 } -match regexp -output "::oo::Obj\\d+\n"
 
 ::tcltest::test cons-8.1 {procedure with two expressions} -body {
-    pep "(define f (lambda () (define r 20) (* r r)))"
+    pep "(define (f) (define r 20) (* r r))"
     pep "(f)"
 } -output "400\n"
 
@@ -182,7 +182,7 @@ TT(
 } -output "#t\n"
 
 ::tcltest::test cons-10.0 {shadowing} -body {
-    pep "(begin (define r 10) (define f (lambda (r) (set! r 20))) (f 30) r)"
+    pep "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
 } -output "10\n"
 
 #-constraints knownBug 
@@ -223,17 +223,17 @@ TT(
 } -output "(quote foo)\n"
 
 ::tcltest::test cons-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pep "(define every? (lambda (fn list)
+    pep "(define (every? fn list)
   (or (null? list)
-      (and (fn (car list)) (every? fn (cdr list))))))"
+      (and (fn (car list)) (every? fn (cdr list)))))"
     pep "(every? number? '(1 2 3 4))"
 } -output "#t\n"
 
 ::tcltest::test cons-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pep "(define adjoin (lambda (x a)
+    pep "(define (adjoin x a)
   (if (member x a)
       a
-      (cons x a))))"
+      (cons x a)))"
     pep "(adjoin 'x '(a b c))"
 } -output "(x a b c)\n"
 
@@ -242,46 +242,46 @@ TT(
 } -output "(a b c)\n"
 
 ::tcltest::test cons-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pep "(define list-index (lambda (fn list)
+    pep "(define (list-index fn list)
   (let iter ((list list) (index 0))
     (if (null? list)
         -1
         (let ((item (car list)))
           (if (fn item)
               index
-              (iter (cdr list) (+ index 1))))))))"
-    pep "(define >10 (lambda (x) (> x 10)))"
+              (iter (cdr list) (+ index 1)))))))"
+    pep "(define (>10 x) (> x 10))"
     pep "(list-index >10 '(1 2 3 4 10 11 12 13 14))"
 } -output "5\n"
 
 ::tcltest::test cons-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pep "(define take (lambda (lst n)
+    pep "(define (take lst n)
   (let loop ((result '()) (i n) (lst lst))
     (if (or (null? lst) (<= i 0))
         (reverse result)
-        (loop (cons (car lst) result) (- i 1) (cdr lst))))))"
-    pep "(define sublist-map (lambda (n fn lst)
+        (loop (cons (car lst) result) (- i 1) (cdr lst)))))"
+    pep "(define (sublist-map n fn lst)
   (let loop ((lst lst) (result '()))
     (if (< (length lst) n)
         (reverse result)
         (let ((next-list (take lst n)))
-          (loop (cdr lst) (cons (apply fn next-list) result)))))))"
+          (loop (cdr lst) (cons (apply fn next-list) result))))))"
     pep "(sublist-map 2 < '(1 2 3 4))"
 } -output "(#t #t #t)\n"
 
 ::tcltest::test cons-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pep "(define remove (lambda (fn lst)
+    pep "(define (remove fn lst)
   (let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
         (let ((item (car lst)))
           (loop (cdr lst)
-                (if (fn item) result (cons item result))))))))"
+                (if (fn item) result (cons item result)))))))"
     pep "(remove >10 '(1 2 3 4 10 11 12 13 14))"
 } -output "(1 2 3 4 10)\n"
 
 ::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -body {
-    pep {(define group (lambda (n lst)
+    pep {(define (group n lst)
   (if (< n 1)
       (error "group: n must be positive")
       (let loop ((lst lst) (m n) (g '()) (gs '()))
@@ -290,12 +290,12 @@ TT(
               ((or (null? lst) (zero? m))
                (loop lst n '() (cons (reverse g) gs)))
               (else
-               (loop (cdr lst) (- m 1) (cons (car lst) g) gs)))))))}
+               (loop (cdr lst) (- m 1) (cons (car lst) g) gs))))))}
     pep "(group 3 (in-range 10))"
 } -output "((0 1 2) (3 4 5) (6 7 8) (9))\n"
 
 ::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -body {
-    pep {(define group-by (lambda (f lst)
+    pep {(define (group-by f lst)
   (if (null? lst) '()
       (let ((first (car lst)))
         (let loop ((lst (cdr lst))
@@ -311,7 +311,7 @@ TT(
                           groups)
                     (loop (cdr lst) newkey
                           (list (car lst))
-                          (cons (reverse group) groups))))))))))}
+                          (cons (reverse group) groups)))))))))}
     pep "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
 } -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
 

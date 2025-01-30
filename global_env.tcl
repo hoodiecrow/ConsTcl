@@ -1,9 +1,9 @@
 
 MD(
-On startup, two __Environment__ objects called __null_env__ (the null environment, not the same
-as __null-environment__ in Scheme) and __global_env__ (the global environment) are created. 
+On startup, two `Environment` objects called `null_env` (the null environment, not the same
+as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
 
-Make __null_env__ empty and unresponsive: this is where searches for unbound symbols end up.
+Make `null_env` empty and unresponsive: this is where searches for unbound symbols end up.
 MD)
 
 CB
@@ -17,8 +17,8 @@ oo::objdefine ::constcl::null_env {
 CB
 
 MD(
-Meanwhile, __global_env__ is populated with all the definitions from the definitions register,
-__defreg__. This is where top level evaluation happens.
+Meanwhile, `global_env` is populated with all the definitions from the definitions register,
+`defreg`. This is where top level evaluation happens.
 MD)
 
 CB
@@ -26,18 +26,18 @@ namespace eval ::constcl {
     set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
-    format "[llength [dict keys $defreg]] built-in procedures in definition register"
 }
 CB
 
 MD(
-Thereafter, each time a user-defined procedure is called, a new __Environment__ object is
+Thereafter, each time a user-defined procedure is called, a new `Environment` object is
 created to hold the bindings introduced by the call, and also a link to the outer environment
 (the one closed over when the procedure was defined).
 
 #### Lexical scoping
 
-A procedure definition form creates a new procedure. Example:
+
+Example:
 
 ```
 ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))
@@ -55,7 +55,7 @@ in its own environment, which the procedure will be evaluated in. The symbols
 to the outer global environment. This is all part of
 _[lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)_.
 
-In the first image, we see the global environment before we call __circle-area__
+In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):
 
 ![A global environment](/images/env1.png)

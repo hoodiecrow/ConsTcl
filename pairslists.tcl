@@ -77,7 +77,7 @@ proc ::constcl::show-pair {obj} {
         # cdr is a cons pair
         ::append str " "
         ::append str [show-pair $d]
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return $str
     } else {
@@ -382,7 +382,7 @@ MD)
 
 CB
 proc ::constcl::length-helper {obj} {
-    if {$obj eq "#NIL"} {
+    if {[null? $obj] eq "#t"} {
         return 0
     } else {
         return [expr {1 + [length-helper [cdr $obj]]}]

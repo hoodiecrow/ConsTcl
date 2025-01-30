@@ -57,7 +57,7 @@ proc ::constcl::write-pair {obj} {
         # cdr is a cons pair
         puts -nonewline " "
         write-pair $d
-    } elseif {$d eq "#NIL"} {
+    } elseif {[null? $d] eq "#t"} {
         # cdr is nil
         return
     } else {

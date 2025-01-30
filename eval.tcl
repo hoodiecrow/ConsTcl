@@ -36,7 +36,9 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
     } else {
         set op [car $e]
         set args [cdr $e]
-        while {[$op name] in {and case cond for for/and for/list for/or let or quasiquote}} {
+        while {[$op name] in {
+                and case cond for for/and for/list
+                for/or let or define quasiquote}} {
             expand-macro op args $env
         }
         switch [$op name] {
@@ -214,6 +216,9 @@ MD)
 CB
 proc ::constcl::expand-macro {n1 n2 env} {
     upvar $n1 op $n2 args
+    if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
+        return -code break
+    }
     switch [$op name] {
         and {
             set val [expand-and $args]
@@ -241,6 +246,9 @@ proc ::constcl::expand-macro {n1 n2 env} {
         }
         or {
             set val [expand-or $args]
+        }
+        define {
+            set val [expand-define $args]
         }
         quasiquote {
             set val [expand-quasiquote $args $env]
@@ -484,6 +492,20 @@ proc ::constcl::do-or {exps} {
 CB
 
 MD(
+`define` has two variants, one of which requires some rewriting. It's the one with an implied `lambda`
+call, the one that defines a procedure.
+MD)
+
+CB
+proc ::constcl::expand-define {exps} {
+    set symbol [caar $exps]
+    set formals [cdar $exps]
+    set body [cdr $exps]
+    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
+}
+CB
+
+MD(
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
 traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
 fragile and sprawling.
@@ -713,6 +735,22 @@ if no {
 } -output "(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f)\n"
 
 #(a `(b (unquote x) (unquote (quote y)) d) e)\n(quasiquote (list (unquote (+ 1 2)) 4))\n"
+
+::tcltest::test eval-7.0 {define} -body {
+    pxp {(define (foo a b) (+ a b) (* a b))}
+} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
+
+::tcltest::test eval-7.1 {define} -body {
+    pxp "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
+} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
+
+::tcltest::test eval-7.2 {define} -body {
+    pxp "(define (f) (define r 20) (* r r))"
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+::tcltest::test eval-8.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+    pep "(if (zero? 0) (* 4 4) (- 5 5))"
+} -output "16\n"
 
 
 TT)

@@ -16,6 +16,7 @@ MD)
 CB
 proc ::constcl::input {prompt} {
     puts -nonewline $prompt
+    flush stdout
     gets stdin
 }
 CB
