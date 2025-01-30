@@ -3,7 +3,6 @@ A second try at a Lisp interpreter written in Tcl (the first one was [Thtcl](htt
 this time with a real Lisp-like type system. It steps over and back over the border
 between Tcl and Lisp a lot of times while working, and as a result is fairly slow.
 
-MD(
 #### Benchmark
 
 On my cheap computer, the following code takes 0.024 seconds to run.
@@ -14,7 +13,6 @@ namespace eval ::constcl {
     time {eval [parse "(fact 100)"]} 10
 }
 ```
-MD)
 
 
 Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO
@@ -63,8 +61,7 @@ proc ::pxp {str} {
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
     ::constcl::expand-macro op args ::constcl::global_env
-    set val [::constcl::cons $op $args]
-    ::constcl::write $val
+    ::constcl::write [::constcl::cons $op $args]
 }
 ```
 
@@ -76,21 +73,6 @@ but has grown a bit since then to suit my needs.
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
-proc ::constcl::tcl-in-range {args} {
-    set start 0
-    set step 1
-    switch [llength $args] {
-        1 { lassign $args e ; set end [$e value]}
-        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
-        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
-    }
-    set res $start
-    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
-        lappend res $start
-    }
-    return [lmap r $res {MkNumber $r}]
-}
-
 proc ::constcl::in-range {args} {
     set start 0
     set step 1
