@@ -13,7 +13,7 @@ oo::class create ::constcl::Number {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[::string is double $v]} {
+        if {[::string is double -strict $v]} {
             set value $v
         } else {
             error "NUMBER expected\n$v"
@@ -469,7 +469,7 @@ CB
 reg abs ::constcl::abs
 
 proc ::constcl::abs {x} {
-    if {[::constcl::number? $x] eq "#t"} {
+    if {[number? $x] eq "#t"} {
         if {[$x negative?] eq "#t"} {
             return [MkNumber [expr {[$x numval] * -1}]]
         } else {
@@ -573,7 +573,7 @@ CB
 reg floor ::constcl::floor
 
 proc ::constcl::floor {x} {
-    if {[::constcl::number? $x] eq "#t"} {
+    if {[number? $x] eq "#t"} {
         MkNumber [::tcl::mathfunc::floor [$x numval]]
     } else {
         error "NUMBER expected\n(floor [$x show])"
@@ -593,7 +593,7 @@ CB
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {x} {
-    if {[::constcl::number? $x] eq "#t"} {
+    if {[number? $x] eq "#t"} {
         MkNumber [::tcl::mathfunc::ceil [$x numval]]
     } else {
         error "NUMBER expected\n(ceiling [$x show])"
@@ -613,7 +613,7 @@ CB
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {x} {
-    if {[::constcl::number? $x] eq "#t"} {
+    if {[number? $x] eq "#t"} {
         if {[$x negative?] eq "#t"} {
             MkNumber [::tcl::mathfunc::ceil [$x numval]]
         } else {
@@ -638,7 +638,7 @@ CB
 reg round ::constcl::round
 
 proc ::constcl::round {x} {
-    if {[::constcl::number? $x] eq "#t"} {
+    if {[number? $x] eq "#t"} {
         MkNumber [::tcl::mathfunc::round [$x numval]]
     } else {
         error "NUMBER expected\n(round [$x show])"
@@ -679,7 +679,7 @@ CB
 reg exp ::constcl::exp
 
 proc ::constcl::exp {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::exp [$z numval]]
     } else {
         error "NUMBER expected\n(exp [$z show])"
@@ -699,7 +699,7 @@ CB
 reg log ::constcl::log
 
 proc ::constcl::log {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::log [$z numval]]
     } else {
         error "NUMBER expected\n(log [$z show])"
@@ -719,7 +719,7 @@ CB
 reg sin ::constcl::sin
 
 proc ::constcl::sin {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sin [$z numval]]
     } else {
         error "NUMBER expected\n(sin [$z show])"
@@ -731,7 +731,7 @@ CB
 reg cos ::constcl::cos
 
 proc ::constcl::cos {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::cos [$z numval]]
     } else {
         error "NUMBER expected\n(cos [$z show])"
@@ -743,7 +743,7 @@ CB
 reg tan ::constcl::tan
 
 proc ::constcl::tan {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::tan [$z numval]]
     } else {
         error "NUMBER expected\n(tan [$z show])"
@@ -765,7 +765,7 @@ CB
 reg asin ::constcl::asin
 
 proc ::constcl::asin {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::asin [$z numval]]
     } else {
         error "NUMBER expected\n(asin [$z show])"
@@ -777,7 +777,7 @@ CB
 reg acos ::constcl::acos
 
 proc ::constcl::acos {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::acos [$z numval]]
     } else {
         error "NUMBER expected\n(acos [$z show])"
@@ -791,14 +791,14 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set z [lindex $args 0]
-        if {[::constcl::number? $z] eq "#t"} {
+        if {[number? $z] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan [$z numval]]
         } else {
             error "NUMBER expected\n(atan [$z show])"
         }
     } else {
         lassign $args y x
-        if {[::constcl::number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
+        if {[number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
             MkNumber [::tcl::mathfunc::atan2 [$y numval] [$x numval]]
         } else {
             error "NUMBER expected\n(atan [$y show] [$x show])"
@@ -825,7 +825,7 @@ CB
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {z} {
-    if {[::constcl::number? $z] eq "#t"} {
+    if {[number? $z] eq "#t"} {
         MkNumber [::tcl::mathfunc::sqrt [$z numval]]
     } else {
         error "NUMBER expected\n(sqrt [$z show])"
@@ -849,7 +849,7 @@ CB
 reg expt ::constcl::expt
 
 proc ::constcl::expt {z1 z2} {
-    if {[::constcl::number? $z1] eq "#t" && [::constcl::number? $z2] eq "#t"} {
+    if {[number? $z1] eq "#t" && [number? $z2] eq "#t"} {
         MkNumber [::tcl::mathfunc::pow [$z1 numval] [$z2 numval]]
     } else {
         error "NUMBER expected\n(expt [$z1 show] [$z2 show])"

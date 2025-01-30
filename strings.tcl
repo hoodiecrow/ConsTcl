@@ -96,13 +96,12 @@ MD)
 CB
 reg make-string ::constcl::make-string
 
-proc ::constcl::make-string {args} {
-    if {[llength $args] == 1} {
-        lassign $args k
-        return [MkString [::string repeat " " [$k value]]]
+proc ::constcl::make-string {k args} {
+    if {[llength $args] == 0} {
+        return [MkString [::string repeat " " [$k numval]]]
     } else {
-        lassign $args k c
-        return [MkString [::string repeat [$c char] [$k value]]]
+        lassign $args c
+        return [MkString [::string repeat [$c char] [$k numval]]]
     }
 }
 CB
@@ -128,7 +127,7 @@ proc ::constcl::string {args} {
         if {[::constcl::char? $char] eq "#t"} {
             ::append str [$char char]
         } else {
-            error "CHAR expected\n(string [$char show])"
+            error "CHAR expected\n(string [lmap c $args {$c show}])"
         }
     }
     return [MkString $str]
@@ -140,6 +139,10 @@ TT(
 ::tcltest::test strings-1.2 {try string} -body {
     pep {(string #\f #\o #\o)}
 } -output "\"foo\"\n"
+
+::tcltest::test strings-1.3 {try string} -body {
+    pep {(string #\f #\o 'a #\o)}
+} -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
 
 TT)
 
@@ -161,7 +164,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.3 {try string-length} -body {
+::tcltest::test strings-1.4 {try string-length} -body {
     pep {(string-length "foo bar")}
 } -output "7\n"
 
@@ -177,7 +180,7 @@ reg string-ref ::constcl::string-ref
 proc ::constcl::string-ref {str k} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            set i [$k value]
+            set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
@@ -190,7 +193,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.4 {try string-ref} -body {
+::tcltest::test strings-1.5 {try string-ref} -body {
     pep {(string-ref "foo bar" 4)}
 } -output "#\\b\n"
 
@@ -206,7 +209,7 @@ reg string-set! ::constcl::string-set!
 proc ::constcl::string-set! {str k char} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            set i [$k value]
+            set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
@@ -224,17 +227,17 @@ CB
 
 TT(
 
-::tcltest::test strings-1.5 {try string-set!} -body {
+::tcltest::test strings-1.6 {try string-set!} -body {
     pep {(string-set! (string #\f #\o #\o) 0 #\x)}
 } -output "\"xoo\"\n"
 
-::tcltest::test strings-1.6 {try string-set!} -body {
+::tcltest::test strings-1.7 {try string-set!} -body {
     pep {(define f (lambda () (make-string 3 #\*)))}
     pep {(define g (lambda () "***"))}
     pep {(string-set! (f) 0 #\?)}
 } -output "\"?**\"\n"
 
-::tcltest::test strings-1.7 {try string-set!} -body {
+::tcltest::test strings-1.8 {try string-set!} -body {
     pep {(string-set! (g) 0 #\?)}
 } -returnCodes error -result "string is constant"
 
@@ -264,7 +267,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.8 {try string=?} -body {
+::tcltest::test strings-1.9 {try string=?} -body {
     pep {(string=? "foo bar" "faa bor")}
     pep {(string=? "foo bar" "foo bar")}
     pep {(string=? "foo bar" "Foo bar")}
@@ -290,7 +293,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.9 {try string-ci=?} -body {
+::tcltest::test strings-1.10 {try string-ci=?} -body {
     pep {(string-ci=? "foo bar" "faa bor")}
     pep {(string-ci=? "foo bar" "foo bar")}
     pep {(string-ci=? "foo bar" "Foo bar")}
@@ -316,7 +319,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.10 {try string<?} -body {
+::tcltest::test strings-1.11 {try string<?} -body {
     pep {(string<? "bar" "car")}
     pep {(string<? "bar" "bar")}
     pep {(string<? "bar" "aar")}
@@ -342,7 +345,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.11 {try string-ci<?} -body {
+::tcltest::test strings-1.12 {try string-ci<?} -body {
     pep {(string-ci<? "bar" "Car")}
     pep {(string-ci<? "bar" "Bar")}
     pep {(string-ci<? "bar" "Aar")}
@@ -368,7 +371,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.12 {try string>?} -body {
+::tcltest::test strings-1.13 {try string>?} -body {
     pep {(string>? "bar" "car")}
     pep {(string>? "bar" "bar")}
     pep {(string>? "bar" "aar")}
@@ -394,7 +397,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.13 {try string-ci>?} -body {
+::tcltest::test strings-1.14 {try string-ci>?} -body {
     pep {(string-ci>? "bar" "Car")}
     pep {(string-ci>? "bar" "Bar")}
     pep {(string-ci>? "bar" "Aar")}
@@ -420,7 +423,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.14 {try string<=?} -body {
+::tcltest::test strings-1.15 {try string<=?} -body {
     pep {(string<=? "bar" "car")}
     pep {(string<=? "bar" "bar")}
     pep {(string<=? "bar" "aar")}
@@ -446,7 +449,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.15 {try string-ci<=?} -body {
+::tcltest::test strings-1.16 {try string-ci<=?} -body {
     pep {(string-ci<=? "bar" "Car")}
     pep {(string-ci<=? "bar" "Bar")}
     pep {(string-ci<=? "bar" "Aar")}
@@ -472,7 +475,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.16 {try string>=?} -body {
+::tcltest::test strings-1.17 {try string>=?} -body {
     pep {(string>=? "bar" "car")}
     pep {(string>=? "bar" "bar")}
     pep {(string>=? "bar" "aar")}
@@ -498,7 +501,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.17 {try string-ci>=?} -body {
+::tcltest::test strings-1.18 {try string-ci>=?} -body {
     pep {(string-ci>=? "bar" "Car")}
     pep {(string-ci>=? "bar" "Bar")}
     pep {(string-ci>=? "bar" "Aar")}
@@ -529,7 +532,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.18 {try substring} -body {
+::tcltest::test strings-1.19 {try substring} -body {
     pep {(substring "foo bar" 0 2)}
 } -output "\"foo\"\n"
 
@@ -549,7 +552,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.19 {try string-append} -body {
+::tcltest::test strings-1.20 {try string-append} -body {
     pep {(string-append "foo" " bar")}
 } -output "\"foo bar\"\n"
 
@@ -569,7 +572,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.20 {try string->list} -body {
+::tcltest::test strings-1.21 {try string->list} -body {
     pep {(string->list "foo")}
 } -output "(#\\f #\\o #\\o)\n"
 
@@ -589,7 +592,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.21 {try list->string} -body {
+::tcltest::test strings-1.22 {try list->string} -body {
     pep {(list->string '(#\f #\o #\o))}
 } -output "\"foo\"\n"
 
@@ -613,7 +616,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.22 {try string-copy} -body {
+::tcltest::test strings-1.23 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
 } -output "\"xoo\"\n"
@@ -639,7 +642,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.23 {try string-fill!} -body {
+::tcltest::test strings-1.24 {try string-fill!} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-fill! x #\x)}
 } -output "\"xxx\"\n"

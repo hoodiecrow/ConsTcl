@@ -3096,7 +3096,7 @@ Example:
 ```
     (define e '((a 1) (b 2) (c 3)))
     (assq 'a e)
-                            ⇒ (a 1)
+                                   ⇒ (a 1)
 ```
 
 ```
@@ -3231,13 +3231,12 @@ filled with _c_ characters.
 ```
 reg make-string ::constcl::make-string
 
-proc ::constcl::make-string {args} {
-    if {[llength $args] == 1} {
-        lassign $args k
-        return [MkString [::string repeat " " [$k value]]]
+proc ::constcl::make-string {k args} {
+    if {[llength $args] == 0} {
+        return [MkString [::string repeat " " [$k numval]]]
     } else {
-        lassign $args k c
-        return [MkString [::string repeat [$c char] [$k value]]]
+        lassign $args c
+        return [MkString [::string repeat [$c char] [$k numval]]]
     }
 }
 ```
@@ -3254,7 +3253,7 @@ proc ::constcl::string {args} {
         if {[::constcl::char? $char] eq "#t"} {
             ::append str [$char char]
         } else {
-            error "CHAR expected\n(string [$char show])"
+            error "CHAR expected\n(string [lmap c $args {$c show}])"
         }
     }
     return [MkString $str]
@@ -3285,7 +3284,7 @@ reg string-ref ::constcl::string-ref
 proc ::constcl::string-ref {str k} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            set i [$k value]
+            set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
@@ -3305,7 +3304,7 @@ reg string-set! ::constcl::string-set!
 proc ::constcl::string-set! {str k char} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $k] eq "#t"} {
-            set i [$k value]
+            set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
@@ -3745,14 +3744,14 @@ proc ::constcl::vector? {obj} {
 ```
 reg make-vector ::constcl::make-vector
 
-proc ::constcl::make-vector {args} {
-    if {[llength $args] == 1} {
+proc ::constcl::make-vector {k args} {
+    if {[llength $args] == 0} {
         lassign $args k
         set fill #NIL
     } else {
-        lassign $args k fill
+        lassign $args fill
     }
-    MkVector [lrepeat [$k value] $fill]
+    MkVector [lrepeat [$k numval] $fill]
 }
 ```
 
@@ -3790,7 +3789,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec ref [$k value]]
+            return [$vec ref [$k numval]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
         }
@@ -3810,7 +3809,7 @@ reg vector-set! ::constcl::vector-set!
 proc ::constcl::vector-set! {vec k obj} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec set! [$k value] $obj]
+            return [$vec set! [$k numval] $obj]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
         }

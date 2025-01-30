@@ -10,7 +10,7 @@ MD)
 
 CB
 proc ::constcl::idcheckinit {init} {
-    if {[::string is alpha $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    if {[::string is alpha -strict $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
         return true
     } else {
         return false
@@ -19,7 +19,7 @@ proc ::constcl::idcheckinit {init} {
 
 proc ::constcl::idchecksubs {subs} {
     foreach c [split $subs {}] {
-        if {!([::string is alnum $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+        if {!([::string is alnum -strict $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
             return false
         }
     }

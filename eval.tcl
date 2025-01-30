@@ -63,7 +63,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
                 return [make-function [car $args] [cdr $args] $env]
             }
             default {
-                return [invoke [eval $op $env] [evlis $args $env]]
+                return [invoke [eval $op $env] [eval-list $args $env]]
             }
         }
     }
@@ -168,7 +168,7 @@ proc ::constcl::invoke {pr vals} {
             $pr {*}[splitlist $vals]
         }
     } else {
-        error "PROCEDURE expected\n" ; #([$pr write] [$vals write])"
+        error "PROCEDURE expected\n([$pr show] val ...)" ;# [$vals show])
     }
 }
 CB
@@ -189,14 +189,14 @@ proc ::constcl::splitlist {vals} {
 CB
 
 MD(
-`evlis` successively evaluates the elements of a Lisp list and returns the results
+`eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
 MD)
 
 CB
-proc ::constcl::evlis {exps env} {
+proc ::constcl::eval-list {exps env} {
     if {[pair? $exps] eq "#t"} {
-        return [cons [eval [car $exps] $env] [evlis [cdr $exps] $env]]
+        return [cons [eval [car $exps] $env] [eval-list [cdr $exps] $env]]
     } else {
         return #NIL
     }
@@ -356,7 +356,6 @@ proc ::constcl::for-seq {seq env} {
 }
 
 proc ::constcl::do-for {exps env} {
-    #single-clause
     set clauses [splitlist [car $exps]]
     set body [cdr $exps]
     set ids {}
@@ -441,7 +440,7 @@ proc ::constcl::expand-let {exps} {
         }
         set decl [dict values [dict map {k v} $vars {list $k $v}]]
         set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-        set call [list $variable {*}[lrange [dict keys $vars] 1 end]]
+        set call [list {*}[dict keys $vars]]
         return [list #L [list {*}$decl] [list #S $variable $func] $call]
     } else {
         # regular let
@@ -454,7 +453,7 @@ proc ::constcl::expand-let {exps} {
             if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
             dict set vars $var $val
         }
-        return [list [list #λ [list {*}[dict keys $vars]] [cons #B $body]] {*}[dict values $vars]]
+        return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
     }
 }
 CB
@@ -575,9 +574,16 @@ TT(
 ::tcltest::test eval-1.3 {expand let macro} -body {
     pxp "(let ((x 10)) (* x x))"
     pxp "(let ((x 10) (y 5)) (* x y))"
-} -output "((lambda (x) (begin (* x x))) 10)\n((lambda (x y) (begin (* x y))) 10 5)\n"
+    pxp "(let ((x 10) (y 5)) (define z 7) (* x y z))"
+} -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
 
-::tcltest::test eval-1.4 {expand named let macro} -body {
+::tcltest::test eval-1.4 {run let macro} -body {
+    pep "(let ((x 10)) (* x x))"
+    pep "(let ((x 10) (y 5)) (* x y))"
+    pep "(let ((x 10) (y 5)) (define z 7) (* x y z))"
+} -output "100\n50\n350\n"
+
+::tcltest::test eval-1.5 {expand named let macro} -body {
     pxp {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)

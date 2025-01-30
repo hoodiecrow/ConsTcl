@@ -42,8 +42,7 @@ proc ::pxp {str} {
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
     ::constcl::expand-macro op args ::constcl::global_env
-    set val [::constcl::cons $op $args]
-    ::constcl::write $val
+    ::constcl::write [::constcl::cons $op $args]
 }
 CB
 
@@ -57,21 +56,6 @@ CB
 reg in-range ::constcl::in-range
 
 #started out as DKF's code
-proc ::constcl::tcl-in-range {args} {
-    set start 0
-    set step 1
-    switch [llength $args] {
-        1 { lassign $args e ; set end [$e value]}
-        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
-        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
-    }
-    set res $start
-    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
-        lappend res $start
-    }
-    return [lmap r $res {MkNumber $r}]
-}
-
 proc ::constcl::in-range {args} {
     set start 0
     set step 1

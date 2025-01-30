@@ -85,14 +85,14 @@ MD)
 CB
 reg make-vector ::constcl::make-vector
 
-proc ::constcl::make-vector {args} {
-    if {[llength $args] == 1} {
+proc ::constcl::make-vector {k args} {
+    if {[llength $args] == 0} {
         lassign $args k
         set fill #NIL
     } else {
-        lassign $args k fill
+        lassign $args fill
     }
-    MkVector [lrepeat [$k value] $fill]
+    MkVector [lrepeat [$k numval] $fill]
 }
 CB
 
@@ -151,7 +151,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec ref [$k value]]
+            return [$vec ref [$k numval]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
         }
@@ -180,7 +180,7 @@ reg vector-set! ::constcl::vector-set!
 proc ::constcl::vector-set! {vec k obj} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec set! [$k value] $obj]
+            return [$vec set! [$k numval] $obj]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
         }

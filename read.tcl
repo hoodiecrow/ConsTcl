@@ -46,9 +46,9 @@ oo::class create ::constcl::IB {
         set peekc $char
     }
     method find {char} {
-        if {[::string is space $peekc]} {
+        if {[::string is space -strict $peekc]} {
             for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
-                if {![::string is space [::string index $buffer $cp]]} {
+                if {![::string is space -strict [::string index $buffer $cp]]} {
                     break
                 }
             }
@@ -339,16 +339,16 @@ CB
 proc ::constcl::parse-plus-minus {} {
     set c [ib first]
     ib advance
-    if {[::string is digit [ib first]]} {
+    if {[::string is digit -strict [ib first]]} {
         ib unget $c
         return [::constcl::parse-number]
     } else {
         if {$c eq "+"} {
             ib skip-ws
-            return [MkSymbol +]
+            return [MkSymbol "+"]
         } else {
             ib skip-ws
-            return [MkSymbol -]
+            return [MkSymbol "-"]
         }
     }
 }
@@ -408,12 +408,12 @@ MD)
 
 CB
 proc ::constcl::parse-number {} {
-    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) \]}} {
+    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
     }
     ib skip-ws
-    if {[::string is double $num]} {
+    if {[::string is double -strict $num]} {
         return [MkNumber $num]
     } else {
         error "Invalid numeric constant $num"
@@ -465,9 +465,7 @@ MD)
 
 CB
 proc ::constcl::parse-identifier {} {
-    ::append name [ib first]
-    ib advance
-    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) \]}} {
+    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
     }
@@ -515,7 +513,7 @@ MD)
 CB
 proc ::constcl::parse-character {} {
     set name "#"
-    while {[ib first] ne {} && ![::string is space [ib first]] && [ib first] ni {) ]}} {
+    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
         ib advance
     }

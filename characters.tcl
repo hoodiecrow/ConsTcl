@@ -30,35 +30,35 @@ oo::class create ::constcl::Char {
         }
     }
     method alphabetic? {} {
-        if {[::string is alpha [my char]]} {
+        if {[::string is alpha -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[::string is digit [my char]]} {
+        if {[::string is digit -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[::string is space [my char]]} {
+        if {[::string is space -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[::string is upper [my char]]} {
+        if {[::string is upper -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[::string is lower [my char]]} {
+        if {[::string is lower -strict [my char]]} {
             return #t
         } else {
             return #f

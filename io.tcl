@@ -100,13 +100,9 @@ proc ::constcl::char-ready? {args} {
 }
 CB
 
-CB
-if no {
-proc ::constcl::write {obj args} {
-    # TODO write [$obj write]
-}
-}
-CB
+MD(
+`write` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+MD)
 
 MD(
 `display` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.

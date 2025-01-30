@@ -123,7 +123,8 @@ TT(
 TT)
 
 MD(
-`cons` adds a pair to a list.
+`cons` joins two values in a pair; useful in many operations such as pushing
+a new value onto a list.
 MD)
 
 CB
@@ -196,6 +197,11 @@ TT(
 } -returnCodes error -result "PAIR expected"
 
 TT)
+
+MD(
+`car` and `cdr` can be combined to form 28 composite access
+operations.
+MD)
 
 CB
 foreach ads {
@@ -308,14 +314,10 @@ proc ::constcl::listp {obj} {
         return #f
     }
     lappend visited $obj
-    if {$obj eq "#NIL"} {
+    if {[null? $obj] eq "#t"} {
         return #t
     } elseif {[pair? $obj] eq "#t"} {
-        if {[cdr $obj] eq "#NIL"} {
-            return #t
-        } else {
-            return [listp [cdr $obj]]
-        }
+        return [listp [cdr $obj]]
     } else {
         return #f
     }
@@ -519,22 +521,32 @@ respectively, for the comparison.
 MD)
 
 CB
-reg memq ::constcl::memq
 
-proc ::constcl::memq {obj1 obj2} {
+proc ::constcl::member-proc {epred obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
         if {[null? $obj2] eq "#t"} {
             return #f
         } elseif {[pair? $obj2] eq "#t"} {
-            if {[eq? $obj1 [car $obj2]] eq "#t"} {
+            if {[$epred $obj1 [car $obj2]] eq "#t"} {
                 return $obj2
             } else {
-                return [memq $obj1 [cdr $obj2]]
+                return [member-proc $epred $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(memq [$obj1 show] [$obj2 show])"
+        switch $epred {
+            eq? { set name "memq" }
+            eqv? { set name "memv" }
+            equal? { set name "member" }
+        }
+        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
     }
+}
+
+reg memq ::constcl::memq
+
+proc ::constcl::memq {obj1 obj2} {
+    return [member-proc eq? $obj1 $obj2]
 }
 CB
 
@@ -559,19 +571,7 @@ CB
 reg memv ::constcl::memv
 
 proc ::constcl::memv {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[eqv? $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
-            } else {
-                return [memv $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(memv [$obj1 show] [$obj2 show])"
-    }
+    return [member-proc eqv? $obj1 $obj2]
 }
 CB
 
@@ -579,45 +579,52 @@ CB
 reg member ::constcl::member
 
 proc ::constcl::member {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[equal? $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
-            } else {
-                return [member $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(member [$obj1 show] [$obj2 show])"
-    }
+    return [member-proc equal? $obj1 $obj2]
 }
 CB
 
 MD(
 `assq`, `assv`, and `assoc` return the associative item marked with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
-respectively, for the comparison.
+respectively, for the comparison. They implement lookup in the form of lookup
+table known as an association list, or _alist_.
+
+Example:
+
+```
+    (define e '((a 1) (b 2) (c 3)))
+    (assq 'a e)
+                                   ⇒ (a 1)
+```
 MD)
 
 CB
-reg assq
 
-proc ::constcl::assq {obj1 obj2} {
+proc ::constcl::assoc-proc {epred obj1 obj2} {
     if {[list? $obj2] eq "#t"} {
         if {[null? $obj2] eq "#t"} {
             return #f
         } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [eq? $obj1 [caar $obj2]] eq "#t"} {
+            if {[pair? [car $obj2]] eq "#t" && [$epred $obj1 [caar $obj2]] eq "#t"} {
                 return [car $obj2]
             } else {
-                return [assq $obj1 [cdr $obj2]]
+                return [assoc-proc $epred $obj1 [cdr $obj2]]
             }
         }
     } else {
-        error "LIST expected\n(assq [$obj1 show] [$obj2 show])"
+        switch $epred {
+            eq? { set name "assq" }
+            eqv? { set name "assv" }
+            equal? { set name "assoc" }
+        }
+        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
     }
+}
+
+reg assq
+
+proc ::constcl::assq {obj1 obj2} {
+    return [assoc-proc eq? $obj1 $obj2]
 }
 CB
 
@@ -626,19 +633,7 @@ CB
 reg assv
 
 proc ::constcl::assv {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [eqv? $obj1 [caar $obj2]] eq "#t"} {
-                return [car $obj2]
-            } else {
-                return [assq $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(assv [$obj1 show] [$obj2 show])"
-    }
+    return [assoc-proc eqv? $obj1 $obj2]
 }
 CB
 
@@ -646,19 +641,7 @@ CB
 reg assoc
 
 proc ::constcl::assoc {obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
-            return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [equal? $obj1 [caar $obj2]] eq "#t"} {
-                return [car $obj2]
-            } else {
-                return [assq $obj1 [cdr $obj2]]
-            }
-        }
-    } else {
-        error "LIST expected\n(assoc [$obj1 show] [$obj2 show])"
-    }
+    return [assoc-proc equal? $obj1 $obj2]
 }
 CB
 

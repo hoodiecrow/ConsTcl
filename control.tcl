@@ -23,8 +23,8 @@ oo::class create ::constcl::Procedure {
     variable parms body env
     constructor {p b e} {
         set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
-        set body $b          ;# a Lisp list of expressions under 'begin
-        set env $e           ;# an environment
+        set body $b          ;# a Lisp list of expressions under 'begin, or a single expression
+        set env $e           ;# the closed over environment
     }
     method value {} {}
     method write {} { puts -nonewline [self] }
