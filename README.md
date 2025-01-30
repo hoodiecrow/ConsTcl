@@ -4017,7 +4017,7 @@ with the added finesse of keeping a link to the outer environment (starting a ch
 the way to the global environment and then stops at the null environment) which can be traversed
 by the find method to find which innermost environment a given symbol is bound in.
 
-The long and complex constructor is to accomodate the variations of Scheme parameter lists, which 
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
 can be empty, a proper list, a symbol, or an improper list.
 
 ```
@@ -4097,7 +4097,6 @@ namespace eval ::constcl {
     set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
     set vals [dict values $defreg]
     Environment create global_env $keys $vals ::constcl::null_env
-    format "[llength [dict keys $defreg]] built-in procedures in definition register"
 }
 ```
 
