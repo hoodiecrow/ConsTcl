@@ -2,10 +2,13 @@ MD(
 
 ## Environment class and objects
 
-The class for environments is called __Environment__. It is mostly a wrapper around a dictionary,
+The class for environments is called `Environment`. It is mostly a wrapper around a dictionary,
 with the added finesse of keeping a link to the outer environment (starting a chain that goes all
 the way to the global environment and then stops at the null environment) which can be traversed
 by the find method to find which innermost environment a given symbol is bound in.
+
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
+can be empty, a proper list, a symbol, or an improper list.
 MD)
 
 CB
@@ -15,7 +18,7 @@ oo::class create ::constcl::Environment {
     variable bindings outer_env
     constructor {syms vals {outer {}}} {
         set bindings [dict create]
-        if {$syms eq "#NIL"} {
+        if {[::constcl::null? $syms] eq "#t"} {
             if {[llength $vals]} { error "too many arguments" }
         } elseif {[::constcl::list? $syms] eq "#t"} {
             set syms [::constcl::splitlist $syms]

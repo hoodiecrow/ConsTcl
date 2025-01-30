@@ -3,7 +3,6 @@ A second try at a Lisp interpreter written in Tcl (the first one was [Thtcl](htt
 this time with a real Lisp-like type system. It steps over and back over the border
 between Tcl and Lisp a lot of times while working, and as a result is fairly slow.
 
-MD(
 #### Benchmark
 
 On my cheap computer, the following code takes 0.024 seconds to run.
@@ -14,7 +13,6 @@ namespace eval ::constcl {
     time {eval [parse "(fact 100)"]} 10
 }
 ```
-MD)
 
 
 Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO
