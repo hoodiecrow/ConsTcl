@@ -552,7 +552,7 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
-[The eval procedure](/images/eval.png)
+![The eval procedure](/images/eval.png)
 
 ```
 reg eval ::constcl::eval
