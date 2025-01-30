@@ -10,11 +10,12 @@ MD)
 CB
 reg write ::constcl::write
 
-proc ::constcl::write {obj args} {
-    if {$obj ne "#NONE"} {
-        ::constcl::write-value $obj
+proc ::constcl::write {val args} {
+    if {$val ne "#NONE"} {
+        ::constcl::write-value $val
         puts {}
     }
+    return #NONE
 }
 CB
 
@@ -24,8 +25,8 @@ write itself.
 MD)
 
 CB
-proc ::constcl::write-value {obj} {
-    $obj write
+proc ::constcl::write-value {val} {
+    $val write
 }
 CB
 
@@ -36,9 +37,10 @@ MD)
 CB
 reg display ::constcl::display
 
-proc ::constcl::display {obj args} {
-    ::constcl::write-value $obj
+proc ::constcl::display {val args} {
+    ::constcl::write-value $val
     flush stdout
+    return #NONE
 }
 CB
 
@@ -47,10 +49,10 @@ The `write-pair` procedure prints a Pair object.
 MD)
 
 CB
-proc ::constcl::write-pair {obj} {
+proc ::constcl::write-pair {val} {
     # take an object and print the car and the cdr of the stored value
-    set a [car $obj]
-    set d [cdr $obj]
+    set a [car $val]
+    set d [cdr $val]
     # print car
     write-value $a
     if {[pair? $d] eq "#t"} {
@@ -65,6 +67,7 @@ proc ::constcl::write-pair {obj} {
         puts -nonewline " . "
         write-value $d
     }
+    return #NONE
 }
 CB
 

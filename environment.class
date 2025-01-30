@@ -64,3 +64,4 @@ oo::class create ::constcl::Environment {
 }
 CB
 
+# vim: set filetype=tcl:

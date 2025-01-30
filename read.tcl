@@ -80,14 +80,12 @@ oo::class create ::constcl::IB {
 CB
 
 MD(
-When given a string, `parse` fills the input buffer. It then reads and parses the input.
+Given a string, `parse` fills the input buffer. It then reads and parses the input.
 MD)
 
 CB
-proc ::constcl::parse {args} {
-    if {[llength $args]} {
-        ib fill [lindex $args 0]
-    }
+proc ::constcl::parse {str} {
+    ib fill $str
     return [parse-value]
 }
 CB
@@ -122,9 +120,9 @@ proc ::constcl::parse-value {} {
         {\.}          { ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-value "\]"] }
         {\`}          { return [parse-quasiquoted-value] }
-        {\d}          { return [parse-number] }
+        {\d}          { return [parse-number-value] }
         {[[:space:]]} { ib advance }
-        {[[:graph:]]} { return [parse-identifier] }
+        {[[:graph:]]} { return [parse-identifier-value] }
         default {
             error "unexpected char [ib first]"
         }
@@ -181,10 +179,10 @@ CB
 proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
-        (    { return [parse-vector] }
+        (    { return [parse-vector-value] }
         t    { ib advance ; ib skip-ws ; return #t }
         f    { ib advance ; ib skip-ws ; return #f }
-        "\\" { return [parse-character] }
+        "\\" { return [parse-character-value] }
         default {
             error "Illegal #-literal"
         }
@@ -341,7 +339,7 @@ proc ::constcl::parse-plus-minus {} {
     ib advance
     if {[::string is digit -strict [ib first]]} {
         ib unget $c
-        return [::constcl::parse-number]
+        return [::constcl::parse-number-value]
     } else {
         if {$c eq "+"} {
             ib skip-ws
@@ -403,11 +401,11 @@ TT(
 TT)
 
 MD(
-`parse-number` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 CB
-proc ::constcl::parse-number {} {
+proc ::constcl::parse-number-value {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
@@ -460,11 +458,11 @@ TT(
 TT)
 
 MD(
-`parse-identifier` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 CB
-proc ::constcl::parse-identifier {} {
+proc ::constcl::parse-identifier-value {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
@@ -484,7 +482,7 @@ TT(
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
     ::constcl::ib fill "+foo"
-    set obj [::constcl::parse-identifier]
+    set obj [::constcl::parse-identifier-value]
     $obj name
 } -returnCodes error -result "Identifier expected (+foo)"
 
@@ -507,11 +505,11 @@ proc ::constcl::character-check {name} {
 CB
 
 MD(
-`parse-character` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 CB
-proc ::constcl::parse-character {} {
+proc ::constcl::parse-character-value {} {
     set name "#"
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
@@ -551,11 +549,11 @@ TT(
 TT)
 
 MD(
-`parse-vector` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 CB
-proc ::constcl::parse-vector {} {
+proc ::constcl::parse-vector-value {} {
     ib advance
     ib skip-ws
     set res {}

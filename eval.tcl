@@ -18,7 +18,7 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
-
+![The eval procedure](/images/eval.png)
 MD)
 
 CB
@@ -75,6 +75,7 @@ CB
 MD(
 Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
 environment chain for the symbol's name, and returns the value it is bound to.
+![The lookup procedure](/images/lookup.png)
 MD)
 
 CB
@@ -93,6 +94,7 @@ MD)
 MD(
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
+![The eprogn procedure](/images/eprogn.png)
 MD)
 
 CB
@@ -113,6 +115,7 @@ CB
 MD(
 The `declare` helper adds a variable to the current environment. It first checks that the
 symbol name is a valid identifier, then it updates the environment with the new binding.
+![The declare procedure](/images/declare.png)
 MD)
 
 CB
@@ -124,16 +127,17 @@ proc ::constcl::declare {sym val env} {
 CB
 
 MD(
-The `update!` helper modifies an existing variable that is bound somewhere in the 
-environment chain. It finds the variable's environment and updates the binding. It
-returns the expression, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
+The `update!` helper does _assignment_: it modifies an existing variable that is bound
+somewhere in the environment chain. It finds the variable's environment and updates the
+binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
+![The update! procedure](/images/update!.png)
 MD)
 
 CB
-proc ::constcl::update! {var expr env} {
-    [$env find $var] set $var $expr
-    set expr
+proc ::constcl::update! {var val env} {
+    [$env find $var] set $var $val
+    set val
 }
 CB
 
@@ -142,6 +146,7 @@ MD(
 object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
+![The make-function procedure](/images/make-function.png)
 MD)
 
 CB
@@ -159,6 +164,7 @@ MD(
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
 arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+![The invoke procedure](/images/invoke.png)
 MD)
 
 CB
@@ -193,6 +199,7 @@ CB
 MD(
 `eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
+![The eval-list procedure](/images/eval-list.png)
 MD)
 
 CB
@@ -256,6 +263,7 @@ proc ::constcl::expand-macro {n1 n2 env} {
     }
     set op [car $val]
     set args [cdr $val]
+    return #NIL
 }
 CB
 
