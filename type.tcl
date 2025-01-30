@@ -1,18 +1,5 @@
 
 MD(
-#### Benchmark
-
-On my cheap computer, the following code takes 0.024 seconds to run.
-
-```
-namespace eval ::constcl {
-    eval [parse "(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))"]
-    time {eval [parse "(fact 100)"]} 10
-}
-```
-MD)
-
-MD(
 ## Initial declarations
 MD)
 
