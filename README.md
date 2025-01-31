@@ -676,6 +676,13 @@ if it has more than one expression, and taken out of its list if not. The Lisp l
 
 ![The make-function procedure](/images/make-function.png)
 
+A Scheme formals list is either:
+
+* An _empty list_, `()`, meaning that no arguments are accepted,
+* A _proper list_, `(a b c)`, meaning it accepts three arguments, one in each symbol,
+* A _symbol_, `a`, meaning that all arguments go into `a`, or
+* A _dotted list_, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+
 ```
 proc ::constcl::make-function {formals body env} {
     if {[[length $body] value] > 1} {
