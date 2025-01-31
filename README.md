@@ -60,7 +60,7 @@ proc ::pxp {str} {
     set val [::constcl::parse $str]
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
-    ::constcl::expand-macro op args ::constcl::global_env
+    ::constcl::expand-macro ::constcl::global_env
     ::constcl::write [::constcl::cons $op $args]
 }
 ```
@@ -552,6 +552,7 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+
 ![The eval procedure](/images/eval.png)
 
 ```
@@ -572,7 +573,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
         while {[$op name] in {
                 and case cond for for/and for/list
                 for/or let or define quasiquote}} {
-            expand-macro op args $env
+            expand-macro $env
         }
         switch [$op name] {
             quote {
@@ -607,6 +608,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 
 Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
 environment chain for the symbol's name, and returns the value it is bound to.
+
 ![The lookup procedure](/images/lookup.png)
 
 ```
@@ -622,6 +624,7 @@ _alternate_) is evaluated and the value returned.
 
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
+
 ![The eprogn procedure](/images/eprogn.png)
 
 ```
@@ -641,6 +644,7 @@ proc ::constcl::eprogn {exps env} {
 
 The `declare` helper adds a variable to the current environment. It first checks that the
 symbol name is a valid identifier, then it updates the environment with the new binding.
+
 ![The declare procedure](/images/declare.png)
 
 ```
@@ -655,6 +659,7 @@ The `update!` helper does _assignment_: it modifies an existing variable that is
 somewhere in the environment chain. It finds the variable's environment and updates the
 binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
+
 ![The update! procedure](/images/update!.png)
 
 ```
@@ -668,6 +673,7 @@ proc ::constcl::update! {var val env} {
 object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
+
 ![The make-function procedure](/images/make-function.png)
 
 ```
@@ -684,6 +690,7 @@ proc ::constcl::make-function {formals body env} {
 `invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
 arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+
 ![The invoke procedure](/images/invoke.png)
 
 ```
@@ -702,6 +709,8 @@ proc ::constcl::invoke {pr vals} {
 
 `splitlist` converts a Lisp list to a Tcl list with Lisp objects.
 
+![The splitlist procedure](/images/splitlist.png)
+
 ```
 proc ::constcl::splitlist {vals} {
     set result {}
@@ -715,6 +724,7 @@ proc ::constcl::splitlist {vals} {
 
 `eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
+
 ![The eval-list procedure](/images/eval-list.png)
 
 ```
@@ -733,9 +743,11 @@ Macros that rewrite expressions into other, more concrete expressions is one of 
 points. This interpreter does macro expansion, but the user can't define new macros--the ones
 available are hardcoded in the code below.
 
+![The expand-macro procedure](/images/expand-macro.png)
+
 ```
-proc ::constcl::expand-macro {n1 n2 env} {
-    upvar $n1 op $n2 args
+proc ::constcl::expand-macro {env} {
+    upvar op op args args
     if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
         return -code break
     }
@@ -1103,7 +1115,6 @@ proc ::constcl::write {val args} {
         ::constcl::write-value $val
         puts {}
     }
-    return #NONE
 }
 ```
 
@@ -1124,7 +1135,6 @@ reg display ::constcl::display
 proc ::constcl::display {val args} {
     ::constcl::write-value $val
     flush stdout
-    return #NONE
 }
 ```
 
