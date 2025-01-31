@@ -583,7 +583,7 @@ The evaluator also does a simple form of macro expansion on `op` and `args` befo
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 
-<table border="1"><thead><tr><th colspan="2" align="left">eval (internal)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2>eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg eval ::constcl::eval
@@ -738,7 +738,6 @@ proc ::constcl::invoke {pr vals} {
             $pr {*}[splitlist $vals]
         }
     } else {
-        error "PROCEDURE expected\n([$pr show] val ...)" ;# [$vals show])
     }
 }
 ```
@@ -2620,7 +2619,6 @@ proc ::constcl::apply {proc vals} {
     if {[procedure? $proc] eq "#t"} {
         invoke $proc $vals
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
@@ -2649,7 +2647,6 @@ proc ::constcl::map {proc args} {
         }
         return [list {*}$res]
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
@@ -2676,7 +2673,6 @@ proc ::constcl::for-each {proc args} {
         }
         return [list]
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
