@@ -232,7 +232,7 @@ oo::class create ::constcl::IB {
 
 Given a string, `parse` fills the input buffer. It then reads and parses the input.
 
-<table><thead><tr colspan=2><th>parse (public)</th></tr></thead><tr><td>str</td><td>Lisp source text</td></tr><tr><td>Returns:</td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse (public)</th></tr></thead><tr><td>str</td><td>Lisp source text</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg parse
@@ -245,7 +245,7 @@ proc ::constcl::parse {str} {
 
 The standard builtin `read` consumes and parses input into a Lisp expression.
 
-<table><thead><tr colspan=2><th>read (public)</th></tr></thead><tr><td>args</td><td>-don't care-</td></tr><tr><td>Returns:</td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg read ::constcl::read
@@ -257,7 +257,7 @@ proc ::constcl::read {args} {
 
 The procedure `parse-value` reads a value of any kind.
 
-<table><thead><tr colspan=2><th>parse-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::parse-value {} {
@@ -285,7 +285,7 @@ proc ::constcl::parse-value {} {
 
 `parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
-<table><thead><tr colspan=2><th>parse-string-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-string-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 proc ::constcl::parse-string-value {} {
@@ -313,7 +313,7 @@ proc ::constcl::parse-string-value {} {
 `parse-sharp` reads the various kinds of values whose literal begins with
 a sharp sign (#).
 
-<table><thead><tr colspan=2><th>parse-sharp (internal)</th></tr></thead><tr><td>Returns:</td><td>a vector boolean or character value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector boolean or character value</td></tr></table>
 
 ```
 proc ::constcl::parse-sharp {} {
@@ -349,7 +349,7 @@ proc ::constcl::make-constant {val} {
 
 `parse-quoted-value` reads a value and returns it wrapped in `quote`.
 
-<table><thead><tr colspan=2><th>parse-quoted-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a value wrapped in the quote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quote symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-quoted-value {} {
@@ -365,7 +365,7 @@ proc ::constcl::parse-quoted-value {} {
 The `parse-pair-value` procedure reads values and returns a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 
-<table><thead><tr colspan=2><th>parse-pair-value (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td>Returns:</td><td>a structure of pair values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-pair-value (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair values</td></tr></table>
 
 ```
 
@@ -417,7 +417,7 @@ proc ::constcl::parse-pair-value {char} {
 `parse-plus-minus` reacts to a plus or minus in the input buffer, and either
 returns a `#+` or `#-` symbol, or a number.
 
-<table><thead><tr colspan=2><th>parse-plus-minus (internal)</th></tr></thead><tr><td>Returns:</td><td>either the symbols + or - or a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number</td></tr></table>
 
 ```
 proc ::constcl::parse-plus-minus {} {
@@ -441,7 +441,7 @@ proc ::constcl::parse-plus-minus {} {
 `parse-unquoted-value` reads a value and returns it wrapped in `unquote`, or possibly
 in `unquote-splicing`.
 
-<table><thead><tr colspan=2><th>parse-unquoted-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a value wrapped in the unquote/-splicing symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the unquote/-splicing symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-unquoted-value {} {
@@ -460,7 +460,7 @@ proc ::constcl::parse-unquoted-value {} {
 
 `parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
 
-<table><thead><tr colspan=2><th>parse-quasiquoted-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a value wrapped in the quasiquote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quasiquote symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-quasiquoted-value {} {
@@ -475,7 +475,7 @@ proc ::constcl::parse-quasiquoted-value {} {
 
 `parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
-<table><thead><tr colspan=2><th>parse-number-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-number-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 proc ::constcl::parse-number-value {} {
@@ -495,7 +495,7 @@ proc ::constcl::parse-number-value {} {
 
 `parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
-<table><thead><tr colspan=2><th>parse-identifier-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-identifier-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-identifier-value {} {
@@ -521,7 +521,7 @@ proc ::constcl::character-check {name} {
 
 `parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
-<table><thead><tr colspan=2><th>parse-character-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a character</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-character-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 proc ::constcl::parse-character-value {} {
@@ -542,7 +542,7 @@ proc ::constcl::parse-character-value {} {
 
 `parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
-<table><thead><tr colspan=2><th>parse-vector-value (internal)</th></tr></thead><tr><td>Returns:</td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-vector-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 proc ::constcl::parse-vector-value {} {
@@ -585,7 +585,7 @@ The evaluator also does a simple form of macro expansion on `op` and `args` befo
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 
-<table><thead><tr colspan=2><th>eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td>Returns:</td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg eval ::constcl::eval
