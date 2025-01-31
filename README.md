@@ -436,7 +436,8 @@ proc ::constcl::parse-plus-minus {} {
 }
 ```
 
-`parse-unquoted-value` reads a value and returns it wrapped in `unquote`.
+`parse-unquoted-value` reads a value and returns it wrapped in `unquote`, or possibly
+in `unquote-splicing`.
 
 ![The parse-unquoted-value procedure](/images/parse-unquoted-value.png)
 
@@ -582,6 +583,9 @@ The evaluator also does a simple form of macro expansion on `op` and `args` befo
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 ![The eval procedure](/images/eval.png)
+
+<table border="1"><thead><tr><th colspan="2" align="left">eval (internal)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 
 ```
 reg eval ::constcl::eval
@@ -1214,6 +1218,8 @@ Of the three equivalence predicates, `eq` generally tests for identity (with exc
 and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
 identity), and `equal` tests for whether the output strings are equal.
 
+![The equivalence predicates](/images/equiv-pred.png)
+
 ```
 reg eq? ::constcl::eq?
 
@@ -1321,7 +1327,7 @@ interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 `number?` recognizes a number by object type, not by content.
 
-![The number? procedure](/images/number?.png)
+![The number? procedure](/images/numberp.png)
 ```
 reg number? ::constcl::number?
 
@@ -1434,7 +1440,7 @@ proc ::constcl::>= {args} {
 
 The `zero?` predicate tests if a given number is equal to zero.
 
-![The zero? procedure](/images/zero?.png)
+![The zero? procedure](/images/zerop.png)
 
 ```
 reg zero? ::constcl::zero?
@@ -1658,7 +1664,7 @@ reg remainder
 
 proc ::constcl::remainder {val1 val2} {
     set n [::tcl::mathop::% [[abs $val1] numval] [[abs $val2] numval]]
-    if {[$n1 negative?] eq "#t"} {
+    if {[$val1 negative?] eq "#t"} {
         set n -$n
     }
     return [MkNumber $n]
@@ -2098,13 +2104,15 @@ proc ::constcl::MkBoolean {v} {
 
 The `boolean?` predicate recognizes a Boolean by type.
 
+![The boolean? procedure](/images/booleanp.png)
+
 ```
 reg boolean? ::constcl::boolean?
 
-proc ::constcl::boolean? {obj} {
-    if {[info object isa typeof $obj ::constcl::Boolean]} {
+proc ::constcl::boolean? {val} {
+    if {[info object isa typeof $val ::constcl::Boolean]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Boolean]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
         return #t
     } else {
         return #f
@@ -2115,11 +2123,13 @@ proc ::constcl::boolean? {obj} {
 
 The only operation on booleans: `not`, or logical negation.
 
+![The not procedure](/images/not.png)
+
 ```
 reg not ::constcl::not
 
-proc ::constcl::not {obj} {
-    if {[$obj bvalue] eq "#f"} {
+proc ::constcl::not {val} {
+    if {[$val bvalue] eq "#f"} {
         return #t
     } else {
         return #f
@@ -2212,15 +2222,17 @@ proc ::constcl::MkChar {v} {
 }
 ```
 
-`char?` recognizes Char objects by type.
+`char?` recognizes Char values by type.
+
+![The char? procedure](/images/charp.png)
 
 ```
 reg char? ::constcl::char?
 
-proc ::constcl::char? {obj} {
-    if {[info object isa typeof $obj ::constcl::Char]} {
+proc ::constcl::char? {val} {
+    if {[info object isa typeof $val ::constcl::Char]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Char]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Char]} {
         return #t
     } else {
         return #f
@@ -2231,6 +2243,8 @@ proc ::constcl::char? {obj} {
 
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
+
+![The char comparison operators 1](/images/char-comp-ops1.png)
 
 ```
 reg char=? ::constcl::char=?
@@ -2319,6 +2333,8 @@ proc ::constcl::char>=? {c1 c2} {
 
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
+
+![The char comparison operators 2](/images/char-comp-ops2.png)
 
 ```
 reg char-ci=? ::constcl::char-ci=?
@@ -2409,6 +2425,8 @@ The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
 conditions.
 
+![The char class operators](/images/char-class-ops.png)
+
 ```
 reg char-alphabetic? ::constcl::char-alphabetic?
 
@@ -2477,6 +2495,9 @@ proc ::constcl::char-lower-case? {char} {
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
 
+![The char->integer procedure](/images/cti.png)
+![The integer->char procedure](/images/itc.png)
+
 ```
 reg char->integer
 
@@ -2502,12 +2523,14 @@ proc ::constcl::integer->char {int} {
 
 `char-upcase` and `char-downcase` alter the case of a character.
 
+![The char case operations](/images/char-case-ops.png)
+
 ```
 reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
     if {[char? $char] eq "#t"} {
-        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+        if {[::string is alpha -strict [$char char]]} {
             return [MkChar [::string toupper [$char value]]]
         } else {
             return $char
@@ -2525,7 +2548,7 @@ reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
     if {[char? $char] eq "#t"} {
-        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+        if {[::string is alpha -strict [$char char]]} {
             return [MkChar [::string tolower [$char value]]]
         } else {
             return $char
