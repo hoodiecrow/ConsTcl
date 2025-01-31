@@ -232,6 +232,8 @@ oo::class create ::constcl::IB {
 
 Given a string, `parse` fills the input buffer. It then reads and parses the input.
 
+![The parse procedure](/images/parse.png)
+
 ```
 proc ::constcl::parse {str} {
     ib fill $str
@@ -240,6 +242,8 @@ proc ::constcl::parse {str} {
 ```
 
 The standard builtin `read` consumes and parses input into a Lisp expression.
+
+![The read procedure](/images/read.png)
 
 ```
 reg read ::constcl::read
@@ -251,12 +255,14 @@ proc ::constcl::read {args} {
 
 The procedure `parse-value` reads a value of any kind.
 
+![The parse-value procedure](/images/parse-value.png)
+
 ```
 proc ::constcl::parse-value {} {
     ib skip-ws
     switch -regexp [ib first] {
         {^$}          { return }
-        {\"}          { return [parse-string] }
+        {\"}          { return [parse-string-value] }
         {\#}          { return [parse-sharp] }
         {\'}          { return [parse-quoted-value] }
         {\(}          { return [parse-pair-value ")"] }
@@ -277,8 +283,10 @@ proc ::constcl::parse-value {} {
 
 `parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
+![The parse-string-value procedure](/images/parse-string-value.png)
+
 ```
-proc ::constcl::parse-string {} {
+proc ::constcl::parse-string-value {} {
     set str {}
     ib advance
     while {[ib first] ne {"}} {
@@ -303,6 +311,8 @@ proc ::constcl::parse-string {} {
 `parse-sharp` reads the various kinds of values whose literal begins with
 a sharp sign (#).
 
+![The parse-sharp procedure](/images/parse-sharp.png)
+
 ```
 proc ::constcl::parse-sharp {} {
     ib advance
@@ -318,24 +328,26 @@ proc ::constcl::parse-sharp {} {
 }
 ```
 
-The `make-constant` helper procedure is called to set objects to
+The `make-constant` helper procedure is called to set values to
 constants when read as a quoted literal.
 
 ```
-proc ::constcl::make-constant {obj} {
-    if {[pair? $obj] eq "#t"} {
-        $obj mkconstant
-        make-constant [car $obj]
-        make-constant [cdr $obj]
-    } elseif {[null? $obj] eq "#t"} {
+proc ::constcl::make-constant {val} {
+    if {[pair? $val] eq "#t"} {
+        $val mkconstant
+        make-constant [car $val]
+        make-constant [cdr $val]
+    } elseif {[null? $val] eq "#t"} {
         return #NIL
     } else {
-        $obj mkconstant
+        $val mkconstant
     }
 }
 ```
 
 `parse-quoted-value` reads a value and returns it wrapped in `quote`.
+
+![The parse-quoted-value procedure](/images/parse-quoted-value.png)
 
 ```
 proc ::constcl::parse-quoted-value {} {
@@ -350,6 +362,8 @@ proc ::constcl::parse-quoted-value {} {
 
 The `parse-pair-value` procedure reads values and returns a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
+
+![The parse-pair-value procedure](/images/parse-pair-value.png)
 
 ```
 
@@ -401,6 +415,8 @@ proc ::constcl::parse-pair-value {char} {
 `parse-plus-minus` reacts to a plus or minus in the input buffer, and either
 returns a `#+` or `#-` symbol, or a number.
 
+![The parse-plus-minus procedure](/images/parse-plus-minus.png)
+
 ```
 proc ::constcl::parse-plus-minus {} {
     set c [ib first]
@@ -422,6 +438,8 @@ proc ::constcl::parse-plus-minus {} {
 
 `parse-unquoted-value` reads a value and returns it wrapped in `unquote`.
 
+![The parse-unquoted-value procedure](/images/parse-unquoted-value.png)
+
 ```
 proc ::constcl::parse-unquoted-value {} {
     ib advance
@@ -439,6 +457,8 @@ proc ::constcl::parse-unquoted-value {} {
 
 `parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
 
+![The parse-quasiquoted-value procedure](/images/parse-quasiquoted-value.png)
+
 ```
 proc ::constcl::parse-quasiquoted-value {} {
     ib advance
@@ -451,6 +471,8 @@ proc ::constcl::parse-quasiquoted-value {} {
 
 
 `parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+
+![The parse-number-value procedure](/images/parse-number-value.png)
 
 ```
 proc ::constcl::parse-number-value {} {
@@ -469,6 +491,8 @@ proc ::constcl::parse-number-value {} {
 
 
 `parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+
+![The parse-identifier-value procedure](/images/parse-identifier-value.png)
 
 ```
 proc ::constcl::parse-identifier-value {} {
@@ -494,6 +518,8 @@ proc ::constcl::character-check {name} {
 
 `parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
+![The parse-character-value procedure](/images/parse-character-value.png)
+
 ```
 proc ::constcl::parse-character-value {} {
     set name "#"
@@ -512,6 +538,8 @@ proc ::constcl::parse-character-value {} {
 
 
 `parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+
+![The parse-vector-value procedure](/images/parse-vector-value.png)
 
 ```
 proc ::constcl::parse-vector-value {} {
@@ -694,8 +722,7 @@ proc ::constcl::make-function {formals body env} {
 }
 ```
 
-`invoke` _pr_ _vals_ where _pr_ is a procedure and _vals_ is a Lisp list of Lisp values. It 
-arranges for a procedure to be called with each of the values in _vals_. It checks if
+`invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
 ![The invoke procedure](/images/invoke.png)
