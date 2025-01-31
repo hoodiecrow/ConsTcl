@@ -583,7 +583,7 @@ The evaluator also does a simple form of macro expansion on `op` and `args` befo
 See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 
-<table border=1><thead><tr><th colspan=2>eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg eval ::constcl::eval
