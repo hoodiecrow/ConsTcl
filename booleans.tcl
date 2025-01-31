@@ -54,15 +54,17 @@ TT)
 
 MD(
 The `boolean?` predicate recognizes a Boolean by type.
+
+![The boolean? procedure](/images/booleanp.png)
 MD)
 
 CB
 reg boolean? ::constcl::boolean?
 
-proc ::constcl::boolean? {obj} {
-    if {[info object isa typeof $obj ::constcl::Boolean]} {
+proc ::constcl::boolean? {val} {
+    if {[info object isa typeof $val ::constcl::Boolean]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Boolean]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
         return #t
     } else {
         return #f
@@ -88,13 +90,15 @@ TT)
 
 MD(
 The only operation on booleans: `not`, or logical negation.
+
+![The not procedure](/images/not.png)
 MD)
 
 CB
 reg not ::constcl::not
 
-proc ::constcl::not {obj} {
-    if {[$obj bvalue] eq "#f"} {
+proc ::constcl::not {val} {
+    if {[$val bvalue] eq "#f"} {
         return #t
     } else {
         return #f

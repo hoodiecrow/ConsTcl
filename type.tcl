@@ -41,7 +41,7 @@ proc ::pxp {str} {
     set val [::constcl::parse $str]
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
-    ::constcl::expand-macro op args ::constcl::global_env
+    ::constcl::expand-macro ::constcl::global_env
     ::constcl::write [::constcl::cons $op $args]
 }
 CB

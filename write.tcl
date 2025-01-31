@@ -5,6 +5,8 @@ MD(
 The third member in the great triad is `write`. As long as the object
 given to it isn't `#NONE`, it passes it to `write-value` and prints
 a newline.
+
+![The write procedure](/images/write.png)
 MD)
 
 CB
@@ -15,13 +17,14 @@ proc ::constcl::write {val args} {
         ::constcl::write-value $val
         puts {}
     }
-    return #NONE
 }
 CB
 
 MD(
 `write-value` simply calls an object's `write` method, letting the object
 write itself.
+
+![The write-value procedure](/images/write-value.png)
 MD)
 
 CB
@@ -32,6 +35,8 @@ CB
 
 MD(
 The `display` procedure is like `write` but doesn't print a newline.
+
+![The display procedure](/images/display.png)
 MD)
 
 CB
@@ -40,12 +45,13 @@ reg display ::constcl::display
 proc ::constcl::display {val args} {
     ::constcl::write-value $val
     flush stdout
-    return #NONE
 }
 CB
 
 MD(
 The `write-pair` procedure prints a Pair object.
+
+![The write-pair procedure](/images/write-pair.png)
 MD)
 
 CB

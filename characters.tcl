@@ -85,16 +85,18 @@ proc ::constcl::MkChar {v} {
 CB
 
 MD(
-`char?` recognizes Char objects by type.
+`char?` recognizes Char values by type.
+
+![The char? procedure](/images/charp.png)
 MD)
 
 CB
 reg char? ::constcl::char?
 
-proc ::constcl::char? {obj} {
-    if {[info object isa typeof $obj ::constcl::Char]} {
+proc ::constcl::char? {val} {
+    if {[info object isa typeof $val ::constcl::Char]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Char]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Char]} {
         return #t
     } else {
         return #f
@@ -113,6 +115,8 @@ TT)
 MD(
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
+
+![The char comparison operators 1](/images/char-comp-ops1.png)
 MD)
 
 CB
@@ -248,6 +252,8 @@ TT)
 MD(
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
+
+![The char comparison operators 2](/images/char-comp-ops2.png)
 MD)
 
 CB
@@ -385,6 +391,8 @@ MD(
 The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
 conditions.
+
+![The char class operators](/images/char-class-ops.png)
 MD)
 
 CB
@@ -515,6 +523,9 @@ TT)
 MD(
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
+
+![The char->integer procedure](/images/cti.png)
+![The integer->char procedure](/images/itc.png)
 MD)
 
 CB
@@ -550,6 +561,8 @@ TT)
 
 MD(
 `char-upcase` and `char-downcase` alter the case of a character.
+
+![The char case operations](/images/char-case-ops.png)
 MD)
 
 CB
@@ -557,7 +570,7 @@ reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
     if {[char? $char] eq "#t"} {
-        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+        if {[::string is alpha -strict [$char char]]} {
             return [MkChar [::string toupper [$char value]]]
         } else {
             return $char
@@ -570,7 +583,7 @@ CB
 
 TT(
 
-::tcltest::test characters-1.17 {try char-upcase?} -body {
+::tcltest::test characters-1.17 {try char-upcase} -body {
     pep {(char-upcase #\A)}
     pep {(char-upcase #\a)}
     pep {(char-upcase #\space)}
@@ -584,7 +597,7 @@ reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
     if {[char? $char] eq "#t"} {
-        if {[regexp {^#\\[[:alpha:]]$} [$char value]]} {
+        if {[::string is alpha -strict [$char char]]} {
             return [MkChar [::string tolower [$char value]]]
         } else {
             return $char

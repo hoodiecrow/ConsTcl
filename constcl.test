@@ -793,7 +793,7 @@ if no {
 
 
 
-::tcltest::test characters-1.17 {try char-upcase?} -body {
+::tcltest::test characters-1.17 {try char-upcase} -body {
     pep {(char-upcase #\A)}
     pep {(char-upcase #\a)}
     pep {(char-upcase #\space)}

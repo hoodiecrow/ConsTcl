@@ -38,14 +38,16 @@ CB
 
 MD(
 `number?` recognizes a number by object type, not by content.
+
+![The number? procedure](/images/numberp.png)
 MD)
 CB
 reg number? ::constcl::number?
 
-proc ::constcl::number? {obj} {
-    if {[info object isa typeof $obj ::constcl::Number]} {
+proc ::constcl::number? {val} {
+    if {[info object isa typeof $val ::constcl::Number]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Number]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Number]} {
         return #t
     } else {
         return #f
@@ -68,6 +70,8 @@ TT)
 MD(
 The operators `=`, `<`, `>`, `<=`, and `>=` are implemented. They return Lisp truth (#t / #f),
 not Tcl truth.
+
+![The mathematical comparison operators](/images/math-comp-ops.png)
 MD)
 
 CB
@@ -197,16 +201,18 @@ TT)
 
 MD(
 The `zero?` predicate tests if a given number is equal to zero.
+
+![The zero? procedure](/images/zerop.png)
 MD)
 
 CB
 reg zero? ::constcl::zero?
 
-proc ::constcl::zero? {obj} {
-    if {[number? $obj] eq "#t"} {
-        return [$obj zero?]
+proc ::constcl::zero? {val} {
+    if {[number? $val] eq "#t"} {
+        return [$val zero?]
     } else {
-        error "NUMBER expected\n(zero? [$obj show])"
+        error "NUMBER expected\n(zero? [$val show])"
     }
 }
 CB
@@ -222,16 +228,18 @@ TT)
 MD(
 The `positive?`/`negative?`/`even?`/`odd?` predicates test a number
 for those traits.
+
+![The pneo procedure](/images/pneo.png)
 MD)
 
 CB
 reg positive? ::constcl::positive?
 
-proc ::constcl::positive? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj positive?]
+proc ::constcl::positive? {val} {
+    if {[::constcl::number? $val] eq "#t"} {
+        return [$val positive?]
     } else {
-        error "NUMBER expected\n(positive? [$obj show])"
+        error "NUMBER expected\n(positive? [$val show])"
     }
 }
 CB
@@ -247,11 +255,11 @@ TT)
 CB
 reg negative? ::constcl::negative?
 
-proc ::constcl::negative? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj negative?]
+proc ::constcl::negative? {val} {
+    if {[::constcl::number? $val] eq "#t"} {
+        return [$val negative?]
     } else {
-        error "NUMBER expected\n(negative? [$obj show])"
+        error "NUMBER expected\n(negative? [$val show])"
     }
 }
 CB
@@ -307,6 +315,8 @@ TT)
 MD(
 The `max` function selects the largest number, and the `min` function
 selects the smallest number.
+
+![The maxmin procedure](/images/maxmin.png)
 MD)
 
 CB
@@ -355,6 +365,9 @@ MD(
 The operators `+`, `*`, `-`, and `/` stand for the respective
 mathematical operations. They take a number of operands, but
 at least one for `-` and `/`.
+
+![The mathematical operators 1](/images/math-ops1.png)
+![The mathematical operators 2](/images/math-ops2.png)
 MD)
 
 CB
@@ -463,20 +476,22 @@ TT)
 
 MD(
 The `abs` function yields the absolute value of a number.
+
+![The abs function](/images/abs.png)
 MD)
 
 CB
 reg abs ::constcl::abs
 
-proc ::constcl::abs {x} {
-    if {[number? $x] eq "#t"} {
-        if {[$x negative?] eq "#t"} {
-            return [MkNumber [expr {[$x numval] * -1}]]
+proc ::constcl::abs {val} {
+    if {[number? $val] eq "#t"} {
+        if {[$val negative?] eq "#t"} {
+            return [MkNumber [expr {[$val numval] * -1}]]
         } else {
-            return $x
+            return $val
         }
     } else {
-        error "NUMBER expected\n(abs [$x show])"
+        error "NUMBER expected\n(abs [$val show])"
     }
 }
 CB
@@ -489,11 +504,17 @@ TT(
 
 TT)
 
+MD(
+`quotient` calculates the quotient between two numbers.
+
+![The quotient function](/images/quotient.png)
+MD)
+
 CB
 reg quotient
 
-proc ::constcl::quotient {n1 n2} {
-    set q [::tcl::mathop::/ [$n1 numval] [$n2 numval]]
+proc ::constcl::quotient {val1 val2} {
+    set q [::tcl::mathop::/ [$val1 numval] [$val2 numval]]
     if {$q > 0} {
         return [MkNumber [::tcl::mathfunc::floor $q]]
     } elseif {$q < 0} {
@@ -504,23 +525,34 @@ proc ::constcl::quotient {n1 n2} {
 }
 CB
 
+MD(
+`remainder` is a variant of the modulus function. (I'm a programmer, not
+a mathematician!)
+
+![The remainder function](/images/remainder.png)
+MD)
+
 CB
 reg remainder
 
-proc ::constcl::remainder {n1 n2} {
-    set n [::tcl::mathop::% [[abs $n1] numval] [[abs $n2] numval]]
-    if {[$n1 negative?] eq "#t"} {
+proc ::constcl::remainder {val1 val2} {
+    set n [::tcl::mathop::% [[abs $val1] numval] [[abs $val2] numval]]
+    if {[$val1 negative?] eq "#t"} {
         set n -$n
     }
     return [MkNumber $n]
 }
 CB
 
+MD(
+![The modulo function](/images/modulo.png)
+MD)
+
 CB
 reg modulo
 
-proc ::constcl::modulo {n1 n2} {
-    return [MkNumber [::tcl::mathop::% [$n1 numval] [$n2 numval]]]
+proc ::constcl::modulo {val1 val2} {
+    return [MkNumber [::tcl::mathop::% [$val1 numval] [$val2 numval]]]
 }
 CB
 
@@ -567,16 +599,18 @@ CB
 MD(
 `floor`, `ceiling`, `truncate`, and `round` are different methods for
 converting a real number to an integer.
+
+![The rounding functions](/images/rounding.png)
 MD)
 
 CB
 reg floor ::constcl::floor
 
-proc ::constcl::floor {x} {
-    if {[number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::floor [$x numval]]
+proc ::constcl::floor {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::floor [$val numval]]
     } else {
-        error "NUMBER expected\n(floor [$x show])"
+        error "NUMBER expected\n(floor [$val show])"
     }
 }
 CB
@@ -673,16 +707,19 @@ The mathematical functions _e<sup>x</sup>_, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
 calculated by `exp`, `log`, `sin`, `cos`, `tan`, `asin`, `acos`,
 and `atan`, respectively.
+
+![The transcendent functions](/images/transc.png)
+![The binary atan function](/images/atan.png)
 MD)
 
 CB
 reg exp ::constcl::exp
 
-proc ::constcl::exp {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::exp [$z numval]]
+proc ::constcl::exp {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::exp [$val numval]]
     } else {
-        error "NUMBER expected\n(exp [$z show])"
+        error "NUMBER expected\n(exp [$val show])"
     }
 }
 CB
@@ -698,11 +735,11 @@ TT)
 CB
 reg log ::constcl::log
 
-proc ::constcl::log {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::log [$z numval]]
+proc ::constcl::log {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::log [$val numval]]
     } else {
-        error "NUMBER expected\n(log [$z show])"
+        error "NUMBER expected\n(log [$val show])"
     }
 }
 CB
@@ -718,11 +755,11 @@ TT)
 CB
 reg sin ::constcl::sin
 
-proc ::constcl::sin {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sin [$z numval]]
+proc ::constcl::sin {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sin [$val numval]]
     } else {
-        error "NUMBER expected\n(sin [$z show])"
+        error "NUMBER expected\n(sin [$val show])"
     }
 }
 CB
@@ -730,11 +767,11 @@ CB
 CB
 reg cos ::constcl::cos
 
-proc ::constcl::cos {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::cos [$z numval]]
+proc ::constcl::cos {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::cos [$val numval]]
     } else {
-        error "NUMBER expected\n(cos [$z show])"
+        error "NUMBER expected\n(cos [$val show])"
     }
 }
 CB
@@ -742,11 +779,11 @@ CB
 CB
 reg tan ::constcl::tan
 
-proc ::constcl::tan {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::tan [$z numval]]
+proc ::constcl::tan {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::tan [$val numval]]
     } else {
-        error "NUMBER expected\n(tan [$z show])"
+        error "NUMBER expected\n(tan [$val show])"
     }
 }
 CB
@@ -764,11 +801,11 @@ TT)
 CB
 reg asin ::constcl::asin
 
-proc ::constcl::asin {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::asin [$z numval]]
+proc ::constcl::asin {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::asin [$val numval]]
     } else {
-        error "NUMBER expected\n(asin [$z show])"
+        error "NUMBER expected\n(asin [$val show])"
     }
 }
 CB
@@ -776,11 +813,11 @@ CB
 CB
 reg acos ::constcl::acos
 
-proc ::constcl::acos {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::acos [$z numval]]
+proc ::constcl::acos {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::acos [$val numval]]
     } else {
-        error "NUMBER expected\n(acos [$z show])"
+        error "NUMBER expected\n(acos [$val show])"
     }
 }
 CB
@@ -790,18 +827,18 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
-        set z [lindex $args 0]
-        if {[number? $z] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan [$z numval]]
+        set val [lindex $args 0]
+        if {[number? $val] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan [$val numval]]
         } else {
-            error "NUMBER expected\n(atan [$z show])"
+            error "NUMBER expected\n(atan [$val show])"
         }
     } else {
-        lassign $args y x
-        if {[number? $y] eq "#t" && [::constcl::number? $x] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan2 [$y numval] [$x numval]]
+        lassign $args val1 val2
+        if {[number? $val1] eq "#t" && [::constcl::number? $val2] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan2 [$val1 numval] [$val2 numval]]
         } else {
-            error "NUMBER expected\n(atan [$y show] [$x show])"
+            error "NUMBER expected\n(atan [$val1 show] [$val2 show])"
         }
     }
 }
@@ -819,16 +856,18 @@ TT)
 
 MD(
 `sqrt` calculates the square root.
+
+![The sqrt operation](/images/sqrt.png)
 MD)
 
 CB
 reg sqrt ::constcl::sqrt
 
-proc ::constcl::sqrt {z} {
-    if {[number? $z] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sqrt [$z numval]]
+proc ::constcl::sqrt {val} {
+    if {[number? $val] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sqrt [$val numval]]
     } else {
-        error "NUMBER expected\n(sqrt [$z show])"
+        error "NUMBER expected\n(sqrt [$val show])"
     }
 }
 CB
@@ -843,16 +882,18 @@ TT)
 
 MD(
 `expt` calculates the _x_ to the power of _y_.
+
+![The expt operation](/images/expt.png)
 MD)
 
 CB
 reg expt ::constcl::expt
 
-proc ::constcl::expt {z1 z2} {
-    if {[number? $z1] eq "#t" && [number? $z2] eq "#t"} {
-        MkNumber [::tcl::mathfunc::pow [$z1 numval] [$z2 numval]]
+proc ::constcl::expt {val1 val2} {
+    if {[number? $val1] eq "#t" && [number? $val2] eq "#t"} {
+        MkNumber [::tcl::mathfunc::pow [$val1 numval] [$val2 numval]]
     } else {
-        error "NUMBER expected\n(expt [$z1 show] [$z2 show])"
+        error "NUMBER expected\n(expt [$val1 show] [$val2 show])"
     }
 }
 CB
@@ -916,31 +957,33 @@ CB
 MD(
 The procedures `number->string` and `string->number` converts between
 number and string with optional radix conversion.
+
+![The number->string procedure](/images/nts.png)
+![The string->number procedure](/images/stn.png)
 MD)
 
 CB
 reg number->string ::constcl::number->string
 
-proc ::constcl::number->string {args} {
-    if {[llength $args] == 1} {
-        set num [lindex $args 0]
-        if {[number? $num] eq "#t"} {
-            return [MkString [$num numval]]
+proc ::constcl::number->string {val args} {
+    if {[llength $args] == 0} {
+        if {[number? $val] eq "#t"} {
+            return [MkString [$val numval]]
         } else {
-            error "NUMBER expected\n(string->number [$num show])"
+            error "NUMBER expected\n(string->number [$val show])"
         }
     } else {
-        lassign $args num radix
-        if {[number? $num] eq "#t"} {
+        lassign $args radix
+        if {[number? $val] eq "#t"} {
             if {[$radix numval] == 10} {
-                return [MkString [$num numval]]
+                return [MkString [$val numval]]
             } elseif {[$radix numval] in {2 8 16}} {
-                return [MkString [base [$radix numval] [$num numval]]]
+                return [MkString [base [$radix numval] [$val numval]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
         } else {
-            error "NUMBER expected\n(string->number [$num show])"
+            error "NUMBER expected\n(string->number [$val show])"
         }
     }
 }
@@ -974,16 +1017,15 @@ TT)
 CB
 reg string->number ::constcl::string->number
 
-proc ::constcl::string->number {args} {
-    if {[llength $args] == 1} {
-        set str [lindex $args 0]
+proc ::constcl::string->number {str args} {
+    if {[llength $args] == 0} {
         if {[string? $str] eq "#t"} {
             return [MkNumber [$str value]]
         } else {
             error "STRING expected\n(string->number [$str show])"
         }
     } else {
-        lassign $args str radix
+        lassign $args radix
         if {[string? $str] eq "#t"} {
             if {[$radix numval] == 10} {
                 return [MkNumber [$str value]]

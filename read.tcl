@@ -83,7 +83,13 @@ MD(
 Given a string, `parse` fills the input buffer. It then reads and parses the input.
 MD)
 
+PR(
+parse (public);str lisp -> val
+PR)
+
 CB
+reg parse
+
 proc ::constcl::parse {str} {
     ib fill $str
     return [parse-value]
@@ -93,6 +99,10 @@ CB
 MD(
 The standard builtin `read` consumes and parses input into a Lisp expression.
 MD)
+
+PR(
+read (public);args dc -> val
+PR)
 
 CB
 reg read ::constcl::read
@@ -106,12 +116,16 @@ MD(
 The procedure `parse-value` reads a value of any kind.
 MD)
 
+PR(
+parse-value (internal);-> val
+PR)
+
 CB
 proc ::constcl::parse-value {} {
     ib skip-ws
     switch -regexp [ib first] {
         {^$}          { return }
-        {\"}          { return [parse-string] }
+        {\"}          { return [parse-string-value] }
         {\#}          { return [parse-sharp] }
         {\'}          { return [parse-quoted-value] }
         {\(}          { return [parse-pair-value ")"] }
@@ -134,8 +148,12 @@ MD(
 `parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
+PR(
+parse-string-value (internal);-> str
+PR)
+
 CB
-proc ::constcl::parse-string {} {
+proc ::constcl::parse-string-value {} {
     set str {}
     ib advance
     while {[ib first] ne {"}} {
@@ -175,6 +193,10 @@ MD(
 a sharp sign (#).
 MD)
 
+PR(
+parse-sharp (internal);-> sharp
+PR)
+
 CB
 proc ::constcl::parse-sharp {} {
     ib advance
@@ -191,20 +213,20 @@ proc ::constcl::parse-sharp {} {
 CB
 
 MD(
-The `make-constant` helper procedure is called to set objects to
+The `make-constant` helper procedure is called to set values to
 constants when read as a quoted literal.
 MD)
 
 CB
-proc ::constcl::make-constant {obj} {
-    if {[pair? $obj] eq "#t"} {
-        $obj mkconstant
-        make-constant [car $obj]
-        make-constant [cdr $obj]
-    } elseif {[null? $obj] eq "#t"} {
+proc ::constcl::make-constant {val} {
+    if {[pair? $val] eq "#t"} {
+        $val mkconstant
+        make-constant [car $val]
+        make-constant [cdr $val]
+    } elseif {[null? $val] eq "#t"} {
         return #NIL
     } else {
-        $obj mkconstant
+        $val mkconstant
     }
 }
 CB
@@ -212,6 +234,10 @@ CB
 MD(
 `parse-quoted-value` reads a value and returns it wrapped in `quote`.
 MD)
+
+PR(
+parse-quoted-value (internal);-> quote
+PR)
 
 CB
 proc ::constcl::parse-quoted-value {} {
@@ -235,6 +261,10 @@ MD(
 The `parse-pair-value` procedure reads values and returns a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 MD)
+
+PR(
+parse-pair-value (internal);char pterm -> pstr
+PR)
 
 CB
 
@@ -333,6 +363,10 @@ MD(
 returns a `#+` or `#-` symbol, or a number.
 MD)
 
+PR(
+parse-plus-minus (internal);-> pm
+PR)
+
 CB
 proc ::constcl::parse-plus-minus {} {
     set c [ib first]
@@ -353,8 +387,13 @@ proc ::constcl::parse-plus-minus {} {
 CB
 
 MD(
-`parse-unquoted-value` reads a value and returns it wrapped in `unquote`.
+`parse-unquoted-value` reads a value and returns it wrapped in `unquote`, or possibly
+in `unquote-splicing`.
 MD)
+
+PR(
+parse-unquoted-value (internal);-> unquote
+PR)
 
 CB
 proc ::constcl::parse-unquoted-value {} {
@@ -382,6 +421,10 @@ MD(
 `parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
 MD)
 
+PR(
+parse-quasiquoted-value (internal);-> qquote
+PR)
+
 CB
 proc ::constcl::parse-quasiquoted-value {} {
     ib advance
@@ -403,6 +446,10 @@ TT)
 MD(
 `parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
+
+PR(
+parse-number-value (internal);-> num
+PR)
 
 CB
 proc ::constcl::parse-number-value {} {
@@ -461,6 +508,10 @@ MD(
 `parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
+PR(
+parse-identifier-value (internal);-> sym
+PR)
+
 CB
 proc ::constcl::parse-identifier-value {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
@@ -508,6 +559,10 @@ MD(
 `parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
+PR(
+parse-character-value (internal);-> char
+PR)
+
 CB
 proc ::constcl::parse-character-value {} {
     set name "#"
@@ -551,6 +606,10 @@ TT)
 MD(
 `parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
+
+PR(
+parse-vector-value (internal);-> vec
+PR)
 
 CB
 proc ::constcl::parse-vector-value {} {
