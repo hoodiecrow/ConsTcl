@@ -3443,13 +3443,17 @@ oo::class create ::constcl::String {
 }
 
 interp alias {} MkString {} ::constcl::String new
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">string? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg string? ::constcl::string?
 
-proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj ::constcl::String]} {
+proc ::constcl::string? {val} {
+    if {[info object isa typeof $val ::constcl::String]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::String]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
         return #t
     } else {
         return #f
@@ -3459,26 +3463,30 @@ proc ::constcl::string? {obj} {
 
 Helper function for finding a string in the string store.
 
+<table border=1><thead><tr><th colspan=2 align="left">find-string-index (internal)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
+
 ```
-proc ::constcl::find-string-index {v} {
-    set s -1
+proc ::constcl::find-string-index {str} {
+    set index -1
     for {set i 0} {$i < $::constcl::S} {incr i} {
-        if {[::string equal [lindex $::constcl::StrSto $i] $v]} {
-            set s $i
+        if {[::string equal [lindex $::constcl::StrSto $i] $str]} {
+            set index $i
         }
     }
-    if {$s == -1} {
-        set s $::constcl::S
-        lset ::constcl::StrSto $s $v
+    if {$index == -1} {
+        set index $::constcl::S
+        lset ::constcl::StrSto $index $str
         incr ::constcl::S
     }
-    set s
+    set index
 }
 ```
 
 
 `make-string` _k_ _?c?_ creates a string of _k_ characters, optionally
 filled with _c_ characters.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-string (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg make-string ::constcl::make-string
@@ -3487,14 +3495,16 @@ proc ::constcl::make-string {k args} {
     if {[llength $args] == 0} {
         return [MkString [::string repeat " " [$k numval]]]
     } else {
-        lassign $args c
-        return [MkString [::string repeat [$c char] [$k numval]]]
+        lassign $args char
+        return [MkString [::string repeat [$char char] [$k numval]]]
     }
 }
 ```
 
 
 `string` constructs a string from a Tcl list of Lisp characters.
+
+<table border=1><thead><tr><th colspan=2 align="left">string (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg string ::constcl::string
@@ -3515,6 +3525,8 @@ proc ::constcl::string {args} {
 
 `string-length` reports a string's length.
 
+<table border=1><thead><tr><th colspan=2 align="left">string-length (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg string-length ::constcl::string-length
 
@@ -3529,6 +3541,8 @@ proc ::constcl::string-length {str} {
 
 
 `string-ref` _str_ _k_ yields the _k_-th character (0-based) in _str_.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 reg string-ref ::constcl::string-ref
@@ -3549,6 +3563,8 @@ proc ::constcl::string-ref {str k} {
 
 
 `string-set!` _str_ _k_ _char_ replaces the character at _k_ with _char_.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-set! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg string-set! ::constcl::string-set!
@@ -3577,18 +3593,22 @@ proc ::constcl::string-set! {str k char} {
 case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
 `string-ci<=?`, `string-ci>=?` compare strings.
 
+<table border=1><thead><tr><th colspan=2 align="left">string=?, string&lt;?, string&gt;?, string&lt;=?, string&gt;=? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">string-ci=?, string-ci&lt;?, string-ci&gt;?, string-ci&lt;=?, string-ci&gt;=? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg string=? ::constcl::string=?
 
-proc ::constcl::string=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] eq [$s2 value]} {
+proc ::constcl::string=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] eq [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3597,15 +3617,15 @@ proc ::constcl::string=? {s1 s2} {
 ```
 reg string-ci=? ::constcl::string-ci=?
 
-proc ::constcl::string-ci=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] eq [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3614,15 +3634,15 @@ proc ::constcl::string-ci=? {s1 s2} {
 ```
 reg string<? ::constcl::string<?
 
-proc ::constcl::string<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] < [$s2 value]} {
+proc ::constcl::string<? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] < [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string<? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string<? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3631,15 +3651,15 @@ proc ::constcl::string<? {s1 s2} {
 ```
 reg string-ci<? ::constcl::string-ci<?
 
-proc ::constcl::string-ci<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] < [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci<? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci<? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3648,15 +3668,15 @@ proc ::constcl::string-ci<? {s1 s2} {
 ```
 reg string>? ::constcl::string>?
 
-proc ::constcl::string>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] > [$s2 value]} {
+proc ::constcl::string>? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] > [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string>? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string>? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3665,15 +3685,15 @@ proc ::constcl::string>? {s1 s2} {
 ```
 reg string-ci>? ::constcl::string-ci>?
 
-proc ::constcl::string-ci>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] > [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci>? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci>? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3682,15 +3702,15 @@ proc ::constcl::string-ci>? {s1 s2} {
 ```
 reg string<=? ::constcl::string<=?
 
-proc ::constcl::string<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] <= [$s2 value]} {
+proc ::constcl::string<=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] <= [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string<=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string<=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3699,15 +3719,15 @@ proc ::constcl::string<=? {s1 s2} {
 ```
 reg string-ci<=? ::constcl::string-ci<=?
 
-proc ::constcl::string-ci<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] <= [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci<=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci<=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3716,15 +3736,15 @@ proc ::constcl::string-ci<=? {s1 s2} {
 ```
 reg string>=? ::constcl::string>=?
 
-proc ::constcl::string>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] >= [$s2 value]} {
+proc ::constcl::string>=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] >= [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string>=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string>=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3733,15 +3753,15 @@ proc ::constcl::string>=? {s1 s2} {
 ```
 reg string-ci>=? ::constcl::string-ci>=?
 
-proc ::constcl::string-ci>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] >= [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci>=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci>=? [$str1 show] [$str2 show])"
     }
 }
 ```
@@ -3750,13 +3770,15 @@ proc ::constcl::string-ci>=? {s1 s2} {
 `substring` _str_ _start_ _end_ yields the substring of _str_ that starts at _start_
 and ends at _end_.
 
+<table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $start] eq "#t" && [::constcl::number? $end] eq "#t"} {
-            return [MkString [$str substring [$start value] [$end value]]]
+            return [MkString [$str substring [$start numval] [$end numval]]]
         } else {
             error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
         }
@@ -3769,6 +3791,8 @@ proc ::constcl::substring {str start end} {
 
 `string-append` joins strings together.
 
+<table border=1><thead><tr><th colspan=2 align="left">string-append (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of strings</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string-append ::constcl::string-append
 
@@ -3779,6 +3803,8 @@ proc ::constcl::string-append {args} {
 
 
 `string->list` converts a string to a Lisp list of characters.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;list (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of characters</td></tr></table>
 
 ```
 reg string->list ::constcl::string->list
@@ -3791,6 +3817,8 @@ proc ::constcl::string->list {str} {
 
 `list->string` converts a Lisp list of characters to a string.
 
+<table border=1><thead><tr><th colspan=2 align="left">list-&gt;string (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg list->string ::constcl::list->string
 
@@ -3801,6 +3829,8 @@ proc ::constcl::list->string {list} {
 
 
 `string-copy` makes a copy of a string.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-copy (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg string-copy ::constcl::string-copy
@@ -3816,6 +3846,8 @@ proc ::constcl::string-copy {str} {
 
 
 `string-fill!` _str_ _char_ fills a non-constant string with _char_.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-fill! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg string-fill! ::constcl::string-fill!
