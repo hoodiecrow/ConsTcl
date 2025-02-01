@@ -69,11 +69,11 @@ proc ::constcl::write-pair {pair} {
     set d [cdr $pair]
     # print car
     write-value $a
-    if {[pair? $d] eq "#t"} {
+    if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
         puts -nonewline " "
         write-pair $d
-    } elseif {[null? $d] eq "#t"} {
+    } elseif {[null? $d] ne "#f"} {
         # cdr is nil
         return
     } else {

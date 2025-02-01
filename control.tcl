@@ -80,7 +80,7 @@ CB
 reg apply ::constcl::apply
 
 proc ::constcl::apply {pr vals} {
-    if {[procedure? $pr] eq "#t"} {
+    if {[procedure? $pr] ne "#f"} {
         invoke $pr $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
@@ -108,14 +108,14 @@ returned.
 MD)
 
 PR(
-map (public);pr proc args tlvals -> lvals
+map (public);pr proc args lists -> lvals
 PR)
 
 CB
 reg map ::constcl::map
 
 proc ::constcl::map {pr args} {
-    if {[procedure? $pr] eq "#t"} {
+    if {[procedure? $pr] ne "#f"} {
         set arglists $args
         for {set i 0} {$i < [llength $arglists]} {incr i} {
             lset arglists $i [splitlist [lindex $arglists $i]]
@@ -156,14 +156,14 @@ a procedure as an argument. The empty list is returned.
 MD)
 
 PR(
-for-each (public);pr proc args tlvals -> nil
+for-each (public);pr proc args lists -> nil
 PR)
 
 CB
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[procedure? $proc] eq "#t"} {
+    if {[procedure? $proc] ne "#f"} {
         set arglists $args
         for {set i 0} {$i < [llength $arglists]} {incr i} {
             lset arglists $i [splitlist [lindex $arglists $i]]

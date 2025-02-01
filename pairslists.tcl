@@ -83,11 +83,11 @@ proc ::constcl::show-pair {pair} {
     set d [cdr $pair]
     # print car
     ::append str [$a show]
-    if {[pair? $d] eq "#t"} {
+    if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
         ::append str " "
         ::append str [show-pair $d]
-    } elseif {[null? $d] eq "#t"} {
+    } elseif {[null? $d] ne "#f"} {
         # cdr is nil
         return $str
     } else {
@@ -348,9 +348,9 @@ proc ::constcl::listp {pair} {
         return #f
     }
     lappend visited $pair
-    if {[null? $pair] eq "#t"} {
+    if {[null? $pair] ne "#f"} {
         return #t
-    } elseif {[pair? $pair] eq "#t"} {
+    } elseif {[pair? $pair] ne "#f"} {
         return [listp [cdr $pair]]
     } else {
         return #f
@@ -392,7 +392,7 @@ MD(
 MD)
 
 PR(
-list (public);args tvals -> lvals
+list (public);args vals -> lvals
 PR)
 
 CB
@@ -430,7 +430,7 @@ PR)
 
 CB
 proc ::constcl::length-helper {pair} {
-    if {[null? $pair] eq "#t"} {
+    if {[null? $pair] ne "#f"} {
         return 0
     } else {
         return [expr {1 + [length-helper [cdr $pair]]}]
@@ -446,7 +446,7 @@ CB
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-    if {[list? $pair] eq "#t"} {
+    if {[list? $pair] ne "#f"} {
         MkNumber [length-helper $pair]
     } else {
         error "LIST expected\n(list lst)"
@@ -475,9 +475,9 @@ PR)
 CB
 proc ::constcl::copy-list {pair next} {
     # TODO only fresh conses in the direct chain to NIL
-    if {[null? $pair] eq "#t"} {
+    if {[null? $pair] ne "#f"} {
         set next
-    } elseif {[null? [cdr $pair]] eq "#t"} {
+    } elseif {[null? [cdr $pair]] ne "#f"} {
         cons [car $pair] $next
     } else {
         cons [car $pair] [copy-list [cdr $pair] $next]
@@ -486,7 +486,7 @@ proc ::constcl::copy-list {pair next} {
 CB
 
 PR(
-append (public);args tlvals -> lvals
+append (public);args lists -> lvals
 PR)
 
 CB
@@ -550,7 +550,7 @@ CB
 reg list-tail ::constcl::list-tail
 
 proc ::constcl::list-tail {vals k} {
-    if {[zero? $k] eq "#t"} {
+    if {[zero? $k] ne "#f"} {
         return $vals
     } else {
         list-tail [cdr $vals] [- $k #1]
@@ -603,11 +603,11 @@ PR)
 CB
 
 proc ::constcl::member-proc {epred val1 val2} {
-    if {[list? $val2] eq "#t"} {
-        if {[null? $val2] eq "#t"} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
             return #f
-        } elseif {[pair? $val2] eq "#t"} {
-            if {[$epred $val1 [car $val2]] eq "#t"} {
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[$epred $val1 [car $val2]] ne "#f"} {
                 return $val2
             } else {
                 return [member-proc $epred $val1 [cdr $val2]]
@@ -698,11 +698,11 @@ PR)
 
 CB
 proc ::constcl::assoc-proc {epred val1 val2} {
-    if {[list? $val2] eq "#t"} {
-        if {[null? $val2] eq "#t"} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
             return #f
-        } elseif {[pair? $val2] eq "#t"} {
-            if {[pair? [car $val2]] eq "#t" && [$epred $val1 [caar $val2]] eq "#t"} {
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
                 return [car $val2]
             } else {
                 return [assoc-proc $epred $val1 [cdr $val2]]

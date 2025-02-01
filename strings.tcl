@@ -133,7 +133,7 @@ MD(
 MD)
 
 PR(
-string (public);args tchars -> str
+string (public);args chars -> str
 PR)
 
 CB
@@ -142,7 +142,7 @@ reg string ::constcl::string
 proc ::constcl::string {args} {
     set str {}
     foreach char $args {
-        if {[::constcl::char? $char] eq "#t"} {
+        if {[::constcl::char? $char] ne "#f"} {
             ::append str [$char char]
         } else {
             error "CHAR expected\n(string [lmap c $args {$c show}])"
@@ -176,7 +176,7 @@ CB
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    if {[::constcl::string? $str] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
         return [MkNumber [$str length]]
     } else {
         error "STRING expected\n(string-length [$str show])"
@@ -204,8 +204,8 @@ CB
 reg string-ref ::constcl::string-ref
 
 proc ::constcl::string-ref {str k} {
-    if {[::constcl::string? $str] eq "#t"} {
-        if {[::constcl::number? $k] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
+        if {[::constcl::number? $k] ne "#f"} {
             set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
@@ -237,13 +237,13 @@ CB
 reg string-set! ::constcl::string-set!
 
 proc ::constcl::string-set! {str k char} {
-    if {[::constcl::string? $str] eq "#t"} {
-        if {[::constcl::number? $k] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
+        if {[::constcl::number? $k] ne "#f"} {
             set i [$k numval]
         } else {
             error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
         }
-        if {[::constcl::char? $char] eq "#t"} {
+        if {[::constcl::char? $char] ne "#f"} {
             $str set! $i [$char char]
             return $str
         } else {
@@ -291,7 +291,7 @@ CB
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[$str1 value] eq [$str2 value]} {
             return #t
         } else {
@@ -317,7 +317,7 @@ CB
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
             return #t
         } else {
@@ -343,7 +343,7 @@ CB
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[$str1 value] < [$str2 value]} {
             return #t
         } else {
@@ -369,7 +369,7 @@ CB
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
             return #t
         } else {
@@ -395,7 +395,7 @@ CB
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[$str1 value] > [$str2 value]} {
             return #t
         } else {
@@ -421,7 +421,7 @@ CB
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
             return #t
         } else {
@@ -447,7 +447,7 @@ CB
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[$str1 value] <= [$str2 value]} {
             return #t
         } else {
@@ -473,7 +473,7 @@ CB
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
             return #t
         } else {
@@ -499,7 +499,7 @@ CB
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[$str1 value] >= [$str2 value]} {
             return #t
         } else {
@@ -525,7 +525,7 @@ CB
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
-    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
         if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
             return #t
         } else {
@@ -560,8 +560,8 @@ CB
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    if {[::constcl::string? $str] eq "#t"} {
-        if {[::constcl::number? $start] eq "#t" && [::constcl::number? $end] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
+        if {[::constcl::number? $start] ne "#f" && [::constcl::number? $end] ne "#f"} {
             return [MkString [$str substring [$start numval] [$end numval]]]
         } else {
             error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
@@ -585,7 +585,7 @@ MD(
 MD)
 
 PR(
-string-append (public);args tstrs -> str
+string-append (public);args strs -> str
 PR)
 
 CB
@@ -664,7 +664,7 @@ CB
 reg string-copy ::constcl::string-copy
 
 proc ::constcl::string-copy {str} {
-    if {[::constcl::string? $str] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
         return [MkString [$str value]]
     } else {
         error "STRING expected\n(string-copy [$str show])"
@@ -693,7 +693,7 @@ CB
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
-    if {[::constcl::string? $str] eq "#t"} {
+    if {[::constcl::string? $str] ne "#f"} {
         $str fill! [$char char]
         return $str
     } else {

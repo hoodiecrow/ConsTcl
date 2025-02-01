@@ -78,7 +78,7 @@ CB
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-    if {[symbol? $val] eq "#t" || [number? $val] eq "#t" || [string? $val] eq "#t" || [char? $val] eq "#t" || [boolean? $val] eq "#t" || [vector? $val] eq "#t"} {
+    if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f"} {
         return #t
     } else {
         return #f

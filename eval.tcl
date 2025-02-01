@@ -29,10 +29,10 @@ CB
 reg eval ::constcl::eval
 
 proc ::constcl::eval {e {env ::constcl::global_env}} {
-    if {[atom? $e] eq "#t"} {
-        if {[symbol? $e] eq "#t"} {
+    if {[atom? $e] ne "#f"} {
+        if {[symbol? $e] ne "#f"} {
             return [lookup $e $env]
-        } elseif {[null? $e] eq "#t" || [atom? $e] eq "#t"} {
+        } elseif {[null? $e] ne "#f" || [atom? $e] ne "#f"} {
             return $e
         } else {
             error "cannot evaluate $e"
@@ -109,8 +109,8 @@ PR)
 
 CB
 proc ::constcl::eprogn {exps env} {
-    if {[pair? $exps] eq "#t"} {
-        if {[pair? [cdr $exps]] eq "#t"} {
+    if {[pair? $exps] ne "#f"} {
+        if {[pair? [cdr $exps]] ne "#f"} {
             eval [car $exps] $env
             return [eprogn [cdr $exps] $env]
         } else {
@@ -197,7 +197,7 @@ PR)
 
 CB
 proc ::constcl::invoke {pr vals} {
-    if {[procedure? $pr] eq "#t"} {
+    if {[procedure? $pr] ne "#f"} {
         if {[info object isa object $pr]} {
             $pr call {*}[splitlist $vals]
         } else {
@@ -220,7 +220,7 @@ PR)
 CB
 proc ::constcl::splitlist {vals} {
     set result {}
-    while {[pair? $vals] eq "#t"} {
+    while {[pair? $vals] ne "#f"} {
         lappend result [car $vals]
         set vals [cdr $vals]
     }
@@ -239,7 +239,7 @@ PR)
 
 CB
 proc ::constcl::eval-list {exps env} {
-    if {[pair? $exps] eq "#t"} {
+    if {[pair? $exps] ne "#f"} {
         return [cons [eval [car $exps] $env] [eval-list [cdr $exps] $env]]
     } else {
         return #NIL
@@ -317,9 +317,9 @@ PR)
 
 CB
 proc ::constcl::expand-and {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
+    if {[eq? [length $exps] #0] ne "#f"} {
         return [list #B #t]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
+    } elseif {[eq? [length $exps] #1] ne "#f"} {
         return [cons #B $exps]
     } else {
         return [do-and $exps #NIL]
@@ -333,7 +333,7 @@ PR)
 
 CB
 proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] eq "#t"} {
+    if {[eq? [length $exps] #0] ne "#f"} {
         return $prev
     } else {
         return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
@@ -352,12 +352,12 @@ PR)
 
 CB
 proc ::constcl::do-case {keyexpr clauses} {
-    if {[eq? [length $clauses] #0] eq "#t"} {
+    if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
-    } elseif {[eq? [length $clauses] #1] eq "#t"} {
+    } elseif {[eq? [length $clauses] #1] ne "#f"} {
         set keyl [caar $clauses]
         set body [cdar $clauses]
-        if {[eq? $keyl [MkSymbol "else"]] eq "#t"} {
+        if {[eq? $keyl [MkSymbol "else"]] ne "#f"} {
             set keyl #t
         } else {
             set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
@@ -383,23 +383,23 @@ PR)
 
 CB
 proc ::constcl::do-cond {clauses} {
-    if {[eq? [length $clauses] #0] eq "#t"} {
+    if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
-    } elseif {[eq? [length $clauses] #1] eq "#t"} {
+    } elseif {[eq? [length $clauses] #1] ne "#f"} {
         set pred [caar $clauses]
         set body [cdar $clauses]
-        if {[symbol? [car $body]] eq "#t" && [$body name] eq "=>"} {
+        if {[symbol? [car $body]] ne "#f" && [$body name] eq "=>"} {
             set body [cddar $clauses]
         }
-        if {[eq? $pred [MkSymbol "else"]] eq "#t"} {
+        if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
             set pred #t
         }
-        if {[null? $body] eq "#t"} {set body $pred}
+        if {[null? $body] ne "#f"} {set body $pred}
         return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
     } else {
         set pred [caar $clauses]
         set body [cdar $clauses]
-        if {[null? $body] eq "#t"} {set body $pred}
+        if {[null? $body] ne "#f"} {set body $pred}
         return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
     }
 }
@@ -418,16 +418,16 @@ PR)
 
 CB
 proc ::constcl::for-seq {seq env} {
-    if {[number? $seq] eq "#t"} {
+    if {[number? $seq] ne "#f"} {
         set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
     }
-    if {[list? $seq] eq "#t"} {
+    if {[list? $seq] ne "#f"} {
         set seq [splitlist $seq]
-    } elseif {[string? $seq] eq "#t"} { 
+    } elseif {[string? $seq] ne "#f"} { 
         set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
-    } elseif {[vector? $seq] eq "#t"} {
+    } elseif {[vector? $seq] ne "#f"} {
         set seq [$seq value]
     }
 }
@@ -531,7 +531,7 @@ PR)
 
 CB
 proc ::constcl::expand-let {exps} {
-    if {[symbol? [car $exps]] eq "#t"} {
+    if {[symbol? [car $exps]] ne "#f"} {
         # named let
         set variable [car $exps]
         set bindings [cadr $exps]
@@ -574,9 +574,9 @@ PR)
 
 CB
 proc ::constcl::expand-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
+    if {[eq? [length $exps] #0] ne "#f"} {
         return [list #B #f]
-    } elseif {[eq? [length $exps] #1] eq "#t"} {
+    } elseif {[eq? [length $exps] #1] ne "#f"} {
         return [cons #B $exps]
     } else {
         return [do-or $exps]
@@ -590,7 +590,7 @@ PR)
 
 CB
 proc ::constcl::do-or {exps} {
-    if {[eq? [length $exps] #0] eq "#t"} {
+    if {[eq? [length $exps] #0] ne "#f"} {
         return #f
     } else {
         return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
@@ -631,22 +631,22 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     if {$qqlevel < 0} {
         set qqlevel 0
     }
-    if {[list? $node] eq "#t"} {
+    if {[list? $node] ne "#f"} {
         set res {}
         foreach child [splitlist $node] {
-            if {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote"]] eq "#t"} {
+            if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
                 if {$qqlevel == 0} {
                     lappend res [eval [cadr $child] $env]
                 } else {
                     lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
-            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "unquote-splicing"]] eq "#t"} {
+            } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
                 if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $child] $env]]
                 }
-            } elseif {[pair? $child] eq "#t" && [eq? [car $child] [MkSymbol "quasiquote"]] eq "#t"} {
+            } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "quasiquote"]] ne "#f"} {
                 lappend res [list [MkSymbol "quasiquote"] [car [qq-visit-child [cdr $child] [expr {$qqlevel + 1}] $env]]] 
-            } elseif {[atom? $child] eq "#t"} {
+            } elseif {[atom? $child] ne "#f"} {
                 lappend res $child
             } else {
                 lappend res [qq-visit-child $child $qqlevel $env]
@@ -664,24 +664,24 @@ PR)
 CB
 proc ::constcl::expand-quasiquote {exps env} {
     set qqlevel 0
-    if {[list? [car $exps]] eq "#t"} {
+    if {[list? [car $exps]] ne "#f"} {
         set node [car $exps]
         return [qq-visit-child $node 0 $env]
-    } elseif {[vector? [car $exps]] eq "#t"} {
+    } elseif {[vector? [car $exps]] ne "#f"} {
         set vect [car $exps]
         set res {}
         for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
             set vecref [vector-ref $vect $idx]
-            if {[pair? $vecref] eq "#t" && [eq? [car $vecref] [MkSymbol "unquote"]] eq "#t"} {
+            if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
                 if {$qqlevel == 0} {
                     lappend res [eval [cadr $vecref] $env]
                 }
-            } elseif {[pair? $vecref] eq "#t" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] eq "#t"} {
+            } elseif {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] ne "#f"} {
                 if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $vecref] $env]]
                 }
-            } elseif {[atom? $vecref] eq "#t"} {
+            } elseif {[atom? $vecref] ne "#f"} {
                 lappend res $vecref
             } else {
             }

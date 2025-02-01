@@ -145,7 +145,7 @@ proc ::constcl::parse-value {} {
 CB
 
 MD(
-`parse-string` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string-value` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
@@ -219,11 +219,11 @@ MD)
 
 CB
 proc ::constcl::make-constant {val} {
-    if {[pair? $val] eq "#t"} {
+    if {[pair? $val] ne "#f"} {
         $val mkconstant
         make-constant [car $val]
         make-constant [cdr $val]
-    } elseif {[null? $val] eq "#t"} {
+    } elseif {[null? $val] ne "#f"} {
         return #NIL
     } else {
         $val mkconstant
@@ -280,7 +280,7 @@ proc ::constcl::parse-pair {char} {
     while {![ib find $char]} {
         set x [parse-value]
         ib skip-ws
-        if {[dot? $x] eq "#t"} {
+        if {[dot? $x] ne "#f"} {
             set prev [parse-value]
             ib skip-ws
         } else {

@@ -76,7 +76,7 @@ not Tcl truth.
 MD)
 
 PR(
-=, <, >, <=, >= (public);args tnums -> bool
+=, <, >, <=, >= (public);args nums -> bool
 PR)
 
 CB
@@ -216,7 +216,7 @@ CB
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         return [$num zero?]
     } else {
         error "NUMBER expected\n(zero? [$num show])"
@@ -245,7 +245,7 @@ CB
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-    if {[::constcl::number? $num] eq "#t"} {
+    if {[::constcl::number? $num] ne "#f"} {
         return [$num positive?]
     } else {
         error "NUMBER expected\n(positive? [$num show])"
@@ -265,7 +265,7 @@ CB
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-    if {[::constcl::number? $num] eq "#t"} {
+    if {[::constcl::number? $num] ne "#f"} {
         return [$num negative?]
     } else {
         error "NUMBER expected\n(negative? [$num show])"
@@ -285,7 +285,7 @@ CB
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-    if {[::constcl::number? $num] eq "#t"} {
+    if {[::constcl::number? $num] ne "#f"} {
         return [$num even?]
     } else {
         error "NUMBER expected\n(even? [$num show])"
@@ -305,7 +305,7 @@ CB
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-    if {[::constcl::number? $num] eq "#t"} {
+    if {[::constcl::number? $num] ne "#f"} {
         return [$num odd?]
     } else {
         error "NUMBER expected\n(odd? [$num show])"
@@ -327,7 +327,7 @@ selects the smallest number.
 MD)
 
 PR(
-max, min (public);args tnums -> num
+max, min (public);args nums -> num
 PR)
 
 CB
@@ -379,11 +379,11 @@ at least one for `-` and `/`.
 MD)
 
 PR(
-+, * (public);args tnums -> num
++, * (public);args nums -> num
 PR)
 
 PR(
--, / (public);num num args tnums -> num
+-, / (public);num num args nums -> num
 PR)
 
 CB
@@ -496,8 +496,8 @@ CB
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-    if {[number? $num] eq "#t"} {
-        if {[$num negative?] eq "#t"} {
+    if {[number? $num] ne "#f"} {
+        if {[$num negative?] ne "#f"} {
             return [MkNumber [expr {[$num numval] * -1}]]
         } else {
             return $num
@@ -553,7 +553,7 @@ reg remainder
 
 proc ::constcl::remainder {num1 num2} {
     set n [::tcl::mathop::% [[abs $num1] numval] [[abs $num2] numval]]
-    if {[$num1 negative?] eq "#t"} {
+    if {[$num1 negative?] ne "#f"} {
         set n -$n
     }
     return [MkNumber $n]
@@ -625,7 +625,7 @@ CB
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::floor [$num numval]]
     } else {
         error "NUMBER expected\n(floor [$num show])"
@@ -645,7 +645,7 @@ CB
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
         error "NUMBER expected\n(ceiling [$num show])"
@@ -665,8 +665,8 @@ CB
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-    if {[number? $num] eq "#t"} {
-        if {[$num negative?] eq "#t"} {
+    if {[number? $num] ne "#f"} {
+        if {[$num negative?] ne "#f"} {
             MkNumber [::tcl::mathfunc::ceil [$num numval]]
         } else {
             MkNumber [::tcl::mathfunc::floor [$num numval]]
@@ -690,7 +690,7 @@ CB
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::round [$num numval]]
     } else {
         error "NUMBER expected\n(round [$num show])"
@@ -739,7 +739,7 @@ CB
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::exp [$num numval]]
     } else {
         error "NUMBER expected\n(exp [$num show])"
@@ -759,7 +759,7 @@ CB
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::log [$num numval]]
     } else {
         error "NUMBER expected\n(log [$num show])"
@@ -779,7 +779,7 @@ CB
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::sin [$num numval]]
     } else {
         error "NUMBER expected\n(sin [$num show])"
@@ -791,7 +791,7 @@ CB
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::cos [$num numval]]
     } else {
         error "NUMBER expected\n(cos [$num show])"
@@ -803,7 +803,7 @@ CB
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::tan [$num numval]]
     } else {
         error "NUMBER expected\n(tan [$num show])"
@@ -825,7 +825,7 @@ CB
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::asin [$num numval]]
     } else {
         error "NUMBER expected\n(asin [$num show])"
@@ -837,7 +837,7 @@ CB
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::acos [$num numval]]
     } else {
         error "NUMBER expected\n(acos [$num show])"
@@ -851,14 +851,14 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set num [lindex $args 0]
-        if {[number? $num] eq "#t"} {
+        if {[number? $num] ne "#f"} {
             MkNumber [::tcl::mathfunc::atan [$num numval]]
         } else {
             error "NUMBER expected\n(atan [$num show])"
         }
     } else {
         lassign $args num1 num2
-        if {[number? $num1] eq "#t" && [::constcl::number? $num2] eq "#t"} {
+        if {[number? $num1] ne "#f" && [::constcl::number? $num2] ne "#f"} {
             MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
         } else {
             error "NUMBER expected\n(atan [$num1 show] [$num2 show])"
@@ -889,7 +889,7 @@ CB
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-    if {[number? $num] eq "#t"} {
+    if {[number? $num] ne "#f"} {
         MkNumber [::tcl::mathfunc::sqrt [$num numval]]
     } else {
         error "NUMBER expected\n(sqrt [$num show])"
@@ -917,7 +917,7 @@ CB
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-    if {[number? $num1] eq "#t" && [number? $num2] eq "#t"} {
+    if {[number? $num1] ne "#f" && [number? $num2] ne "#f"} {
         MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
     } else {
         error "NUMBER expected\n(expt [$num1 show] [$num2 show])"
@@ -995,14 +995,14 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        if {[number? $num] eq "#t"} {
+        if {[number? $num] ne "#f"} {
             return [MkString [$num numval]]
         } else {
             error "NUMBER expected\n(string->number [$num show])"
         }
     } else {
         lassign $args radix
-        if {[number? $num] eq "#t"} {
+        if {[number? $num] ne "#f"} {
             if {[$radix numval] == 10} {
                 return [MkString [$num numval]]
             } elseif {[$radix numval] in {2 8 16}} {
@@ -1051,14 +1051,14 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
     if {[llength $args] == 0} {
-        if {[string? $str] eq "#t"} {
+        if {[string? $str] ne "#f"} {
             return [MkNumber [$str value]]
         } else {
             error "STRING expected\n(string->number [$str show])"
         }
     } else {
         lassign $args radix
-        if {[string? $str] eq "#t"} {
+        if {[string? $str] ne "#f"} {
             if {[$radix numval] == 10} {
                 return [MkNumber [$str value]]
             } elseif {[$radix numval] in {2 8 16}} {

@@ -111,7 +111,7 @@ Given a number of Lisp values, `vector` creates a vector containing them.
 MD)
 
 PR(
-vector (public);args tvals -> vec
+vector (public);args vals -> vec
 PR)
 
 CB
@@ -143,7 +143,7 @@ CB
 reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
-    if {[vector? $vec] eq "#t"} {
+    if {[vector? $vec] ne "#f"} {
         return [MkNumber [$vec length]]
     } else {
         error "VECTOR expected\n(vector-length [$vec show])"
@@ -171,8 +171,8 @@ CB
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    if {[vector? $vec] eq "#t"} {
-        if {[number? $k] eq "#t"} {
+    if {[vector? $vec] ne "#f"} {
+        if {[number? $k] ne "#f"} {
             return [$vec ref [$k numval]]
         } else {
             error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
@@ -204,8 +204,8 @@ CB
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-    if {[vector? $vec] eq "#t"} {
-        if {[number? $k] eq "#t"} {
+    if {[vector? $vec] ne "#f"} {
+        if {[number? $k] ne "#f"} {
             return [$vec set! [$k numval] $val]
         } else {
             error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
@@ -285,7 +285,7 @@ CB
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    if {[vector? $vec] eq "#t"} {
+    if {[vector? $vec] ne "#f"} {
         $vec fill! $fill
     } else {
         error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"

@@ -84,7 +84,7 @@ CB
 reg symbol->string ::constcl::symbol->string
 
 proc ::constcl::symbol->string {sym} {
-    if {[symbol? $sym] eq "#t"} {
+    if {[symbol? $sym] ne "#f"} {
         if {![$sym case-constant]} {
             set str [MkString [::string tolower [$sym name]]]
         } else {
@@ -128,7 +128,7 @@ CB
 reg string->symbol ::constcl::string->symbol
 
 proc ::constcl::string->symbol {str} {
-    if {[string? $str] eq "#t"} {
+    if {[string? $str] ne "#f"} {
         set sym [MkSymbol [$str value]]
         $sym make-case-constant
         return $sym
