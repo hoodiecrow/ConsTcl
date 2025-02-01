@@ -791,47 +791,49 @@ proc ::constcl::expand-macro {env} {
     }
     switch [$op name] {
         and {
-            set val [expand-and $args]
+            set expr [expand-and $args]
         }
         case {
-            set val [do-case [car $args] [cdr $args]]
+            set expr [do-case [car $args] [cdr $args]]
         }
         cond {
-            set val [do-cond $args]
+            set expr [do-cond $args]
         }
         for {
-            set val [expand-for $args $env]
+            set expr [expand-for $args $env]
         }
         for/and {
-            set val [expand-for/and $args $env]
+            set expr [expand-for/and $args $env]
         }
         for/list {
-            set val [expand-for/list $args $env]
+            set expr [expand-for/list $args $env]
         }
         for/or {
-            set val [expand-for/or $args $env]
+            set expr [expand-for/or $args $env]
         }
         let {
-            set val [expand-let $args]
+            set expr [expand-let $args]
         }
         or {
-            set val [expand-or $args]
+            set expr [expand-or $args]
         }
         define {
-            set val [expand-define $args]
+            set expr [expand-define $args]
         }
         quasiquote {
-            set val [expand-quasiquote $args $env]
+            set expr [expand-quasiquote $args $env]
         }
     }
-    set op [car $val]
-    set args [cdr $val]
+    set op [car $expr]
+    set args [cdr $expr]
     return #NIL
 }
 ```
 
 `expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
 has 0 or 1 elements, and a nested `if` construct otherwise.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>exps</td><td></td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-and {exps} {
@@ -843,7 +845,11 @@ proc ::constcl::expand-and {exps} {
         return [do-and $exps #NIL]
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">do-and (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>prev</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
 proc ::constcl::do-and {exps prev} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return $prev
@@ -855,6 +861,8 @@ proc ::constcl::do-and {exps prev} {
 
 The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
+
+<table border=1><thead><tr><th colspan=2 align="left">do-case (internal)</th></tr></thead><tr><td>keyexpr</td><td>an expression</td></tr><tr><td>clauses</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::do-case {keyexpr clauses} {
@@ -880,6 +888,8 @@ proc ::constcl::do-case {keyexpr clauses} {
 
 The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
+
+<table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>clauses</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::do-cond {clauses} {
@@ -910,6 +920,8 @@ construct containing the iterations of each clause (multiple clauses
 weren't implemented, but I brought up my strongest brain cells and they
 did it).
 
+<table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+
 ```
 proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
@@ -925,7 +937,11 @@ proc ::constcl::for-seq {seq env} {
         set seq [$seq value]
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">do-for (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
+
+```
 proc ::constcl::do-for {exps env} {
     set clauses [splitlist [car $exps]]
     set body [cdr $exps]
@@ -946,7 +962,11 @@ proc ::constcl::do-for {exps env} {
     }
     return $res
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">expand-for (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
 proc ::constcl::expand-for {exps env} {
     set res [do-for $exps $env]
     lappend res [list #Q #NIL]
@@ -956,6 +976,8 @@ proc ::constcl::expand-for {exps env} {
 
 The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
 construct containing the iterations of the clauses.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-for/and (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-for/and {exps env} {
@@ -967,6 +989,8 @@ proc ::constcl::expand-for/and {exps env} {
 The `expand-for/list` procedure expands the `for/list` macro. It returns a `list`
 construct containing the iterations of each clause.
 
+<table border=1><thead><tr><th colspan=2 align="left">expand for/list (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
 ```
 proc ::constcl::expand-for/list {exps env} {
     set res [do-for $exps $env]
@@ -977,6 +1001,8 @@ proc ::constcl::expand-for/list {exps env} {
 The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
 construct containing the iterations of each clause.
 
+<table border=1><thead><tr><th colspan=2 align="left">expand-for/or (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
 ```
 proc ::constcl::expand-for/or {exps env} {
     set res [do-for $exps $env]
@@ -986,6 +1012,8 @@ proc ::constcl::expand-for/or {exps env} {
 
 `expand-let` expands the named `let` and 'regular' `let` macros. They ultimately
 expand to `lambda` constructs.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-let (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-let {exps} {
@@ -1024,6 +1052,8 @@ proc ::constcl::expand-let {exps} {
 `expand-or` expands the `or` macro. It returns a `begin`-expression if the macro
 has 0 or 1 elements, and a nested `if` construct otherwise.
 
+<table border=1><thead><tr><th colspan=2 align="left">expand-or (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
 ```
 proc ::constcl::expand-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
@@ -1034,7 +1064,11 @@ proc ::constcl::expand-or {exps} {
         return [do-or $exps]
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">do-or (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
 proc ::constcl::do-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return #f
@@ -1047,6 +1081,8 @@ proc ::constcl::do-or {exps} {
 `define` has two variants, one of which requires some rewriting. It's the one with an implied `lambda`
 call, the one that defines a procedure.
 
+<table border=1><thead><tr><th colspan=2 align="left">expand-define (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
 ```
 proc ::constcl::expand-define {exps} {
     set symbol [caar $exps]
@@ -1058,7 +1094,9 @@ proc ::constcl::expand-define {exps} {
 
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
 traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
-fragile and sprawling.
+brittle and sprawling and I barely understand it myself.
+
+<table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
 
 ```
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -1089,7 +1127,11 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
     return [list {*}$res]
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">expand-quasiquote (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
 proc ::constcl::expand-quasiquote {exps env} {
     set qqlevel 0
     if {[list? [car $exps]] eq "#t"} {
