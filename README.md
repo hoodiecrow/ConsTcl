@@ -657,7 +657,7 @@ _alternate_) is evaluated and the value returned.
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
 
-<table border=1><thead><tr><th colspan=2 align="left">eprogn (internal)</th></tr></thead><tr><td>exps</td><td></td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eprogn (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::eprogn {exps env} {
@@ -706,14 +706,14 @@ object. First it needs to convert the Lisp list `body`. It is packed inside a `b
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
-![The make-function procedure](/images/make-function.png)
-
 A Scheme formals list is either:
 
 * An _empty list_, `()`, meaning that no arguments are accepted,
 * A _proper list_, `(a b c)`, meaning it accepts three arguments, one in each symbol,
 * A _symbol_, `a`, meaning that all arguments go into `a`, or
 * A _dotted list_, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-function (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
 proc ::constcl::make-function {formals body env} {
@@ -729,7 +729,7 @@ proc ::constcl::make-function {formals body env} {
 `invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
-![The invoke procedure](/images/invoke.png)
+<table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -740,13 +740,14 @@ proc ::constcl::invoke {pr vals} {
             $pr {*}[splitlist $vals]
         }
     } else {
+        error "PROCEDURE expected\n([$pr show] val ...)" ;# [$vals show])
     }
 }
 ```
 
 `splitlist` converts a Lisp list to a Tcl list with Lisp objects.
 
-![The splitlist procedure](/images/splitlist.png)
+<table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
 
 ```
 proc ::constcl::splitlist {vals} {
@@ -762,7 +763,7 @@ proc ::constcl::splitlist {vals} {
 `eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
 
-![The eval-list procedure](/images/eval-list.png)
+<table border=1><thead><tr><th colspan=2 align="left">eval-list (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
 proc ::constcl::eval-list {exps env} {
@@ -780,7 +781,7 @@ Macros that rewrite expressions into other, more concrete expressions is one of 
 points. This interpreter does macro expansion, but the user can't define new macros--the ones
 available are hardcoded in the code below.
 
-![The expand-macro procedure](/images/expand-macro.png)
+<table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
 
 ```
 proc ::constcl::expand-macro {env} {
@@ -2621,6 +2622,7 @@ proc ::constcl::apply {proc vals} {
     if {[procedure? $proc] eq "#t"} {
         invoke $proc $vals
     } else {
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
@@ -2649,6 +2651,7 @@ proc ::constcl::map {proc args} {
         }
         return [list {*}$res]
     } else {
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
@@ -2675,6 +2678,7 @@ proc ::constcl::for-each {proc args} {
         }
         return [list]
     } else {
+        error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
 }
 ```
