@@ -729,7 +729,7 @@ proc ::constcl::make-function {formals body env} {
 `invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
-<table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -2285,8 +2285,6 @@ values. They only compare two characters at a time.
 
 <table border=1><thead><tr><th colspan=2 align="left">char=?, char&lt;?, char&gt;?, char&lt;=?, char&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
-<table border=1><thead><tr><th colspan=2 align="left">char-ci=?, char-ci&lt;?, char-ci&gt;?, char-ci&lt;=?, char-ci&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
 ```
 reg char=? ::constcl::char=?
 
@@ -2375,7 +2373,7 @@ proc ::constcl::char>=? {char1 char2} {
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
 
-![The char comparison operators 2](/images/char-comp-ops2.png)
+<table border=1><thead><tr><th colspan=2 align="left">char-ci=?, char-ci&lt;?, char-ci&gt;?, char-ci&lt;=?, char-ci&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char-ci=? ::constcl::char-ci=?
@@ -2607,7 +2605,7 @@ proc ::constcl::char-downcase {char} {
 
 This section concerns itself with procedures and the application of the same.
 
-A `Procedure` object is basically a
+A `Procedure` object is a
 [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
 storing the procedure's parameter list, the body, and the environment that is current
 when the object is created (when the procedure is defined).
@@ -2638,15 +2636,19 @@ oo::class create ::constcl::Procedure {
 }
 
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg procedure? ::constcl::procedure?
 
-proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj ::constcl::Procedure]} {
+proc ::constcl::procedure? {val} {
+    if {[info object isa typeof $val ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
         return #t
-    } elseif {[::string match "::constcl::*" $obj]} {
+    } elseif {[::string match "::constcl::*" $val]} {
         return #t
     } else {
         return #f
@@ -2657,12 +2659,14 @@ proc ::constcl::procedure? {obj} {
 
 `apply` applies a procedure to a Lisp list of Lisp arguments.
 
+<table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
+
 ```
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc vals} {
-    if {[procedure? $proc] eq "#t"} {
-        invoke $proc $vals
+proc ::constcl::apply {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        invoke $pr $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -2674,11 +2678,13 @@ proc ::constcl::apply {proc vals} {
 a procedure as an argument. The Lisp list of the results of the invocations is 
 returned.
 
+<table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>a Tcl list of Lisp lists of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg map ::constcl::map
 
-proc ::constcl::map {proc args} {
-    if {[procedure? $proc] eq "#t"} {
+proc ::constcl::map {pr args} {
+    if {[procedure? $pr] eq "#t"} {
         set arglists $args
         for {set i 0} {$i < [llength $arglists]} {incr i} {
             lset arglists $i [splitlist [lindex $arglists $i]]
@@ -2689,11 +2695,11 @@ proc ::constcl::map {proc args} {
             for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
                 lappend arguments [lindex $arglists $arg $item]
             }
-            lappend res [invoke $proc [list {*}$arguments]]
+            lappend res [invoke $pr [list {*}$arguments]]
         }
         return [list {*}$res]
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
+        error "PROCEDURE expected\n(apply [$pr show] ...)"
     }
 }
 ```
@@ -2701,6 +2707,8 @@ proc ::constcl::map {proc args} {
 
 `for-each` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">for-each (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>a Tcl list of Lisp lists of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
 
 ```
 reg for-each ::constcl::for-each
@@ -2937,13 +2945,17 @@ oo::class create ::constcl::Pair {
 
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg pair? ::constcl::pair?
 
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj ::constcl::Pair]} {
+proc ::constcl::pair? {val} {
+    if {[info object isa typeof $val ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
         return #t
     } else {
         return #f
@@ -2953,12 +2965,14 @@ proc ::constcl::pair? {obj} {
 
 Helper procedure to make a string representation of a list.
 
+<table border=1><thead><tr><th colspan=2 align="left">show-pair (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
 ```
-proc ::constcl::show-pair {obj} {
+proc ::constcl::show-pair {pair} {
     # take an object and print the car and the cdr of the stored value
     set str {}
-    set a [car $obj]
-    set d [cdr $obj]
+    set a [car $pair]
+    set d [cdr $pair]
     # print car
     ::append str [$a show]
     if {[pair? $d] eq "#t"} {
@@ -2981,6 +2995,8 @@ proc ::constcl::show-pair {obj} {
 `cons` joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
 
+<table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
 ```
 reg cons ::constcl::cons
 
@@ -2992,22 +3008,26 @@ proc ::constcl::cons {car cdr} {
 
 `car` gets the contents of the first cell in a pair.
 
+<table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg car ::constcl::car
 
-proc ::constcl::car {obj} {
-    $obj car
+proc ::constcl::car {pair} {
+    $pair car
 }
 ```
 
 
 `cdr` gets the contents of the second cell in a pair.
 
+<table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg cdr ::constcl::cdr
 
-proc ::constcl::cdr {obj} {
-    $obj cdr
+proc ::constcl::cdr {pair} {
+    $pair cdr
 }
 ```
 
@@ -3048,15 +3068,15 @@ foreach ads {
 } {
     reg c${ads}r ::constcl::c${ads}r
 
-    proc ::constcl::c${ads}r {obj} "
+    proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set obj \[car \$obj\]
+                set pair \[car \$pair\]
             } else {
-                set obj \[cdr \$obj\]
+                set pair \[cdr \$pair\]
             }
         }
-        return \$obj
+        return \$pair
     "
 
 }
@@ -3064,22 +3084,26 @@ foreach ads {
 
 `set-car!` sets the contents of the first cell in a pair.
 
+<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg set-car! ::constcl::set-car!
 
-proc ::constcl::set-car! {obj val} {
-    $obj set-car! $val
+proc ::constcl::set-car! {pair val} {
+    $pair set-car! $val
 }
 ```
 
 
 `set-cdr!` sets the contents of the second cell in a pair.
 
+<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg set-cdr! ::constcl::set-cdr!
 
-proc ::constcl::set-cdr! {obj val} {
-    $obj set-cdr! $val
+proc ::constcl::set-cdr! {pair val} {
+    $pair set-cdr! $val
 }
 ```
 
@@ -3087,32 +3111,40 @@ proc ::constcl::set-cdr! {obj val} {
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 
+<table border=1><thead><tr><th colspan=2 align="left">listp (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
-proc ::constcl::listp {obj} {
+proc ::constcl::listp {pair} {
     upvar visited visited
-    if {$obj in $visited} {
+    if {$pair in $visited} {
         return #f
     }
-    lappend visited $obj
-    if {[null? $obj] eq "#t"} {
+    lappend visited $pair
+    if {[null? $pair] eq "#t"} {
         return #t
-    } elseif {[pair? $obj] eq "#t"} {
-        return [listp [cdr $obj]]
+    } elseif {[pair? $pair] eq "#t"} {
+        return [listp [cdr $pair]]
     } else {
         return #f
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg list? ::constcl::list?
 
-proc ::constcl::list? {obj} {
+proc ::constcl::list? {pair} {
     set visited {}
-    return [listp $obj]
+    return [listp $pair]
 }
 ```
 
 
 `list` constructs a Lisp list from a Tcl list of items.
+
+<table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
 reg list ::constcl::list
@@ -3133,20 +3165,26 @@ proc ::constcl::list {args} {
 
 `length` reports the length of a Lisp list.
 
+<table border=1><thead><tr><th colspan=2 align="left">length-helper (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
+
 ```
-proc ::constcl::length-helper {obj} {
-    if {[null? $obj] eq "#t"} {
+proc ::constcl::length-helper {pair} {
+    if {[null? $pair] eq "#t"} {
         return 0
     } else {
-        return [expr {1 + [length-helper [cdr $obj]]}]
+        return [expr {1 + [length-helper [cdr $pair]]}]
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
 reg length ::constcl::length
 
-proc ::constcl::length {obj} {
-    if {[list? $obj] eq "#t"} {
-        MkNumber [length-helper $obj]
+proc ::constcl::length {pair} {
+    if {[list? $pair] eq "#t"} {
+        MkNumber [length-helper $pair]
     } else {
         error "LIST expected\n(list lst)"
     }
@@ -3156,18 +3194,24 @@ proc ::constcl::length {obj} {
 
 `append` joins lists together.
 
+<table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
-proc ::constcl::copy-list {obj next} {
+proc ::constcl::copy-list {pair next} {
     # TODO only fresh conses in the direct chain to NIL
-    if {[null? $obj] eq "#t"} {
+    if {[null? $pair] eq "#t"} {
         set next
-    } elseif {[null? [cdr $obj]] eq "#t"} {
-        cons [car $obj] $next
+    } elseif {[null? [cdr $pair]] eq "#t"} {
+        cons [car $pair] $next
     } else {
-        cons [car $obj] [copy-list [cdr $obj] $next]
+        cons [car $pair] [copy-list [cdr $pair] $next]
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of Lisp lists of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+```
 reg append ::constcl::append
 
 proc ::constcl::append {args} {
@@ -3182,25 +3226,29 @@ proc ::constcl::append {args} {
 
 `reverse` produces a reversed copy of a Lisp list.
 
+<table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg reverse ::constcl::reverse
 
-proc ::constcl::reverse {obj} {
-    list {*}[lreverse [splitlist $obj]]
+proc ::constcl::reverse {vals} {
+    list {*}[lreverse [splitlist $vals]]
 }
 ```
 
 
 Given a list index, `list-tail` yields the sublist starting from that index.
 
+<table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg list-tail ::constcl::list-tail
 
-proc ::constcl::list-tail {obj k} {
+proc ::constcl::list-tail {vals k} {
     if {[zero? $k] eq "#t"} {
-        return $obj
+        return $vals
     } else {
-        list-tail [cdr $obj] [- $k #1]
+        list-tail [cdr $vals] [- $k #1]
     }
 }
 ```
@@ -3208,11 +3256,13 @@ proc ::constcl::list-tail {obj k} {
 
 `list-ref` yields the list item at a given index.
 
+<table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg list-ref ::constcl::list-ref
 
-proc ::constcl::list-ref {obj k} {
-    car [list-tail $obj $k]
+proc ::constcl::list-ref {vals k} {
+    car [list-tail $vals $k]
 }
 ```
 
@@ -3221,17 +3271,19 @@ proc ::constcl::list-ref {obj k} {
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
 respectively, for the comparison.
 
+<table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
 ```
 
-proc ::constcl::member-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+proc ::constcl::member-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[$epred $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[$epred $val1 [car $val2]] eq "#t"} {
+                return $val2
             } else {
-                return [member-proc $epred $obj1 [cdr $obj2]]
+                return [member-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -3240,31 +3292,39 @@ proc ::constcl::member-proc {epred obj1 obj2} {
             eqv? { set name "memv" }
             equal? { set name "member" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
-}
-
-reg memq ::constcl::memq
-
-proc ::constcl::memq {obj1 obj2} {
-    return [member-proc eq? $obj1 $obj2]
 }
 ```
 
+<table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
+```
+reg memq ::constcl::memq
+
+proc ::constcl::memq {val1 val2} {
+    return [member-proc eq? $val1 $val2]
+}
+```
+
+
+<table border=1><thead><tr><th colspan=2 align="left">memv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg memv ::constcl::memv
 
-proc ::constcl::memv {obj1 obj2} {
-    return [member-proc eqv? $obj1 $obj2]
+proc ::constcl::memv {val1 val2} {
+    return [member-proc eqv? $val1 $val2]
 }
 ```
+
+<table border=1><thead><tr><th colspan=2 align="left">member (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg member ::constcl::member
 
-proc ::constcl::member {obj1 obj2} {
-    return [member-proc equal? $obj1 $obj2]
+proc ::constcl::member {val1 val2} {
+    return [member-proc equal? $val1 $val2]
 }
 ```
 
@@ -3281,17 +3341,18 @@ Example:
                                    ⇒ (a 1)
 ```
 
-```
+<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td></td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
-proc ::constcl::assoc-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+```
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [$epred $obj1 [caar $obj2]] eq "#t"} {
-                return [car $obj2]
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[pair? [car $val2]] eq "#t" && [$epred $val1 [caar $val2]] eq "#t"} {
+                return [car $val2]
             } else {
-                return [assoc-proc $epred $obj1 [cdr $obj2]]
+                return [assoc-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -3300,31 +3361,40 @@ proc ::constcl::assoc-proc {epred obj1 obj2} {
             eqv? { set name "assv" }
             equal? { set name "assoc" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
+```
 reg assq
 
-proc ::constcl::assq {obj1 obj2} {
-    return [assoc-proc eq? $obj1 $obj2]
+proc ::constcl::assq {val1 val2} {
+    return [assoc-proc eq? $val1 $val2]
 }
 ```
+
+<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 
 ```
 reg assv
 
-proc ::constcl::assv {obj1 obj2} {
-    return [assoc-proc eqv? $obj1 $obj2]
+proc ::constcl::assv {val1 val2} {
+    return [assoc-proc eqv? $val1 $val2]
 }
 ```
+
+<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
 
 ```
 reg assoc
 
-proc ::constcl::assoc {obj1 obj2} {
-    return [assoc-proc equal? $obj1 $obj2]
+proc ::constcl::assoc {val1 val2} {
+    return [assoc-proc equal? $val1 $val2]
 }
 ```
 
