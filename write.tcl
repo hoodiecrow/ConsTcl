@@ -19,6 +19,7 @@ proc ::constcl::write {val args} {
         ::constcl::write-value $val
         puts {}
     }
+    return
 }
 CB
 
@@ -34,6 +35,7 @@ PR)
 CB
 proc ::constcl::write-value {val} {
     $val write
+    return
 }
 CB
 
@@ -49,8 +51,11 @@ CB
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-    ::constcl::write-value $val
-    flush stdout
+    if {$val ne "#NONE"} {
+        ::constcl::write-value $val
+        flush stdout
+    }
+    return
 }
 CB
 
@@ -81,7 +86,7 @@ proc ::constcl::write-pair {pair} {
         puts -nonewline " . "
         write-value $d
     }
-    return #NONE
+    return
 }
 CB
 

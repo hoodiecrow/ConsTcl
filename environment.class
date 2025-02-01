@@ -8,7 +8,7 @@ the way to the global environment and then stops at the null environment) which 
 by the find method to find which innermost environment a given symbol is bound in.
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
-can be empty, a proper list, a symbol, or an improper list.
+can be empty, a proper list, a symbol, or a dotted list.
 MD)
 
 CB
@@ -64,4 +64,4 @@ oo::class create ::constcl::Environment {
 }
 CB
 
-;# vim: set filetype=tcl:
+# vim: set filetype=tcl:

@@ -255,7 +255,7 @@ proc ::constcl::read {args} {
 }
 ```
 
-The procedure `parse-expression` parses an expression of any kind.
+The procedure `parse-expression` parses input and produces an expression of any kind.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -283,7 +283,7 @@ proc ::constcl::parse-expression {} {
 }
 ```
 
-`parse-string-expression` parses a string expression and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string-expression` parses input and returns a string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -310,8 +310,8 @@ proc ::constcl::parse-string-expression {} {
 ```
 
 
-`parse-sharp` parses the various kinds of expressions whose literal begins with
-a sharp sign (#).
+`parse-sharp` parses input and produces the various kinds of expressions whose literal
+begins with a sharp sign (#).
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value</td></tr></table>
 
@@ -330,7 +330,7 @@ proc ::constcl::parse-sharp {} {
 }
 ```
 
-The `make-constant` helper procedure is called to set values to
+The `make-constant` helper procedure is called to set components of expressions to
 constants when read as a quoted literal.
 
 ```
@@ -347,9 +347,9 @@ proc ::constcl::make-constant {val} {
 }
 ```
 
-`parse-quoted-expression` parses an expression and returns it wrapped in `quote`.
+`parse-quoted-expression` parses input and produces an expression, returning it wrapped in `quote`.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-quoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quote symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-quoted-expression {} {
@@ -362,10 +362,10 @@ proc ::constcl::parse-quoted-expression {} {
 ```
 
 
-The `parse-pair-expression` procedure parses expressions and returns a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
+The `parse-pair-expression` procedure parses input and produces a structure of
+[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
 
 ```
 
@@ -438,10 +438,10 @@ proc ::constcl::parse-plus-minus {} {
 }
 ```
 
-`parse-unquoted-expression` reads an expression and returns it wrapped in `unquote`, or possibly
-in `unquote-splicing`.
+`parse-unquoted-expression` parses input, producing an expression and returning it wrapped in `unquote`, or
+in `unquote-splicing` if an @-sign is present in the input stream.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the unquote/-splicing symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the unquote/-splicing symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-unquoted-expression {} {
@@ -458,9 +458,9 @@ proc ::constcl::parse-unquoted-expression {} {
 ```
 
 
-`parse-quasiquoted-expression` reads an expression and returns it wrapped in `quasiquote`.
+`parse-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quasiquote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quasiquote symbol</td></tr></table>
 
 ```
 proc ::constcl::parse-quasiquoted-expression {} {
@@ -473,7 +473,7 @@ proc ::constcl::parse-quasiquoted-expression {} {
 ```
 
 
-`parse-number-expression` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-number-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -493,7 +493,7 @@ proc ::constcl::parse-number-expression {} {
 ```
 
 
-`parse-identifier-expression` reads an identifier expression and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -519,7 +519,7 @@ proc ::constcl::character-check {name} {
 }
 ```
 
-`parse-character-expression` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-expression` parses input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-character-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -540,7 +540,7 @@ proc ::constcl::parse-character-expression {} {
 ```
 
 
-`parse-vector-expression` reads a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-vector-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -571,8 +571,8 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 | Syntactic form | Syntax | Semantics |
 |----------------|--------|-----------|
-| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of a identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
-| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_ | Numerical and boolean constants evaluate to themselves. Example: `99` ⇒ 99 |
+| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
 | [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
 | [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expression_ s are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
 | [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
@@ -581,8 +581,9 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 | [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
 | [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
 
-The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
-See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+The evaluator also does a simple form of macro expansion on `op` and `args` (the car and cdr of the
+expression) before processing them in the big `switch`. See the part about
+[macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>e</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
@@ -638,8 +639,9 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 }
 ```
 
-Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
-environment chain for the symbol's name, and returns the value it is bound to.
+_Variable reference_ is handled by the helper `lookup`. It searches the
+environment chain for the symbol's name, and returns the value it is bound to. It is an
+error to lookup an unbound symbol.
 
 <table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1197,6 +1199,7 @@ proc ::constcl::write {val args} {
         ::constcl::write-value $val
         puts {}
     }
+    return
 }
 ```
 
@@ -1208,6 +1211,7 @@ write itself.
 ```
 proc ::constcl::write-value {val} {
     $val write
+    return
 }
 ```
 
@@ -1219,8 +1223,11 @@ The `display` procedure is like `write` but doesn't print a newline.
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-    ::constcl::write-value $val
-    flush stdout
+    if {$val ne "#NONE"} {
+        ::constcl::write-value $val
+        flush stdout
+    }
+    return
 }
 ```
 
@@ -1247,7 +1254,7 @@ proc ::constcl::write-pair {pair} {
         puts -nonewline " . "
         write-value $d
     }
-    return #NONE
+    return
 }
 ```
 
@@ -4332,7 +4339,7 @@ the way to the global environment and then stops at the null environment) which 
 by the find method to find which innermost environment a given symbol is bound in.
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
-can be empty, a proper list, a symbol, or an improper list.
+can be empty, a proper list, a symbol, or a dotted list.
 
 ```
 catch { ::constcl::Environment destroy }
@@ -4387,7 +4394,6 @@ oo::class create ::constcl::Environment {
 }
 ```
 
-;# vim: set filetype=tcl:
 
 On startup, two `Environment` objects called `null_env` (the null environment, not the same
 as `null-environment` in Scheme) and `global_env` (the global environment) are created. 

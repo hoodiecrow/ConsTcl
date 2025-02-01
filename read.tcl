@@ -113,7 +113,7 @@ proc ::constcl::read {args} {
 CB
 
 MD(
-The procedure `parse-expression` parses an expression of any kind.
+The procedure `parse-expression` parses input and produces an expression of any kind.
 MD)
 
 PR(
@@ -145,7 +145,7 @@ proc ::constcl::parse-expression {} {
 CB
 
 MD(
-`parse-string-expression` parses a string expression and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string-expression` parses input and returns a string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
 MD)
 
 PR(
@@ -189,8 +189,8 @@ TT(
 TT)
 
 MD(
-`parse-sharp` parses the various kinds of expressions whose literal begins with
-a sharp sign (#).
+`parse-sharp` parses input and produces the various kinds of expressions whose literal
+begins with a sharp sign (#).
 MD)
 
 PR(
@@ -213,7 +213,7 @@ proc ::constcl::parse-sharp {} {
 CB
 
 MD(
-The `make-constant` helper procedure is called to set values to
+The `make-constant` helper procedure is called to set components of expressions to
 constants when read as a quoted literal.
 MD)
 
@@ -232,7 +232,7 @@ proc ::constcl::make-constant {val} {
 CB
 
 MD(
-`parse-quoted-expression` parses an expression and returns it wrapped in `quote`.
+`parse-quoted-expression` parses input and produces an expression, returning it wrapped in `quote`.
 MD)
 
 PR(
@@ -258,8 +258,8 @@ TT(
 TT)
 
 MD(
-The `parse-pair-expression` procedure parses expressions and returns a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
+The `parse-pair-expression` procedure parses input and produces a structure of
+[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
 
 PR(
@@ -387,8 +387,8 @@ proc ::constcl::parse-plus-minus {} {
 CB
 
 MD(
-`parse-unquoted-expression` reads an expression and returns it wrapped in `unquote`, or possibly
-in `unquote-splicing`.
+`parse-unquoted-expression` parses input, producing an expression and returning it wrapped in `unquote`, or
+in `unquote-splicing` if an @-sign is present in the input stream.
 MD)
 
 PR(
@@ -418,7 +418,7 @@ TT(
 TT)
 
 MD(
-`parse-quasiquoted-expression` reads an expression and returns it wrapped in `quasiquote`.
+`parse-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
 MD)
 
 PR(
@@ -444,7 +444,7 @@ TT(
 TT)
 
 MD(
-`parse-number-expression` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
@@ -505,7 +505,7 @@ TT(
 TT)
 
 MD(
-`parse-identifier-expression` reads an identifier expression and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(
@@ -556,7 +556,7 @@ proc ::constcl::character-check {name} {
 CB
 
 MD(
-`parse-character-expression` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-expression` parses input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
@@ -604,7 +604,7 @@ TT(
 TT)
 
 MD(
-`parse-vector-expression` reads a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(

@@ -6,8 +6,8 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 | Syntactic form | Syntax | Semantics |
 |----------------|--------|-----------|
-| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of a identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
-| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_ | Numerical and boolean constants evaluate to themselves. Example: `99` ⇒ 99 |
+| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
 | [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
 | [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expression_ s are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
 | [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
@@ -16,8 +16,9 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 | [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
 | [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
 
-The evaluator also does a simple form of macro expansion on `op` and `args` before processing them in the big `switch`. 
-See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+The evaluator also does a simple form of macro expansion on `op` and `args` (the car and cdr of the
+expression) before processing them in the big `switch`. See the part about
+[macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 MD)
 
@@ -77,8 +78,9 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 CB
 
 MD(
-Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
-environment chain for the symbol's name, and returns the value it is bound to.
+_Variable reference_ is handled by the helper `lookup`. It searches the
+environment chain for the symbol's name, and returns the value it is bound to. It is an
+error to lookup an unbound symbol.
 MD)
 
 PR(

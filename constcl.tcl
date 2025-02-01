@@ -890,12 +890,14 @@ proc ::constcl::write {val args} {
         ::constcl::write-value $val
         puts {}
     }
+    return
 }
 
 
 
 proc ::constcl::write-value {val} {
     $val write
+    return
 }
 
 
@@ -903,8 +905,11 @@ proc ::constcl::write-value {val} {
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-    ::constcl::write-value $val
-    flush stdout
+    if {$val ne "#NONE"} {
+        ::constcl::write-value $val
+        flush stdout
+    }
+    return
 }
 
 
@@ -927,7 +932,7 @@ proc ::constcl::write-pair {pair} {
         puts -nonewline " . "
         write-value $d
     }
-    return #NONE
+    return
 }
 
 
@@ -3422,7 +3427,7 @@ oo::class create ::constcl::Environment {
     }
 }
 
-;# vim: set filetype=tcl:
+# vim: set filetype=tcl:
 
 
 ::constcl::Environment create ::constcl::null_env #NIL {}
