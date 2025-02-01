@@ -167,7 +167,7 @@ reg parse
 
 proc ::constcl::parse {str} {
     ib fill $str
-    return [parse-value]
+    return [parse-expression]
 }
 
 
@@ -175,27 +175,27 @@ proc ::constcl::parse {str} {
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    return [parse-value]
+    return [parse-expression]
 }
 
 
 
-proc ::constcl::parse-value {} {
+proc ::constcl::parse-expression {} {
     ib skip-ws
     switch -regexp [ib first] {
         {^$}          { return }
-        {\"}          { return [parse-string-value] }
+        {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
-        {\'}          { return [parse-quoted-value] }
-        {\(}          { return [parse-pair-value ")"] }
+        {\'}          { return [parse-quoted-expression] }
+        {\(}          { return [parse-pair-expression ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\,}          { return [parse-unquoted-value] }
+        {\,}          { return [parse-unquoted-expression] }
         {\.}          { ib advance ; return [Dot new] }
-        {\[}          { return [parse-pair-value "\]"] }
-        {\`}          { return [parse-quasiquoted-value] }
-        {\d}          { return [parse-number-value] }
+        {\[}          { return [parse-pair-expression "\]"] }
+        {\`}          { return [parse-quasiquoted-expression] }
+        {\d}          { return [parse-number-expression] }
         {[[:space:]]} { ib advance }
-        {[[:graph:]]} { return [parse-identifier-value] }
+        {[[:graph:]]} { return [parse-identifier-expression] }
         default {
             error "unexpected char [ib first]"
         }
@@ -204,7 +204,7 @@ proc ::constcl::parse-value {} {
 
 
 
-proc ::constcl::parse-string-value {} {
+proc ::constcl::parse-string-expression {} {
     set str {}
     ib advance
     while {[ib first] ne {"}} {
@@ -219,9 +219,9 @@ proc ::constcl::parse-string-value {} {
     }
     ib advance
     ib skip-ws
-    set obj [MkString $str]
-    $obj mkconstant
-    return $obj
+    set expr [MkString $str]
+    $expr mkconstant
+    return $expr
 }
 
 
@@ -230,10 +230,10 @@ proc ::constcl::parse-string-value {} {
 proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
-        (    { return [parse-vector-value] }
+        (    { return [parse-vector-expression] }
         t    { ib advance ; ib skip-ws ; return #t }
         f    { ib advance ; ib skip-ws ; return #f }
-        "\\" { return [parse-character-value] }
+        "\\" { return [parse-character-expression] }
         default {
             error "Illegal #-literal"
         }
@@ -255,12 +255,12 @@ proc ::constcl::make-constant {val} {
 
 
 
-proc ::constcl::parse-quoted-value {} {
+proc ::constcl::parse-quoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list #Q $val]
+    make-constant $expr
+    return [list #Q $expr]
 }
 
 
@@ -272,15 +272,15 @@ proc ::constcl::parse-pair {char} {
         return #NIL
     }
     ib skip-ws
-    set a [parse-value]
+    set a [parse-expression]
     ib skip-ws
     set res $a
     set prev #NIL
     while {![ib find $char]} {
-        set x [parse-value]
+        set x [parse-expression]
         ib skip-ws
         if {[dot? $x] ne "#f"} {
-            set prev [parse-value]
+            set prev [parse-expression]
             ib skip-ws
         } else {
             lappend res $x
@@ -293,10 +293,10 @@ proc ::constcl::parse-pair {char} {
     return $prev
 }
 
-proc ::constcl::parse-pair-value {char} {
+proc ::constcl::parse-pair-expression {char} {
     ib advance
     ib skip-ws
-    set val [parse-pair $char]
+    set expr [parse-pair $char]
     ib skip-ws
     if {[ib first] ne $char} {
         if {$char eq ")"} {
@@ -307,7 +307,7 @@ proc ::constcl::parse-pair-value {char} {
     }
     ib advance
     ib skip-ws
-    return $val
+    return $expr
 }
 
 
@@ -318,7 +318,7 @@ proc ::constcl::parse-plus-minus {} {
     ib advance
     if {[::string is digit -strict [ib first]]} {
         ib unget $c
-        return [::constcl::parse-number-value]
+        return [::constcl::parse-number-expression]
     } else {
         if {$c eq "+"} {
             ib skip-ws
@@ -332,33 +332,33 @@ proc ::constcl::parse-plus-minus {} {
 
 
 
-proc ::constcl::parse-unquoted-value {} {
+proc ::constcl::parse-unquoted-expression {} {
     ib advance
     set symbol "unquote"
     if {[ib first] eq "@"} {
         set symbol "unquote-splicing"
         ib advance
     }
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    return [list [MkSymbol $symbol] $val]
+    return [list [MkSymbol $symbol] $expr]
 }
 
 
 
 
-proc ::constcl::parse-quasiquoted-value {} {
+proc ::constcl::parse-quasiquoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list [MkSymbol "quasiquote"] $val]
+    make-constant $expr
+    return [list [MkSymbol "quasiquote"] $expr]
 }
 
 
 
 
-proc ::constcl::parse-number-value {} {
+proc ::constcl::parse-number-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
@@ -374,7 +374,7 @@ proc ::constcl::parse-number-value {} {
 
 
 
-proc ::constcl::parse-identifier-value {} {
+proc ::constcl::parse-identifier-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
@@ -392,7 +392,7 @@ proc ::constcl::character-check {name} {
 
 
 
-proc ::constcl::parse-character-value {} {
+proc ::constcl::parse-character-expression {} {
     set name "#"
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
@@ -409,12 +409,12 @@ proc ::constcl::parse-character-value {} {
 
 
 
-proc ::constcl::parse-vector-value {} {
+proc ::constcl::parse-vector-expression {} {
     ib advance
     ib skip-ws
     set res {}
     while {[ib first] ne {} && [ib first] ne ")"} {
-        lappend res [parse-value]
+        lappend res [parse-expression]
         ib skip-ws
     }
     set vec [MkVector $res]

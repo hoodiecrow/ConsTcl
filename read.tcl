@@ -84,7 +84,7 @@ Given a string, `parse` fills the input buffer. It then reads and parses the inp
 MD)
 
 PR(
-parse (public);str lisp -> val
+parse (public);str lisp -> expr
 PR)
 
 CB
@@ -92,7 +92,7 @@ reg parse
 
 proc ::constcl::parse {str} {
     ib fill $str
-    return [parse-value]
+    return [parse-expression]
 }
 CB
 
@@ -101,42 +101,42 @@ The standard builtin `read` consumes and parses input into a Lisp expression.
 MD)
 
 PR(
-read (public);args dc -> val
+read (public);args dc -> expr
 PR)
 
 CB
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    return [parse-value]
+    return [parse-expression]
 }
 CB
 
 MD(
-The procedure `parse-value` reads a value of any kind.
+The procedure `parse-expression` parses an expression of any kind.
 MD)
 
 PR(
-parse-value (internal);-> val
+parse-expression (internal);-> expr
 PR)
 
 CB
-proc ::constcl::parse-value {} {
+proc ::constcl::parse-expression {} {
     ib skip-ws
     switch -regexp [ib first] {
         {^$}          { return }
-        {\"}          { return [parse-string-value] }
+        {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
-        {\'}          { return [parse-quoted-value] }
-        {\(}          { return [parse-pair-value ")"] }
+        {\'}          { return [parse-quoted-expression] }
+        {\(}          { return [parse-pair-expression ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\,}          { return [parse-unquoted-value] }
+        {\,}          { return [parse-unquoted-expression] }
         {\.}          { ib advance ; return [Dot new] }
-        {\[}          { return [parse-pair-value "\]"] }
-        {\`}          { return [parse-quasiquoted-value] }
-        {\d}          { return [parse-number-value] }
+        {\[}          { return [parse-pair-expression "\]"] }
+        {\`}          { return [parse-quasiquoted-expression] }
+        {\d}          { return [parse-number-expression] }
         {[[:space:]]} { ib advance }
-        {[[:graph:]]} { return [parse-identifier-value] }
+        {[[:graph:]]} { return [parse-identifier-expression] }
         default {
             error "unexpected char [ib first]"
         }
@@ -145,15 +145,15 @@ proc ::constcl::parse-value {} {
 CB
 
 MD(
-`parse-string-value` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string-expression` parses a string expression and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
-parse-string-value (internal);-> str
+parse-string-expression (internal);-> str
 PR)
 
 CB
-proc ::constcl::parse-string-value {} {
+proc ::constcl::parse-string-expression {} {
     set str {}
     ib advance
     while {[ib first] ne {"}} {
@@ -168,28 +168,28 @@ proc ::constcl::parse-string-value {} {
     }
     ib advance
     ib skip-ws
-    set obj [MkString $str]
-    $obj mkconstant
-    return $obj
+    set expr [MkString $str]
+    $expr mkconstant
+    return $expr
 }
 CB
 
 TT(
 
 ::tcltest::test read-4.0 {try reading a string} {
-    set obj [::constcl::parse {"foo bar"}]
-    $obj value
+    set expr [::constcl::parse {"foo bar"}]
+    $expr value
 } "foo bar"
 
 ::tcltest::test read-4.1 {try reading a string} {
-    set obj [::constcl::parse {"\"foo\" \\ bar"}]
-    $obj value
+    set expr [::constcl::parse {"\"foo\" \\ bar"}]
+    $expr value
 } {"foo" \ bar}
 
 TT)
 
 MD(
-`parse-sharp` reads the various kinds of values whose literal begins with
+`parse-sharp` parses the various kinds of expressions whose literal begins with
 a sharp sign (#).
 MD)
 
@@ -201,10 +201,10 @@ CB
 proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
-        (    { return [parse-vector-value] }
+        (    { return [parse-vector-expression] }
         t    { ib advance ; ib skip-ws ; return #t }
         f    { ib advance ; ib skip-ws ; return #f }
-        "\\" { return [parse-character-value] }
+        "\\" { return [parse-character-expression] }
         default {
             error "Illegal #-literal"
         }
@@ -232,20 +232,20 @@ proc ::constcl::make-constant {val} {
 CB
 
 MD(
-`parse-quoted-value` reads a value and returns it wrapped in `quote`.
+`parse-quoted-expression` parses an expression and returns it wrapped in `quote`.
 MD)
 
 PR(
-parse-quoted-value (internal);-> quote
+parse-quoted-expression (internal);-> quote
 PR)
 
 CB
-proc ::constcl::parse-quoted-value {} {
+proc ::constcl::parse-quoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list #Q $val]
+    make-constant $expr
+    return [list #Q $expr]
 }
 CB
 
@@ -258,12 +258,12 @@ TT(
 TT)
 
 MD(
-The `parse-pair-value` procedure reads values and returns a structure of
+The `parse-pair-expression` procedure parses expressions and returns a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 MD)
 
 PR(
-parse-pair-value (internal);char pterm -> pstr
+parse-pair-expression (internal);char pterm -> pstr
 PR)
 
 CB
@@ -273,15 +273,15 @@ proc ::constcl::parse-pair {char} {
         return #NIL
     }
     ib skip-ws
-    set a [parse-value]
+    set a [parse-expression]
     ib skip-ws
     set res $a
     set prev #NIL
     while {![ib find $char]} {
-        set x [parse-value]
+        set x [parse-expression]
         ib skip-ws
         if {[dot? $x] ne "#f"} {
-            set prev [parse-value]
+            set prev [parse-expression]
             ib skip-ws
         } else {
             lappend res $x
@@ -294,10 +294,10 @@ proc ::constcl::parse-pair {char} {
     return $prev
 }
 
-proc ::constcl::parse-pair-value {char} {
+proc ::constcl::parse-pair-expression {char} {
     ib advance
     ib skip-ws
-    set val [parse-pair $char]
+    set expr [parse-pair $char]
     ib skip-ws
     if {[ib first] ne $char} {
         if {$char eq ")"} {
@@ -308,7 +308,7 @@ proc ::constcl::parse-pair-value {char} {
     }
     ib advance
     ib skip-ws
-    return $val
+    return $expr
 }
 CB
 
@@ -323,8 +323,8 @@ TT(
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
-        set obj [::constcl::parse "(a (b))"]
-        [caadr $obj] name
+        set expr [::constcl::parse "(a (b))"]
+        [caadr $expr] name
     }
 } -result "b"
 
@@ -373,7 +373,7 @@ proc ::constcl::parse-plus-minus {} {
     ib advance
     if {[::string is digit -strict [ib first]]} {
         ib unget $c
-        return [::constcl::parse-number-value]
+        return [::constcl::parse-number-expression]
     } else {
         if {$c eq "+"} {
             ib skip-ws
@@ -387,25 +387,25 @@ proc ::constcl::parse-plus-minus {} {
 CB
 
 MD(
-`parse-unquoted-value` reads a value and returns it wrapped in `unquote`, or possibly
+`parse-unquoted-expression` reads an expression and returns it wrapped in `unquote`, or possibly
 in `unquote-splicing`.
 MD)
 
 PR(
-parse-unquoted-value (internal);-> unquote
+parse-unquoted-expression (internal);-> unquote
 PR)
 
 CB
-proc ::constcl::parse-unquoted-value {} {
+proc ::constcl::parse-unquoted-expression {} {
     ib advance
     set symbol "unquote"
     if {[ib first] eq "@"} {
         set symbol "unquote-splicing"
         ib advance
     }
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    return [list [MkSymbol $symbol] $val]
+    return [list [MkSymbol $symbol] $expr]
 }
 CB
 
@@ -418,20 +418,20 @@ TT(
 TT)
 
 MD(
-`parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
+`parse-quasiquoted-expression` reads an expression and returns it wrapped in `quasiquote`.
 MD)
 
 PR(
-parse-quasiquoted-value (internal);-> qquote
+parse-quasiquoted-expression (internal);-> qquote
 PR)
 
 CB
-proc ::constcl::parse-quasiquoted-value {} {
+proc ::constcl::parse-quasiquoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list [MkSymbol "quasiquote"] $val]
+    make-constant $expr
+    return [list [MkSymbol "quasiquote"] $expr]
 }
 CB
 
@@ -444,15 +444,15 @@ TT(
 TT)
 
 MD(
-`parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
-parse-number-value (internal);-> num
+parse-number-expression (internal);-> num
 PR)
 
 CB
-proc ::constcl::parse-number-value {} {
+proc ::constcl::parse-number-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
@@ -505,15 +505,15 @@ TT(
 TT)
 
 MD(
-`parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` reads an identifier expression and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(
-parse-identifier-value (internal);-> sym
+parse-identifier-expression (internal);-> sym
 PR)
 
 CB
-proc ::constcl::parse-identifier-value {} {
+proc ::constcl::parse-identifier-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
@@ -527,19 +527,19 @@ CB
 TT(
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set obj [::constcl::parse "foo"]
-    $obj name
+    set expr [::constcl::parse "foo"]
+    $expr name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
     ::constcl::ib fill "+foo"
-    set obj [::constcl::parse-identifier-value]
-    $obj name
+    set expr [::constcl::parse-identifier-expression]
+    $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set obj [::constcl::parse "let"]
-    ::constcl::varcheck [$obj name]
+    set expr [::constcl::parse "let"]
+    ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 TT)
@@ -556,15 +556,15 @@ proc ::constcl::character-check {name} {
 CB
 
 MD(
-`parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-expression` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
-parse-character-value (internal);-> char
+parse-character-expression (internal);-> char
 PR)
 
 CB
-proc ::constcl::parse-character-value {} {
+proc ::constcl::parse-character-expression {} {
     set name "#"
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
@@ -582,42 +582,42 @@ CB
 TT(
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set obj [::constcl::parse {#\A}]
-    $obj char
+    set expr [::constcl::parse {#\A}]
+    $expr char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set obj [::constcl::parse "#\\space"]
-    $obj char
+    set expr [::constcl::parse "#\\space"]
+    $expr char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set obj [::constcl::parse "#\\newline"]
-    $obj char
+    set expr [::constcl::parse "#\\newline"]
+    $expr char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set obj [::constcl::parse "#\\foobar"]
-    $obj char
+    set expr [::constcl::parse "#\\foobar"]
+    $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
 TT)
 
 MD(
-`parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` reads a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(
-parse-vector-value (internal);-> vec
+parse-vector-expression (internal);-> vec
 PR)
 
 CB
-proc ::constcl::parse-vector-value {} {
+proc ::constcl::parse-vector-expression {} {
     ib advance
     ib skip-ws
     set res {}
     while {[ib first] ne {} && [ib first] ne ")"} {
-        lappend res [parse-value]
+        lappend res [parse-expression]
         ib skip-ws
     }
     set vec [MkVector $res]

@@ -3,13 +3,13 @@ source constcl.tcl
 
 
 ::tcltest::test read-4.0 {try reading a string} {
-    set obj [::constcl::parse {"foo bar"}]
-    $obj value
+    set expr [::constcl::parse {"foo bar"}]
+    $expr value
 } "foo bar"
 
 ::tcltest::test read-4.1 {try reading a string} {
-    set obj [::constcl::parse {"\"foo\" \\ bar"}]
-    $obj value
+    set expr [::constcl::parse {"\"foo\" \\ bar"}]
+    $expr value
 } {"foo" \ bar}
 
 
@@ -29,8 +29,8 @@ source constcl.tcl
 
 ::tcltest::test read-1.1 {try reading a list} -body {
     namespace eval ::constcl {
-        set obj [::constcl::parse "(a (b))"]
-        [caadr $obj] name
+        set expr [::constcl::parse "(a (b))"]
+        [caadr $expr] name
     }
 } -result "b"
 
@@ -113,41 +113,41 @@ source constcl.tcl
 
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set obj [::constcl::parse "foo"]
-    $obj name
+    set expr [::constcl::parse "foo"]
+    $expr name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
     ::constcl::ib fill "+foo"
-    set obj [::constcl::parse-identifier-value]
-    $obj name
+    set expr [::constcl::parse-identifier-expression]
+    $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set obj [::constcl::parse "let"]
-    ::constcl::varcheck [$obj name]
+    set expr [::constcl::parse "let"]
+    ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set obj [::constcl::parse {#\A}]
-    $obj char
+    set expr [::constcl::parse {#\A}]
+    $expr char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set obj [::constcl::parse "#\\space"]
-    $obj char
+    set expr [::constcl::parse "#\\space"]
+    $expr char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set obj [::constcl::parse "#\\newline"]
-    $obj char
+    set expr [::constcl::parse "#\\newline"]
+    $expr char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set obj [::constcl::parse "#\\foobar"]
-    $obj char
+    set expr [::constcl::parse "#\\foobar"]
+    $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
 

@@ -232,50 +232,50 @@ oo::class create ::constcl::IB {
 
 Given a string, `parse` fills the input buffer. It then reads and parses the input.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse (public)</th></tr></thead><tr><td>str</td><td>Lisp source text</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse (public)</th></tr></thead><tr><td>str</td><td>Lisp source text</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg parse
 
 proc ::constcl::parse {str} {
     ib fill $str
-    return [parse-value]
+    return [parse-expression]
 }
 ```
 
 The standard builtin `read` consumes and parses input into a Lisp expression.
 
-<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg read ::constcl::read
 
 proc ::constcl::read {args} {
-    return [parse-value]
+    return [parse-expression]
 }
 ```
 
-The procedure `parse-value` reads a value of any kind.
+The procedure `parse-expression` parses an expression of any kind.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc ::constcl::parse-value {} {
+proc ::constcl::parse-expression {} {
     ib skip-ws
     switch -regexp [ib first] {
         {^$}          { return }
-        {\"}          { return [parse-string-value] }
+        {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
-        {\'}          { return [parse-quoted-value] }
-        {\(}          { return [parse-pair-value ")"] }
+        {\'}          { return [parse-quoted-expression] }
+        {\(}          { return [parse-pair-expression ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\,}          { return [parse-unquoted-value] }
+        {\,}          { return [parse-unquoted-expression] }
         {\.}          { ib advance ; return [Dot new] }
-        {\[}          { return [parse-pair-value "\]"] }
-        {\`}          { return [parse-quasiquoted-value] }
-        {\d}          { return [parse-number-value] }
+        {\[}          { return [parse-pair-expression "\]"] }
+        {\`}          { return [parse-quasiquoted-expression] }
+        {\d}          { return [parse-number-expression] }
         {[[:space:]]} { ib advance }
-        {[[:graph:]]} { return [parse-identifier-value] }
+        {[[:graph:]]} { return [parse-identifier-expression] }
         default {
             error "unexpected char [ib first]"
         }
@@ -283,12 +283,12 @@ proc ::constcl::parse-value {} {
 }
 ```
 
-`parse-string-value` reads a string value and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`parse-string-expression` parses a string expression and returns a [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-string-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
-proc ::constcl::parse-string-value {} {
+proc ::constcl::parse-string-expression {} {
     set str {}
     ib advance
     while {[ib first] ne {"}} {
@@ -303,14 +303,14 @@ proc ::constcl::parse-string-value {} {
     }
     ib advance
     ib skip-ws
-    set obj [MkString $str]
-    $obj mkconstant
-    return $obj
+    set expr [MkString $str]
+    $expr mkconstant
+    return $expr
 }
 ```
 
 
-`parse-sharp` reads the various kinds of values whose literal begins with
+`parse-sharp` parses the various kinds of expressions whose literal begins with
 a sharp sign (#).
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value</td></tr></table>
@@ -319,10 +319,10 @@ a sharp sign (#).
 proc ::constcl::parse-sharp {} {
     ib advance
     switch [ib first] {
-        (    { return [parse-vector-value] }
+        (    { return [parse-vector-expression] }
         t    { ib advance ; ib skip-ws ; return #t }
         f    { ib advance ; ib skip-ws ; return #f }
-        "\\" { return [parse-character-value] }
+        "\\" { return [parse-character-expression] }
         default {
             error "Illegal #-literal"
         }
@@ -347,25 +347,25 @@ proc ::constcl::make-constant {val} {
 }
 ```
 
-`parse-quoted-value` reads a value and returns it wrapped in `quote`.
+`parse-quoted-expression` parses an expression and returns it wrapped in `quote`.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-quoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quote symbol</td></tr></table>
 
 ```
-proc ::constcl::parse-quoted-value {} {
+proc ::constcl::parse-quoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list #Q $val]
+    make-constant $expr
+    return [list #Q $expr]
 }
 ```
 
 
-The `parse-pair-value` procedure reads values and returns a structure of
+The `parse-pair-expression` procedure parses expressions and returns a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-pair-value (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair values</td></tr></table>
 
 ```
 
@@ -374,15 +374,15 @@ proc ::constcl::parse-pair {char} {
         return #NIL
     }
     ib skip-ws
-    set a [parse-value]
+    set a [parse-expression]
     ib skip-ws
     set res $a
     set prev #NIL
     while {![ib find $char]} {
-        set x [parse-value]
+        set x [parse-expression]
         ib skip-ws
         if {[dot? $x] ne "#f"} {
-            set prev [parse-value]
+            set prev [parse-expression]
             ib skip-ws
         } else {
             lappend res $x
@@ -395,10 +395,10 @@ proc ::constcl::parse-pair {char} {
     return $prev
 }
 
-proc ::constcl::parse-pair-value {char} {
+proc ::constcl::parse-pair-expression {char} {
     ib advance
     ib skip-ws
-    set val [parse-pair $char]
+    set expr [parse-pair $char]
     ib skip-ws
     if {[ib first] ne $char} {
         if {$char eq ")"} {
@@ -409,7 +409,7 @@ proc ::constcl::parse-pair-value {char} {
     }
     ib advance
     ib skip-ws
-    return $val
+    return $expr
 }
 ```
 
@@ -425,7 +425,7 @@ proc ::constcl::parse-plus-minus {} {
     ib advance
     if {[::string is digit -strict [ib first]]} {
         ib unget $c
-        return [::constcl::parse-number-value]
+        return [::constcl::parse-number-expression]
     } else {
         if {$c eq "+"} {
             ib skip-ws
@@ -438,47 +438,47 @@ proc ::constcl::parse-plus-minus {} {
 }
 ```
 
-`parse-unquoted-value` reads a value and returns it wrapped in `unquote`, or possibly
+`parse-unquoted-expression` reads an expression and returns it wrapped in `unquote`, or possibly
 in `unquote-splicing`.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the unquote/-splicing symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the unquote/-splicing symbol</td></tr></table>
 
 ```
-proc ::constcl::parse-unquoted-value {} {
+proc ::constcl::parse-unquoted-expression {} {
     ib advance
     set symbol "unquote"
     if {[ib first] eq "@"} {
         set symbol "unquote-splicing"
         ib advance
     }
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    return [list [MkSymbol $symbol] $val]
+    return [list [MkSymbol $symbol] $expr]
 }
 ```
 
 
-`parse-quasiquoted-value` reads a value and returns it wrapped in `quasiquote`.
+`parse-quasiquoted-expression` reads an expression and returns it wrapped in `quasiquote`.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quasiquote symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value wrapped in the quasiquote symbol</td></tr></table>
 
 ```
-proc ::constcl::parse-quasiquoted-value {} {
+proc ::constcl::parse-quasiquoted-expression {} {
     ib advance
-    set val [parse-value]
+    set expr [parse-expression]
     ib skip-ws
-    make-constant $val
-    return [list [MkSymbol "quasiquote"] $val]
+    make-constant $expr
+    return [list [MkSymbol "quasiquote"] $expr]
 }
 ```
 
 
-`parse-number-value` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` reads a number and returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-number-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-number-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
-proc ::constcl::parse-number-value {} {
+proc ::constcl::parse-number-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
@@ -493,12 +493,12 @@ proc ::constcl::parse-number-value {} {
 ```
 
 
-`parse-identifier-value` reads an identifier value and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` reads an identifier expression and returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-identifier-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
 ```
-proc ::constcl::parse-identifier-value {} {
+proc ::constcl::parse-identifier-expression {} {
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
@@ -519,12 +519,12 @@ proc ::constcl::character-check {name} {
 }
 ```
 
-`parse-character-value` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-expression` reads a character and returns a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-character-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-character-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
-proc ::constcl::parse-character-value {} {
+proc ::constcl::parse-character-expression {} {
     set name "#"
     while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
         ::append name [ib first]
@@ -540,17 +540,17 @@ proc ::constcl::parse-character-value {} {
 ```
 
 
-`parse-vector-value` reads a vector value and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` reads a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-vector-value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-vector-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
-proc ::constcl::parse-vector-value {} {
+proc ::constcl::parse-vector-expression {} {
     ib advance
     ib skip-ws
     set res {}
     while {[ib first] ne {} && [ib first] ne ")"} {
-        lappend res [parse-value]
+        lappend res [parse-expression]
         ib skip-ws
     }
     set vec [MkVector $res]
@@ -3341,7 +3341,7 @@ Example:
                                    ⇒ (a 1)
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td></td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 proc ::constcl::assoc-proc {epred val1 val2} {
@@ -3366,7 +3366,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg assq
@@ -3376,7 +3376,7 @@ proc ::constcl::assq {val1 val2} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 
 ```
@@ -3387,7 +3387,7 @@ proc ::constcl::assv {val1 val2} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 
 ```

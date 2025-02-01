@@ -693,7 +693,7 @@ Example:
 MD)
 
 PR(
-assoc-proc (internal);epred epred val1 val val2 lval -> lvfalse
+assoc-proc (internal);epred epred val1 val val2 alist -> lvfalse
 PR)
 
 CB
@@ -720,7 +720,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 CB
 
 PR(
-assq (public);val1 val val2 lvals -> lvfalse
+assq (public);val1 val val2 alist -> lvfalse
 PR)
 
 CB
@@ -732,7 +732,7 @@ proc ::constcl::assq {val1 val2} {
 CB
 
 PR(
-assv (public);val1 val val2 lvals -> lvfalse
+assv (public);val1 val val2 alist -> lvfalse
 PR)
 
 
@@ -745,7 +745,7 @@ proc ::constcl::assv {val1 val2} {
 CB
 
 PR(
-assoc (public);val1 val val2 lvals -> lvfalse
+assoc (public);val1 val val2 alist -> lvfalse
 PR)
 
 
