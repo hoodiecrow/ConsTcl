@@ -1389,8 +1389,6 @@ proc ::constcl::number? {val} {
 The operators `=`, `<`, `>`, `<=`, and `>=` are implemented. They return Lisp truth (#t / #f),
 not Tcl truth.
 
-![The mathematical comparison operators](/images/math-comp-ops.png)
-
 <table border=1><thead><tr><th colspan=2 align="left">=, &lt;, &gt;, &lt;=, &gt;= (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of numbers</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
@@ -2146,7 +2144,7 @@ proc ::constcl::MkBoolean {v} {
 
 The `boolean?` predicate recognizes a Boolean by type.
 
-![The boolean? procedure](/images/booleanp.png)
+<table border=1><thead><tr><th colspan=2 align="left">boolean? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg boolean? ::constcl::boolean?
@@ -2165,7 +2163,7 @@ proc ::constcl::boolean? {val} {
 
 The only operation on booleans: `not`, or logical negation.
 
-![The not procedure](/images/not.png)
+<table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg not ::constcl::not
@@ -2266,7 +2264,6 @@ proc ::constcl::MkChar {v} {
 
 `char?` recognizes Char values by type.
 
-![The char? procedure](/images/charp.png)
 
 ```
 reg char? ::constcl::char?
@@ -2286,20 +2283,22 @@ proc ::constcl::char? {val} {
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
 
-![The char comparison operators 1](/images/char-comp-ops1.png)
+<table border=1><thead><tr><th colspan=2 align="left">char=?, char&lt;?, char&gt;?, char&lt;=?, char&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">char-ci=?, char-ci&lt;?, char-ci&gt;?, char-ci&lt;=?, char-ci&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char=? ::constcl::char=?
 
-proc ::constcl::char=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {$c1 eq $c2} {
+proc ::constcl::char=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {$char1 eq $char2} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2308,15 +2307,15 @@ proc ::constcl::char=? {c1 c2} {
 ```
 reg char<? ::constcl::char<?
 
-proc ::constcl::char<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] < [$c2 char]} {
+proc ::constcl::char<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] < [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2325,15 +2324,15 @@ proc ::constcl::char<? {c1 c2} {
 ```
 reg char>? ::constcl::char>?
 
-proc ::constcl::char>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] > [$c2 char]} {
+proc ::constcl::char>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] > [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2342,15 +2341,15 @@ proc ::constcl::char>? {c1 c2} {
 ```
 reg char<=? ::constcl::char<=?
 
-proc ::constcl::char<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] <= [$c2 char]} {
+proc ::constcl::char<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] <= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2359,15 +2358,15 @@ proc ::constcl::char<=? {c1 c2} {
 ```
 reg char>=? ::constcl::char>=?
 
-proc ::constcl::char>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] >= [$c2 char]} {
+proc ::constcl::char>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] >= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2381,15 +2380,15 @@ values in a case insensitive manner. They only compare two characters at a time.
 ```
 reg char-ci=? ::constcl::char-ci=?
 
-proc ::constcl::char-ci=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2398,15 +2397,15 @@ proc ::constcl::char-ci=? {c1 c2} {
 ```
 reg char-ci<? ::constcl::char-ci<?
 
-proc ::constcl::char-ci<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2415,15 +2414,15 @@ proc ::constcl::char-ci<? {c1 c2} {
 ```
 reg char-ci>? ::constcl::char-ci>?
 
-proc ::constcl::char-ci>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2432,15 +2431,15 @@ proc ::constcl::char-ci>? {c1 c2} {
 ```
 reg char-ci<=? ::constcl::char-ci<=?
 
-proc ::constcl::char-ci<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2449,15 +2448,15 @@ proc ::constcl::char-ci<=? {c1 c2} {
 ```
 reg char-ci>=? ::constcl::char-ci>=?
 
-proc ::constcl::char-ci>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
 ```
@@ -2467,7 +2466,7 @@ The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
 conditions.
 
-![The char class operators](/images/char-class-ops.png)
+<table border=1><thead><tr><th colspan=2 align="left">char-alphabetic?, char-numeric?, char-whitespace?, char-upper-case?, char-lower-case? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char-alphabetic? ::constcl::char-alphabetic?
@@ -2537,8 +2536,7 @@ proc ::constcl::char-lower-case? {char} {
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
 
-![The char->integer procedure](/images/cti.png)
-![The integer->char procedure](/images/itc.png)
+<table border=1><thead><tr><th colspan=2 align="left">char-&gt;integer (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an integer</td></tr></table>
 
 ```
 reg char->integer
@@ -2547,6 +2545,8 @@ proc ::constcl::char->integer {char} {
     return [MkNumber [scan [$char char] %c]]
 }
 ```
+
+<table border=1><thead><tr><th colspan=2 align="left">integer-&gt;char (public)</th></tr></thead><tr><td>int</td><td>an integer</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 reg integer->char
@@ -2565,7 +2565,7 @@ proc ::constcl::integer->char {int} {
 
 `char-upcase` and `char-downcase` alter the case of a character.
 
-![The char case operations](/images/char-case-ops.png)
+<table border=1><thead><tr><th colspan=2 align="left">char-upcase, char-downcase (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 reg char-upcase ::constcl::char-upcase
