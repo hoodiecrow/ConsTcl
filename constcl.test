@@ -455,7 +455,7 @@ if no {
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(-)"
-} -returnCodes error -result {wrong # args: should be "- value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "::constcl::- num ?arg ...?"}
 
 ::tcltest::test number-1.16 {try -} -body {
     pep "(- 5)"
@@ -466,7 +466,7 @@ if no {
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/)"
-} -returnCodes error -result {wrong # args: should be "/ value ?value ...?"}
+} -returnCodes error -result {wrong # args: should be "::constcl::/ num ?arg ...?"}
 
 ::tcltest::test number-1.17 {try /} -body {
     pep "(/ 5)"
@@ -1209,7 +1209,6 @@ if no {
 "Malvina"
 }
 
-# hangs tkcon
 ::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
     pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""

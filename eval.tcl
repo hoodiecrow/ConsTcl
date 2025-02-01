@@ -79,9 +79,11 @@ CB
 MD(
 Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
 environment chain for the symbol's name, and returns the value it is bound to.
-
-![The lookup procedure](/images/lookup.png)
 MD)
+
+PR(
+lookup (internal);sym sym env env -> val
+PR)
 
 CB
 proc ::constcl::lookup {sym env} {
@@ -99,9 +101,11 @@ MD)
 MD(
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
-
-![The eprogn procedure](/images/eprogn.png)
 MD)
+
+PR(
+eprogn (internal);exps lexprs env env -> val
+PR)
 
 CB
 proc ::constcl::eprogn {exps env} {
@@ -121,9 +125,11 @@ CB
 MD(
 The `declare` helper adds a variable to the current environment. It first checks that the
 symbol name is a valid identifier, then it updates the environment with the new binding.
-
-![The declare procedure](/images/declare.png)
 MD)
+
+PR(
+declare (internal);sym sym val val env env -> none
+PR)
 
 CB
 proc ::constcl::declare {sym val env} {
@@ -138,9 +144,11 @@ The `update!` helper does _assignment_: it modifies an existing variable that is
 somewhere in the environment chain. It finds the variable's environment and updates the
 binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
-
-![The update! procedure](/images/update!.png)
 MD)
+
+PR(
+update! (internal);var bsym val val env env -> val
+PR)
 
 CB
 proc ::constcl::update! {var val env} {
@@ -155,8 +163,6 @@ object. First it needs to convert the Lisp list `body`. It is packed inside a `b
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
-![The make-function procedure](/images/make-function.png)
-
 A Scheme formals list is either:
 
 * An _empty list_, `()`, meaning that no arguments are accepted,
@@ -164,6 +170,10 @@ A Scheme formals list is either:
 * A _symbol_, `a`, meaning that all arguments go into `a`, or
 * A _dotted list_, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
 MD)
+
+PR(
+make-function (internal);formals formals body lexprs env env -> proc
+PR)
 
 CB
 proc ::constcl::make-function {formals body env} {
@@ -179,9 +189,11 @@ CB
 MD(
 `invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
 _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
-
-![The invoke procedure](/images/invoke.png)
 MD)
+
+PR(
+invoke (internal);pr proc vals lvals -> invoke
+PR)
 
 CB
 proc ::constcl::invoke {pr vals} {
@@ -199,9 +211,11 @@ CB
 
 MD(
 `splitlist` converts a Lisp list to a Tcl list with Lisp objects.
-
-![The splitlist procedure](/images/splitlist.png)
 MD)
+
+PR(
+splitlist (internal);vals lvals -> tvals
+PR)
 
 CB
 proc ::constcl::splitlist {vals} {
@@ -217,9 +231,11 @@ CB
 MD(
 `eval-list` successively evaluates the elements of a Lisp list and returns the results
 as a Lisp list.
-
-![The eval-list procedure](/images/eval-list.png)
 MD)
+
+PR(
+eval-list (internal);exps lexprs env env -> lvals
+PR)
 
 CB
 proc ::constcl::eval-list {exps env} {
@@ -237,9 +253,11 @@ MD(
 Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong
 points. This interpreter does macro expansion, but the user can't define new macros--the ones
 available are hardcoded in the code below.
-
-![The expand-macro procedure](/images/expand-macro.png)
 MD)
+
+PR(
+expand-macro (internal);env env -> nil
+PR)
 
 CB
 proc ::constcl::expand-macro {env} {
@@ -249,41 +267,41 @@ proc ::constcl::expand-macro {env} {
     }
     switch [$op name] {
         and {
-            set val [expand-and $args]
+            set expr [expand-and $args]
         }
         case {
-            set val [do-case [car $args] [cdr $args]]
+            set expr [do-case [car $args] [cdr $args]]
         }
         cond {
-            set val [do-cond $args]
+            set expr [do-cond $args]
         }
         for {
-            set val [expand-for $args $env]
+            set expr [expand-for $args $env]
         }
         for/and {
-            set val [expand-for/and $args $env]
+            set expr [expand-for/and $args $env]
         }
         for/list {
-            set val [expand-for/list $args $env]
+            set expr [expand-for/list $args $env]
         }
         for/or {
-            set val [expand-for/or $args $env]
+            set expr [expand-for/or $args $env]
         }
         let {
-            set val [expand-let $args]
+            set expr [expand-let $args]
         }
         or {
-            set val [expand-or $args]
+            set expr [expand-or $args]
         }
         define {
-            set val [expand-define $args]
+            set expr [expand-define $args]
         }
         quasiquote {
-            set val [expand-quasiquote $args $env]
+            set expr [expand-quasiquote $args $env]
         }
     }
-    set op [car $val]
-    set args [cdr $val]
+    set op [car $expr]
+    set args [cdr $expr]
     return #NIL
 }
 CB
@@ -292,6 +310,10 @@ MD(
 `expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
 has 0 or 1 elements, and a nested `if` construct otherwise.
 MD)
+
+PR(
+expand-and (internal);exps lexprs -> expr
+PR)
 
 CB
 proc ::constcl::expand-and {exps} {
@@ -303,7 +325,13 @@ proc ::constcl::expand-and {exps} {
         return [do-and $exps #NIL]
     }
 }
+CB
 
+PR(
+do-and (internal);exps lexprs prev expr -> expr
+PR)
+
+CB
 proc ::constcl::do-and {exps prev} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return $prev
@@ -317,6 +345,10 @@ MD(
 The `case` macro is expanded by `do-case`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 MD)
+
+PR(
+do-case (internal);keyexpr expr clauses lexprs -> expr
+PR)
 
 CB
 proc ::constcl::do-case {keyexpr clauses} {
@@ -344,6 +376,10 @@ MD(
 The `cond` macro is expanded by `do-cond`. It returns `'()` if there are no clauses (left), 
 and nested `if` constructs if there are some.
 MD)
+
+PR(
+do-cond (internal);clauses lexprs -> expr
+PR)
 
 CB
 proc ::constcl::do-cond {clauses} {
@@ -376,6 +412,10 @@ weren't implemented, but I brought up my strongest brain cells and they
 did it).
 MD)
 
+PR(
+for-seq (internal);seq val env env -> tvals
+PR)
+
 CB
 proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
@@ -391,7 +431,13 @@ proc ::constcl::for-seq {seq env} {
         set seq [$seq value]
     }
 }
+CB
 
+PR(
+do-for (internal);exps lexprs env env -> texprs
+PR)
+
+CB
 proc ::constcl::do-for {exps env} {
     set clauses [splitlist [car $exps]]
     set body [cdr $exps]
@@ -412,7 +458,13 @@ proc ::constcl::do-for {exps env} {
     }
     return $res
 }
+CB
 
+PR(
+expand-for (internal);exps lexprs env env -> expr
+PR)
+
+CB
 proc ::constcl::expand-for {exps env} {
     set res [do-for $exps $env]
     lappend res [list #Q #NIL]
@@ -424,6 +476,10 @@ MD(
 The `expand-for/and` procedure expands the `for/and` macro. It returns an `and`
 construct containing the iterations of the clauses.
 MD)
+
+PR(
+expand-for/and (internal);exps lexprs env env -> expr
+PR)
 
 CB
 proc ::constcl::expand-for/and {exps env} {
@@ -437,6 +493,10 @@ The `expand-for/list` procedure expands the `for/list` macro. It returns a `list
 construct containing the iterations of each clause.
 MD)
 
+PR(
+expand for/list (internal);exps lexprs env env -> expr
+PR)
+
 CB
 proc ::constcl::expand-for/list {exps env} {
     set res [do-for $exps $env]
@@ -449,6 +509,10 @@ The `expand-for/or` procedure expands the `for/or` macro. It returns an `or`
 construct containing the iterations of each clause.
 MD)
 
+PR(
+expand-for/or (internal);exps lexprs env env -> expr
+PR)
+
 CB
 proc ::constcl::expand-for/or {exps env} {
     set res [do-for $exps $env]
@@ -460,6 +524,10 @@ MD(
 `expand-let` expands the named `let` and 'regular' `let` macros. They ultimately
 expand to `lambda` constructs.
 MD)
+
+PR(
+expand-let (internal);exps lexprs -> expr
+PR)
 
 CB
 proc ::constcl::expand-let {exps} {
@@ -500,6 +568,10 @@ MD(
 has 0 or 1 elements, and a nested `if` construct otherwise.
 MD)
 
+PR(
+expand-or (internal);exps lexprs -> expr
+PR)
+
 CB
 proc ::constcl::expand-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
@@ -510,7 +582,13 @@ proc ::constcl::expand-or {exps} {
         return [do-or $exps]
     }
 }
+CB
 
+PR(
+do-or (internal);exps lexprs -> expr
+PR)
+
+CB
 proc ::constcl::do-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return #f
@@ -525,6 +603,10 @@ MD(
 call, the one that defines a procedure.
 MD)
 
+PR(
+expand-define (internal);exps lexprs -> expr
+PR)
+
 CB
 proc ::constcl::expand-define {exps} {
     set symbol [caar $exps]
@@ -537,8 +619,12 @@ CB
 MD(
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
 traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
-fragile and sprawling.
+brittle and sprawling and I barely understand it myself.
 MD)
+
+PR(
+qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
+PR)
 
 CB
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -569,7 +655,13 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
     return [list {*}$res]
 }
+CB
 
+PR(
+expand-quasiquote (internal);exps lexprs env env -> expr
+PR)
+
+CB
 proc ::constcl::expand-quasiquote {exps env} {
     set qqlevel 0
     if {[list? [car $exps]] eq "#t"} {

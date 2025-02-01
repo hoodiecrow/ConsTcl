@@ -70,11 +70,15 @@ MD(
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
 MD)
 
+PR(
+atom? (public);val val -> bool
+PR)
+
 CB
 reg atom? ::constcl::atom?
 
-proc ::constcl::atom? {obj} {
-    if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
+proc ::constcl::atom? {val} {
+    if {[symbol? $val] eq "#t" || [number? $val] eq "#t" || [string? $val] eq "#t" || [char? $val] eq "#t" || [boolean? $val] eq "#t" || [vector? $val] eq "#t"} {
         return #t
     } else {
         return #f

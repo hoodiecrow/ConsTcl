@@ -47,13 +47,19 @@ oo::class create ::constcl::Pair {
 
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
+CB
 
+PR(
+pair? (public);val val -> bool
+PR)
+
+CB
 reg pair? ::constcl::pair?
 
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj ::constcl::Pair]} {
+proc ::constcl::pair? {val} {
+    if {[info object isa typeof $val ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
         return #t
     } else {
         return #f
@@ -65,12 +71,16 @@ MD(
 Helper procedure to make a string representation of a list.
 MD)
 
+PR(
+show-pair (internal);pair pair -> tstr
+PR)
+
 CB
-proc ::constcl::show-pair {obj} {
+proc ::constcl::show-pair {pair} {
     # take an object and print the car and the cdr of the stored value
     set str {}
-    set a [car $obj]
-    set d [cdr $obj]
+    set a [car $pair]
+    set d [cdr $pair]
     # print car
     ::append str [$a show]
     if {[pair? $d] eq "#t"} {
@@ -127,6 +137,10 @@ MD(
 a new value onto a list.
 MD)
 
+PR(
+cons (public);car val cdr val -> pair
+PR)
+
 CB
 reg cons ::constcl::cons
 
@@ -151,11 +165,15 @@ MD(
 `car` gets the contents of the first cell in a pair.
 MD)
 
+PR(
+car (public);pair pair -> val
+PR)
+
 CB
 reg car ::constcl::car
 
-proc ::constcl::car {obj} {
-    $obj car
+proc ::constcl::car {pair} {
+    $pair car
 }
 CB
 
@@ -177,11 +195,15 @@ MD(
 `cdr` gets the contents of the second cell in a pair.
 MD)
 
+PR(
+cdr (public);pair pair -> val
+PR)
+
 CB
 reg cdr ::constcl::cdr
 
-proc ::constcl::cdr {obj} {
-    $obj cdr
+proc ::constcl::cdr {pair} {
+    $pair cdr
 }
 CB
 
@@ -236,15 +258,15 @@ foreach ads {
 } {
     reg c${ads}r ::constcl::c${ads}r
 
-    proc ::constcl::c${ads}r {obj} "
+    proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set obj \[car \$obj\]
+                set pair \[car \$pair\]
             } else {
-                set obj \[cdr \$obj\]
+                set pair \[cdr \$pair\]
             }
         }
-        return \$obj
+        return \$pair
     "
 
 }
@@ -254,11 +276,15 @@ MD(
 `set-car!` sets the contents of the first cell in a pair.
 MD)
 
+PR(
+set-car! (public);pair pair val val -> none
+PR)
+
 CB
 reg set-car! ::constcl::set-car!
 
-proc ::constcl::set-car! {obj val} {
-    $obj set-car! $val
+proc ::constcl::set-car! {pair val} {
+    $pair set-car! $val
 }
 CB
 
@@ -280,11 +306,15 @@ MD(
 `set-cdr!` sets the contents of the second cell in a pair.
 MD)
 
+PR(
+set-cdr! (public);pair pair val val -> none
+PR)
+
 CB
 reg set-cdr! ::constcl::set-cdr!
 
-proc ::constcl::set-cdr! {obj val} {
-    $obj set-cdr! $val
+proc ::constcl::set-cdr! {pair val} {
+    $pair set-cdr! $val
 }
 CB
 
@@ -307,27 +337,37 @@ The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 MD)
 
+PR(
+listp (internal);pair pair -> bool
+PR)
+
 CB
-proc ::constcl::listp {obj} {
+proc ::constcl::listp {pair} {
     upvar visited visited
-    if {$obj in $visited} {
+    if {$pair in $visited} {
         return #f
     }
-    lappend visited $obj
-    if {[null? $obj] eq "#t"} {
+    lappend visited $pair
+    if {[null? $pair] eq "#t"} {
         return #t
-    } elseif {[pair? $obj] eq "#t"} {
-        return [listp [cdr $obj]]
+    } elseif {[pair? $pair] eq "#t"} {
+        return [listp [cdr $pair]]
     } else {
         return #f
     }
 }
+CB
 
+PR(
+list? (public);pair pair -> bool
+PR)
+
+CB
 reg list? ::constcl::list?
 
-proc ::constcl::list? {obj} {
+proc ::constcl::list? {pair} {
     set visited {}
-    return [listp $obj]
+    return [listp $pair]
 }
 CB
 
@@ -350,6 +390,10 @@ TT)
 MD(
 `list` constructs a Lisp list from a Tcl list of items.
 MD)
+
+PR(
+list (public);args tvals -> lvals
+PR)
 
 CB
 reg list ::constcl::list
@@ -380,20 +424,30 @@ MD(
 `length` reports the length of a Lisp list.
 MD)
 
+PR(
+length-helper (internal);pair pair -> tnum
+PR)
+
 CB
-proc ::constcl::length-helper {obj} {
-    if {[null? $obj] eq "#t"} {
+proc ::constcl::length-helper {pair} {
+    if {[null? $pair] eq "#t"} {
         return 0
     } else {
-        return [expr {1 + [length-helper [cdr $obj]]}]
+        return [expr {1 + [length-helper [cdr $pair]]}]
     }
 }
+CB
 
+PR(
+length (public);pair pair -> num
+PR)
+
+CB
 reg length ::constcl::length
 
-proc ::constcl::length {obj} {
-    if {[list? $obj] eq "#t"} {
-        MkNumber [length-helper $obj]
+proc ::constcl::length {pair} {
+    if {[list? $pair] eq "#t"} {
+        MkNumber [length-helper $pair]
     } else {
         error "LIST expected\n(list lst)"
     }
@@ -414,18 +468,28 @@ MD(
 `append` joins lists together.
 MD)
 
+PR(
+copy-list (internal);pair pair next lvals -> lvals
+PR)
+
 CB
-proc ::constcl::copy-list {obj next} {
+proc ::constcl::copy-list {pair next} {
     # TODO only fresh conses in the direct chain to NIL
-    if {[null? $obj] eq "#t"} {
+    if {[null? $pair] eq "#t"} {
         set next
-    } elseif {[null? [cdr $obj]] eq "#t"} {
-        cons [car $obj] $next
+    } elseif {[null? [cdr $pair]] eq "#t"} {
+        cons [car $pair] $next
     } else {
-        cons [car $obj] [copy-list [cdr $obj] $next]
+        cons [car $pair] [copy-list [cdr $pair] $next]
     }
 }
+CB
 
+PR(
+append (public);args tlvals -> lvals
+PR)
+
+CB
 reg append ::constcl::append
 
 proc ::constcl::append {args} {
@@ -453,11 +517,15 @@ MD(
 `reverse` produces a reversed copy of a Lisp list.
 MD)
 
+PR(
+reverse (public);vals lvals -> lvals
+PR)
+
 CB
 reg reverse ::constcl::reverse
 
-proc ::constcl::reverse {obj} {
-    list {*}[lreverse [splitlist $obj]]
+proc ::constcl::reverse {vals} {
+    list {*}[lreverse [splitlist $vals]]
 }
 CB
 
@@ -474,14 +542,18 @@ MD(
 Given a list index, `list-tail` yields the sublist starting from that index.
 MD)
 
+PR(
+list-tail (public);vals lvals k num -> lvals
+PR)
+
 CB
 reg list-tail ::constcl::list-tail
 
-proc ::constcl::list-tail {obj k} {
+proc ::constcl::list-tail {vals k} {
     if {[zero? $k] eq "#t"} {
-        return $obj
+        return $vals
     } else {
-        list-tail [cdr $obj] [- $k #1]
+        list-tail [cdr $vals] [- $k #1]
     }
 }
 CB
@@ -498,11 +570,15 @@ MD(
 `list-ref` yields the list item at a given index.
 MD)
 
+PR(
+list-ref (public);vals lvals k num -> val
+PR)
+
 CB
 reg list-ref ::constcl::list-ref
 
-proc ::constcl::list-ref {obj k} {
-    car [list-tail $obj $k]
+proc ::constcl::list-ref {vals k} {
+    car [list-tail $vals $k]
 }
 CB
 
@@ -520,17 +596,21 @@ item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`,
 respectively, for the comparison.
 MD)
 
+PR(
+member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
+PR)
+
 CB
 
-proc ::constcl::member-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+proc ::constcl::member-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[$epred $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[$epred $val1 [car $val2]] eq "#t"} {
+                return $val2
             } else {
-                return [member-proc $epred $obj1 [cdr $obj2]]
+                return [member-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -539,14 +619,20 @@ proc ::constcl::member-proc {epred obj1 obj2} {
             eqv? { set name "memv" }
             equal? { set name "member" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
+CB
 
+PR(
+memq (public);val1 val val2 lvals -> lvfalse
+PR)
+
+CB
 reg memq ::constcl::memq
 
-proc ::constcl::memq {obj1 obj2} {
-    return [member-proc eq? $obj1 $obj2]
+proc ::constcl::memq {val1 val2} {
+    return [member-proc eq? $val1 $val2]
 }
 CB
 
@@ -567,19 +653,27 @@ TT(
 
 TT)
 
+PR(
+memv (public);val1 val val2 lvals -> lvfalse
+PR)
+
 CB
 reg memv ::constcl::memv
 
-proc ::constcl::memv {obj1 obj2} {
-    return [member-proc eqv? $obj1 $obj2]
+proc ::constcl::memv {val1 val2} {
+    return [member-proc eqv? $val1 $val2]
 }
 CB
+
+PR(
+member (public);val1 val val2 lvals -> lvfalse
+PR)
 
 CB
 reg member ::constcl::member
 
-proc ::constcl::member {obj1 obj2} {
-    return [member-proc equal? $obj1 $obj2]
+proc ::constcl::member {val1 val2} {
+    return [member-proc equal? $val1 $val2]
 }
 CB
 
@@ -598,17 +692,20 @@ Example:
 ```
 MD)
 
-CB
+PR(
+assoc-proc (internal);epred epred val1 val val2 lval -> lvfalse
+PR)
 
-proc ::constcl::assoc-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+CB
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [$epred $obj1 [caar $obj2]] eq "#t"} {
-                return [car $obj2]
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[pair? [car $val2]] eq "#t" && [$epred $val1 [caar $val2]] eq "#t"} {
+                return [car $val2]
             } else {
-                return [assoc-proc $epred $obj1 [cdr $obj2]]
+                return [assoc-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -617,31 +714,46 @@ proc ::constcl::assoc-proc {epred obj1 obj2} {
             eqv? { set name "assv" }
             equal? { set name "assoc" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
+CB
 
+PR(
+assq (public);val1 val val2 lvals -> lvfalse
+PR)
+
+CB
 reg assq
 
-proc ::constcl::assq {obj1 obj2} {
-    return [assoc-proc eq? $obj1 $obj2]
+proc ::constcl::assq {val1 val2} {
+    return [assoc-proc eq? $val1 $val2]
 }
 CB
+
+PR(
+assv (public);val1 val val2 lvals -> lvfalse
+PR)
 
 
 CB
 reg assv
 
-proc ::constcl::assv {obj1 obj2} {
-    return [assoc-proc eqv? $obj1 $obj2]
+proc ::constcl::assv {val1 val2} {
+    return [assoc-proc eqv? $val1 $val2]
 }
 CB
+
+PR(
+assoc (public);val1 val val2 lvals -> lvfalse
+PR)
+
 
 CB
 reg assoc
 
-proc ::constcl::assoc {obj1 obj2} {
-    return [assoc-proc equal? $obj1 $obj2]
+proc ::constcl::assoc {val1 val2} {
+    return [assoc-proc equal? $val1 $val2]
 }
 CB
 

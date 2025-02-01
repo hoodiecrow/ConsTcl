@@ -20,25 +20,19 @@ all: README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 source_files = type.tcl read.tcl eval.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
 README.md: top.md constcl.md
-	awk -f constcl.awk dict.txt $^ |sed -e /PR/d >$@
+	awk -f prototype.awk dict.txt $^ |sed -e /^PR/d >$@
 
 constcl.md: $(source_files)
-	cat $^ |sed -e s/^CB/\`\`\`/g -e /MD/d -e /TT/,/TT/d >$@
+	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	cat $^ |sed -e /CB/d -e /MD/,/MD/d -e /^PR/,/^PR/d -e /TT/,/TT/d -e s/\\r//g >$@
+	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
 	echo 'package require tcltest' >$@
 	echo 'source constcl.tcl\n' >>$@
 	cat $^ |sed -n '/TT/,// { //n ; p }' >>$@
 	echo '\n::tcltest::cleanupTests' >>$@
-
-wiki/type.md: type.tcl
-	cat $^ |sed -e s/^CB/\`\`\`/g -e /MD/d -e /TT/,/TT/d >$@
-
-wiki/read.md: read.tcl
-	cat $^ |sed -e s/^CB/\`\`\`/g -e /MD/d -e /TT/,/TT/d >$@
 
 .PHONY: clean
 clean:

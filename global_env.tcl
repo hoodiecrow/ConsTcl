@@ -40,7 +40,7 @@ created to hold the bindings introduced by the call, and also a link to the oute
 Example:
 
 ```
-ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))
+ConsTcl> (define (circle-area r) (* pi (* r r)))
 ConsTcl> (circle-area 10)
 314.1592653589793
 ```

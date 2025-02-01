@@ -86,9 +86,11 @@ CB
 
 MD(
 `char?` recognizes Char values by type.
-
-![The char? procedure](/images/charp.png)
 MD)
+
+PR(
+char? (public):val val -> bool
+PR)
 
 CB
 reg char? ::constcl::char?
@@ -115,22 +117,24 @@ TT)
 MD(
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
-
-![The char comparison operators 1](/images/char-comp-ops1.png)
 MD)
+
+PR(
+char=?, char<?, char>?, char<=?, char>=? (public);char1 char char2 char -> bool
+PR)
 
 CB
 reg char=? ::constcl::char=?
 
-proc ::constcl::char=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {$c1 eq $c2} {
+proc ::constcl::char=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {$char1 eq $char2} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -148,15 +152,15 @@ TT)
 CB
 reg char<? ::constcl::char<?
 
-proc ::constcl::char<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] < [$c2 char]} {
+proc ::constcl::char<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] < [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -174,15 +178,15 @@ TT)
 CB
 reg char>? ::constcl::char>?
 
-proc ::constcl::char>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] > [$c2 char]} {
+proc ::constcl::char>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] > [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -200,15 +204,15 @@ TT)
 CB
 reg char<=? ::constcl::char<=?
 
-proc ::constcl::char<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] <= [$c2 char]} {
+proc ::constcl::char<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] <= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -226,15 +230,15 @@ TT)
 CB
 reg char>=? ::constcl::char>=?
 
-proc ::constcl::char>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] >= [$c2 char]} {
+proc ::constcl::char>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] >= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -252,22 +256,24 @@ TT)
 MD(
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
-
-![The char comparison operators 2](/images/char-comp-ops2.png)
 MD)
+
+PR(
+char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public);char1 char char2 char -> bool
+PR)
 
 CB
 reg char-ci=? ::constcl::char-ci=?
 
-proc ::constcl::char-ci=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -285,15 +291,15 @@ TT)
 CB
 reg char-ci<? ::constcl::char-ci<?
 
-proc ::constcl::char-ci<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -311,15 +317,15 @@ TT)
 CB
 reg char-ci>? ::constcl::char-ci>?
 
-proc ::constcl::char-ci>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -337,15 +343,15 @@ TT)
 CB
 reg char-ci<=? ::constcl::char-ci<=?
 
-proc ::constcl::char-ci<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -363,15 +369,15 @@ TT)
 CB
 reg char-ci>=? ::constcl::char-ci>=?
 
-proc ::constcl::char-ci>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
 CB
@@ -391,9 +397,11 @@ MD(
 The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
 conditions.
-
-![The char class operators](/images/char-class-ops.png)
 MD)
+
+PR(
+char-alphabetic?, char-numeric?, char-whitespace?, char-upper-case?, char-lower-case? (public);char char -> bool
+PR)
 
 CB
 reg char-alphabetic? ::constcl::char-alphabetic?
@@ -523,10 +531,11 @@ TT)
 MD(
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
-
-![The char->integer procedure](/images/cti.png)
-![The integer->char procedure](/images/itc.png)
 MD)
+
+PR(
+char->integer (public);char char -> int
+PR)
 
 CB
 reg char->integer
@@ -535,6 +544,10 @@ proc ::constcl::char->integer {char} {
     return [MkNumber [scan [$char char] %c]]
 }
 CB
+
+PR(
+integer->char (public);int int -> char
+PR)
 
 CB
 reg integer->char
@@ -561,9 +574,11 @@ TT)
 
 MD(
 `char-upcase` and `char-downcase` alter the case of a character.
-
-![The char case operations](/images/char-case-ops.png)
 MD)
+
+PR(
+char-upcase, char-downcase (public);char char -> char
+PR)
 
 CB
 reg char-upcase ::constcl::char-upcase

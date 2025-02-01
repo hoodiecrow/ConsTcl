@@ -37,13 +37,19 @@ proc ::constcl::MkSymbol {n} {
     }
     return [::constcl::Symbol new $n]
 }
+CB
 
+PR(
+symbol? (public);val val -> bool
+PR)
+
+CB
 reg symbol? ::constcl::symbol?
 
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj ::constcl::Symbol]} {
+proc ::constcl::symbol? {val} {
+    if {[info object isa typeof $val ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
         return #t
     } else {
         return #f
@@ -70,20 +76,24 @@ MD(
 lower-cased.
 MD)
 
+PR(
+symbol->string (public);sym sym -> str
+PR)
+
 CB
 reg symbol->string ::constcl::symbol->string
 
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
+proc ::constcl::symbol->string {sym} {
+    if {[symbol? $sym] eq "#t"} {
+        if {![$sym case-constant]} {
+            set str [MkString [::string tolower [$sym name]]]
         } else {
-            set str [MkString [$obj name]]
+            set str [MkString [$sym name]]
         }
         $str mkconstant
         return $str
     } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
+        error "SYMBOL expected\n(symbol->string [$sym show])"
     }
 }
 CB
@@ -99,7 +109,6 @@ TT(
 "Malvina"
 }
 
-# hangs tkcon
 ::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
     pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""
@@ -110,6 +119,10 @@ MD(
 `string->symbol` creates a symbol with the name given by the string. The symbol
 is 'case-constant', i.e. it will not be lower-cased.
 MD)
+
+PR(
+string->symbol (public);str str -> sym
+PR)
 
 CB
 reg string->symbol ::constcl::string->symbol

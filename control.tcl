@@ -4,7 +4,7 @@ MD(
 
 This section concerns itself with procedures and the application of the same.
 
-A `Procedure` object is basically a
+A `Procedure` object is a
 [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
 storing the procedure's parameter list, the body, and the environment that is current
 when the object is created (when the procedure is defined).
@@ -36,15 +36,21 @@ oo::class create ::constcl::Procedure {
 }
 
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
+CB
 
+PR(
+procedure? (public);val val -> bool
+PR)
+
+CB
 reg procedure? ::constcl::procedure?
 
-proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj ::constcl::Procedure]} {
+proc ::constcl::procedure? {val} {
+    if {[info object isa typeof $val ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
         return #t
-    } elseif {[::string match "::constcl::*" $obj]} {
+    } elseif {[::string match "::constcl::*" $val]} {
         return #t
     } else {
         return #f
@@ -66,12 +72,16 @@ MD(
 `apply` applies a procedure to a Lisp list of Lisp arguments.
 MD)
 
+PR(
+apply (public);pr proc vals lvals -> invoke
+PR)
+
 CB
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc vals} {
-    if {[procedure? $proc] eq "#t"} {
-        invoke $proc $vals
+proc ::constcl::apply {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        invoke $pr $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -97,11 +107,15 @@ a procedure as an argument. The Lisp list of the results of the invocations is
 returned.
 MD)
 
+PR(
+map (public);pr proc args tlvals -> lvals
+PR)
+
 CB
 reg map ::constcl::map
 
-proc ::constcl::map {proc args} {
-    if {[procedure? $proc] eq "#t"} {
+proc ::constcl::map {pr args} {
+    if {[procedure? $pr] eq "#t"} {
         set arglists $args
         for {set i 0} {$i < [llength $arglists]} {incr i} {
             lset arglists $i [splitlist [lindex $arglists $i]]
@@ -112,11 +126,11 @@ proc ::constcl::map {proc args} {
             for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
                 lappend arguments [lindex $arglists $arg $item]
             }
-            lappend res [invoke $proc [list {*}$arguments]]
+            lappend res [invoke $pr [list {*}$arguments]]
         }
         return [list {*}$res]
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
+        error "PROCEDURE expected\n(apply [$pr show] ...)"
     }
 }
 CB
@@ -140,6 +154,10 @@ MD(
 `for-each` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
 MD)
+
+PR(
+for-each (public);pr proc args tlvals -> nil
+PR)
 
 CB
 reg for-each ::constcl::for-each

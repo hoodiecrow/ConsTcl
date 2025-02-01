@@ -6,31 +6,33 @@ MD(
 Of the three equivalence predicates, `eq` generally tests for identity (with exceptions for numbers
 and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
 identity), and `equal` tests for whether the output strings are equal.
-
-![The equivalence predicates](/images/equiv-pred.png)
 MD)
+
+PR(
+eq?, eqv?, equal? (public);val1 val val2 val -> bool
+PR)
 
 CB
 reg eq? ::constcl::eq?
 
-proc ::constcl::eq? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eq? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -41,24 +43,24 @@ CB
 CB
 reg eqv? ::constcl::eqv?
 
-proc ::constcl::eqv? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eqv? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && [$obj1 name] eq [$obj2 name]} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && [$val1 name] eq [$val2 name]} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && [$obj1 char] eq [$obj2 char]} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && [$val1 char] eq [$val2 char]} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && [$obj1 car] eq [$obj2 car] && [$obj1 cdr] eq [$obj2 cdr]} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -69,8 +71,8 @@ CB
 CB
 reg equal? ::constcl::equal?
 
-proc ::constcl::equal? {obj1 obj2} {
-    if {[$obj1 show] eq [$obj2 show]} {
+proc ::constcl::equal? {val1 val2} {
+    if {[$val1 show] eq [$val2 show]} {
         return #t
     } else {
         return #f

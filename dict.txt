@@ -7,18 +7,25 @@ lisp    -> Lisp source text
 none    -> nothing
 pterm   -> the terminating paren or bracket
 pstr    -> a structure of pair values
-sharp   -> a vector boolean or character value
+sharp   -> a vector, boolean, or character value
 quote   -> a value wrapped in the quote symbol
 unquote -> a value wrapped in the unquote/-splicing symbol
 qquote  -> a value wrapped in the quasiquote symbol
 pm      -> either the symbols + or - or a number
+lvfalse -> a Lisp list of values OR #f
+alist   -> an association list
+plist   -> a property list
+pred    -> a predicate
+epred   -> an equivalence predicate
 val     -> a Lisp value
 vals    -> some Lisp values
 lvals   -> a Lisp list of Lisp values
 tvals   -> a Tcl list of Lisp values
+tlvals  -> a Tcl list of Lisp lists of Lisp values
 num     -> a number
 nums    -> some numbers
 lnums   -> a Lisp list of numbers
+tnum    -> a Tcl number
 tnums   -> a Tcl list of numbers
 bool    -> a boolean
 bools   -> some booleans
@@ -44,6 +51,7 @@ str     -> a string
 strs    -> some strings
 lstrs   -> a Lisp list of strings
 tstrs   -> a Tcl list of strings
+tstr    -> a Tcl string
 sym     -> a symbol
 syms    -> some symbols
 lsyms   -> a Lisp list of symbols

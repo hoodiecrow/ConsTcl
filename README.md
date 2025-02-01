@@ -3900,13 +3900,17 @@ proc ::constcl::MkSymbol {n} {
     }
     return [::constcl::Symbol new $n]
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg symbol? ::constcl::symbol?
 
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj ::constcl::Symbol]} {
+proc ::constcl::symbol? {val} {
+    if {[info object isa typeof $val ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
         return #t
     } else {
         return #f
@@ -3918,20 +3922,22 @@ proc ::constcl::symbol? {obj} {
 `symbol->string` yields a string consisting of the symbol name, usually
 lower-cased.
 
+<table border=1><thead><tr><th colspan=2 align="left">symbol-&gt;string (public)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg symbol->string ::constcl::symbol->string
 
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
+proc ::constcl::symbol->string {sym} {
+    if {[symbol? $sym] eq "#t"} {
+        if {![$sym case-constant]} {
+            set str [MkString [::string tolower [$sym name]]]
         } else {
-            set str [MkString [$obj name]]
+            set str [MkString [$sym name]]
         }
         $str mkconstant
         return $str
     } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
+        error "SYMBOL expected\n(symbol->string [$sym show])"
     }
 }
 ```
@@ -3939,6 +3945,8 @@ proc ::constcl::symbol->string {obj} {
 
 `string->symbol` creates a symbol with the name given by the string. The symbol
 is 'case-constant', i.e. it will not be lower-cased.
+
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;symbol (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
 ```
 reg string->symbol ::constcl::string->symbol
@@ -4008,13 +4016,17 @@ proc ::constcl::MkVector {v} {
     }
     return [::constcl::Vector new $v]
 }
+```
 
+<table border=1><thead><tr><th colspan=2 align="left">vector? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
 reg vector? ::constcl::vector?
 
-proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj ::constcl::Vector]} {
+proc ::constcl::vector? {val} {
+    if {[info object isa typeof $val ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
         return #t
     } else {
         return #f
@@ -4024,6 +4036,8 @@ proc ::constcl::vector? {obj} {
 
 
 `make-vector` creates a vector with a given length and optionally a fill value.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?fill?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg make-vector ::constcl::make-vector
@@ -4041,6 +4055,8 @@ proc ::constcl::make-vector {k args} {
 
 Given a number of Lisp values, `vector` creates a vector containing them.
 
+<table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg vector ::constcl::vector
 
@@ -4051,6 +4067,8 @@ proc ::constcl::vector {args} {
 
 
 `vector-length` returns the length of a vector.
+
+<table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg vector-length ::constcl::vector-length
@@ -4066,6 +4084,8 @@ proc ::constcl::vector-length {vec} {
 
 
 `vector-ref` _vector_ _k_ returns the element of _vector_ at index _k_.
+
+<table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg vector-ref ::constcl::vector-ref
@@ -4087,24 +4107,28 @@ proc ::constcl::vector-ref {vec k} {
 `vector-set!` _vector_ _k_ _obj_, for a non-constant vector, sets the element at
 index _k_ to _obj_.
 
+<table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg vector-set! ::constcl::vector-set!
 
-proc ::constcl::vector-set! {vec k obj} {
+proc ::constcl::vector-set! {vec k val} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec set! [$k numval] $obj]
+            return [$vec set! [$k numval] $val]
         } else {
-            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
         }
     } else {
-        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$val show])"
     }
 }
 ```
 
 
 `vector->list` converts a vector value to a Lisp list.
+
+<table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
 reg vector->list ::constcl::vector->list
@@ -4117,6 +4141,8 @@ proc ::constcl::vector->list {vec} {
 
 `list->vector` converts a Lisp list value to a vector.
 
+<table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg list->vector ::constcl::list->vector
 
@@ -4127,6 +4153,8 @@ proc ::constcl::list->vector {list} {
 
 
 `vector-fill!` fills a non-constant vector with a given value.
+
+<table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg vector-fill! ::constcl::vector-fill!
@@ -4248,11 +4276,13 @@ dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
 
+<table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg atom? ::constcl::atom?
 
-proc ::constcl::atom? {obj} {
-    if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
+proc ::constcl::atom? {val} {
+    if {[symbol? $val] eq "#t" || [number? $val] eq "#t" || [string? $val] eq "#t" || [char? $val] eq "#t" || [boolean? $val] eq "#t" || [vector? $val] eq "#t"} {
         return #t
     } else {
         return #f
@@ -4395,7 +4425,7 @@ created to hold the bindings introduced by the call, and also a link to the oute
 Example:
 
 ```
-ConsTcl> (define circle-area (lambda (r) (* pi (* r r))))
+ConsTcl> (define (circle-area r) (* pi (* r r)))
 ConsTcl> (circle-area 10)
 314.1592653589793
 ```

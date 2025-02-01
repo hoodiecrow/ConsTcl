@@ -54,13 +54,19 @@ proc ::constcl::MkVector {v} {
     }
     return [::constcl::Vector new $v]
 }
+CB
 
+PR(
+vector? (public);val val -> bool
+PR)
+
+CB
 reg vector? ::constcl::vector?
 
-proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj ::constcl::Vector]} {
+proc ::constcl::vector? {val} {
+    if {[info object isa typeof $val ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
         return #t
     } else {
         return #f
@@ -82,6 +88,10 @@ MD(
 `make-vector` creates a vector with a given length and optionally a fill value.
 MD)
 
+PR(
+make-vector? (public);k num ?fill? val -> vec
+PR)
+
 CB
 reg make-vector ::constcl::make-vector
 
@@ -99,6 +109,10 @@ CB
 MD(
 Given a number of Lisp values, `vector` creates a vector containing them.
 MD)
+
+PR(
+vector (public);args tvals -> vec
+PR)
 
 CB
 reg vector ::constcl::vector
@@ -120,6 +134,10 @@ TT)
 MD(
 `vector-length` returns the length of a vector.
 MD)
+
+PR(
+vector-length (public);vec vec -> num
+PR)
 
 CB
 reg vector-length ::constcl::vector-length
@@ -144,6 +162,10 @@ TT)
 MD(
 `vector-ref` _vector_ _k_ returns the element of _vector_ at index _k_.
 MD)
+
+PR(
+vector-ref (public);vec vec k num -> val
+PR)
 
 CB
 reg vector-ref ::constcl::vector-ref
@@ -174,18 +196,22 @@ MD(
 index _k_ to _obj_.
 MD)
 
+PR(
+vector-set! (public);vec vec k num val val -> vec
+PR)
+
 CB
 reg vector-set! ::constcl::vector-set!
 
-proc ::constcl::vector-set! {vec k obj} {
+proc ::constcl::vector-set! {vec k val} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec set! [$k numval] $obj]
+            return [$vec set! [$k numval] $val]
         } else {
-            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
         }
     } else {
-        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$val show])"
     }
 }
 CB
@@ -202,6 +228,10 @@ TT)
 MD(
 `vector->list` converts a vector value to a Lisp list.
 MD)
+
+PR(
+vector->list (public);vec vec -> lvals
+PR)
 
 CB
 reg vector->list ::constcl::vector->list
@@ -223,6 +253,10 @@ MD(
 `list->vector` converts a Lisp list value to a vector.
 MD)
 
+PR(
+list->vector (public);list lvals -> vec
+PR)
+
 CB
 reg list->vector ::constcl::list->vector
 
@@ -242,6 +276,10 @@ TT)
 MD(
 `vector-fill!` fills a non-constant vector with a given value.
 MD)
+
+PR(
+vector-fill! (public);vec vec fill val -> vec
+PR)
 
 CB
 reg vector-fill! ::constcl::vector-fill!

@@ -54,9 +54,11 @@ TT)
 
 MD(
 The `boolean?` predicate recognizes a Boolean by type.
-
-![The boolean? procedure](/images/booleanp.png)
 MD)
+
+PR(
+boolean? (public);val val -> bool
+PR)
 
 CB
 reg boolean? ::constcl::boolean?
@@ -90,9 +92,11 @@ TT)
 
 MD(
 The only operation on booleans: `not`, or logical negation.
-
-![The not procedure](/images/not.png)
 MD)
+
+PR(
+not (public);val val -> bool
+PR)
 
 CB
 reg not ::constcl::not

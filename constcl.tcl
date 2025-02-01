@@ -480,9 +480,11 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 }
 
 
+
 proc ::constcl::lookup {sym env} {
     [$env find $sym] get $sym
 }
+
 
 
 
@@ -500,6 +502,7 @@ proc ::constcl::eprogn {exps env} {
 }
 
 
+
 proc ::constcl::declare {sym val env} {
     varcheck [idcheck [$sym name]]
     $env set $sym $val
@@ -507,10 +510,12 @@ proc ::constcl::declare {sym val env} {
 }
 
 
+
 proc ::constcl::update! {var val env} {
     [$env find $var] set $var $val
     set val
 }
+
 
 
 proc ::constcl::make-function {formals body env} {
@@ -521,6 +526,7 @@ proc ::constcl::make-function {formals body env} {
     }
     return [MkProcedure $formals $body $env]
 }
+
 
 
 proc ::constcl::invoke {pr vals} {
@@ -536,6 +542,7 @@ proc ::constcl::invoke {pr vals} {
 }
 
 
+
 proc ::constcl::splitlist {vals} {
     set result {}
     while {[pair? $vals] eq "#t"} {
@@ -544,6 +551,7 @@ proc ::constcl::splitlist {vals} {
     }
     return $result
 }
+
 
 
 proc ::constcl::eval-list {exps env} {
@@ -555,6 +563,7 @@ proc ::constcl::eval-list {exps env} {
 }
 
 
+
 proc ::constcl::expand-macro {env} {
     upvar op op args args
     if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
@@ -562,43 +571,44 @@ proc ::constcl::expand-macro {env} {
     }
     switch [$op name] {
         and {
-            set val [expand-and $args]
+            set expr [expand-and $args]
         }
         case {
-            set val [do-case [car $args] [cdr $args]]
+            set expr [do-case [car $args] [cdr $args]]
         }
         cond {
-            set val [do-cond $args]
+            set expr [do-cond $args]
         }
         for {
-            set val [expand-for $args $env]
+            set expr [expand-for $args $env]
         }
         for/and {
-            set val [expand-for/and $args $env]
+            set expr [expand-for/and $args $env]
         }
         for/list {
-            set val [expand-for/list $args $env]
+            set expr [expand-for/list $args $env]
         }
         for/or {
-            set val [expand-for/or $args $env]
+            set expr [expand-for/or $args $env]
         }
         let {
-            set val [expand-let $args]
+            set expr [expand-let $args]
         }
         or {
-            set val [expand-or $args]
+            set expr [expand-or $args]
         }
         define {
-            set val [expand-define $args]
+            set expr [expand-define $args]
         }
         quasiquote {
-            set val [expand-quasiquote $args $env]
+            set expr [expand-quasiquote $args $env]
         }
     }
-    set op [car $val]
-    set args [cdr $val]
+    set op [car $expr]
+    set args [cdr $expr]
     return #NIL
 }
+
 
 
 proc ::constcl::expand-and {exps} {
@@ -611,6 +621,7 @@ proc ::constcl::expand-and {exps} {
     }
 }
 
+
 proc ::constcl::do-and {exps prev} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return $prev
@@ -618,6 +629,7 @@ proc ::constcl::do-and {exps prev} {
         return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
     }
 }
+
 
 
 proc ::constcl::do-case {keyexpr clauses} {
@@ -639,6 +651,7 @@ proc ::constcl::do-case {keyexpr clauses} {
         return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
     }
 }
+
 
 
 proc ::constcl::do-cond {clauses} {
@@ -664,6 +677,7 @@ proc ::constcl::do-cond {clauses} {
 }
 
 
+
 proc ::constcl::for-seq {seq env} {
     if {[number? $seq] eq "#t"} {
         set seq [in-range $seq]
@@ -678,6 +692,7 @@ proc ::constcl::for-seq {seq env} {
         set seq [$seq value]
     }
 }
+
 
 proc ::constcl::do-for {exps env} {
     set clauses [splitlist [car $exps]]
@@ -700,11 +715,13 @@ proc ::constcl::do-for {exps env} {
     return $res
 }
 
+
 proc ::constcl::expand-for {exps env} {
     set res [do-for $exps $env]
     lappend res [list #Q #NIL]
     return [list #B {*}$res]
 }
+
 
 
 proc ::constcl::expand-for/and {exps env} {
@@ -713,16 +730,19 @@ proc ::constcl::expand-for/and {exps env} {
 }
 
 
+
 proc ::constcl::expand-for/list {exps env} {
     set res [do-for $exps $env]
     return [list [MkSymbol "list"] {*}$res]
 }
 
 
+
 proc ::constcl::expand-for/or {exps env} {
     set res [do-for $exps $env]
     return [list [MkSymbol "or"] {*}$res]
 }
+
 
 
 proc ::constcl::expand-let {exps} {
@@ -758,6 +778,7 @@ proc ::constcl::expand-let {exps} {
 }
 
 
+
 proc ::constcl::expand-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return [list #B #f]
@@ -768,6 +789,7 @@ proc ::constcl::expand-or {exps} {
     }
 }
 
+
 proc ::constcl::do-or {exps} {
     if {[eq? [length $exps] #0] eq "#t"} {
         return #f
@@ -777,12 +799,14 @@ proc ::constcl::do-or {exps} {
 }
 
 
+
 proc ::constcl::expand-define {exps} {
     set symbol [caar $exps]
     set formals [cdar $exps]
     set body [cdr $exps]
     return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
 }
+
 
 
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -813,6 +837,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
     return [list {*}$res]
 }
+
 
 proc ::constcl::expand-quasiquote {exps env} {
     set qqlevel 0
@@ -857,6 +882,7 @@ proc ::constcl::interaction-environment {} {
 
 
 
+
 reg write ::constcl::write
 
 proc ::constcl::write {val args} {
@@ -867,9 +893,11 @@ proc ::constcl::write {val args} {
 }
 
 
+
 proc ::constcl::write-value {val} {
     $val write
 }
+
 
 
 reg display ::constcl::display
@@ -880,10 +908,11 @@ proc ::constcl::display {val args} {
 }
 
 
-proc ::constcl::write-pair {val} {
+
+proc ::constcl::write-pair {pair} {
     # take an object and print the car and the cdr of the stored value
-    set a [car $val]
-    set d [cdr $val]
+    set a [car $pair]
+    set d [cdr $pair]
     # print car
     write-value $a
     if {[pair? $d] eq "#t"} {
@@ -903,26 +932,27 @@ proc ::constcl::write-pair {val} {
 
 
 
+
 reg eq? ::constcl::eq?
 
-proc ::constcl::eq? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eq? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -931,24 +961,24 @@ proc ::constcl::eq? {obj1 obj2} {
 
 reg eqv? ::constcl::eqv?
 
-proc ::constcl::eqv? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eqv? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && [$obj1 name] eq [$obj2 name]} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && [$val1 name] eq [$val2 name]} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && [$obj1 char] eq [$obj2 char]} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && [$val1 char] eq [$val2 char]} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && [$obj1 car] eq [$obj2 car] && [$obj1 cdr] eq [$obj2 cdr]} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -957,8 +987,8 @@ proc ::constcl::eqv? {obj1 obj2} {
 
 reg equal? ::constcl::equal?
 
-proc ::constcl::equal? {obj1 obj2} {
-    if {[$obj1 show] eq [$obj2 show]} {
+proc ::constcl::equal? {val1 val2} {
+    if {[$val1 show] eq [$val2 show]} {
         return #t
     } else {
         return #f
@@ -994,6 +1024,8 @@ oo::class create ::constcl::Number {
 interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 
+
+
 reg number? ::constcl::number?
 
 proc ::constcl::number? {val} {
@@ -1005,6 +1037,7 @@ proc ::constcl::number? {val} {
         return #f
     }
 }
+
 
 
 
@@ -1089,60 +1122,63 @@ proc ::constcl::>= {args} {
 
 
 
+
 reg zero? ::constcl::zero?
 
-proc ::constcl::zero? {val} {
-    if {[number? $val] eq "#t"} {
-        return [$val zero?]
+proc ::constcl::zero? {num} {
+    if {[number? $num] eq "#t"} {
+        return [$num zero?]
     } else {
-        error "NUMBER expected\n(zero? [$val show])"
+        error "NUMBER expected\n(zero? [$num show])"
     }
 }
 
 
 
+
 reg positive? ::constcl::positive?
 
-proc ::constcl::positive? {val} {
-    if {[::constcl::number? $val] eq "#t"} {
-        return [$val positive?]
+proc ::constcl::positive? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num positive?]
     } else {
-        error "NUMBER expected\n(positive? [$val show])"
+        error "NUMBER expected\n(positive? [$num show])"
     }
 }
 
 
 reg negative? ::constcl::negative?
 
-proc ::constcl::negative? {val} {
-    if {[::constcl::number? $val] eq "#t"} {
-        return [$val negative?]
+proc ::constcl::negative? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num negative?]
     } else {
-        error "NUMBER expected\n(negative? [$val show])"
+        error "NUMBER expected\n(negative? [$num show])"
     }
 }
 
 
 reg even? ::constcl::even?
 
-proc ::constcl::even? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj even?]
+proc ::constcl::even? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num even?]
     } else {
-        error "NUMBER expected\n(even? [$obj show])"
+        error "NUMBER expected\n(even? [$num show])"
     }
 }
 
 
 reg odd? ::constcl::odd?
 
-proc ::constcl::odd? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj odd?]
+proc ::constcl::odd? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num odd?]
     } else {
-        error "NUMBER expected\n(odd? [$obj show])"
+        error "NUMBER expected\n(odd? [$num show])"
     }
 }
+
 
 
 
@@ -1168,6 +1204,8 @@ proc ::constcl::min {args} {
     }
     MkNumber [::tcl::mathfunc::min {*}$vals]
 }
+
+
 
 
 
@@ -1197,55 +1235,51 @@ proc ::constcl::* {args} {
 
 reg - ::constcl::-
 
-proc ::constcl::- {args} {
+proc ::constcl::- {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(- num ...)"
     }
-    if {[llength $vals] == 0} {
-        error "wrong # args: should be \"- value ?value ...?\""
-    }
-    MkNumber [::tcl::mathop::- {*}$vals]
+    MkNumber [::tcl::mathop::- [$num numval] {*}$vals]
 }
 
 
 reg / ::constcl::/
 
-proc ::constcl::/ {args} {
+proc ::constcl::/ {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(/ num ...)"
     }
-    if {[llength $vals] == 0} {
-        error "wrong # args: should be \"/ value ?value ...?\""
-    }
-    MkNumber [::tcl::mathop::/ {*}$vals]
+    MkNumber [::tcl::mathop::/ [$num numval] {*}$vals]
 }
+
 
 
 
 reg abs ::constcl::abs
 
-proc ::constcl::abs {val} {
-    if {[number? $val] eq "#t"} {
-        if {[$val negative?] eq "#t"} {
-            return [MkNumber [expr {[$val numval] * -1}]]
+proc ::constcl::abs {num} {
+    if {[number? $num] eq "#t"} {
+        if {[$num negative?] eq "#t"} {
+            return [MkNumber [expr {[$num numval] * -1}]]
         } else {
-            return $val
+            return $num
         }
     } else {
-        error "NUMBER expected\n(abs [$val show])"
+        error "NUMBER expected\n(abs [$num show])"
     }
 }
 
 
 
+
 reg quotient
 
-proc ::constcl::quotient {val1 val2} {
-    set q [::tcl::mathop::/ [$val1 numval] [$val2 numval]]
+proc ::constcl::quotient {num1 num2} {
+    set q [::tcl::mathop::/ [$num1 numval] [$num2 numval]]
     if {$q > 0} {
         return [MkNumber [::tcl::mathfunc::floor $q]]
     } elseif {$q < 0} {
@@ -1256,11 +1290,12 @@ proc ::constcl::quotient {val1 val2} {
 }
 
 
+
 reg remainder
 
-proc ::constcl::remainder {val1 val2} {
-    set n [::tcl::mathop::% [[abs $val1] numval] [[abs $val2] numval]]
-    if {[$val1 negative?] eq "#t"} {
+proc ::constcl::remainder {num1 num2} {
+    set n [::tcl::mathop::% [[abs $num1] numval] [[abs $num2] numval]]
+    if {[$num1 negative?] eq "#t"} {
         set n -$n
     }
     return [MkNumber $n]
@@ -1269,8 +1304,8 @@ proc ::constcl::remainder {val1 val2} {
 
 reg modulo
 
-proc ::constcl::modulo {val1 val2} {
-    return [MkNumber [::tcl::mathop::% [$val1 numval] [$val2 numval]]]
+proc ::constcl::modulo {num1 num2} {
+    return [MkNumber [::tcl::mathop::% [$num1 numval] [$num2 numval]]]
 }
 
 
@@ -1291,50 +1326,51 @@ proc ::constcl::denominator {q} {
 }
 
 
+
 reg floor ::constcl::floor
 
-proc ::constcl::floor {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::floor [$val numval]]
+proc ::constcl::floor {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::floor [$num numval]]
     } else {
-        error "NUMBER expected\n(floor [$val show])"
+        error "NUMBER expected\n(floor [$num show])"
     }
 }
 
 
 reg ceiling ::constcl::ceiling
 
-proc ::constcl::ceiling {x} {
-    if {[number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::ceil [$x numval]]
+proc ::constcl::ceiling {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
-        error "NUMBER expected\n(ceiling [$x show])"
+        error "NUMBER expected\n(ceiling [$num show])"
     }
 }
 
 
 reg truncate ::constcl::truncate
 
-proc ::constcl::truncate {x} {
-    if {[number? $x] eq "#t"} {
-        if {[$x negative?] eq "#t"} {
-            MkNumber [::tcl::mathfunc::ceil [$x numval]]
+proc ::constcl::truncate {num} {
+    if {[number? $num] eq "#t"} {
+        if {[$num negative?] eq "#t"} {
+            MkNumber [::tcl::mathfunc::ceil [$num numval]]
         } else {
-            MkNumber [::tcl::mathfunc::floor [$x numval]]
+            MkNumber [::tcl::mathfunc::floor [$num numval]]
         }
     } else {
-        error "NUMBER expected\n(truncate [$x show])"
+        error "NUMBER expected\n(truncate [$num show])"
     }
 }
 
 
 reg round ::constcl::round
 
-proc ::constcl::round {x} {
-    if {[number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::round [$x numval]]
+proc ::constcl::round {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::round [$num numval]]
     } else {
-        error "NUMBER expected\n(round [$x show])"
+        error "NUMBER expected\n(round [$num show])"
     }
 }
 
@@ -1344,76 +1380,78 @@ proc ::constcl::rationalize {x y} {
 }
 
 
+
+
 reg exp ::constcl::exp
 
-proc ::constcl::exp {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::exp [$val numval]]
+proc ::constcl::exp {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::exp [$num numval]]
     } else {
-        error "NUMBER expected\n(exp [$val show])"
+        error "NUMBER expected\n(exp [$num show])"
     }
 }
 
 
 reg log ::constcl::log
 
-proc ::constcl::log {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::log [$val numval]]
+proc ::constcl::log {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::log [$num numval]]
     } else {
-        error "NUMBER expected\n(log [$val show])"
+        error "NUMBER expected\n(log [$num show])"
     }
 }
 
 
 reg sin ::constcl::sin
 
-proc ::constcl::sin {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sin [$val numval]]
+proc ::constcl::sin {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sin [$num numval]]
     } else {
-        error "NUMBER expected\n(sin [$val show])"
+        error "NUMBER expected\n(sin [$num show])"
     }
 }
 
 reg cos ::constcl::cos
 
-proc ::constcl::cos {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::cos [$val numval]]
+proc ::constcl::cos {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::cos [$num numval]]
     } else {
-        error "NUMBER expected\n(cos [$val show])"
+        error "NUMBER expected\n(cos [$num show])"
     }
 }
 
 reg tan ::constcl::tan
 
-proc ::constcl::tan {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::tan [$val numval]]
+proc ::constcl::tan {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::tan [$num numval]]
     } else {
-        error "NUMBER expected\n(tan [$val show])"
+        error "NUMBER expected\n(tan [$num show])"
     }
 }
 
 
 reg asin ::constcl::asin
 
-proc ::constcl::asin {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::asin [$val numval]]
+proc ::constcl::asin {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::asin [$num numval]]
     } else {
-        error "NUMBER expected\n(asin [$val show])"
+        error "NUMBER expected\n(asin [$num show])"
     }
 }
 
 reg acos ::constcl::acos
 
-proc ::constcl::acos {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::acos [$val numval]]
+proc ::constcl::acos {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::acos [$num numval]]
     } else {
-        error "NUMBER expected\n(acos [$val show])"
+        error "NUMBER expected\n(acos [$num show])"
     }
 }
 
@@ -1421,43 +1459,45 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
-        set val [lindex $args 0]
-        if {[number? $val] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan [$val numval]]
+        set num [lindex $args 0]
+        if {[number? $num] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan [$num numval]]
         } else {
-            error "NUMBER expected\n(atan [$val show])"
+            error "NUMBER expected\n(atan [$num show])"
         }
     } else {
-        lassign $args val1 val2
-        if {[number? $val1] eq "#t" && [::constcl::number? $val2] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan2 [$val1 numval] [$val2 numval]]
+        lassign $args num1 num2
+        if {[number? $num1] eq "#t" && [::constcl::number? $num2] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
         } else {
-            error "NUMBER expected\n(atan [$val1 show] [$val2 show])"
+            error "NUMBER expected\n(atan [$num1 show] [$num2 show])"
         }
     }
 }
+
 
 
 
 reg sqrt ::constcl::sqrt
 
-proc ::constcl::sqrt {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sqrt [$val numval]]
+proc ::constcl::sqrt {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sqrt [$num numval]]
     } else {
-        error "NUMBER expected\n(sqrt [$val show])"
+        error "NUMBER expected\n(sqrt [$num show])"
     }
 }
 
 
 
+
 reg expt ::constcl::expt
 
-proc ::constcl::expt {val1 val2} {
-    if {[number? $val1] eq "#t" && [number? $val2] eq "#t"} {
-        MkNumber [::tcl::mathfunc::pow [$val1 numval] [$val2 numval]]
+proc ::constcl::expt {num1 num2} {
+    if {[number? $num1] eq "#t" && [number? $num2] eq "#t"} {
+        MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
     } else {
-        error "NUMBER expected\n(expt [$val1 show] [$val2 show])"
+        error "NUMBER expected\n(expt [$num1 show] [$num2 show])"
     }
 }
 
@@ -1495,27 +1535,28 @@ proc ::constcl::inexact->exact {z} {
 }
 
 
+
 reg number->string ::constcl::number->string
 
-proc ::constcl::number->string {val args} {
+proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        if {[number? $val] eq "#t"} {
-            return [MkString [$val numval]]
+        if {[number? $num] eq "#t"} {
+            return [MkString [$num numval]]
         } else {
-            error "NUMBER expected\n(string->number [$val show])"
+            error "NUMBER expected\n(string->number [$num show])"
         }
     } else {
         lassign $args radix
-        if {[number? $val] eq "#t"} {
+        if {[number? $num] eq "#t"} {
             if {[$radix numval] == 10} {
-                return [MkString [$val numval]]
+                return [MkString [$num numval]]
             } elseif {[$radix numval] in {2 8 16}} {
-                return [MkString [base [$radix numval] [$val numval]]]
+                return [MkString [base [$radix numval] [$num numval]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
         } else {
-            error "NUMBER expected\n(string->number [$val show])"
+            error "NUMBER expected\n(string->number [$num show])"
         }
     }
 }
@@ -1533,6 +1574,7 @@ proc base {base number} {
     if $negative {set res -$res}
     set res
 }
+
 
 
 reg string->number ::constcl::string->number
@@ -1607,6 +1649,7 @@ proc ::constcl::MkBoolean {v} {
 
 
 
+
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {val} {
@@ -1618,6 +1661,7 @@ proc ::constcl::boolean? {val} {
         return #f
     }
 }
+
 
 
 
@@ -1712,6 +1756,7 @@ proc ::constcl::MkChar {v} {
 }
 
 
+
 reg char? ::constcl::char?
 
 proc ::constcl::char? {val} {
@@ -1726,155 +1771,158 @@ proc ::constcl::char? {val} {
 
 
 
+
 reg char=? ::constcl::char=?
 
-proc ::constcl::char=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {$c1 eq $c2} {
+proc ::constcl::char=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {$char1 eq $char2} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char<? ::constcl::char<?
 
-proc ::constcl::char<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] < [$c2 char]} {
+proc ::constcl::char<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] < [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char>? ::constcl::char>?
 
-proc ::constcl::char>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] > [$c2 char]} {
+proc ::constcl::char>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] > [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char<=? ::constcl::char<=?
 
-proc ::constcl::char<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] <= [$c2 char]} {
+proc ::constcl::char<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] <= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char>=? ::constcl::char>=?
 
-proc ::constcl::char>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[$c1 char] >= [$c2 char]} {
+proc ::constcl::char>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[$char1 char] >= [$char2 char]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
 
 
 
+
 reg char-ci=? ::constcl::char-ci=?
 
-proc ::constcl::char-ci=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] eq [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char-ci<? ::constcl::char-ci<?
 
-proc ::constcl::char-ci<? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] < [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char-ci>? ::constcl::char-ci>?
 
-proc ::constcl::char-ci>? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] > [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char-ci<=? ::constcl::char-ci<=?
 
-proc ::constcl::char-ci<=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] <= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci<=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char<=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
     }
 }
 
 
 reg char-ci>=? ::constcl::char-ci>=?
 
-proc ::constcl::char-ci>=? {c1 c2} {
-    if {[char? $c1] eq "#t" && [char? $c2] eq "#t"} {
-        if {[::string tolower [$c1 char]] >= [::string tolower [$c2 char]]} {
+proc ::constcl::char-ci>=? {char1 char2} {
+    if {[char? $char1] eq "#t" && [char? $char2] eq "#t"} {
+        if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "CHAR expected\n(char>=? [$c1 show] [$c2 show])"
+        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
     }
 }
+
 
 
 
@@ -1934,11 +1982,13 @@ proc ::constcl::char-lower-case? {char} {
 
 
 
+
 reg char->integer
 
 proc ::constcl::char->integer {char} {
     return [MkNumber [scan [$char char] %c]]
 }
+
 
 reg integer->char
 
@@ -1951,6 +2001,7 @@ proc ::constcl::integer->char {int} {
         return [MkChar #\\[format %c [$int numval]]]
     }
 }
+
 
 
 
@@ -2008,14 +2059,15 @@ oo::class create ::constcl::Procedure {
 
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 
+
 reg procedure? ::constcl::procedure?
 
-proc ::constcl::procedure? {obj} {
-    if {[info object isa typeof $obj ::constcl::Procedure]} {
+proc ::constcl::procedure? {val} {
+    if {[info object isa typeof $val ::constcl::Procedure]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Procedure]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
         return #t
-    } elseif {[::string match "::constcl::*" $obj]} {
+    } elseif {[::string match "::constcl::*" $val]} {
         return #t
     } else {
         return #f
@@ -2024,11 +2076,12 @@ proc ::constcl::procedure? {obj} {
 
 
 
+
 reg apply ::constcl::apply
 
-proc ::constcl::apply {proc vals} {
-    if {[procedure? $proc] eq "#t"} {
-        invoke $proc $vals
+proc ::constcl::apply {pr vals} {
+    if {[procedure? $pr] eq "#t"} {
+        invoke $pr $vals
     } else {
         error "PROCEDURE expected\n(apply [$proc show] ...)"
     }
@@ -2036,10 +2089,11 @@ proc ::constcl::apply {proc vals} {
 
 
 
+
 reg map ::constcl::map
 
-proc ::constcl::map {proc args} {
-    if {[procedure? $proc] eq "#t"} {
+proc ::constcl::map {pr args} {
+    if {[procedure? $pr] eq "#t"} {
         set arglists $args
         for {set i 0} {$i < [llength $arglists]} {incr i} {
             lset arglists $i [splitlist [lindex $arglists $i]]
@@ -2050,13 +2104,14 @@ proc ::constcl::map {proc args} {
             for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
                 lappend arguments [lindex $arglists $arg $item]
             }
-            lappend res [invoke $proc [list {*}$arguments]]
+            lappend res [invoke $pr [list {*}$arguments]]
         }
         return [list {*}$res]
     } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
+        error "PROCEDURE expected\n(apply [$pr show] ...)"
     }
 }
+
 
 
 
@@ -2234,12 +2289,13 @@ oo::class create ::constcl::Pair {
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 
+
 reg pair? ::constcl::pair?
 
-proc ::constcl::pair? {obj} {
-    if {[info object isa typeof $obj ::constcl::Pair]} {
+proc ::constcl::pair? {val} {
+    if {[info object isa typeof $val ::constcl::Pair]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Pair]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
         return #t
     } else {
         return #f
@@ -2247,11 +2303,12 @@ proc ::constcl::pair? {obj} {
 }
 
 
-proc ::constcl::show-pair {obj} {
+
+proc ::constcl::show-pair {pair} {
     # take an object and print the car and the cdr of the stored value
     set str {}
-    set a [car $obj]
-    set d [cdr $obj]
+    set a [car $pair]
+    set d [cdr $pair]
     # print car
     ::append str [$a show]
     if {[pair? $d] eq "#t"} {
@@ -2271,6 +2328,7 @@ proc ::constcl::show-pair {obj} {
 
 
 
+
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
@@ -2279,18 +2337,20 @@ proc ::constcl::cons {car cdr} {
 
 
 
+
 reg car ::constcl::car
 
-proc ::constcl::car {obj} {
-    $obj car
+proc ::constcl::car {pair} {
+    $pair car
 }
+
 
 
 
 reg cdr ::constcl::cdr
 
-proc ::constcl::cdr {obj} {
-    $obj cdr
+proc ::constcl::cdr {pair} {
+    $pair cdr
 }
 
 
@@ -2327,57 +2387,62 @@ foreach ads {
 } {
     reg c${ads}r ::constcl::c${ads}r
 
-    proc ::constcl::c${ads}r {obj} "
+    proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set obj \[car \$obj\]
+                set pair \[car \$pair\]
             } else {
-                set obj \[cdr \$obj\]
+                set pair \[cdr \$pair\]
             }
         }
-        return \$obj
+        return \$pair
     "
 
 }
 
 
+
 reg set-car! ::constcl::set-car!
 
-proc ::constcl::set-car! {obj val} {
-    $obj set-car! $val
+proc ::constcl::set-car! {pair val} {
+    $pair set-car! $val
 }
+
 
 
 
 reg set-cdr! ::constcl::set-cdr!
 
-proc ::constcl::set-cdr! {obj val} {
-    $obj set-cdr! $val
+proc ::constcl::set-cdr! {pair val} {
+    $pair set-cdr! $val
 }
 
 
 
-proc ::constcl::listp {obj} {
+
+proc ::constcl::listp {pair} {
     upvar visited visited
-    if {$obj in $visited} {
+    if {$pair in $visited} {
         return #f
     }
-    lappend visited $obj
-    if {[null? $obj] eq "#t"} {
+    lappend visited $pair
+    if {[null? $pair] eq "#t"} {
         return #t
-    } elseif {[pair? $obj] eq "#t"} {
-        return [listp [cdr $obj]]
+    } elseif {[pair? $pair] eq "#t"} {
+        return [listp [cdr $pair]]
     } else {
         return #f
     }
 }
 
+
 reg list? ::constcl::list?
 
-proc ::constcl::list? {obj} {
+proc ::constcl::list? {pair} {
     set visited {}
-    return [listp $obj]
+    return [listp $pair]
 }
+
 
 
 
@@ -2397,19 +2462,21 @@ proc ::constcl::list {args} {
 
 
 
-proc ::constcl::length-helper {obj} {
-    if {[null? $obj] eq "#t"} {
+
+proc ::constcl::length-helper {pair} {
+    if {[null? $pair] eq "#t"} {
         return 0
     } else {
-        return [expr {1 + [length-helper [cdr $obj]]}]
+        return [expr {1 + [length-helper [cdr $pair]]}]
     }
 }
 
+
 reg length ::constcl::length
 
-proc ::constcl::length {obj} {
-    if {[list? $obj] eq "#t"} {
-        MkNumber [length-helper $obj]
+proc ::constcl::length {pair} {
+    if {[list? $pair] eq "#t"} {
+        MkNumber [length-helper $pair]
     } else {
         error "LIST expected\n(list lst)"
     }
@@ -2417,16 +2484,18 @@ proc ::constcl::length {obj} {
 
 
 
-proc ::constcl::copy-list {obj next} {
+
+proc ::constcl::copy-list {pair next} {
     # TODO only fresh conses in the direct chain to NIL
-    if {[null? $obj] eq "#t"} {
+    if {[null? $pair] eq "#t"} {
         set next
-    } elseif {[null? [cdr $obj]] eq "#t"} {
-        cons [car $obj] $next
+    } elseif {[null? [cdr $pair]] eq "#t"} {
+        cons [car $pair] $next
     } else {
-        cons [car $obj] [copy-list [cdr $obj] $next]
+        cons [car $pair] [copy-list [cdr $pair] $next]
     }
 }
+
 
 reg append ::constcl::append
 
@@ -2440,44 +2509,48 @@ proc ::constcl::append {args} {
 
 
 
+
 reg reverse ::constcl::reverse
 
-proc ::constcl::reverse {obj} {
-    list {*}[lreverse [splitlist $obj]]
+proc ::constcl::reverse {vals} {
+    list {*}[lreverse [splitlist $vals]]
 }
+
 
 
 
 reg list-tail ::constcl::list-tail
 
-proc ::constcl::list-tail {obj k} {
+proc ::constcl::list-tail {vals k} {
     if {[zero? $k] eq "#t"} {
-        return $obj
+        return $vals
     } else {
-        list-tail [cdr $obj] [- $k #1]
+        list-tail [cdr $vals] [- $k #1]
     }
 }
 
 
 
+
 reg list-ref ::constcl::list-ref
 
-proc ::constcl::list-ref {obj k} {
-    car [list-tail $obj $k]
+proc ::constcl::list-ref {vals k} {
+    car [list-tail $vals $k]
 }
 
 
 
 
-proc ::constcl::member-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+
+proc ::constcl::member-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[$epred $obj1 [car $obj2]] eq "#t"} {
-                return $obj2
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[$epred $val1 [car $val2]] eq "#t"} {
+                return $val2
             } else {
-                return [member-proc $epred $obj1 [cdr $obj2]]
+                return [member-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -2486,40 +2559,43 @@ proc ::constcl::member-proc {epred obj1 obj2} {
             eqv? { set name "memv" }
             equal? { set name "member" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
 
+
 reg memq ::constcl::memq
 
-proc ::constcl::memq {obj1 obj2} {
-    return [member-proc eq? $obj1 $obj2]
+proc ::constcl::memq {val1 val2} {
+    return [member-proc eq? $val1 $val2]
 }
+
 
 
 reg memv ::constcl::memv
 
-proc ::constcl::memv {obj1 obj2} {
-    return [member-proc eqv? $obj1 $obj2]
+proc ::constcl::memv {val1 val2} {
+    return [member-proc eqv? $val1 $val2]
 }
+
 
 reg member ::constcl::member
 
-proc ::constcl::member {obj1 obj2} {
-    return [member-proc equal? $obj1 $obj2]
+proc ::constcl::member {val1 val2} {
+    return [member-proc equal? $val1 $val2]
 }
 
 
 
-proc ::constcl::assoc-proc {epred obj1 obj2} {
-    if {[list? $obj2] eq "#t"} {
-        if {[null? $obj2] eq "#t"} {
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] eq "#t"} {
+        if {[null? $val2] eq "#t"} {
             return #f
-        } elseif {[pair? $obj2] eq "#t"} {
-            if {[pair? [car $obj2]] eq "#t" && [$epred $obj1 [caar $obj2]] eq "#t"} {
-                return [car $obj2]
+        } elseif {[pair? $val2] eq "#t"} {
+            if {[pair? [car $val2]] eq "#t" && [$epred $val1 [caar $val2]] eq "#t"} {
+                return [car $val2]
             } else {
-                return [assoc-proc $epred $obj1 [cdr $obj2]]
+                return [assoc-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
@@ -2528,27 +2604,31 @@ proc ::constcl::assoc-proc {epred obj1 obj2} {
             eqv? { set name "assv" }
             equal? { set name "assoc" }
         }
-        error "LIST expected\n($name [$obj1 show] [$obj2 show])"
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
 
+
 reg assq
 
-proc ::constcl::assq {obj1 obj2} {
-    return [assoc-proc eq? $obj1 $obj2]
+proc ::constcl::assq {val1 val2} {
+    return [assoc-proc eq? $val1 $val2]
 }
+
 
 
 reg assv
 
-proc ::constcl::assv {obj1 obj2} {
-    return [assoc-proc eqv? $obj1 $obj2]
+proc ::constcl::assv {val1 val2} {
+    return [assoc-proc eqv? $val1 $val2]
 }
+
+
 
 reg assoc
 
-proc ::constcl::assoc {obj1 obj2} {
-    return [assoc-proc equal? $obj1 $obj2]
+proc ::constcl::assoc {val1 val2} {
+    return [assoc-proc equal? $val1 $val2]
 }
 
 
@@ -2593,12 +2673,13 @@ oo::class create ::constcl::String {
 
 interp alias {} MkString {} ::constcl::String new
 
+
 reg string? ::constcl::string?
 
-proc ::constcl::string? {obj} {
-    if {[info object isa typeof $obj ::constcl::String]} {
+proc ::constcl::string? {val} {
+    if {[info object isa typeof $val ::constcl::String]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::String]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
         return #t
     } else {
         return #f
@@ -2606,20 +2687,22 @@ proc ::constcl::string? {obj} {
 }
 
 
-proc ::constcl::find-string-index {v} {
-    set s -1
+
+proc ::constcl::find-string-index {str} {
+    set index -1
     for {set i 0} {$i < $::constcl::S} {incr i} {
-        if {[::string equal [lindex $::constcl::StrSto $i] $v]} {
-            set s $i
+        if {[::string equal [lindex $::constcl::StrSto $i] $str]} {
+            set index $i
         }
     }
-    if {$s == -1} {
-        set s $::constcl::S
-        lset ::constcl::StrSto $s $v
+    if {$index == -1} {
+        set index $::constcl::S
+        lset ::constcl::StrSto $index $str
         incr ::constcl::S
     }
-    set s
+    set index
 }
+
 
 
 
@@ -2629,10 +2712,11 @@ proc ::constcl::make-string {k args} {
     if {[llength $args] == 0} {
         return [MkString [::string repeat " " [$k numval]]]
     } else {
-        lassign $args c
-        return [MkString [::string repeat [$c char] [$k numval]]]
+        lassign $args char
+        return [MkString [::string repeat [$char char] [$k numval]]]
     }
 }
+
 
 
 
@@ -2652,6 +2736,7 @@ proc ::constcl::string {args} {
 
 
 
+
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
@@ -2661,6 +2746,7 @@ proc ::constcl::string-length {str} {
         error "STRING expected\n(string-length [$str show])"
     }
 }
+
 
 
 
@@ -2678,6 +2764,7 @@ proc ::constcl::string-ref {str k} {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
 }
+
 
 
 
@@ -2703,154 +2790,157 @@ proc ::constcl::string-set! {str k char} {
 
 
 
+
+
 reg string=? ::constcl::string=?
 
-proc ::constcl::string=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] eq [$s2 value]} {
+proc ::constcl::string=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] eq [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string=? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string-ci=? ::constcl::string-ci=?
 
-proc ::constcl::string-ci=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] eq [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci=? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string<? ::constcl::string<?
 
-proc ::constcl::string<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] < [$s2 value]} {
+proc ::constcl::string<? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] < [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string<? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string<? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string-ci<? ::constcl::string-ci<?
 
-proc ::constcl::string-ci<? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] < [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci<? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci<? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string>? ::constcl::string>?
 
-proc ::constcl::string>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] > [$s2 value]} {
+proc ::constcl::string>? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] > [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string>? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string>? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string-ci>? ::constcl::string-ci>?
 
-proc ::constcl::string-ci>? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] > [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci>? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci>? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string<=? ::constcl::string<=?
 
-proc ::constcl::string<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] <= [$s2 value]} {
+proc ::constcl::string<=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] <= [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string<=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string<=? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string-ci<=? ::constcl::string-ci<=?
 
-proc ::constcl::string-ci<=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] <= [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci<=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci<=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci<=? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string>=? ::constcl::string>=?
 
-proc ::constcl::string>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[$s1 value] >= [$s2 value]} {
+proc ::constcl::string>=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[$str1 value] >= [$str2 value]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string>=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string>=? [$str1 show] [$str2 show])"
     }
 }
 
 
 reg string-ci>=? ::constcl::string-ci>=?
 
-proc ::constcl::string-ci>=? {s1 s2} {
-    if {[::constcl::string? $s1] eq "#t" && [::constcl::string? $s2] eq "#t"} {
-        if {[::string tolower [$s1 value]] >= [::string tolower [$s2 value]]} {
+proc ::constcl::string-ci>=? {str1 str2} {
+    if {[::constcl::string? $str1] eq "#t" && [::constcl::string? $str2] eq "#t"} {
+        if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
             return #t
         } else {
             return #f
         }
     } else {
-        error "STRING expected\n(string-ci>=? [$s1 show] [$s2 show])"
+        error "STRING expected\n(string-ci>=? [$str1 show] [$str2 show])"
     }
 }
+
 
 
 
@@ -2859,7 +2949,7 @@ reg substring ::constcl::substring
 proc ::constcl::substring {str start end} {
     if {[::constcl::string? $str] eq "#t"} {
         if {[::constcl::number? $start] eq "#t" && [::constcl::number? $end] eq "#t"} {
-            return [MkString [$str substring [$start value] [$end value]]]
+            return [MkString [$str substring [$start numval] [$end numval]]]
         } else {
             error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
         }
@@ -2867,6 +2957,7 @@ proc ::constcl::substring {str start end} {
         error "STRING expected\n(substring [$str show] [$start show] [$end show])"
     }
 }
+
 
 
 
@@ -2878,6 +2969,7 @@ proc ::constcl::string-append {args} {
 
 
 
+
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
@@ -2886,11 +2978,13 @@ proc ::constcl::string->list {str} {
 
 
 
+
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
     MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
+
 
 
 
@@ -2903,6 +2997,7 @@ proc ::constcl::string-copy {str} {
         error "STRING expected\n(string-copy [$str show])"
     }
 }
+
 
 
 
@@ -2951,12 +3046,13 @@ proc ::constcl::MkSymbol {n} {
     return [::constcl::Symbol new $n]
 }
 
+
 reg symbol? ::constcl::symbol?
 
-proc ::constcl::symbol? {obj} {
-    if {[info object isa typeof $obj ::constcl::Symbol]} {
+proc ::constcl::symbol? {val} {
+    if {[info object isa typeof $val ::constcl::Symbol]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Symbol]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
         return #t
     } else {
         return #f
@@ -2965,21 +3061,23 @@ proc ::constcl::symbol? {obj} {
 
 
 
+
 reg symbol->string ::constcl::symbol->string
 
-proc ::constcl::symbol->string {obj} {
-    if {[symbol? $obj] eq "#t"} {
-        if {![$obj case-constant]} {
-            set str [MkString [::string tolower [$obj name]]]
+proc ::constcl::symbol->string {sym} {
+    if {[symbol? $sym] eq "#t"} {
+        if {![$sym case-constant]} {
+            set str [MkString [::string tolower [$sym name]]]
         } else {
-            set str [MkString [$obj name]]
+            set str [MkString [$sym name]]
         }
         $str mkconstant
         return $str
     } else {
-        error "SYMBOL expected\n(symbol->string [$obj show])"
+        error "SYMBOL expected\n(symbol->string [$sym show])"
     }
 }
+
 
 
 
@@ -3042,17 +3140,19 @@ proc ::constcl::MkVector {v} {
     return [::constcl::Vector new $v]
 }
 
+
 reg vector? ::constcl::vector?
 
-proc ::constcl::vector? {obj} {
-    if {[info object isa typeof $obj ::constcl::Vector]} {
+proc ::constcl::vector? {val} {
+    if {[info object isa typeof $val ::constcl::Vector]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] ::constcl::Vector]} {
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
         return #t
     } else {
         return #f
     }
 }
+
 
 
 
@@ -3069,11 +3169,13 @@ proc ::constcl::make-vector {k args} {
 }
 
 
+
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
     MkVector $args
 }
+
 
 
 
@@ -3086,6 +3188,7 @@ proc ::constcl::vector-length {vec} {
         error "VECTOR expected\n(vector-length [$vec show])"
     }
 }
+
 
 
 
@@ -3105,19 +3208,21 @@ proc ::constcl::vector-ref {vec k} {
 
 
 
+
 reg vector-set! ::constcl::vector-set!
 
-proc ::constcl::vector-set! {vec k obj} {
+proc ::constcl::vector-set! {vec k val} {
     if {[vector? $vec] eq "#t"} {
         if {[number? $k] eq "#t"} {
-            return [$vec set! [$k numval] $obj]
+            return [$vec set! [$k numval] $val]
         } else {
-            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
         }
     } else {
-        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$obj show])"
+        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$val show])"
     }
 }
+
 
 
 
@@ -3129,11 +3234,13 @@ proc ::constcl::vector->list {vec} {
 
 
 
+
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
     vector {*}[splitlist $list]
 }
+
 
 
 
@@ -3232,10 +3339,11 @@ interp alias {} #NONE {} [::constcl::None new]
 dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 
 
+
 reg atom? ::constcl::atom?
 
-proc ::constcl::atom? {obj} {
-    if {[symbol? $obj] eq "#t" || [number? $obj] eq "#t" || [string? $obj] eq "#t" || [char? $obj] eq "#t" || [boolean? $obj] eq "#t" || [vector? $obj] eq "#t"} {
+proc ::constcl::atom? {val} {
+    if {[symbol? $val] eq "#t" || [number? $val] eq "#t" || [string? $val] eq "#t" || [char? $val] eq "#t" || [boolean? $val] eq "#t" || [vector? $val] eq "#t"} {
         return #t
     } else {
         return #f
