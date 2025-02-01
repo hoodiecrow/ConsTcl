@@ -833,7 +833,7 @@ proc ::constcl::expand-macro {env} {
 `expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
 has 0 or 1 elements, and a nested `if` construct otherwise.
 
-<table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>exps</td><td></td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-and {exps} {
@@ -1187,7 +1187,7 @@ The third member in the great triad is `write`. As long as the object
 given to it isn't `#NONE`, it passes it to `write-value` and prints
 a newline.
 
-![The write procedure](/images/write.png)
+<table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg write ::constcl::write
@@ -1203,7 +1203,7 @@ proc ::constcl::write {val args} {
 `write-value` simply calls an object's `write` method, letting the object
 write itself.
 
-![The write-value procedure](/images/write-value.png)
+<table border=1><thead><tr><th colspan=2 align="left">write-value (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::write-value {val} {
@@ -1213,7 +1213,7 @@ proc ::constcl::write-value {val} {
 
 The `display` procedure is like `write` but doesn't print a newline.
 
-![The display procedure](/images/display.png)
+<table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg display ::constcl::display
@@ -1226,13 +1226,13 @@ proc ::constcl::display {val args} {
 
 The `write-pair` procedure prints a Pair object.
 
-![The write-pair procedure](/images/write-pair.png)
+<table border=1><thead><tr><th colspan=2 align="left">write-pair (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::constcl::write-pair {val} {
+proc ::constcl::write-pair {pair} {
     # take an object and print the car and the cdr of the stored value
-    set a [car $val]
-    set d [cdr $val]
+    set a [car $pair]
+    set d [cdr $pair]
     # print car
     write-value $a
     if {[pair? $d] eq "#t"} {
@@ -1260,29 +1260,29 @@ Of the three equivalence predicates, `eq` generally tests for identity (with exc
 and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
 identity), and `equal` tests for whether the output strings are equal.
 
-![The equivalence predicates](/images/equiv-pred.png)
+<table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg eq? ::constcl::eq?
 
-proc ::constcl::eq? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eq? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -1293,24 +1293,24 @@ proc ::constcl::eq? {obj1 obj2} {
 ```
 reg eqv? ::constcl::eqv?
 
-proc ::constcl::eqv? {obj1 obj2} {
-    if {[boolean? $obj1] eq "#t" && [boolean? $obj2] eq "#t" && $obj1 eq $obj2} {
+proc ::constcl::eqv? {val1 val2} {
+    if {[boolean? $val1] eq "#t" && [boolean? $val2] eq "#t" && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $obj1] eq "#t" && [symbol? $obj2] eq "#t" && [$obj1 name] eq [$obj2 name]} {
+    } elseif {[symbol? $val1] eq "#t" && [symbol? $val2] eq "#t" && [$val1 name] eq [$val2 name]} {
         return #t
-    } elseif {[number? $obj1] eq "#t" && [number? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[number? $val1] eq "#t" && [number? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[char? $obj1] eq "#t" && [char? $obj2] eq "#t" && [$obj1 char] eq [$obj2 char]} {
+    } elseif {[char? $val1] eq "#t" && [char? $val2] eq "#t" && [$val1 char] eq [$val2 char]} {
         return #t
-    } elseif {[null? $obj1] eq "#t" && [null? $obj2] eq "#t"} {
+    } elseif {[null? $val1] eq "#t" && [null? $val2] eq "#t"} {
         return #t
-    } elseif {[pair? $obj1] eq "#t" && [pair? $obj2] eq "#t" && [$obj1 car] eq [$obj2 car] && [$obj1 cdr] eq [$obj2 cdr]} {
+    } elseif {[pair? $val1] eq "#t" && [pair? $val2] eq "#t" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $obj1] eq "#t" && [string? $obj2] eq "#t" && [$obj1 index] eq [$obj2 index]} {
+    } elseif {[string? $val1] eq "#t" && [string? $val2] eq "#t" && [$val1 index] eq [$val2 index]} {
         return #t
-    } elseif {[vector? $obj1] eq "#t" && [vector? $obj2] eq "#t" && [$obj1 value] eq [$obj2 value]} {
+    } elseif {[vector? $val1] eq "#t" && [vector? $val2] eq "#t" && [$val1 value] eq [$val2 value]} {
         return #t
-    } elseif {[procedure? $obj1] eq "#t" && [procedure? $obj2] eq "#t" && $obj1 eq $obj2} {
+    } elseif {[procedure? $val1] eq "#t" && [procedure? $val2] eq "#t" && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -1321,8 +1321,8 @@ proc ::constcl::eqv? {obj1 obj2} {
 ```
 reg equal? ::constcl::equal?
 
-proc ::constcl::equal? {obj1 obj2} {
-    if {[$obj1 show] eq [$obj2 show]} {
+proc ::constcl::equal? {val1 val2} {
+    if {[$val1 show] eq [$val2 show]} {
         return #t
     } else {
         return #f
@@ -1369,7 +1369,8 @@ interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 `number?` recognizes a number by object type, not by content.
 
-![The number? procedure](/images/numberp.png)
+<table border=1><thead><tr><th colspan=2 align="left">number? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg number? ::constcl::number?
 
@@ -1389,6 +1390,8 @@ The operators `=`, `<`, `>`, `<=`, and `>=` are implemented. They return Lisp tr
 not Tcl truth.
 
 ![The mathematical comparison operators](/images/math-comp-ops.png)
+
+<table border=1><thead><tr><th colspan=2 align="left">=, &lt;, &gt;, &lt;=, &gt;= (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of numbers</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg = ::constcl::=
@@ -1482,16 +1485,16 @@ proc ::constcl::>= {args} {
 
 The `zero?` predicate tests if a given number is equal to zero.
 
-![The zero? procedure](/images/zerop.png)
+<table border=1><thead><tr><th colspan=2 align="left">zero? (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg zero? ::constcl::zero?
 
-proc ::constcl::zero? {val} {
-    if {[number? $val] eq "#t"} {
-        return [$val zero?]
+proc ::constcl::zero? {num} {
+    if {[number? $num] eq "#t"} {
+        return [$num zero?]
     } else {
-        error "NUMBER expected\n(zero? [$val show])"
+        error "NUMBER expected\n(zero? [$num show])"
     }
 }
 ```
@@ -1500,16 +1503,16 @@ proc ::constcl::zero? {val} {
 The `positive?`/`negative?`/`even?`/`odd?` predicates test a number
 for those traits.
 
-![The pneo procedure](/images/pneo.png)
+<table border=1><thead><tr><th colspan=2 align="left">positive?, negative?, even?, odd? (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg positive? ::constcl::positive?
 
-proc ::constcl::positive? {val} {
-    if {[::constcl::number? $val] eq "#t"} {
-        return [$val positive?]
+proc ::constcl::positive? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num positive?]
     } else {
-        error "NUMBER expected\n(positive? [$val show])"
+        error "NUMBER expected\n(positive? [$num show])"
     }
 }
 ```
@@ -1518,11 +1521,11 @@ proc ::constcl::positive? {val} {
 ```
 reg negative? ::constcl::negative?
 
-proc ::constcl::negative? {val} {
-    if {[::constcl::number? $val] eq "#t"} {
-        return [$val negative?]
+proc ::constcl::negative? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num negative?]
     } else {
-        error "NUMBER expected\n(negative? [$val show])"
+        error "NUMBER expected\n(negative? [$num show])"
     }
 }
 ```
@@ -1531,11 +1534,11 @@ proc ::constcl::negative? {val} {
 ```
 reg even? ::constcl::even?
 
-proc ::constcl::even? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj even?]
+proc ::constcl::even? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num even?]
     } else {
-        error "NUMBER expected\n(even? [$obj show])"
+        error "NUMBER expected\n(even? [$num show])"
     }
 }
 ```
@@ -1544,11 +1547,11 @@ proc ::constcl::even? {obj} {
 ```
 reg odd? ::constcl::odd?
 
-proc ::constcl::odd? {obj} {
-    if {[::constcl::number? $obj] eq "#t"} {
-        return [$obj odd?]
+proc ::constcl::odd? {num} {
+    if {[::constcl::number? $num] eq "#t"} {
+        return [$num odd?]
     } else {
-        error "NUMBER expected\n(odd? [$obj show])"
+        error "NUMBER expected\n(odd? [$num show])"
     }
 }
 ```
@@ -1557,7 +1560,7 @@ proc ::constcl::odd? {obj} {
 The `max` function selects the largest number, and the `min` function
 selects the smallest number.
 
-![The maxmin procedure](/images/maxmin.png)
+<table border=1><thead><tr><th colspan=2 align="left">max, min (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg max ::constcl::max
@@ -1591,8 +1594,9 @@ The operators `+`, `*`, `-`, and `/` stand for the respective
 mathematical operations. They take a number of operands, but
 at least one for `-` and `/`.
 
-![The mathematical operators 1](/images/math-ops1.png)
-![The mathematical operators 2](/images/math-ops2.png)
+<table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>args</td><td>a Tcl list of numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">-, / (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>a Tcl list of numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg + ::constcl::+
@@ -1625,16 +1629,13 @@ proc ::constcl::* {args} {
 ```
 reg - ::constcl::-
 
-proc ::constcl::- {args} {
+proc ::constcl::- {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(- num ...)"
     }
-    if {[llength $vals] == 0} {
-        error "wrong # args: should be \"- value ?value ...?\""
-    }
-    MkNumber [::tcl::mathop::- {*}$vals]
+    MkNumber [::tcl::mathop::- [$num numval] {*}$vals]
 }
 ```
 
@@ -1642,36 +1643,33 @@ proc ::constcl::- {args} {
 ```
 reg / ::constcl::/
 
-proc ::constcl::/ {args} {
+proc ::constcl::/ {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(/ num ...)"
     }
-    if {[llength $vals] == 0} {
-        error "wrong # args: should be \"/ value ?value ...?\""
-    }
-    MkNumber [::tcl::mathop::/ {*}$vals]
+    MkNumber [::tcl::mathop::/ [$num numval] {*}$vals]
 }
 ```
 
 
 The `abs` function yields the absolute value of a number.
 
-![The abs function](/images/abs.png)
+<table border=1><thead><tr><th colspan=2 align="left">abs (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg abs ::constcl::abs
 
-proc ::constcl::abs {val} {
-    if {[number? $val] eq "#t"} {
-        if {[$val negative?] eq "#t"} {
-            return [MkNumber [expr {[$val numval] * -1}]]
+proc ::constcl::abs {num} {
+    if {[number? $num] eq "#t"} {
+        if {[$num negative?] eq "#t"} {
+            return [MkNumber [expr {[$num numval] * -1}]]
         } else {
-            return $val
+            return $num
         }
     } else {
-        error "NUMBER expected\n(abs [$val show])"
+        error "NUMBER expected\n(abs [$num show])"
     }
 }
 ```
@@ -1679,13 +1677,13 @@ proc ::constcl::abs {val} {
 
 `quotient` calculates the quotient between two numbers.
 
-![The quotient function](/images/quotient.png)
+<table border=1><thead><tr><th colspan=2 align="left">quotient (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg quotient
 
-proc ::constcl::quotient {val1 val2} {
-    set q [::tcl::mathop::/ [$val1 numval] [$val2 numval]]
+proc ::constcl::quotient {num1 num2} {
+    set q [::tcl::mathop::/ [$num1 numval] [$num2 numval]]
     if {$q > 0} {
         return [MkNumber [::tcl::mathfunc::floor $q]]
     } elseif {$q < 0} {
@@ -1699,27 +1697,27 @@ proc ::constcl::quotient {val1 val2} {
 `remainder` is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
 
-![The remainder function](/images/remainder.png)
+<table border=1><thead><tr><th colspan=2 align="left">remainder (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg remainder
 
-proc ::constcl::remainder {val1 val2} {
-    set n [::tcl::mathop::% [[abs $val1] numval] [[abs $val2] numval]]
-    if {[$val1 negative?] eq "#t"} {
+proc ::constcl::remainder {num1 num2} {
+    set n [::tcl::mathop::% [[abs $num1] numval] [[abs $num2] numval]]
+    if {[$num1 negative?] eq "#t"} {
         set n -$n
     }
     return [MkNumber $n]
 }
 ```
 
-![The modulo function](/images/modulo.png)
+<table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg modulo
 
-proc ::constcl::modulo {val1 val2} {
-    return [MkNumber [::tcl::mathop::% [$val1 numval] [$val2 numval]]]
+proc ::constcl::modulo {num1 num2} {
+    return [MkNumber [::tcl::mathop::% [$num1 numval] [$num2 numval]]]
 }
 ```
 
@@ -1751,16 +1749,16 @@ proc ::constcl::denominator {q} {
 `floor`, `ceiling`, `truncate`, and `round` are different methods for
 converting a real number to an integer.
 
-![The rounding functions](/images/rounding.png)
+<table border=1><thead><tr><th colspan=2 align="left">floor, ceiling, truncate, round (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg floor ::constcl::floor
 
-proc ::constcl::floor {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::floor [$val numval]]
+proc ::constcl::floor {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::floor [$num numval]]
     } else {
-        error "NUMBER expected\n(floor [$val show])"
+        error "NUMBER expected\n(floor [$num show])"
     }
 }
 ```
@@ -1769,11 +1767,11 @@ proc ::constcl::floor {val} {
 ```
 reg ceiling ::constcl::ceiling
 
-proc ::constcl::ceiling {x} {
-    if {[number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::ceil [$x numval]]
+proc ::constcl::ceiling {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
-        error "NUMBER expected\n(ceiling [$x show])"
+        error "NUMBER expected\n(ceiling [$num show])"
     }
 }
 ```
@@ -1782,15 +1780,15 @@ proc ::constcl::ceiling {x} {
 ```
 reg truncate ::constcl::truncate
 
-proc ::constcl::truncate {x} {
-    if {[number? $x] eq "#t"} {
-        if {[$x negative?] eq "#t"} {
-            MkNumber [::tcl::mathfunc::ceil [$x numval]]
+proc ::constcl::truncate {num} {
+    if {[number? $num] eq "#t"} {
+        if {[$num negative?] eq "#t"} {
+            MkNumber [::tcl::mathfunc::ceil [$num numval]]
         } else {
-            MkNumber [::tcl::mathfunc::floor [$x numval]]
+            MkNumber [::tcl::mathfunc::floor [$num numval]]
         }
     } else {
-        error "NUMBER expected\n(truncate [$x show])"
+        error "NUMBER expected\n(truncate [$num show])"
     }
 }
 ```
@@ -1799,11 +1797,11 @@ proc ::constcl::truncate {x} {
 ```
 reg round ::constcl::round
 
-proc ::constcl::round {x} {
-    if {[number? $x] eq "#t"} {
-        MkNumber [::tcl::mathfunc::round [$x numval]]
+proc ::constcl::round {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::round [$num numval]]
     } else {
-        error "NUMBER expected\n(round [$x show])"
+        error "NUMBER expected\n(round [$num show])"
     }
 }
 ```
@@ -1820,17 +1818,18 @@ sine, cosine, tangent, arcsine, arccosine, and arctangent are
 calculated by `exp`, `log`, `sin`, `cos`, `tan`, `asin`, `acos`,
 and `atan`, respectively.
 
-![The transcendent functions](/images/transc.png)
-![The binary atan function](/images/atan.png)
+<table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">(binary) atan (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg exp ::constcl::exp
 
-proc ::constcl::exp {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::exp [$val numval]]
+proc ::constcl::exp {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::exp [$num numval]]
     } else {
-        error "NUMBER expected\n(exp [$val show])"
+        error "NUMBER expected\n(exp [$num show])"
     }
 }
 ```
@@ -1839,11 +1838,11 @@ proc ::constcl::exp {val} {
 ```
 reg log ::constcl::log
 
-proc ::constcl::log {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::log [$val numval]]
+proc ::constcl::log {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::log [$num numval]]
     } else {
-        error "NUMBER expected\n(log [$val show])"
+        error "NUMBER expected\n(log [$num show])"
     }
 }
 ```
@@ -1852,11 +1851,11 @@ proc ::constcl::log {val} {
 ```
 reg sin ::constcl::sin
 
-proc ::constcl::sin {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sin [$val numval]]
+proc ::constcl::sin {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sin [$num numval]]
     } else {
-        error "NUMBER expected\n(sin [$val show])"
+        error "NUMBER expected\n(sin [$num show])"
     }
 }
 ```
@@ -1864,11 +1863,11 @@ proc ::constcl::sin {val} {
 ```
 reg cos ::constcl::cos
 
-proc ::constcl::cos {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::cos [$val numval]]
+proc ::constcl::cos {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::cos [$num numval]]
     } else {
-        error "NUMBER expected\n(cos [$val show])"
+        error "NUMBER expected\n(cos [$num show])"
     }
 }
 ```
@@ -1876,11 +1875,11 @@ proc ::constcl::cos {val} {
 ```
 reg tan ::constcl::tan
 
-proc ::constcl::tan {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::tan [$val numval]]
+proc ::constcl::tan {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::tan [$num numval]]
     } else {
-        error "NUMBER expected\n(tan [$val show])"
+        error "NUMBER expected\n(tan [$num show])"
     }
 }
 ```
@@ -1889,11 +1888,11 @@ proc ::constcl::tan {val} {
 ```
 reg asin ::constcl::asin
 
-proc ::constcl::asin {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::asin [$val numval]]
+proc ::constcl::asin {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::asin [$num numval]]
     } else {
-        error "NUMBER expected\n(asin [$val show])"
+        error "NUMBER expected\n(asin [$num show])"
     }
 }
 ```
@@ -1901,11 +1900,11 @@ proc ::constcl::asin {val} {
 ```
 reg acos ::constcl::acos
 
-proc ::constcl::acos {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::acos [$val numval]]
+proc ::constcl::acos {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::acos [$num numval]]
     } else {
-        error "NUMBER expected\n(acos [$val show])"
+        error "NUMBER expected\n(acos [$num show])"
     }
 }
 ```
@@ -1915,18 +1914,18 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
-        set val [lindex $args 0]
-        if {[number? $val] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan [$val numval]]
+        set num [lindex $args 0]
+        if {[number? $num] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan [$num numval]]
         } else {
-            error "NUMBER expected\n(atan [$val show])"
+            error "NUMBER expected\n(atan [$num show])"
         }
     } else {
-        lassign $args val1 val2
-        if {[number? $val1] eq "#t" && [::constcl::number? $val2] eq "#t"} {
-            MkNumber [::tcl::mathfunc::atan2 [$val1 numval] [$val2 numval]]
+        lassign $args num1 num2
+        if {[number? $num1] eq "#t" && [::constcl::number? $num2] eq "#t"} {
+            MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
         } else {
-            error "NUMBER expected\n(atan [$val1 show] [$val2 show])"
+            error "NUMBER expected\n(atan [$num1 show] [$num2 show])"
         }
     }
 }
@@ -1935,16 +1934,16 @@ proc ::constcl::atan {args} {
 
 `sqrt` calculates the square root.
 
-![The sqrt operation](/images/sqrt.png)
+<table border=1><thead><tr><th colspan=2 align="left">sqrt (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg sqrt ::constcl::sqrt
 
-proc ::constcl::sqrt {val} {
-    if {[number? $val] eq "#t"} {
-        MkNumber [::tcl::mathfunc::sqrt [$val numval]]
+proc ::constcl::sqrt {num} {
+    if {[number? $num] eq "#t"} {
+        MkNumber [::tcl::mathfunc::sqrt [$num numval]]
     } else {
-        error "NUMBER expected\n(sqrt [$val show])"
+        error "NUMBER expected\n(sqrt [$num show])"
     }
 }
 ```
@@ -1952,16 +1951,16 @@ proc ::constcl::sqrt {val} {
 
 `expt` calculates the _x_ to the power of _y_.
 
-![The expt operation](/images/expt.png)
+<table border=1><thead><tr><th colspan=2 align="left">expt (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg expt ::constcl::expt
 
-proc ::constcl::expt {val1 val2} {
-    if {[number? $val1] eq "#t" && [number? $val2] eq "#t"} {
-        MkNumber [::tcl::mathfunc::pow [$val1 numval] [$val2 numval]]
+proc ::constcl::expt {num1 num2} {
+    if {[number? $num1] eq "#t" && [number? $num2] eq "#t"} {
+        MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
     } else {
-        error "NUMBER expected\n(expt [$val1 show] [$val2 show])"
+        error "NUMBER expected\n(expt [$num1 show] [$num2 show])"
     }
 }
 ```
@@ -2018,31 +2017,30 @@ proc ::constcl::inexact->exact {z} {
 The procedures `number->string` and `string->number` converts between
 number and string with optional radix conversion.
 
-![The number->string procedure](/images/nts.png)
-![The string->number procedure](/images/stn.png)
+<table border=1><thead><tr><th colspan=2 align="left">number-&gt;string (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 reg number->string ::constcl::number->string
 
-proc ::constcl::number->string {val args} {
+proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        if {[number? $val] eq "#t"} {
-            return [MkString [$val numval]]
+        if {[number? $num] eq "#t"} {
+            return [MkString [$num numval]]
         } else {
-            error "NUMBER expected\n(string->number [$val show])"
+            error "NUMBER expected\n(string->number [$num show])"
         }
     } else {
         lassign $args radix
-        if {[number? $val] eq "#t"} {
+        if {[number? $num] eq "#t"} {
             if {[$radix numval] == 10} {
-                return [MkString [$val numval]]
+                return [MkString [$num numval]]
             } elseif {[$radix numval] in {2 8 16}} {
-                return [MkString [base [$radix numval] [$val numval]]]
+                return [MkString [base [$radix numval] [$num numval]]]
             } else {
                 error "radix not in 2, 8, 10, 16"
             }
         } else {
-            error "NUMBER expected\n(string->number [$val show])"
+            error "NUMBER expected\n(string->number [$num show])"
         }
     }
 }
@@ -2062,6 +2060,8 @@ proc base {base number} {
 }
 ```
 
+
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;number (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg string->number ::constcl::string->number
