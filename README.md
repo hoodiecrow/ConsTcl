@@ -313,7 +313,7 @@ proc ::constcl::parse-string-value {} {
 `parse-sharp` reads the various kinds of values whose literal begins with
 a sharp sign (#).
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector boolean or character value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value</td></tr></table>
 
 ```
 proc ::constcl::parse-sharp {} {
@@ -641,7 +641,7 @@ proc ::constcl::eval {e {env ::constcl::global_env}} {
 Variable reference, or _lookup_, is handled by the helper `lookup`. It searches the
 environment chain for the symbol's name, and returns the value it is bound to.
 
-![The lookup procedure](/images/lookup.png)
+<table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::lookup {sym env} {
@@ -657,7 +657,7 @@ _alternate_) is evaluated and the value returned.
 The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
 _sequence_, returning the value of the last one.
 
-![The eprogn procedure](/images/eprogn.png)
+<table border=1><thead><tr><th colspan=2 align="left">eprogn (internal)</th></tr></thead><tr><td>exps</td><td></td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::eprogn {exps env} {
@@ -677,7 +677,7 @@ proc ::constcl::eprogn {exps env} {
 The `declare` helper adds a variable to the current environment. It first checks that the
 symbol name is a valid identifier, then it updates the environment with the new binding.
 
-![The declare procedure](/images/declare.png)
+<table border=1><thead><tr><th colspan=2 align="left">declare (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::declare {sym val env} {
@@ -692,7 +692,7 @@ somewhere in the environment chain. It finds the variable's environment and upda
 binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
 sets both variables to 99.
 
-![The update! procedure](/images/update!.png)
+<table border=1><thead><tr><th colspan=2 align="left">update! (internal)</th></tr></thead><tr><td>var</td><td>a bound symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::update! {var val env} {
