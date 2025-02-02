@@ -8,21 +8,40 @@ MD)
 CB
 oo::class create ::constcl::String {
     superclass ::constcl::NIL
-    variable s constant
+    variable vsaddr length constant
     constructor {v} {
-        set s [::constcl::find-string-index $v]
+        set vsaddr $::constcl::vectorAssign
+        set length [::string length $v]
+        incr ::constcl::vectorAssign $length
+        set idx $vsaddr
+        foreach elt [split $v {}] {
+            if {$elt eq " "} {
+                set c #\\space
+            } elseif {$elt eq "\n"} {
+                set c #\\newline
+            } else {
+                set c #\\$elt
+            }
+            lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+            incr idx
+        }
         set constant 0
     }
-    method index {} {set s}
     method = {str} {::string equal [my value] $str}
-    method length {} {::string length [my value]}
-    method ref {i} {::string index [my value] $i}
+    method length {} {set length}
+    method ref {i} {lindex $::constcl::vectorSpace $i+$vsaddr}
+    method value {} {
+        join [lmap c [lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]] {$c char}] {}
+    }
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string replace [my value] $k $k $c]
-            set s [::constcl::find-string-index $value]
+            if {$k < 0 || $k >= [my length]} {
+                error "index out of range\n$k"
+            } else {
+                lset ::constcl::vectorSpace $k+$vsaddr [::constcl::MkChar #\\$c]
+            }
         }
         return [self]
     }
@@ -30,13 +49,15 @@ oo::class create ::constcl::String {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string repeat $c [::string length [my value]]]
-            set s [::constcl::find-string-index $value]
+            for {set idx $vsaddr} {$idx < $length+$vsaddr} {incr idx} {
+                lset ::constcl::vectorSpace $idx [::constcl::MkChar #\\$c]
+            }
         }
         return [self]
     }
-    method substring {from to} {::string range [my value] $from $to}
-    method value {} {return [lindex $::constcl::StrSto $s]}
+    method substring {from to} {
+        join [lmap c [lrange $::constcl::vectorSpace $from+$vsaddr $to+$vsaddr] {$c char}] {}
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
@@ -64,31 +85,6 @@ proc ::constcl::string? {val} {
 }
 CB
 
-MD(
-Helper function for finding a string in the string store.
-MD)
-
-PR(
-find-string-index (internal);str str -> tnum
-PR)
-
-CB
-proc ::constcl::find-string-index {str} {
-    set index -1
-    for {set i 0} {$i < $::constcl::S} {incr i} {
-        if {[::string equal [lindex $::constcl::StrSto $i] $str]} {
-            set index $i
-        }
-    }
-    if {$index == -1} {
-        set index $::constcl::S
-        lset ::constcl::StrSto $index $str
-        incr ::constcl::S
-    }
-    set index
-}
-CB
-
 TT(
 
 ::tcltest::test strings-1.0 {try string?} -body {
@@ -99,8 +95,10 @@ TT(
 TT)
 
 MD(
-`make-string` _k_ _?c?_ creates a string of _k_ characters, optionally
-filled with _c_ characters.
+**make-string**
+
+`make-string` creates a string of _k_ characters, optionally filled with _char_
+characters. If _char_ is omitted, the string will be filled with space characters.
 MD)
 
 PR(
@@ -129,7 +127,9 @@ TT(
 TT)
 
 MD(
-`string` constructs a string from a Tcl list of Lisp characters.
+**string**
+
+`string` constructs a string from a number of Lisp characters.
 MD)
 
 PR(
@@ -165,6 +165,8 @@ TT(
 TT)
 
 MD(
+**string-length**
+
 `string-length` reports a string's length.
 MD)
 
@@ -193,7 +195,9 @@ TT(
 TT)
 
 MD(
-`string-ref` _str_ _k_ yields the _k_-th character (0-based) in _str_.
+**string-ref**
+
+`string-ref` yields the _k_-th character (0-based) in _str_.
 MD)
 
 PR(
@@ -210,7 +214,7 @@ proc ::constcl::string-ref {str k} {
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
-        return [MkChar "#\\[$str ref $i]"]
+        return [$str ref $i]
     } else {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
@@ -226,7 +230,9 @@ TT(
 TT)
 
 MD(
-`string-set!` _str_ _k_ _char_ replaces the character at _k_ with _char_.
+**string-set!**
+
+`string-set!` replaces the character at _k_ with _char_.
 MD)
 
 PR(
@@ -274,6 +280,16 @@ TT(
 TT)
 
 MD(
+**string=?**, **string-ci=?**
+
+**string<?**, **string-ci<?**
+
+**string>?**, **string-ci>?**
+
+**string<=?**, **string-ci<=?**
+
+**string>=?**, **string-ci>=?**
+
 `string=?`, `string<?`, `string>?`, `string<=?`, `string>=?` and their
 case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
 `string-ci<=?`, `string-ci>=?` compare strings.
@@ -548,8 +564,9 @@ TT(
 TT)
 
 MD(
-`substring` _str_ _start_ _end_ yields the substring of _str_ that starts at _start_
-and ends at _end_.
+**substring**
+
+`substring` yields the substring of _str_ that starts at _start_ and ends at _end_.
 MD)
 
 PR(
@@ -581,6 +598,8 @@ TT(
 TT)
 
 MD(
+**string-append**
+
 `string-append` joins strings together.
 MD)
 
@@ -605,6 +624,8 @@ TT(
 TT)
 
 MD(
+**string->list**
+
 `string->list` converts a string to a Lisp list of characters.
 MD)
 
@@ -629,6 +650,8 @@ TT(
 TT)
 
 MD(
+**list->string**
+
 `list->string` converts a Lisp list of characters to a string.
 MD)
 
@@ -653,6 +676,8 @@ TT(
 TT)
 
 MD(
+**string-copy**
+
 `string-copy` makes a copy of a string.
 MD)
 
@@ -677,11 +702,17 @@ TT(
 ::tcltest::test strings-1.23 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
-} -output "\"xoo\"\n"
+    pep {(define y "foobar")}
+    pep {(define z (string-copy y))}
+    pep {(eq? y z)}
+    pep {(equal? y z)}
+} -output "\"xoo\"\n#f\n#t\n"
 
 TT)
 
 MD(
+**string-fill!**
+
 `string-fill!` _str_ _char_ fills a non-constant string with _char_.
 MD)
 
@@ -711,3 +742,4 @@ TT(
 
 TT)
 
+# vim: ft=tcl tw=80

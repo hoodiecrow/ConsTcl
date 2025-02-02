@@ -72,6 +72,8 @@ TT(
 TT)
 
 MD(
+**symbol->string**
+
 `symbol->string` yields a string consisting of the symbol name, usually
 lower-cased.
 MD)
@@ -116,6 +118,8 @@ TT(
 TT)
 
 MD(
+**string->symbol**
+
 `string->symbol` creates a symbol with the name given by the string. The symbol
 is 'case-constant', i.e. it will not be lower-cased.
 MD)
@@ -138,3 +142,4 @@ proc ::constcl::string->symbol {str} {
 }
 CB
 
+# vim: ft=tcl tw=80

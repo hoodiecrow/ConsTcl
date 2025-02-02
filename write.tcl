@@ -2,6 +2,8 @@
 MD(
 ## write
 
+**write**
+
 The third member in the great triad is `write`. As long as the object
 given to it isn't `#NONE`, it passes it to `write-value` and prints
 a newline.
@@ -24,6 +26,8 @@ proc ::constcl::write {val args} {
 CB
 
 MD(
+**write-value**
+
 `write-value` simply calls an object's `write` method, letting the object
 write itself.
 MD)
@@ -40,6 +44,8 @@ proc ::constcl::write-value {val} {
 CB
 
 MD(
+**display**
+
 The `display` procedure is like `write` but doesn't print a newline.
 MD)
 
@@ -60,6 +66,8 @@ proc ::constcl::display {val args} {
 CB
 
 MD(
+**write-pair**
+
 The `write-pair` procedure prints a Pair object.
 MD)
 
@@ -106,3 +114,4 @@ TT(
 
 TT)
 
+# vim: ft=tcl tw=80

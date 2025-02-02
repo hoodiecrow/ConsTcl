@@ -10,6 +10,8 @@ is a loop that repeatedly _reads_ a Scheme source string from the user through t
 MD)
 
 MD(
+**input**
+
 `input` is modelled after the Python 3 function. It displays a prompt and reads a string.
 MD)
 
@@ -22,6 +24,8 @@ proc ::constcl::input {prompt} {
 CB
 
 MD(
+**repl**
+
 `repl` puts the loop in the read-eval-print loop. It repeats prompting for a string until given
 a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
 MD)
@@ -35,3 +39,5 @@ proc ::constcl::repl {{prompt "ConsTcl> "}} {
     }
 }
 CB
+
+# vim: ft=tcl tw=80

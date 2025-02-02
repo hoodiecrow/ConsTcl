@@ -49,6 +49,10 @@ oo::class create ::constcl::Pair {
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 CB
 
+MD(
+**pair?**
+MD)
+
 PR(
 pair? (public);val val -> bool
 PR)
@@ -68,6 +72,8 @@ proc ::constcl::pair? {val} {
 CB
 
 MD(
+**show-pair**
+
 Helper procedure to make a string representation of a list.
 MD)
 
@@ -133,6 +139,8 @@ TT(
 TT)
 
 MD(
+**cons**
+
 `cons` joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
 MD)
@@ -162,6 +170,8 @@ TT(
 TT)
 
 MD(
+**car**
+
 `car` gets the contents of the first cell in a pair.
 MD)
 
@@ -192,6 +202,8 @@ TT(
 TT)
 
 MD(
+**cdr**
+
 `cdr` gets the contents of the second cell in a pair.
 MD)
 
@@ -221,6 +233,8 @@ TT(
 TT)
 
 MD(
+**caar** to **cddddr**
+
 `car` and `cdr` can be combined to form 28 composite access
 operations.
 MD)
@@ -273,6 +287,8 @@ foreach ads {
 CB
 
 MD(
+**set-car!**
+
 `set-car!` sets the contents of the first cell in a pair.
 MD)
 
@@ -303,6 +319,8 @@ TT(
 TT)
 
 MD(
+**set-cdr!**
+
 `set-cdr!` sets the contents of the second cell in a pair.
 MD)
 
@@ -333,6 +351,8 @@ TT(
 TT)
 
 MD(
+**list?**
+
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 MD)
@@ -388,7 +408,9 @@ TT(
 TT)
 
 MD(
-`list` constructs a Lisp list from a Tcl list of items.
+**list**
+
+`list` constructs a Lisp list from a number of values.
 MD)
 
 PR(
@@ -421,6 +443,8 @@ TT(
 TT)
 
 MD(
+**length**
+
 `length` reports the length of a Lisp list.
 MD)
 
@@ -465,6 +489,8 @@ TT(
 TT)
 
 MD(
+**append**
+
 `append` joins lists together.
 MD)
 
@@ -514,6 +540,8 @@ TT(
 TT)
 
 MD(
+**reverse**
+
 `reverse` produces a reversed copy of a Lisp list.
 MD)
 
@@ -539,6 +567,8 @@ TT(
 TT)
 
 MD(
+**list-tail**
+
 Given a list index, `list-tail` yields the sublist starting from that index.
 MD)
 
@@ -567,6 +597,8 @@ TT(
 TT)
 
 MD(
+**list-ref**
+
 `list-ref` yields the list item at a given index.
 MD)
 
@@ -591,6 +623,12 @@ TT(
 TT)
 
 MD(
+**memq**
+
+**memv**
+
+**member**
+
 `memq`, `memv`, and `member` return the sublist starting with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
 respectively, for the comparison.
@@ -678,6 +716,12 @@ proc ::constcl::member {val1 val2} {
 CB
 
 MD(
+**assq**
+
+**assv**
+
+**assoc**
+
 `assq`, `assv`, and `assoc` return the associative item marked with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
 respectively, for the comparison. They implement lookup in the form of lookup
@@ -770,3 +814,4 @@ TT(
 } -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
 TT)
 
+# vim: ft=tcl tw=80

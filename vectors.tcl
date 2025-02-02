@@ -12,14 +12,21 @@ MD)
 CB
 oo::class create ::constcl::Vector {
     superclass ::constcl::NIL
-    variable value constant
+    variable vsaddr length constant
     constructor {v} {
-        set value $v
+        set vsaddr $::constcl::vectorAssign
+        set length [llength $v]
+        incr ::constcl::vectorAssign $length
+        set idx $vsaddr
+        foreach elt $v {
+            lset ::constcl::vectorSpace $idx $elt
+            incr idx
+        }
         set constant 0
     }
-    method length {} {llength $value}
-    method ref {i} {lindex $value $i}
-    method value {} {set value}
+    method length {} {set length}
+    method ref {i} {lindex $::constcl::vectorSpace [expr {$i + $vsaddr}]}
+    method value {} {lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]}
     method set! {i obj} {
         if {[my constant]} {
             error "vector is constant"
@@ -27,7 +34,7 @@ oo::class create ::constcl::Vector {
             if {$i < 0 || $i >= [my length]} {
                 error "index out of range\n$i"
             } else {
-                set value [::lreplace [my value] $i $i $obj]
+                lset ::constcl::vectorSpace [expr {$i + $vsaddr}] $obj
             }
         }
         return [self]
@@ -36,7 +43,9 @@ oo::class create ::constcl::Vector {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            set value [::lrepeat [::llength [my value]] $c]
+            for {set idx $vsaddr} {$idx < [expr {$length + $vsaddr}]} {incr idx} {
+                lset ::constcl::vectorSpace $idx $c
+            }
         }
         return [self]
     }
@@ -46,15 +55,12 @@ oo::class create ::constcl::Vector {
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
-proc ::constcl::MkVector {v} {
-    foreach instance [info class instances ::constcl::Vector] {
-        if {$instance eq $v} {
-            return $instance
-        }
-    }
-    return [::constcl::Vector new $v]
-}
+interp alias {} ::constcl::MkVector {} ::constcl::Vector new
 CB
+
+MD(
+**vector?**
+MD)
 
 PR(
 vector? (public);val val -> bool
@@ -85,7 +91,10 @@ TT(
 TT)
 
 MD(
+**make-vector**
+
 `make-vector` creates a vector with a given length and optionally a fill value.
+If a fill value isn't given, the empty list will be used.
 MD)
 
 PR(
@@ -97,7 +106,6 @@ reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
     if {[llength $args] == 0} {
-        lassign $args k
         set fill #NIL
     } else {
         lassign $args fill
@@ -107,6 +115,8 @@ proc ::constcl::make-vector {k args} {
 CB
 
 MD(
+**vector**
+
 Given a number of Lisp values, `vector` creates a vector containing them.
 MD)
 
@@ -132,6 +142,8 @@ TT(
 TT)
 
 MD(
+**vector-length**
+
 `vector-length` returns the length of a vector.
 MD)
 
@@ -160,7 +172,9 @@ TT(
 TT)
 
 MD(
-`vector-ref` _vector_ _k_ returns the element of _vector_ at index _k_.
+**vector-ref**
+
+`vector-ref` returns the element of _vec_ at index _k_.
 MD)
 
 PR(
@@ -192,8 +206,7 @@ TT(
 TT)
 
 MD(
-`vector-set!` _vector_ _k_ _obj_, for a non-constant vector, sets the element at
-index _k_ to _obj_.
+`vector-set!`, for a non-constant vector, sets the element at index _k_ to _val_.
 MD)
 
 PR(
@@ -226,6 +239,8 @@ TT(
 TT)
 
 MD(
+**vector->list**
+
 `vector->list` converts a vector value to a Lisp list.
 MD)
 
@@ -250,6 +265,8 @@ TT(
 TT)
 
 MD(
+**list->vector**
+
 `list->vector` converts a Lisp list value to a vector.
 MD)
 
@@ -274,6 +291,8 @@ TT(
 TT)
 
 MD(
+**vector-fill!**
+
 `vector-fill!` fills a non-constant vector with a given value.
 MD)
 
@@ -301,3 +320,4 @@ TT(
 
 TT)
 
+# vim: ft=tcl tw=80

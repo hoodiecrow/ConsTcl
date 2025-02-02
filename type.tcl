@@ -44,6 +44,12 @@ proc ::pxp {str} {
     ::constcl::expand-macro ::constcl::global_env
     ::constcl::write [::constcl::cons $op $args]
 }
+
+proc ::constcl::check {cond msg} {
+    ::if {[uplevel $cond] eq "#f"} {
+        error [uplevel [::list subst $msg]]
+    }
+}
 CB
 
 MD(
@@ -94,6 +100,8 @@ oo::class create ::constcl::NIL {
 CB
 
 MD(
+**null?**
+
 The `null?` standard predicate recognizes the empty list. Predicates
 in ConsTcl return #t or #f for true or false, so some care is necessary
 when calling them from Tcl code.
@@ -144,3 +152,4 @@ proc ::constcl::dot? {obj} {
 
 CB
 
+# vim: ft=tcl tw=80

@@ -30,6 +30,12 @@ proc ::pxp {str} {
     ::constcl::write [::constcl::cons $op $args]
 }
 
+proc ::constcl::check {cond msg} {
+    ::if {[uplevel $cond] eq "#f"} {
+        error [uplevel [::list subst $msg]]
+    }
+}
+
 
 reg in-range ::constcl::in-range
 
@@ -98,6 +104,7 @@ proc ::constcl::dot? {obj} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 
@@ -163,6 +170,7 @@ oo::class create ::constcl::IB {
 
 
 
+
 reg parse
 
 proc ::constcl::parse {str} {
@@ -183,7 +191,7 @@ proc ::constcl::read {args} {
 proc ::constcl::parse-expression {} {
     ib skip-ws
     switch -regexp [ib first] {
-        {^$}          { return }
+        {^$}          { return #NONE}
         {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
         {\'}          { return [parse-quoted-expression] }
@@ -194,10 +202,9 @@ proc ::constcl::parse-expression {} {
         {\[}          { return [parse-pair-expression "\]"] }
         {\`}          { return [parse-quasiquoted-expression] }
         {\d}          { return [parse-number-expression] }
-        {[[:space:]]} { ib advance }
         {[[:graph:]]} { return [parse-identifier-expression] }
         default {
-            error "unexpected char [ib first]"
+            error "unexpected character ([ib first])"
         }
     }
 }
@@ -207,7 +214,7 @@ proc ::constcl::parse-expression {} {
 proc ::constcl::parse-string-expression {} {
     set str {}
     ib advance
-    while {[ib first] ne {"}} {
+    while {[ib first] ne "\"" && [ib first] ne {}} {
         set c [ib first]
         if {$c eq "\\"} {
             ib advance
@@ -216,6 +223,9 @@ proc ::constcl::parse-string-expression {} {
             ::append str $c
         }
         ib advance
+    }
+    if {[ib first] ne "\""} {
+        error "malformed string (no ending double quote)"
     }
     ib advance
     ib skip-ws
@@ -357,25 +367,31 @@ proc ::constcl::parse-quasiquoted-expression {} {
 
 
 
+proc ::constcl::interspace {c} {
+    if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+        return #t
+    } else {
+        return #f
+    }
+}
+
+
 
 proc ::constcl::parse-number-expression {} {
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
     }
     ib skip-ws
-    if {[::string is double -strict $num]} {
-        return [MkNumber $num]
-    } else {
-        error "Invalid numeric constant $num"
-    }
+    check {::string is double -strict $num} {Invalid numeric constant $num}
+    return [MkNumber $num]
 }
 
 
 
 
 proc ::constcl::parse-identifier-expression {} {
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
     }
@@ -387,23 +403,24 @@ proc ::constcl::parse-identifier-expression {} {
 
 
 proc ::constcl::character-check {name} {
-    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
+    ::if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 
 
 
 proc ::constcl::parse-character-expression {} {
     set name "#"
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) ]}} {
         ::append name [ib first]
         ib advance
     }
-    if {[::constcl::character-check $name]} {
-        return [MkChar $name]
-    } else {
-        error "Invalid character constant $name"
-    }
+    check {character-check $name} {Invalid character constant $name}
     ib skip-ws
+    return [MkChar $name]
 }
 
 
@@ -428,53 +445,40 @@ proc ::constcl::parse-vector-expression {} {
 }
 
 
+# vim: ft=tcl tw=80
+
+
 
 
 reg eval ::constcl::eval
 
-proc ::constcl::eval {e {env ::constcl::global_env}} {
-    if {[atom? $e] ne "#f"} {
-        if {[symbol? $e] ne "#f"} {
-            return [lookup $e $env]
-        } elseif {[null? $e] ne "#f" || [atom? $e] ne "#f"} {
-            return $e
+proc ::constcl::eval {expr {env ::constcl::global_env}} {
+    if {[atom? $expr] ne "#f"} {
+        if {[symbol? $expr] ne "#f"} {
+            lookup $expr $env
+        } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+            set expr
         } else {
-            error "cannot evaluate $e"
+            error "cannot evaluate $expr"
         }
     } else {
-        set op [car $e]
-        set args [cdr $e]
+        set op [car $expr]
+        set args [cdr $expr]
         while {[$op name] in {
-                and case cond for for/and for/list
-                for/or let or define quasiquote}} {
+                and case cond define for for/and
+                for/list for/or let or quasiquote}} {
             expand-macro $env
         }
         switch [$op name] {
-            quote {
-                return [car $args]
-            }
-            if {
-                if {[eval [car $args] $env] ne "#f"} {
-                    return [eval [cadr $args] $env]
-                } else {
-                    return [eval [caddr $args] $env]
-                }
-            }
-            begin {
-                return [eprogn $args $env]
-            }
-            define {
-                return [declare [car $args] [eval [cadr $args] $env] $env]
-            }
-            set! {
-                return [update! [car $args] [eval [cadr $args] $env] $env]
-            }
-            lambda {
-                return [make-function [car $args] [cdr $args] $env]
-            }
-            default {
-                return [invoke [eval $op $env] [eval-list $args $env]]
-            }
+            quote   { car $args }
+            if      { _if {eval [car $args] $env} \
+                            {eval [cadr $args] $env} \
+                            {eval [caddr $args] $env} }
+            begin   { eprogn $args $env }
+            define  { declare [car $args] [eval [cadr $args] $env] $env }
+            set!    { update! [car $args] [eval [cadr $args] $env] $env }
+            lambda  { make-function [car $args] [cdr $args] $env }
+            default { invoke [eval $op $env] [eval-list $args $env] }
         }
     }
 }
@@ -485,6 +489,10 @@ proc ::constcl::lookup {sym env} {
     [$env find $sym] get $sym
 }
 
+
+proc ::constcl::_if {cond conseq altern} {
+    if {[uplevel $cond] ne "#f"} then {uplevel $conseq} else {uplevel $altern}
+}
 
 
 
@@ -530,16 +538,14 @@ proc ::constcl::make-function {formals body env} {
 
 
 proc ::constcl::invoke {pr vals} {
-    if {[procedure? $pr] ne "#f"} {
-        if {[info object isa object $pr]} {
-            $pr call {*}[splitlist $vals]
-        } else {
-            $pr {*}[splitlist $vals]
-        }
+    check {procedure? $pr} {PROCEDURE expected\n([$pr show] val ...)}
+    ::if {[info object isa object $pr]} {
+        $pr call {*}[splitlist $vals]
     } else {
-        error "PROCEDURE expected\n([$pr show] val ...)" ;# [$vals show])
+        $pr {*}[splitlist $vals]
     }
 }
+
 
 
 
@@ -574,10 +580,13 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-and $args]
         }
         case {
-            set expr [do-case [car $args] [cdr $args]]
+            set expr [expand-case [car $args] [cdr $args]]
         }
         cond {
-            set expr [do-cond $args]
+            set expr [expand-cond $args]
+        }
+        define {
+            set expr [expand-define $args]
         }
         for {
             set expr [expand-for $args $env]
@@ -596,9 +605,6 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args]
-        }
-        define {
-            set expr [expand-define $args]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -632,48 +638,50 @@ proc ::constcl::do-and {exps prev} {
 
 
 
-proc ::constcl::do-case {keyexpr clauses} {
+proc ::constcl::expand-case {keyexpr clauses} {
     if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
-    } elseif {[eq? [length $clauses] #1] ne "#f"} {
-        set keyl [caar $clauses]
-        set body [cdar $clauses]
-        if {[eq? $keyl [MkSymbol "else"]] ne "#f"} {
-            set keyl #t
-        } else {
-            set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        }
-        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
     } else {
         set keyl [caar $clauses]
         set body [cdar $clauses]
         set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+        if {[eq? [length $clauses] #1] ne "#f"} {
+            if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
+                set keyl #t
+            }
+        }
+        return [list #I $keyl [cons #B $body] [expand-case $keyexpr [cdr $clauses]]]
     }
 }
 
 
 
-proc ::constcl::do-cond {clauses} {
+proc ::constcl::expand-cond {clauses} {
     if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
-    } elseif {[eq? [length $clauses] #1] ne "#f"} {
-        set pred [caar $clauses]
-        set body [cdar $clauses]
-        if {[symbol? [car $body]] ne "#f" && [$body name] eq "=>"} {
-            set body [cddar $clauses]
-        }
-        if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
-            set pred #t
-        }
-        if {[null? $body] ne "#f"} {set body $pred}
-        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
     } else {
         set pred [caar $clauses]
         set body [cdar $clauses]
+        if {[symbol? [car $body]] ne "#f" && [[car $body] name] eq "=>"} {
+            set body [cddar $clauses]
+        }
+        if {[eq? [length $clauses] #1] ne "#f"} {
+            if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
+                set pred #t
+            }
+        }
         if {[null? $body] ne "#f"} {set body $pred}
-        return [list #I $pred [cons #B $body] [do-cond [cdr $clauses]]]
+        return [list #I $pred [cons #B $body] [expand-cond [cdr $clauses]]]
     }
+}
+
+
+
+proc ::constcl::expand-define {exps} {
+    set symbol [caar $exps]
+    set formals [cdar $exps]
+    set body [cdr $exps]
+    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
 }
 
 
@@ -684,6 +692,7 @@ proc ::constcl::for-seq {seq env} {
     } else {
         set seq [eval $seq $env]
     }
+    # make it a Tcl list, one way or another
     if {[list? $seq] ne "#f"} {
         set seq [splitlist $seq]
     } elseif {[string? $seq] ne "#f"} { 
@@ -695,21 +704,28 @@ proc ::constcl::for-seq {seq env} {
 
 
 proc ::constcl::do-for {exps env} {
+    # make clauses a Tcl list
     set clauses [splitlist [car $exps]]
     set body [cdr $exps]
     set ids {}
     set seqs {}
     for {set i 0} {$i < [llength $clauses]} {incr i} {
         set clause [lindex $clauses $i]
+        # insert the first part of the clause in the ids structure
         lset ids $i [car $clause]
+        # run the second part of the clause through for-seq and insert in seqs
         lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
     for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
+        # for each iteration of the sequences
         set x {}
         for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
+            # for each clause
+            # list append to x the Lisp list of the id and the iteration
             lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
         }
+        # list append to res a let expression with the ids and iterations and the body
         lappend res [list #L [list {*}$x] {*}[splitlist $body]]
     }
     return $res
@@ -800,15 +816,6 @@ proc ::constcl::do-or {exps} {
 
 
 
-proc ::constcl::expand-define {exps} {
-    set symbol [caar $exps]
-    set formals [cdar $exps]
-    set body [cdr $exps]
-    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
-}
-
-
-
 proc ::constcl::qq-visit-child {node qqlevel env} {
     if {$qqlevel < 0} {
         set qqlevel 0
@@ -880,6 +887,7 @@ proc ::constcl::interaction-environment {} {
     # TODO
 }
 
+# vim: ft=tcl tw=80
 
 
 
@@ -936,6 +944,7 @@ proc ::constcl::write-pair {pair} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 reg eq? ::constcl::eq?
@@ -953,7 +962,7 @@ proc ::constcl::eq? {val1 val2} {
         return #t
     } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && $val1 eq $val2} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 index] eq [$val2 index]} {
+    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && $val1 eq $val2} {
         return #t
     } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && $val1 eq $val2} {
         return #t
@@ -979,7 +988,7 @@ proc ::constcl::eqv? {val1 val2} {
         return #t
     } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 index] eq [$val2 index]} {
+    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
         return #t
     } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
         return #t
@@ -1001,6 +1010,7 @@ proc ::constcl::equal? {val1 val2} {
     # TODO
 }
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::Number {
@@ -1131,11 +1141,8 @@ proc ::constcl::>= {args} {
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-    if {[number? $num] ne "#f"} {
-        return [$num zero?]
-    } else {
-        error "NUMBER expected\n(zero? [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(zero? [$num show])}
+    return [$num zero?]
 }
 
 
@@ -1144,44 +1151,32 @@ proc ::constcl::zero? {num} {
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-    if {[::constcl::number? $num] ne "#f"} {
-        return [$num positive?]
-    } else {
-        error "NUMBER expected\n(positive? [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(positive? [$num show])}
+    return [$num positive?]
 }
 
 
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-    if {[::constcl::number? $num] ne "#f"} {
-        return [$num negative?]
-    } else {
-        error "NUMBER expected\n(negative? [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(negative? [$num show])}
+    return [$num negative?]
 }
 
 
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-    if {[::constcl::number? $num] ne "#f"} {
-        return [$num even?]
-    } else {
-        error "NUMBER expected\n(even? [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(even? [$num show])}
+    return [$num even?]
 }
 
 
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-    if {[::constcl::number? $num] ne "#f"} {
-        return [$num odd?]
-    } else {
-        error "NUMBER expected\n(odd? [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(odd? [$num show])}
+    return [$num odd?]
 }
 
 
@@ -1189,9 +1184,9 @@ proc ::constcl::odd? {num} {
 
 reg max ::constcl::max
 
-proc ::constcl::max {args} {
+proc ::constcl::max {num args} {
     try {
-        set vals [lmap arg $args {$arg numval}]
+        set vals [lmap arg [::list $num {*}$args] {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(max num...)"
     }
@@ -1201,9 +1196,9 @@ proc ::constcl::max {args} {
 
 reg min ::constcl::min
 
-proc ::constcl::min {args} {
+proc ::constcl::min {num args} {
     try {
-        set vals [lmap arg $args {$arg numval}]
+        set vals [lmap arg [::list $num {*}$args] {$arg numval}]
     } on error {} {
         error "NUMBER expected\n(min num...)"
     }
@@ -1267,14 +1262,11 @@ proc ::constcl::/ {num args} {
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-    if {[number? $num] ne "#f"} {
-        if {[$num negative?] ne "#f"} {
-            return [MkNumber [expr {[$num numval] * -1}]]
-        } else {
-            return $num
-        }
+    check {number? $num} {NUMBER expected\n(abs [$num show])}
+    if {[$num negative?] ne "#f"} {
+        return [MkNumber [expr {[$num numval] * -1}]]
     } else {
-        error "NUMBER expected\n(abs [$num show])"
+        return $num
     }
 }
 
@@ -1307,6 +1299,7 @@ proc ::constcl::remainder {num1 num2} {
 }
 
 
+
 reg modulo
 
 proc ::constcl::modulo {num1 num2} {
@@ -1335,36 +1328,27 @@ proc ::constcl::denominator {q} {
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::floor [$num numval]]
-    } else {
-        error "NUMBER expected\n(floor [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(floor [$num show])}
+    MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 
 
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::ceil [$num numval]]
-    } else {
-        error "NUMBER expected\n(ceiling [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(ceiling [$num show])}
+    MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 
 
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-    if {[number? $num] ne "#f"} {
-        if {[$num negative?] ne "#f"} {
-            MkNumber [::tcl::mathfunc::ceil [$num numval]]
-        } else {
-            MkNumber [::tcl::mathfunc::floor [$num numval]]
-        }
+    check {number? $num} {NUMBER expected\n(truncate [$num show])}
+    if {[$num negative?] ne "#f"} {
+        MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
-        error "NUMBER expected\n(truncate [$num show])"
+        MkNumber [::tcl::mathfunc::floor [$num numval]]
     }
 }
 
@@ -1372,11 +1356,8 @@ proc ::constcl::truncate {num} {
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::round [$num numval]]
-    } else {
-        error "NUMBER expected\n(round [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(round [$num show])}
+    MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 
 
@@ -1390,74 +1371,53 @@ proc ::constcl::rationalize {x y} {
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::exp [$num numval]]
-    } else {
-        error "NUMBER expected\n(exp [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(exp [$num show])}
+    MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 
 
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::log [$num numval]]
-    } else {
-        error "NUMBER expected\n(log [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(log [$num show])}
+    MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 
 
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::sin [$num numval]]
-    } else {
-        error "NUMBER expected\n(sin [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(sin [$num show])}
+    MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::cos [$num numval]]
-    } else {
-        error "NUMBER expected\n(cos [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(cos [$num show])}
+    MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::tan [$num numval]]
-    } else {
-        error "NUMBER expected\n(tan [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(tan [$num show])}
+    MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 
 
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::asin [$num numval]]
-    } else {
-        error "NUMBER expected\n(asin [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(asin [$num show])}
+    MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::acos [$num numval]]
-    } else {
-        error "NUMBER expected\n(acos [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(acos [$num show])}
+    MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 
 reg atan ::constcl::atan
@@ -1465,18 +1425,13 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set num [lindex $args 0]
-        if {[number? $num] ne "#f"} {
-            MkNumber [::tcl::mathfunc::atan [$num numval]]
-        } else {
-            error "NUMBER expected\n(atan [$num show])"
-        }
+        check {number? $num} {NUMBER expected\n(atan [$num show])}
+        MkNumber [::tcl::mathfunc::atan [$num numval]]
     } else {
         lassign $args num1 num2
-        if {[number? $num1] ne "#f" && [::constcl::number? $num2] ne "#f"} {
-            MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
-        } else {
-            error "NUMBER expected\n(atan [$num1 show] [$num2 show])"
-        }
+        check {number? $num1} {NUMBER expected\n(atan [$num1 show])}
+        check {number? $num2} {NUMBER expected\n(atan [$num2 show])}
+        MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
     }
 }
 
@@ -1486,11 +1441,8 @@ proc ::constcl::atan {args} {
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-    if {[number? $num] ne "#f"} {
-        MkNumber [::tcl::mathfunc::sqrt [$num numval]]
-    } else {
-        error "NUMBER expected\n(sqrt [$num show])"
-    }
+    check {number? $num} {NUMBER expected\n(sqrt [$num show])}
+    MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 
 
@@ -1499,11 +1451,9 @@ proc ::constcl::sqrt {num} {
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-    if {[number? $num1] ne "#f" && [number? $num2] ne "#f"} {
-        MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
-    } else {
-        error "NUMBER expected\n(expt [$num1 show] [$num2 show])"
-    }
+    check {number? $num1} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
+    check {number? $num2} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
+    MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 
 
@@ -1545,23 +1495,18 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        if {[number? $num] ne "#f"} {
-            return [MkString [$num numval]]
-        } else {
-            error "NUMBER expected\n(string->number [$num show])"
-        }
+        check {number? $num} {NUMBER expected\n(string->number [$num show])}
+        return [MkString [$num numval]]
     } else {
         lassign $args radix
-        if {[number? $num] ne "#f"} {
-            if {[$radix numval] == 10} {
-                return [MkString [$num numval]]
-            } elseif {[$radix numval] in {2 8 16}} {
-                return [MkString [base [$radix numval] [$num numval]]]
-            } else {
-                error "radix not in 2, 8, 10, 16"
-            }
+        check {number? $num} {NUMBER expected\n(string->number [$num show])}
+        check {number? $radix} {NUMBER expected\n(string->number [$num show] [$radix show])}
+        if {[$radix numval] == 10} {
+            return [MkString [$num numval]]
+        } elseif {[$radix numval] in {2 8 16}} {
+            return [MkString [base [$radix numval] [$num numval]]]
         } else {
-            error "NUMBER expected\n(string->number [$num show])"
+            error "radix not in 2, 8, 10, 16"
         }
     }
 }
@@ -1586,23 +1531,17 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
     if {[llength $args] == 0} {
-        if {[string? $str] ne "#f"} {
-            return [MkNumber [$str value]]
-        } else {
-            error "STRING expected\n(string->number [$str show])"
-        }
+        check {string? $str} {STRING expected\n(string->number [$str show])}
+        return [MkNumber [$str value]]
     } else {
         lassign $args radix
-        if {[string? $str] ne "#f"} {
-            if {[$radix numval] == 10} {
-                return [MkNumber [$str value]]
-            } elseif {[$radix numval] in {2 8 16}} {
-                return [MkNumber [frombase [$radix numval] [$str value]]]
-            } else {
-                error "radix not in 2, 8, 10, 16"
-            }
+        check {string? $str} {STRING expected\n(string->number [$str show])}
+        if {[$radix numval] == 10} {
+            return [MkNumber [$str value]]
+        } elseif {[$radix numval] in {2 8 16}} {
+            return [MkNumber [frombase [$radix numval] [$str value]]]
         } else {
-            error "STRING expected\n(string->number [$str show])"
+            error "radix not in 2, 8, 10, 16"
         }
     }
 }
@@ -1624,6 +1563,7 @@ proc frombase {base number} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::Boolean {
@@ -1681,6 +1621,7 @@ proc ::constcl::not {val} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::Char {
@@ -1690,7 +1631,13 @@ oo::class create ::constcl::Char {
         if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
-            error "CHAR expected\n$v"
+            if {$v eq "#\\ "} {
+                set value #\\space
+            } elseif {$v eq "#\\\n"} {
+                set value #\\newline
+            } else {
+                error "CHAR expected\n$v"
+            }
         }
     }
     method char {} {
@@ -2041,6 +1988,7 @@ proc ::constcl::char-downcase {char} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 catch { ::constcl::Procedure destroy }
@@ -2054,7 +2002,10 @@ oo::class create ::constcl::Procedure {
         set env $e           ;# the closed over environment
     }
     method value {} {}
-    method write {} { puts -nonewline [self] }
+    method write {} {
+        regexp {(\d+)} [self] -> num
+        puts -nonewline "#<proc-$num>"
+    }
     method show {} { return [self] }
     method call {args} {
         ::constcl::eval $body [::constcl::Environment new $parms $args $env]
@@ -2063,6 +2014,7 @@ oo::class create ::constcl::Procedure {
 }
 
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
+
 
 
 reg procedure? ::constcl::procedure?
@@ -2162,6 +2114,7 @@ proc ::constcl::dynamic-wind {before thunk after} {
     # TODO
 }
 
+# vim: ft=tcl tw=80
 
 
 proc ::constcl::call-with-input-file {string proc} {
@@ -2293,6 +2246,7 @@ oo::class create ::constcl::Pair {
 
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
+
 
 
 reg pair? ::constcl::pair?
@@ -2637,25 +2591,45 @@ proc ::constcl::assoc {val1 val2} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::String {
     superclass ::constcl::NIL
-    variable s constant
+    variable vsaddr length constant
     constructor {v} {
-        set s [::constcl::find-string-index $v]
+        set vsaddr $::constcl::vectorAssign
+        set length [::string length $v]
+        incr ::constcl::vectorAssign $length
+        set idx $vsaddr
+        foreach elt [split $v {}] {
+            if {$elt eq " "} {
+                set c #\\space
+            } elseif {$elt eq "\n"} {
+                set c #\\newline
+            } else {
+                set c #\\$elt
+            }
+            lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+            incr idx
+        }
         set constant 0
     }
-    method index {} {set s}
     method = {str} {::string equal [my value] $str}
-    method length {} {::string length [my value]}
-    method ref {i} {::string index [my value] $i}
+    method length {} {set length}
+    method ref {i} {lindex $::constcl::vectorSpace $i+$vsaddr}
+    method value {} {
+        join [lmap c [lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]] {$c char}] {}
+    }
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string replace [my value] $k $k $c]
-            set s [::constcl::find-string-index $value]
+            if {$k < 0 || $k >= [my length]} {
+                error "index out of range\n$k"
+            } else {
+                lset ::constcl::vectorSpace $k+$vsaddr [::constcl::MkChar #\\$c]
+            }
         }
         return [self]
     }
@@ -2663,13 +2637,15 @@ oo::class create ::constcl::String {
         if {[my constant]} {
             error "string is constant"
         } else {
-            set value [::string repeat $c [::string length [my value]]]
-            set s [::constcl::find-string-index $value]
+            for {set idx $vsaddr} {$idx < $length+$vsaddr} {incr idx} {
+                lset ::constcl::vectorSpace $idx [::constcl::MkChar #\\$c]
+            }
         }
         return [self]
     }
-    method substring {from to} {::string range [my value] $from $to}
-    method value {} {return [lindex $::constcl::StrSto $s]}
+    method substring {from to} {
+        join [lmap c [lrange $::constcl::vectorSpace $from+$vsaddr $to+$vsaddr] {$c char}] {}
+    }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
@@ -2689,23 +2665,6 @@ proc ::constcl::string? {val} {
     } else {
         return #f
     }
-}
-
-
-
-proc ::constcl::find-string-index {str} {
-    set index -1
-    for {set i 0} {$i < $::constcl::S} {incr i} {
-        if {[::string equal [lindex $::constcl::StrSto $i] $str]} {
-            set index $i
-        }
-    }
-    if {$index == -1} {
-        set index $::constcl::S
-        lset ::constcl::StrSto $index $str
-        incr ::constcl::S
-    }
-    set index
 }
 
 
@@ -2764,7 +2723,7 @@ proc ::constcl::string-ref {str k} {
         } else {
             error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
         }
-        return [MkChar "#\\[$str ref $i]"]
+        return [$str ref $i]
     } else {
         error "STRING expected\n(string-ref [$str show] [$k show])"
     }
@@ -3018,6 +2977,7 @@ proc ::constcl::string-fill! {str char} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::Symbol {
@@ -3098,18 +3058,26 @@ proc ::constcl::string->symbol {str} {
     }
 }
 
+# vim: ft=tcl tw=80
 
 
 oo::class create ::constcl::Vector {
     superclass ::constcl::NIL
-    variable value constant
+    variable vsaddr length constant
     constructor {v} {
-        set value $v
+        set vsaddr $::constcl::vectorAssign
+        set length [llength $v]
+        incr ::constcl::vectorAssign $length
+        set idx $vsaddr
+        foreach elt $v {
+            lset ::constcl::vectorSpace $idx $elt
+            incr idx
+        }
         set constant 0
     }
-    method length {} {llength $value}
-    method ref {i} {lindex $value $i}
-    method value {} {set value}
+    method length {} {set length}
+    method ref {i} {lindex $::constcl::vectorSpace [expr {$i + $vsaddr}]}
+    method value {} {lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]}
     method set! {i obj} {
         if {[my constant]} {
             error "vector is constant"
@@ -3117,7 +3085,7 @@ oo::class create ::constcl::Vector {
             if {$i < 0 || $i >= [my length]} {
                 error "index out of range\n$i"
             } else {
-                set value [::lreplace [my value] $i $i $obj]
+                lset ::constcl::vectorSpace [expr {$i + $vsaddr}] $obj
             }
         }
         return [self]
@@ -3126,7 +3094,9 @@ oo::class create ::constcl::Vector {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            set value [::lrepeat [::llength [my value]] $c]
+            for {set idx $vsaddr} {$idx < [expr {$length + $vsaddr}]} {incr idx} {
+                lset ::constcl::vectorSpace $idx $c
+            }
         }
         return [self]
     }
@@ -3136,14 +3106,8 @@ oo::class create ::constcl::Vector {
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
-proc ::constcl::MkVector {v} {
-    foreach instance [info class instances ::constcl::Vector] {
-        if {$instance eq $v} {
-            return $instance
-        }
-    }
-    return [::constcl::Vector new $v]
-}
+interp alias {} ::constcl::MkVector {} ::constcl::Vector new
+
 
 
 reg vector? ::constcl::vector?
@@ -3165,7 +3129,6 @@ reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
     if {[llength $args] == 0} {
-        lassign $args k
         set fill #NIL
     } else {
         lassign $args fill
@@ -3260,6 +3223,7 @@ proc ::constcl::vector-fill! {vec fill} {
 }
 
 
+# vim: ft=tcl tw=80
 
 
 proc ::constcl::idcheckinit {init} {
@@ -3295,12 +3259,13 @@ proc ::constcl::varcheck {sym} {
     return $sym
 }
 
+# vim: ft=tcl tw=80
 
-unset -nocomplain ::constcl::S ;# string store number
-set ::constcl::S 0
+unset -nocomplain ::constcl::vectorSpace
+set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
-unset -nocomplain ::constcl::StrSto
-set ::constcl::StrSto [list]
+unset -nocomplain ::constcl::vectorAssign
+set ::constcl::vectorAssign 0
 
 
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -3356,7 +3321,7 @@ proc ::constcl::atom? {val} {
 }
 
 
-
+# vim: ft=tcl tw=80
 
 
 
@@ -3375,6 +3340,8 @@ proc ::constcl::repl {{prompt "ConsTcl> "}} {
         set str [input $prompt]
     }
 }
+
+# vim: ft=tcl tw=80
 
 catch { ::constcl::Environment destroy }
 
@@ -3448,3 +3415,4 @@ namespace eval ::constcl {
 
 
 
+# vim: ft=tcl tw=80

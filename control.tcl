@@ -27,7 +27,10 @@ oo::class create ::constcl::Procedure {
         set env $e           ;# the closed over environment
     }
     method value {} {}
-    method write {} { puts -nonewline [self] }
+    method write {} {
+        regexp {(\d+)} [self] -> num
+        puts -nonewline "#<proc-$num>"
+    }
     method show {} { return [self] }
     method call {args} {
         ::constcl::eval $body [::constcl::Environment new $parms $args $env]
@@ -37,6 +40,10 @@ oo::class create ::constcl::Procedure {
 
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 CB
+
+MD(
+**procedure?**
+MD)
 
 PR(
 procedure? (public);val val -> bool
@@ -69,6 +76,8 @@ TT(
 TT)
 
 MD(
+**apply**
+
 `apply` applies a procedure to a Lisp list of Lisp arguments.
 MD)
 
@@ -102,6 +111,8 @@ TT(
 TT)
 
 MD(
+**map**
+
 `map` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The Lisp list of the results of the invocations is 
 returned.
@@ -151,6 +162,8 @@ TT(
 TT)
 
 MD(
+**for-each**
+
 `for-each` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
 MD)
@@ -220,3 +233,4 @@ proc ::constcl::dynamic-wind {before thunk after} {
 }
 CB
 
+# vim: ft=tcl tw=80

@@ -3,6 +3,12 @@ MD(
 
 ### Equivalence predicates
 
+**eq**
+
+**eqv**
+
+**equal**
+
 Of the three equivalence predicates, `eq` generally tests for identity (with exceptions for numbers
 and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
 identity), and `equal` tests for whether the output strings are equal.
@@ -28,7 +34,7 @@ proc ::constcl::eq? {val1 val2} {
         return #t
     } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && $val1 eq $val2} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 index] eq [$val2 index]} {
+    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && $val1 eq $val2} {
         return #t
     } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && $val1 eq $val2} {
         return #t
@@ -56,7 +62,7 @@ proc ::constcl::eqv? {val1 val2} {
         return #t
     } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 index] eq [$val2 index]} {
+    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
         return #t
     } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
         return #t
@@ -81,3 +87,4 @@ proc ::constcl::equal? {val1 val2} {
 }
 CB
 
+# vim: ft=tcl tw=80

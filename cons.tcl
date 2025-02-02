@@ -1,16 +1,15 @@
 MD(
 ## Initialization
 
-Initialize the string store with the running index `S` and the
-storage variable `StrSto`.
+Initialize the memory space for vector contents.
 MD)
 
 CB
-unset -nocomplain ::constcl::S ;# string store number
-set ::constcl::S 0
+unset -nocomplain ::constcl::vectorSpace
+set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
-unset -nocomplain ::constcl::StrSto
-set ::constcl::StrSto [list]
+unset -nocomplain ::constcl::vectorAssign
+set ::constcl::vectorAssign 0
 CB
 
 MD(
@@ -67,6 +66,8 @@ dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 CB
 
 MD(
+**atom?**
+
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
 MD)
 
@@ -174,7 +175,7 @@ TT(
 
 ::tcltest::test cons-8.0 {procedure definition} -body {
     pep "(lambda (r) (* r r))"
-} -match regexp -output "::oo::Obj\\d+\n"
+} -match regexp -output "#<proc-\\d+>\n"
 
 ::tcltest::test cons-8.1 {procedure with two expressions} -body {
     pep "(define (f) (define r 20) (* r r))"
@@ -321,4 +322,4 @@ TT(
 
 TT)
 
-
+# vim: ft=tcl tw=80

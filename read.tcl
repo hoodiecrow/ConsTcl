@@ -7,13 +7,15 @@ strings.
 MD)
 
 MD(
-A quick-and-dirty input simulator, using an input buffer object to hold characters to be
-read. The `fill` method fills the buffer and sets the first character in the peek position.
-The `advance` method consumes one character from the buffer. `first` peeks at the next
-character to be read. `skip-ws` advances past whitespace and comments.  `unget` backs up
-one position and sets a given character in the peek position. The `find` method looks past
-whitespace and comments to find a given character. It returns Tcl truth if it is found.
-Or it gets the hose again.
+
+A quick-and-dirty input simulator, using an input buffer object to hold
+characters to be read. The `fill` method fills the buffer and sets the first
+character in the peek position.  The `advance` method consumes one character
+from the buffer. `first` peeks at the next character to be read. `skip-ws`
+advances past whitespace and comments.  `unget` backs up one position and sets a
+given character in the peek position. The `find` method looks past whitespace
+and comments to find a given character. It returns Tcl truth if it is found.  Or
+it gets the hose again.
 
 MD)
 
@@ -80,7 +82,61 @@ oo::class create ::constcl::IB {
 CB
 
 MD(
-Given a string, `parse` fills the input buffer. It then reads and parses the input.
+
+The parsing procedure translates an expression from external representation to
+internal representation. The external representation is a 'recipe' for an
+expression that expresses it in a unique way. For example, the external
+representation for a vector is a sharp sign (#), a left parenthesis ((), the
+external representation for some values, and a right parenthesis ()). The parser
+takes in the input buffer character by character, matching each character
+against a fitting external representation. When done, it creates an object,
+which is the internal representation of an expression.  The object can then be
+passed to the evaluator.
+
+MD)
+
+MD(
+**parse**
+
+Given a string, `parse` fills the input buffer. It then parses the input and
+produces an expression.
+
+Example:
+
+```
+% ::constcl::parse "(+ 2 3)"
+::oo::Obj491
+```
+
+Here, `parse` parsed the external representation of a list with three elements,
++, 2, and 3. It produced the expression that has the internal representation
+`::oo::Obj491`. We will later meet procedures like `eval`, which transforms an
+expression into a value, and `write`, which prints a printed representation of
+expressions and values. Putting them together: we can see
+
+```
+% ::constcl::write ::oo::Obj491
+(+ 2 3)
+% ::constcl::write [::constcl::eval ::oo::Obj491]
+5
+```
+
+Fortunately, we don't have to work at such a low level. We can use the `repl`
+instead:
+
+```
+ConsTcl> (+ 2 3)
+5
+```
+
+Then, parsing and evaluation and writing goes on in the background and the
+internal representations of expressions and values are hidden.
+
+Anyway, here is how it really looks like. `::oo::Obj491` was just the head of the
+list.
+
+![intreplist](/images/intreplist.png)
+
 MD)
 
 PR(
@@ -97,7 +153,9 @@ proc ::constcl::parse {str} {
 CB
 
 MD(
-The standard builtin `read` consumes and parses input into a Lisp expression.
+**read**
+
+The standard builtin `read` parses input into a Lisp expression.
 MD)
 
 PR(
@@ -113,7 +171,11 @@ proc ::constcl::read {args} {
 CB
 
 MD(
-The procedure `parse-expression` parses input and produces an expression of any kind.
+**parse-expression**
+
+The procedure `parse-expression` parses input by peeking at the first available
+character and calling one of the more detailed parsing procedures based on that,
+producing an expression of any kind.
 MD)
 
 PR(
@@ -124,7 +186,7 @@ CB
 proc ::constcl::parse-expression {} {
     ib skip-ws
     switch -regexp [ib first] {
-        {^$}          { return }
+        {^$}          { return #NONE}
         {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
         {\'}          { return [parse-quoted-expression] }
@@ -135,17 +197,20 @@ proc ::constcl::parse-expression {} {
         {\[}          { return [parse-pair-expression "\]"] }
         {\`}          { return [parse-quasiquoted-expression] }
         {\d}          { return [parse-number-expression] }
-        {[[:space:]]} { ib advance }
         {[[:graph:]]} { return [parse-identifier-expression] }
         default {
-            error "unexpected char [ib first]"
+            error "unexpected character ([ib first])"
         }
     }
 }
 CB
 
 MD(
-`parse-string-expression` parses input and returns a string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+**parse-string-expression**
+
+`parse-string-expression` parses input starting with a double quote and collects
+characters until it reaches another (unescaped) double quote. It then returns a
+string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
 MD)
 
 PR(
@@ -156,7 +221,7 @@ CB
 proc ::constcl::parse-string-expression {} {
     set str {}
     ib advance
-    while {[ib first] ne {"}} {
+    while {[ib first] ne "\"" && [ib first] ne {}} {
         set c [ib first]
         if {$c eq "\\"} {
             ib advance
@@ -165,6 +230,9 @@ proc ::constcl::parse-string-expression {} {
             ::append str $c
         }
         ib advance
+    }
+    if {[ib first] ne "\""} {
+        error "malformed string (no ending double quote)"
     }
     ib advance
     ib skip-ws
@@ -189,8 +257,10 @@ TT(
 TT)
 
 MD(
-`parse-sharp` parses input and produces the various kinds of expressions whose literal
-begins with a sharp sign (#).
+**parse-sharp**
+
+`parse-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
+expressions whose external representation begins with a sharp sign.
 MD)
 
 PR(
@@ -213,6 +283,8 @@ proc ::constcl::parse-sharp {} {
 CB
 
 MD(
+**make-constant**
+
 The `make-constant` helper procedure is called to set components of expressions to
 constants when read as a quoted literal.
 MD)
@@ -232,7 +304,10 @@ proc ::constcl::make-constant {val} {
 CB
 
 MD(
-`parse-quoted-expression` parses input and produces an expression, returning it wrapped in `quote`.
+**parse-quoted-expression**
+
+`parse-quoted-expression` parses input starting with a "'", and then parses an entire
+expression beyond that, returning it wrapped in a list with `quote`.
 MD)
 
 PR(
@@ -258,6 +333,8 @@ TT(
 TT)
 
 MD(
+**parse-pair-expression**
+
 The `parse-pair-expression` procedure parses input and produces a structure of
 [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
@@ -359,8 +436,10 @@ TT(
 TT)
 
 MD(
+**parse-plus-minus**
+
 `parse-plus-minus` reacts to a plus or minus in the input buffer, and either
-returns a `#+` or `#-` symbol, or a number.
+returns a `+` or `-` symbol, or a number.
 MD)
 
 PR(
@@ -387,8 +466,11 @@ proc ::constcl::parse-plus-minus {} {
 CB
 
 MD(
-`parse-unquoted-expression` parses input, producing an expression and returning it wrapped in `unquote`, or
-in `unquote-splicing` if an @-sign is present in the input stream.
+**parse-unquoted-expression**
+
+`parse-unquoted-expression` parses input, producing an expression and returning
+it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
+the input stream.
 MD)
 
 PR(
@@ -418,6 +500,8 @@ TT(
 TT)
 
 MD(
+**parse-quasiquoted-expression**
+
 `parse-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
 MD)
 
@@ -444,6 +528,25 @@ TT(
 TT)
 
 MD(
+**interspace**
+
+The `interspace` helper procedure recognizes whitespace or comments between
+value representations.
+MD)
+
+CB
+proc ::constcl::interspace {c} {
+    if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+        return #t
+    } else {
+        return #f
+    }
+}
+CB
+
+MD(
+**parse-number-expression**
+
 `parse-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
@@ -453,16 +556,13 @@ PR)
 
 CB
 proc ::constcl::parse-number-expression {} {
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
         ::append num [ib first]
         ib advance
     }
     ib skip-ws
-    if {[::string is double -strict $num]} {
-        return [MkNumber $num]
-    } else {
-        error "Invalid numeric constant $num"
-    }
+    check {::string is double -strict $num} {Invalid numeric constant $num}
+    return [MkNumber $num]
 }
 CB
 
@@ -505,6 +605,8 @@ TT(
 TT)
 
 MD(
+**parse-identifier-expression**
+
 `parse-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
@@ -514,7 +616,7 @@ PR)
 
 CB
 proc ::constcl::parse-identifier-expression {} {
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) \]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
         ::append name [ib first]
         ib advance
     }
@@ -545,18 +647,27 @@ TT(
 TT)
 
 MD(
+**character-check**
+
 The `character-check` helper procedure compares a potential
 character constant to the valid kinds. Returns Tcl truth (1/0).
 MD)
 
 CB
 proc ::constcl::character-check {name} {
-    regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name
+    ::if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 CB
 
 MD(
-`parse-character-expression` parses input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+**parse-character-expression**
+
+`parse-character-expression` parses input, producing a character and returning
+a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
@@ -566,16 +677,13 @@ PR)
 CB
 proc ::constcl::parse-character-expression {} {
     set name "#"
-    while {[ib first] ne {} && ![::string is space -strict [ib first]] && [ib first] ni {) ]}} {
+    while {[interspace [ib first]] ne "#t" && [ib first] ni {) ]}} {
         ::append name [ib first]
         ib advance
     }
-    if {[::constcl::character-check $name]} {
-        return [MkChar $name]
-    } else {
-        error "Invalid character constant $name"
-    }
+    check {character-check $name} {Invalid character constant $name}
     ib skip-ws
+    return [MkChar $name]
 }
 CB
 
@@ -604,6 +712,8 @@ TT(
 TT)
 
 MD(
+**parse-vector-expression**
+
 `parse-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
@@ -638,3 +748,5 @@ TT(
 } -output "#(1 2 3)\n"
 
 TT)
+
+# vim: ft=tcl tw=80

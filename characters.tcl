@@ -13,7 +13,13 @@ oo::class create ::constcl::Char {
         if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
-            error "CHAR expected\n$v"
+            if {$v eq "#\\ "} {
+                set value #\\space
+            } elseif {$v eq "#\\\n"} {
+                set value #\\newline
+            } else {
+                error "CHAR expected\n$v"
+            }
         }
     }
     method char {} {
@@ -85,6 +91,8 @@ proc ::constcl::MkChar {v} {
 CB
 
 MD(
+**char?**
+
 `char?` recognizes Char values by type.
 MD)
 
@@ -115,6 +123,16 @@ TT(
 TT)
 
 MD(
+**char=?**
+
+**char<?**
+
+**char>?**
+
+**char<=?**
+
+**char>=?**
+
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
 MD)
@@ -254,6 +272,16 @@ TT(
 TT)
 
 MD(
+**char-ci=?**
+
+**char-ci<?**
+
+**char-ci>?**
+
+**char-ci<=?**
+
+**char-ci>=?**
+
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
 MD)
@@ -394,6 +422,16 @@ TT(
 TT)
 
 MD(
+**char-alphabetic**
+
+**char-numeric**
+
+**char-whitespace**
+
+**char-upper-case**
+
+**char-lower-case**
+
 The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
 conditions.
@@ -529,6 +567,10 @@ TT(
 TT)
 
 MD(
+**char->integer**
+
+**integer->char**
+
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
 MD)
@@ -573,6 +615,10 @@ TT(
 TT)
 
 MD(
+**char-upcase**
+
+**char-downcase**
+
 `char-upcase` and `char-downcase` alter the case of a character.
 MD)
 
@@ -633,3 +679,4 @@ TT(
 
 TT)
 
+# vim: ft=tcl tw=80

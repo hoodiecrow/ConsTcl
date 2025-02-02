@@ -33,6 +33,9 @@ inside_pr_block {
 	next;
 }
 
+# skip any modeline
+/# vim:/ { next; }
+
 # output non PR lines
 { print; }
 

@@ -157,6 +157,10 @@ source constcl.tcl
 } -output "#(1 2 3)\n"
 
 
+::tcltest::test eval-check-1.0 {try triggering a check} -body {
+    ::constcl::invoke #NIL [list #NIL #NIL]
+} -returnCodes error -result "PROCEDURE expected\n(() val ...)"
+
 
 ::tcltest::test eval-1.0 {expand and macro} -body {
     pxp "(and)"
@@ -219,6 +223,10 @@ source constcl.tcl
 
 ::tcltest::test eval-2.4 {expand cond macro} -body {
     pxp "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test eval-2.5 {expand cond macro} -body {
+    pxp "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test eval-3.0 {expand case macro} -body {
@@ -479,6 +487,9 @@ if no {
     pep "(abs -99)"
 } -output "99\n"
 
+::tcltest::test number-check-1.0 {try check} -body {
+    pep "(abs \"foo\")"
+} -returnCodes error -result "NUMBER expected\n(abs \"foo\")"
 
 
 ::tcltest::test number-1.19 {try quotient, remainder, modulo} -body {
@@ -546,6 +557,9 @@ if no {
     pep "(tan (/ pi 3))"
 } -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
 
+::tcltest::test number-check-1.0 {try triggering tan} -body {
+    pep "(tan #\\A)"
+} -returnCodes error -result "NUMBER expected\n(tan #\\A)"
 
 
 ::tcltest::test number-1.28 {try trig} -body {
@@ -1177,7 +1191,11 @@ if no {
 ::tcltest::test strings-1.23 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
-} -output "\"xoo\"\n"
+    pep {(define y "foobar")}
+    pep {(define z (string-copy y))}
+    pep {(eq? y z)}
+    pep {(equal? y z)}
+} -output "\"xoo\"\n#f\n#t\n"
 
 
 
@@ -1353,7 +1371,7 @@ if no {
 
 ::tcltest::test cons-8.0 {procedure definition} -body {
     pep "(lambda (r) (* r r))"
-} -match regexp -output "::oo::Obj\\d+\n"
+} -match regexp -output "#<proc-\\d+>\n"
 
 ::tcltest::test cons-8.1 {procedure with two expressions} -body {
     pep "(define (f) (define r 20) (* r r))"

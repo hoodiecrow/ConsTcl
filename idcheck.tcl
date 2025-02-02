@@ -2,10 +2,20 @@
 MD(
 ## Identifier validation
 
-Some routines for checking if a string is a valid identifier. `idcheckinit` checks the
-first character, `idchecksubs` checks the rest. `idcheck` calls the others and raises
-errors if they fail. A valid symbol is still an invalid identifier if has the name of
-some keyword, which varcheck checks, for a set of keywords given in the standard.
+**idcheckinit**
+
+**idchecksubs**
+
+**idcheck**
+
+**varcheck**
+
+Some routines for checking if a string is a valid identifier. `idcheckinit`
+checks the first character, `idchecksubs` checks the rest. `idcheck` calls the
+others and raises errors if they fail. A valid symbol is still an invalid
+identifier if has the name of some keyword, which `varcheck` checks, for a set
+of keywords given in the standard.
+
 MD)
 
 CB
@@ -43,3 +53,4 @@ proc ::constcl::varcheck {sym} {
 }
 CB
 
+# vim: ft=tcl tw=80

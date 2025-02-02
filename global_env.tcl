@@ -87,3 +87,4 @@ TT(
 } -returnCodes error -result "Unbound variable: foo"
 TT)
 
+# vim: ft=tcl tw=80

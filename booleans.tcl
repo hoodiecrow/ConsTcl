@@ -53,6 +53,8 @@ TT(
 TT)
 
 MD(
+**boolean?**
+
 The `boolean?` predicate recognizes a Boolean by type.
 MD)
 
@@ -91,6 +93,8 @@ TT(
 TT)
 
 MD(
+**not**
+
 The only operation on booleans: `not`, or logical negation.
 MD)
 
@@ -142,3 +146,4 @@ TT(
 
 TT)
 
+# vim: ft=tcl tw=80
