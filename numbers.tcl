@@ -341,6 +341,15 @@ PR(
 max, min (public);num num args nums -> num
 PR)
 
+MD(
+Example:
+
+```
+(max 7 1 10 3)   ⇒  10
+(min 7 1 10 3)   ⇒  1
+```
+MD)
+
 CB
 reg max ::constcl::max
 
@@ -404,6 +413,20 @@ PR)
 PR(
 -, / (public);num num args nums -> num
 PR)
+
+MD(
+Example:
+
+```
+(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   ⇒  (4 4 4 4)
+(+ 21 7 3)                                 ⇒  31
+(* 21 7 3)                                 ⇒  441
+(- 21 7 3)                                 ⇒  11
+(/ 21 7 3)                                 ⇒  1
+(- 5)                                      ⇒  -5
+(/ 5)                                      ⇒  0.2
+```
+MD)
 
 CB
 reg + ::constcl::+
@@ -547,6 +570,14 @@ PR(
 quotient (public);num1 num num2 num -> num
 PR)
 
+MD(
+Example:
+
+```
+(quotient 7 3)   ⇒  2.0
+```
+MD)
+
 CB
 reg quotient
 
@@ -573,6 +604,14 @@ PR(
 remainder (public);num1 num num2 num -> num
 PR)
 
+MD(
+Example:
+
+```
+(remainder 7 3)   ⇒  1
+```
+MD)
+
 CB
 reg remainder
 
@@ -592,6 +631,14 @@ MD)
 PR(
 modulo (public);num1 num num2 num -> num
 PR)
+
+MD(
+Example:
+
+```
+(modulo 7 3)   ⇒  1
+```
+MD)
 
 CB
 reg modulo
@@ -657,6 +704,17 @@ MD)
 PR(
 floor, ceiling, truncate, round (public);num num -> num
 PR)
+
+MD(
+Example:
+
+```
+(floor 7.5)      ⇒  7.0
+(ceiling 7.5)    ⇒  8.0
+(truncate 7.5)   ⇒  7.0
+(round 7.5)      ⇒  8
+```
+MD)
 
 CB
 reg floor ::constcl::floor
@@ -775,6 +833,15 @@ PR)
 PR(
 (binary) atan (public);num1 num num2 num -> num
 PR)
+
+MD(
+Example:
+
+```
+(let ((x (log 2))) (= 2 (exp x)))                         ⇒  #t
+(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   ⇒  #t
+```
+MD)
 
 CB
 reg exp ::constcl::exp
@@ -925,7 +992,7 @@ TT)
 MD(
 **expt**
 
-`expt` calculates the _x_ to the power of _y_.
+`expt` calculates the _x_ to the power of _y_, or _x<sup>y</sup>_.
 MD)
 
 PR(
@@ -1001,8 +1068,6 @@ CB
 MD(
 **number->string**
 
-**string->number**
-
 The procedures `number->string` and `string->number` convert between
 number and string with optional radix conversion.
 MD)
@@ -1010,6 +1075,17 @@ MD)
 PR(
 number->string (public);num num ?radix? num -> str
 PR)
+
+MD(
+Example:
+
+```
+(number->string 23)      ⇒  "23"
+(number->string 23 2)    ⇒  "10111"
+(number->string 23 8)    ⇒  "27"
+(number->string 23 16)   ⇒  "17"
+```
+MD)
 
 CB
 reg number->string ::constcl::number->string
@@ -1022,12 +1098,11 @@ proc ::constcl::number->string {num args} {
         lassign $args radix
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkString [$num numval]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkString [base [$radix numval] [$num numval]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkString [base [$radix numval] [$num numval]]]
         }
     }
 }
@@ -1056,11 +1131,32 @@ TT(
     pep "(number->string 23 16)"
 } -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
 
+::tcltest::test number-1.32 {try number->string} -body {
+    pep "(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string 23 13)"
+
 TT)
+
+MD(
+**string->number**
+
+As with `number->string`, above.
+MD)
 
 PR(
 string->number (public);str str ?radix? num -> num
 PR)
+
+MD(
+Example:
+
+```
+(string->number "23")        ⇒  23
+(string->number "10111" 2)   ⇒  23
+(string->number "27" 8)      ⇒  23
+(string->number "17" 16)     ⇒  23
+```
+MD)
 
 CB
 reg string->number ::constcl::string->number
@@ -1072,12 +1168,11 @@ proc ::constcl::string->number {str args} {
     } else {
         lassign $args radix
         check {string? $str} {STRING expected\n([pn] [$str show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkNumber [frombase [$radix numval] [$str value]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkNumber [frombase [$radix numval] [$str value]]]
         }
     }
 }
@@ -1101,12 +1196,16 @@ CB
 
 TT(
 
-::tcltest::test number-1.32 {try string->number} -body {
+::tcltest::test number-1.33 {try string->number} -body {
     pep {(string->number "23")}
     pep {(string->number "10111" 2)}
     pep {(string->number "27" 8)}
     pep {(string->number "17" 16)}
 } -output "23\n23\n23\n23\n"
+
+::tcltest::test number-1.34 {try string->number} -body {
+    pep {(string->number "23" 13)}
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\" 13)"
 
 TT)
 

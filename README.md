@@ -1747,6 +1747,13 @@ selects the smallest number.
 
 <table border=1><thead><tr><th colspan=2 align="left">max, min (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
+Example:
+
+```
+(max 7 1 10 3)   ⇒  10
+(min 7 1 10 3)   ⇒  1
+```
+
 ```
 reg max ::constcl::max
 
@@ -1790,6 +1797,18 @@ at least one for `-` and `/`.
 <table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">-, / (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   ⇒  (4 4 4 4)
+(+ 21 7 3)                                 ⇒  31
+(* 21 7 3)                                 ⇒  441
+(- 21 7 3)                                 ⇒  11
+(/ 21 7 3)                                 ⇒  1
+(- 5)                                      ⇒  -5
+(/ 5)                                      ⇒  0.2
+```
 
 ```
 reg + ::constcl::+
@@ -1873,6 +1892,12 @@ proc ::constcl::abs {num} {
 
 <table border=1><thead><tr><th colspan=2 align="left">quotient (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
+Example:
+
+```
+(quotient 7 3)   ⇒  2.0
+```
+
 ```
 reg quotient
 
@@ -1895,6 +1920,12 @@ a mathematician!)
 
 <table border=1><thead><tr><th colspan=2 align="left">remainder (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
+Example:
+
+```
+(remainder 7 3)   ⇒  1
+```
+
 ```
 reg remainder
 
@@ -1910,6 +1941,12 @@ proc ::constcl::remainder {num1 num2} {
 **modulo**
 
 <table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(modulo 7 3)   ⇒  1
+```
 
 ```
 reg modulo
@@ -1956,6 +1993,15 @@ proc ::constcl::denominator {q} {
 converting a real number to an integer.
 
 <table border=1><thead><tr><th colspan=2 align="left">floor, ceiling, truncate, round (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(floor 7.5)      ⇒  7.0
+(ceiling 7.5)    ⇒  8.0
+(truncate 7.5)   ⇒  7.0
+(round 7.5)      ⇒  8
+```
 
 ```
 reg floor ::constcl::floor
@@ -2031,6 +2077,13 @@ and `atan`, respectively.
 <table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">(binary) atan (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(let ((x (log 2))) (= 2 (exp x)))                         ⇒  #t
+(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   ⇒  #t
+```
 
 ```
 reg exp ::constcl::exp
@@ -2134,7 +2187,7 @@ proc ::constcl::sqrt {num} {
 
 **expt**
 
-`expt` calculates the _x_ to the power of _y_.
+`expt` calculates the _x_ to the power of _y_, or _x<sup>y</sup>_.
 
 <table border=1><thead><tr><th colspan=2 align="left">expt (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -2199,12 +2252,19 @@ proc ::constcl::inexact->exact {z} {
 
 **number->string**
 
-**string->number**
-
 The procedures `number->string` and `string->number` convert between
 number and string with optional radix conversion.
 
 <table border=1><thead><tr><th colspan=2 align="left">number-&gt;string (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+Example:
+
+```
+(number->string 23)      ⇒  "23"
+(number->string 23 2)    ⇒  "10111"
+(number->string 23 8)    ⇒  "27"
+(number->string 23 16)   ⇒  "17"
+```
 
 ```
 reg number->string ::constcl::number->string
@@ -2217,12 +2277,11 @@ proc ::constcl::number->string {num args} {
         lassign $args radix
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkString [$num numval]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkString [base [$radix numval] [$num numval]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkString [base [$radix numval] [$num numval]]]
         }
     }
 }
@@ -2243,7 +2302,20 @@ proc base {base number} {
 ```
 
 
+**string->number**
+
+As with `number->string`, above.
+
 <table border=1><thead><tr><th colspan=2 align="left">string-&gt;number (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(string->number "23")        ⇒  23
+(string->number "10111" 2)   ⇒  23
+(string->number "27" 8)      ⇒  23
+(string->number "17" 16)     ⇒  23
+```
 
 ```
 reg string->number ::constcl::string->number
@@ -2255,12 +2327,11 @@ proc ::constcl::string->number {str args} {
     } else {
         lassign $args radix
         check {string? $str} {STRING expected\n([pn] [$str show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkNumber [frombase [$radix numval] [$str value]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkNumber [frombase [$radix numval] [$str value]]]
         }
     }
 }
@@ -2346,6 +2417,13 @@ proc ::constcl::boolean? {val} {
 The only operation on booleans: `not`, or logical negation.
 
 <table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+Example:
+
+```
+(not #f)    ⇒  #t   ; the only argument that returns #t, all others return #f
+(not nil)   ⇒  #f   ; see?
+```
 
 ```
 reg not ::constcl::not
@@ -2454,6 +2532,7 @@ proc ::constcl::MkChar {v} {
 
 `char?` recognizes Char values by type.
 
+<table border=1><thead><tr><th colspan=2 align="left">char? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char? ::constcl::char?
@@ -2725,6 +2804,12 @@ proc ::constcl::char-lower-case? {char} {
 
 <table border=1><thead><tr><th colspan=2 align="left">char-&gt;integer (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an integer</td></tr></table>
 
+Example:
+
+```
+(char->integer #\A)   =>  65
+```
+
 ```
 reg char->integer
 
@@ -2734,6 +2819,12 @@ proc ::constcl::char->integer {char} {
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">integer-&gt;char (public)</th></tr></thead><tr><td>int</td><td>an integer</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
+Example:
+
+```
+(integer->char 97)   =>  #\a
+```
 
 ```
 reg integer->char
@@ -2855,6 +2946,12 @@ proc ::constcl::procedure? {val} {
 
 <table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
+Example:
+
+```
+(apply + (list 2 3))   ⇒  5
+```
+
 ```
 reg apply ::constcl::apply
 
@@ -2872,6 +2969,12 @@ a procedure as an argument. The Lisp list of the results of the invocations is
 returned.
 
 <table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+Example:
+
+```
+(map + '(1 2 3) '(5 6 7))   ⇒ (6 8 10)
+```
 
 ```
 reg map ::constcl::map
@@ -2901,6 +3004,17 @@ proc ::constcl::map {pr args} {
 a procedure as an argument. The empty list is returned.
 
 <table border=1><thead><tr><th colspan=2 align="left">for-each (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
+
+Example: (from R5RS; must be written on one line for the ConsTcl repl to stomach
+it.)
+
+```
+(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)                                      ⇒  #(0 1 4 9 16)
+```
 
 ```
 reg for-each ::constcl::for-each
@@ -3114,6 +3228,7 @@ oo::class create ::constcl::Pair {
         } else {
             set car $val
         }
+        self
     }
     method set-cdr! {val} {
         if {$constant} {
@@ -3121,6 +3236,7 @@ oo::class create ::constcl::Pair {
         } else {
             set cdr $val
         }
+        self
     }
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
@@ -3192,6 +3308,14 @@ a new value onto a list.
 
 <table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
+Example:
+
+```
+(cons 'a 'b)              ⇒  (a . b)
+(cons 'a nil)             ⇒  (a)
+(cons 'a (cons 'b nil))   ⇒  (a b)
+```
+
 ```
 reg cons ::constcl::cons
 
@@ -3207,6 +3331,12 @@ proc ::constcl::cons {car cdr} {
 
 <table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
+Example:
+
+```
+(car '(a b))   ⇒  a
+```
+
 ```
 reg car ::constcl::car
 
@@ -3221,6 +3351,12 @@ proc ::constcl::car {pair} {
 `cdr` gets the contents of the second cell in a pair.
 
 <table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+Example:
+
+```
+(cdr '(a b))   ⇒  (b)
+```
 
 ```
 reg cdr ::constcl::cdr
@@ -3287,7 +3423,13 @@ foreach ads {
 
 `set-car!` sets the contents of the first cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
+Example:
+
+```
+(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   ⇒  (x . b)
+```
 
 ```
 reg set-car! ::constcl::set-car!
@@ -3302,7 +3444,13 @@ proc ::constcl::set-car! {pair val} {
 
 `set-cdr!` sets the contents of the second cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
+Example:
+
+```
+(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   ⇒  (a . x)
+```
 
 ```
 reg set-cdr! ::constcl::set-cdr!
@@ -3317,6 +3465,17 @@ proc ::constcl::set-cdr! {pair val} {
 
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
+
+<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg list? ::constcl::list?
+
+proc ::constcl::list? {pair} {
+    set visited {}
+    return [listp $pair]
+}
+```
 
 <table border=1><thead><tr><th colspan=2 align="left">listp (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -3337,23 +3496,18 @@ proc ::constcl::listp {pair} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg list? ::constcl::list?
-
-proc ::constcl::list? {pair} {
-    set visited {}
-    return [listp $pair]
-}
-```
-
 
 **list**
 
 `list` constructs a Lisp list from a number of values.
 
 <table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+Example:
+
+```
+(list 1 2 3)   ⇒  (1 2 3)
+```
 
 ```
 reg list ::constcl::list
@@ -3376,6 +3530,23 @@ proc ::constcl::list {args} {
 
 `length` reports the length of a Lisp list.
 
+<table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+Example:
+
+```
+(length '(a b c d))   ⇒  4
+```
+
+```
+reg length ::constcl::length
+
+proc ::constcl::length {pair} {
+    check {list? $pair} {LIST expected\n([pn] lst)}
+    MkNumber [length-helper $pair]
+}
+```
+
 <table border=1><thead><tr><th colspan=2 align="left">length-helper (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
 
 ```
@@ -3388,35 +3559,15 @@ proc ::constcl::length-helper {pair} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
-```
-reg length ::constcl::length
-
-proc ::constcl::length {pair} {
-    check {list? $pair} {LIST expected\n([pn] lst)}
-    MkNumber [length-helper $pair]
-}
-```
-
 
 **append**
 
 `append` joins lists together.
 
-<table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+Example:
 
 ```
-proc ::constcl::copy-list {pair next} {
-    # TODO only fresh conses in the direct chain to NIL
-    if {[null? $pair] ne "#f"} {
-        set next
-    } elseif {[null? [cdr $pair]] ne "#f"} {
-        cons [car $pair] $next
-    } else {
-        cons [car $pair] [copy-list [cdr $pair] $next]
-    }
-}
+(append '(a b) '(c d))   ⇒  (a b c d)
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
@@ -3433,12 +3584,33 @@ proc ::constcl::append {args} {
 }
 ```
 
+<table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+```
+proc ::constcl::copy-list {pair next} {
+    # TODO only fresh conses in the direct chain to NIL
+    if {[null? $pair] ne "#f"} {
+        set next
+    } elseif {[null? [cdr $pair]] ne "#f"} {
+        cons [car $pair] $next
+    } else {
+        cons [car $pair] [copy-list [cdr $pair] $next]
+    }
+}
+```
+
 
 **reverse**
 
 `reverse` produces a reversed copy of a Lisp list.
 
 <table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+Example:
+
+```
+(reverse '(a b c))   ⇒  (c b a)
+```
 
 ```
 reg reverse ::constcl::reverse
@@ -3454,6 +3626,12 @@ proc ::constcl::reverse {vals} {
 Given a list index, `list-tail` yields the sublist starting from that index.
 
 <table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+Example:
+
+```
+(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   ⇒  (d e f)
+```
 
 ```
 reg list-tail ::constcl::list-tail
@@ -3474,6 +3652,12 @@ proc ::constcl::list-tail {vals k} {
 
 <table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
+Example:
+
+```
+(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   ⇒  d
+```
+
 ```
 reg list-ref ::constcl::list-ref
 
@@ -3493,33 +3677,13 @@ proc ::constcl::list-ref {vals k} {
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
 respectively, for the comparison.
 
-<table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
-
-```
-
-proc ::constcl::member-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[$epred $val1 [car $val2]] ne "#f"} {
-                return $val2
-            } else {
-                return [member-proc $epred $val1 [cdr $val2]]
-            }
-        }
-    } else {
-        switch $epred {
-            eq? { set name "memq" }
-            eqv? { set name "memv" }
-            equal? { set name "member" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
-    }
-}
-```
-
 <table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
+Example:
+
+```
+(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   ⇒  (d e f)
+```
 
 ```
 reg memq ::constcl::memq
@@ -3550,6 +3714,32 @@ proc ::constcl::member {val1 val2} {
 }
 ```
 
+<table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
+```
+
+proc ::constcl::member-proc {epred val1 val2} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
+            return #f
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[$epred $val1 [car $val2]] ne "#f"} {
+                return $val2
+            } else {
+                return [member-proc $epred $val1 [cdr $val2]]
+            }
+        }
+    } else {
+        switch $epred {
+            eq? { set name "memq" }
+            eqv? { set name "memv" }
+            equal? { set name "member" }
+        }
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
+    }
+}
+```
+
 **assq**
 
 **assv**
@@ -3564,34 +3754,8 @@ table known as an association list, or _alist_.
 Example:
 
 ```
-    (define e '((a 1) (b 2) (c 3)))
-    (assq 'a e)
-                                   ⇒ (a 1)
-```
-
-<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
-
-```
-proc ::constcl::assoc-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
-                return [car $val2]
-            } else {
-                return [assoc-proc $epred $val1 [cdr $val2]]
-            }
-        }
-    } else {
-        switch $epred {
-            eq? { set name "assq" }
-            eqv? { set name "assv" }
-            equal? { set name "assoc" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
-    }
-}
+(define e '((a 1) (b 2) (c 3)))
+(assq 'a e)                       ⇒ (a 1)
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
@@ -3623,6 +3787,31 @@ reg assoc
 
 proc ::constcl::assoc {val1 val2} {
     return [assoc-proc equal? $val1 $val2]
+}
+```
+
+<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
+```
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
+            return #f
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+                return [car $val2]
+            } else {
+                return [assoc-proc $epred $val1 [cdr $val2]]
+            }
+        }
+    } else {
+        switch $epred {
+            eq? { set name "assq" }
+            eqv? { set name "assv" }
+            equal? { set name "assoc" }
+        }
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
+    }
 }
 ```
 
@@ -3718,6 +3907,13 @@ characters. If _char_ is omitted, the string will be filled with space character
 
 <table border=1><thead><tr><th colspan=2 align="left">make-string (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
+Example:
+
+```
+(let ((k 5)) (make-string k))                   ⇒  "     "
+(let ((k 5) (char #\A)) (make-string k char))   ⇒  "AAAAA"
+```
+
 ```
 reg make-string ::constcl::make-string
 
@@ -3737,6 +3933,12 @@ proc ::constcl::make-string {k args} {
 `string` constructs a string from a number of Lisp characters.
 
 <table border=1><thead><tr><th colspan=2 align="left">string (public)</th></tr></thead><tr><td>args</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+Example:
+
+```
+(string #\f #\o #\o)   ⇒  "foo"
+```
 
 ```
 reg string ::constcl::string
@@ -3758,6 +3960,12 @@ proc ::constcl::string {args} {
 
 <table border=1><thead><tr><th colspan=2 align="left">string-length (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
+Example:
+
+```
+(string-length "foobar")   ⇒ 6
+```
+
 ```
 reg string-length ::constcl::string-length
 
@@ -3774,6 +3982,12 @@ proc ::constcl::string-length {str} {
 
 <table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
+Example:
+
+```
+(string-ref "foobar" 3)   ⇒ #\b
+```
+
 ```
 reg string-ref ::constcl::string-ref
 
@@ -3787,18 +4001,24 @@ proc ::constcl::string-ref {str k} {
 
 **string-set!**
 
-`string-set!` replaces the character at _k_ with _char_.
+`string-set!` replaces the character at _k_ with _char_ in a non-constant string.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-set! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
+Example:
+
 ```
-reg string-set! ::constcl::string-set!
+(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   ⇒  "fox"
+```
+
+```
+reg string-set!
 
 proc ::constcl::string-set! {str k char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
     check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
-    set i [$k numval]
     check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
+    set i [$k numval]
     $str set! $i [$char char]
     return $str
 }
@@ -3979,6 +4199,12 @@ proc ::constcl::string-ci>=? {str1 str2} {
 
 <table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
+Example:
+
+```
+(substring "foobar" 2 4)   ⇒ "oba"
+```
+
 ```
 reg substring ::constcl::substring
 
@@ -3997,6 +4223,12 @@ proc ::constcl::substring {str start end} {
 
 <table border=1><thead><tr><th colspan=2 align="left">string-append (public)</th></tr></thead><tr><td>args</td><td>some strings</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
+Example:
+
+```
+(string-append "foo" "bar")   ⇒  "foobar"
+```
+
 ```
 reg string-append ::constcl::string-append
 
@@ -4011,6 +4243,12 @@ proc ::constcl::string-append {args} {
 `string->list` converts a string to a Lisp list of characters.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-&gt;list (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of characters</td></tr></table>
+
+Example:
+
+```
+(string->list "foo")   ⇒  (#\f #\o #\o)
+```
 
 ```
 reg string->list ::constcl::string->list
@@ -4027,6 +4265,12 @@ proc ::constcl::string->list {str} {
 
 <table border=1><thead><tr><th colspan=2 align="left">list-&gt;string (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
+Example:
+
+```
+(list->string '(#\1 #\2 #\3))   ⇒ "123"
+```
+
 ```
 reg list->string ::constcl::list->string
 
@@ -4041,6 +4285,12 @@ proc ::constcl::list->string {list} {
 `string-copy` makes a copy of a string.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-copy (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+Example:
+
+```
+(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            ⇒  "xbc"
+```
 
 ```
 reg string-copy ::constcl::string-copy
@@ -4057,6 +4307,12 @@ proc ::constcl::string-copy {str} {
 `string-fill!` _str_ _char_ fills a non-constant string with _char_.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-fill! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+Example:
+
+```
+(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   ⇒  "XXXXXX"
+```
 
 ```
 reg string-fill! ::constcl::string-fill!
@@ -4147,6 +4403,12 @@ proc ::constcl::symbol->string {sym} {
 }
 ```
 
+Example:
+
+```
+(let ((sym 'Foobar)) (symbol->string sym))   ⇒  "foobar"
+```
+
 
 **string->symbol**
 
@@ -4154,6 +4416,14 @@ proc ::constcl::symbol->string {sym} {
 is 'case-constant', i.e. it will not be lower-cased.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-&gt;symbol (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
+Example:
+
+```
+(define sym (let ((str "Foobar")) (string->symbol str)))
+sym                                                        ⇒  Foobar
+(symbol->string sym)                                       ⇒  "Foobar"
+```
 
 ```
 reg string->symbol ::constcl::string->symbol
@@ -4250,6 +4520,13 @@ If a fill value isn't given, the empty list will be used.
 
 <table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?fill?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
+Example:
+
+```
+(let ((k 5)) (make-vector k))                  ⇒  #(() () () () ())
+(let ((k 5) (fill #\A)) (make-vector k fill))  ⇒  #(#\A #\A #\A #\A #\A)
+```
+
 ```
 reg make-vector ::constcl::make-vector
 
@@ -4269,6 +4546,12 @@ Given a number of Lisp values, `vector` creates a vector containing them.
 
 <table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
+Example:
+
+```
+(vector 'a 'b 'c)   ⇒  #(a b c)
+```
+
 ```
 reg vector ::constcl::vector
 
@@ -4284,8 +4567,14 @@ proc ::constcl::vector {args} {
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
+Example:
+
 ```
-reg vector-length ::constcl::vector-length
+(vector-length '#(a b c))   ⇒  3
+```
+
+```
+reg vector-length
 
 proc ::constcl::vector-length {vec} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
@@ -4296,9 +4585,15 @@ proc ::constcl::vector-length {vec} {
 
 **vector-ref**
 
-`vector-ref` returns the element of _vec_ at index _k_.
+`vector-ref` returns the element of _vec_ at index _k_ (0-based).
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+Example:
+
+```
+(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   ⇒  b
+```
 
 ```
 reg vector-ref ::constcl::vector-ref
@@ -4311,9 +4606,18 @@ proc ::constcl::vector-ref {vec k} {
 ```
 
 
+**vector-set!**
+
 `vector-set!`, for a non-constant vector, sets the element at index _k_ to _val_.
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
+Example:
+
+```
+(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           ⇒  *error*
+(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   ⇒  #(a x c)
+```
 
 ```
 reg vector-set! ::constcl::vector-set!
@@ -4332,6 +4636,12 @@ proc ::constcl::vector-set! {vec k val} {
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
+Example:
+
+```
+(vector->list '#(a b c))   ⇒  (a b c)
+```
+
 ```
 reg vector->list ::constcl::vector->list
 
@@ -4347,6 +4657,12 @@ proc ::constcl::vector->list {vec} {
 
 <table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
+Example:
+
+```
+(list->vector '(1 2 3))   ⇒  #(1 2 3)
+```
+
 ```
 reg list->vector ::constcl::list->vector
 
@@ -4361,6 +4677,14 @@ proc ::constcl::list->vector {list} {
 `vector-fill!` fills a non-constant vector with a given value.
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
+Example:
+
+```
+(define vec (vector 'a 'b 'c))
+(vector-fill! vec 'x)             ⇒  #(x x x)
+vec                               ⇒  #(x x x)
+```
 
 ```
 reg vector-fill! ::constcl::vector-fill!
@@ -4486,6 +4810,12 @@ a double floating point approximation).
 dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 ```
 
+In this interpreter, `nil` refers to the empty list.
+
+```
+reg nil #NIL
+```
+
 **atom?**
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
@@ -4522,7 +4852,15 @@ is a loop that repeatedly _reads_ a Scheme source string from the user through t
 proc ::constcl::input {prompt} {
     puts -nonewline $prompt
     flush stdout
-    gets stdin
+    set buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    while {[llength $openpars] > [llength $clsepars]} {
+        ::append buf [gets stdin]
+        set openpars [regexp -all -inline {\(} $buf]
+        set clsepars [regexp -all -inline {\)} $buf]
+    }
+    return $buf
 }
 ```
 

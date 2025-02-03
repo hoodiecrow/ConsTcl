@@ -97,6 +97,14 @@ proc ::constcl::symbol->string {sym} {
 }
 CB
 
+MD(
+Example:
+
+```
+(let ((sym 'Foobar)) (symbol->string sym))   ⇒  "foobar"
+```
+MD)
+
 TT(
 
 ::tcltest::test symbols-1.1 {try symbol->string (and string->symbol)} -body {
@@ -124,6 +132,16 @@ MD)
 PR(
 string->symbol (public);str str -> sym
 PR)
+
+MD(
+Example:
+
+```
+(define sym (let ((str "Foobar")) (string->symbol str)))
+sym                                                        ⇒  Foobar
+(symbol->string sym)                                       ⇒  "Foobar"
+```
+MD)
 
 CB
 reg string->symbol ::constcl::string->symbol

@@ -27,6 +27,7 @@ oo::class create ::constcl::Pair {
         } else {
             set car $val
         }
+        self
     }
     method set-cdr! {val} {
         if {$constant} {
@@ -34,6 +35,7 @@ oo::class create ::constcl::Pair {
         } else {
             set cdr $val
         }
+        self
     }
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
@@ -117,7 +119,7 @@ TT(
 ::tcltest::test pairslists-1.2 {playing with lists} -body {
     pep {(set-cdr! x 4)}
     pep {x}
-} -output "4\n(a . 4)\n"
+} -output "(a . 4)\n(a . 4)\n"
 
 ::tcltest::test pairslists-1.3 {playing with lists} -body {
     pep {(eqv? x y)}
@@ -149,6 +151,16 @@ PR(
 cons (public);car val cdr val -> pair
 PR)
 
+MD(
+Example:
+
+```
+(cons 'a 'b)              ⇒  (a . b)
+(cons 'a nil)             ⇒  (a)
+(cons 'a (cons 'b nil))   ⇒  (a b)
+```
+MD)
+
 CB
 reg cons ::constcl::cons
 
@@ -178,6 +190,14 @@ MD)
 PR(
 car (public);pair pair -> val
 PR)
+
+MD(
+Example:
+
+```
+(car '(a b))   ⇒  a
+```
+MD)
 
 CB
 reg car ::constcl::car
@@ -210,6 +230,14 @@ MD)
 PR(
 cdr (public);pair pair -> val
 PR)
+
+MD(
+Example:
+
+```
+(cdr '(a b))   ⇒  (b)
+```
+MD)
 
 CB
 reg cdr ::constcl::cdr
@@ -293,8 +321,16 @@ MD(
 MD)
 
 PR(
-set-car! (public);pair pair val val -> none
+set-car! (public);pair pair val val -> pair
 PR)
+
+MD(
+Example:
+
+```
+(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   ⇒  (x . b)
+```
+MD)
 
 CB
 reg set-car! ::constcl::set-car!
@@ -310,7 +346,7 @@ TT(
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-car! (f) 3)}
-} -output "3\n"
+} -output "(3)\n"
 
 ::tcltest::test pairslists-1.12 {try set-car!} -body {
     pep {(set-car! (g) 3)}
@@ -325,8 +361,16 @@ MD(
 MD)
 
 PR(
-set-cdr! (public);pair pair val val -> none
+set-cdr! (public);pair pair val val -> pair
 PR)
+
+MD(
+Example:
+
+```
+(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   ⇒  (a . x)
+```
+MD)
 
 CB
 reg set-cdr! ::constcl::set-cdr!
@@ -342,7 +386,7 @@ TT(
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-cdr! (f) 3)}
-} -output "3\n"
+} -output "(not-a-constant-list . 3)\n"
 
 ::tcltest::test pairslists-1.14 {try set-cdr!} -body {
     pep {(set-cdr! (g) 3)}
@@ -356,6 +400,19 @@ MD(
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 MD)
+
+PR(
+list? (public);pair pair -> bool
+PR)
+
+CB
+reg list? ::constcl::list?
+
+proc ::constcl::list? {pair} {
+    set visited {}
+    return [listp $pair]
+}
+CB
 
 PR(
 listp (internal);pair pair -> bool
@@ -375,19 +432,6 @@ proc ::constcl::listp {pair} {
     } else {
         return #f
     }
-}
-CB
-
-PR(
-list? (public);pair pair -> bool
-PR)
-
-CB
-reg list? ::constcl::list?
-
-proc ::constcl::list? {pair} {
-    set visited {}
-    return [listp $pair]
 }
 CB
 
@@ -416,6 +460,14 @@ MD)
 PR(
 list (public);args vals -> lvals
 PR)
+
+MD(
+Example:
+
+```
+(list 1 2 3)   ⇒  (1 2 3)
+```
+MD)
 
 CB
 reg list ::constcl::list
@@ -449,6 +501,27 @@ MD(
 MD)
 
 PR(
+length (public);pair pair -> num
+PR)
+
+MD(
+Example:
+
+```
+(length '(a b c d))   ⇒  4
+```
+MD)
+
+CB
+reg length ::constcl::length
+
+proc ::constcl::length {pair} {
+    check {list? $pair} {LIST expected\n([pn] lst)}
+    MkNumber [length-helper $pair]
+}
+CB
+
+PR(
 length-helper (internal);pair pair -> tnum
 PR)
 
@@ -459,19 +532,6 @@ proc ::constcl::length-helper {pair} {
     } else {
         return [expr {1 + [length-helper [cdr $pair]]}]
     }
-}
-CB
-
-PR(
-length (public);pair pair -> num
-PR)
-
-CB
-reg length ::constcl::length
-
-proc ::constcl::length {pair} {
-    check {list? $pair} {LIST expected\n([pn] lst)}
-    MkNumber [length-helper $pair]
 }
 CB
 
@@ -491,22 +551,13 @@ MD(
 `append` joins lists together.
 MD)
 
-PR(
-copy-list (internal);pair pair next lvals -> lvals
-PR)
+MD(
+Example:
 
-CB
-proc ::constcl::copy-list {pair next} {
-    # TODO only fresh conses in the direct chain to NIL
-    if {[null? $pair] ne "#f"} {
-        set next
-    } elseif {[null? [cdr $pair]] ne "#f"} {
-        cons [car $pair] $next
-    } else {
-        cons [car $pair] [copy-list [cdr $pair] $next]
-    }
-}
-CB
+```
+(append '(a b) '(c d))   ⇒  (a b c d)
+```
+MD)
 
 PR(
 append (public);args lists -> lvals
@@ -521,6 +572,23 @@ proc ::constcl::append {args} {
         set prev [copy-list $r $prev]
     }
     set prev
+}
+CB
+
+PR(
+copy-list (internal);pair pair next lvals -> lvals
+PR)
+
+CB
+proc ::constcl::copy-list {pair next} {
+    # TODO only fresh conses in the direct chain to NIL
+    if {[null? $pair] ne "#f"} {
+        set next
+    } elseif {[null? [cdr $pair]] ne "#f"} {
+        cons [car $pair] $next
+    } else {
+        cons [car $pair] [copy-list [cdr $pair] $next]
+    }
 }
 CB
 
@@ -545,6 +613,14 @@ MD)
 PR(
 reverse (public);vals lvals -> lvals
 PR)
+
+MD(
+Example:
+
+```
+(reverse '(a b c))   ⇒  (c b a)
+```
+MD)
 
 CB
 reg reverse ::constcl::reverse
@@ -572,6 +648,14 @@ MD)
 PR(
 list-tail (public);vals lvals k num -> lvals
 PR)
+
+MD(
+Example:
+
+```
+(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   ⇒  (d e f)
+```
+MD)
 
 CB
 reg list-tail ::constcl::list-tail
@@ -603,6 +687,14 @@ PR(
 list-ref (public);vals lvals k num -> val
 PR)
 
+MD(
+Example:
+
+```
+(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   ⇒  d
+```
+MD)
+
 CB
 reg list-ref ::constcl::list-ref
 
@@ -632,36 +724,16 @@ respectively, for the comparison.
 MD)
 
 PR(
-member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
-PR)
-
-CB
-
-proc ::constcl::member-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[$epred $val1 [car $val2]] ne "#f"} {
-                return $val2
-            } else {
-                return [member-proc $epred $val1 [cdr $val2]]
-            }
-        }
-    } else {
-        switch $epred {
-            eq? { set name "memq" }
-            eqv? { set name "memv" }
-            equal? { set name "member" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
-    }
-}
-CB
-
-PR(
 memq (public);val1 val val2 lvals -> lvfalse
 PR)
+
+MD(
+Example:
+
+```
+(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   ⇒  (d e f)
+```
+MD)
 
 CB
 reg memq ::constcl::memq
@@ -712,6 +784,34 @@ proc ::constcl::member {val1 val2} {
 }
 CB
 
+PR(
+member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
+PR)
+
+CB
+
+proc ::constcl::member-proc {epred val1 val2} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
+            return #f
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[$epred $val1 [car $val2]] ne "#f"} {
+                return $val2
+            } else {
+                return [member-proc $epred $val1 [cdr $val2]]
+            }
+        }
+    } else {
+        switch $epred {
+            eq? { set name "memq" }
+            eqv? { set name "memv" }
+            equal? { set name "member" }
+        }
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
+    }
+}
+CB
+
 MD(
 **assq**
 
@@ -727,38 +827,10 @@ table known as an association list, or _alist_.
 Example:
 
 ```
-    (define e '((a 1) (b 2) (c 3)))
-    (assq 'a e)
-                                   ⇒ (a 1)
+(define e '((a 1) (b 2) (c 3)))
+(assq 'a e)                       ⇒ (a 1)
 ```
 MD)
-
-PR(
-assoc-proc (internal);epred epred val1 val val2 alist -> lvfalse
-PR)
-
-CB
-proc ::constcl::assoc-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
-                return [car $val2]
-            } else {
-                return [assoc-proc $epred $val1 [cdr $val2]]
-            }
-        }
-    } else {
-        switch $epred {
-            eq? { set name "assq" }
-            eqv? { set name "assv" }
-            equal? { set name "assoc" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
-    }
-}
-CB
 
 PR(
 assq (public);val1 val val2 alist -> lvfalse
@@ -795,6 +867,33 @@ reg assoc
 
 proc ::constcl::assoc {val1 val2} {
     return [assoc-proc equal? $val1 $val2]
+}
+CB
+
+PR(
+assoc-proc (internal);epred epred val1 val val2 alist -> lvfalse
+PR)
+
+CB
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
+            return #f
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+                return [car $val2]
+            } else {
+                return [assoc-proc $epred $val1 [cdr $val2]]
+            }
+        }
+    } else {
+        switch $epred {
+            eq? { set name "assq" }
+            eqv? { set name "assv" }
+            equal? { set name "assoc" }
+        }
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
+    }
 }
 CB
 

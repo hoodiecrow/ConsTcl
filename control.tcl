@@ -85,6 +85,14 @@ PR(
 apply (public);pr proc vals lvals -> invoke
 PR)
 
+MD(
+Example:
+
+```
+(apply + (list 2 3))   ⇒  5
+```
+MD)
+
 CB
 reg apply ::constcl::apply
 
@@ -122,6 +130,14 @@ MD)
 PR(
 map (public);pr proc args lists -> lvals
 PR)
+
+MD(
+Example:
+
+```
+(map + '(1 2 3) '(5 6 7))   ⇒ (6 8 10)
+```
+MD)
 
 CB
 reg map ::constcl::map
@@ -169,6 +185,19 @@ MD)
 PR(
 for-each (public);pr proc args lists -> nil
 PR)
+
+MD(
+Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach
+it.)
+
+```
+(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)                                      ⇒  #(0 1 4 9 16)
+```
+MD)
 
 CB
 reg for-each ::constcl::for-each

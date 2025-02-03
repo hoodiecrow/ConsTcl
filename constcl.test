@@ -589,14 +589,22 @@ if no {
     pep "(number->string 23 16)"
 } -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
 
+::tcltest::test number-1.32 {try number->string} -body {
+    pep "(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string 23 13)"
 
 
-::tcltest::test number-1.32 {try string->number} -body {
+
+::tcltest::test number-1.33 {try string->number} -body {
     pep {(string->number "23")}
     pep {(string->number "10111" 2)}
     pep {(string->number "27" 8)}
     pep {(string->number "17" 16)}
 } -output "23\n23\n23\n23\n"
+
+::tcltest::test number-1.34 {try string->number} -body {
+    pep {(string->number "23" 13)}
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\" 13)"
 
 
 
@@ -879,7 +887,7 @@ if no {
 ::tcltest::test pairslists-1.2 {playing with lists} -body {
     pep {(set-cdr! x 4)}
     pep {x}
-} -output "4\n(a . 4)\n"
+} -output "(a . 4)\n(a . 4)\n"
 
 ::tcltest::test pairslists-1.3 {playing with lists} -body {
     pep {(eqv? x y)}
@@ -937,7 +945,7 @@ if no {
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-car! (f) 3)}
-} -output "3\n"
+} -output "(3)\n"
 
 ::tcltest::test pairslists-1.12 {try set-car!} -body {
     pep {(set-car! (g) 3)}
@@ -949,7 +957,7 @@ if no {
     pep {(define f (lambda () (list 'not-a-constant-list)))}
     pep {(define g (lambda () '(constant-list)))}
     pep {(set-cdr! (f) 3)}
-} -output "3\n"
+} -output "(not-a-constant-list . 3)\n"
 
 ::tcltest::test pairslists-1.14 {try set-cdr!} -body {
     pep {(set-cdr! (g) 3)}

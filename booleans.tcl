@@ -102,6 +102,15 @@ PR(
 not (public);val val -> bool
 PR)
 
+MD(
+Example:
+
+```
+(not #f)    ⇒  #t   ; the only argument that returns #t, all others return #f
+(not nil)   ⇒  #f   ; see?
+```
+MD)
+
 CB
 reg not ::constcl::not
 

@@ -1187,6 +1187,7 @@ proc ::constcl::odd? {num} {
 
 
 
+
 reg max ::constcl::max
 
 proc ::constcl::max {num args} {
@@ -1209,6 +1210,7 @@ proc ::constcl::min {num args} {
     }
     MkNumber [::tcl::mathfunc::min {*}$vals]
 }
+
 
 
 
@@ -1278,6 +1280,7 @@ proc ::constcl::abs {num} {
 
 
 
+
 reg quotient
 
 proc ::constcl::quotient {num1 num2} {
@@ -1293,6 +1296,7 @@ proc ::constcl::quotient {num1 num2} {
 
 
 
+
 reg remainder
 
 proc ::constcl::remainder {num1 num2} {
@@ -1302,6 +1306,7 @@ proc ::constcl::remainder {num1 num2} {
     }
     return [MkNumber $n]
 }
+
 
 
 
@@ -1327,6 +1332,7 @@ proc ::constcl::numerator {q} {
 proc ::constcl::denominator {q} {
     # TODO
 }
+
 
 
 
@@ -1369,6 +1375,7 @@ proc ::constcl::round {num} {
 proc ::constcl::rationalize {x y} {
     # TODO
 }
+
 
 
 
@@ -1496,6 +1503,7 @@ proc ::constcl::inexact->exact {z} {
 
 
 
+
 reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
@@ -1506,12 +1514,11 @@ proc ::constcl::number->string {num args} {
         lassign $args radix
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkString [$num numval]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkString [base [$radix numval] [$num numval]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkString [base [$radix numval] [$num numval]]]
         }
     }
 }
@@ -1532,6 +1539,8 @@ proc base {base number} {
 
 
 
+
+
 reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
@@ -1541,12 +1550,11 @@ proc ::constcl::string->number {str args} {
     } else {
         lassign $args radix
         check {string? $str} {STRING expected\n([pn] [$str show])}
+        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
-        } elseif {[$radix numval] in {2 8 16}} {
-            return [MkNumber [frombase [$radix numval] [$str value]]]
         } else {
-            error "radix not in 2, 8, 10, 16"
+            return [MkNumber [frombase [$radix numval] [$str value]]]
         }
     }
 }
@@ -1611,6 +1619,7 @@ proc ::constcl::boolean? {val} {
         return #f
     }
 }
+
 
 
 
@@ -1905,11 +1914,13 @@ proc ::constcl::char-lower-case? {char} {
 
 
 
+
 reg char->integer
 
 proc ::constcl::char->integer {char} {
     return [MkNumber [scan [$char char] %c]]
 }
+
 
 
 reg integer->char
@@ -1998,12 +2009,14 @@ proc ::constcl::procedure? {val} {
 
 
 
+
 reg apply ::constcl::apply
 
 proc ::constcl::apply {pr vals} {
     check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
     invoke $pr $vals
 }
+
 
 
 
@@ -2026,6 +2039,7 @@ proc ::constcl::map {pr args} {
     }
     return [list {*}$res]
 }
+
 
 
 
@@ -2181,6 +2195,7 @@ oo::class create ::constcl::Pair {
         } else {
             set car $val
         }
+        self
     }
     method set-cdr! {val} {
         if {$constant} {
@@ -2188,6 +2203,7 @@ oo::class create ::constcl::Pair {
         } else {
             set cdr $val
         }
+        self
     }
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
@@ -2243,6 +2259,7 @@ proc ::constcl::show-pair {pair} {
 
 
 
+
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
@@ -2252,11 +2269,13 @@ proc ::constcl::cons {car cdr} {
 
 
 
+
 reg car ::constcl::car
 
 proc ::constcl::car {pair} {
     $pair car
 }
+
 
 
 
@@ -2316,11 +2335,13 @@ foreach ads {
 
 
 
+
 reg set-car! ::constcl::set-car!
 
 proc ::constcl::set-car! {pair val} {
     $pair set-car! $val
 }
+
 
 
 
@@ -2332,6 +2353,14 @@ proc ::constcl::set-cdr! {pair val} {
 }
 
 
+
+
+reg list? ::constcl::list?
+
+proc ::constcl::list? {pair} {
+    set visited {}
+    return [listp $pair]
+}
 
 
 proc ::constcl::listp {pair} {
@@ -2349,13 +2378,6 @@ proc ::constcl::listp {pair} {
     }
 }
 
-
-reg list? ::constcl::list?
-
-proc ::constcl::list? {pair} {
-    set visited {}
-    return [listp $pair]
-}
 
 
 
@@ -2377,14 +2399,6 @@ proc ::constcl::list {args} {
 
 
 
-proc ::constcl::length-helper {pair} {
-    if {[null? $pair] ne "#f"} {
-        return 0
-    } else {
-        return [expr {1 + [length-helper [cdr $pair]]}]
-    }
-}
-
 
 reg length ::constcl::length
 
@@ -2394,6 +2408,27 @@ proc ::constcl::length {pair} {
 }
 
 
+proc ::constcl::length-helper {pair} {
+    if {[null? $pair] ne "#f"} {
+        return 0
+    } else {
+        return [expr {1 + [length-helper [cdr $pair]]}]
+    }
+}
+
+
+
+
+
+reg append ::constcl::append
+
+proc ::constcl::append {args} {
+    set prev [lindex $args end]
+    foreach r [lreverse [lrange $args 0 end-1]] {
+        set prev [copy-list $r $prev]
+    }
+    set prev
+}
 
 
 proc ::constcl::copy-list {pair next} {
@@ -2408,16 +2443,6 @@ proc ::constcl::copy-list {pair next} {
 }
 
 
-reg append ::constcl::append
-
-proc ::constcl::append {args} {
-    set prev [lindex $args end]
-    foreach r [lreverse [lrange $args 0 end-1]] {
-        set prev [copy-list $r $prev]
-    }
-    set prev
-}
-
 
 
 
@@ -2426,6 +2451,7 @@ reg reverse ::constcl::reverse
 proc ::constcl::reverse {vals} {
     list {*}[lreverse [splitlist $vals]]
 }
+
 
 
 
@@ -2443,6 +2469,7 @@ proc ::constcl::list-tail {vals k} {
 
 
 
+
 reg list-ref ::constcl::list-ref
 
 proc ::constcl::list-ref {vals k} {
@@ -2451,28 +2478,6 @@ proc ::constcl::list-ref {vals k} {
 
 
 
-
-
-proc ::constcl::member-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[$epred $val1 [car $val2]] ne "#f"} {
-                return $val2
-            } else {
-                return [member-proc $epred $val1 [cdr $val2]]
-            }
-        }
-    } else {
-        switch $epred {
-            eq? { set name "memq" }
-            eqv? { set name "memv" }
-            equal? { set name "member" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
-    }
-}
 
 
 reg memq ::constcl::memq
@@ -2498,26 +2503,27 @@ proc ::constcl::member {val1 val2} {
 
 
 
-proc ::constcl::assoc-proc {epred val1 val2} {
+proc ::constcl::member-proc {epred val1 val2} {
     if {[list? $val2] ne "#f"} {
         if {[null? $val2] ne "#f"} {
             return #f
         } elseif {[pair? $val2] ne "#f"} {
-            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
-                return [car $val2]
+            if {[$epred $val1 [car $val2]] ne "#f"} {
+                return $val2
             } else {
-                return [assoc-proc $epred $val1 [cdr $val2]]
+                return [member-proc $epred $val1 [cdr $val2]]
             }
         }
     } else {
         switch $epred {
-            eq? { set name "assq" }
-            eqv? { set name "assv" }
-            equal? { set name "assoc" }
+            eq? { set name "memq" }
+            eqv? { set name "memv" }
+            equal? { set name "member" }
         }
         error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
+
 
 
 reg assq
@@ -2540,6 +2546,28 @@ reg assoc
 
 proc ::constcl::assoc {val1 val2} {
     return [assoc-proc equal? $val1 $val2]
+}
+
+
+proc ::constcl::assoc-proc {epred val1 val2} {
+    if {[list? $val2] ne "#f"} {
+        if {[null? $val2] ne "#f"} {
+            return #f
+        } elseif {[pair? $val2] ne "#f"} {
+            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+                return [car $val2]
+            } else {
+                return [assoc-proc $epred $val1 [cdr $val2]]
+            }
+        }
+    } else {
+        switch $epred {
+            eq? { set name "assq" }
+            eqv? { set name "assv" }
+            equal? { set name "assoc" }
+        }
+        error "LIST expected\n($name [$val1 show] [$val2 show])"
+    }
 }
 
 
@@ -2622,6 +2650,7 @@ proc ::constcl::string? {val} {
 
 
 
+
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {k args} {
@@ -2632,6 +2661,7 @@ proc ::constcl::make-string {k args} {
         return [MkString [::string repeat [$char char] [$k numval]]]
     }
 }
+
 
 
 
@@ -2650,12 +2680,14 @@ proc ::constcl::string {args} {
 
 
 
+
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
     check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
     return [MkNumber [$str length]]
 }
+
 
 
 
@@ -2671,13 +2703,14 @@ proc ::constcl::string-ref {str k} {
 
 
 
-reg string-set! ::constcl::string-set!
+
+reg string-set!
 
 proc ::constcl::string-set! {str k char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
     check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
-    set i [$k numval]
     check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
+    set i [$k numval]
     $str set! $i [$char char]
     return $str
 }
@@ -2818,6 +2851,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 
 
 
+
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
@@ -2826,6 +2860,7 @@ proc ::constcl::substring {str start end} {
     check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
     return [MkString [$str substring [$start numval] [$end numval]]]
 }
+
 
 
 
@@ -2839,11 +2874,13 @@ proc ::constcl::string-append {args} {
 
 
 
+
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
     list {*}[lmap c [split [$str value] {}] {MkChar "#\\$c"}]
 }
+
 
 
 
@@ -2857,12 +2894,14 @@ proc ::constcl::list->string {list} {
 
 
 
+
 reg string-copy ::constcl::string-copy
 
 proc ::constcl::string-copy {str} {
     check {string? $str} {STRING expected\n([pn] [$str show])}
     return [MkString [$str value]]
 }
+
 
 
 
@@ -2938,6 +2977,8 @@ proc ::constcl::symbol->string {sym} {
     $str mkconstant
     return $str
 }
+
+
 
 
 
@@ -3018,6 +3059,7 @@ proc ::constcl::vector? {val} {
 
 
 
+
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
@@ -3031,6 +3073,7 @@ proc ::constcl::make-vector {k args} {
 
 
 
+
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
@@ -3040,12 +3083,14 @@ proc ::constcl::vector {args} {
 
 
 
-reg vector-length ::constcl::vector-length
+
+reg vector-length
 
 proc ::constcl::vector-length {vec} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
     return [MkNumber [$vec length]]
 }
+
 
 
 
@@ -3061,6 +3106,7 @@ proc ::constcl::vector-ref {vec k} {
 
 
 
+
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
@@ -3068,6 +3114,7 @@ proc ::constcl::vector-set! {vec k val} {
     check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
     return [$vec set! [$k numval] $val]
 }
+
 
 
 
@@ -3081,11 +3128,13 @@ proc ::constcl::vector->list {vec} {
 
 
 
+
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
     vector {*}[splitlist $list]
 }
+
 
 
 
@@ -3184,6 +3233,9 @@ interp alias {} #NONE {} [::constcl::None new]
 dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 
 
+reg nil #NIL
+
+
 
 reg atom? ::constcl::atom?
 
@@ -3204,7 +3256,15 @@ proc ::constcl::atom? {val} {
 proc ::constcl::input {prompt} {
     puts -nonewline $prompt
     flush stdout
-    gets stdin
+    set buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    while {[llength $openpars] > [llength $clsepars]} {
+        ::append buf [gets stdin]
+        set openpars [regexp -all -inline {\(} $buf]
+        set clsepars [regexp -all -inline {\)} $buf]
+    }
+    return $buf
 }
 
 

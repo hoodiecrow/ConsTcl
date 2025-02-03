@@ -105,6 +105,15 @@ PR(
 make-string (public);k num ?char? char -> str
 PR)
 
+MD(
+Example:
+
+```
+(let ((k 5)) (make-string k))                   ⇒  "     "
+(let ((k 5) (char #\A)) (make-string k char))   ⇒  "AAAAA"
+```
+MD)
+
 CB
 reg make-string ::constcl::make-string
 
@@ -135,6 +144,14 @@ MD)
 PR(
 string (public);args chars -> str
 PR)
+
+MD(
+Example:
+
+```
+(string #\f #\o #\o)   ⇒  "foo"
+```
+MD)
 
 CB
 reg string ::constcl::string
@@ -171,6 +188,14 @@ PR(
 string-length (public);str str -> num
 PR)
 
+MD(
+Example:
+
+```
+(string-length "foobar")   ⇒ 6
+```
+MD)
+
 CB
 reg string-length ::constcl::string-length
 
@@ -198,6 +223,14 @@ PR(
 string-ref (public);str str k num -> char
 PR)
 
+MD(
+Example:
+
+```
+(string-ref "foobar" 3)   ⇒ #\b
+```
+MD)
+
 CB
 reg string-ref ::constcl::string-ref
 
@@ -219,21 +252,29 @@ TT)
 MD(
 **string-set!**
 
-`string-set!` replaces the character at _k_ with _char_.
+`string-set!` replaces the character at _k_ with _char_ in a non-constant string.
 MD)
 
 PR(
 string-set! (public);str str k num char char -> str
 PR)
 
+MD(
+Example:
+
+```
+(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   ⇒  "fox"
+```
+MD)
+
 CB
-reg string-set! ::constcl::string-set!
+reg string-set!
 
 proc ::constcl::string-set! {str k char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
     check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
-    set i [$k numval]
     check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
+    set i [$k numval]
     $str set! $i [$char char]
     return $str
 }
@@ -531,6 +572,14 @@ PR(
 substring (public);str str start num end num -> str
 PR)
 
+MD(
+Example:
+
+```
+(substring "foobar" 2 4)   ⇒ "oba"
+```
+MD)
+
 CB
 reg substring ::constcl::substring
 
@@ -560,6 +609,14 @@ PR(
 string-append (public);args strs -> str
 PR)
 
+MD(
+Example:
+
+```
+(string-append "foo" "bar")   ⇒  "foobar"
+```
+MD)
+
 CB
 reg string-append ::constcl::string-append
 
@@ -585,6 +642,14 @@ MD)
 PR(
 string->list (public);str str -> lchars
 PR)
+
+MD(
+Example:
+
+```
+(string->list "foo")   ⇒  (#\f #\o #\o)
+```
+MD)
 
 CB
 reg string->list ::constcl::string->list
@@ -612,6 +677,14 @@ PR(
 list->string (public);list lchars -> str
 PR)
 
+MD(
+Example:
+
+```
+(list->string '(#\1 #\2 #\3))   ⇒ "123"
+```
+MD)
+
 CB
 reg list->string ::constcl::list->string
 
@@ -637,6 +710,14 @@ MD)
 PR(
 string-copy (public);str str -> str
 PR)
+
+MD(
+Example:
+
+```
+(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            ⇒  "xbc"
+```
+MD)
 
 CB
 reg string-copy ::constcl::string-copy
@@ -669,6 +750,14 @@ MD)
 PR(
 string-fill! (public);str str char char -> str
 PR)
+
+MD(
+Example:
+
+```
+(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   ⇒  "XXXXXX"
+```
+MD)
 
 CB
 reg string-fill! ::constcl::string-fill!

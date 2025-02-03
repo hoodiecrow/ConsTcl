@@ -66,6 +66,14 @@ dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
 CB
 
 MD(
+In this interpreter, `nil` refers to the empty list.
+MD)
+
+CB
+reg nil #NIL
+CB
+
+MD(
 **atom?**
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.

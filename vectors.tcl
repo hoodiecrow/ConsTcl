@@ -101,6 +101,15 @@ PR(
 make-vector? (public);k num ?fill? val -> vec
 PR)
 
+MD(
+Example:
+
+```
+(let ((k 5)) (make-vector k))                  ⇒  #(() () () () ())
+(let ((k 5) (fill #\A)) (make-vector k fill))  ⇒  #(#\A #\A #\A #\A #\A)
+```
+MD)
+
 CB
 reg make-vector ::constcl::make-vector
 
@@ -123,6 +132,14 @@ MD)
 PR(
 vector (public);args vals -> vec
 PR)
+
+MD(
+Example:
+
+```
+(vector 'a 'b 'c)   ⇒  #(a b c)
+```
+MD)
 
 CB
 reg vector ::constcl::vector
@@ -151,8 +168,16 @@ PR(
 vector-length (public);vec vec -> num
 PR)
 
+MD(
+Example:
+
+```
+(vector-length '#(a b c))   ⇒  3
+```
+MD)
+
 CB
-reg vector-length ::constcl::vector-length
+reg vector-length
 
 proc ::constcl::vector-length {vec} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
@@ -171,12 +196,20 @@ TT)
 MD(
 **vector-ref**
 
-`vector-ref` returns the element of _vec_ at index _k_.
+`vector-ref` returns the element of _vec_ at index _k_ (0-based).
 MD)
 
 PR(
 vector-ref (public);vec vec k num -> val
 PR)
+
+MD(
+Example:
+
+```
+(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   ⇒  b
+```
+MD)
 
 CB
 reg vector-ref ::constcl::vector-ref
@@ -197,12 +230,23 @@ TT(
 TT)
 
 MD(
+**vector-set!**
+
 `vector-set!`, for a non-constant vector, sets the element at index _k_ to _val_.
 MD)
 
 PR(
 vector-set! (public);vec vec k num val val -> vec
 PR)
+
+MD(
+Example:
+
+```
+(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           ⇒  *error*
+(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   ⇒  #(a x c)
+```
+MD)
 
 CB
 reg vector-set! ::constcl::vector-set!
@@ -233,6 +277,14 @@ PR(
 vector->list (public);vec vec -> lvals
 PR)
 
+MD(
+Example:
+
+```
+(vector->list '#(a b c))   ⇒  (a b c)
+```
+MD)
+
 CB
 reg vector->list ::constcl::vector->list
 
@@ -259,6 +311,14 @@ PR(
 list->vector (public);list lvals -> vec
 PR)
 
+MD(
+Example:
+
+```
+(list->vector '(1 2 3))   ⇒  #(1 2 3)
+```
+MD)
+
 CB
 reg list->vector ::constcl::list->vector
 
@@ -284,6 +344,16 @@ MD)
 PR(
 vector-fill! (public);vec vec fill val -> vec
 PR)
+
+MD(
+Example:
+
+```
+(define vec (vector 'a 'b 'c))
+(vector-fill! vec 'x)             ⇒  #(x x x)
+vec                               ⇒  #(x x x)
+```
+MD)
 
 CB
 reg vector-fill! ::constcl::vector-fill!

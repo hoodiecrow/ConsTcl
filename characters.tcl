@@ -97,7 +97,7 @@ MD(
 MD)
 
 PR(
-char? (public):val val -> bool
+char? (public);val val -> bool
 PR)
 
 CB
@@ -548,6 +548,14 @@ PR(
 char->integer (public);char char -> int
 PR)
 
+MD(
+Example:
+
+```
+(char->integer #\A)   =>  65
+```
+MD)
+
 CB
 reg char->integer
 
@@ -559,6 +567,14 @@ CB
 PR(
 integer->char (public);int int -> char
 PR)
+
+MD(
+Example:
+
+```
+(integer->char 97)   =>  #\a
+```
+MD)
 
 CB
 reg integer->char
