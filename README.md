@@ -3005,7 +3005,7 @@ a procedure as an argument. The empty list is returned.
 
 <table border=1><thead><tr><th colspan=2 align="left">for-each (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
 
-Example: (from R5RS; must be written on one line for the ConsTcl repl to stomach
+Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach
 it.)
 
 ```
@@ -3315,6 +3315,9 @@ Example:
 (cons 'a nil)             ⇒  (a)
 (cons 'a (cons 'b nil))   ⇒  (a b)
 ```
+
+![a small schematic to make it clearer](/images/consing.png)
+
 
 ```
 reg cons ::constcl::cons
@@ -4839,10 +4842,11 @@ proc ::constcl::atom? {val} {
 
 ## The REPL
 
-The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop))
-is a loop that repeatedly _reads_ a Scheme source string from the user through the command
-`::constcl::input` (breaking the loop if given an empty line) and `::constcl::parse`, _evaluates_ it using
-`::constcl::eval`, and _prints_ using `::constcl::write`.
+The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)) is a
+loop that repeatedly _reads_ a Scheme source string from the user through the
+command `::constcl::input` (breaking the loop if given an empty line) and
+`::constcl::parse`, _evaluates_ it using `::constcl::eval`, and _prints_ using
+`::constcl::write`.
 
 **input**
 
@@ -4855,10 +4859,14 @@ proc ::constcl::input {prompt} {
     set buf [gets stdin]
     set openpars [regexp -all -inline {\(} $buf]
     set clsepars [regexp -all -inline {\)} $buf]
-    while {[llength $openpars] > [llength $clsepars]} {
+    set openbrak [regexp -all -inline {\[} $buf]
+    set clsebrak [regexp -all -inline {\]} $buf]
+    while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
         ::append buf [gets stdin]
         set openpars [regexp -all -inline {\(} $buf]
         set clsepars [regexp -all -inline {\)} $buf]
+        set openbrak [regexp -all -inline {\[} $buf]
+        set clsebrak [regexp -all -inline {\]} $buf]
     }
     return $buf
 }
@@ -4866,8 +4874,9 @@ proc ::constcl::input {prompt} {
 
 **repl**
 
-`repl` puts the loop in the read-eval-print loop. It repeats prompting for a string until given
-a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+`repl` puts the loop in the read-eval-print loop. It repeats prompting for a
+string until given a blank input. Given non-blank input, it parses and evaluates
+the string, printing the resulting value.
 
 ```
 proc ::constcl::repl {{prompt "ConsTcl> "}} {
