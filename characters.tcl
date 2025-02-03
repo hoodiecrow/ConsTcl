@@ -145,14 +145,12 @@ CB
 reg char=? ::constcl::char=?
 
 proc ::constcl::char=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {$char1 eq $char2} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {$char1 eq $char2} {
+        return #t
     } else {
-        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -165,20 +163,22 @@ TT(
     pep {(char=? #\Space #\space)}
 } -output "#t\n#f\n#t\n"
 
+::tcltest::test characters-check-1.0 {try triggering a check} -body {
+    pep {(char=? 99 #\A)}
+} -returnCodes error -result "CHAR expected\n(char=? 99 #\\A)"
+
 TT)
 
 CB
 reg char<? ::constcl::char<?
 
 proc ::constcl::char<? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] < [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] < [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -197,14 +197,12 @@ CB
 reg char>? ::constcl::char>?
 
 proc ::constcl::char>? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] > [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] > [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -223,14 +221,12 @@ CB
 reg char<=? ::constcl::char<=?
 
 proc ::constcl::char<=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] <= [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] <= [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -249,14 +245,12 @@ CB
 reg char>=? ::constcl::char>=?
 
 proc ::constcl::char>=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] >= [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] >= [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -294,14 +288,12 @@ CB
 reg char-ci=? ::constcl::char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -320,14 +312,12 @@ CB
 reg char-ci<? ::constcl::char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -346,14 +336,12 @@ CB
 reg char-ci>? ::constcl::char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -372,14 +360,12 @@ CB
 reg char-ci<=? ::constcl::char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -398,14 +384,12 @@ CB
 reg char-ci>=? ::constcl::char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 CB
@@ -445,11 +429,8 @@ CB
 reg char-alphabetic? ::constcl::char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char alphabetic?]
-    } else {
-        error "CHAR expected\n(char-alphabetic? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char alphabetic?]
 }
 CB
 
@@ -470,11 +451,8 @@ CB
 reg char-numeric? ::constcl::char-numeric?
 
 proc ::constcl::char-numeric? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char numeric?]
-    } else {
-        error "CHAR expected\n(char-numeric? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char numeric?]
 }
 CB
 
@@ -495,11 +473,8 @@ CB
 reg char-whitespace? ::constcl::char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char whitespace?]
-    } else {
-        error "CHAR expected\n(char-whitespace? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char whitespace?]
 }
 CB
 
@@ -520,11 +495,8 @@ CB
 reg char-upper-case? ::constcl::char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char upper-case?]
-    } else {
-        error "CHAR expected\n(char-upper-case? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char upper-case?]
 }
 CB
 
@@ -545,11 +517,8 @@ CB
 reg char-lower-case? ::constcl::char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char lower-case?]
-    } else {
-        error "CHAR expected\n(char-lower-case? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char lower-case?]
 }
 CB
 
@@ -630,14 +599,11 @@ CB
 reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
-    if {[char? $char] ne "#f"} {
-        if {[::string is alpha -strict [$char char]]} {
-            return [MkChar [::string toupper [$char value]]]
-        } else {
-            return $char
-        }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    if {[::string is alpha -strict [$char char]]} {
+        return [MkChar [::string toupper [$char value]]]
     } else {
-        error "CHAR expected\n(char-upcase [$char show])"
+        return $char
     }
 }
 CB
@@ -657,14 +623,11 @@ CB
 reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
-    if {[char? $char] ne "#f"} {
-        if {[::string is alpha -strict [$char char]]} {
-            return [MkChar [::string tolower [$char value]]]
-        } else {
-            return $char
-        }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    if {[::string is alpha -strict [$char char]]} {
+        return [MkChar [::string tolower [$char value]]]
     } else {
-        error "CHAR expected\n(char-downcase [$char show])"
+        return $char
     }
 }
 CB

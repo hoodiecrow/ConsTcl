@@ -36,6 +36,11 @@ proc ::constcl::check {cond msg} {
     }
 }
 
+proc pn {} {
+    lindex [split [lindex [info level -1] 0] :] end
+}
+
+
 
 reg in-range ::constcl::in-range
 
@@ -1141,7 +1146,7 @@ proc ::constcl::>= {args} {
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-    check {number? $num} {NUMBER expected\n(zero? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num zero?]
 }
 
@@ -1151,7 +1156,7 @@ proc ::constcl::zero? {num} {
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-    check {number? $num} {NUMBER expected\n(positive? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num positive?]
 }
 
@@ -1159,7 +1164,7 @@ proc ::constcl::positive? {num} {
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-    check {number? $num} {NUMBER expected\n(negative? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num negative?]
 }
 
@@ -1167,7 +1172,7 @@ proc ::constcl::negative? {num} {
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-    check {number? $num} {NUMBER expected\n(even? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num even?]
 }
 
@@ -1175,7 +1180,7 @@ proc ::constcl::even? {num} {
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-    check {number? $num} {NUMBER expected\n(odd? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num odd?]
 }
 
@@ -1262,7 +1267,7 @@ proc ::constcl::/ {num args} {
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-    check {number? $num} {NUMBER expected\n(abs [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     if {[$num negative?] ne "#f"} {
         return [MkNumber [expr {[$num numval] * -1}]]
     } else {
@@ -1328,7 +1333,7 @@ proc ::constcl::denominator {q} {
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-    check {number? $num} {NUMBER expected\n(floor [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 
@@ -1336,7 +1341,7 @@ proc ::constcl::floor {num} {
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-    check {number? $num} {NUMBER expected\n(ceiling [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 
@@ -1344,7 +1349,7 @@ proc ::constcl::ceiling {num} {
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-    check {number? $num} {NUMBER expected\n(truncate [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     if {[$num negative?] ne "#f"} {
         MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
@@ -1356,7 +1361,7 @@ proc ::constcl::truncate {num} {
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-    check {number? $num} {NUMBER expected\n(round [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 
@@ -1371,7 +1376,7 @@ proc ::constcl::rationalize {x y} {
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-    check {number? $num} {NUMBER expected\n(exp [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 
@@ -1379,7 +1384,7 @@ proc ::constcl::exp {num} {
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-    check {number? $num} {NUMBER expected\n(log [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 
@@ -1387,21 +1392,21 @@ proc ::constcl::log {num} {
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-    check {number? $num} {NUMBER expected\n(sin [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-    check {number? $num} {NUMBER expected\n(cos [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-    check {number? $num} {NUMBER expected\n(tan [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 
@@ -1409,14 +1414,14 @@ proc ::constcl::tan {num} {
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-    check {number? $num} {NUMBER expected\n(asin [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-    check {number? $num} {NUMBER expected\n(acos [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 
@@ -1425,12 +1430,12 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set num [lindex $args 0]
-        check {number? $num} {NUMBER expected\n(atan [$num show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
         MkNumber [::tcl::mathfunc::atan [$num numval]]
     } else {
         lassign $args num1 num2
-        check {number? $num1} {NUMBER expected\n(atan [$num1 show])}
-        check {number? $num2} {NUMBER expected\n(atan [$num2 show])}
+        check {number? $num1} {NUMBER expected\n([pn] [$num1 show])}
+        check {number? $num2} {NUMBER expected\n([pn] [$num2 show])}
         MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
     }
 }
@@ -1441,7 +1446,7 @@ proc ::constcl::atan {args} {
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-    check {number? $num} {NUMBER expected\n(sqrt [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 
@@ -1451,8 +1456,8 @@ proc ::constcl::sqrt {num} {
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-    check {number? $num1} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
-    check {number? $num2} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
+    check {number? $num1} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
+    check {number? $num2} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
     MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 
@@ -1495,12 +1500,12 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        check {number? $num} {NUMBER expected\n(string->number [$num show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
         return [MkString [$num numval]]
     } else {
         lassign $args radix
-        check {number? $num} {NUMBER expected\n(string->number [$num show])}
-        check {number? $radix} {NUMBER expected\n(string->number [$num show] [$radix show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
+        check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkString [$num numval]]
         } elseif {[$radix numval] in {2 8 16}} {
@@ -1531,11 +1536,11 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
     if {[llength $args] == 0} {
-        check {string? $str} {STRING expected\n(string->number [$str show])}
+        check {string? $str} {STRING expected\n([pn] [$str show])}
         return [MkNumber [$str value]]
     } else {
         lassign $args radix
-        check {string? $str} {STRING expected\n(string->number [$str show])}
+        check {string? $str} {STRING expected\n([pn] [$str show])}
         if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
         } elseif {[$radix numval] in {2 8 16}} {
@@ -1727,14 +1732,12 @@ proc ::constcl::char? {val} {
 reg char=? ::constcl::char=?
 
 proc ::constcl::char=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {$char1 eq $char2} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {$char1 eq $char2} {
+        return #t
     } else {
-        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1742,14 +1745,12 @@ proc ::constcl::char=? {char1 char2} {
 reg char<? ::constcl::char<?
 
 proc ::constcl::char<? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] < [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] < [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1757,14 +1758,12 @@ proc ::constcl::char<? {char1 char2} {
 reg char>? ::constcl::char>?
 
 proc ::constcl::char>? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] > [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] > [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1772,14 +1771,12 @@ proc ::constcl::char>? {char1 char2} {
 reg char<=? ::constcl::char<=?
 
 proc ::constcl::char<=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] <= [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] <= [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1787,14 +1784,12 @@ proc ::constcl::char<=? {char1 char2} {
 reg char>=? ::constcl::char>=?
 
 proc ::constcl::char>=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[$char1 char] >= [$char2 char]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[$char1 char] >= [$char2 char]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1804,14 +1799,12 @@ proc ::constcl::char>=? {char1 char2} {
 reg char-ci=? ::constcl::char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1819,14 +1812,12 @@ proc ::constcl::char-ci=? {char1 char2} {
 reg char-ci<? ::constcl::char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1834,14 +1825,12 @@ proc ::constcl::char-ci<? {char1 char2} {
 reg char-ci>? ::constcl::char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1849,14 +1838,12 @@ proc ::constcl::char-ci>? {char1 char2} {
 reg char-ci<=? ::constcl::char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char<=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1864,14 +1851,12 @@ proc ::constcl::char-ci<=? {char1 char2} {
 reg char-ci>=? ::constcl::char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
-    if {[char? $char1] ne "#f" && [char? $char2] ne "#f"} {
-        if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
+    if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
+        return #t
     } else {
-        error "CHAR expected\n(char>=? [$char1 show] [$char2 show])"
+        return #f
     }
 }
 
@@ -1881,55 +1866,40 @@ proc ::constcl::char-ci>=? {char1 char2} {
 reg char-alphabetic? ::constcl::char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char alphabetic?]
-    } else {
-        error "CHAR expected\n(char-alphabetic? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char alphabetic?]
 }
 
 
 reg char-numeric? ::constcl::char-numeric?
 
 proc ::constcl::char-numeric? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char numeric?]
-    } else {
-        error "CHAR expected\n(char-numeric? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char numeric?]
 }
 
 
 reg char-whitespace? ::constcl::char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char whitespace?]
-    } else {
-        error "CHAR expected\n(char-whitespace? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char whitespace?]
 }
 
 
 reg char-upper-case? ::constcl::char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char upper-case?]
-    } else {
-        error "CHAR expected\n(char-upper-case? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char upper-case?]
 }
 
 
 reg char-lower-case? ::constcl::char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
-    if {[char? $char] ne "#f"} {
-        return [$char lower-case?]
-    } else {
-        error "CHAR expected\n(char-lower-case? [$char show])"
-    }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    return [$char lower-case?]
 }
 
 
@@ -1960,14 +1930,11 @@ proc ::constcl::integer->char {int} {
 reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
-    if {[char? $char] ne "#f"} {
-        if {[::string is alpha -strict [$char char]]} {
-            return [MkChar [::string toupper [$char value]]]
-        } else {
-            return $char
-        }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    if {[::string is alpha -strict [$char char]]} {
+        return [MkChar [::string toupper [$char value]]]
     } else {
-        error "CHAR expected\n(char-upcase [$char show])"
+        return $char
     }
 }
 
@@ -1976,14 +1943,11 @@ proc ::constcl::char-upcase {char} {
 reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
-    if {[char? $char] ne "#f"} {
-        if {[::string is alpha -strict [$char char]]} {
-            return [MkChar [::string tolower [$char value]]]
-        } else {
-            return $char
-        }
+    check {char? $char} {CHAR expected\n([pn] [$char show])}
+    if {[::string is alpha -strict [$char char]]} {
+        return [MkChar [::string tolower [$char value]]]
     } else {
-        error "CHAR expected\n(char-downcase [$char show])"
+        return $char
     }
 }
 
@@ -2020,7 +1984,7 @@ interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {val} {
-    if {[info object isa typeof $val ::constcl::Procedure]} {
+    ::if {[info object isa typeof $val ::constcl::Procedure]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
         return #t
@@ -2037,11 +2001,8 @@ proc ::constcl::procedure? {val} {
 reg apply ::constcl::apply
 
 proc ::constcl::apply {pr vals} {
-    if {[procedure? $pr] ne "#f"} {
-        invoke $pr $vals
-    } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
-    }
+    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+    invoke $pr $vals
 }
 
 
@@ -2050,23 +2011,20 @@ proc ::constcl::apply {pr vals} {
 reg map ::constcl::map
 
 proc ::constcl::map {pr args} {
-    if {[procedure? $pr] ne "#f"} {
-        set arglists $args
-        for {set i 0} {$i < [llength $arglists]} {incr i} {
-            lset arglists $i [splitlist [lindex $arglists $i]]
-        }
-        set res {}
-        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-            set arguments {}
-            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-                lappend arguments [lindex $arglists $arg $item]
-            }
-            lappend res [invoke $pr [list {*}$arguments]]
-        }
-        return [list {*}$res]
-    } else {
-        error "PROCEDURE expected\n(apply [$pr show] ...)"
+    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+    set arglists $args
+    for {set i 0} {$i < [llength $arglists]} {incr i} {
+        lset arglists $i [splitlist [lindex $arglists $i]]
     }
+    set res {}
+    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+        set arguments {}
+        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+            lappend arguments [lindex $arglists $arg $item]
+        }
+        lappend res [invoke $pr [list {*}$arguments]]
+    }
+    return [list {*}$res]
 }
 
 
@@ -2075,22 +2033,19 @@ proc ::constcl::map {pr args} {
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[procedure? $proc] ne "#f"} {
-        set arglists $args
-        for {set i 0} {$i < [llength $arglists]} {incr i} {
-            lset arglists $i [splitlist [lindex $arglists $i]]
-        }
-        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-            set arguments {}
-            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-                lappend arguments [lindex $arglists $arg $item]
-            }
-            invoke $proc [list {*}$arguments]
-        }
-        return [list]
-    } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
+    check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
+    set arglists $args
+    for {set i 0} {$i < [llength $arglists]} {incr i} {
+        lset arglists $i [splitlist [lindex $arglists $i]]
     }
+    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+        set arguments {}
+        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+            lappend arguments [lindex $arglists $arg $item]
+        }
+        invoke $proc [list {*}$arguments]
+    }
+    return [list]
 }
 
 
@@ -2434,11 +2389,8 @@ proc ::constcl::length-helper {pair} {
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-    if {[list? $pair] ne "#f"} {
-        MkNumber [length-helper $pair]
-    } else {
-        error "LIST expected\n(list lst)"
-    }
+    check {list? $pair} {LIST expected\n([pn] lst)}
+    MkNumber [length-helper $pair]
 }
 
 
@@ -2689,11 +2641,8 @@ reg string ::constcl::string
 proc ::constcl::string {args} {
     set str {}
     foreach char $args {
-        if {[::constcl::char? $char] ne "#f"} {
-            ::append str [$char char]
-        } else {
-            error "CHAR expected\n(string [lmap c $args {$c show}])"
-        }
+        check {::constcl::char? $char} {CHAR expected\n([pn] [lmap c $args {$c show}])}
+        ::append str [$char char]
     }
     return [MkString $str]
 }
@@ -2704,11 +2653,8 @@ proc ::constcl::string {args} {
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    if {[::constcl::string? $str] ne "#f"} {
-        return [MkNumber [$str length]]
-    } else {
-        error "STRING expected\n(string-length [$str show])"
-    }
+    check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
+    return [MkNumber [$str length]]
 }
 
 
@@ -2717,16 +2663,9 @@ proc ::constcl::string-length {str} {
 reg string-ref ::constcl::string-ref
 
 proc ::constcl::string-ref {str k} {
-    if {[::constcl::string? $str] ne "#f"} {
-        if {[::constcl::number? $k] ne "#f"} {
-            set i [$k numval]
-        } else {
-            error "Exact INTEGER expected\n(string-ref [$str show] [$k show])"
-        }
-        return [$str ref $i]
-    } else {
-        error "STRING expected\n(string-ref [$str show] [$k show])"
-    }
+    check {::constcl::string? $str} {STRING expected\n([pn] [$str show] [$k show])}
+    check {::constcl::number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show])}
+    return [$str ref [$k numval]]
 }
 
 
@@ -2735,21 +2674,12 @@ proc ::constcl::string-ref {str k} {
 reg string-set! ::constcl::string-set!
 
 proc ::constcl::string-set! {str k char} {
-    if {[::constcl::string? $str] ne "#f"} {
-        if {[::constcl::number? $k] ne "#f"} {
-            set i [$k numval]
-        } else {
-            error "Exact INTEGER expected\n(string-set! [$str show] [$k show] [$char show])"
-        }
-        if {[::constcl::char? $char] ne "#f"} {
-            $str set! $i [$char char]
-            return $str
-        } else {
-            error "CHAR expected\n(string-set! [$str show] [$k show] [$char show])"
-        }
-    } else {
-        error "STRING expected\n(string-set! [$str show] [$k show] [$char show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
+    check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
+    set i [$k numval]
+    check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
+    $str set! $i [$char char]
+    return $str
 }
 
 
@@ -2759,14 +2689,12 @@ proc ::constcl::string-set! {str k char} {
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[$str1 value] eq [$str2 value]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[$str1 value] eq [$str2 value]} {
+        return #t
     } else {
-        error "STRING expected\n(string=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2774,14 +2702,12 @@ proc ::constcl::string=? {str1 str2} {
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+        return #t
     } else {
-        error "STRING expected\n(string-ci=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2789,14 +2715,12 @@ proc ::constcl::string-ci=? {str1 str2} {
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[$str1 value] < [$str2 value]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[$str1 value] < [$str2 value]} {
+        return #t
     } else {
-        error "STRING expected\n(string<? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2804,14 +2728,12 @@ proc ::constcl::string<? {str1 str2} {
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+        return #t
     } else {
-        error "STRING expected\n(string-ci<? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2819,14 +2741,12 @@ proc ::constcl::string-ci<? {str1 str2} {
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[$str1 value] > [$str2 value]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[$str1 value] > [$str2 value]} {
+        return #t
     } else {
-        error "STRING expected\n(string>? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2834,14 +2754,12 @@ proc ::constcl::string>? {str1 str2} {
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+        return #t
     } else {
-        error "STRING expected\n(string-ci>? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2849,14 +2767,12 @@ proc ::constcl::string-ci>? {str1 str2} {
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[$str1 value] <= [$str2 value]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[$str1 value] <= [$str2 value]} {
+        return #t
     } else {
-        error "STRING expected\n(string<=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2864,14 +2780,12 @@ proc ::constcl::string<=? {str1 str2} {
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+        return #t
     } else {
-        error "STRING expected\n(string-ci<=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2879,14 +2793,12 @@ proc ::constcl::string-ci<=? {str1 str2} {
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[$str1 value] >= [$str2 value]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[$str1 value] >= [$str2 value]} {
+        return #t
     } else {
-        error "STRING expected\n(string>=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2894,14 +2806,12 @@ proc ::constcl::string>=? {str1 str2} {
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
-    if {[::constcl::string? $str1] ne "#f" && [::constcl::string? $str2] ne "#f"} {
-        if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
-            return #t
-        } else {
-            return #f
-        }
+    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
+    if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+        return #t
     } else {
-        error "STRING expected\n(string-ci>=? [$str1 show] [$str2 show])"
+        return #f
     }
 }
 
@@ -2911,15 +2821,10 @@ proc ::constcl::string-ci>=? {str1 str2} {
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    if {[::constcl::string? $str] ne "#f"} {
-        if {[::constcl::number? $start] ne "#f" && [::constcl::number? $end] ne "#f"} {
-            return [MkString [$str substring [$start numval] [$end numval]]]
-        } else {
-            error "NUMBER expected\n(substring [$str show] [$start show] [$end show])"
-        }
-    } else {
-        error "STRING expected\n(substring [$str show] [$start show] [$end show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$str show] [$start show] [$end show])}
+    check {number? $start} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
+    check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
+    return [MkString [$str substring [$start numval] [$end numval]]]
 }
 
 
@@ -2955,11 +2860,8 @@ proc ::constcl::list->string {list} {
 reg string-copy ::constcl::string-copy
 
 proc ::constcl::string-copy {str} {
-    if {[::constcl::string? $str] ne "#f"} {
-        return [MkString [$str value]]
-    } else {
-        error "STRING expected\n(string-copy [$str show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$str show])}
+    return [MkString [$str value]]
 }
 
 
@@ -2968,12 +2870,9 @@ proc ::constcl::string-copy {str} {
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
-    if {[::constcl::string? $str] ne "#f"} {
-        $str fill! [$char char]
-        return $str
-    } else {
-        error "STRING expected\n(string-fill [$str show] [$char show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$str show] [$char show])}
+    $str fill! [$char char]
+    return $str
 }
 
 
@@ -3030,17 +2929,14 @@ proc ::constcl::symbol? {val} {
 reg symbol->string ::constcl::symbol->string
 
 proc ::constcl::symbol->string {sym} {
-    if {[symbol? $sym] ne "#f"} {
-        if {![$sym case-constant]} {
-            set str [MkString [::string tolower [$sym name]]]
-        } else {
-            set str [MkString [$sym name]]
-        }
-        $str mkconstant
-        return $str
+    check {symbol? $sym} {SYMBOL expected\n([pn] [$sym show])}
+    if {![$sym case-constant]} {
+        set str [MkString [::string tolower [$sym name]]]
     } else {
-        error "SYMBOL expected\n(symbol->string [$sym show])"
+        set str [MkString [$sym name]]
     }
+    $str mkconstant
+    return $str
 }
 
 
@@ -3049,13 +2945,10 @@ proc ::constcl::symbol->string {sym} {
 reg string->symbol ::constcl::string->symbol
 
 proc ::constcl::string->symbol {str} {
-    if {[string? $str] ne "#f"} {
-        set sym [MkSymbol [$str value]]
-        $sym make-case-constant
-        return $sym
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$obj show])}
+    set sym [MkSymbol [$str value]]
+    $sym make-case-constant
+    return $sym
 }
 
 # vim: ft=tcl tw=80
@@ -3150,11 +3043,8 @@ proc ::constcl::vector {args} {
 reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
-    if {[vector? $vec] ne "#f"} {
-        return [MkNumber [$vec length]]
-    } else {
-        error "VECTOR expected\n(vector-length [$vec show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
+    return [MkNumber [$vec length]]
 }
 
 
@@ -3163,15 +3053,9 @@ proc ::constcl::vector-length {vec} {
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    if {[vector? $vec] ne "#f"} {
-        if {[number? $k] ne "#f"} {
-            return [$vec ref [$k numval]]
-        } else {
-            error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
-        }
-    } else {
-        error "VECTOR expected\n(vector-ref [$vec show] [$k show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
+    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
+    return [$vec ref [$k numval]]
 }
 
 
@@ -3180,15 +3064,9 @@ proc ::constcl::vector-ref {vec k} {
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-    if {[vector? $vec] ne "#f"} {
-        if {[number? $k] ne "#f"} {
-            return [$vec set! [$k numval] $val]
-        } else {
-            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
-        }
-    } else {
-        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$val show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
+    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
+    return [$vec set! [$k numval] $val]
 }
 
 
@@ -3215,11 +3093,8 @@ proc ::constcl::list->vector {list} {
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    if {[vector? $vec] ne "#f"} {
-        $vec fill! $fill
-    } else {
-        error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$fill show])}
+    $vec fill! $fill
 }
 
 

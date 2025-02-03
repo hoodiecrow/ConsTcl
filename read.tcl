@@ -174,8 +174,8 @@ MD(
 **parse-expression**
 
 The procedure `parse-expression` parses input by peeking at the first available
-character and calling one of the more detailed parsing procedures based on that,
-producing an expression of any kind.
+character and delegating to one of the more detailed parsing procedures based on
+that, producing an expression of any kind.
 MD)
 
 PR(

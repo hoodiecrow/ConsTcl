@@ -86,17 +86,14 @@ CB
 reg symbol->string ::constcl::symbol->string
 
 proc ::constcl::symbol->string {sym} {
-    if {[symbol? $sym] ne "#f"} {
-        if {![$sym case-constant]} {
-            set str [MkString [::string tolower [$sym name]]]
-        } else {
-            set str [MkString [$sym name]]
-        }
-        $str mkconstant
-        return $str
+    check {symbol? $sym} {SYMBOL expected\n([pn] [$sym show])}
+    if {![$sym case-constant]} {
+        set str [MkString [::string tolower [$sym name]]]
     } else {
-        error "SYMBOL expected\n(symbol->string [$sym show])"
+        set str [MkString [$sym name]]
     }
+    $str mkconstant
+    return $str
 }
 CB
 
@@ -132,13 +129,10 @@ CB
 reg string->symbol ::constcl::string->symbol
 
 proc ::constcl::string->symbol {str} {
-    if {[string? $str] ne "#f"} {
-        set sym [MkSymbol [$str value]]
-        $sym make-case-constant
-        return $sym
-    } else {
-        error "STRING expected\n(string->symbol [$obj show])"
-    }
+    check {string? $str} {STRING expected\n([pn] [$obj show])}
+    set sym [MkSymbol [$str value]]
+    $sym make-case-constant
+    return $sym
 }
 CB
 

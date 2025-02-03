@@ -155,11 +155,8 @@ CB
 reg vector-length ::constcl::vector-length
 
 proc ::constcl::vector-length {vec} {
-    if {[vector? $vec] ne "#f"} {
-        return [MkNumber [$vec length]]
-    } else {
-        error "VECTOR expected\n(vector-length [$vec show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
+    return [MkNumber [$vec length]]
 }
 CB
 
@@ -185,15 +182,9 @@ CB
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    if {[vector? $vec] ne "#f"} {
-        if {[number? $k] ne "#f"} {
-            return [$vec ref [$k numval]]
-        } else {
-            error "NUMBER expected\n(vector-ref [$vec show] [$k show])"
-        }
-    } else {
-        error "VECTOR expected\n(vector-ref [$vec show] [$k show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
+    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
+    return [$vec ref [$k numval]]
 }
 CB
 
@@ -217,15 +208,9 @@ CB
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-    if {[vector? $vec] ne "#f"} {
-        if {[number? $k] ne "#f"} {
-            return [$vec set! [$k numval] $val]
-        } else {
-            error "NUMBER expected\n(vector-set! [$vec show] [$k show] [$val show])"
-        }
-    } else {
-        error "VECTOR expected\n(vector-set! [$vec show] [$k show] [$val show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
+    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
+    return [$vec set! [$k numval] $val]
 }
 CB
 
@@ -304,11 +289,8 @@ CB
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    if {[vector? $vec] ne "#f"} {
-        $vec fill! $fill
-    } else {
-        error "VECTOR expected\n(vector-fill [$vec show] [$fill show])"
-    }
+    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$fill show])}
+    $vec fill! $fill
 }
 CB
 

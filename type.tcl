@@ -50,6 +50,11 @@ proc ::constcl::check {cond msg} {
         error [uplevel [::list subst $msg]]
     }
 }
+
+proc pn {} {
+    lindex [split [lindex [info level -1] 0] :] end
+}
+
 CB
 
 MD(

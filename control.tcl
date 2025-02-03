@@ -53,7 +53,7 @@ CB
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {val} {
-    if {[info object isa typeof $val ::constcl::Procedure]} {
+    ::if {[info object isa typeof $val ::constcl::Procedure]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
         return #t
@@ -89,11 +89,8 @@ CB
 reg apply ::constcl::apply
 
 proc ::constcl::apply {pr vals} {
-    if {[procedure? $pr] ne "#f"} {
-        invoke $pr $vals
-    } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
-    }
+    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+    invoke $pr $vals
 }
 CB
 
@@ -107,6 +104,10 @@ TT(
       (f (apply g args)))))}
     pep {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
+
+::tcltest::test control-check-1.0 {try triggering a check} -body {
+    pep {(apply #\+ (list 3 4))}
+} -returnCodes error -result "PROCEDURE expected\n(apply #\\+ ...)"
 
 TT)
 
@@ -126,23 +127,20 @@ CB
 reg map ::constcl::map
 
 proc ::constcl::map {pr args} {
-    if {[procedure? $pr] ne "#f"} {
-        set arglists $args
-        for {set i 0} {$i < [llength $arglists]} {incr i} {
-            lset arglists $i [splitlist [lindex $arglists $i]]
-        }
-        set res {}
-        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-            set arguments {}
-            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-                lappend arguments [lindex $arglists $arg $item]
-            }
-            lappend res [invoke $pr [list {*}$arguments]]
-        }
-        return [list {*}$res]
-    } else {
-        error "PROCEDURE expected\n(apply [$pr show] ...)"
+    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+    set arglists $args
+    for {set i 0} {$i < [llength $arglists]} {incr i} {
+        lset arglists $i [splitlist [lindex $arglists $i]]
     }
+    set res {}
+    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+        set arguments {}
+        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+            lappend arguments [lindex $arglists $arg $item]
+        }
+        lappend res [invoke $pr [list {*}$arguments]]
+    }
+    return [list {*}$res]
 }
 CB
 
@@ -176,22 +174,19 @@ CB
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    if {[procedure? $proc] ne "#f"} {
-        set arglists $args
-        for {set i 0} {$i < [llength $arglists]} {incr i} {
-            lset arglists $i [splitlist [lindex $arglists $i]]
-        }
-        for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-            set arguments {}
-            for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-                lappend arguments [lindex $arglists $arg $item]
-            }
-            invoke $proc [list {*}$arguments]
-        }
-        return [list]
-    } else {
-        error "PROCEDURE expected\n(apply [$proc show] ...)"
+    check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
+    set arglists $args
+    for {set i 0} {$i < [llength $arglists]} {incr i} {
+        lset arglists $i [splitlist [lindex $arglists $i]]
     }
+    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+        set arguments {}
+        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+            lappend arguments [lindex $arglists $arg $item]
+        }
+        invoke $proc [list {*}$arguments]
+    }
+    return [list]
 }
 CB
 

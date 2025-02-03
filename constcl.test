@@ -670,6 +670,10 @@ if no {
     pep {(char=? #\Space #\space)}
 } -output "#t\n#f\n#t\n"
 
+::tcltest::test characters-check-1.0 {try triggering a check} -body {
+    pep {(char=? 99 #\A)}
+} -returnCodes error -result "CHAR expected\n(char=? 99 #\\A)"
+
 
 
 ::tcltest::test characters-1.2 {try char<?} -body {
@@ -839,6 +843,10 @@ if no {
       (f (apply g args)))))}
     pep {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
+
+::tcltest::test control-check-1.0 {try triggering a check} -body {
+    pep {(apply #\+ (list 3 4))}
+} -returnCodes error -result "PROCEDURE expected\n(apply #\\+ ...)"
 
 
 

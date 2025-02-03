@@ -470,11 +470,8 @@ CB
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-    if {[list? $pair] ne "#f"} {
-        MkNumber [length-helper $pair]
-    } else {
-        error "LIST expected\n(list lst)"
-    }
+    check {list? $pair} {LIST expected\n([pn] lst)}
+    MkNumber [length-helper $pair]
 }
 CB
 

@@ -230,7 +230,7 @@ CB
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-    check {number? $num} {NUMBER expected\n(zero? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num zero?]
 }
 CB
@@ -264,7 +264,7 @@ CB
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-    check {number? $num} {NUMBER expected\n(positive? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num positive?]
 }
 CB
@@ -281,7 +281,7 @@ CB
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-    check {number? $num} {NUMBER expected\n(negative? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num negative?]
 }
 CB
@@ -298,7 +298,7 @@ CB
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-    check {number? $num} {NUMBER expected\n(even? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num even?]
 }
 CB
@@ -315,7 +315,7 @@ CB
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-    check {number? $num} {NUMBER expected\n(odd? [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     return [$num odd?]
 }
 CB
@@ -517,7 +517,7 @@ CB
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-    check {number? $num} {NUMBER expected\n(abs [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     if {[$num negative?] ne "#f"} {
         return [MkNumber [expr {[$num numval] * -1}]]
     } else {
@@ -662,7 +662,7 @@ CB
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-    check {number? $num} {NUMBER expected\n(floor [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 CB
@@ -679,7 +679,7 @@ CB
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-    check {number? $num} {NUMBER expected\n(ceiling [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 CB
@@ -696,7 +696,7 @@ CB
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-    check {number? $num} {NUMBER expected\n(truncate [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     if {[$num negative?] ne "#f"} {
         MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
@@ -718,7 +718,7 @@ CB
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-    check {number? $num} {NUMBER expected\n(round [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 CB
@@ -780,7 +780,7 @@ CB
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-    check {number? $num} {NUMBER expected\n(exp [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 CB
@@ -797,7 +797,7 @@ CB
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-    check {number? $num} {NUMBER expected\n(log [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 CB
@@ -814,7 +814,7 @@ CB
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-    check {number? $num} {NUMBER expected\n(sin [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 CB
@@ -823,7 +823,7 @@ CB
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-    check {number? $num} {NUMBER expected\n(cos [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 CB
@@ -832,7 +832,7 @@ CB
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-    check {number? $num} {NUMBER expected\n(tan [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 CB
@@ -854,7 +854,7 @@ CB
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-    check {number? $num} {NUMBER expected\n(asin [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 CB
@@ -863,7 +863,7 @@ CB
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-    check {number? $num} {NUMBER expected\n(acos [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 CB
@@ -874,12 +874,12 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
     if {[llength $args] == 1} {
         set num [lindex $args 0]
-        check {number? $num} {NUMBER expected\n(atan [$num show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
         MkNumber [::tcl::mathfunc::atan [$num numval]]
     } else {
         lassign $args num1 num2
-        check {number? $num1} {NUMBER expected\n(atan [$num1 show])}
-        check {number? $num2} {NUMBER expected\n(atan [$num2 show])}
+        check {number? $num1} {NUMBER expected\n([pn] [$num1 show])}
+        check {number? $num2} {NUMBER expected\n([pn] [$num2 show])}
         MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
     }
 }
@@ -909,7 +909,7 @@ CB
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-    check {number? $num} {NUMBER expected\n(sqrt [$num show])}
+    check {number? $num} {NUMBER expected\n([pn] [$num show])}
     MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 CB
@@ -936,8 +936,8 @@ CB
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-    check {number? $num1} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
-    check {number? $num2} {NUMBER expected\n(expt [$num1 show] [$num2 show])}
+    check {number? $num1} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
+    check {number? $num2} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
     MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 CB
@@ -1016,12 +1016,12 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
     if {[llength $args] == 0} {
-        check {number? $num} {NUMBER expected\n(string->number [$num show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
         return [MkString [$num numval]]
     } else {
         lassign $args radix
-        check {number? $num} {NUMBER expected\n(string->number [$num show])}
-        check {number? $radix} {NUMBER expected\n(string->number [$num show] [$radix show])}
+        check {number? $num} {NUMBER expected\n([pn] [$num show])}
+        check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
         if {[$radix numval] == 10} {
             return [MkString [$num numval]]
         } elseif {[$radix numval] in {2 8 16}} {
@@ -1067,11 +1067,11 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
     if {[llength $args] == 0} {
-        check {string? $str} {STRING expected\n(string->number [$str show])}
+        check {string? $str} {STRING expected\n([pn] [$str show])}
         return [MkNumber [$str value]]
     } else {
         lassign $args radix
-        check {string? $str} {STRING expected\n(string->number [$str show])}
+        check {string? $str} {STRING expected\n([pn] [$str show])}
         if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
         } elseif {[$radix numval] in {2 8 16}} {
