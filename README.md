@@ -3210,15 +3210,14 @@ List processing is another of Lisp's great strengths.
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
+    superclass ::constcl::NIL
     variable car cdr constant
     constructor {a d} {
         set car $a
         set cdr $d
         set constant 0
     }
-    method bvalue {} {return #NIL}
-    method name {} {} ;# for eval
-    method numval {} {throw "Not a number"}
+    method name {} {} ;# for eval to call when dealing with an application form
     method value {} {my show}
     method car {} { set car }
     method cdr {} { set cdr }
@@ -3827,12 +3826,11 @@ Procedures for dealing with strings of characters.
 ```
 oo::class create ::constcl::String {
     superclass ::constcl::NIL
-    variable vsaddr length constant
+    variable data constant
     constructor {v} {
-        set vsaddr $::constcl::vectorAssign
-        set length [::string length $v]
-        incr ::constcl::vectorAssign $length
-        set idx $vsaddr
+        set len [::string length $v]
+        set vsa [::constcl::vsAlloc $len]
+        set idx $vsa
         foreach elt [split $v {}] {
             if {$elt eq " "} {
                 set c #\\space
@@ -3844,23 +3842,37 @@ oo::class create ::constcl::String {
             lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
             incr idx
         }
+        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
         set constant 0
     }
-    method = {str} {::string equal [my value] $str}
-    method length {} {set length}
-    method ref {i} {lindex $::constcl::vectorSpace $i+$vsaddr}
+    method = {str} {::string equal [my value] [$str value]}
+    method cmp {str} {::string compare [my value] [$str value]}
+    method length {} {::constcl::cdr $data}
+    method ref {k} {
+        set k [$k numval]
+        if {$k < 0 || $k >= [[my length] numval]} {
+            error "index out of range\n$k"
+        }
+        lindex [my store] $k
+    }
+    method store {} {
+        set base [[::constcl::car $data] numval]
+        set end [expr {[[my length] numval] + $base - 1}]
+        lrange $::constcl::vectorSpace $base $end
+    }
     method value {} {
-        join [lmap c [lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]] {$c char}] {}
+        join [lmap c [my store] {$c char}] {}
     }
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            if {$k < 0 || $k >= [my length]} {
+            set k [$k numval]
+            if {$k < 0 || $k >= [[my length] numval]} {
                 error "index out of range\n$k"
-            } else {
-                lset ::constcl::vectorSpace $k+$vsaddr [::constcl::MkChar #\\$c]
             }
+            set base [[::constcl::car $data] numval]
+            lset ::constcl::vectorSpace $k+$base $c
         }
         return [self]
     }
@@ -3868,14 +3880,16 @@ oo::class create ::constcl::String {
         if {[my constant]} {
             error "string is constant"
         } else {
-            for {set idx $vsaddr} {$idx < $length+$vsaddr} {incr idx} {
-                lset ::constcl::vectorSpace $idx [::constcl::MkChar #\\$c]
+            set base [[::constcl::car $data] numval]
+            set len [[my length] numval]
+            for {set idx $base} {$idx < $len+$base} {incr idx} {
+                lset ::constcl::vectorSpace $idx $c
             }
         }
         return [self]
     }
     method substring {from to} {
-        join [lmap c [lrange $::constcl::vectorSpace $from+$vsaddr $to+$vsaddr] {$c char}] {}
+        join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
     }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
@@ -3974,7 +3988,7 @@ reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
     check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkNumber [$str length]]
+    return [MkNumber [[$str length] numval]]
 }
 ```
 
@@ -3997,7 +4011,7 @@ reg string-ref ::constcl::string-ref
 proc ::constcl::string-ref {str k} {
     check {::constcl::string? $str} {STRING expected\n([pn] [$str show] [$k show])}
     check {::constcl::number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show])}
-    return [$str ref [$k numval]]
+    return [$str ref $k]
 }
 ```
 
@@ -4021,8 +4035,7 @@ proc ::constcl::string-set! {str k char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
     check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
     check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
-    set i [$k numval]
-    $str set! $i [$char char]
+    $str set! $k $char
     return $str
 }
 ```
@@ -4215,7 +4228,7 @@ proc ::constcl::substring {str start end} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$start show] [$end show])}
     check {number? $start} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
     check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    return [MkString [$str substring [$start numval] [$end numval]]]
+    return [MkString [$str substring $start $end]]
 }
 ```
 
@@ -4257,7 +4270,7 @@ Example:
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    list {*}[lmap c [split [$str value] {}] {MkChar "#\\$c"}]
+    list {*}[$str store]
 }
 ```
 
@@ -4322,7 +4335,7 @@ reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$char show])}
-    $str fill! [$char char]
+    $str fill! $char
     return $str
 }
 ```
@@ -4451,39 +4464,55 @@ Elements can be indexed by integers from zero to length minus one.
 ```
 oo::class create ::constcl::Vector {
     superclass ::constcl::NIL
-    variable vsaddr length constant
+    variable data constant
     constructor {v} {
-        set vsaddr $::constcl::vectorAssign
-        set length [llength $v]
-        incr ::constcl::vectorAssign $length
-        set idx $vsaddr
+        set len [llength $v]
+        set vsa [::constcl::vsAlloc $len]
+        set idx $vsa
         foreach elt $v {
             lset ::constcl::vectorSpace $idx $elt
             incr idx
         }
+        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
         set constant 0
     }
-    method length {} {set length}
-    method ref {i} {lindex $::constcl::vectorSpace [expr {$i + $vsaddr}]}
-    method value {} {lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]}
-    method set! {i obj} {
+    method length {} {::constcl::cdr $data}
+    method ref {k} {
+        set k [$k numval]
+        if {$k < 0 || $k >= [[my length] numval]} {
+            error "index out of range\n$k"
+        }
+        lindex [my store] $k
+    }
+    method store {} {
+        set base [[::constcl::car $data] numval]
+        set end [expr {[[my length] numval] + $base - 1}]
+        lrange $::constcl::vectorSpace $base $end
+    }
+    method value {} {
+        my store
+    }
+    method set! {k obj} {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            if {$i < 0 || $i >= [my length]} {
-                error "index out of range\n$i"
-            } else {
-                lset ::constcl::vectorSpace [expr {$i + $vsaddr}] $obj
+            set k [$k numval]
+            if {$k < 0 || $k >= [[my length] numval]} {
+                error "index out of range\n$k"
             }
+            set base [[::constcl::car $data] numval]
+            lset ::constcl::vectorSpace $k+$base $obj
         }
         return [self]
     }
-    method fill! {c} {
+    method fill! {val} {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            for {set idx $vsaddr} {$idx < [expr {$length + $vsaddr}]} {incr idx} {
-                lset ::constcl::vectorSpace $idx $c
+            set base [[::constcl::car $data] numval]
+            set len [[my length] numval]
+            for {set idx $base} {$idx < $len+$base} {incr idx} {
+                lset ::constcl::vectorSpace $idx $val
             }
         }
         return [self]
@@ -4581,7 +4610,7 @@ reg vector-length
 
 proc ::constcl::vector-length {vec} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
-    return [MkNumber [$vec length]]
+    return [$vec length]
 }
 ```
 
@@ -4604,7 +4633,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
     check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec ref [$k numval]]
+    return [$vec ref $k]
 }
 ```
 
@@ -4628,7 +4657,7 @@ reg vector-set! ::constcl::vector-set!
 proc ::constcl::vector-set! {vec k val} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
     check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec set! [$k numval] $val]
+    return [$vec set! $k $val]
 }
 ```
 
@@ -4762,6 +4791,13 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
 unset -nocomplain ::constcl::vectorAssign
 set ::constcl::vectorAssign 0
+
+proc ::constcl::vsAlloc {num} {
+    # TODO calculate free space
+    set va $::constcl::vectorAssign
+    incr ::constcl::vectorAssign $num
+    return $va
+}
 ```
 
 Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)

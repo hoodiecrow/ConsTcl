@@ -8,12 +8,11 @@ MD)
 CB
 oo::class create ::constcl::String {
     superclass ::constcl::NIL
-    variable vsaddr length constant
+    variable data constant
     constructor {v} {
-        set vsaddr $::constcl::vectorAssign
-        set length [::string length $v]
-        incr ::constcl::vectorAssign $length
-        set idx $vsaddr
+        set len [::string length $v]
+        set vsa [::constcl::vsAlloc $len]
+        set idx $vsa
         foreach elt [split $v {}] {
             if {$elt eq " "} {
                 set c #\\space
@@ -25,23 +24,37 @@ oo::class create ::constcl::String {
             lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
             incr idx
         }
+        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
         set constant 0
     }
-    method = {str} {::string equal [my value] $str}
-    method length {} {set length}
-    method ref {i} {lindex $::constcl::vectorSpace $i+$vsaddr}
+    method = {str} {::string equal [my value] [$str value]}
+    method cmp {str} {::string compare [my value] [$str value]}
+    method length {} {::constcl::cdr $data}
+    method ref {k} {
+        set k [$k numval]
+        if {$k < 0 || $k >= [[my length] numval]} {
+            error "index out of range\n$k"
+        }
+        lindex [my store] $k
+    }
+    method store {} {
+        set base [[::constcl::car $data] numval]
+        set end [expr {[[my length] numval] + $base - 1}]
+        lrange $::constcl::vectorSpace $base $end
+    }
     method value {} {
-        join [lmap c [lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]] {$c char}] {}
+        join [lmap c [my store] {$c char}] {}
     }
     method set! {k c} {
         if {[my constant]} {
             error "string is constant"
         } else {
-            if {$k < 0 || $k >= [my length]} {
+            set k [$k numval]
+            if {$k < 0 || $k >= [[my length] numval]} {
                 error "index out of range\n$k"
-            } else {
-                lset ::constcl::vectorSpace $k+$vsaddr [::constcl::MkChar #\\$c]
             }
+            set base [[::constcl::car $data] numval]
+            lset ::constcl::vectorSpace $k+$base $c
         }
         return [self]
     }
@@ -49,14 +62,16 @@ oo::class create ::constcl::String {
         if {[my constant]} {
             error "string is constant"
         } else {
-            for {set idx $vsaddr} {$idx < $length+$vsaddr} {incr idx} {
-                lset ::constcl::vectorSpace $idx [::constcl::MkChar #\\$c]
+            set base [[::constcl::car $data] numval]
+            set len [[my length] numval]
+            for {set idx $base} {$idx < $len+$base} {incr idx} {
+                lset ::constcl::vectorSpace $idx $c
             }
         }
         return [self]
     }
     method substring {from to} {
-        join [lmap c [lrange $::constcl::vectorSpace $from+$vsaddr $to+$vsaddr] {$c char}] {}
+        join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
     }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
@@ -201,7 +216,7 @@ reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
     check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkNumber [$str length]]
+    return [MkNumber [[$str length] numval]]
 }
 CB
 
@@ -237,7 +252,7 @@ reg string-ref ::constcl::string-ref
 proc ::constcl::string-ref {str k} {
     check {::constcl::string? $str} {STRING expected\n([pn] [$str show] [$k show])}
     check {::constcl::number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show])}
-    return [$str ref [$k numval]]
+    return [$str ref $k]
 }
 CB
 
@@ -274,8 +289,7 @@ proc ::constcl::string-set! {str k char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
     check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
     check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
-    set i [$k numval]
-    $str set! $i [$char char]
+    $str set! $k $char
     return $str
 }
 CB
@@ -587,7 +601,7 @@ proc ::constcl::substring {str start end} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$start show] [$end show])}
     check {number? $start} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
     check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    return [MkString [$str substring [$start numval] [$end numval]]]
+    return [MkString [$str substring $start $end]]
 }
 CB
 
@@ -655,7 +669,7 @@ CB
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    list {*}[lmap c [split [$str value] {}] {MkChar "#\\$c"}]
+    list {*}[$str store]
 }
 CB
 
@@ -764,7 +778,7 @@ reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
     check {string? $str} {STRING expected\n([pn] [$str show] [$char show])}
-    $str fill! [$char char]
+    $str fill! $char
     return $str
 }
 CB

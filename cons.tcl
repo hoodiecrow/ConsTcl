@@ -10,6 +10,13 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
 unset -nocomplain ::constcl::vectorAssign
 set ::constcl::vectorAssign 0
+
+proc ::constcl::vsAlloc {num} {
+    # TODO calculate free space
+    set va $::constcl::vectorAssign
+    incr ::constcl::vectorAssign $num
+    return $va
+}
 CB
 
 MD(

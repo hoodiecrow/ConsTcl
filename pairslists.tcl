@@ -9,15 +9,14 @@ CB
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
+    superclass ::constcl::NIL
     variable car cdr constant
     constructor {a d} {
         set car $a
         set cdr $d
         set constant 0
     }
-    method bvalue {} {return #NIL}
-    method name {} {} ;# for eval
-    method numval {} {throw "Not a number"}
+    method name {} {} ;# for eval to call when dealing with an application form
     method value {} {my show}
     method car {} { set car }
     method cdr {} { set cdr }
@@ -159,6 +158,9 @@ Example:
 (cons 'a nil)             ⇒  (a)
 (cons 'a (cons 'b nil))   ⇒  (a b)
 ```
+
+![a small schematic to make it clearer](/images/consing.png)
+
 MD)
 
 CB

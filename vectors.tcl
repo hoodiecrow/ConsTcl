@@ -12,39 +12,55 @@ MD)
 CB
 oo::class create ::constcl::Vector {
     superclass ::constcl::NIL
-    variable vsaddr length constant
+    variable data constant
     constructor {v} {
-        set vsaddr $::constcl::vectorAssign
-        set length [llength $v]
-        incr ::constcl::vectorAssign $length
-        set idx $vsaddr
+        set len [llength $v]
+        set vsa [::constcl::vsAlloc $len]
+        set idx $vsa
         foreach elt $v {
             lset ::constcl::vectorSpace $idx $elt
             incr idx
         }
+        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
         set constant 0
     }
-    method length {} {set length}
-    method ref {i} {lindex $::constcl::vectorSpace [expr {$i + $vsaddr}]}
-    method value {} {lrange $::constcl::vectorSpace $vsaddr [expr {$length + $vsaddr - 1}]}
-    method set! {i obj} {
+    method length {} {::constcl::cdr $data}
+    method ref {k} {
+        set k [$k numval]
+        if {$k < 0 || $k >= [[my length] numval]} {
+            error "index out of range\n$k"
+        }
+        lindex [my store] $k
+    }
+    method store {} {
+        set base [[::constcl::car $data] numval]
+        set end [expr {[[my length] numval] + $base - 1}]
+        lrange $::constcl::vectorSpace $base $end
+    }
+    method value {} {
+        my store
+    }
+    method set! {k obj} {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            if {$i < 0 || $i >= [my length]} {
-                error "index out of range\n$i"
-            } else {
-                lset ::constcl::vectorSpace [expr {$i + $vsaddr}] $obj
+            set k [$k numval]
+            if {$k < 0 || $k >= [[my length] numval]} {
+                error "index out of range\n$k"
             }
+            set base [[::constcl::car $data] numval]
+            lset ::constcl::vectorSpace $k+$base $obj
         }
         return [self]
     }
-    method fill! {c} {
+    method fill! {val} {
         if {[my constant]} {
             error "vector is constant"
         } else {
-            for {set idx $vsaddr} {$idx < [expr {$length + $vsaddr}]} {incr idx} {
-                lset ::constcl::vectorSpace $idx $c
+            set base [[::constcl::car $data] numval]
+            set len [[my length] numval]
+            for {set idx $base} {$idx < $len+$base} {incr idx} {
+                lset ::constcl::vectorSpace $idx $val
             }
         }
         return [self]
@@ -181,7 +197,7 @@ reg vector-length
 
 proc ::constcl::vector-length {vec} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
-    return [MkNumber [$vec length]]
+    return [$vec length]
 }
 CB
 
@@ -217,7 +233,7 @@ reg vector-ref ::constcl::vector-ref
 proc ::constcl::vector-ref {vec k} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
     check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec ref [$k numval]]
+    return [$vec ref $k]
 }
 CB
 
@@ -254,7 +270,7 @@ reg vector-set! ::constcl::vector-set!
 proc ::constcl::vector-set! {vec k val} {
     check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
     check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec set! [$k numval] $val]
+    return [$vec set! $k $val]
 }
 CB
 
