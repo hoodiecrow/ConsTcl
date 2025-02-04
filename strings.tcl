@@ -14,7 +14,7 @@ oo::class create ::constcl::String {
         set vsa [::constcl::vsAlloc $len]
         set idx $vsa
         foreach elt [split $v {}] {
-            if {$elt eq " "} {
+            ::if {$elt eq " "} {
                 set c #\\space
             } elseif {$elt eq "\n"} {
                 set c #\\newline
@@ -32,8 +32,8 @@ oo::class create ::constcl::String {
     method length {} {::constcl::cdr $data}
     method ref {k} {
         set k [$k numval]
-        if {$k < 0 || $k >= [[my length] numval]} {
-            error "index out of range\n$k"
+        ::if {$k < 0 || $k >= [[my length] numval]} {
+            ::error "index out of range\n$k"
         }
         lindex [my store] $k
     }
@@ -46,12 +46,12 @@ oo::class create ::constcl::String {
         join [lmap c [my store] {$c char}] {}
     }
     method set! {k c} {
-        if {[my constant]} {
-            error "string is constant"
+        ::if {[my constant]} {
+            ::error "string is constant"
         } else {
             set k [$k numval]
-            if {$k < 0 || $k >= [[my length] numval]} {
-                error "index out of range\n$k"
+            ::if {$k < 0 || $k >= [[my length] numval]} {
+                ::error "index out of range\n$k"
             }
             set base [[::constcl::car $data] numval]
             lset ::constcl::vectorSpace $k+$base $c
@@ -59,8 +59,8 @@ oo::class create ::constcl::String {
         return [self]
     }
     method fill! {c} {
-        if {[my constant]} {
-            error "string is constant"
+        ::if {[my constant]} {
+            ::error "string is constant"
         } else {
             set base [[::constcl::car $data] numval]
             set len [[my length] numval]
@@ -90,7 +90,7 @@ CB
 reg string? ::constcl::string?
 
 proc ::constcl::string? {val} {
-    if {[info object isa typeof $val ::constcl::String]} {
+    ::if {[info object isa typeof $val ::constcl::String]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
         return #t
@@ -133,7 +133,7 @@ CB
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {k args} {
-    if {[llength $args] == 0} {
+    ::if {[llength $args] == 0} {
         return [MkString [::string repeat " " [$k numval]]]
     } else {
         lassign $args char
@@ -342,7 +342,7 @@ reg string=? ::constcl::string=?
 proc ::constcl::string=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] eq [$str2 value]} {
+    ::if {[$str1 value] eq [$str2 value]} {
         return #t
     } else {
         return #f
@@ -366,7 +366,7 @@ reg string-ci=? ::constcl::string-ci=?
 proc ::constcl::string-ci=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+    ::if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
         return #t
     } else {
         return #f
@@ -390,7 +390,7 @@ reg string<? ::constcl::string<?
 proc ::constcl::string<? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] < [$str2 value]} {
+    ::if {[$str1 value] < [$str2 value]} {
         return #t
     } else {
         return #f
@@ -414,7 +414,7 @@ reg string-ci<? ::constcl::string-ci<?
 proc ::constcl::string-ci<? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+    ::if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
         return #t
     } else {
         return #f
@@ -438,7 +438,7 @@ reg string>? ::constcl::string>?
 proc ::constcl::string>? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] > [$str2 value]} {
+    ::if {[$str1 value] > [$str2 value]} {
         return #t
     } else {
         return #f
@@ -462,7 +462,7 @@ reg string-ci>? ::constcl::string-ci>?
 proc ::constcl::string-ci>? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+    ::if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
         return #t
     } else {
         return #f
@@ -486,7 +486,7 @@ reg string<=? ::constcl::string<=?
 proc ::constcl::string<=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] <= [$str2 value]} {
+    ::if {[$str1 value] <= [$str2 value]} {
         return #t
     } else {
         return #f
@@ -510,7 +510,7 @@ reg string-ci<=? ::constcl::string-ci<=?
 proc ::constcl::string-ci<=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+    ::if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
         return #t
     } else {
         return #f
@@ -534,7 +534,7 @@ reg string>=? ::constcl::string>=?
 proc ::constcl::string>=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] >= [$str2 value]} {
+    ::if {[$str1 value] >= [$str2 value]} {
         return #t
     } else {
         return #f
@@ -558,7 +558,7 @@ reg string-ci>=? ::constcl::string-ci>=?
 proc ::constcl::string-ci>=? {str1 str2} {
     check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
     check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+    ::if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
         return #t
     } else {
         return #f

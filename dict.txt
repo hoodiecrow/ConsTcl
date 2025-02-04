@@ -1,6 +1,7 @@
 env     -> an environment
 dc      -> -don't care-
 nil     -> the empty list
+msg     -> a message string
 invoke  -> what pr returns
 formals -> a Scheme formals list
 lisp    -> Lisp source text

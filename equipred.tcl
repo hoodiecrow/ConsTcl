@@ -22,7 +22,7 @@ CB
 reg eq? ::constcl::eq?
 
 proc ::constcl::eq? {val1 val2} {
-    if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
+    ::if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
         return #t
     } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && $val1 eq $val2} {
         return #t
@@ -50,7 +50,7 @@ CB
 reg eqv? ::constcl::eqv?
 
 proc ::constcl::eqv? {val1 val2} {
-    if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
+    ::if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
         return #t
     } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && [$val1 name] eq [$val2 name]} {
         return #t
@@ -78,7 +78,7 @@ CB
 reg equal? ::constcl::equal?
 
 proc ::constcl::equal? {val1 val2} {
-    if {[$val1 show] eq [$val2 show]} {
+    ::if {[$val1 show] eq [$val2 show]} {
         return #t
     } else {
         return #f

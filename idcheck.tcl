@@ -20,7 +20,7 @@ MD)
 
 CB
 proc ::constcl::idcheckinit {init} {
-    if {[::string is alpha -strict $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    ::if {[::string is alpha -strict $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
         return true
     } else {
         return false
@@ -29,7 +29,7 @@ proc ::constcl::idcheckinit {init} {
 
 proc ::constcl::idchecksubs {subs} {
     foreach c [split $subs {}] {
-        if {!([::string is alnum -strict $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+        ::if {!([::string is alnum -strict $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
             return false
         }
     }
@@ -37,17 +37,17 @@ proc ::constcl::idchecksubs {subs} {
 }
 
 proc ::constcl::idcheck {sym} {
-    if {(![idcheckinit [::string index $sym 0]] ||
+    ::if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
-        error "Identifier expected ($sym)"
+        ::error "Identifier expected ($sym)"
     }
     set sym
 }
 
 proc ::constcl::varcheck {sym} {
-    if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
+    ::if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin
         cond and or case let let* letrec do delay quasiquote}} {
-            error "Macro name can't be used as a variable: $sym"
+            ::error "Macro name can't be used as a variable: $sym"
     }
     return $sym
 }

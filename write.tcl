@@ -17,7 +17,7 @@ CB
 reg write ::constcl::write
 
 proc ::constcl::write {val args} {
-    if {$val ne "#NONE"} {
+    ::if {$val ne "#NONE"} {
         ::constcl::write-value $val
         puts {}
     }
@@ -57,7 +57,7 @@ CB
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-    if {$val ne "#NONE"} {
+    ::if {$val ne "#NONE"} {
         ::constcl::write-value $val
         flush stdout
     }
@@ -82,7 +82,7 @@ proc ::constcl::write-pair {pair} {
     set d [cdr $pair]
     # print car
     write-value $a
-    if {[pair? $d] ne "#f"} {
+    ::if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
         puts -nonewline " "
         write-pair $d

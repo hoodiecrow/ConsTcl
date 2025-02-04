@@ -94,7 +94,7 @@ CB
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-    if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f"} {
+    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f"} {
         return #t
     } else {
         return #f
@@ -104,20 +104,20 @@ CB
 
 TT(
 ::tcltest::test cons-1.0 {calculate circle area} -body {
-    pep "(define circle-area (lambda (r) (* pi (* r r))))"
+    pep "(define (circle-area r) (* pi (* r r)))"
     pep "(circle-area 3)"
 } -output 28.274333882308138\n
 
 ::tcltest::test cons-2.0 {calculate factorial} -body {
-    pep "(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))"
+    pep "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"
     pep "(fact 10)"
 } -output 3628800\n
 
-::tcltest::test cons-2.1 {calculate factorial} -body {
+::tcltest::test cons-2.1 {calculate factorial 100} -body {
     pep "(fact 100)"
 } -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
 
-::tcltest::test cons-2.2 {calculate factorial} -body {
+::tcltest::test cons-2.2 {calculate circle-area factorial 10} -body {
     pep "(circle-area (fact 10))"
 } -output 41369087205782.695\n
 

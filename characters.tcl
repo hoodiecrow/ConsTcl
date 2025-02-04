@@ -10,15 +10,15 @@ oo::class create ::constcl::Char {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
+        ::if {[regexp {^#\\([[:graph:]]|space|newline)$} $v]} {
             set value $v
         } else {
-            if {$v eq "#\\ "} {
+            ::if {$v eq "#\\ "} {
                 set value #\\space
             } elseif {$v eq "#\\\n"} {
                 set value #\\newline
             } else {
-                error "CHAR expected\n$v"
+                ::error "CHAR expected\n$v"
             }
         }
     }
@@ -36,35 +36,35 @@ oo::class create ::constcl::Char {
         }
     }
     method alphabetic? {} {
-        if {[::string is alpha -strict [my char]]} {
+        ::if {[::string is alpha -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method numeric? {} {
-        if {[::string is digit -strict [my char]]} {
+        ::if {[::string is digit -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method whitespace? {} {
-        if {[::string is space -strict [my char]]} {
+        ::if {[::string is space -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method upper-case? {} {
-        if {[::string is upper -strict [my char]]} {
+        ::if {[::string is upper -strict [my char]]} {
             return #t
         } else {
             return #f
         }
     }
     method lower-case? {} {
-        if {[::string is lower -strict [my char]]} {
+        ::if {[::string is lower -strict [my char]]} {
             return #t
         } else {
             return #f
@@ -78,11 +78,11 @@ oo::class create ::constcl::Char {
 }
 
 proc ::constcl::MkChar {v} {
-    if {[regexp -nocase {^#\\(space|newline)$} $v]} {
+    ::if {[regexp -nocase {^#\\(space|newline)$} $v]} {
         set v [::string tolower $v]
     }
     foreach instance [info class instances ::constcl::Char] {
-        if {[$instance value] eq $v} {
+        ::if {[$instance value] eq $v} {
             return $instance
         }
     }
@@ -104,7 +104,7 @@ CB
 reg char? ::constcl::char?
 
 proc ::constcl::char? {val} {
-    if {[info object isa typeof $val ::constcl::Char]} {
+    ::if {[info object isa typeof $val ::constcl::Char]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Char]} {
         return #t
@@ -147,7 +147,7 @@ reg char=? ::constcl::char=?
 proc ::constcl::char=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {$char1 eq $char2} {
+    ::if {$char1 eq $char2} {
         return #t
     } else {
         return #f
@@ -175,7 +175,7 @@ reg char<? ::constcl::char<?
 proc ::constcl::char<? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[$char1 char] < [$char2 char]} {
+    ::if {[$char1 char] < [$char2 char]} {
         return #t
     } else {
         return #f
@@ -199,7 +199,7 @@ reg char>? ::constcl::char>?
 proc ::constcl::char>? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[$char1 char] > [$char2 char]} {
+    ::if {[$char1 char] > [$char2 char]} {
         return #t
     } else {
         return #f
@@ -223,7 +223,7 @@ reg char<=? ::constcl::char<=?
 proc ::constcl::char<=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[$char1 char] <= [$char2 char]} {
+    ::if {[$char1 char] <= [$char2 char]} {
         return #t
     } else {
         return #f
@@ -247,7 +247,7 @@ reg char>=? ::constcl::char>=?
 proc ::constcl::char>=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[$char1 char] >= [$char2 char]} {
+    ::if {[$char1 char] >= [$char2 char]} {
         return #t
     } else {
         return #f
@@ -290,7 +290,7 @@ reg char-ci=? ::constcl::char-ci=?
 proc ::constcl::char-ci=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
+    ::if {[::string tolower [$char1 char]] eq [::string tolower [$char2 char]]} {
         return #t
     } else {
         return #f
@@ -314,7 +314,7 @@ reg char-ci<? ::constcl::char-ci<?
 proc ::constcl::char-ci<? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
+    ::if {[::string tolower [$char1 char]] < [::string tolower [$char2 char]]} {
         return #t
     } else {
         return #f
@@ -338,7 +338,7 @@ reg char-ci>? ::constcl::char-ci>?
 proc ::constcl::char-ci>? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
+    ::if {[::string tolower [$char1 char]] > [::string tolower [$char2 char]]} {
         return #t
     } else {
         return #f
@@ -362,7 +362,7 @@ reg char-ci<=? ::constcl::char-ci<=?
 proc ::constcl::char-ci<=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
+    ::if {[::string tolower [$char1 char]] <= [::string tolower [$char2 char]]} {
         return #t
     } else {
         return #f
@@ -386,7 +386,7 @@ reg char-ci>=? ::constcl::char-ci>=?
 proc ::constcl::char-ci>=? {char1 char2} {
     check {char? $char1} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
     check {char? $char2} {CHAR expected\n([pn] [$char1 show] [$char2 show])}
-    if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
+    ::if {[::string tolower [$char1 char]] >= [::string tolower [$char2 char]]} {
         return #t
     } else {
         return #f
@@ -580,7 +580,7 @@ CB
 reg integer->char
 
 proc ::constcl::integer->char {int} {
-    if {$int == 10} {
+    ::if {$int == 10} {
         return [MkChar #\\newline]
     } elseif {$int == 32} {
         return [MkChar #\\space]
@@ -616,7 +616,7 @@ reg char-upcase ::constcl::char-upcase
 
 proc ::constcl::char-upcase {char} {
     check {char? $char} {CHAR expected\n([pn] [$char show])}
-    if {[::string is alpha -strict [$char char]]} {
+    ::if {[::string is alpha -strict [$char char]]} {
         return [MkChar [::string toupper [$char value]]]
     } else {
         return $char
@@ -640,7 +640,7 @@ reg char-downcase ::constcl::char-downcase
 
 proc ::constcl::char-downcase {char} {
     check {char? $char} {CHAR expected\n([pn] [$char show])}
-    if {[::string is alpha -strict [$char char]]} {
+    ::if {[::string is alpha -strict [$char char]]} {
         return [MkChar [::string tolower [$char value]]]
     } else {
         return $char

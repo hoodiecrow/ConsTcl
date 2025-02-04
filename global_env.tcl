@@ -11,8 +11,8 @@ CB
 
 oo::objdefine ::constcl::null_env {
     method find {sym} {self}
-    method get {sym} {error "Unbound variable: [$sym name]"}
-    method set {sym val} {error "Unbound variable: [$sym name]"}
+    method get {sym} {::error "Unbound variable: [$sym name]"}
+    method set {sym val} {::error "Unbound variable: [$sym name]"}
 }
 CB
 

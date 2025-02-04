@@ -33,7 +33,7 @@ oo::class create ::constcl::IB {
         my advance
     }
     method advance {} {
-        if {$buffer eq {}} {
+        ::if {$buffer eq {}} {
             set peekc {}
         } else {
             set peekc [::string index $buffer 0]
@@ -48,9 +48,9 @@ oo::class create ::constcl::IB {
         set peekc $char
     }
     method find {char} {
-        if {[::string is space -strict $peekc]} {
+        ::if {[::string is space -strict $peekc]} {
             for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
-                if {![::string is space -strict [::string index $buffer $cp]]} {
+                ::if {![::string is space -strict [::string index $buffer $cp]]} {
                     break
                 }
             }
@@ -199,7 +199,7 @@ proc ::constcl::parse-expression {} {
         {\d}          { return [parse-number-expression] }
         {[[:graph:]]} { return [parse-identifier-expression] }
         default {
-            error "unexpected character ([ib first])"
+            ::error "unexpected character ([ib first])"
         }
     }
 }
@@ -223,7 +223,7 @@ proc ::constcl::parse-string-expression {} {
     ib advance
     while {[ib first] ne "\"" && [ib first] ne {}} {
         set c [ib first]
-        if {$c eq "\\"} {
+        ::if {$c eq "\\"} {
             ib advance
             ::append str [ib first]
         } else {
@@ -231,8 +231,8 @@ proc ::constcl::parse-string-expression {} {
         }
         ib advance
     }
-    if {[ib first] ne "\""} {
-        error "malformed string (no ending double quote)"
+    ::if {[ib first] ne "\""} {
+        ::error "malformed string (no ending double quote)"
     }
     ib advance
     ib skip-ws
@@ -276,7 +276,7 @@ proc ::constcl::parse-sharp {} {
         f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character-expression] }
         default {
-            error "Illegal #-literal"
+            ::error "Illegal #-literal"
         }
     }
 }
@@ -291,7 +291,7 @@ MD)
 
 CB
 proc ::constcl::make-constant {val} {
-    if {[pair? $val] ne "#f"} {
+    ::if {[pair? $val] ne "#f"} {
         $val mkconstant
         make-constant [car $val]
         make-constant [cdr $val]
@@ -346,7 +346,7 @@ PR)
 CB
 
 proc ::constcl::parse-pair {char} {
-    if {[ib find $char]} {
+    ::if {[ib find $char]} {
         return #NIL
     }
     ib skip-ws
@@ -357,13 +357,13 @@ proc ::constcl::parse-pair {char} {
     while {![ib find $char]} {
         set x [parse-expression]
         ib skip-ws
-        if {[dot? $x] ne "#f"} {
+        ::if {[dot? $x] ne "#f"} {
             set prev [parse-expression]
             ib skip-ws
         } else {
             lappend res $x
         }
-        if {[llength $res] > 999} break
+        ::if {[llength $res] > 999} break
     }
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
@@ -376,11 +376,11 @@ proc ::constcl::parse-pair-expression {char} {
     ib skip-ws
     set expr [parse-pair $char]
     ib skip-ws
-    if {[ib first] ne $char} {
-        if {$char eq ")"} {
-            error "Missing right parenthesis (first=[ib first])."
+    ::if {[ib first] ne $char} {
+        ::if {$char eq ")"} {
+            ::error "Missing right parenthesis (first=[ib first])."
         } else {
-            error "Missing right bracket (first=[ib first])."
+            ::error "Missing right bracket (first=[ib first])."
         }
     }
     ib advance
@@ -450,11 +450,11 @@ CB
 proc ::constcl::parse-plus-minus {} {
     set c [ib first]
     ib advance
-    if {[::string is digit -strict [ib first]]} {
+    ::if {[::string is digit -strict [ib first]]} {
         ib unget $c
         return [::constcl::parse-number-expression]
     } else {
-        if {$c eq "+"} {
+        ::if {$c eq "+"} {
             ib skip-ws
             return [MkSymbol "+"]
         } else {
@@ -481,7 +481,7 @@ CB
 proc ::constcl::parse-unquoted-expression {} {
     ib advance
     set symbol "unquote"
-    if {[ib first] eq "@"} {
+    ::if {[ib first] eq "@"} {
         set symbol "unquote-splicing"
         ib advance
     }
@@ -536,7 +536,7 @@ MD)
 
 CB
 proc ::constcl::interspace {c} {
-    if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
         return #t
     } else {
         return #f
@@ -732,8 +732,8 @@ proc ::constcl::parse-vector-expression {} {
     }
     set vec [MkVector $res]
     $vec mkconstant
-    if {[ib first] ne ")"} {
-        error "Missing right parenthesis (first=[ib first])."
+    ::if {[ib first] ne ")"} {
+        ::error "Missing right parenthesis (first=[ib first])."
     }
     ib advance
     ib skip-ws

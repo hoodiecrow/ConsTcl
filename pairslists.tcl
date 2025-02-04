@@ -21,23 +21,18 @@ oo::class create ::constcl::Pair {
     method car {} { set car }
     method cdr {} { set cdr }
     method set-car! {val} {
-        if {$constant} {
-            error "Can't modify a constant pair"
-        } else {
-            set car $val
-        }
+        ::constcl::check {my mutable?} {Can't modify a constant pair}
+        set car $val
         self
     }
     method set-cdr! {val} {
-        if {$constant} {
-            error "Can't modify a constant pair"
-        } else {
-            set cdr $val
-        }
+        ::constcl::check {my mutable?} {Can't modify a constant pair}
+        set cdr $val
         self
     }
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
+    method mutable? {} {expr {$constant?"#f":"#t"}}
     method write {} {
         puts -nonewline "("
         ::constcl::write-pair [self]
@@ -62,7 +57,7 @@ CB
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {val} {
-    if {[info object isa typeof $val ::constcl::Pair]} {
+    ::if {[info object isa typeof $val ::constcl::Pair]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
         return #t
@@ -90,7 +85,7 @@ proc ::constcl::show-pair {pair} {
     set d [cdr $pair]
     # print car
     ::append str [$a show]
-    if {[pair? $d] ne "#f"} {
+    ::if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
         ::append str " "
         ::append str [show-pair $d]
@@ -300,11 +295,11 @@ foreach ads {
     dadd
     dddd
 } {
-    reg c${ads}r ::constcl::c${ads}r
+    reg c${ads}r
 
     proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
-            if {\$c eq \"a\"} {
+            ::if {\$c eq \"a\"} {
                 set pair \[car \$pair\]
             } else {
                 set pair \[cdr \$pair\]
@@ -423,11 +418,11 @@ PR)
 CB
 proc ::constcl::listp {pair} {
     upvar visited visited
-    if {$pair in $visited} {
+    ::if {$pair in $visited} {
         return #f
     }
     lappend visited $pair
-    if {[null? $pair] ne "#f"} {
+    ::if {[null? $pair] ne "#f"} {
         return #t
     } elseif {[pair? $pair] ne "#f"} {
         return [listp [cdr $pair]]
@@ -475,7 +470,7 @@ CB
 reg list ::constcl::list
 
 proc ::constcl::list {args} {
-    if {[llength $args] == 0} {
+    ::if {[llength $args] == 0} {
         return #NIL
     } else {
         set prev #NIL
@@ -529,7 +524,7 @@ PR)
 
 CB
 proc ::constcl::length-helper {pair} {
-    if {[null? $pair] ne "#f"} {
+    ::if {[null? $pair] ne "#f"} {
         return 0
     } else {
         return [expr {1 + [length-helper [cdr $pair]]}]
@@ -584,7 +579,7 @@ PR)
 CB
 proc ::constcl::copy-list {pair next} {
     # TODO only fresh conses in the direct chain to NIL
-    if {[null? $pair] ne "#f"} {
+    ::if {[null? $pair] ne "#f"} {
         set next
     } elseif {[null? [cdr $pair]] ne "#f"} {
         cons [car $pair] $next
@@ -663,7 +658,7 @@ CB
 reg list-tail ::constcl::list-tail
 
 proc ::constcl::list-tail {vals k} {
-    if {[zero? $k] ne "#f"} {
+    ::if {[zero? $k] ne "#f"} {
         return $vals
     } else {
         list-tail [cdr $vals] [- $k #1]
@@ -793,23 +788,20 @@ PR)
 CB
 
 proc ::constcl::member-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[$epred $val1 [car $val2]] ne "#f"} {
-                return $val2
-            } else {
-                return [member-proc $epred $val1 [cdr $val2]]
-            }
+    switch $epred {
+        eq? { set name "memq" }
+        eqv? { set name "memv" }
+        equal? { set name "member" }
+    }
+    check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+    ::if {[null? $val2] ne "#f"} {
+        return #f
+    } elseif {[pair? $val2] ne "#f"} {
+        ::if {[$epred $val1 [car $val2]] ne "#f"} {
+            return $val2
+        } else {
+            return [member-proc $epred $val1 [cdr $val2]]
         }
-    } else {
-        switch $epred {
-            eq? { set name "memq" }
-            eqv? { set name "memv" }
-            equal? { set name "member" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
 CB
@@ -878,23 +870,20 @@ PR)
 
 CB
 proc ::constcl::assoc-proc {epred val1 val2} {
-    if {[list? $val2] ne "#f"} {
-        if {[null? $val2] ne "#f"} {
-            return #f
-        } elseif {[pair? $val2] ne "#f"} {
-            if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
-                return [car $val2]
-            } else {
-                return [assoc-proc $epred $val1 [cdr $val2]]
-            }
+    switch $epred {
+        eq? { set name "assq" }
+        eqv? { set name "assv" }
+        equal? { set name "assoc" }
+    }
+    check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+    ::if {[null? $val2] ne "#f"} {
+        return #f
+    } elseif {[pair? $val2] ne "#f"} {
+        ::if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+            return [car $val2]
+        } else {
+            return [assoc-proc $epred $val1 [cdr $val2]]
         }
-    } else {
-        switch $epred {
-            eq? { set name "assq" }
-            eqv? { set name "assv" }
-            equal? { set name "assoc" }
-        }
-        error "LIST expected\n($name [$val1 show] [$val2 show])"
     }
 }
 CB

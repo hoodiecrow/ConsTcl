@@ -161,7 +161,6 @@ source constcl.tcl
     ::constcl::invoke #NIL [list #NIL #NIL]
 } -returnCodes error -result "PROCEDURE expected\n(() val ...)"
 
-
 ::tcltest::test eval-1.0 {expand and macro} -body {
     pxp "(and)"
     pxp "(and #t)"
@@ -345,6 +344,14 @@ if no {
 ::tcltest::test eval-8.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pep "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
+
+::tcltest::test eval-9.0 {conditional: expand unless macro} -body {
+    pxp "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
+
+::tcltest::test eval-9.1 {conditional: run unless macro} -body {
+    pep "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "()\n"
 
 
 
@@ -1301,20 +1308,20 @@ if no {
 
 
 ::tcltest::test cons-1.0 {calculate circle area} -body {
-    pep "(define circle-area (lambda (r) (* pi (* r r))))"
+    pep "(define (circle-area r) (* pi (* r r)))"
     pep "(circle-area 3)"
 } -output 28.274333882308138\n
 
 ::tcltest::test cons-2.0 {calculate factorial} -body {
-    pep "(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))"
+    pep "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"
     pep "(fact 10)"
 } -output 3628800\n
 
-::tcltest::test cons-2.1 {calculate factorial} -body {
+::tcltest::test cons-2.1 {calculate factorial 100} -body {
     pep "(fact 100)"
 } -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
 
-::tcltest::test cons-2.2 {calculate factorial} -body {
+::tcltest::test cons-2.2 {calculate circle-area factorial 10} -body {
     pep "(circle-area (fact 10))"
 } -output 41369087205782.695\n
 

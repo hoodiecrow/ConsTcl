@@ -21,7 +21,7 @@ MD)
 CB
 # utility functions
 proc ::reg {key args} {
-    if {[llength $args] == 0} {
+    ::if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
         set val [lindex $args 0]
@@ -47,11 +47,11 @@ proc ::pxp {str} {
 
 proc ::constcl::check {cond msg} {
     ::if {[uplevel $cond] eq "#f"} {
-        error [uplevel [::list subst $msg]]
+        ::error [uplevel [::list subst $msg]]
     }
 }
 
-proc pn {} {
+proc ::pn {} {
     lindex [split [lindex [info level -1] 0] :] end
 }
 
@@ -94,11 +94,11 @@ catch { ::constcl::NIL destroy }
 oo::class create ::constcl::NIL {
     constructor {} {}
     method bvalue {} {return #NIL}
-    method car {} {error "PAIR expected"}
-    method cdr {} {error "PAIR expected"}
-    method set-car! {v} {error "PAIR expected"}
-    method set-cdr! {v} {error "PAIR expected"}
-    method numval {} {error "Not a number"}
+    method car {} {::error "PAIR expected"}
+    method cdr {} {::error "PAIR expected"}
+    method set-car! {v} {::error "PAIR expected"}
+    method set-cdr! {v} {::error "PAIR expected"}
+    method numval {} {::error "Not a number"}
     method write {} {puts -nonewline "()"}
     method show {} {format "()"}
 }
@@ -116,7 +116,7 @@ CB
 reg null? ::constcl::null?
 
 proc ::constcl::null? {obj} {
-    if {$obj eq "#NIL"} {
+    ::if {$obj eq "#NIL"} {
         return #t
     } else {
         return #f
@@ -146,7 +146,7 @@ oo::class create ::constcl::Dot {
 }
 
 proc ::constcl::dot? {obj} {
-    if {[info object isa typeof $obj Dot]} {
+    ::if {[info object isa typeof $obj Dot]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
         return #t
@@ -154,7 +154,35 @@ proc ::constcl::dot? {obj} {
         return #f
     }
 }
+CB
 
+MD(
+`error` is used to signal an error, with _msg_ being a message string and the
+optional arguments being values to show after the message.
+MD)
+
+PR(
+error (public);msg msg args exprs
+PR)
+
+CB
+reg error
+
+proc ::constcl::error {msg args} {
+    ::if {[llength $args]} {
+        lappend msg "("
+        set times 0
+        foreach arg $args {
+            ::if {$times} {
+                ::append msg " "
+            }
+            ::append msg [$arg show]
+            incr times
+        }
+        lappend msg ")"
+    }
+    ::error $msg
+}
 CB
 
 # vim: ft=tcl tw=80

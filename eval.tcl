@@ -37,27 +37,23 @@ CB
 reg eval ::constcl::eval
 
 proc ::constcl::eval {expr {env ::constcl::global_env}} {
-    if {[atom? $expr] ne "#f"} {
-        if {[symbol? $expr] ne "#f"} {
-            lookup $expr $env
-        } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
-            set expr
-        } else {
-            error "cannot evaluate $expr"
-        }
+    ::if {[symbol? $expr] ne "#f"} {
+        lookup $expr $env
+    } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+        set expr
     } else {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-                and case cond define for for/and
-                for/list for/or let or quasiquote}} {
-            expand-macro $env
+            and case cond define for for/and for/list
+            for/or let or quasiquote unless when}} {
+                expand-macro $env
         }
         switch [$op name] {
             quote   { car $args }
-            if      { _if {eval [car $args] $env} \
-                            {eval [cadr $args] $env} \
-                            {eval [caddr $args] $env} }
+            if      { if {eval [car $args] $env} \
+                        {eval [cadr $args] $env} \
+                        {eval [caddr $args] $env} }
             begin   { eprogn $args $env }
             define  { declare [car $args] [eval [cadr $args] $env] $env }
             set!    { update! [car $args] [eval [cadr $args] $env] $env }
@@ -72,8 +68,8 @@ MD(
 **lookup**
 
 _Variable reference_ is handled by the helper `lookup`. It searches the
-environment chain for the symbol's name, and returns the value it is bound to. It is an
-error to lookup an unbound symbol.
+environment chain for the symbol's name, and returns the value it is bound to.
+It is an error to lookup an unbound symbol.
 MD)
 
 PR(
@@ -89,15 +85,22 @@ CB
 MD(
 **if**
 
-The _conditional_ form evaluates a Lisp list of three expressions. The first, the _condition_,
-is evaluated first. If it evaluates to anything other than `#f`, the second expression (the
-_consequent_) is evaluated and the value returned. Otherwise, the third expression (the 
-_alternate_) is evaluated and the value returned.
+The _conditional_ form evaluates a Lisp list of three expressions. The first,
+the _condition_, is evaluated first. If it evaluates to anything other than
+`#f`, the second expression (the _consequent_) is evaluated and the value
+returned. Otherwise, the third expression (the _alternate_) is evaluated and the
+value returned.
 MD)
 
-proc ::constcl::_if {cond conseq altern} {
-    if {[uplevel $cond] ne "#f"} then {uplevel $conseq} else {uplevel $altern}
+PR(
+if (internal);condition expr consequent expr alternate expr -> val
+PR)
+
+CB
+proc ::constcl::if {cond conseq altern} {
+    ::if {[uplevel $cond] ne "#f"} {uplevel $conseq} {uplevel $altern}
 }
+CB
 
 MD(
 **eprogn**
@@ -112,14 +115,14 @@ PR)
 
 CB
 proc ::constcl::eprogn {exps env} {
-    if {[pair? $exps] ne "#f"} {
-        if {[pair? [cdr $exps]] ne "#f"} {
+    if {pair? $exps} {
+        if {pair? [cdr $exps]} {
             eval [car $exps] $env
             return [eprogn [cdr $exps] $env]
-        } else {
+        } {
             return [eval [car $exps] $env]
         }
-    } else {
+    } {
         return #NIL
     }
 }
@@ -186,7 +189,7 @@ PR)
 
 CB
 proc ::constcl::make-function {formals body env} {
-    if {[[length $body] value] > 1} {
+    ::if {[[length $body] value] > 1} {
         set body [cons #B $body]
     } else {
         set body [car $body]
@@ -257,9 +260,10 @@ PR)
 
 CB
 proc ::constcl::eval-list {exps env} {
-    if {[pair? $exps] ne "#f"} {
+    # don't convert to ::constcl::if, it breaks (fact 100)
+    ::if {[pair? $exps] ne "#f"} {
         return [cons [eval [car $exps] $env] [eval-list [cdr $exps] $env]]
-    } else {
+    } {
         return #NIL
     }
 }
@@ -282,7 +286,7 @@ PR)
 CB
 proc ::constcl::expand-macro {env} {
     upvar op op args args
-    if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
+    ::if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
         return -code break
     }
     switch [$op name] {
@@ -319,6 +323,12 @@ proc ::constcl::expand-macro {env} {
         quasiquote {
             set expr [expand-quasiquote $args $env]
         }
+        unless {
+            set expr [expand-unless $args]
+        }
+        when {
+            set expr [expand-when $args]
+        }
     }
     set op [car $expr]
     set args [cdr $expr]
@@ -339,12 +349,14 @@ PR)
 
 CB
 proc ::constcl::expand-and {exps} {
-    if {[eq? [length $exps] #0] ne "#f"} {
+    if {eq? [length $exps] #0} {
         return [list #B #t]
-    } elseif {[eq? [length $exps] #1] ne "#f"} {
-        return [cons #B $exps]
-    } else {
-        return [do-and $exps #NIL]
+    } {
+        if {eq? [length $exps] #1} {
+            return [cons #B $exps]
+        } {
+            return [do-and $exps #NIL]
+        }
     }
 }
 CB
@@ -355,9 +367,9 @@ PR)
 
 CB
 proc ::constcl::do-and {exps prev} {
-    if {[eq? [length $exps] #0] ne "#f"} {
+    if {eq? [length $exps] #0} {
         return $prev
-    } else {
+    } {
         return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
     }
 }
@@ -376,14 +388,14 @@ PR)
 
 CB
 proc ::constcl::expand-case {keyexpr clauses} {
-    if {[eq? [length $clauses] #0] ne "#f"} {
+    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set keyl [caar $clauses]
         set body [cdar $clauses]
         set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
-        if {[eq? [length $clauses] #1] ne "#f"} {
-            if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
+        ::if {[eq? [length $clauses] #1] ne "#f"} {
+            ::if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
                 set keyl #t
             }
         }
@@ -406,20 +418,20 @@ PR)
 
 CB
 proc ::constcl::expand-cond {clauses} {
-    if {[eq? [length $clauses] #0] ne "#f"} {
+    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set pred [caar $clauses]
         set body [cdar $clauses]
-        if {[symbol? [car $body]] ne "#f" && [[car $body] name] eq "=>"} {
+        ::if {[symbol? [car $body]] ne "#f" && [[car $body] name] eq "=>"} {
             set body [cddar $clauses]
         }
-        if {[eq? [length $clauses] #1] ne "#f"} {
-            if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
+        ::if {[eq? [length $clauses] #1] ne "#f"} {
+            ::if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
                 set pred #t
             }
         }
-        if {[null? $body] ne "#f"} {set body $pred}
+        ::if {[null? $body] ne "#f"} {set body $pred}
         return [list #I $pred [cons #B $body] [expand-cond [cdr $clauses]]]
     }
 }
@@ -460,13 +472,13 @@ PR)
 
 CB
 proc ::constcl::for-seq {seq env} {
-    if {[number? $seq] ne "#f"} {
+    ::if {[number? $seq] ne "#f"} {
         set seq [in-range $seq]
     } else {
         set seq [eval $seq $env]
     }
     # make it a Tcl list, one way or another
-    if {[list? $seq] ne "#f"} {
+    ::if {[list? $seq] ne "#f"} {
         set seq [splitlist $seq]
     } elseif {[string? $seq] ne "#f"} { 
         set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
@@ -589,7 +601,7 @@ PR)
 
 CB
 proc ::constcl::expand-let {exps} {
-    if {[symbol? [car $exps]] ne "#f"} {
+    ::if {[symbol? [car $exps]] ne "#f"} {
         # named let
         set variable [car $exps]
         set bindings [cadr $exps]
@@ -598,7 +610,7 @@ proc ::constcl::expand-let {exps} {
         foreach binding [splitlist $bindings] {
             set var [car $binding]
             set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
             dict set vars $var $val
         }
         set decl [dict values [dict map {k v} $vars {list $k $v}]]
@@ -613,7 +625,7 @@ proc ::constcl::expand-let {exps} {
         foreach binding [splitlist $bindings] {
             set var [car $binding]
             set val [cadr $binding]
-            if {$var in [dict keys $vars]} {error "variable '$var' occurs more than once in let construct"}
+            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
             dict set vars $var $val
         }
         return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
@@ -634,7 +646,7 @@ PR)
 
 CB
 proc ::constcl::expand-or {exps} {
-    if {[eq? [length $exps] #0] ne "#f"} {
+    ::if {[eq? [length $exps] #0] ne "#f"} {
         return [list #B #f]
     } elseif {[eq? [length $exps] #1] ne "#f"} {
         return [cons #B $exps]
@@ -650,9 +662,9 @@ PR)
 
 CB
 proc ::constcl::do-or {exps} {
-    if {[eq? [length $exps] #0] ne "#f"} {
+    if {eq? [length $exps] #0} {
         return #f
-    } else {
+    } {
         return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
     }
 }
@@ -672,20 +684,20 @@ PR)
 
 CB
 proc ::constcl::qq-visit-child {node qqlevel env} {
-    if {$qqlevel < 0} {
+    ::if {$qqlevel < 0} {
         set qqlevel 0
     }
-    if {[list? $node] ne "#f"} {
+    ::if {[list? $node] ne "#f"} {
         set res {}
         foreach child [splitlist $node] {
-            if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
-                if {$qqlevel == 0} {
+            ::if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $child] $env]
                 } else {
                     lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
-                if {$qqlevel == 0} {
+                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $child] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "quasiquote"]] ne "#f"} {
@@ -708,7 +720,7 @@ PR)
 CB
 proc ::constcl::expand-quasiquote {exps env} {
     set qqlevel 0
-    if {[list? [car $exps]] ne "#f"} {
+    ::if {[list? [car $exps]] ne "#f"} {
         set node [car $exps]
         return [qq-visit-child $node 0 $env]
     } elseif {[vector? [car $exps]] ne "#f"} {
@@ -717,12 +729,12 @@ proc ::constcl::expand-quasiquote {exps env} {
         for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
             set vecref [vector-ref $vect $idx]
-            if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
-                if {$qqlevel == 0} {
+            ::if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $vecref] $env]
                 }
             } elseif {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] ne "#f"} {
-                if {$qqlevel == 0} {
+                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $vecref] $env]]
                 }
             } elseif {[atom? $vecref] ne "#f"} {
@@ -735,8 +747,37 @@ proc ::constcl::expand-quasiquote {exps env} {
 }
 CB
 
-TT(
+MD(
+`unless` is a conditional like `if`, with the differences that it takes a number
+of statements and only executes them for a false outcome of `car $exps`.
+MD)
 
+PR(
+expand-unless;exps lexprs -> expr
+PR)
+
+CB
+proc ::constcl::expand-unless {exps} {
+    return [list #I [car $exps] [list #Q #NIL] [cons #B [cdr $exps]]]
+}
+CB
+
+MD(
+`when` is a conditional like `if`, with the differences that it takes a number
+of statements and only executes them for a true outcome of `car $exps`.
+MD)
+
+PR(
+expand-when;exps lexprs -> expr
+PR)
+
+CB
+proc ::constcl::expand-when {exps} {
+    return [list #I [car $exps] [cons #B [cdr $exps]] [list #Q #NIL]]
+}
+CB
+
+TT(
 ::tcltest::test eval-1.0 {expand and macro} -body {
     pxp "(and)"
     pxp "(and #t)"
@@ -920,6 +961,14 @@ if no {
 ::tcltest::test eval-8.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pep "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
+
+::tcltest::test eval-9.0 {conditional: expand unless macro} -body {
+    pxp "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
+
+::tcltest::test eval-9.1 {conditional: run unless macro} -body {
+    pep "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "()\n"
 
 
 TT)

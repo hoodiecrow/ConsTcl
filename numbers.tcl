@@ -13,17 +13,17 @@ oo::class create ::constcl::Number {
     superclass ::constcl::NIL
     variable value
     constructor {v} {
-        if {[::string is double -strict $v]} {
+        ::if {[::string is double -strict $v]} {
             set value $v
         } else {
-            error "NUMBER expected\n$v"
+            ::error "NUMBER expected\n$v"
         }
     }
-    method zero? {} {if {$value == 0} then {return #t} else {return #f}}
-    method positive? {} {if {$value > 0} then {return #t} else {return #f}}
-    method negative? {} {if {$value < 0} then {return #t} else {return #f}}
-    method even? {} {if {$value % 2 == 0} then {return #t} else {return #f}}
-    method odd? {} {if {$value % 2 == 1} then {return #t} else {return #f}}
+    method zero? {} {::if {$value == 0} then {return #t} else {return #f}}
+    method positive? {} {::if {$value > 0} then {return #t} else {return #f}}
+    method negative? {} {::if {$value < 0} then {return #t} else {return #f}}
+    method even? {} {::if {$value % 2 == 0} then {return #t} else {return #f}}
+    method odd? {} {::if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
     method mkconstant {} {}
@@ -50,7 +50,7 @@ CB
 reg number? ::constcl::number?
 
 proc ::constcl::number? {val} {
-    if {[info object isa typeof $val ::constcl::Number]} {
+    ::if {[info object isa typeof $val ::constcl::Number]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Number]} {
         return #t
@@ -98,9 +98,9 @@ proc ::constcl::= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(= num ...)"
+        ::error "NUMBER expected\n(= num ...)"
     }
-    if {[::tcl::mathop::== {*}$vals]} {
+    ::if {[::tcl::mathop::== {*}$vals]} {
         return #t
     } else {
         return #f
@@ -123,9 +123,9 @@ proc ::constcl::< {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(< num ...)"
+        ::error "NUMBER expected\n(< num ...)"
     }
-    if {[::tcl::mathop::< {*}$vals]} {
+    ::if {[::tcl::mathop::< {*}$vals]} {
         return #t
     } else {
         return #f
@@ -148,9 +148,9 @@ proc ::constcl::> {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(> num ...)"
+        ::error "NUMBER expected\n(> num ...)"
     }
-    if {[::tcl::mathop::> {*}$vals]} {
+    ::if {[::tcl::mathop::> {*}$vals]} {
         return #t
     } else {
         return #f
@@ -173,9 +173,9 @@ proc ::constcl::<= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(<= num ...)"
+        ::error "NUMBER expected\n(<= num ...)"
     }
-    if {[::tcl::mathop::<= {*}$vals]} {
+    ::if {[::tcl::mathop::<= {*}$vals]} {
         return #t
     } else {
         return #f
@@ -198,9 +198,9 @@ proc ::constcl::>= {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(>= num ...)"
+        ::error "NUMBER expected\n(>= num ...)"
     }
-    if {[::tcl::mathop::>= {*}$vals]} {
+    ::if {[::tcl::mathop::>= {*}$vals]} {
         return #t
     } else {
         return #f
@@ -357,7 +357,7 @@ proc ::constcl::max {num args} {
     try {
         set vals [lmap arg [::list $num {*}$args] {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(max num...)"
+        ::error "NUMBER expected\n(max num...)"
     }
     MkNumber [::tcl::mathfunc::max {*}$vals]
 }
@@ -378,7 +378,7 @@ proc ::constcl::min {num args} {
     try {
         set vals [lmap arg [::list $num {*}$args] {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(min num...)"
+        ::error "NUMBER expected\n(min num...)"
     }
     MkNumber [::tcl::mathfunc::min {*}$vals]
 }
@@ -435,7 +435,7 @@ proc ::constcl::+ {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(+ num ...)"
+        ::error "NUMBER expected\n(+ num ...)"
     }
     MkNumber [::tcl::mathop::+ {*}$vals]
 }
@@ -458,7 +458,7 @@ proc ::constcl::* {args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(* num ...)"
+        ::error "NUMBER expected\n(* num ...)"
     }
     MkNumber [::tcl::mathop::* {*}$vals]
 }
@@ -481,7 +481,7 @@ proc ::constcl::- {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(- num ...)"
+        ::error "NUMBER expected\n(- num ...)"
     }
     MkNumber [::tcl::mathop::- [$num numval] {*}$vals]
 }
@@ -507,7 +507,7 @@ proc ::constcl::/ {num args} {
     try {
         set vals [lmap arg $args {$arg numval}]
     } on error {} {
-        error "NUMBER expected\n(/ num ...)"
+        ::error "NUMBER expected\n(/ num ...)"
     }
     MkNumber [::tcl::mathop::/ [$num numval] {*}$vals]
 }
@@ -541,7 +541,7 @@ reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
     check {number? $num} {NUMBER expected\n([pn] [$num show])}
-    if {[$num negative?] ne "#f"} {
+    ::if {[$num negative?] ne "#f"} {
         return [MkNumber [expr {[$num numval] * -1}]]
     } else {
         return $num
@@ -583,7 +583,7 @@ reg quotient
 
 proc ::constcl::quotient {num1 num2} {
     set q [::tcl::mathop::/ [$num1 numval] [$num2 numval]]
-    if {$q > 0} {
+    ::if {$q > 0} {
         return [MkNumber [::tcl::mathfunc::floor $q]]
     } elseif {$q < 0} {
         return [MkNumber [::tcl::mathfunc::ceil $q]]
@@ -617,7 +617,7 @@ reg remainder
 
 proc ::constcl::remainder {num1 num2} {
     set n [::tcl::mathop::% [[abs $num1] numval] [[abs $num2] numval]]
-    if {[$num1 negative?] ne "#f"} {
+    ::if {[$num1 negative?] ne "#f"} {
         set n -$n
     }
     return [MkNumber $n]
@@ -755,7 +755,7 @@ reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
     check {number? $num} {NUMBER expected\n([pn] [$num show])}
-    if {[$num negative?] ne "#f"} {
+    ::if {[$num negative?] ne "#f"} {
         MkNumber [::tcl::mathfunc::ceil [$num numval]]
     } else {
         MkNumber [::tcl::mathfunc::floor [$num numval]]
@@ -939,7 +939,7 @@ CB
 reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
-    if {[llength $args] == 1} {
+    ::if {[llength $args] == 1} {
         set num [lindex $args 0]
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         MkNumber [::tcl::mathfunc::atan [$num numval]]
@@ -1091,7 +1091,7 @@ CB
 reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
-    if {[llength $args] == 0} {
+    ::if {[llength $args] == 0} {
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         return [MkString [$num numval]]
     } else {
@@ -1099,7 +1099,7 @@ proc ::constcl::number->string {num args} {
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
         check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
-        if {[$radix numval] == 10} {
+        ::if {[$radix numval] == 10} {
             return [MkString [$num numval]]
         } else {
             return [MkString [base [$radix numval] [$num numval]]]
@@ -1117,7 +1117,7 @@ proc base {base number} {
         set res [lindex $digits $digit]$res
         set number [expr {$number / $base}]
     }
-    if $negative {set res -$res}
+    ::if $negative {set res -$res}
     set res
 }
 CB
@@ -1162,14 +1162,14 @@ CB
 reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
-    if {[llength $args] == 0} {
+    ::if {[llength $args] == 0} {
         check {string? $str} {STRING expected\n([pn] [$str show])}
         return [MkNumber [$str value]]
     } else {
         lassign $args radix
         check {string? $str} {STRING expected\n([pn] [$str show])}
         check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
-        if {[$radix numval] == 10} {
+        ::if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
         } else {
             return [MkNumber [frombase [$radix numval] [$str value]]]
@@ -1184,12 +1184,12 @@ proc frombase {base number} {
     set res 0
     foreach digit [split $number {}] {
         set decimalvalue [lsearch $digits $digit]
-        if {$decimalvalue < 0 || $decimalvalue >= $base} {
-            error "bad digit $decimalvalue for base $base"
+        ::if {$decimalvalue < 0 || $decimalvalue >= $base} {
+            ::error "bad digit $decimalvalue for base $base"
         }
         set res [expr {$res * $base + $decimalvalue}]
     }
-    if $negative {set res -$res}
+    ::if $negative {set res -$res}
     set res
 }
 CB

@@ -13,8 +13,8 @@ oo::class create ::constcl::Boolean {
     superclass ::constcl::NIL
     variable bvalue
     constructor {v} {
-        if {$v ni {#t #f}} {
-            error "bad boolean value $v"
+        ::if {$v ni {#t #f}} {
+            ::error "bad boolean value $v"
         }
         set bvalue $v
     }
@@ -28,7 +28,7 @@ oo::class create ::constcl::Boolean {
 
 proc ::constcl::MkBoolean {v} {
     foreach instance [info class instances ::constcl::Boolean] {
-        if {[$instance bvalue] eq $v} {
+        ::if {[$instance bvalue] eq $v} {
             return $instance
         }
     }
@@ -66,7 +66,7 @@ CB
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {val} {
-    if {[info object isa typeof $val ::constcl::Boolean]} {
+    ::if {[info object isa typeof $val ::constcl::Boolean]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
         return #t
@@ -115,7 +115,7 @@ CB
 reg not ::constcl::not
 
 proc ::constcl::not {val} {
-    if {[$val bvalue] eq "#f"} {
+    ::if {[$val bvalue] eq "#f"} {
         return #t
     } else {
         return #f
