@@ -109,6 +109,20 @@ proc ::constcl::dot? {obj} {
 }
 
 
+catch { ::constcl::Unspecific destroy }
+
+oo::class create ::constcl::Unspecific {
+    method mkconstant {} {}
+}
+
+
+catch { ::constcl::Undefined destroy }
+
+oo::class create ::constcl::Undefined {
+    method mkconstant {} {}
+}
+
+
 
 reg error
 
@@ -914,6 +928,152 @@ proc ::constcl::expand-unless {exps} {
 
 proc ::constcl::expand-when {exps} {
     return [list #I [car $exps] [cons #B [cdr $exps]] [list #Q #NIL]]
+}
+
+### Resolving local defines
+
+
+
+proc resolve-local-defines {expr} {
+    set rest [lassign [extract-from-defines $expr VALS] a error]
+
+    if {$error ne "#f"} {
+        return #NIL
+    }
+
+    set rest [lassign [extract-from-defines $expr VALS] v error]
+
+    if {$rest eq "#NIL"} {
+        set rest [cons #UNSP #NIL]
+    }
+
+    return [make-recursive-lambda $v $a $rest]
+}
+
+
+proc extract-from-defines {expr part} {
+    set a #NIL
+
+    while {$expr ne "#NIL"} {
+        if {[atom? $x] ne "#f" || [atom? [car $x]] ne "#f" || [eq? [caar $x] [MkSymbol "define"]] eq "#f"} {
+            break
+        }
+
+        set n [car $x]
+        set k [length $n]
+        if {[list? $n] eq "#f" || [$k numval] < 3 || [$k numval] > 3 ||
+            ([argument-list? [cadr $n]] ne "#f" || [symbol? [cadr $n]] eq "#f")
+            eq "#f"} {
+            return [::list {} "#t" {}]
+        }
+
+        if {[pair? [cadr $n]] ne "#f"} {
+            if {$part eq "VARS"} {
+                set a [cons [caadr $n] $a]
+            } else {
+                set a [cons #NIL $a]
+                set new [cons [cdadr $n] [cddr $n]]
+                set new [cons #λ $new]
+                set-car! $a $new
+            }
+        } else {
+            if {$part eq "VARS"} {
+                set a [cons [cadr $n] $a]
+            } else {
+                set a [cons [caddr $n] $a]
+            }
+        }
+        set x [cdr $x]
+    }
+    return [::list $a #f x]
+}
+
+
+proc argument-list? {n} {
+    if {$n eq "#NIL"} {
+        return #t
+    } elseif {[symbol? $n] ne "#f"} {
+        return #t
+    } elseif {[atom? $n] ne "#f"} {
+        return #f
+    }
+    while {[pair? $n] ne "#f"} {
+        if {[symbol? [car $n]] eq "#f"} {
+            return #f
+        }
+        set n [cdr $n]
+    }
+    if {$n eq "#NIL"} {
+        return #t
+    } elseif {[symbol? $n] ne "#f"} {
+        return #t
+    }
+}
+
+
+proc make-recursive-lambda {v a body} {
+    set t [make-temporaries $v]
+
+    set body [append-b [make-assignments $v $t] $body]
+    set body [cons $body #NIL]
+    set n [cons $t $body]
+    set n [cons #λ $n]
+    set n [cons $n $a]
+    set n [cons $n #NIL]
+    set n [cons $v $n]
+    set n [cons #λ $n]
+    set n [cons $n [make-undefineds $v]]
+    return $n
+}
+
+
+proc make-temporaries {x} {
+    set n #NIL
+    while {$x ne "#NIL"} {
+        set v [gensym "g"]
+        set n [cons $v $n]
+        set x [cdr $x]
+    }
+    return $n
+}
+
+
+proc append-b {a b} {
+    if {$a eq "#NIL"} {
+        return $b
+    }
+
+    set p $a
+    while {$p ne "#NIL"} {
+        if {[atom? $p] ne "#f"} {
+            ::error "append: improper list"
+        }
+        set last $p
+        set p [cdr $p]
+    }
+    set-cdr! $last $b
+    return $a
+}
+
+
+proc make-assignments {x t} {
+    set n #NIL
+    while {$x ne "#NIL"} {
+       set asg [cons [car $t] #NIL]
+       set asg [cons [car $x] $asg]
+       set asg [cons #S $asg]
+       set n [cons $asg $n]
+       set x [cdr $x]
+       set t [cdr $t]
+   }
+   return [cons #B $n]
+}
+
+
+proc make-undefineds {x} {
+    set n #NIL
+    while {$x ne "#NIL"} {
+        
 }
 
 
@@ -3289,6 +3449,10 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #NONE {} [::constcl::None new]
+
+interp alias {} #UNSP {} [::constcl::Unspecific new]
+
+interp alias {} #UNDF {} [::constcl::Undefined new]
 
 
 
