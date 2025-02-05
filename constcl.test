@@ -396,27 +396,15 @@ if no {
     pxp "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
+::tcltest::test eval-12.0 {expand let, experimental code} -body {
+    #set env [::constcl::Environment new #NIL {} ::constcl::global_env]
+    set ::constcl::env ::constcl::global_env
+    pep "(define varlist '(a b c))"
+    pep "(define body    '((+ a b) (* c 4)))"
+    pep "(define vallist '(1 2 3))"
+    pxp "`((lambda (,@varlist) ,@body) ,@vallist)"
+} -output "((lambda (a b c) (+ a b) (* c 4)) 1 2 3)\n"
 
-
-
-
-if no {
-
-(let ((idx (list-find-key plist 3)))
-  (if (< idx 0)
-    (set! plist (append (list 3 7) plist))
-    (begin
-      (list-set! plist (+ idx 1) 7)
-      plist)))
-
-(defmacro (put plist key val)
-  (let ((idx (list-find-key plist key)))
-    (if (< idx 0)
-      (set! plist (append (list key val) plist))
-      (begin
-        (list-set! plist (+ idx 1) val)
-        plist))))
-}
 
 
 ::tcltest::test write-1.0 {read, eval, and write a number} -body {

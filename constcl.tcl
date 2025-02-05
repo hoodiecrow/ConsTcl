@@ -841,6 +841,13 @@ proc ::constcl::expand-let {exps} {
             dict set vars $var $val
         }
         return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
+        # experimental code
+        set env [::constcl::Environment new #NIL {} ::constcl::global_env]
+        $env set [MkSymbol "varlist"] [dict keys $vars]
+        $env set [MkSymbol "body"] $body
+        $env set [MkSymbol "vallist"] [dict values $vars]
+        set qq "`((lambda (,@varlist) ,@body) ,@vallist)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 
@@ -3642,13 +3649,24 @@ if no {
 3
 
 
+> (get plist 'c)
+3
+
+
 
 > (set! plist (append '(f 6) plist))
 (f 6 a 1 b 2 c 3 d 4 e 5)
 
 
+> (put! plist 'c 9)
+(f 6 a 1 b 2 c 9 d 4 e 5)
+> (put! plist 'g 7)
+(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
+
+
 > (set! plist (append '(d #f) plist))
-(d #f f 6 a 1 b 2 c 3 d 4 e 5)
+(d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
+
 
 }
 

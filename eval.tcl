@@ -632,6 +632,13 @@ proc ::constcl::expand-let {exps} {
             dict set vars $var $val
         }
         return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
+        # experimental code
+        set env [::constcl::Environment new #NIL {} ::constcl::global_env]
+        $env set [MkSymbol "varlist"] [dict keys $vars]
+        $env set [MkSymbol "body"] $body
+        $env set [MkSymbol "vallist"] [dict values $vars]
+        set qq "`((lambda (,@varlist) ,@body) ,@vallist)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 CB
@@ -1287,27 +1294,15 @@ if no {
     pxp "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
+::tcltest::test eval-12.0 {expand let, experimental code} -body {
+    #set env [::constcl::Environment new #NIL {} ::constcl::global_env]
+    set ::constcl::env ::constcl::global_env
+    pep "(define varlist '(a b c))"
+    pep "(define body    '((+ a b) (* c 4)))"
+    pep "(define vallist '(1 2 3))"
+    pxp "`((lambda (,@varlist) ,@body) ,@vallist)"
+} -output "((lambda (a b c) (+ a b) (* c 4)) 1 2 3)\n"
 
-
-
-
-if no {
-
-(let ((idx (list-find-key plist 3)))
-  (if (< idx 0)
-    (set! plist (append (list 3 7) plist))
-    (begin
-      (list-set! plist (+ idx 1) 7)
-      plist)))
-
-(defmacro (put plist key val)
-  (let ((idx (list-find-key plist key)))
-    (if (< idx 0)
-      (set! plist (append (list key val) plist))
-      (begin
-        (list-set! plist (+ idx 1) val)
-        plist))))
-}
 TT)
 
 CB

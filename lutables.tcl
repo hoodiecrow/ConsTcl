@@ -29,6 +29,17 @@ CB
 
 MD(
 If a key doesn't occur in the plist, `memq` returns `#f`.
+
+Alternatively, ConsTcl users can use `get` to access the value in one step. 
+MD)
+
+CB
+> (get plist 'c)
+3
+CB
+
+MD(
+`get` returns `#f` if the key isn't present in the plist.
 MD)
 
 MD(
@@ -41,13 +52,28 @@ CB
 CB
 
 MD(
+or with the `put!` macro, which can both update existing values and add new ones:
+MD)
+
+CB
+> (put! plist 'c 9)
+(f 6 a 1 b 2 c 9 d 4 e 5)
+> (put! plist 'g 7)
+(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
+CB
+
+MD(
 To get rid of a key/value pair, the simplest way is to add an erasing pair:
 MD)
 
 CB
 > (set! plist (append '(d #f) plist))
-(d #f f 6 a 1 b 2 c 3 d 4 e 5)
+(d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
 CB
+
+MD(
+But instead, one can use the `del` macro:
+MD)
 
 }
 

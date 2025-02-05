@@ -1273,6 +1273,13 @@ proc ::constcl::expand-let {exps} {
             dict set vars $var $val
         }
         return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
+        # experimental code
+        set env [::constcl::Environment new #NIL {} ::constcl::global_env]
+        $env set [MkSymbol "varlist"] [dict keys $vars]
+        $env set [MkSymbol "body"] $body
+        $env set [MkSymbol "vallist"] [dict values $vars]
+        set qq "`((lambda (,@varlist) ,@body) ,@vallist)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 ```
@@ -5405,6 +5412,15 @@ Values can be retrieved in a two-step process:
 
 If a key doesn't occur in the plist, `memq` returns `#f`.
 
+Alternatively, ConsTcl users can use `get` to access the value in one step. 
+
+```
+> (get plist 'c)
+3
+```
+
+`get` returns `#f` if the key isn't present in the plist.
+
 Values can be added with a single statement:
 
 ```
@@ -5412,12 +5428,23 @@ Values can be added with a single statement:
 (f 6 a 1 b 2 c 3 d 4 e 5)
 ```
 
+or with the `put!` macro, which can both update existing values and add new ones:
+
+```
+> (put! plist 'c 9)
+(f 6 a 1 b 2 c 9 d 4 e 5)
+> (put! plist 'g 7)
+(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
+```
+
 To get rid of a key/value pair, the simplest way is to add an erasing pair:
 
 ```
 > (set! plist (append '(d #f) plist))
-(d #f f 6 a 1 b 2 c 3 d 4 e 5)
+(d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
 ```
+
+But instead, one can use the `del` macro:
 
 }
 
