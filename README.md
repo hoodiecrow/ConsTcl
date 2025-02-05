@@ -182,6 +182,7 @@ catch { ::constcl::Undefined destroy }
 
 oo::class create ::constcl::Undefined {
     method mkconstant {} {}
+    method write {} {puts -nonewline #<undefined>}
 }
 ```
 
@@ -343,13 +344,16 @@ list.
 ![intreplist](/images/intreplist.png)
 
 
-<table border=1><thead><tr><th colspan=2 align="left">parse (public)</th></tr></thead><tr><td>str</td><td>Lisp source text</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse (public)</th></tr></thead><tr><td>?str?</td><td>Lisp source text</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg parse
 
-proc ::constcl::parse {str} {
-    ib fill $str
+proc ::constcl::parse {args} {
+    ::if {[llength $args]} {
+        lassign $args str
+        ib fill $str
+    }
     return [parse-expression]
 }
 ```
@@ -449,7 +453,7 @@ proc ::constcl::parse-sharp {} {
         f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character-expression] }
         default {
-            ::error "Illegal #-literal"
+            ::error "Illegal #-literal: #[ib first]"
         }
     }
 }
@@ -770,12 +774,12 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set args [cdr $expr]
         while {[$op name] in {
             and case cond define for for/and for/list
-            for/or let or quasiquote unless when}} {
+            for/or let or put! quasiquote unless when}} {
                 expand-macro $env
         }
         switch [$op name] {
             quote   { car $args }
-            if      { if {eval [car $args] $env} \
+            if      { ::if {[eval [car $args] $env] ne "#f"} \
                         {eval [cadr $args] $env} \
                         {eval [caddr $args] $env} }
             begin   { eprogn $args $env }
@@ -998,6 +1002,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args]
+        }
+        put! {
+            set expr [expand-put! $args]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -1301,6 +1308,29 @@ proc ::constcl::do-or {exps} {
 }
 ```
 
+**expand-put!**
+
+The macro `put!` updates a property list. It adds a key-value pair if the key
+isn't present, or changes the value in place if it is.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-put! (public)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::expand-put! {exps} {
+    if {[null? $exps]} {::error "too few arguments, 3 expected, got 0"}
+    set listname [car $exps]
+    if {[null? [cdr $exps]]} {::error "too few arguments, 3 expected, got 1"}
+    set key [cadr $exps]
+    if {[null? [cddr $exps]]} {::error "too few arguments, 3 expected, got 2"}
+    set val [caddr $exps]
+    set keypresent [list #B [list [MkSymbol "list-set!"] $listname [list [MkSymbol "+"] [MkSymbol "idx"] #1] $val] $listname]
+    set keynotpresent [list #S $listname [list [MkSymbol "append"] [list [MkSymbol "list"] $key $val] $listname]]
+    set conditional [list #I [list [MkSymbol "<"] [MkSymbol "idx"] #0] $keynotpresent $keypresent]
+    set let [list #L [list [list [MkSymbol "idx"] [list [MkSymbol "list-find-key"] $listname $key]]] $conditional]
+    return $let
+}
+```
+
 **expand-quasiquote**
 
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
@@ -1396,49 +1426,53 @@ proc ::constcl::expand-when {exps} {
 
 ### Resolving local defines
 
-This section is ported from 'Scheme 9 from Empty Space'.
+This section is ported from 'Scheme 9 from Empty Space'. `resolve-local-defines`
+is the topmost procedure in rewriting local defines as essentially a `letrec`
+form. It takes a list of expressions and extracts variables and values from the
+defines in the beginning of the list. It builds a double lambda expression with
+the variables and values, and the rest of the expressions from the original list
+as body.
 
-<table border=1><thead><tr><th colspan=2 align="left">resolve-local-defines</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">resolve-local-defines</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc resolve-local-defines {expr} {
-    set rest [lassign [extract-from-defines $expr VALS] a error]
-
-    if {$error ne "#f"} {
+proc ::constcl::resolve-local-defines {exps} {
+    set rest [lassign [extract-from-defines $exps VALS] a error]
+    ::if {$error ne "#f"} {
         return #NIL
     }
-
-    set rest [lassign [extract-from-defines $expr VALS] v error]
-
-    if {$rest eq "#NIL"} {
+    set rest [lassign [extract-from-defines $exps VARS] v error]
+    ::if {$rest eq "#NIL"} {
         set rest [cons #UNSP #NIL]
     }
-
     return [make-recursive-lambda $v $a $rest]
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr></table>
+`extract-from-defines` visits every define in the given list of expressions and
+extracts either a variable name or a value, depending on the state of the _part_
+flag, from each one of them. A Tcl list of 1) the resulting list of names or
+values, 2) error state, and 3) the rest of the expressions in the original list
+is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>exps</td><td>an expression</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
 
 ```
-proc extract-from-defines {expr part} {
+proc ::constcl::extract-from-defines {exps part} {
     set a #NIL
-
-    while {$expr ne "#NIL"} {
-        if {[atom? $x] ne "#f" || [atom? [car $x]] ne "#f" || [eq? [caar $x] [MkSymbol "define"]] eq "#f"} {
+    while {$exps ne "#NIL"} {
+        ::if {[atom? $exps] ne "#f" || [atom? [car $exps]] ne "#f" || [eq? [caar $exps] [MkSymbol "define"]] eq "#f"} {
             break
         }
-
-        set n [car $x]
+        set n [car $exps]
         set k [length $n]
-        if {[list? $n] eq "#f" || [$k numval] < 3 || [$k numval] > 3 ||
+        ::if {[list? $n] eq "#f" || [$k numval] < 3 || [$k numval] > 3 ||
             ([argument-list? [cadr $n]] ne "#f" || [symbol? [cadr $n]] eq "#f")
             eq "#f"} {
             return [::list {} "#t" {}]
         }
-
-        if {[pair? [cadr $n]] ne "#f"} {
-            if {$part eq "VARS"} {
+        ::if {[pair? [cadr $n]] ne "#f"} {
+            ::if {$part eq "VARS"} {
                 set a [cons [caadr $n] $a]
             } else {
                 set a [cons #NIL $a]
@@ -1447,87 +1481,109 @@ proc extract-from-defines {expr part} {
                 set-car! $a $new
             }
         } else {
-            if {$part eq "VARS"} {
+            ::if {$part eq "VARS"} {
                 set a [cons [cadr $n] $a]
             } else {
                 set a [cons [caddr $n] $a]
             }
         }
-        set x [cdr $x]
+        set exps [cdr $exps]
     }
-    return [::list $a #f x]
+    return [::list $a #f $exps]
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">argument-list? (internal)</th></tr></thead><tr><td>n</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+`argument-list?` accepts a Scheme formals list and rejects other values.
+
+<table border=1><thead><tr><th colspan=2 align="left">argument-list? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
-proc argument-list? {n} {
-    if {$n eq "#NIL"} {
+proc ::constcl::argument-list? {val} {
+    ::if {$val eq "#NIL"} {
         return #t
-    } elseif {[symbol? $n] ne "#f"} {
+    } elseif {[symbol? $val] ne "#f"} {
         return #t
-    } elseif {[atom? $n] ne "#f"} {
+    } elseif {[atom? $val] ne "#f"} {
         return #f
     }
-    while {[pair? $n] ne "#f"} {
-        if {[symbol? [car $n]] eq "#f"} {
+    while {[pair? $val] ne "#f"} {
+        ::if {[symbol? [car $val]] eq "#f"} {
             return #f
         }
-        set n [cdr $n]
+        set val [cdr $val]
     }
-    if {$n eq "#NIL"} {
+    ::if {$val eq "#NIL"} {
         return #t
-    } elseif {[symbol? $n] ne "#f"} {
+    } elseif {[symbol? $val] ne "#f"} {
         return #t
     }
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">make-recursive-lambda (internal)</th></tr></thead><tr><td>v</td><td></td></tr><tr><td>a</td><td></td></tr><tr><td>body</td><td></td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+`make-recursive-lambda` builds the `letrec` structure.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-recursive-lambda (internal)</th></tr></thead><tr><td>vars</td><td>a Lisp list of symbols</td></tr><tr><td>args</td><td>a Lisp list of expressions</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc make-recursive-lambda {v a body} {
-    set t [make-temporaries $v]
-
-    set body [append-b [make-assignments $v $t] $body]
+proc ::constcl::make-recursive-lambda {vars args body} {
+    set tmps [make-temporaries $vars]
+    set body [append-b [make-assignments $vars $tmps] $body]
     set body [cons $body #NIL]
-    set n [cons $t $body]
+    set n [cons $tmps $body]
     set n [cons #λ $n]
-    set n [cons $n $a]
+    set n [cons $n $args]
     set n [cons $n #NIL]
-    set n [cons $v $n]
+    set n [cons $vars $n]
     set n [cons #λ $n]
-    set n [cons $n [make-undefineds $v]]
+    set n [cons $n [make-undefineds $vars]]
     return $n
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">make-temporaries (internal)</th></tr></thead><tr><td>x</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+`make-temporaries` creates the symbols that will act as middlemen in
+transferring the values to the variables.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-temporaries (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
-proc make-temporaries {x} {
+proc ::constcl::make-temporaries {vals} {
     set n #NIL
-    while {$x ne "#NIL"} {
-        set v [gensym "g"]
-        set n [cons $v $n]
-        set x [cdr $x]
+    while {$vals ne "#NIL"} {
+        set sym [gensym "g"]
+        set n [cons $sym $n]
+        set vals [cdr $vals]
     }
     return $n
 }
 ```
+
+`gensym` generates an unique symbol.
+
+<table border=1><thead><tr><th colspan=2 align="left">gensym (internal)</th></tr></thead><tr><td>prefix</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
+```
+proc ::constcl::gensym {prefix} {
+    set symbolnames [lmap s [info class instances ::constcl::Symbol] {$s name}]
+    set s $prefix<[incr ::constcl::gensymnum]>
+    while {$s in $symbolnames} {
+        set s $prefix[incr ::constcl::gensymnum]
+    }
+    return [MkSymbol $s]
+}
+```
+
+`append-b` joins two lists together.
 
 <table border=1><thead><tr><th colspan=2 align="left">append-b (internal)</th></tr></thead><tr><td>a</td><td>a Lisp list of Lisp values</td></tr><tr><td>b</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
-proc append-b {a b} {
-    if {$a eq "#NIL"} {
+proc ::constcl::append-b {a b} {
+    ::if {$a eq "#NIL"} {
         return $b
     }
-
     set p $a
     while {$p ne "#NIL"} {
-        if {[atom? $p] ne "#f"} {
+        ::if {[atom? $p] ne "#f"} {
             ::error "append: improper list"
         }
         set last $p
@@ -1538,30 +1594,40 @@ proc append-b {a b} {
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">make-assignments (internal)</th></tr></thead><tr><td>x</td><td>a Lisp list of Lisp values</td></tr><tr><td>t</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+`make-assignments` creates the structure that holds the assignment statements.
+Later on, it will be joined to the body of the finished expression.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-assignments (internal)</th></tr></thead><tr><td>vars</td><td>a Lisp list of symbols</td></tr><tr><td>tmps</td><td>a Lisp list of symbols</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc make-assignments {x t} {
+proc ::constcl::make-assignments {vars tmps} {
     set n #NIL
-    while {$x ne "#NIL"} {
-       set asg [cons [car $t] #NIL]
-       set asg [cons [car $x] $asg]
+    while {$vars ne "#NIL"} {
+       set asg [cons [car $tmps] #NIL]
+       set asg [cons [car $vars] $asg]
        set asg [cons #S $asg]
        set n [cons $asg $n]
-       set x [cdr $x]
-       set t [cdr $t]
+       set vars [cdr $vars]
+       set tmps [cdr $tmps]
    }
    return [cons #B $n]
 }
 ```
 
-<table border=1><thead><tr><th colspan=2 align="left">make-undefineds (internal)</th></tr></thead><tr><td>x</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+Due to a mysterious bug, `make-undefineds` actually creates a list of NIL
+values instead of undefined values.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-undefineds (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of nil values</td></tr></table>
 
 ```
-proc make-undefineds {x} {
+proc ::constcl::make-undefineds {vals} {
+    # Use #NIL instead of #UNDF because of some strange bug with eval-list.
     set n #NIL
-    while {$x ne "#NIL"} {
-        
+    while {$vals ne "#NIL"} {
+        set n [cons #NIL $n]
+        set vals [cdr $vals]
+    }
+    return $n
 }
 ```
 
@@ -3432,7 +3498,13 @@ proc ::constcl::write-char {args} {
 
 ```
 proc ::constcl::load {filename} {
-    # TODO
+    set f [open $filename]
+    set src [::read $f]
+    close $f
+    eval [parse $src] ::constcl::global_env
+    while {[ib first] ne {}} {
+        eval [parse] ::constcl::global_env
+    }
 }
 ```
 
@@ -5022,10 +5094,8 @@ proc ::constcl::varcheck {sym} {
 Initialize the memory space for vector contents.
 
 ```
-unset -nocomplain ::constcl::vectorSpace
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
-unset -nocomplain ::constcl::vectorAssign
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
@@ -5034,6 +5104,10 @@ proc ::constcl::vsAlloc {num} {
     incr ::constcl::vectorAssign $num
     return $va
 }
+```
+
+```
+set ::constcl::gensymnum 0
 ```
 
 Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
@@ -5259,6 +5333,12 @@ Thereafter, each time a user-defined procedure is called, a new `Environment` ob
 created to hold the bindings introduced by the call, and also a link to the outer environment
 (the one closed over when the procedure was defined).
 
+Load the Scheme base.
+
+```
+::constcl::load schemebase.lsp
+```
+
 #### Lexical scoping
 
 
@@ -5296,4 +5376,47 @@ After the call, we are back to the first state again.
 
 
 
+
+if no {
+
+## Lookup tables
+
+Lisp languages have two simple variants of key/value lookup tables: property
+lists (plists) and association lists (alists).
+
+A property list is simply a list where every odd-numbered item (starting from 1)
+is a key and every even-numbered item is a value. Example:
+
+```
+'(a 1 b 2 c 3 d 4 e 5)
+```
+
+Values can be retrieved in a two-step process:
+
+```
+> (define plist '(a 1 b 2 c 3 d 4 e 5))
+> (define v '())
+> (set! v (memq 'c plist))
+(c 3 d 4 e 5)
+> (set! v (cadr v))
+3
+```
+
+If a key doesn't occur in the plist, `memq` returns `#f`.
+
+Values can be added with a single statement:
+
+```
+> (set! plist (append '(f 6) plist))
+(f 6 a 1 b 2 c 3 d 4 e 5)
+```
+
+To get rid of a key/value pair, the simplest way is to add an erasing pair:
+
+```
+> (set! plist (append '(d #f) plist))
+(d #f f 6 a 1 b 2 c 3 d 4 e 5)
+```
+
+}
 

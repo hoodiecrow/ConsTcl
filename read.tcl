@@ -140,14 +140,17 @@ list.
 MD)
 
 PR(
-parse (public);str lisp -> expr
+parse (public);?str? lisp -> expr
 PR)
 
 CB
 reg parse
 
-proc ::constcl::parse {str} {
-    ib fill $str
+proc ::constcl::parse {args} {
+    ::if {[llength $args]} {
+        lassign $args str
+        ib fill $str
+    }
     return [parse-expression]
 }
 CB
@@ -276,7 +279,7 @@ proc ::constcl::parse-sharp {} {
         f    { ib advance ; ib skip-ws ; return #f }
         "\\" { return [parse-character-expression] }
         default {
-            ::error "Illegal #-literal"
+            ::error "Illegal #-literal: #[ib first]"
         }
     }
 }

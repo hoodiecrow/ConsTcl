@@ -124,7 +124,13 @@ CB
 
 CB
 proc ::constcl::load {filename} {
-    # TODO
+    set f [open $filename]
+    set src [::read $f]
+    close $f
+    eval [parse $src] ::constcl::global_env
+    while {[ib first] ne {}} {
+        eval [parse] ::constcl::global_env
+    }
 }
 CB
 

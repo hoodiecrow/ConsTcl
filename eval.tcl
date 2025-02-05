@@ -46,12 +46,12 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set args [cdr $expr]
         while {[$op name] in {
             and case cond define for for/and for/list
-            for/or let or quasiquote unless when}} {
+            for/or let or put! quasiquote unless when}} {
                 expand-macro $env
         }
         switch [$op name] {
             quote   { car $args }
-            if      { if {eval [car $args] $env} \
+            if      { ::if {[eval [car $args] $env] ne "#f"} \
                         {eval [cadr $args] $env} \
                         {eval [caddr $args] $env} }
             begin   { eprogn $args $env }
@@ -319,6 +319,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args]
+        }
+        put! {
+            set expr [expand-put! $args]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -671,6 +674,33 @@ proc ::constcl::do-or {exps} {
 CB
 
 MD(
+**expand-put!**
+
+The macro `put!` updates a property list. It adds a key-value pair if the key
+isn't present, or changes the value in place if it is.
+MD)
+
+PR(
+expand-put! (public);exps lexprs -> expr
+PR)
+
+CB
+proc ::constcl::expand-put! {exps} {
+    if {[null? $exps]} {::error "too few arguments, 3 expected, got 0"}
+    set listname [car $exps]
+    if {[null? [cdr $exps]]} {::error "too few arguments, 3 expected, got 1"}
+    set key [cadr $exps]
+    if {[null? [cddr $exps]]} {::error "too few arguments, 3 expected, got 2"}
+    set val [caddr $exps]
+    set keypresent [list #B [list [MkSymbol "list-set!"] $listname [list [MkSymbol "+"] [MkSymbol "idx"] #1] $val] $listname]
+    set keynotpresent [list #S $listname [list [MkSymbol "append"] [list [MkSymbol "list"] $key $val] $listname]]
+    set conditional [list #I [list [MkSymbol "<"] [MkSymbol "idx"] #0] $keynotpresent $keypresent]
+    set let [list #L [list [list [MkSymbol "idx"] [list [MkSymbol "list-find-key"] $listname $key]]] $conditional]
+    return $let
+}
+CB
+
+MD(
 **expand-quasiquote**
 
 A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
@@ -774,6 +804,249 @@ PR)
 CB
 proc ::constcl::expand-when {exps} {
     return [list #I [car $exps] [cons #B [cdr $exps]] [list #Q #NIL]]
+}
+CB
+
+### Resolving local defines
+
+MD(
+This section is ported from 'Scheme 9 from Empty Space'. `resolve-local-defines`
+is the topmost procedure in rewriting local defines as essentially a `letrec`
+form. It takes a list of expressions and extracts variables and values from the
+defines in the beginning of the list. It builds a double lambda expression with
+the variables and values, and the rest of the expressions from the original list
+as body.
+MD)
+
+PR(
+resolve-local-defines;exps lexprs -> expr
+PR)
+
+CB
+proc ::constcl::resolve-local-defines {exps} {
+    set rest [lassign [extract-from-defines $exps VALS] a error]
+    ::if {$error ne "#f"} {
+        return #NIL
+    }
+    set rest [lassign [extract-from-defines $exps VARS] v error]
+    ::if {$rest eq "#NIL"} {
+        set rest [cons #UNSP #NIL]
+    }
+    return [make-recursive-lambda $v $a $rest]
+}
+CB
+
+MD(
+`extract-from-defines` visits every define in the given list of expressions and
+extracts either a variable name or a value, depending on the state of the _part_
+flag, from each one of them. A Tcl list of 1) the resulting list of names or
+values, 2) error state, and 3) the rest of the expressions in the original list
+is returned.
+MD)
+
+PR(
+extract-from-defines (internal);exps expr part varsvals -> tvals
+PR)
+
+CB
+proc ::constcl::extract-from-defines {exps part} {
+    set a #NIL
+    while {$exps ne "#NIL"} {
+        ::if {[atom? $exps] ne "#f" || [atom? [car $exps]] ne "#f" || [eq? [caar $exps] [MkSymbol "define"]] eq "#f"} {
+            break
+        }
+        set n [car $exps]
+        set k [length $n]
+        ::if {[list? $n] eq "#f" || [$k numval] < 3 || [$k numval] > 3 ||
+            ([argument-list? [cadr $n]] ne "#f" || [symbol? [cadr $n]] eq "#f")
+            eq "#f"} {
+            return [::list {} "#t" {}]
+        }
+        ::if {[pair? [cadr $n]] ne "#f"} {
+            ::if {$part eq "VARS"} {
+                set a [cons [caadr $n] $a]
+            } else {
+                set a [cons #NIL $a]
+                set new [cons [cdadr $n] [cddr $n]]
+                set new [cons #λ $new]
+                set-car! $a $new
+            }
+        } else {
+            ::if {$part eq "VARS"} {
+                set a [cons [cadr $n] $a]
+            } else {
+                set a [cons [caddr $n] $a]
+            }
+        }
+        set exps [cdr $exps]
+    }
+    return [::list $a #f $exps]
+}
+CB
+
+MD(
+`argument-list?` accepts a Scheme formals list and rejects other values.
+MD)
+
+PR(
+argument-list? (internal);val val -> bool
+PR)
+
+CB
+proc ::constcl::argument-list? {val} {
+    ::if {$val eq "#NIL"} {
+        return #t
+    } elseif {[symbol? $val] ne "#f"} {
+        return #t
+    } elseif {[atom? $val] ne "#f"} {
+        return #f
+    }
+    while {[pair? $val] ne "#f"} {
+        ::if {[symbol? [car $val]] eq "#f"} {
+            return #f
+        }
+        set val [cdr $val]
+    }
+    ::if {$val eq "#NIL"} {
+        return #t
+    } elseif {[symbol? $val] ne "#f"} {
+        return #t
+    }
+}
+CB
+
+MD(
+`make-recursive-lambda` builds the `letrec` structure.
+MD)
+
+PR(
+make-recursive-lambda (internal);vars lsyms args lexprs body lexprs -> expr
+PR)
+
+CB
+proc ::constcl::make-recursive-lambda {vars args body} {
+    set tmps [make-temporaries $vars]
+    set body [append-b [make-assignments $vars $tmps] $body]
+    set body [cons $body #NIL]
+    set n [cons $tmps $body]
+    set n [cons #λ $n]
+    set n [cons $n $args]
+    set n [cons $n #NIL]
+    set n [cons $vars $n]
+    set n [cons #λ $n]
+    set n [cons $n [make-undefineds $vars]]
+    return $n
+}
+CB
+
+MD(
+`make-temporaries` creates the symbols that will act as middlemen in
+transferring the values to the variables.
+MD)
+
+PR(
+make-temporaries (internal);vals lvals -> lvals
+PR)
+
+CB
+proc ::constcl::make-temporaries {vals} {
+    set n #NIL
+    while {$vals ne "#NIL"} {
+        set sym [gensym "g"]
+        set n [cons $sym $n]
+        set vals [cdr $vals]
+    }
+    return $n
+}
+CB
+
+MD(
+`gensym` generates an unique symbol.
+MD)
+
+PR(
+gensym (internal);prefix str -> sym
+PR)
+
+CB
+proc ::constcl::gensym {prefix} {
+    set symbolnames [lmap s [info class instances ::constcl::Symbol] {$s name}]
+    set s $prefix<[incr ::constcl::gensymnum]>
+    while {$s in $symbolnames} {
+        set s $prefix[incr ::constcl::gensymnum]
+    }
+    return [MkSymbol $s]
+}
+CB
+
+MD(
+`append-b` joins two lists together.
+MD)
+
+PR(
+append-b (internal);a lvals b lvals -> lvals
+PR)
+
+CB
+proc ::constcl::append-b {a b} {
+    ::if {$a eq "#NIL"} {
+        return $b
+    }
+    set p $a
+    while {$p ne "#NIL"} {
+        ::if {[atom? $p] ne "#f"} {
+            ::error "append: improper list"
+        }
+        set last $p
+        set p [cdr $p]
+    }
+    set-cdr! $last $b
+    return $a
+}
+CB
+
+MD(
+`make-assignments` creates the structure that holds the assignment statements.
+Later on, it will be joined to the body of the finished expression.
+MD)
+
+PR(
+make-assignments (internal);vars lsyms tmps lsyms -> expr
+PR)
+
+CB
+proc ::constcl::make-assignments {vars tmps} {
+    set n #NIL
+    while {$vars ne "#NIL"} {
+       set asg [cons [car $tmps] #NIL]
+       set asg [cons [car $vars] $asg]
+       set asg [cons #S $asg]
+       set n [cons $asg $n]
+       set vars [cdr $vars]
+       set tmps [cdr $tmps]
+   }
+   return [cons #B $n]
+}
+CB
+
+MD(
+Due to a mysterious bug, `make-undefineds` actually creates a list of NIL
+values instead of undefined values.
+MD)
+
+PR(
+make-undefineds (internal);vals lvals -> lnils
+PR)
+
+CB
+proc ::constcl::make-undefineds {vals} {
+    # Use #NIL instead of #UNDF because of some strange bug with eval-list.
+    set n #NIL
+    while {$vals ne "#NIL"} {
+        set n [cons #NIL $n]
+        set vals [cdr $vals]
+    }
+    return $n
 }
 CB
 
@@ -970,7 +1243,63 @@ if no {
     pep "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
+::tcltest::test eval-10.0 {expand local defines} -body {
+    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
+::tcltest::test eval-10.1 {run local defines} -body {
+    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::eval [::constcl::resolve-local-defines $x]]
+} -output "49\n"
+
+::tcltest::test eval-10.2 {expand local defines w/o defines} -body {
+    set x [::constcl::parse "((set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test eval-10.3 {expand local defines with begin} -body {
+    set x [::constcl::parse "(begin (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test eval-10.4 {expand local defines with proc definition} -body {
+    set x [::constcl::parse "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
+
+::tcltest::test eval-11.0 {expand put!} -body {
+    pxp "(put! plist 'c 7)"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
+
+::tcltest::test eval-11.1 {run put!} -body {
+    pep "(define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pep "(put! plist 'c 7)"
+    pep "(put! plist 'f 6)"
+    pep "plist"
+} -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
+
+
+
+
+
+if no {
+
+(let ((idx (list-find-key plist 3)))
+  (if (< idx 0)
+    (set! plist (append (list 3 7) plist))
+    (begin
+      (list-set! plist (+ idx 1) 7)
+      plist)))
+
+(defmacro (put plist key val)
+  (let ((idx (list-find-key plist key)))
+    (if (< idx 0)
+      (set! plist (append (list key val) plist))
+      (begin
+        (list-set! plist (+ idx 1) val)
+        plist))))
+}
 TT)
 
 CB

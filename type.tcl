@@ -157,6 +157,31 @@ proc ::constcl::dot? {obj} {
 CB
 
 MD(
+The `Unspecific` class is for unspecific things.
+MD)
+
+CB
+catch { ::constcl::Unspecific destroy }
+
+oo::class create ::constcl::Unspecific {
+    method mkconstant {} {}
+}
+CB
+
+MD(
+The `Undefined` class is for undefined things.
+MD)
+
+CB
+catch { ::constcl::Undefined destroy }
+
+oo::class create ::constcl::Undefined {
+    method mkconstant {} {}
+    method write {} {puts -nonewline #<undefined>}
+}
+CB
+
+MD(
 `error` is used to signal an error, with _msg_ being a message string and the
 optional arguments being values to show after the message.
 MD)

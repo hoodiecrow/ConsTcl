@@ -5,10 +5,8 @@ Initialize the memory space for vector contents.
 MD)
 
 CB
-unset -nocomplain ::constcl::vectorSpace
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
-unset -nocomplain ::constcl::vectorAssign
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
@@ -17,6 +15,10 @@ proc ::constcl::vsAlloc {num} {
     incr ::constcl::vectorAssign $num
     return $va
 }
+CB
+
+CB
+set ::constcl::gensymnum 0
 CB
 
 MD(
@@ -60,6 +62,10 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 interp alias {} #- {} [::constcl::MkSymbol -]
 
 interp alias {} #NONE {} [::constcl::None new]
+
+interp alias {} #UNSP {} [::constcl::Unspecific new]
+
+interp alias {} #UNDF {} [::constcl::Undefined new]
 
 CB
 

@@ -353,7 +353,63 @@ if no {
     pep "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
+::tcltest::test eval-10.0 {expand local defines} -body {
+    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
+::tcltest::test eval-10.1 {run local defines} -body {
+    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::eval [::constcl::resolve-local-defines $x]]
+} -output "49\n"
+
+::tcltest::test eval-10.2 {expand local defines w/o defines} -body {
+    set x [::constcl::parse "((set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test eval-10.3 {expand local defines with begin} -body {
+    set x [::constcl::parse "(begin (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test eval-10.4 {expand local defines with proc definition} -body {
+    set x [::constcl::parse "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    ::constcl::write [::constcl::resolve-local-defines $x]
+} -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
+
+::tcltest::test eval-11.0 {expand put!} -body {
+    pxp "(put! plist 'c 7)"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
+
+::tcltest::test eval-11.1 {run put!} -body {
+    pep "(define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pep "(put! plist 'c 7)"
+    pep "(put! plist 'f 6)"
+    pep "plist"
+} -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
+
+
+
+
+
+if no {
+
+(let ((idx (list-find-key plist 3)))
+  (if (< idx 0)
+    (set! plist (append (list 3 7) plist))
+    (begin
+      (list-set! plist (+ idx 1) 7)
+      plist)))
+
+(defmacro (put plist key val)
+  (let ((idx (list-find-key plist key)))
+    (if (< idx 0)
+      (set! plist (append (list key val) plist))
+      (begin
+        (list-set! plist (+ idx 1) val)
+        plist))))
+}
 
 
 ::tcltest::test write-1.0 {read, eval, and write a number} -body {

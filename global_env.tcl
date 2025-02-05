@@ -33,7 +33,17 @@ MD(
 Thereafter, each time a user-defined procedure is called, a new `Environment` object is
 created to hold the bindings introduced by the call, and also a link to the outer environment
 (the one closed over when the procedure was defined).
+MD)
 
+MD(
+Load the Scheme base.
+MD)
+
+CB
+::constcl::load schemebase.lsp
+CB
+
+MD(
 #### Lexical scoping
 
 
