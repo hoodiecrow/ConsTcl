@@ -321,7 +321,7 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-or $args]
         }
         put! {
-            set expr [expand-put! $args]
+            set expr [expand-put! $args $env]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -681,22 +681,23 @@ isn't present, or changes the value in place if it is.
 MD)
 
 PR(
-expand-put! (public);exps lexprs -> expr
+expand-put! (internal);exps lexprs env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-put! {exps} {
-    if {[null? $exps]} {::error "too few arguments, 3 expected, got 0"}
-    set listname [car $exps]
-    if {[null? [cdr $exps]]} {::error "too few arguments, 3 expected, got 1"}
-    set key [cadr $exps]
-    if {[null? [cddr $exps]]} {::error "too few arguments, 3 expected, got 2"}
-    set val [caddr $exps]
-    set keypresent [list #B [list [MkSymbol "list-set!"] $listname [list [MkSymbol "+"] [MkSymbol "idx"] #1] $val] $listname]
-    set keynotpresent [list #S $listname [list [MkSymbol "append"] [list [MkSymbol "list"] $key $val] $listname]]
-    set conditional [list #I [list [MkSymbol "<"] [MkSymbol "idx"] #0] $keynotpresent $keypresent]
-    set let [list #L [list [list [MkSymbol "idx"] [list [MkSymbol "list-find-key"] $listname $key]]] $conditional]
-    return $let
+proc ::constcl::expand-put! {exps env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $exps] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
+    $env set [MkSymbol "listname"] [car $exps]
+    ::if {[null? [cdr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+    $env set [MkSymbol "key"] [cadr $exps]
+    ::if {[null? [cddr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+    $env set [MkSymbol "val"] [caddr $exps]
+    set qq "`(let ((idx (list-find-key ,listname ,key)))
+               (if (< idx 0)
+                 (set! ,listname (append (list ,key ,val) ,listname))
+                 (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 
@@ -783,7 +784,7 @@ of statements and only executes them for a false outcome of `car $exps`.
 MD)
 
 PR(
-expand-unless;exps lexprs -> expr
+expand-unless (internal);exps lexprs -> expr
 PR)
 
 CB
@@ -798,7 +799,7 @@ of statements and only executes them for a true outcome of `car $exps`.
 MD)
 
 PR(
-expand-when;exps lexprs -> expr
+expand-when (internal);exps lexprs -> expr
 PR)
 
 CB
@@ -845,7 +846,7 @@ is returned.
 MD)
 
 PR(
-extract-from-defines (internal);exps expr part varsvals -> tvals
+extract-from-defines (internal);exps lexprs part varsvals -> tvals
 PR)
 
 CB
@@ -1273,11 +1274,18 @@ if no {
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 ::tcltest::test eval-11.1 {run put!} -body {
-    pep "(define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
-    pep "(put! plist 'c 7)"
-    pep "(put! plist 'f 6)"
-    pep "plist"
+    pep "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pep "(put! plst 'c 7)"
+    pep "(put! plst 'f 6)"
+    pep "plst"
 } -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
+
+::tcltest::test eval-11.2 {expand put!} -body {
+    pep "(define listname 'plist)"
+    pep "(define key ''c)"
+    pep "(define val 7)"
+    pxp "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 
 

@@ -647,7 +647,7 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-or $args]
         }
         put! {
-            set expr [expand-put! $args]
+            set expr [expand-put! $args $env]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -867,18 +867,19 @@ proc ::constcl::do-or {exps} {
 
 
 
-proc ::constcl::expand-put! {exps} {
-    if {[null? $exps]} {::error "too few arguments, 3 expected, got 0"}
-    set listname [car $exps]
-    if {[null? [cdr $exps]]} {::error "too few arguments, 3 expected, got 1"}
-    set key [cadr $exps]
-    if {[null? [cddr $exps]]} {::error "too few arguments, 3 expected, got 2"}
-    set val [caddr $exps]
-    set keypresent [list #B [list [MkSymbol "list-set!"] $listname [list [MkSymbol "+"] [MkSymbol "idx"] #1] $val] $listname]
-    set keynotpresent [list #S $listname [list [MkSymbol "append"] [list [MkSymbol "list"] $key $val] $listname]]
-    set conditional [list #I [list [MkSymbol "<"] [MkSymbol "idx"] #0] $keynotpresent $keypresent]
-    set let [list #L [list [list [MkSymbol "idx"] [list [MkSymbol "list-find-key"] $listname $key]]] $conditional]
-    return $let
+proc ::constcl::expand-put! {exps env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $exps] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
+    $env set [MkSymbol "listname"] [car $exps]
+    ::if {[null? [cdr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+    $env set [MkSymbol "key"] [cadr $exps]
+    ::if {[null? [cddr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+    $env set [MkSymbol "val"] [caddr $exps]
+    set qq "`(let ((idx (list-find-key ,listname ,key)))
+               (if (< idx 0)
+                 (set! ,listname (append (list ,key ,val) ,listname))
+                 (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 
 

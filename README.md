@@ -1004,7 +1004,7 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-or $args]
         }
         put! {
-            set expr [expand-put! $args]
+            set expr [expand-put! $args $env]
         }
         quasiquote {
             set expr [expand-quasiquote $args $env]
@@ -1313,21 +1313,22 @@ proc ::constcl::do-or {exps} {
 The macro `put!` updates a property list. It adds a key-value pair if the key
 isn't present, or changes the value in place if it is.
 
-<table border=1><thead><tr><th colspan=2 align="left">expand-put! (public)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-put! (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc ::constcl::expand-put! {exps} {
-    if {[null? $exps]} {::error "too few arguments, 3 expected, got 0"}
-    set listname [car $exps]
-    if {[null? [cdr $exps]]} {::error "too few arguments, 3 expected, got 1"}
-    set key [cadr $exps]
-    if {[null? [cddr $exps]]} {::error "too few arguments, 3 expected, got 2"}
-    set val [caddr $exps]
-    set keypresent [list #B [list [MkSymbol "list-set!"] $listname [list [MkSymbol "+"] [MkSymbol "idx"] #1] $val] $listname]
-    set keynotpresent [list #S $listname [list [MkSymbol "append"] [list [MkSymbol "list"] $key $val] $listname]]
-    set conditional [list #I [list [MkSymbol "<"] [MkSymbol "idx"] #0] $keynotpresent $keypresent]
-    set let [list #L [list [list [MkSymbol "idx"] [list [MkSymbol "list-find-key"] $listname $key]]] $conditional]
-    return $let
+proc ::constcl::expand-put! {exps env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $exps] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
+    $env set [MkSymbol "listname"] [car $exps]
+    ::if {[null? [cdr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+    $env set [MkSymbol "key"] [cadr $exps]
+    ::if {[null? [cddr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+    $env set [MkSymbol "val"] [caddr $exps]
+    set qq "`(let ((idx (list-find-key ,listname ,key)))
+               (if (< idx 0)
+                 (set! ,listname (append (list ,key ,val) ,listname))
+                 (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 ```
 
@@ -1405,7 +1406,7 @@ proc ::constcl::expand-quasiquote {exps env} {
 `unless` is a conditional like `if`, with the differences that it takes a number
 of statements and only executes them for a false outcome of `car $exps`.
 
-<table border=1><thead><tr><th colspan=2 align="left">expand-unless</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-unless (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-unless {exps} {
@@ -1416,7 +1417,7 @@ proc ::constcl::expand-unless {exps} {
 `when` is a conditional like `if`, with the differences that it takes a number
 of statements and only executes them for a true outcome of `car $exps`.
 
-<table border=1><thead><tr><th colspan=2 align="left">expand-when</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-when (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-when {exps} {
@@ -1455,7 +1456,7 @@ flag, from each one of them. A Tcl list of 1) the resulting list of names or
 values, 2) error state, and 3) the rest of the expressions in the original list
 is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>exps</td><td>an expression</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
 
 ```
 proc ::constcl::extract-from-defines {exps part} {

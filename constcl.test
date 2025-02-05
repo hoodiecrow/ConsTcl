@@ -383,11 +383,18 @@ if no {
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 ::tcltest::test eval-11.1 {run put!} -body {
-    pep "(define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
-    pep "(put! plist 'c 7)"
-    pep "(put! plist 'f 6)"
-    pep "plist"
+    pep "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pep "(put! plst 'c 7)"
+    pep "(put! plst 'f 6)"
+    pep "plst"
 } -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
+
+::tcltest::test eval-11.2 {expand put!} -body {
+    pep "(define listname 'plist)"
+    pep "(define key ''c)"
+    pep "(define val 7)"
+    pxp "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 
 
