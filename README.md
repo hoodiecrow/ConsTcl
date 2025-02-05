@@ -741,23 +741,23 @@ processing them in the big `switch`. See the part about
 reg eval ::constcl::eval
 
 proc ::constcl::eval {expr {env ::constcl::global_env}} {
-        ::if {[symbol? $expr] ne "#f"} {
-            lookup $expr $env
-        } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
-            set expr
-        } else {
+    ::if {[symbol? $expr] ne "#f"} {
+        lookup $expr $env
+    } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+        set expr
+    } else {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-                and case cond define for for/and for/list
-                for/or let or quasiquote unless when}} {
-            expand-macro $env
+            and case cond define for for/and for/list
+            for/or let or quasiquote unless when}} {
+                expand-macro $env
         }
         switch [$op name] {
             quote   { car $args }
             if      { if {eval [car $args] $env} \
-                            {eval [cadr $args] $env} \
-                            {eval [caddr $args] $env} }
+                        {eval [cadr $args] $env} \
+                        {eval [caddr $args] $env} }
             begin   { eprogn $args $env }
             define  { declare [car $args] [eval [cadr $args] $env] $env }
             set!    { update! [car $args] [eval [cadr $args] $env] $env }
