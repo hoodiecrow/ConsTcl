@@ -68,6 +68,7 @@ oo::class create ::constcl::Vector {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} {puts -nonewline [my show]}
+    method display {} {puts -nonewline [my show]}
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 

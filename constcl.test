@@ -113,40 +113,41 @@ source constcl.tcl
 
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set expr [::constcl::parse "foo"]
+    set expr [::constcl::parse [::constcl::IB new "foo"]]
     $expr name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    ::constcl::ib fill "+foo"
+    set ib [::constcl::IB new "+foo"]
     set expr [::constcl::parse-identifier-expression]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set expr [::constcl::parse "let"]
+    ::constcl::IB create ib-read-5.2 "let"
+    set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
 
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set expr [::constcl::parse {#\A}]
+    set expr [::constcl::parse [::constcl::IB new {#\A}]]
     $expr char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set expr [::constcl::parse "#\\space"]
+    set expr [::constcl::parse [::constcl::IB new "#\\space"]]
     $expr char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set expr [::constcl::parse "#\\newline"]
+    set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
     $expr char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set expr [::constcl::parse "#\\foobar"]
+    set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
@@ -191,7 +192,7 @@ source constcl.tcl
 ::tcltest::test eval-1.4 {run let macro} -body {
     pep "(let ((x 10)) (* x x))"
     pep "(let ((x 10) (y 5)) (* x y))"
-    pep "(let ((x 10) (y 5)) (define z 7) (* x y z))"
+    pep "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
 ::tcltest::test eval-1.5 {expand named let macro} -body {
@@ -306,19 +307,19 @@ source constcl.tcl
 } -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 ::tcltest::test eval-6.1 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,(+ 1 2) 4)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,(+ 1 2) 4)}]]] ::constcl::global_env]
     ::constcl::global_env set [::constcl::list [::constcl::MkSymbol "name"]] a
     pep {(define name 'a)}
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,name ',name)}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,name ',name)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]]] ::constcl::global_env]
 if no {
 }
 } -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
 
 ::tcltest::test eval-6.2 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]]] ::constcl::global_env]
 if no {
     pep {(let ((name1 'x)
       (name2 'y))
@@ -341,6 +342,10 @@ if no {
     pxp "(define (f) (define r 20) (* r r))"
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
+::tcltest::test eval-7.3 {define} -body {
+    pxp "(define (list-find-key lst key)\n(lfk lst key 0))"
+} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
 ::tcltest::test eval-8.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pep "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
@@ -353,28 +358,36 @@ if no {
     pep "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
+::tcltest::test eval-9.2 {conditional: expand when macro} -body {
+    pxp "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
+
+::tcltest::test eval-9.3 {conditional: run when macro} -body {
+    pep "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "0\n"
+
 ::tcltest::test eval-10.0 {expand local defines} -body {
-    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
 ::tcltest::test eval-10.1 {run local defines} -body {
-    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::eval [::constcl::resolve-local-defines $x]]
 } -output "49\n"
 
 ::tcltest::test eval-10.2 {expand local defines w/o defines} -body {
-    set x [::constcl::parse "((set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test eval-10.3 {expand local defines with begin} -body {
-    set x [::constcl::parse "(begin (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "(begin (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test eval-10.4 {expand local defines with proc definition} -body {
-    set x [::constcl::parse "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
 
@@ -1452,6 +1465,10 @@ if no {
     pep "(f)"
 } -output "400\n"
 
+::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
+    pxp "(define (f) (define r 20) (* r r))"
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
 ::tcltest::test cons-9.0 {symbol?} -body {
     pep "(symbol? (quote foo99))"
 } -output "#t\n"
@@ -1602,6 +1619,23 @@ if no {
 ::tcltest::test global_env-2.1 {dereference an unbound symbol: procedure} -body {
     pep "(foo)"
 } -returnCodes error -result "Unbound variable: foo"
+
+::tcltest::test lutables-1.0 {test get procedure} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'c))"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'x))"
+} -output "3\n#f\n"
+
+::tcltest::test lutables-2.0 {test put! macro} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'd 4) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'c 4) plist)"
+} -output "(d 4 a 1 b 2 c 3)\n(a 1 b 2 c 4)\n"
+
+::tcltest::test lutables-3.0 {test del! macro} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'c) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'a) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'b) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'x) plist)"
+} -output "(a 1 b 2)\n(b 2 c 3)\n(a 1 c 3)\n(a 1 b 2 c 3)\n"
 
 
 ::tcltest::cleanupTests

@@ -15,15 +15,29 @@ proc ::reg {key args} {
 }
 
 proc ::pep {str} {
-    ::constcl::write [::constcl::eval [::constcl::parse $str]]
+    ::constcl::write [::constcl::eval [::constcl::parse [::constcl::IB new $str]]]
 }
 
 proc ::pp {str} {
-    ::constcl::write [::constcl::parse $str]
+    ::constcl::write [::constcl::parse [::constcl::IB new $str]]
+}
+
+proc ::prp {str} {
+    set val [::constcl::parse [::constcl::IB new $str]]
+    set op [::constcl::car $val]
+    set args [::constcl::cdr $val]
+    set env ::constcl::global_env
+    while {[$op name] in {
+        and case cond define for for/and for/list
+        for/or let or put! quasiquote unless when}} {
+            ::constcl::expand-macro $env
+    }
+    set args [::constcl::resolve-local-defines $args]
+    ::constcl::write $args
 }
 
 proc ::pxp {str} {
-    set val [::constcl::parse $str]
+    set val [::constcl::parse [::constcl::IB new $str]]
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
     ::constcl::expand-macro ::constcl::global_env
@@ -72,6 +86,7 @@ oo::class create ::constcl::NIL {
     method set-cdr! {v} {::error "PAIR expected"}
     method numval {} {::error "Not a number"}
     method write {} {puts -nonewline "()"}
+    method display {} { puts -nonewline "()" }
     method show {} {format "()"}
 }
 
@@ -151,11 +166,8 @@ catch { ::constcl::IB destroy }
 
 oo::class create ::constcl::IB {
     variable peekc buffer
-    constructor {} {
+    constructor {str} {
         set peekc {}
-        set buffer {}
-    }
-    method fill {str} {
         set buffer $str
         my advance
     }
@@ -205,17 +217,17 @@ oo::class create ::constcl::IB {
     }
 }
 
-::constcl::IB create ::constcl::ib
 
 
 
 
 reg parse
 
-proc ::constcl::parse {args} {
-    ::if {[llength $args]} {
-        lassign $args str
-        ib fill $str
+proc ::constcl::parse {inp} {
+    ::if {[info object isa object $inp]} {
+        set ib $inp
+    } else {
+        set ib [IB new $inp]
     }
     return [parse-expression]
 }
@@ -224,15 +236,16 @@ proc ::constcl::parse {args} {
 
 reg read ::constcl::read
 
-proc ::constcl::read {args} {
+proc ::constcl::read {ib} {
     return [parse-expression]
 }
 
 
 
 proc ::constcl::parse-expression {} {
-    ib skip-ws
-    switch -regexp [ib first] {
+    upvar ib ib
+    $ib skip-ws
+    switch -regexp [$ib first] {
         {^$}          { return #NONE}
         {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
@@ -240,13 +253,13 @@ proc ::constcl::parse-expression {} {
         {\(}          { return [parse-pair-expression ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
         {\,}          { return [parse-unquoted-expression] }
-        {\.}          { ib advance ; return [Dot new] }
+        {\.}          { $ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-expression "\]"] }
         {\`}          { return [parse-quasiquoted-expression] }
         {\d}          { return [parse-number-expression] }
         {[[:graph:]]} { return [parse-identifier-expression] }
         default {
-            ::error "unexpected character ([ib first])"
+            ::error "unexpected character ([$ib first])"
         }
     }
 }
@@ -254,23 +267,24 @@ proc ::constcl::parse-expression {} {
 
 
 proc ::constcl::parse-string-expression {} {
+    upvar ib ib
     set str {}
-    ib advance
-    while {[ib first] ne "\"" && [ib first] ne {}} {
-        set c [ib first]
+    $ib advance
+    while {[$ib first] ne "\"" && [$ib first] ne {}} {
+        set c [$ib first]
         ::if {$c eq "\\"} {
-            ib advance
-            ::append str [ib first]
+            $ib advance
+            ::append str [$ib first]
         } else {
             ::append str $c
         }
-        ib advance
+        $ib advance
     }
-    ::if {[ib first] ne "\""} {
+    ::if {[$ib first] ne "\""} {
         ::error "malformed string (no ending double quote)"
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     set expr [MkString $str]
     $expr mkconstant
     return $expr
@@ -280,14 +294,15 @@ proc ::constcl::parse-string-expression {} {
 
 
 proc ::constcl::parse-sharp {} {
-    ib advance
-    switch [ib first] {
+    upvar ib ib
+    $ib advance
+    switch [$ib first] {
         (    { return [parse-vector-expression] }
-        t    { ib advance ; ib skip-ws ; return #t }
-        f    { ib advance ; ib skip-ws ; return #f }
+        t    { $ib advance ; $ib skip-ws ; return #t }
+        f    { $ib advance ; $ib skip-ws ; return #f }
         "\\" { return [parse-character-expression] }
         default {
-            ::error "Illegal #-literal: #[ib first]"
+            ::error "Illegal #-literal: #[$ib first]"
         }
     }
 }
@@ -308,9 +323,10 @@ proc ::constcl::make-constant {val} {
 
 
 proc ::constcl::parse-quoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     make-constant $expr
     return [list #Q $expr]
 }
@@ -320,20 +336,21 @@ proc ::constcl::parse-quoted-expression {} {
 
 
 proc ::constcl::parse-pair {char} {
-    ::if {[ib find $char]} {
+    upvar ib ib
+    ::if {[$ib find $char]} {
         return #NIL
     }
-    ib skip-ws
+    $ib skip-ws
     set a [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     set res $a
     set prev #NIL
-    while {![ib find $char]} {
+    while {![$ib find $char]} {
         set x [parse-expression]
-        ib skip-ws
+        $ib skip-ws
         ::if {[dot? $x] ne "#f"} {
             set prev [parse-expression]
-            ib skip-ws
+            $ib skip-ws
         } else {
             lappend res $x
         }
@@ -346,19 +363,20 @@ proc ::constcl::parse-pair {char} {
 }
 
 proc ::constcl::parse-pair-expression {char} {
-    ib advance
-    ib skip-ws
+    upvar ib ib
+    $ib advance
+    $ib skip-ws
     set expr [parse-pair $char]
-    ib skip-ws
-    ::if {[ib first] ne $char} {
+    $ib skip-ws
+    ::if {[$ib first] ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=[ib first])."
+            ::error "Missing right parenthesis (first=[$ib first])."
         } else {
-            ::error "Missing right bracket (first=[ib first])."
+            ::error "Missing right bracket (first=[$ib first])."
         }
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     return $expr
 }
 
@@ -366,17 +384,18 @@ proc ::constcl::parse-pair-expression {char} {
 
 
 proc ::constcl::parse-plus-minus {} {
-    set c [ib first]
-    ib advance
-    ::if {[::string is digit -strict [ib first]]} {
-        ib unget $c
+    upvar ib ib
+    set c [$ib first]
+    $ib advance
+    ::if {[::string is digit -strict [$ib first]]} {
+        $ib unget $c
         return [::constcl::parse-number-expression]
     } else {
         ::if {$c eq "+"} {
-            ib skip-ws
+            $ib skip-ws
             return [MkSymbol "+"]
         } else {
-            ib skip-ws
+            $ib skip-ws
             return [MkSymbol "-"]
         }
     }
@@ -385,14 +404,15 @@ proc ::constcl::parse-plus-minus {} {
 
 
 proc ::constcl::parse-unquoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set symbol "unquote"
-    ::if {[ib first] eq "@"} {
+    ::if {[$ib first] eq "@"} {
         set symbol "unquote-splicing"
-        ib advance
+        $ib advance
     }
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     return [list [MkSymbol $symbol] $expr]
 }
 
@@ -400,9 +420,10 @@ proc ::constcl::parse-unquoted-expression {} {
 
 
 proc ::constcl::parse-quasiquoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     make-constant $expr
     return [list [MkSymbol "quasiquote"] $expr]
 }
@@ -420,11 +441,12 @@ proc ::constcl::interspace {c} {
 
 
 proc ::constcl::parse-number-expression {} {
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
-        ::append num [ib first]
-        ib advance
+    upvar ib ib
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
+        ::append num [$ib first]
+        $ib advance
     }
-    ib skip-ws
+    $ib skip-ws
     check {::string is double -strict $num} {Invalid numeric constant $num}
     return [MkNumber $num]
 }
@@ -433,11 +455,12 @@ proc ::constcl::parse-number-expression {} {
 
 
 proc ::constcl::parse-identifier-expression {} {
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
-        ::append name [ib first]
-        ib advance
+    upvar ib ib
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
+        ::append name [$ib first]
+        $ib advance
     }
-    ib skip-ws
+    $ib skip-ws
     # idcheck throws error if invalid identifier
     return [MkSymbol [idcheck $name]]
 }
@@ -455,13 +478,14 @@ proc ::constcl::character-check {name} {
 
 
 proc ::constcl::parse-character-expression {} {
+    upvar ib ib
     set name "#"
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) ]}} {
-        ::append name [ib first]
-        ib advance
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
+        ::append name [$ib first]
+        $ib advance
     }
     check {character-check $name} {Invalid character constant $name}
-    ib skip-ws
+    $ib skip-ws
     return [MkChar $name]
 }
 
@@ -469,20 +493,21 @@ proc ::constcl::parse-character-expression {} {
 
 
 proc ::constcl::parse-vector-expression {} {
-    ib advance
-    ib skip-ws
+    upvar ib ib
+    $ib advance
+    $ib skip-ws
     set res {}
-    while {[ib first] ne {} && [ib first] ne ")"} {
+    while {[$ib first] ne {} && [$ib first] ne ")"} {
         lappend res [parse-expression]
-        ib skip-ws
+        $ib skip-ws
     }
     set vec [MkVector $res]
     $vec mkconstant
-    ::if {[ib first] ne ")"} {
-        ::error "Missing right parenthesis (first=[ib first])."
+    ::if {[$ib first] ne ")"} {
+        ::error "Missing right parenthesis (first=[$ib first])."
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     return $vec
 }
 
@@ -503,9 +528,15 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-            and case cond define for for/and for/list
+            and case cond define del! for for/and for/list
             for/or let or put! quasiquote unless when}} {
                 expand-macro $env
+        }
+        ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
+            ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+            set args [resolve-local-defines $args]
+            set op [car $args]
+            set args [cdr $args]
         }
         switch [$op name] {
             quote   { car $args }
@@ -617,7 +648,7 @@ proc ::constcl::expand-macro {env} {
     }
     switch [$op name] {
         and {
-            set expr [expand-and $args]
+            set expr [expand-and $args $env]
         }
         case {
             set expr [expand-case [car $args] [cdr $args]]
@@ -626,7 +657,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-cond $args]
         }
         define {
-            set expr [expand-define $args]
+            set expr [expand-define $args $env]
+        }
+        del! {
+            set expr [expand-del! $args $env]
         }
         for {
             set expr [expand-for $args $env]
@@ -641,10 +675,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-for/or $args $env]
         }
         let {
-            set expr [expand-let $args]
+            set expr [expand-let $args $env]
         }
         or {
-            set expr [expand-or $args]
+            set expr [expand-or $args $env]
         }
         put! {
             set expr [expand-put! $args $env]
@@ -653,10 +687,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-quasiquote $args $env]
         }
         unless {
-            set expr [expand-unless $args]
+            set expr [expand-unless $args $env]
         }
         when {
-            set expr [expand-when $args]
+            set expr [expand-when $args $env]
         }
     }
     set op [car $expr]
@@ -666,24 +700,28 @@ proc ::constcl::expand-macro {env} {
 
 
 
-proc ::constcl::expand-and {exps} {
-    if {eq? [length $exps] #0} {
+proc ::constcl::expand-and {tail env} {
+    if {eq? [length $tail] #0} {
         return [list #B #t]
     } {
-        if {eq? [length $exps] #1} {
-            return [cons #B $exps]
+        if {eq? [length $tail] #1} {
+            return [cons #B $tail]
         } {
-            return [do-and $exps #NIL]
+            return [do-and $tail #NIL $env]
         }
     }
 }
 
 
-proc ::constcl::do-and {exps prev} {
-    if {eq? [length $exps] #0} {
+proc ::constcl::do-and {tail prev env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
         return $prev
     } {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+        $env setstr "first" [car $tail]
+        $env setstr "rest" [do-and [cdr $tail] [car $tail] $env]
+        set qq "`(if ,first ,rest #f)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 
@@ -728,11 +766,23 @@ proc ::constcl::expand-cond {clauses} {
 
 
 
-proc ::constcl::expand-define {exps} {
-    set symbol [caar $exps]
-    set formals [cdar $exps]
-    set body [cdr $exps]
-    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
+proc ::constcl::expand-define {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(define ,(caar tail) (lambda ,(cdar tail) ,@(cdr tail)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
+}
+
+
+
+proc ::constcl::expand-del! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 2 expected, got 0"}
+    $env setstr "listname" [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 2 expected, got 1"}
+    $env setstr "key" [cadr $tail]
+    set qq "`(set! ,listname (delete! ,listname ,key))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 
 
@@ -754,10 +804,10 @@ proc ::constcl::for-seq {seq env} {
 }
 
 
-proc ::constcl::do-for {exps env} {
+proc ::constcl::do-for {tail env} {
     # make clauses a Tcl list
-    set clauses [splitlist [car $exps]]
-    set body [cdr $exps]
+    set clauses [splitlist [car $tail]]
+    set body [cdr $tail]
     set ids {}
     set seqs {}
     for {set i 0} {$i < [llength $clauses]} {incr i} {
@@ -783,105 +833,110 @@ proc ::constcl::do-for {exps env} {
 }
 
 
-proc ::constcl::expand-for {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for {tail env} {
+    set res [do-for $tail $env]
     lappend res [list #Q #NIL]
     return [list #B {*}$res]
 }
 
 
 
-proc ::constcl::expand-for/and {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/and {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "and"] {*}$res]
 }
 
 
 
-proc ::constcl::expand-for/list {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/list {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "list"] {*}$res]
 }
 
 
 
-proc ::constcl::expand-for/or {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/or {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "or"] {*}$res]
 }
 
 
 
-proc ::constcl::expand-let {exps} {
-    ::if {[symbol? [car $exps]] ne "#f"} {
+proc ::constcl::expand-let {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[symbol? [car $tail]] ne "#f"} {
         # named let
-        set variable [car $exps]
-        set bindings [cadr $exps]
-        set body [cddr $exps]
+        set variable [car $tail]
+        set bindings [cadr $tail]
+        set body [cddr $tail]
         set vars [dict create $variable #f]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        set decl [dict values [dict map {k v} $vars {list $k $v}]]
-        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-        set call [list {*}[dict keys $vars]]
-        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+        parse-bindings vars $bindings
+        $env setstr "decl" [list {*}[dict values [dict map {k v} $vars {list $k $v}]]]
+        $env setstr "variable" $variable
+        $env setstr "varlist" [list {*}[lrange [dict keys $vars] 1 end]]
+        $env setstr "body" $body
+        $env setstr "call" [list {*}[dict keys $vars]]
+        set qq "`(let ,decl (set! ,variable (lambda ,varlist ,@body)) ,call)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     } else {
         # regular let
-        set bindings [car $exps]
-        set body [cdr $exps]
+        set bindings [car $tail]
+        set body [cdr $tail]
         set vars [dict create]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
-        # experimental code
-        set env [::constcl::Environment new #NIL {} ::constcl::global_env]
-        $env set [MkSymbol "varlist"] [dict keys $vars]
-        $env set [MkSymbol "body"] $body
-        $env set [MkSymbol "vallist"] [dict values $vars]
-        set qq "`((lambda (,@varlist) ,@body) ,@vallist)"
+        parse-bindings vars $bindings
+        $env setstr "varlist" [list {*}[dict keys $vars]]
+        $env setstr "body" $body
+        $env setstr "vallist" [list {*}[dict values $vars]]
+        set qq "`((lambda ,varlist ,@body) ,@vallist)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
+    }
+}
+
+proc ::constcl::parse-bindings {name bindings} {
+    upvar $name vars
+    foreach binding [splitlist $bindings] {
+        set var [car $binding]
+        set val [cadr $binding]
+        ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
+        dict set vars $var $val
+    }
+}
+
+
+
+proc ::constcl::expand-or {tail env} {
+    ::if {[eq? [length $tail] #0] ne "#f"} {
+        return [list #B #f]
+    } elseif {[eq? [length $tail] #1] ne "#f"} {
+        return [cons #B $tail]
+    } else {
+        return [do-or $tail $env]
+    }
+}
+
+
+proc ::constcl::do-or {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
+        return #f
+    } {
+        $env setstr "first" [car $tail]
+        $env setstr "rest" [do-or [cdr $tail] $env]
+        set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 
 
 
-proc ::constcl::expand-or {exps} {
-    ::if {[eq? [length $exps] #0] ne "#f"} {
-        return [list #B #f]
-    } elseif {[eq? [length $exps] #1] ne "#f"} {
-        return [cons #B $exps]
-    } else {
-        return [do-or $exps]
-    }
-}
-
-
-proc ::constcl::do-or {exps} {
-    if {eq? [length $exps] #0} {
-        return #f
-    } {
-        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
-    }
-}
-
-
-
-proc ::constcl::expand-put! {exps env} {
+proc ::constcl::expand-put! {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
-    ::if {[null? $exps] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
-    $env set [MkSymbol "listname"] [car $exps]
-    ::if {[null? [cdr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
-    $env set [MkSymbol "key"] [cadr $exps]
-    ::if {[null? [cddr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
-    $env set [MkSymbol "val"] [caddr $exps]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
+    $env set [MkSymbol "listname"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+    $env set [MkSymbol "key"] [cadr $tail]
+    ::if {[null? [cddr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+    $env set [MkSymbol "val"] [caddr $tail]
     set qq "`(let ((idx (list-find-key ,listname ,key)))
                (if (< idx 0)
                  (set! ,listname (append (list ,key ,val) ,listname))
@@ -921,13 +976,13 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 }
 
 
-proc ::constcl::expand-quasiquote {exps env} {
+proc ::constcl::expand-quasiquote {tail env} {
     set qqlevel 0
-    ::if {[list? [car $exps]] ne "#f"} {
-        set node [car $exps]
+    ::if {[list? [car $tail]] ne "#f"} {
+        set node [car $tail]
         return [qq-visit-child $node 0 $env]
-    } elseif {[vector? [car $exps]] ne "#f"} {
-        set vect [car $exps]
+    } elseif {[vector? [car $tail]] ne "#f"} {
+        set vect [car $tail]
         set res {}
         for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
@@ -951,17 +1006,21 @@ proc ::constcl::expand-quasiquote {exps env} {
 
 
 
-proc ::constcl::expand-unless {exps} {
-    return [list #I [car $exps] [list #Q #NIL] [cons #B [cdr $exps]]]
+proc ::constcl::expand-unless {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(if ,(car tail) (quote ()) (begin ,@(cdr tail)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 
 
 
-proc ::constcl::expand-when {exps} {
-    return [list #I [car $exps] [cons #B [cdr $exps]] [list #Q #NIL]]
+proc ::constcl::expand-when {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(if ,(car tail) (begin ,@(cdr tail)) (quote ()))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
-
-### Resolving local defines
 
 
 
@@ -1160,7 +1219,7 @@ reg display ::constcl::display
 
 proc ::constcl::display {val args} {
     ::if {$val ne "#NONE"} {
-        ::constcl::write-value $val
+        $val display
         flush stdout
     }
     return
@@ -1279,6 +1338,7 @@ oo::class create ::constcl::Number {
     method mkconstant {} {}
     method constant {} {return 1}
     method write {} { puts -nonewline [my value] }
+    method display {} { puts -nonewline [my value] }
     method show {} { set value }
 }
 
@@ -1834,6 +1894,7 @@ oo::class create ::constcl::Boolean {
     method bvalue {} { set bvalue }
     method value {} { set bvalue }
     method write {} { puts -nonewline [my bvalue] }
+    method display {} { puts -nonewline [my bvalue] }
     method show {} {set bvalue}
 }
 
@@ -1947,6 +2008,7 @@ oo::class create ::constcl::Char {
     method constant {} {return 1}
     method value {} {return $value}
     method write {} { puts -nonewline $value }
+    method display {} { puts -nonewline [my char] }
     method show {} {set value}
 }
 
@@ -2222,6 +2284,7 @@ oo::class create ::constcl::Procedure {
         regexp {(\d+)} [self] -> num
         puts -nonewline "#<proc-$num>"
     }
+    method display {} {my write}
     method show {} { return [self] }
     method call {args} {
         ::constcl::eval $body [::constcl::Environment new $parms $args $env]
@@ -2405,9 +2468,10 @@ proc ::constcl::load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
-    eval [parse $src] ::constcl::global_env
-    while {[ib first] ne {}} {
-        eval [parse] ::constcl::global_env
+    set ib [::constcl::IB new $src]
+    eval [parse $ib]
+    while {[$ib first] ne {}} {
+        eval [parse $ib]
     }
 }
 
@@ -2453,6 +2517,7 @@ oo::class create ::constcl::Pair {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
+    method display {} { [my write] }
     method show {} {format "(%s)" [::constcl::show-pair [self]]}
 }
 
@@ -2879,6 +2944,7 @@ oo::class create ::constcl::String {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
+    method display {} { puts -nonewline [my value] }
     method show {} {format "\"[my value]\""}
 }
 
@@ -3186,6 +3252,7 @@ oo::class create ::constcl::Symbol {
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
     method write {} { puts -nonewline [my name] }
+    method display {} { puts -nonewline [my name] }
     method show {} {set name}
 }
 
@@ -3302,6 +3369,7 @@ oo::class create ::constcl::Vector {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} {puts -nonewline [my show]}
+    method display {} {puts -nonewline [my show]}
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
@@ -3607,6 +3675,9 @@ oo::class create ::constcl::Environment {
     method set {sym val} {
         dict set bindings $sym $val
     }
+    method setstr {str val} {
+        dict set bindings [::constcl::MkSymbol $str] $val
+    }
 }
 
 # vim: set filetype=tcl:
@@ -3641,7 +3712,7 @@ if no {
 '(a 1 b 2 c 3 d 4 e 5)
 
 
-> (define plist '(a 1 b 2 c 3 d 4 e 5))
+> (define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))
 > (define v '())
 > (set! v (memq 'c plist))
 (c 3 d 4 e 5)
@@ -3651,6 +3722,7 @@ if no {
 
 > (get plist 'c)
 3
+
 
 
 
@@ -3664,8 +3736,15 @@ if no {
 (g 7 f 6 a 1 b 2 c 9 d 4 e 5)
 
 
+
 > (set! plist (append '(d #f) plist))
 (d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
+
+
+> plist
+(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
+> (del! plist 'd)
+(g 7 f 6 a 1 b 2 c 9 e 5)
 
 
 }

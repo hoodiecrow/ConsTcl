@@ -23,6 +23,7 @@ oo::class create ::constcl::Boolean {
     method bvalue {} { set bvalue }
     method value {} { set bvalue }
     method write {} { puts -nonewline [my bvalue] }
+    method display {} { puts -nonewline [my bvalue] }
     method show {} {set bvalue}
 }
 

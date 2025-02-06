@@ -24,11 +24,8 @@ catch { ::constcl::IB destroy }
 
 oo::class create ::constcl::IB {
     variable peekc buffer
-    constructor {} {
+    constructor {str} {
         set peekc {}
-        set buffer {}
-    }
-    method fill {str} {
         set buffer $str
         my advance
     }
@@ -78,7 +75,6 @@ oo::class create ::constcl::IB {
     }
 }
 
-::constcl::IB create ::constcl::ib
 CB
 
 MD(
@@ -132,24 +128,25 @@ ConsTcl> (+ 2 3)
 Then, parsing and evaluation and writing goes on in the background and the
 internal representations of expressions and values are hidden.
 
-Anyway, here is how it really looks like. `::oo::Obj491` was just the head of the
-list.
+Anyway, here is how it really looks like. `::oo::Obj491` was just the head of
+the list.
 
 ![intreplist](/images/intreplist.png)
 
 MD)
 
 PR(
-parse (public);?str? lisp -> expr
+parse (public);inp strinpbuf -> expr
 PR)
 
 CB
 reg parse
 
-proc ::constcl::parse {args} {
-    ::if {[llength $args]} {
-        lassign $args str
-        ib fill $str
+proc ::constcl::parse {inp} {
+    ::if {[info object isa object $inp]} {
+        set ib $inp
+    } else {
+        set ib [IB new $inp]
     }
     return [parse-expression]
 }
@@ -162,13 +159,13 @@ The standard builtin `read` parses input into a Lisp expression.
 MD)
 
 PR(
-read (public);args dc -> expr
+read (public);ib inpbuf -> expr
 PR)
 
 CB
 reg read ::constcl::read
 
-proc ::constcl::read {args} {
+proc ::constcl::read {ib} {
     return [parse-expression]
 }
 CB
@@ -187,8 +184,9 @@ PR)
 
 CB
 proc ::constcl::parse-expression {} {
-    ib skip-ws
-    switch -regexp [ib first] {
+    upvar ib ib
+    $ib skip-ws
+    switch -regexp [$ib first] {
         {^$}          { return #NONE}
         {\"}          { return [parse-string-expression] }
         {\#}          { return [parse-sharp] }
@@ -196,13 +194,13 @@ proc ::constcl::parse-expression {} {
         {\(}          { return [parse-pair-expression ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
         {\,}          { return [parse-unquoted-expression] }
-        {\.}          { ib advance ; return [Dot new] }
+        {\.}          { $ib advance ; return [Dot new] }
         {\[}          { return [parse-pair-expression "\]"] }
         {\`}          { return [parse-quasiquoted-expression] }
         {\d}          { return [parse-number-expression] }
         {[[:graph:]]} { return [parse-identifier-expression] }
         default {
-            ::error "unexpected character ([ib first])"
+            ::error "unexpected character ([$ib first])"
         }
     }
 }
@@ -222,23 +220,24 @@ PR)
 
 CB
 proc ::constcl::parse-string-expression {} {
+    upvar ib ib
     set str {}
-    ib advance
-    while {[ib first] ne "\"" && [ib first] ne {}} {
-        set c [ib first]
+    $ib advance
+    while {[$ib first] ne "\"" && [$ib first] ne {}} {
+        set c [$ib first]
         ::if {$c eq "\\"} {
-            ib advance
-            ::append str [ib first]
+            $ib advance
+            ::append str [$ib first]
         } else {
             ::append str $c
         }
-        ib advance
+        $ib advance
     }
-    ::if {[ib first] ne "\""} {
+    ::if {[$ib first] ne "\""} {
         ::error "malformed string (no ending double quote)"
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     set expr [MkString $str]
     $expr mkconstant
     return $expr
@@ -272,14 +271,15 @@ PR)
 
 CB
 proc ::constcl::parse-sharp {} {
-    ib advance
-    switch [ib first] {
+    upvar ib ib
+    $ib advance
+    switch [$ib first] {
         (    { return [parse-vector-expression] }
-        t    { ib advance ; ib skip-ws ; return #t }
-        f    { ib advance ; ib skip-ws ; return #f }
+        t    { $ib advance ; $ib skip-ws ; return #t }
+        f    { $ib advance ; $ib skip-ws ; return #f }
         "\\" { return [parse-character-expression] }
         default {
-            ::error "Illegal #-literal: #[ib first]"
+            ::error "Illegal #-literal: #[$ib first]"
         }
     }
 }
@@ -319,9 +319,10 @@ PR)
 
 CB
 proc ::constcl::parse-quoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     make-constant $expr
     return [list #Q $expr]
 }
@@ -349,20 +350,21 @@ PR)
 CB
 
 proc ::constcl::parse-pair {char} {
-    ::if {[ib find $char]} {
+    upvar ib ib
+    ::if {[$ib find $char]} {
         return #NIL
     }
-    ib skip-ws
+    $ib skip-ws
     set a [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     set res $a
     set prev #NIL
-    while {![ib find $char]} {
+    while {![$ib find $char]} {
         set x [parse-expression]
-        ib skip-ws
+        $ib skip-ws
         ::if {[dot? $x] ne "#f"} {
             set prev [parse-expression]
-            ib skip-ws
+            $ib skip-ws
         } else {
             lappend res $x
         }
@@ -375,19 +377,20 @@ proc ::constcl::parse-pair {char} {
 }
 
 proc ::constcl::parse-pair-expression {char} {
-    ib advance
-    ib skip-ws
+    upvar ib ib
+    $ib advance
+    $ib skip-ws
     set expr [parse-pair $char]
-    ib skip-ws
-    ::if {[ib first] ne $char} {
+    $ib skip-ws
+    ::if {[$ib first] ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=[ib first])."
+            ::error "Missing right parenthesis (first=[$ib first])."
         } else {
-            ::error "Missing right bracket (first=[ib first])."
+            ::error "Missing right bracket (first=[$ib first])."
         }
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     return $expr
 }
 CB
@@ -451,17 +454,18 @@ PR)
 
 CB
 proc ::constcl::parse-plus-minus {} {
-    set c [ib first]
-    ib advance
-    ::if {[::string is digit -strict [ib first]]} {
-        ib unget $c
+    upvar ib ib
+    set c [$ib first]
+    $ib advance
+    ::if {[::string is digit -strict [$ib first]]} {
+        $ib unget $c
         return [::constcl::parse-number-expression]
     } else {
         ::if {$c eq "+"} {
-            ib skip-ws
+            $ib skip-ws
             return [MkSymbol "+"]
         } else {
-            ib skip-ws
+            $ib skip-ws
             return [MkSymbol "-"]
         }
     }
@@ -482,14 +486,15 @@ PR)
 
 CB
 proc ::constcl::parse-unquoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set symbol "unquote"
-    ::if {[ib first] eq "@"} {
+    ::if {[$ib first] eq "@"} {
         set symbol "unquote-splicing"
-        ib advance
+        $ib advance
     }
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     return [list [MkSymbol $symbol] $expr]
 }
 CB
@@ -514,9 +519,10 @@ PR)
 
 CB
 proc ::constcl::parse-quasiquoted-expression {} {
-    ib advance
+    upvar ib ib
+    $ib advance
     set expr [parse-expression]
-    ib skip-ws
+    $ib skip-ws
     make-constant $expr
     return [list [MkSymbol "quasiquote"] $expr]
 }
@@ -559,11 +565,12 @@ PR)
 
 CB
 proc ::constcl::parse-number-expression {} {
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
-        ::append num [ib first]
-        ib advance
+    upvar ib ib
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
+        ::append num [$ib first]
+        $ib advance
     }
-    ib skip-ws
+    $ib skip-ws
     check {::string is double -strict $num} {Invalid numeric constant $num}
     return [MkNumber $num]
 }
@@ -619,11 +626,12 @@ PR)
 
 CB
 proc ::constcl::parse-identifier-expression {} {
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) \]}} {
-        ::append name [ib first]
-        ib advance
+    upvar ib ib
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
+        ::append name [$ib first]
+        $ib advance
     }
-    ib skip-ws
+    $ib skip-ws
     # idcheck throws error if invalid identifier
     return [MkSymbol [idcheck $name]]
 }
@@ -632,18 +640,19 @@ CB
 TT(
 
 ::tcltest::test read-5.0 {try reading an identifier} {
-    set expr [::constcl::parse "foo"]
+    set expr [::constcl::parse [::constcl::IB new "foo"]]
     $expr name
 } "foo"
 
 ::tcltest::test read-5.1 {try reading an identifier} -body {
-    ::constcl::ib fill "+foo"
+    set ib [::constcl::IB new "+foo"]
     set expr [::constcl::parse-identifier-expression]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test read-5.2 {try reading an identifier} -body {
-    set expr [::constcl::parse "let"]
+    ::constcl::IB create ib-read-5.2 "let"
+    set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Macro name can't be used as a variable: let"
 
@@ -679,13 +688,14 @@ PR)
 
 CB
 proc ::constcl::parse-character-expression {} {
+    upvar ib ib
     set name "#"
-    while {[interspace [ib first]] ne "#t" && [ib first] ni {) ]}} {
-        ::append name [ib first]
-        ib advance
+    while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
+        ::append name [$ib first]
+        $ib advance
     }
     check {character-check $name} {Invalid character constant $name}
-    ib skip-ws
+    $ib skip-ws
     return [MkChar $name]
 }
 CB
@@ -693,22 +703,22 @@ CB
 TT(
 
 ::tcltest::test read-3.0 {try reading a character} {
-    set expr [::constcl::parse {#\A}]
+    set expr [::constcl::parse [::constcl::IB new {#\A}]]
     $expr char
 } "A"
 
 ::tcltest::test read-3.1 {try reading a character} {
-    set expr [::constcl::parse "#\\space"]
+    set expr [::constcl::parse [::constcl::IB new "#\\space"]]
     $expr char
 } " "
 
 ::tcltest::test read-3.2 {try reading a character} {
-    set expr [::constcl::parse "#\\newline"]
+    set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
     $expr char
 } "\n"
 
 ::tcltest::test read-3.3 {try reading a character} -body {
-    set expr [::constcl::parse "#\\foobar"]
+    set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
@@ -726,20 +736,21 @@ PR)
 
 CB
 proc ::constcl::parse-vector-expression {} {
-    ib advance
-    ib skip-ws
+    upvar ib ib
+    $ib advance
+    $ib skip-ws
     set res {}
-    while {[ib first] ne {} && [ib first] ne ")"} {
+    while {[$ib first] ne {} && [$ib first] ne ")"} {
         lappend res [parse-expression]
-        ib skip-ws
+        $ib skip-ws
     }
     set vec [MkVector $res]
     $vec mkconstant
-    ::if {[ib first] ne ")"} {
-        ::error "Missing right parenthesis (first=[ib first])."
+    ::if {[$ib first] ne ")"} {
+        ::error "Missing right parenthesis (first=[$ib first])."
     }
-    ib advance
-    ib skip-ws
+    $ib advance
+    $ib skip-ws
     return $vec
 }
 CB

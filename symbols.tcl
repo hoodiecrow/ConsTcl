@@ -26,6 +26,7 @@ oo::class create ::constcl::Symbol {
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
     method write {} { puts -nonewline [my name] }
+    method display {} { puts -nonewline [my name] }
     method show {} {set name}
 }
 

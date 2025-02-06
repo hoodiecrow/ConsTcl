@@ -31,6 +31,7 @@ oo::class create ::constcl::Procedure {
         regexp {(\d+)} [self] -> num
         puts -nonewline "#<proc-$num>"
     }
+    method display {} {my write}
     method show {} { return [self] }
     method call {args} {
         ::constcl::eval $body [::constcl::Environment new $parms $args $env]

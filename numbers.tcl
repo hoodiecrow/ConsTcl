@@ -29,6 +29,7 @@ oo::class create ::constcl::Number {
     method mkconstant {} {}
     method constant {} {return 1}
     method write {} { puts -nonewline [my value] }
+    method display {} { puts -nonewline [my value] }
     method show {} { set value }
 }
 

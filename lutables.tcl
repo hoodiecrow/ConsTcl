@@ -19,7 +19,7 @@ Values can be retrieved in a two-step process:
 MD)
 
 CB
-> (define plist '(a 1 b 2 c 3 d 4 e 5))
+> (define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))
 > (define v '())
 > (set! v (memq 'c plist))
 (c 3 d 4 e 5)
@@ -42,6 +42,13 @@ MD(
 `get` returns `#f` if the key isn't present in the plist.
 MD)
 
+TT(
+::tcltest::test lutables-1.0 {test get procedure} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'c))"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'x))"
+} -output "3\n#f\n"
+TT)
+
 MD(
 Values can be added with a single statement:
 MD)
@@ -62,8 +69,15 @@ CB
 (g 7 f 6 a 1 b 2 c 9 d 4 e 5)
 CB
 
+TT(
+::tcltest::test lutables-2.0 {test put! macro} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'd 4) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'c 4) plist)"
+} -output "(d 4 a 1 b 2 c 3)\n(a 1 b 2 c 4)\n"
+TT)
+
 MD(
-To get rid of a key/value pair, the simplest way is to add an erasing pair:
+To get rid of a key/value pair, the simplest way is to add a masking pair:
 MD)
 
 CB
@@ -72,8 +86,24 @@ CB
 CB
 
 MD(
-But instead, one can use the `del` macro:
+But instead, one can use the `del!` macro:
 MD)
+
+CB
+> plist
+(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
+> (del! plist 'd)
+(g 7 f 6 a 1 b 2 c 9 e 5)
+CB
+
+TT(
+::tcltest::test lutables-3.0 {test del! macro} -body {
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'c) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'a) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'b) plist)"
+    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'x) plist)"
+} -output "(a 1 b 2)\n(b 2 c 3)\n(a 1 c 3)\n(a 1 b 2 c 3)\n"
+TT)
 
 }
 

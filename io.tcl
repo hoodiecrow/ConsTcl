@@ -127,9 +127,10 @@ proc ::constcl::load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
-    eval [parse $src] ::constcl::global_env
-    while {[ib first] ne {}} {
-        eval [parse] ::constcl::global_env
+    set ib [::constcl::IB new $src]
+    eval [parse $ib]
+    while {[$ib first] ne {}} {
+        eval [parse $ib]
     }
 }
 CB

@@ -58,7 +58,7 @@ reg display ::constcl::display
 
 proc ::constcl::display {val args} {
     ::if {$val ne "#NONE"} {
-        ::constcl::write-value $val
+        $val display
         flush stdout
     }
     return

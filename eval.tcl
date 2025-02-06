@@ -45,9 +45,15 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-            and case cond define for for/and for/list
+            and case cond define del! for for/and for/list
             for/or let or put! quasiquote unless when}} {
                 expand-macro $env
+        }
+        ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
+            ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+            set args [resolve-local-defines $args]
+            set op [car $args]
+            set args [cdr $args]
         }
         switch [$op name] {
             quote   { car $args }
@@ -291,7 +297,7 @@ proc ::constcl::expand-macro {env} {
     }
     switch [$op name] {
         and {
-            set expr [expand-and $args]
+            set expr [expand-and $args $env]
         }
         case {
             set expr [expand-case [car $args] [cdr $args]]
@@ -300,7 +306,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-cond $args]
         }
         define {
-            set expr [expand-define $args]
+            set expr [expand-define $args $env]
+        }
+        del! {
+            set expr [expand-del! $args $env]
         }
         for {
             set expr [expand-for $args $env]
@@ -315,10 +324,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-for/or $args $env]
         }
         let {
-            set expr [expand-let $args]
+            set expr [expand-let $args $env]
         }
         or {
-            set expr [expand-or $args]
+            set expr [expand-or $args $env]
         }
         put! {
             set expr [expand-put! $args $env]
@@ -327,10 +336,10 @@ proc ::constcl::expand-macro {env} {
             set expr [expand-quasiquote $args $env]
         }
         unless {
-            set expr [expand-unless $args]
+            set expr [expand-unless $args $env]
         }
         when {
-            set expr [expand-when $args]
+            set expr [expand-when $args $env]
         }
     }
     set op [car $expr]
@@ -347,33 +356,37 @@ has 0 or 1 elements, and a nested `if` construct otherwise.
 MD)
 
 PR(
-expand-and (internal);exps lexprs -> expr
+expand-and (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-and {exps} {
-    if {eq? [length $exps] #0} {
+proc ::constcl::expand-and {tail env} {
+    if {eq? [length $tail] #0} {
         return [list #B #t]
     } {
-        if {eq? [length $exps] #1} {
-            return [cons #B $exps]
+        if {eq? [length $tail] #1} {
+            return [cons #B $tail]
         } {
-            return [do-and $exps #NIL]
+            return [do-and $tail #NIL $env]
         }
     }
 }
 CB
 
 PR(
-do-and (internal);exps lexprs prev expr -> expr
+do-and (internal);tail exprtail prev expr env env -> expr
 PR)
 
 CB
-proc ::constcl::do-and {exps prev} {
-    if {eq? [length $exps] #0} {
+proc ::constcl::do-and {tail prev env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
         return $prev
     } {
-        return [list #I [car $exps] [do-and [cdr $exps] [car $exps]] #f]
+        $env setstr "first" [car $tail]
+        $env setstr "rest" [do-and [cdr $tail] [car $tail] $env]
+        set qq "`(if ,first ,rest #f)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 CB
@@ -386,7 +399,7 @@ and nested `if` constructs if there are some.
 MD)
 
 PR(
-expand-case (internal);keyexpr expr clauses lexprs -> expr
+expand-case (internal);keyexpr expr clauses lvals -> expr
 PR)
 
 CB
@@ -416,7 +429,7 @@ clauses (left), and nested `if` constructs if there are some.
 MD)
 
 PR(
-expand-cond (internal);clauses lexprs -> expr
+expand-cond (internal);clauses lvals -> expr
 PR)
 
 CB
@@ -443,20 +456,51 @@ CB
 MD(
 **expand-define**
 
-`define` has two variants, one of which requires some rewriting. It's the one with an implied `lambda`
-call, the one that defines a procedure.
+`define` has two variants, one of which requires some rewriting. It's the one
+with an implied `lambda` call, the one that defines a procedure. 
+
+(__define__ (_symbol_ _formals_) _body_)
+
+is transformed into
+
+(__define__ _symbol_ (__lambda__ _formals_ _body_))
+
+which conforms better to `eval`'s standard of (__define__ _symbol_ _value_).
 MD)
 
 PR(
-expand-define (internal);exps lexprs -> expr
+expand-define (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-define {exps} {
-    set symbol [caar $exps]
-    set formals [cdar $exps]
-    set body [cdr $exps]
-    return [list [MkSymbol "define"] $symbol [list #λ $formals {*}[splitlist $body]]]
+proc ::constcl::expand-define {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(define ,(caar tail) (lambda ,(cdar tail) ,@(cdr tail)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
+}
+CB
+
+MD(
+**expand-del!**
+
+The macro `del!` updates a property list. It removes a key-value pair if the key
+is present, or leaves the list untouched if it isn't.
+MD)
+
+PR(
+expand-del! (internal);tail exprtail env env -> expr
+PR)
+
+CB
+proc ::constcl::expand-del! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 2 expected, got 0"}
+    $env setstr "listname" [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 2 expected, got 1"}
+    $env setstr "key" [cadr $tail]
+    set qq "`(set! ,listname (delete! ,listname ,key))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 
@@ -492,14 +536,14 @@ proc ::constcl::for-seq {seq env} {
 CB
 
 PR(
-do-for (internal);exps lexprs env env -> texprs
+do-for (internal);tail exprtail env env -> texprs
 PR)
 
 CB
-proc ::constcl::do-for {exps env} {
+proc ::constcl::do-for {tail env} {
     # make clauses a Tcl list
-    set clauses [splitlist [car $exps]]
-    set body [cdr $exps]
+    set clauses [splitlist [car $tail]]
+    set body [cdr $tail]
     set ids {}
     set seqs {}
     for {set i 0} {$i < [llength $clauses]} {incr i} {
@@ -526,12 +570,12 @@ proc ::constcl::do-for {exps env} {
 CB
 
 PR(
-expand-for (internal);exps lexprs env env -> expr
+expand-for (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-for {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for {tail env} {
+    set res [do-for $tail $env]
     lappend res [list #Q #NIL]
     return [list #B {*}$res]
 }
@@ -545,12 +589,12 @@ construct containing the iterations of the clauses.
 MD)
 
 PR(
-expand-for/and (internal);exps lexprs env env -> expr
+expand-for/and (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-for/and {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/and {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "and"] {*}$res]
 }
 CB
@@ -563,12 +607,12 @@ construct containing the iterations of each clause.
 MD)
 
 PR(
-expand for/list (internal);exps lexprs env env -> expr
+expand for/list (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-for/list {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/list {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "list"] {*}$res]
 }
 CB
@@ -581,12 +625,12 @@ construct containing the iterations of each clause.
 MD)
 
 PR(
-expand-for/or (internal);exps lexprs env env -> expr
+expand-for/or (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-for/or {exps env} {
-    set res [do-for $exps $env]
+proc ::constcl::expand-for/or {tail env} {
+    set res [do-for $tail $env]
     return [list [MkSymbol "or"] {*}$res]
 }
 CB
@@ -599,46 +643,47 @@ expand to `lambda` constructs.
 MD)
 
 PR(
-expand-let (internal);exps lexprs -> expr
+expand-let (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-let {exps} {
-    ::if {[symbol? [car $exps]] ne "#f"} {
+proc ::constcl::expand-let {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[symbol? [car $tail]] ne "#f"} {
         # named let
-        set variable [car $exps]
-        set bindings [cadr $exps]
-        set body [cddr $exps]
+        set variable [car $tail]
+        set bindings [cadr $tail]
+        set body [cddr $tail]
         set vars [dict create $variable #f]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        set decl [dict values [dict map {k v} $vars {list $k $v}]]
-        set func [list #λ [list {*}[lrange [dict keys $vars] 1 end]] {*}[splitlist $body]]
-        set call [list {*}[dict keys $vars]]
-        return [list #L [list {*}$decl] [list #S $variable $func] $call]
+        parse-bindings vars $bindings
+        $env setstr "decl" [list {*}[dict values [dict map {k v} $vars {list $k $v}]]]
+        $env setstr "variable" $variable
+        $env setstr "varlist" [list {*}[lrange [dict keys $vars] 1 end]]
+        $env setstr "body" $body
+        $env setstr "call" [list {*}[dict keys $vars]]
+        set qq "`(let ,decl (set! ,variable (lambda ,varlist ,@body)) ,call)"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     } else {
         # regular let
-        set bindings [car $exps]
-        set body [cdr $exps]
+        set bindings [car $tail]
+        set body [cdr $tail]
         set vars [dict create]
-        foreach binding [splitlist $bindings] {
-            set var [car $binding]
-            set val [cadr $binding]
-            ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
-            dict set vars $var $val
-        }
-        return [list [list #λ [list {*}[dict keys $vars]] {*}[splitlist $body]] {*}[dict values $vars]]
-        # experimental code
-        set env [::constcl::Environment new #NIL {} ::constcl::global_env]
-        $env set [MkSymbol "varlist"] [dict keys $vars]
-        $env set [MkSymbol "body"] $body
-        $env set [MkSymbol "vallist"] [dict values $vars]
-        set qq "`((lambda (,@varlist) ,@body) ,@vallist)"
+        parse-bindings vars $bindings
+        $env setstr "varlist" [list {*}[dict keys $vars]]
+        $env setstr "body" $body
+        $env setstr "vallist" [list {*}[dict values $vars]]
+        set qq "`((lambda ,varlist ,@body) ,@vallist)"
         return [expand-quasiquote [cdr [parse $qq]] $env]
+    }
+}
+
+proc ::constcl::parse-bindings {name bindings} {
+    upvar $name vars
+    foreach binding [splitlist $bindings] {
+        set var [car $binding]
+        set val [cadr $binding]
+        ::if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
+        dict set vars $var $val
     }
 }
 CB
@@ -651,31 +696,35 @@ has 0 or 1 elements, and a nested `if` construct otherwise.
 MD)
 
 PR(
-expand-or (internal);exps lexprs -> expr
+expand-or (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-or {exps} {
-    ::if {[eq? [length $exps] #0] ne "#f"} {
+proc ::constcl::expand-or {tail env} {
+    ::if {[eq? [length $tail] #0] ne "#f"} {
         return [list #B #f]
-    } elseif {[eq? [length $exps] #1] ne "#f"} {
-        return [cons #B $exps]
+    } elseif {[eq? [length $tail] #1] ne "#f"} {
+        return [cons #B $tail]
     } else {
-        return [do-or $exps]
+        return [do-or $tail $env]
     }
 }
 CB
 
 PR(
-do-or (internal);exps lexprs -> expr
+do-or (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::do-or {exps} {
-    if {eq? [length $exps] #0} {
+proc ::constcl::do-or {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
         return #f
     } {
-        return [list #L [list [list #x [car $exps]]] [list #I #x #x [do-or [cdr $exps]]]]
+        $env setstr "first" [car $tail]
+        $env setstr "rest" [do-or [cdr $tail] $env]
+        set qq "`(let ((x ,first)) (if x x ,rest))"
+        return [expand-quasiquote [cdr [parse $qq]] $env]
     }
 }
 CB
@@ -688,18 +737,18 @@ isn't present, or changes the value in place if it is.
 MD)
 
 PR(
-expand-put! (internal);exps lexprs env env -> expr
+expand-put! (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-put! {exps env} {
+proc ::constcl::expand-put! {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
-    ::if {[null? $exps] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
-    $env set [MkSymbol "listname"] [car $exps]
-    ::if {[null? [cdr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
-    $env set [MkSymbol "key"] [cadr $exps]
-    ::if {[null? [cddr $exps]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
-    $env set [MkSymbol "val"] [caddr $exps]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
+    $env set [MkSymbol "listname"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+    $env set [MkSymbol "key"] [cadr $tail]
+    ::if {[null? [cddr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+    $env set [MkSymbol "val"] [caddr $tail]
     set qq "`(let ((idx (list-find-key ,listname ,key)))
                (if (< idx 0)
                  (set! ,listname (append (list ,key ,val) ,listname))
@@ -752,17 +801,17 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 CB
 
 PR(
-expand-quasiquote (internal);exps lexprs env env -> expr
+expand-quasiquote (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-quasiquote {exps env} {
+proc ::constcl::expand-quasiquote {tail env} {
     set qqlevel 0
-    ::if {[list? [car $exps]] ne "#f"} {
-        set node [car $exps]
+    ::if {[list? [car $tail]] ne "#f"} {
+        set node [car $tail]
         return [qq-visit-child $node 0 $env]
-    } elseif {[vector? [car $exps]] ne "#f"} {
-        set vect [car $exps]
+    } elseif {[vector? [car $tail]] ne "#f"} {
+        set vect [car $tail]
         set res {}
         for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
@@ -787,37 +836,43 @@ CB
 
 MD(
 `unless` is a conditional like `if`, with the differences that it takes a number
-of statements and only executes them for a false outcome of `car $exps`.
+of expressions and only executes them for a false outcome of `car $tail`.
 MD)
 
 PR(
-expand-unless (internal);exps lexprs -> expr
+expand-unless (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-unless {exps} {
-    return [list #I [car $exps] [list #Q #NIL] [cons #B [cdr $exps]]]
+proc ::constcl::expand-unless {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(if ,(car tail) (quote ()) (begin ,@(cdr tail)))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 
 MD(
 `when` is a conditional like `if`, with the differences that it takes a number
-of statements and only executes them for a true outcome of `car $exps`.
+of expressions and only executes them for a true outcome of `car $tail`.
 MD)
 
 PR(
-expand-when (internal);exps lexprs -> expr
+expand-when (internal);tail exprtail env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-when {exps} {
-    return [list #I [car $exps] [cons #B [cdr $exps]] [list #Q #NIL]]
+proc ::constcl::expand-when {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    $env setstr "tail" $tail
+    set qq "`(if ,(car tail) (begin ,@(cdr tail)) (quote ()))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 
+MD(
 ### Resolving local defines
 
-MD(
 This section is ported from 'Scheme 9 from Empty Space'. `resolve-local-defines`
 is the topmost procedure in rewriting local defines as essentially a `letrec`
 form. It takes a list of expressions and extracts variables and values from the
@@ -1089,7 +1144,7 @@ TT(
 ::tcltest::test eval-1.4 {run let macro} -body {
     pep "(let ((x 10)) (* x x))"
     pep "(let ((x 10) (y 5)) (* x y))"
-    pep "(let ((x 10) (y 5)) (define z 7) (* x y z))"
+    pep "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
 ::tcltest::test eval-1.5 {expand named let macro} -body {
@@ -1204,19 +1259,19 @@ TT(
 } -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 ::tcltest::test eval-6.1 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,(+ 1 2) 4)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,(+ 1 2) 4)}]]] ::constcl::global_env]
     ::constcl::global_env set [::constcl::list [::constcl::MkSymbol "name"]] a
     pep {(define name 'a)}
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(list ,name ',name)}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,name ',name)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]]] ::constcl::global_env]
 if no {
 }
 } -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
 
 ::tcltest::test eval-6.2 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]]] ::constcl::global_env]
 if no {
     pep {(let ((name1 'x)
       (name2 'y))
@@ -1239,6 +1294,10 @@ if no {
     pxp "(define (f) (define r 20) (* r r))"
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
+::tcltest::test eval-7.3 {define} -body {
+    pxp "(define (list-find-key lst key)\n(lfk lst key 0))"
+} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
 ::tcltest::test eval-8.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pep "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
@@ -1251,28 +1310,36 @@ if no {
     pep "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
+::tcltest::test eval-9.2 {conditional: expand when macro} -body {
+    pxp "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
+
+::tcltest::test eval-9.3 {conditional: run when macro} -body {
+    pep "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "0\n"
+
 ::tcltest::test eval-10.0 {expand local defines} -body {
-    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
 ::tcltest::test eval-10.1 {run local defines} -body {
-    set x [::constcl::parse "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::eval [::constcl::resolve-local-defines $x]]
 } -output "49\n"
 
 ::tcltest::test eval-10.2 {expand local defines w/o defines} -body {
-    set x [::constcl::parse "((set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test eval-10.3 {expand local defines with begin} -body {
-    set x [::constcl::parse "(begin (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "(begin (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test eval-10.4 {expand local defines with proc definition} -body {
-    set x [::constcl::parse "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    set x [::constcl::parse [::constcl::IB new "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]]
     ::constcl::write [::constcl::resolve-local-defines $x]
 } -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
 

@@ -38,6 +38,7 @@ oo::class create ::constcl::Pair {
         ::constcl::write-pair [self]
         puts -nonewline ")"
     }
+    method display {} { [my write] }
     method show {} {format "(%s)" [::constcl::show-pair [self]]}
 }
 

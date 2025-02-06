@@ -76,6 +76,7 @@ oo::class create ::constcl::String {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {} { puts -nonewline "\"[my value]\"" }
+    method display {} { puts -nonewline [my value] }
     method show {} {format "\"[my value]\""}
 }
 

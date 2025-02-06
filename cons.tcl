@@ -203,6 +203,10 @@ TT(
     pep "(f)"
 } -output "400\n"
 
+::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
+    pxp "(define (f) (define r 20) (* r r))"
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
 ::tcltest::test cons-9.0 {symbol?} -body {
     pep "(symbol? (quote foo99))"
 } -output "#t\n"

@@ -30,15 +30,29 @@ proc ::reg {key args} {
 }
 
 proc ::pep {str} {
-    ::constcl::write [::constcl::eval [::constcl::parse $str]]
+    ::constcl::write [::constcl::eval [::constcl::parse [::constcl::IB new $str]]]
 }
 
 proc ::pp {str} {
-    ::constcl::write [::constcl::parse $str]
+    ::constcl::write [::constcl::parse [::constcl::IB new $str]]
+}
+
+proc ::prp {str} {
+    set val [::constcl::parse [::constcl::IB new $str]]
+    set op [::constcl::car $val]
+    set args [::constcl::cdr $val]
+    set env ::constcl::global_env
+    while {[$op name] in {
+        and case cond define for for/and for/list
+        for/or let or put! quasiquote unless when}} {
+            ::constcl::expand-macro $env
+    }
+    set args [::constcl::resolve-local-defines $args]
+    ::constcl::write $args
 }
 
 proc ::pxp {str} {
-    set val [::constcl::parse $str]
+    set val [::constcl::parse [::constcl::IB new $str]]
     set op [::constcl::car $val]
     set args [::constcl::cdr $val]
     ::constcl::expand-macro ::constcl::global_env
@@ -100,6 +114,7 @@ oo::class create ::constcl::NIL {
     method set-cdr! {v} {::error "PAIR expected"}
     method numval {} {::error "Not a number"}
     method write {} {puts -nonewline "()"}
+    method display {} { puts -nonewline "()" }
     method show {} {format "()"}
 }
 CB

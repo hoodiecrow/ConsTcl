@@ -14,11 +14,25 @@
       count
       (lfk (cddr lst) key (+ count 2)))))
 
-
-
 (define (list-set! lst idx val)
   (if (zero? idx)
     (set-car! lst val)
     (list-set! (cdr lst) (- idx 1) val)))
+
+(define (delete! lst key)
+  (let ((idx (list-find-key lst key)))
+    (if (< idx 0)
+      lst
+      (if (= idx 0)
+        (set! lst (cddr lst))
+        (let ((node-before (delete-seek lst (- idx 1)))
+              (node-after (delete-seek lst (+ idx 2))))
+          (set-cdr! node-before node-after))))
+    lst))
+
+(define (delete-seek lst idx)
+  (if (zero? idx)
+    lst
+    (delete-seek (cdr lst) (- idx 1))))
 
 ; vim: ft=lisp tw=80

@@ -74,6 +74,7 @@ oo::class create ::constcl::Char {
     method constant {} {return 1}
     method value {} {return $value}
     method write {} { puts -nonewline $value }
+    method display {} { puts -nonewline [my char] }
     method show {} {set value}
 }
 
