@@ -2414,6 +2414,12 @@ proc ::constcl::current-output-port {} {
     # TODO
 }
 
+proc ::constcl::make-port {portno type} {
+    set n [new-atom $portno {}]
+    set n [cons3 $type $n [expr {"ATOM_TAG | PORT_TAG"}]]
+    return $n
+}
+
 proc ::constcl::with-input-from-file {string thunk} {
     # TODO
 }
@@ -2431,12 +2437,31 @@ proc ::constcl::open-output-file {filename} {
     # TODO
 }
 
-proc ::constcl::close-input-port {port} {
-    # TODO
+proc ::constcl::close-input-port {x} {
+    ::if {[lindex $::constcl::port_no $x] < 2} {
+        error "don't close the standard input port"
+    }
+    close-port [lindex $::constcl::port_no $x]
+}
+
+proc ::constcl::close-port {port} {
+    ::if {port < 0 || port >= $::constcl::max_ports} {
+        return
+    }
+    ::if {[lindex $::constcl::ports $port] eq {}} {
+        lset $::constcl::port_flags $port 0
+        return
+    }
+    close [lindex $::constcl::ports $port]
+    lset $::constcl::ports $port {}
+    lset $::constcl::port_flags $port 0
 }
 
 proc ::constcl::close-output-port {port} {
-    # TODO
+    ::if {[lindex $::constcl::port_no $x] < 2} {
+        error "don't close the standard output port"
+    }
+    close-port [lindex $::constcl::port_no $x]
 }
 
 
@@ -3746,6 +3771,25 @@ if no {
 > (del! plist 'd)
 (g 7 f 6 a 1 b 2 c 9 e 5)
 
+
+
+> (define alist (list (cons 'a 1) (cons 'b 2) (cons 'c 3) (cons 'd 4)))
+> alist
+((a . 1) (b . 2) (c . 3) (d . 4))
+
+
+> (assq 'a alist)
+(a . 1)
+> (cdr (assq 'a alist))
+1
+> (assq 'x alist)
+#f
+
+
+> (get-alist 'a)
+1
+> (get-alist 'x)
+#f
 
 }
 

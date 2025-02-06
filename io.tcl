@@ -42,6 +42,14 @@ proc ::constcl::current-output-port {} {
 CB
 
 CB
+proc ::constcl::make-port {portno type} {
+    set n [new-atom $portno {}]
+    set n [cons3 $type $n [expr {"ATOM_TAG | PORT_TAG"}]]
+    return $n
+}
+CB
+
+CB
 proc ::constcl::with-input-from-file {string thunk} {
     # TODO
 }
@@ -67,14 +75,35 @@ proc ::constcl::open-output-file {filename} {
 CB
 
 CB
-proc ::constcl::close-input-port {port} {
-    # TODO
+proc ::constcl::close-input-port {x} {
+    ::if {[lindex $::constcl::port_no $x] < 2} {
+        error "don't close the standard input port"
+    }
+    close-port [lindex $::constcl::port_no $x]
+}
+CB
+
+CB
+proc ::constcl::close-port {port} {
+    ::if {port < 0 || port >= $::constcl::max_ports} {
+        return
+    }
+    ::if {[lindex $::constcl::ports $port] eq {}} {
+        lset $::constcl::port_flags $port 0
+        return
+    }
+    close [lindex $::constcl::ports $port]
+    lset $::constcl::ports $port {}
+    lset $::constcl::port_flags $port 0
 }
 CB
 
 CB
 proc ::constcl::close-output-port {port} {
-    # TODO
+    ::if {[lindex $::constcl::port_no $x] < 2} {
+        error "don't close the standard output port"
+    }
+    close-port [lindex $::constcl::port_no $x]
 }
 CB
 

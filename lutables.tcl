@@ -105,6 +105,42 @@ TT(
 } -output "(a 1 b 2)\n(b 2 c 3)\n(a 1 c 3)\n(a 1 b 2 c 3)\n"
 TT)
 
+MD(
+An alist is a list where the items are pairs, with the key as the `car` and the
+value as the `cdr`. Example:
+MD)
+
+CB
+> (define alist (list (cons 'a 1) (cons 'b 2) (cons 'c 3) (cons 'd 4)))
+> alist
+((a . 1) (b . 2) (c . 3) (d . 4))
+CB
+
+MD(
+The procedure `assq` retrieves one pair based on the key:
+MD)
+
+CB
+> (assq 'a alist)
+(a . 1)
+> (cdr (assq 'a alist))
+1
+> (assq 'x alist)
+#f
+CB
+
+MD(
+As an alternative, the `get-alist` procedure fetches the value directly, or #f
+for a missing item:
+MD)
+
+CB
+> (get-alist 'a)
+1
+> (get-alist 'x)
+#f
+CB
+
 }
 
 # vim: ft=tcl tw=80

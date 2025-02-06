@@ -35,4 +35,10 @@
     lst
     (delete-seek (cdr lst) (- idx 1))))
 
+(define (get-alist lst key)
+  (let ((item (assq key lst)))
+    (if item
+      (cdr item)
+      #f)))
+
 ; vim: ft=lisp tw=80
