@@ -167,6 +167,8 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
+    method write {} {puts -nonewline "."}
+    method display {} { puts -nonewline "." }
 }
 
 proc ::constcl::dot? {obj} {
@@ -201,6 +203,17 @@ oo::class create ::constcl::Undefined {
 }
 ```
 
+The `EndOfFile` class is for end-of-file conditions.
+
+```
+catch { ::constcl::EndOfFile destroy }
+
+oo::class create ::constcl::EndOfFile {
+    method mkconstant {} {}
+    method write {} {puts -nonewline #<eof>}
+}
+```
+
 `error` is used to signal an error, with _msg_ being a message string and the
 optional arguments being values to show after the message.
 
@@ -225,6 +238,39 @@ proc ::constcl::error {msg args} {
     ::error $msg
 }
 ```
+
+## S9fES
+
+I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+I've already mixed this up with my own stuff.
+
+```
+proc ::constcl::new-atom {pa pd} {
+    cons3 $pa $pd $::constcl::ATOM_TAG
+}
+```
+
+```
+proc cons3 {pcar pcdr ptag} {
+    # TODO counters
+    set n [MkPair $pcar $pcdr]
+    $n settag $ptag
+    return $n
+}
+```
+
+proc ::constcl::xread {} {
+    ::if {[$::constcl::InputPort handle] eq "#NIL"} {
+        error "input port is not open"
+    }
+    set ::constcl::Level 0
+    return [read-form 0]
+}
+
+proc ::constcl::read_c_ci {} {
+    return [tolower [::read [$::constcl::Input_port handle] 1]]
+}
 
 
 ## read
@@ -313,6 +359,8 @@ which is the internal representation of an expression.  The object can then be
 passed to the evaluator.
 
 
+### parse
+
 **parse**
 
 Given a string, `parse` fills the input buffer. It then parses the input and
@@ -366,20 +414,6 @@ proc ::constcl::parse {inp} {
     } else {
         set ib [IB new $inp]
     }
-    return [parse-expression]
-}
-```
-
-**read**
-
-The standard builtin `read` parses input into a Lisp expression.
-
-<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>ib</td><td>an input buffer</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-reg read ::constcl::read
-
-proc ::constcl::read {ib} {
     return [parse-expression]
 }
 ```
@@ -644,7 +678,7 @@ value representations.
 
 ```
 proc ::constcl::interspace {c} {
-    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+    ::if {$c eq "#EOF" || [::string is space -strict $c] || $c eq ";"} {
         return #t
     } else {
         return #f
@@ -756,6 +790,426 @@ proc ::constcl::parse-vector-expression {} {
 }
 ```
 
+
+### read
+
+**read**
+
+The standard builtin `read` reads and parses input into a Lisp expression in a
+similar manner to how `parse` parses a string buffer.
+
+<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+reg read ::constcl::read
+
+proc ::constcl::read {args} {
+    set c {}
+    set unget {}
+    ::if {[llength $args]} {
+        lassign $args port
+    } else {
+        set port $::constcl::Input_port
+    }
+    set oldport $::constcl::Input_port
+    set ::constcl::Input_port $port
+    set expr [read-expression]
+    set ::constcl::Input_port $oldport
+    return $expr
+}
+```
+
+**read-expression**
+
+The procedure `read-expression` parses input by reading the first available
+character and delegating to one of the more detailed reading procedures based on
+that, producing an expression of any kind.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::read-expression {args} {
+    upvar c c unget unget
+    ::if {[llength $args]} {
+        set c $char
+    } else {
+        set c [readc]
+    }
+    read-eof $c
+    ::if {[::string is space $c] || $c eq ";"} {
+        set c [skip-ws $c]
+        read-eof $c
+    }
+    switch -regexp $c {
+        {^$}          { return #NONE}
+        {\"}          { set n [read-string-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\#}          { set n [read-sharp]                   ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\'}          { set n [read-quoted-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\(}          { set n [read-pair-expression ")"]     ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\+} - {\-}   { set n [read-plus-minus $c]           ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\,}          { set n [read-unquoted-expression]     ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\.}          { set n [Dot new]                      ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\[}          { set n [read-pair-expression "\]"]    ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\`}          { set n [read-quasiquoted-expression]  ; set c [skip-ws $c]; read-eof $n; return $n }
+        {\d}          { set n [read-number-expression $c]    ; set c [skip-ws $c]; read-eof $n; return $n }
+        {[[:graph:]]} { error "character $c" ; set n [read-identifier-expression $c]; set c [skip-ws $c]; read-eof $n; return $n }
+        default {
+            read-eof $c
+            ::error "unexpected character ($c)"
+        }
+    }
+}
+```
+
+
+```
+proc readc {} {
+    upvar unget unget
+    ::if {$unget ne {}} {
+        set c $unget
+        set unget {}
+    } else {
+        set c [::read [$::constcl::Input_port handle] 1]
+        ::if {[eof [$::constcl::Input_port handle]]} {
+            return #EOF
+        }
+    }
+    return $c
+}
+
+proc skip-ws {char} {
+    upvar unget unget
+    while true {
+        switch -regexp $char {
+            {[[:space:]]} {
+                set char [readc]
+            }
+            {;} {
+                while {$char ne "\n" && $char ne "#EOF"}  {
+                    set char [readc]
+                }
+            }
+            default {
+                read-eof $char
+                set unget $char
+            }
+        }
+    }
+}
+
+proc read-eof {args} {
+    foreach val $args {
+        ::if {$val eq "#EOF"} {
+            return -level 1 -code return #EOF
+        }
+    }
+}
+```
+
+**read-string-expression**
+
+`read-string-expression` parses input starting with a double quote and collects
+characters until it reaches another (unescaped) double quote. It then returns a
+string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+
+<table border=1><thead><tr><th colspan=2 align="left">read-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
+proc ::constcl::read-string-expression {} {
+    upvar c c unget unget
+    set str {}
+    set c [readc]
+    read-eof $c
+    while {$c ne "\"" && $c ne "#EOF"} {
+        ::if {$c eq "\\"} {
+            set c [readc]
+            read-eof $c
+        }
+        ::append str $c
+error strfoo
+        set c [readc]
+        read-eof $c
+    }
+    ::if {$c ne "\""} {
+        ::error "malformed string (no ending double quote)"
+    }
+    set expr [MkString $str]
+    $expr mkconstant
+    return $expr
+}
+```
+
+**read-sharp**
+
+`read-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
+expressions whose external representation begins with a sharp sign.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value</td></tr></table>
+
+```
+proc ::constcl::read-sharp {} {
+    upvar c c unget unget
+    set c [readc]
+    read-eof $c
+    switch $c {
+        (    { return [read-vector-expression] }
+        t    { return #t }
+        f    { return #f }
+        "\\" { return [read-character-expression] }
+        default {
+            read-eof $c
+            ::error "Illegal #-literal: #$c"
+        }
+    }
+}
+```
+
+**read-vector-expression**
+
+`read-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-vector-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::read-vector-expression {} {
+    upvar c c unget unget
+    set c [readc]
+    read-eof $c
+    set c [skip-ws $c]
+    read-eof $c
+    set res {}
+    while {$c ne "#EOF" && $c ne ")"} {
+        lappend res [read-expression]
+        set c [skip-ws $c]
+        read-eof $c
+    }
+error foo
+    set expr [MkVector $res]
+    $expr mkconstant
+    ::if {$c ne ")"} {
+        ::error "Missing right parenthesis (first=$c)."
+    }
+    set c [readc]
+    return $expr
+}
+```
+
+**read-character-expression**
+
+`read-character-expression` parses input, producing a character and returning
+a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-character-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
+```
+proc ::constcl::read-character-expression {} {
+    upvar c c unget unget
+    set name "#"
+    while {[interspace $c] ne "#t" && $c ni {) ]}} {
+        ::append name $c
+        set c [readc]
+        read-eof $c
+    }
+    check {character-check $name} {Invalid character constant $name}
+    set expr [MkChar $name]
+    return $expr
+}
+```
+
+**read-quoted-expression**
+
+`read-quoted-expression` parses input starting with a "'", and then parses an entire
+expression beyond that, returning it wrapped in a list with `quote`.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-quoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quote symbol</td></tr></table>
+
+```
+proc ::constcl::read-quoted-expression {} {
+    upvar c c unget unget
+    set expr [read-expression]
+    read-eof $expr
+    make-constant $expr
+    return [list #Q $expr]
+}
+```
+
+**read-pair-expression**
+
+The `read-pair-expression` procedure parses input and produces a structure of
+[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
+
+```
+proc ::constcl::read-pair-expression {char} {
+    upvar c c unget unget
+    set c [readc]
+    read-eof $c
+    set c [skip-ws $c]
+    read-eof $c
+    set expr [read-pair $char]
+    set c [skip-ws $c]
+    read-eof $c
+    ::if {$c ne $char} {
+        ::if {$char eq ")"} {
+            ::error "Missing right parenthesis (first=$c)."
+        } else {
+            ::error "Missing right bracket (first=$c)."
+        }
+    }
+    return $expr
+}
+
+proc ::constcl::read-pair {char} {
+    upvar c c unget unget
+    ::if {[read-find $char]} {
+        return #NIL
+    }
+    set c [skip-ws $c]
+    read-eof $c
+    set a [read-expression]
+    set c [skip-ws $c]
+    read-eof $c
+    set res $a
+    set prev #NIL
+    while {![read-find $char]} {
+        set x [read-expression]
+        set c [skip-ws $c]
+        read-eof $c
+        ::if {[dot? $x] ne "#f"} {
+            set prev [read-expression]
+            set c [skip-ws $c]
+            read-eof $c
+        } else {
+            lappend res $x
+        }
+        ::if {[llength $res] > 999} break
+    }
+    foreach r [lreverse $res] {
+        set prev [cons $r $prev]
+    }
+    return $prev
+}
+```
+
+**read-plus-minus**
+
+`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+returns a `+` or `-` symbol, or a number.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number</td></tr></table>
+
+```
+proc ::constcl::read-plus-minus {char} {
+    upvar c c unget unget
+    set c [readc]
+    read-eof $c
+    ::if {[::string is digit -strict $c]} {
+        set n [read-number-expression $c]
+        set c [skip-ws $c]
+        read-eof $c $n
+        return $n
+    } else {
+        ::if {$char eq "+"} {
+            return [MkSymbol "+"]
+        } else {
+            return [MkSymbol "-"]
+        }
+    }
+}
+```
+
+**read-number-expression**
+
+`read-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-number-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
+proc ::constcl::read-number-expression {args} {
+    upvar c c unget unget
+    ::if {[llength $args]} {
+        set c $char
+    } else {
+        set c [readc]
+    }
+    read-eof $c
+    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+        ::append num $c
+        set c [readc]
+    }
+    set unget $c
+    check {::string is double -strict $num} {Invalid numeric constant $num}
+    return [MkNumber $num]
+}
+```
+
+**read-unquoted-expression**
+
+`read-unquoted-expression` parses input, producing an expression and returning
+it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
+the input stream.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-unquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the unquote/-splicing symbol</td></tr></table>
+
+```
+proc ::constcl::read-unquoted-expression {} {
+    upvar c c unget unget
+    set c [readc]
+    read-eof $c
+    ::if {$c eq "@"} {
+        set symbol "unquote-splicing"
+        set expr [read-expression]
+    } else {
+        set symbol "unquote"
+        set expr [read-expression $c]
+    }
+    read-eof $expr
+    return [list [MkSymbol $symbol] $expr]
+}
+```
+
+**read-quasiquoted-expression**
+
+`read-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-quasiquoted-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quasiquote symbol</td></tr></table>
+
+```
+proc ::constcl::read-quasiquoted-expression {} {
+    upvar c c unget unget
+    set expr [read-expression]
+    set c [skip-ws $c]
+    read-eof $expr
+    make-constant $expr
+    return [list [MkSymbol "quasiquote"] $expr]
+}
+```
+
+**read-identifier-expression**
+
+`read-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-identifier-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
+```
+proc ::constcl::read-identifier-expression {args} {
+    upvar c c unget unget
+    ::if {[llength $args]} {
+        set c [lindex $args 0]
+    } else {
+        set c [readc]
+    }
+    read-eof $c
+    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+        ::append name $c
+        set c [readc]
+    }
+    set unget $c
+    # idcheck throws error if invalid identifier
+    return [MkSymbol [idcheck $name]]
+}
+```
 
 
 ## eval
@@ -3471,7 +3925,74 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 ### Input and output
 
-I may never get around to implementing these.
+I may never get around to implementing these. Or I might.
+
+```
+set ::constcl::Ports [list]
+set ::constcl::MAX_PORTS 32
+for {set i 0} {$i < $::constcl::MAX_PORTS} {incr i} {
+    lset ::constcl::Ports $i #NIL
+}
+
+oo::class create Port {
+    variable handle
+    constructor {args} {
+        if {[llength $args]} {
+            lassign $args handle
+        } else {
+            set handle #NIL
+        }
+    }
+    method handle {} {set handle}
+    method close {} {
+        close $handle
+        set handle #NIL
+    }
+}
+
+oo::class create InputPort {
+    superclass Port
+    variable handle
+    method open {name} {
+        try {
+            set handle [open $name "r"]
+        } on error {} {
+            set handle #NIL
+            return -1
+        }
+    }
+}
+
+oo::class create OutputPort {
+    superclass Port
+    variable handle
+    method open {name} {
+        try {
+            set handle [open $name "w"]
+        } on error {} {
+            set handle #NIL
+            return -1
+        }
+    }
+}
+
+interp alias {} ::constcl::MkInputPort {} InputPort new
+interp alias {} ::constcl::MkOutputPort {} OutputPort new
+
+set ::constcl::Input_port [::constcl::MkInputPort stdin]
+set ::constcl::Output_port [::constcl::MkOutputPort stdout]
+set ::constcl::END_OF_FILE -4
+
+proc ::constcl::port? {val} {
+    ::if {[info object isa typeof $val ::constcl::Port]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Port]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+```
 
 ```
 proc ::constcl::call-with-input-file {string proc} {
@@ -3487,33 +4008,38 @@ proc ::constcl::call-with-output-file {string proc} {
 
 ```
 proc ::constcl::input-port? {obj} {
-    # TODO
+    ::if {[info object isa typeof $val ::constcl::InputPort]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::InputPort]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 ```
 
 ```
 proc ::constcl::output-port? {obj} {
-    # TODO
+    ::if {[info object isa typeof $val ::constcl::OutputPort]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::OutputPort]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 ```
 
 ```
 proc ::constcl::current-input-port {} {
-    # TODO
+    return $::constcl::Input_port
 }
 ```
 
 ```
 proc ::constcl::current-output-port {} {
+    return $::constcl::Output_port
     # TODO
-}
-```
-
-```
-proc ::constcl::make-port {portno type} {
-    set n [new-atom $portno {}]
-    set n [cons3 $type $n [expr {"ATOM_TAG | PORT_TAG"}]]
-    return $n
 }
 ```
 
@@ -3532,51 +4058,61 @@ proc ::constcl::with-output-to-file {string thunk} {
 
 ```
 proc ::constcl::open-input-file {filename} {
-    # TODO
+    set p [MkInputPort]
+    $p open $filename
+    ::if {[$p handle] eq "#NIL"} {
+        error "open-input-file: could not open file $filename"
+    }
+    return $p
 }
 ```
 
 ```
 proc ::constcl::open-output-file {filename} {
-    # TODO
+    ::if {[file exists $filename]} {
+        error "open-output-file: file already exists $filename"
+    }
+    set p MkOutputPort]
+    $p open $filename
+    ::if {[$p handle] eq "#NIL"} {
+        error "open-output-file: could not open file $filename"
+    }
+    return $p
 }
 ```
 
 ```
-proc ::constcl::close-input-port {x} {
-    ::if {[lindex $::constcl::port_no $x] < 2} {
+proc ::constcl::close-input-port {port} {
+    ::if {[$port handle] eq "stdin"} {
         error "don't close the standard input port"
     }
-    close-port [lindex $::constcl::port_no $x]
-}
-```
-
-```
-proc ::constcl::close-port {port} {
-    ::if {port < 0 || port >= $::constcl::max_ports} {
-        return
-    }
-    ::if {[lindex $::constcl::ports $port] eq {}} {
-        lset $::constcl::port_flags $port 0
-        return
-    }
-    close [lindex $::constcl::ports $port]
-    lset $::constcl::ports $port {}
-    lset $::constcl::port_flags $port 0
+    $port close
 }
 ```
 
 ```
 proc ::constcl::close-output-port {port} {
-    ::if {[lindex $::constcl::port_no $x] < 2} {
+    ::if {[$port handle] eq "stdout"} {
         error "don't close the standard output port"
     }
-    close-port [lindex $::constcl::port_no $x]
+    $port close
 }
 ```
 
 `read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
 
+proc ::constcl::__read {args} {
+    ::if {[llength $args]} {
+        set new_port [lindex $args 0]
+    } else {
+        set new_port $::constcl::Input_port
+    }
+    set old_port $::constcl::Input_port
+    set ::constcl::Input_port $new_port
+    set n [xread]
+    set ::constcl::Input_port $old_port
+    return $n
+}
 ```
 proc ::constcl::read-char {args} {
     # TODO
@@ -3614,12 +4150,42 @@ proc ::constcl::write-char {args} {
 ```
 
 ```
+proc ::constcl::__load {filename} {
+    set new_port [MkInputPort]
+    $new_port open $filename
+    if {[$new_port handle] eq "#NIL"} {
+        return -1
+    }
+    set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
+    set save_env $env
+    set env ::constcl::global_env
+    set outer_loading [$::constcl::S_loading cdr]
+    set-cdr! ::constcl::S_loading #t
+    set old_port $::constcl::Input_port
+    set outer_lno $::constcl::Line_no
+    set ::constcl::Line_no 1
+    while true {
+        set ::constcl::Input_port $new_port
+        set n [xread]
+        set ::constcl::Input_port $old_port
+        ::if {$n == $::constcl::END_OF_FILE} {
+            break
+        }
+        set n [eval $n $env]
+    }
+    $new_port close
+    set $::constcl::Line_no $outer_lno
+    set-cdr! ::constcl::S_loading $outer_loading
+    set ::constcl::File_list [cdr $::constcl::File_list]
+    set env $save_env
+    return 0
+}
+
 proc ::constcl::load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
     set ib [::constcl::IB new $src]
-    eval [parse $ib]
     while {[$ib first] ne {}} {
         eval [parse $ib]
     }
@@ -5276,6 +5842,8 @@ interp alias {} #UNSP {} [::constcl::Unspecific new]
 
 interp alias {} #UNDF {} [::constcl::Undefined new]
 
+interp alias {} #EOF {} [::constcl::EndOfFile new]
+
 ```
 
 Initialize the definition register with the queen of numbers (or at least
@@ -5301,7 +5869,9 @@ reg nil #NIL
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f"} {
+    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" ||
+        [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" ||
+        [port? $val] ne "#f"} {
         return #t
     } else {
         return #f

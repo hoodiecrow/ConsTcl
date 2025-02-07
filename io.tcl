@@ -2,8 +2,75 @@
 MD(
 ### Input and output
 
-I may never get around to implementing these.
+I may never get around to implementing these. Or I might.
 MD)
+
+CB
+set ::constcl::Ports [list]
+set ::constcl::MAX_PORTS 32
+for {set i 0} {$i < $::constcl::MAX_PORTS} {incr i} {
+    lset ::constcl::Ports $i #NIL
+}
+
+oo::class create Port {
+    variable handle
+    constructor {args} {
+        if {[llength $args]} {
+            lassign $args handle
+        } else {
+            set handle #NIL
+        }
+    }
+    method handle {} {set handle}
+    method close {} {
+        close $handle
+        set handle #NIL
+    }
+}
+
+oo::class create InputPort {
+    superclass Port
+    variable handle
+    method open {name} {
+        try {
+            set handle [open $name "r"]
+        } on error {} {
+            set handle #NIL
+            return -1
+        }
+    }
+}
+
+oo::class create OutputPort {
+    superclass Port
+    variable handle
+    method open {name} {
+        try {
+            set handle [open $name "w"]
+        } on error {} {
+            set handle #NIL
+            return -1
+        }
+    }
+}
+
+interp alias {} ::constcl::MkInputPort {} InputPort new
+interp alias {} ::constcl::MkOutputPort {} OutputPort new
+
+set ::constcl::Input_port [::constcl::MkInputPort stdin]
+set ::constcl::Output_port [::constcl::MkOutputPort stdout]
+set ::constcl::END_OF_FILE -4
+
+proc ::constcl::port? {val} {
+    ::if {[info object isa typeof $val ::constcl::Port]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Port]} {
+        return #t
+    } else {
+        return #f
+    }
+}
+CB
 
 CB
 proc ::constcl::call-with-input-file {string proc} {
@@ -19,33 +86,38 @@ CB
 
 CB
 proc ::constcl::input-port? {obj} {
-    # TODO
+    ::if {[info object isa typeof $val ::constcl::InputPort]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::InputPort]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 CB
 
 CB
 proc ::constcl::output-port? {obj} {
-    # TODO
+    ::if {[info object isa typeof $val ::constcl::OutputPort]} {
+        return #t
+    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::OutputPort]} {
+        return #t
+    } else {
+        return #f
+    }
 }
 CB
 
 CB
 proc ::constcl::current-input-port {} {
-    # TODO
+    return $::constcl::Input_port
 }
 CB
 
 CB
 proc ::constcl::current-output-port {} {
+    return $::constcl::Output_port
     # TODO
-}
-CB
-
-CB
-proc ::constcl::make-port {portno type} {
-    set n [new-atom $portno {}]
-    set n [cons3 $type $n [expr {"ATOM_TAG | PORT_TAG"}]]
-    return $n
 }
 CB
 
@@ -64,46 +136,44 @@ CB
 
 CB
 proc ::constcl::open-input-file {filename} {
-    # TODO
+    set p [MkInputPort]
+    $p open $filename
+    ::if {[$p handle] eq "#NIL"} {
+        error "open-input-file: could not open file $filename"
+    }
+    return $p
 }
 CB
 
 CB
 proc ::constcl::open-output-file {filename} {
-    # TODO
+    ::if {[file exists $filename]} {
+        error "open-output-file: file already exists $filename"
+    }
+    set p MkOutputPort]
+    $p open $filename
+    ::if {[$p handle] eq "#NIL"} {
+        error "open-output-file: could not open file $filename"
+    }
+    return $p
 }
 CB
 
 CB
-proc ::constcl::close-input-port {x} {
-    ::if {[lindex $::constcl::port_no $x] < 2} {
+proc ::constcl::close-input-port {port} {
+    ::if {[$port handle] eq "stdin"} {
         error "don't close the standard input port"
     }
-    close-port [lindex $::constcl::port_no $x]
-}
-CB
-
-CB
-proc ::constcl::close-port {port} {
-    ::if {port < 0 || port >= $::constcl::max_ports} {
-        return
-    }
-    ::if {[lindex $::constcl::ports $port] eq {}} {
-        lset $::constcl::port_flags $port 0
-        return
-    }
-    close [lindex $::constcl::ports $port]
-    lset $::constcl::ports $port {}
-    lset $::constcl::port_flags $port 0
+    $port close
 }
 CB
 
 CB
 proc ::constcl::close-output-port {port} {
-    ::if {[lindex $::constcl::port_no $x] < 2} {
+    ::if {[$port handle] eq "stdout"} {
         error "don't close the standard output port"
     }
-    close-port [lindex $::constcl::port_no $x]
+    $port close
 }
 CB
 
@@ -111,6 +181,18 @@ MD(
 `read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
 MD)
 
+proc ::constcl::__read {args} {
+    ::if {[llength $args]} {
+        set new_port [lindex $args 0]
+    } else {
+        set new_port $::constcl::Input_port
+    }
+    set old_port $::constcl::Input_port
+    set ::constcl::Input_port $new_port
+    set n [xread]
+    set ::constcl::Input_port $old_port
+    return $n
+}
 CB
 proc ::constcl::read-char {args} {
     # TODO
@@ -152,12 +234,42 @@ proc ::constcl::write-char {args} {
 CB
 
 CB
+proc ::constcl::__load {filename} {
+    set new_port [MkInputPort]
+    $new_port open $filename
+    if {[$new_port handle] eq "#NIL"} {
+        return -1
+    }
+    set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
+    set save_env $env
+    set env ::constcl::global_env
+    set outer_loading [$::constcl::S_loading cdr]
+    set-cdr! ::constcl::S_loading #t
+    set old_port $::constcl::Input_port
+    set outer_lno $::constcl::Line_no
+    set ::constcl::Line_no 1
+    while true {
+        set ::constcl::Input_port $new_port
+        set n [xread]
+        set ::constcl::Input_port $old_port
+        ::if {$n == $::constcl::END_OF_FILE} {
+            break
+        }
+        set n [eval $n $env]
+    }
+    $new_port close
+    set $::constcl::Line_no $outer_lno
+    set-cdr! ::constcl::S_loading $outer_loading
+    set ::constcl::File_list [cdr $::constcl::File_list]
+    set env $save_env
+    return 0
+}
+
 proc ::constcl::load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
     set ib [::constcl::IB new $src]
-    eval [parse $ib]
     while {[$ib first] ne {}} {
         eval [parse $ib]
     }

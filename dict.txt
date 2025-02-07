@@ -84,4 +84,8 @@ bsym      -> a bound symbol
 bsyms     -> some bound symbols
 lbsyms    -> a Lisp list of bound symbols
 tbsyms    -> a Tcl list of bound symbols
+port      -> a port
+ports     -> some ports
+lports    -> a Lisp list of ports
+tports    -> a Tcl list of ports
 

@@ -1,0 +1,35 @@
+MD(
+## S9fES
+
+I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+I've already mixed this up with my own stuff.
+MD)
+
+CB
+proc ::constcl::new-atom {pa pd} {
+    cons3 $pa $pd $::constcl::ATOM_TAG
+}
+CB
+
+CB
+proc cons3 {pcar pcdr ptag} {
+    # TODO counters
+    set n [MkPair $pcar $pcdr]
+    $n settag $ptag
+    return $n
+}
+CB
+
+proc ::constcl::xread {} {
+    ::if {[$::constcl::InputPort handle] eq "#NIL"} {
+        error "input port is not open"
+    }
+    set ::constcl::Level 0
+    return [read-form 0]
+}
+
+proc ::constcl::read_c_ci {} {
+    return [tolower [::read [$::constcl::Input_port handle] 1]]
+}
+

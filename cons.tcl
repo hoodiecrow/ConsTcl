@@ -67,6 +67,8 @@ interp alias {} #UNSP {} [::constcl::Unspecific new]
 
 interp alias {} #UNDF {} [::constcl::Undefined new]
 
+interp alias {} #EOF {} [::constcl::EndOfFile new]
+
 CB
 
 MD(
@@ -100,7 +102,9 @@ CB
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f"} {
+    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" ||
+        [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" ||
+        [port? $val] ne "#f"} {
         return #t
     } else {
         return #f

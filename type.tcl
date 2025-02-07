@@ -158,6 +158,8 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
+    method write {} {puts -nonewline "."}
+    method display {} { puts -nonewline "." }
 }
 
 proc ::constcl::dot? {obj} {
@@ -193,6 +195,19 @@ catch { ::constcl::Undefined destroy }
 oo::class create ::constcl::Undefined {
     method mkconstant {} {}
     method write {} {puts -nonewline #<undefined>}
+}
+CB
+
+MD(
+The `EndOfFile` class is for end-of-file conditions.
+MD)
+
+CB
+catch { ::constcl::EndOfFile destroy }
+
+oo::class create ::constcl::EndOfFile {
+    method mkconstant {} {}
+    method write {} {puts -nonewline #<eof>}
 }
 CB
 
