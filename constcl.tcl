@@ -556,9 +556,7 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
-set p [open-output-file foo[clock microseconds].txt]
     set expr [read-expression]
-close-output-port $p; 
     set ::constcl::Input_port $oldport
     ::if {$unget ne "#EOF"} {
         set ::constcl::global_unget $unget
@@ -569,19 +567,16 @@ close-output-port $p;
 
 
 proc ::constcl::read-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
-write [MkString "Beginning an expression, args='$c'"] $p
     } else {
         set c [readc]
-write [MkString "Beginning an expression, c='$c'"] $p
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
     }
     switch -regexp $c {
         {^$}          { return #NONE}
@@ -591,7 +586,7 @@ write [MkString "Skipped ws, c='$c'"] $p
         {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\.}          { set n [Dot new]                      ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
@@ -602,6 +597,8 @@ write [MkString "Skipped ws, c='$c'"] $p
         }
     }
 }
+
+
 
 
 proc readc {} {
@@ -618,6 +615,8 @@ proc readc {} {
     return $c
 }
 
+
+
 proc read-find {char} {
     upvar c c unget unget
     while {[::string is space -strict $c]} {
@@ -627,6 +626,8 @@ proc read-find {char} {
     set unget $c
     return [expr {$c eq $char}]
 }
+
+
 
 proc skip-ws {char} {
     upvar unget unget
@@ -650,6 +651,8 @@ proc skip-ws {char} {
     }
 }
 
+
+
 proc read-eof {args} {
     foreach val $args {
         ::if {$val eq "#EOF"} {
@@ -661,7 +664,7 @@ proc read-eof {args} {
 
 
 proc ::constcl::read-string-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set str {}
     set c [readc]
     read-eof $c
@@ -684,7 +687,7 @@ proc ::constcl::read-string-expression {} {
 
 
 proc ::constcl::read-sharp {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     switch $c {
@@ -702,7 +705,7 @@ proc ::constcl::read-sharp {} {
 
 
 proc ::constcl::read-vector-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set res {}
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
@@ -722,7 +725,7 @@ proc ::constcl::read-vector-expression {} {
 
 
 proc ::constcl::read-character-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set name "#\\"
     set c [readc]
     read-eof $c
@@ -739,7 +742,7 @@ proc ::constcl::read-character-expression {} {
 
 
 proc ::constcl::read-quoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     read-eof $expr
     make-constant $expr
@@ -749,12 +752,10 @@ proc ::constcl::read-quoted-expression {} {
 
 
 proc ::constcl::read-pair-expression {char} {
-    upvar c c unget unget p p
-write [MkString "Beginning a pair expression, c='$c', char='$char'"] $p
+    upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    read-eof $c
-write [MkString "Skipped ws, c='$c', is it = $char?"] $p
+    #read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
@@ -762,48 +763,38 @@ write [MkString "Skipped ws, c='$c', is it = $char?"] $p
             ::error "Missing right bracket (first=$c)."
         }
     } else {
-        while {$c eq $char} {
-            set c [readc]
-        }
-write [MkString "Consumed $char, c='$c'"] $p
+        set unget {}
+        set c [readc]
     }
     return $expr
 }
 
 proc ::constcl::read-pair {char} {
-    upvar c c unget unget p p
-write [MkString "Inside pair reader, c='$c', char='$char'"] $p
+    upvar c c unget unget
     ::if {[read-find $char]} {
         # read right paren/brack
         set c [readc]
-write [MkString "Found $char, c='$c'"] $p
         return #NIL
     }
     set c [readc]
     read-eof $c
     set a [read-expression]
     set res $a
-write [MkString "Read car, c='$c'"] $p
     set c [skip-ws $c]
-write [MkString "Skipped ws, c='$c'"] $p
     set prev #NIL
     while {![read-find $char]} {
         set x [read-expression]
-write [MkString "Read next in chain, c='$c'"] $p
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         ::if {[dot? $x] ne "#f"} {
             set prev [read-expression]
             set c [skip-ws $c]
             read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         } else {
             lappend res $x
         }
         ::if {[llength $res] > 999} break
     }
-write [MkString "Found $char, c='$c'"] $p
     # read right paren/brack
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
@@ -814,13 +805,14 @@ write [MkString "Found $char, c='$c'"] $p
 
 
 proc ::constcl::read-plus-minus {char} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
         set n [read-number-expression $c]
-        set c [skip-ws $c]
-        read-eof $c $n
+        ::if {$char eq "-"} {
+            set n [- $n]
+        }
         return $n
     } else {
         ::if {$char eq "+"} {
@@ -834,7 +826,7 @@ proc ::constcl::read-plus-minus {char} {
 
 
 proc ::constcl::read-number-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
     } else {
@@ -853,7 +845,7 @@ proc ::constcl::read-number-expression {args} {
 
 
 proc ::constcl::read-unquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
@@ -870,7 +862,7 @@ proc ::constcl::read-unquoted-expression {} {
 
 
 proc ::constcl::read-quasiquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     set c [skip-ws $c]
     read-eof $expr
@@ -881,13 +873,11 @@ proc ::constcl::read-quasiquoted-expression {} {
 
 
 proc ::constcl::read-identifier-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         set c [lindex $args 0]
-write [MkString "$c passed to read-identifier-expression"] $p
     } else {
         set c [readc]
-write [MkString "no character passed, $c read"] $p
     }
     read-eof $c
     set name {}
@@ -899,12 +889,10 @@ write [MkString "no character passed, $c read"] $p
         set c [readc]
     }
     ::if {$c ne "#EOF"} {
-write [MkString "ungetting $c"] $p
         set unget $c
     }
     # idcheck throws error if invalid identifier
     idcheck $name
-write [MkString "name $name passed to MkSymbol"] $p
     return [MkSymbol $name]
 }
 
@@ -2793,12 +2781,6 @@ proc ::constcl::dynamic-wind {before thunk after} {
 # vim: ft=tcl tw=80
 
 
-set ::constcl::Ports [list]
-set ::constcl::MAX_PORTS 32
-for {set i 0} {$i < $::constcl::MAX_PORTS} {incr i} {
-    lset ::constcl::Ports $i #NIL
-}
-
 oo::class create Port {
     variable handle
     constructor {args} {
@@ -2891,7 +2873,6 @@ proc ::constcl::current-input-port {} {
 
 proc ::constcl::current-output-port {} {
     return $::constcl::Output_port
-    # TODO
 }
 
 proc ::constcl::with-input-from-file {string thunk} {
@@ -2955,6 +2936,7 @@ proc ::constcl::__read {args} {
     set ::constcl::Input_port $old_port
     return $n
 }
+
 proc ::constcl::read-char {args} {
     # TODO
 }
@@ -2969,15 +2951,21 @@ proc ::constcl::char-ready? {args} {
 
 
 
-reg newline ::constcl::newline
+reg newline
 
 proc ::constcl::newline {args} {
-    # TODO write newline
+    ::if {[llength $args]} {
+        lassign $args port
+    } else {
+        set port [current-output-port]
+    }
+    write #\\newline $port
 }
 
 proc ::constcl::write-char {args} {
     # TODO
 }
+
 
 proc ::constcl::__load {filename} {
     set new_port [MkInputPort]
@@ -3010,7 +2998,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::load {filename} {
+proc ::constcl::_____load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
@@ -3018,6 +3006,16 @@ proc ::constcl::load {filename} {
     while {[$ib first] ne {}} {
         eval [parse $ib]
     }
+}
+
+proc ::constcl::load {filename} {
+    set p [open-input-file $filename]
+    set n [read $p]
+    while {$n ne "#EOF"} {
+        eval $n ::constcl::global_env
+        set n [read $p]
+    }
+    close-input-port $p
 }
 
 proc ::constcl::transcript-on {filename} {

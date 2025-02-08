@@ -38,10 +38,13 @@ tnums     -> a Tcl list of numbers
 bool      -> a boolean
 bools     -> some booleans
 lbools    -> a Lisp list of booleans
+tbool     -> a Tcl truth value (1 or 0)
 tbools    -> a Tcl list of booleans
 char      -> a character
 chars     -> some characters
 lchars    -> a Lisp list of characters
+tchar     -> a Tcl character
+tchareof  -> a Tcl character or end of file
 tchars    -> a Tcl list of characters
 proc      -> a procedure
 procs     -> some procedures

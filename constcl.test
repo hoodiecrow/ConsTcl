@@ -160,93 +160,160 @@ source constcl.tcl
 
 ::tcltest::test read-1.0 {try read-expression on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
-} -constraints knownBug -body {
-    ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "\"foo bar\"\n"
 
 ::tcltest::test read-1.1 {try read-expression on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
-} -constraints knownBug -body {
-    ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -returnCodes error -result {malformed string (no ending double quote)}
 
 ::tcltest::test read-1.2 {try read-expression on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
 ::tcltest::test read-1.3 {try read-expression on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#t\n#f\n"
 
 ::tcltest::test read-1.4 {try read-expression on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#\\A\n#\\space\n"
 
 ::tcltest::test read-1.5 {try read-expression on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
 
 ::tcltest::test read-1.6 {try read-expression on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
 ::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
-    ::tcltest::makeFile {  ([d e] f)} testrr.lsp
-} -body {
+    ::tcltest::makeFile {  ([d e] f)  } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
 ::tcltest::test read-1.8 {try read-expression on pair expr} -setup {
-    ::tcltest::makeFile {  (def ghi (jkl mno) pqr)} testrr.lsp
+    ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
 } -body {
-    set p [::constcl::open-input-file testrr.lsp]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
-} -output "(def ghi (jkl mno) pqr)\n"
+} -output "(def ghi (jkl mno))\n"
 
-::tcltest::test read-1.9 {try read-expression on identifiers} -setup {
-    ::tcltest::makeFile {  foo    bar } testrr.lsp
-} -constraints knownBug -body {
+::tcltest::test read-1.9 {try read-expression on plus/minus} -setup {
+    ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+
+::tcltest::test read-1.10 {try read-expression on unquoted expr} -setup {
+    ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(unquote foo)\n(unquote-splicing bar)\n"
+
+::tcltest::test read-1.11 {try read-expression on dot expr} -setup {
+    ::tcltest::makeFile {  a . b } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "a\n.\nb\n"
+
+::tcltest::test read-1.12 {try read-expression on quasiquoted expr} -setup {
+    ::tcltest::makeFile {  `(a b) } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quasiquote (a b))\n"
+
+::tcltest::test read-1.13 {try read-expression on numeric expr} -setup {
+    ::tcltest::makeFile {  99 } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "99\n"
+
+::tcltest::test read-1.14 {try read-expression on identifiers} -setup {
+    ::tcltest::makeFile {  foo    bar } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "foo\nbar\n"
 

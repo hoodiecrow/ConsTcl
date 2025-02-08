@@ -817,9 +817,7 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
-set p [open-output-file foo[clock microseconds].txt]
     set expr [read-expression]
-close-output-port $p; 
     set ::constcl::Input_port $oldport
     ::if {$unget ne "#EOF"} {
         set ::constcl::global_unget $unget
@@ -832,25 +830,23 @@ close-output-port $p;
 
 The procedure `read-expression` parses input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
-that, producing an expression of any kind.
+that, producing an expression of any kind. A Tcl character value can be passed
+to it, that character will be used first before reading from the input stream.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::read-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
-write [MkString "Beginning an expression, args='$c'"] $p
     } else {
         set c [readc]
-write [MkString "Beginning an expression, c='$c'"] $p
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
     }
     switch -regexp $c {
         {^$}          { return #NONE}
@@ -860,7 +856,7 @@ write [MkString "Skipped ws, c='$c'"] $p
         {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\.}          { set n [Dot new]                      ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
@@ -873,6 +869,11 @@ write [MkString "Skipped ws, c='$c'"] $p
 }
 ```
 
+
+`readc` reads one character either from the unget store or from the input
+stream. If the input stream is at end-of-file, an eof object is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
 
 ```
 proc readc {} {
@@ -888,7 +889,14 @@ proc readc {} {
     }
     return $c
 }
+```
 
+`read-find` reads ahead through whitespace to find a given character. Returns 1
+if it has found the character, and 0 if it has stopped at some other character.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
 proc read-find {char} {
     upvar c c unget unget
     while {[::string is space -strict $c]} {
@@ -898,7 +906,14 @@ proc read-find {char} {
     set unget $c
     return [expr {$c eq $char}]
 }
+```
 
+`skip-ws` skips whitespace and comments (the ; to end of line kind). Expects a
+character argument to start the skipping with.
+
+<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+
+```
 proc skip-ws {char} {
     upvar unget unget
     read-eof $char
@@ -920,7 +935,14 @@ proc skip-ws {char} {
         }
     }
 }
+```
 
+`read-eof` checks a number of characters for possible end-of-file objects. If it
+finds one, it returns _from its caller_ with the EOF value.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>args</td><td>some characters</td></tr></table>
+
+```
 proc read-eof {args} {
     foreach val $args {
         ::if {$val eq "#EOF"} {
@@ -934,13 +956,14 @@ proc read-eof {args} {
 
 `read-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression (an immutable
+[String](https://github.com/hoodiecrow/ConsTcl#strings) object).
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 proc ::constcl::read-string-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set str {}
     set c [readc]
     read-eof $c
@@ -970,7 +993,7 @@ expressions whose external representation begins with a sharp sign.
 
 ```
 proc ::constcl::read-sharp {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     switch $c {
@@ -994,7 +1017,7 @@ proc ::constcl::read-sharp {} {
 
 ```
 proc ::constcl::read-vector-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set res {}
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
@@ -1021,7 +1044,7 @@ a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 ```
 proc ::constcl::read-character-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set name "#\\"
     set c [readc]
     read-eof $c
@@ -1045,7 +1068,7 @@ expression beyond that, returning it wrapped in a list with `quote`.
 
 ```
 proc ::constcl::read-quoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     read-eof $expr
     make-constant $expr
@@ -1062,12 +1085,10 @@ The `read-pair-expression` procedure parses input and produces a structure of
 
 ```
 proc ::constcl::read-pair-expression {char} {
-    upvar c c unget unget p p
-write [MkString "Beginning a pair expression, c='$c', char='$char'"] $p
+    upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    read-eof $c
-write [MkString "Skipped ws, c='$c', is it = $char?"] $p
+    #read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
@@ -1075,48 +1096,38 @@ write [MkString "Skipped ws, c='$c', is it = $char?"] $p
             ::error "Missing right bracket (first=$c)."
         }
     } else {
-        while {$c eq $char} {
-            set c [readc]
-        }
-write [MkString "Consumed $char, c='$c'"] $p
+        set unget {}
+        set c [readc]
     }
     return $expr
 }
 
 proc ::constcl::read-pair {char} {
-    upvar c c unget unget p p
-write [MkString "Inside pair reader, c='$c', char='$char'"] $p
+    upvar c c unget unget
     ::if {[read-find $char]} {
         # read right paren/brack
         set c [readc]
-write [MkString "Found $char, c='$c'"] $p
         return #NIL
     }
     set c [readc]
     read-eof $c
     set a [read-expression]
     set res $a
-write [MkString "Read car, c='$c'"] $p
     set c [skip-ws $c]
-write [MkString "Skipped ws, c='$c'"] $p
     set prev #NIL
     while {![read-find $char]} {
         set x [read-expression]
-write [MkString "Read next in chain, c='$c'"] $p
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         ::if {[dot? $x] ne "#f"} {
             set prev [read-expression]
             set c [skip-ws $c]
             read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         } else {
             lappend res $x
         }
         ::if {[llength $res] > 999} break
     }
-write [MkString "Found $char, c='$c'"] $p
     # read right paren/brack
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
@@ -1127,20 +1138,21 @@ write [MkString "Found $char, c='$c'"] $p
 
 **read-plus-minus**
 
-`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+`read-plus-minus` reacts to a plus or minus in the input stream, and either
 returns a `+` or `-` symbol, or a number.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number</td></tr></table>
 
 ```
 proc ::constcl::read-plus-minus {char} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
         set n [read-number-expression $c]
-        set c [skip-ws $c]
-        read-eof $c $n
+        ::if {$char eq "-"} {
+            set n [- $n]
+        }
         return $n
     } else {
         ::if {$char eq "+"} {
@@ -1156,11 +1168,11 @@ proc ::constcl::read-plus-minus {char} {
 
 `read-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-number-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-number-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 proc ::constcl::read-number-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
     } else {
@@ -1187,7 +1199,7 @@ the input stream.
 
 ```
 proc ::constcl::read-unquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
@@ -1210,7 +1222,7 @@ proc ::constcl::read-unquoted-expression {} {
 
 ```
 proc ::constcl::read-quasiquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     set c [skip-ws $c]
     read-eof $expr
@@ -1223,17 +1235,15 @@ proc ::constcl::read-quasiquoted-expression {} {
 
 `read-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-identifier-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-identifier-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
 ```
 proc ::constcl::read-identifier-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         set c [lindex $args 0]
-write [MkString "$c passed to read-identifier-expression"] $p
     } else {
         set c [readc]
-write [MkString "no character passed, $c read"] $p
     }
     read-eof $c
     set name {}
@@ -1245,12 +1255,10 @@ write [MkString "no character passed, $c read"] $p
         set c [readc]
     }
     ::if {$c ne "#EOF"} {
-write [MkString "ungetting $c"] $p
         set unget $c
     }
     # idcheck throws error if invalid identifier
     idcheck $name
-write [MkString "name $name passed to MkSymbol"] $p
     return [MkSymbol $name]
 }
 ```
@@ -1909,7 +1917,7 @@ proc ::constcl::expand-put! {tail env} {
 
 **expand-quasiquote**
 
-A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
+A quasi-quote isn't a macro, but we will deal with it in this section anyway. `expand-quasiquote`
 traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
 brittle and sprawling and I barely understand it myself.
 
@@ -3976,15 +3984,8 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 ### Input and output
 
-I may never get around to implementing these. Or I might.
 
 ```
-set ::constcl::Ports [list]
-set ::constcl::MAX_PORTS 32
-for {set i 0} {$i < $::constcl::MAX_PORTS} {incr i} {
-    lset ::constcl::Ports $i #NIL
-}
-
 oo::class create Port {
     variable handle
     constructor {args} {
@@ -4089,7 +4090,6 @@ proc ::constcl::current-input-port {} {
 ```
 proc ::constcl::current-output-port {} {
     return $::constcl::Output_port
-    # TODO
 }
 ```
 
@@ -4153,8 +4153,9 @@ proc ::constcl::close-output-port {port} {
 }
 ```
 
-`read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
+`read` is implemented in the [read](https://github.com/hoodiecrow/ConsTcl#read) section.
 
+```
 proc ::constcl::__read {args} {
     ::if {[llength $args]} {
         set new_port [lindex $args 0]
@@ -4167,6 +4168,8 @@ proc ::constcl::__read {args} {
     set ::constcl::Input_port $old_port
     return $n
 }
+```
+
 ```
 proc ::constcl::read-char {args} {
     # TODO
@@ -4185,15 +4188,20 @@ proc ::constcl::char-ready? {args} {
 }
 ```
 
-`write` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`write` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
 
-`display` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`display` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
 
 ```
-reg newline ::constcl::newline
+reg newline
 
 proc ::constcl::newline {args} {
-    # TODO write newline
+    ::if {[llength $args]} {
+        lassign $args port
+    } else {
+        set port [current-output-port]
+    }
+    write #\\newline $port
 }
 ```
 
@@ -4202,6 +4210,9 @@ proc ::constcl::write-char {args} {
     # TODO
 }
 ```
+
+`__load` is a raw port of the S9fES implementation. `____load` is my original
+straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
 
 ```
 proc ::constcl::__load {filename} {
@@ -4235,7 +4246,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::load {filename} {
+proc ::constcl::_____load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
@@ -4243,6 +4254,16 @@ proc ::constcl::load {filename} {
     while {[$ib first] ne {}} {
         eval [parse $ib]
     }
+}
+
+proc ::constcl::load {filename} {
+    set p [open-input-file $filename]
+    set n [read $p]
+    while {$n ne "#EOF"} {
+        eval $n ::constcl::global_env
+        set n [read $p]
+    }
+    close-input-port $p
 }
 ```
 

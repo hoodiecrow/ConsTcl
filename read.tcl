@@ -777,9 +777,7 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
-set p [open-output-file foo[clock microseconds].txt]
     set expr [read-expression]
-close-output-port $p; 
     set ::constcl::Input_port $oldport
     ::if {$unget ne "#EOF"} {
         set ::constcl::global_unget $unget
@@ -793,28 +791,26 @@ MD(
 
 The procedure `read-expression` parses input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
-that, producing an expression of any kind.
+that, producing an expression of any kind. A Tcl character value can be passed
+to it, that character will be used first before reading from the input stream.
 MD)
 
 PR(
-read-expression (internal);?char? char -> expr
+read-expression (internal);?char? tchar -> expr
 PR)
 
 CB
 proc ::constcl::read-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
-write [MkString "Beginning an expression, args='$c'"] $p
     } else {
         set c [readc]
-write [MkString "Beginning an expression, c='$c'"] $p
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
     }
     switch -regexp $c {
         {^$}          { return #NONE}
@@ -824,7 +820,7 @@ write [MkString "Skipped ws, c='$c'"] $p
         {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\.}          { set n [Dot new]                      ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
         {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
@@ -840,96 +836,172 @@ CB
 TT(
 ::tcltest::test read-1.0 {try read-expression on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
-} -constraints knownBug -body {
-    ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "\"foo bar\"\n"
 
 ::tcltest::test read-1.1 {try read-expression on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
-} -constraints knownBug -body {
-    ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -returnCodes error -result {malformed string (no ending double quote)}
 
 ::tcltest::test read-1.2 {try read-expression on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
 ::tcltest::test read-1.3 {try read-expression on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#t\n#f\n"
 
 ::tcltest::test read-1.4 {try read-expression on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "#\\A\n#\\space\n"
 
 ::tcltest::test read-1.5 {try read-expression on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
 
 ::tcltest::test read-1.6 {try read-expression on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
-} -constraints knownBug -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
 ::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
-} -body {
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
 ::tcltest::test read-1.8 {try read-expression on pair expr} -setup {
-    ::tcltest::makeFile {  (def ghi (jkl mno) pqr)} testrr.lsp
+    ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
 } -body {
-    set p [::constcl::open-input-file testrr.lsp]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
-} -output "(def ghi (jkl mno) pqr)\n"
+} -output "(def ghi (jkl mno))\n"
 
-::tcltest::test read-1.9 {try read-expression on identifiers} -setup {
-    ::tcltest::makeFile {  foo    bar } testrr.lsp
-} -constraints knownBug -body {
+::tcltest::test read-1.9 {try read-expression on plus/minus} -setup {
+    ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
     ::constcl::write [::constcl::read $p]
 } -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+
+::tcltest::test read-1.10 {try read-expression on unquoted expr} -setup {
+    ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(unquote foo)\n(unquote-splicing bar)\n"
+
+::tcltest::test read-1.11 {try read-expression on dot expr} -setup {
+    ::tcltest::makeFile {  a . b } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "a\n.\nb\n"
+
+::tcltest::test read-1.12 {try read-expression on quasiquoted expr} -setup {
+    ::tcltest::makeFile {  `(a b) } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quasiquote (a b))\n"
+
+::tcltest::test read-1.13 {try read-expression on numeric expr} -setup {
+    ::tcltest::makeFile {  99 } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "99\n"
+
+::tcltest::test read-1.14 {try read-expression on identifiers} -setup {
+    ::tcltest::makeFile {  foo    bar } testrr.lsp
+    set p [::constcl::open-input-file testrr.lsp]
+} -body {
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "foo\nbar\n"
 TT)
+
+MD(
+`readc` reads one character either from the unget store or from the input
+stream. If the input stream is at end-of-file, an eof object is returned.
+MD)
+
+PR(
+readc (internal);-> tchareof
+PR)
 
 CB
 proc readc {} {
@@ -945,7 +1017,18 @@ proc readc {} {
     }
     return $c
 }
+CB
 
+MD(
+`read-find` reads ahead through whitespace to find a given character. Returns 1
+if it has found the character, and 0 if it has stopped at some other character.
+MD)
+
+PR(
+read-find (internal);char tchar -> tbool
+PR)
+
+CB
 proc read-find {char} {
     upvar c c unget unget
     while {[::string is space -strict $c]} {
@@ -955,7 +1038,18 @@ proc read-find {char} {
     set unget $c
     return [expr {$c eq $char}]
 }
+CB
 
+MD(
+`skip-ws` skips whitespace and comments (the ; to end of line kind). Expects a
+character argument to start the skipping with.
+MD)
+
+PR(
+skip-ws (internal);char tchar -> tchareof
+PR)
+
+CB
 proc skip-ws {char} {
     upvar unget unget
     read-eof $char
@@ -977,7 +1071,18 @@ proc skip-ws {char} {
         }
     }
 }
+CB
 
+MD(
+`read-eof` checks a number of characters for possible end-of-file objects. If it
+finds one, it returns _from its caller_ with the EOF value.
+MD)
+
+PR(
+read-eof (internal);args chars
+PR)
+
+CB
 proc read-eof {args} {
     foreach val $args {
         ::if {$val eq "#EOF"} {
@@ -992,7 +1097,8 @@ MD(
 
 `read-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression (an immutable
+[String](https://github.com/hoodiecrow/ConsTcl#strings) object).
 MD)
 
 PR(
@@ -1001,7 +1107,7 @@ PR)
 
 CB
 proc ::constcl::read-string-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set str {}
     set c [readc]
     read-eof $c
@@ -1035,7 +1141,7 @@ PR)
 
 CB
 proc ::constcl::read-sharp {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     switch $c {
@@ -1063,7 +1169,7 @@ PR)
 
 CB
 proc ::constcl::read-vector-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set res {}
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
@@ -1094,7 +1200,7 @@ PR)
 
 CB
 proc ::constcl::read-character-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set name "#\\"
     set c [readc]
     read-eof $c
@@ -1122,7 +1228,7 @@ PR)
 
 CB
 proc ::constcl::read-quoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     read-eof $expr
     make-constant $expr
@@ -1143,12 +1249,10 @@ PR)
 
 CB
 proc ::constcl::read-pair-expression {char} {
-    upvar c c unget unget p p
-write [MkString "Beginning a pair expression, c='$c', char='$char'"] $p
+    upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    read-eof $c
-write [MkString "Skipped ws, c='$c', is it = $char?"] $p
+    #read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
@@ -1156,48 +1260,38 @@ write [MkString "Skipped ws, c='$c', is it = $char?"] $p
             ::error "Missing right bracket (first=$c)."
         }
     } else {
-        while {$c eq $char} {
-            set c [readc]
-        }
-write [MkString "Consumed $char, c='$c'"] $p
+        set unget {}
+        set c [readc]
     }
     return $expr
 }
 
 proc ::constcl::read-pair {char} {
-    upvar c c unget unget p p
-write [MkString "Inside pair reader, c='$c', char='$char'"] $p
+    upvar c c unget unget
     ::if {[read-find $char]} {
         # read right paren/brack
         set c [readc]
-write [MkString "Found $char, c='$c'"] $p
         return #NIL
     }
     set c [readc]
     read-eof $c
     set a [read-expression]
     set res $a
-write [MkString "Read car, c='$c'"] $p
     set c [skip-ws $c]
-write [MkString "Skipped ws, c='$c'"] $p
     set prev #NIL
     while {![read-find $char]} {
         set x [read-expression]
-write [MkString "Read next in chain, c='$c'"] $p
         set c [skip-ws $c]
         read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         ::if {[dot? $x] ne "#f"} {
             set prev [read-expression]
             set c [skip-ws $c]
             read-eof $c
-write [MkString "Skipped ws, c='$c'"] $p
         } else {
             lappend res $x
         }
         ::if {[llength $res] > 999} break
     }
-write [MkString "Found $char, c='$c'"] $p
     # read right paren/brack
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
@@ -1209,7 +1303,7 @@ CB
 MD(
 **read-plus-minus**
 
-`read-plus-minus` reacts to a plus or minus in the input buffer, and either
+`read-plus-minus` reacts to a plus or minus in the input stream, and either
 returns a `+` or `-` symbol, or a number.
 MD)
 
@@ -1219,13 +1313,14 @@ PR)
 
 CB
 proc ::constcl::read-plus-minus {char} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
         set n [read-number-expression $c]
-        set c [skip-ws $c]
-        read-eof $c $n
+        ::if {$char eq "-"} {
+            set n [- $n]
+        }
         return $n
     } else {
         ::if {$char eq "+"} {
@@ -1244,12 +1339,12 @@ MD(
 MD)
 
 PR(
-read-number-expression (internal);-> num
+read-number-expression (internal);?char? tchar -> num
 PR)
 
 CB
 proc ::constcl::read-number-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
     } else {
@@ -1280,7 +1375,7 @@ PR)
 
 CB
 proc ::constcl::read-unquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
@@ -1307,7 +1402,7 @@ PR)
 
 CB
 proc ::constcl::read-quasiquoted-expression {} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     set expr [read-expression]
     set c [skip-ws $c]
     read-eof $expr
@@ -1323,18 +1418,16 @@ MD(
 MD)
 
 PR(
-read-identifier-expression (internal);?char? char -> sym
+read-identifier-expression (internal);?char? tchar -> sym
 PR)
 
 CB
 proc ::constcl::read-identifier-expression {args} {
-    upvar c c unget unget p p
+    upvar c c unget unget
     ::if {[llength $args]} {
         set c [lindex $args 0]
-write [MkString "$c passed to read-identifier-expression"] $p
     } else {
         set c [readc]
-write [MkString "no character passed, $c read"] $p
     }
     read-eof $c
     set name {}
@@ -1346,12 +1439,10 @@ write [MkString "no character passed, $c read"] $p
         set c [readc]
     }
     ::if {$c ne "#EOF"} {
-write [MkString "ungetting $c"] $p
         set unget $c
     }
     # idcheck throws error if invalid identifier
     idcheck $name
-write [MkString "name $name passed to MkSymbol"] $p
     return [MkSymbol $name]
 }
 CB

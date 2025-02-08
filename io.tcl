@@ -2,16 +2,9 @@
 MD(
 ### Input and output
 
-I may never get around to implementing these. Or I might.
 MD)
 
 CB
-set ::constcl::Ports [list]
-set ::constcl::MAX_PORTS 32
-for {set i 0} {$i < $::constcl::MAX_PORTS} {incr i} {
-    lset ::constcl::Ports $i #NIL
-}
-
 oo::class create Port {
     variable handle
     constructor {args} {
@@ -116,7 +109,6 @@ CB
 CB
 proc ::constcl::current-output-port {} {
     return $::constcl::Output_port
-    # TODO
 }
 CB
 
@@ -181,9 +173,10 @@ proc ::constcl::close-output-port {port} {
 CB
 
 MD(
-`read` implemented in [read](https://github.com/hoodiecrow/ConsTcl#read) section.
+`read` is implemented in the [read](https://github.com/hoodiecrow/ConsTcl#read) section.
 MD)
 
+CB
 proc ::constcl::__read {args} {
     ::if {[llength $args]} {
         set new_port [lindex $args 0]
@@ -196,6 +189,8 @@ proc ::constcl::__read {args} {
     set ::constcl::Input_port $old_port
     return $n
 }
+CB
+
 CB
 proc ::constcl::read-char {args} {
     # TODO
@@ -215,18 +210,23 @@ proc ::constcl::char-ready? {args} {
 CB
 
 MD(
-`write` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`write` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
 MD)
 
 MD(
-`display` implemented in [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`display` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
 MD)
 
 CB
-reg newline ::constcl::newline
+reg newline
 
 proc ::constcl::newline {args} {
-    # TODO write newline
+    ::if {[llength $args]} {
+        lassign $args port
+    } else {
+        set port [current-output-port]
+    }
+    write #\\newline $port
 }
 CB
 
@@ -235,6 +235,11 @@ proc ::constcl::write-char {args} {
     # TODO
 }
 CB
+
+MD(
+`__load` is a raw port of the S9fES implementation. `____load` is my original
+straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
+MD)
 
 CB
 proc ::constcl::__load {filename} {
@@ -268,7 +273,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::load {filename} {
+proc ::constcl::_____load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
@@ -276,6 +281,16 @@ proc ::constcl::load {filename} {
     while {[$ib first] ne {}} {
         eval [parse $ib]
     }
+}
+
+proc ::constcl::load {filename} {
+    set p [open-input-file $filename]
+    set n [read $p]
+    while {$n ne "#EOF"} {
+        eval $n ::constcl::global_env
+        set n [read $p]
+    }
+    close-input-port $p
 }
 CB
 

@@ -760,7 +760,7 @@ CB
 MD(
 **expand-quasiquote**
 
-A quasi-quote isn't a macro, but we'll deal with it in this section anyway. `expand-quasiquote`
+A quasi-quote isn't a macro, but we will deal with it in this section anyway. `expand-quasiquote`
 traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
 brittle and sprawling and I barely understand it myself.
 MD)
