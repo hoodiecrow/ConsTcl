@@ -22,7 +22,7 @@ oo::class create ::constcl::Boolean {
     method constant {} {return 1}
     method bvalue {} { set bvalue }
     method value {} { set bvalue }
-    method write {} { puts -nonewline [my bvalue] }
+    method write {handle} { puts -nonewline $handle [my bvalue] }
     method display {} { puts -nonewline [my bvalue] }
     method show {} {set bvalue}
 }

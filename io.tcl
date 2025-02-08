@@ -59,7 +59,6 @@ interp alias {} ::constcl::MkOutputPort {} OutputPort new
 
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
-set ::constcl::END_OF_FILE -4
 
 proc ::constcl::port? {val} {
     ::if {[info object isa typeof $val ::constcl::Port]} {
@@ -135,6 +134,8 @@ proc ::constcl::with-output-to-file {string thunk} {
 CB
 
 CB
+reg open-input-file
+
 proc ::constcl::open-input-file {filename} {
     set p [MkInputPort]
     $p open $filename
@@ -146,11 +147,13 @@ proc ::constcl::open-input-file {filename} {
 CB
 
 CB
+reg open-output-file
+
 proc ::constcl::open-output-file {filename} {
     ::if {[file exists $filename]} {
         error "open-output-file: file already exists $filename"
     }
-    set p MkOutputPort]
+    set p [MkOutputPort]
     $p open $filename
     ::if {[$p handle] eq "#NIL"} {
         error "open-output-file: could not open file $filename"

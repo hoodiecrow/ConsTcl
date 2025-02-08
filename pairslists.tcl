@@ -33,10 +33,10 @@ oo::class create ::constcl::Pair {
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
     method mutable? {} {expr {$constant?"#f":"#t"}}
-    method write {} {
-        puts -nonewline "("
-        ::constcl::write-pair [self]
-        puts -nonewline ")"
+    method write {handle} {
+        puts -nonewline $handle "("
+        ::constcl::write-pair $handle [self]
+        puts -nonewline $handle ")"
     }
     method display {} { [my write] }
     method show {} {format "(%s)" [::constcl::show-pair [self]]}

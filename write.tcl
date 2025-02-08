@@ -18,8 +18,15 @@ reg write ::constcl::write
 
 proc ::constcl::write {val args} {
     ::if {$val ne "#NONE"} {
-        ::constcl::write-value $val
-        puts {}
+        ::if {[llength $args]} {
+            lassign $args port
+        } else {
+            set port [MkOutputPort stdout]
+        }
+        set ::constcl::Output_port $port
+        write-value [$::constcl::Output_port handle] $val
+        puts [$::constcl::Output_port handle] {}
+        set ::constcl::Output_port [MkOutputPort stdout]
     }
     return
 }
@@ -33,12 +40,12 @@ write itself.
 MD)
 
 PR(
-write-value (internal);val val -> none
+write-value (internal);handle handle val val -> none
 PR)
 
 CB
-proc ::constcl::write-value {val} {
-    $val write
+proc ::constcl::write-value {handle val} {
+    $val write $handle
     return
 }
 CB
@@ -72,27 +79,27 @@ The `write-pair` procedure prints a Pair object.
 MD)
 
 PR(
-write-pair (internal);pair pair -> none
+write-pair (internal);handle handle pair pair -> none
 PR)
 
 CB
-proc ::constcl::write-pair {pair} {
+proc ::constcl::write-pair {handle pair} {
     # take an object and print the car and the cdr of the stored value
     set a [car $pair]
     set d [cdr $pair]
     # print car
-    write-value $a
+    write-value $handle $a
     ::if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
-        puts -nonewline " "
-        write-pair $d
+        puts -nonewline $handle " "
+        write-pair $handle $d
     } elseif {[null? $d] ne "#f"} {
         # cdr is nil
         return
     } else {
         # it is an atom
-        puts -nonewline " . "
-        write-value $d
+        puts -nonewline $handle " . "
+        write-value $handle $d
     }
     return
 }

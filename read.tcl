@@ -230,12 +230,12 @@ CB
 
 TT(
 
-::tcltest::test read-4.0 {try reading a string} {
+::tcltest::test parse-4.0 {try reading a string} {
     set expr [::constcl::parse {"foo bar"}]
     $expr value
 } "foo bar"
 
-::tcltest::test read-4.1 {try reading a string} {
+::tcltest::test parse-4.1 {try reading a string} {
     set expr [::constcl::parse {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
@@ -314,7 +314,7 @@ CB
 
 TT(
 
-::tcltest::test read-1.0 {try reading quoted symbol} -body {
+::tcltest::test parse-1.0 {try reading quoted symbol} -body {
     pp "'foo"
 } -output "(quote foo)\n"
 
@@ -380,46 +380,46 @@ proc ::constcl::parse-pair-expression {char} {
 CB
 
 TT(
-::tcltest::test read-6.0 {try reading an improper list} -body {
+::tcltest::test parse-6.0 {try reading an improper list} -body {
     pp "(a . b)"
 } -output "(a . b)\n"
 
-::tcltest::test read-6.1 {try reading an improper list} -body {
+::tcltest::test parse-6.1 {try reading an improper list} -body {
     pp "(a b . c)"
 } -output "(a b . c)\n"
 
-::tcltest::test read-1.1 {try reading a list} -body {
+::tcltest::test parse-1.1 {try reading a list} -body {
     namespace eval ::constcl {
         set expr [::constcl::parse "(a (b))"]
         [caadr $expr] name
     }
 } -result "b"
 
-::tcltest::test read-1.2 {try reading a list} -body {
+::tcltest::test parse-1.2 {try reading a list} -body {
     pp "(a)"
 } -output "(a)\n"
 
-::tcltest::test read-1.3 {try reading a list} -body {
+::tcltest::test parse-1.3 {try reading a list} -body {
     pp "(a b)"
 } -output "(a b)\n"
 
-::tcltest::test read-1.4 {try reading a list} -body {
+::tcltest::test parse-1.4 {try reading a list} -body {
     pp "(a b c)"
 } -output "(a b c)\n"
 
-::tcltest::test read-1.5 {try reading a list} -body {
+::tcltest::test parse-1.5 {try reading a list} -body {
     pp "(a b c d)"
 } -output "(a b c d)\n"
 
-::tcltest::test read-1.6 {try reading a list} -body {
+::tcltest::test parse-1.6 {try reading a list} -body {
     pp "(a b c d e)"
 } -output "(a b c d e)\n"
 
-::tcltest::test read-1.7 {try reading a list} -body {
+::tcltest::test parse-1.7 {try reading a list} -body {
     pp "(a (b) )"
 } -output "(a (b))\n"
 
-::tcltest::test read-1.8 {try reading a list} -body {
+::tcltest::test parse-1.8 {try reading a list} -body {
     pp "(a (b))"
 } -output "(a (b))\n"
 
@@ -485,7 +485,7 @@ CB
 
 TT(
 
-::tcltest::test read-1.9 {try reading unquoted symbol} -body {
+::tcltest::test parse-1.9 {try reading unquoted symbol} -body {
     pp ",foo"
 } -output "(unquote foo)\n"
 
@@ -514,7 +514,7 @@ CB
 
 TT(
 
-::tcltest::test read-1.10 {try reading unquoted symbol} -body {
+::tcltest::test parse-1.10 {try reading unquoted symbol} -body {
     pp "`(list 1 2 ,@foo)"
 } -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
 
@@ -529,7 +529,8 @@ MD)
 
 CB
 proc ::constcl::interspace {c} {
-    ::if {$c eq "#EOF" || [::string is space -strict $c] || $c eq ";"} {
+    # don't add #EOF: parse-* uses this one too
+    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
         return #t
     } else {
         return #f
@@ -561,37 +562,37 @@ proc ::constcl::parse-number-expression {} {
 CB
 
 TT(
-::tcltest::test read-2.0 {try reading a number} {
+::tcltest::test parse-2.0 {try reading a number} {
     set obj [::constcl::parse "99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test read-2.1 {try reading a number} {
+::tcltest::test parse-2.1 {try reading a number} {
     set obj [::constcl::parse "     99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test read-2.2 {try reading a number} {
+::tcltest::test parse-2.2 {try reading a number} {
     set obj [::constcl::parse "     9"]
     $obj value
 } "9"
 
-::tcltest::test read-2.3 {try reading a number} {
+::tcltest::test parse-2.3 {try reading a number} {
     set obj [::constcl::parse "     +9"]
     $obj value
 } "+9"
 
-::tcltest::test read-2.4 {try reading a number} {
+::tcltest::test parse-2.4 {try reading a number} {
     set obj [::constcl::parse "     -9"]
     $obj value
 } "-9"
 
-::tcltest::test read-2.5 {try reading a number} {
+::tcltest::test parse-2.5 {try reading a number} {
     set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
-::tcltest::test read-2.6 {try reading a number} {
+::tcltest::test parse-2.6 {try reading a number} {
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
@@ -623,18 +624,18 @@ CB
 
 TT(
 
-::tcltest::test read-5.0 {try reading an identifier} {
+::tcltest::test parse-5.0 {try reading an identifier} {
     set expr [::constcl::parse [::constcl::IB new "foo"]]
     $expr name
 } "foo"
 
-::tcltest::test read-5.1 {try reading an identifier} -body {
+::tcltest::test parse-5.1 {try reading an identifier} -body {
     set ib [::constcl::IB new "+foo"]
     set expr [::constcl::parse-identifier-expression]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
-::tcltest::test read-5.2 {try reading an identifier} -body {
+::tcltest::test parse-5.2 {try reading an identifier} -body {
     ::constcl::IB create ib-read-5.2 "let"
     set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
@@ -686,22 +687,22 @@ CB
 
 TT(
 
-::tcltest::test read-3.0 {try reading a character} {
+::tcltest::test parse-3.0 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new {#\A}]]
     $expr char
 } "A"
 
-::tcltest::test read-3.1 {try reading a character} {
+::tcltest::test parse-3.1 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\space"]]
     $expr char
 } " "
 
-::tcltest::test read-3.2 {try reading a character} {
+::tcltest::test parse-3.2 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
     $expr char
 } "\n"
 
-::tcltest::test read-3.3 {try reading a character} -body {
+::tcltest::test parse-3.3 {try reading a character} -body {
     set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
@@ -741,7 +742,7 @@ CB
 
 TT(
 
-::tcltest::test read-6.0 {try reading a vector} -body {
+::tcltest::test parse-6.0 {try reading a vector} -body {
     pp "#(1 2 3)"
 } -output "#(1 2 3)\n"
 
@@ -763,9 +764,12 @@ PR)
 CB
 reg read ::constcl::read
 
+set ::constcl::global_unget {}
+
 proc ::constcl::read {args} {
     set c {}
-    set unget {}
+    set unget $::constcl::global_unget
+    set ::constcl::global_unget {}
     ::if {[llength $args]} {
         lassign $args port
     } else {
@@ -773,8 +777,13 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
+set p [open-output-file foo[clock microseconds].txt]
     set expr [read-expression]
+close-output-port $p; 
     set ::constcl::Input_port $oldport
+    ::if {$unget ne "#EOF"} {
+        set ::constcl::global_unget $unget
+    }
     return $expr
 }
 CB
@@ -793,30 +802,33 @@ PR)
 
 CB
 proc ::constcl::read-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
-        set c $char
+        lassign $args c
+write [MkString "Beginning an expression, args='$c'"] $p
     } else {
         set c [readc]
+write [MkString "Beginning an expression, c='$c'"] $p
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
         set c [skip-ws $c]
         read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
     }
     switch -regexp $c {
         {^$}          { return #NONE}
-        {\"}          { set n [read-string-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\#}          { set n [read-sharp]                   ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\'}          { set n [read-quoted-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\(}          { set n [read-pair-expression ")"]     ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\+} - {\-}   { set n [read-plus-minus $c]           ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\,}          { set n [read-unquoted-expression]     ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\.}          { set n [Dot new]                      ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\[}          { set n [read-pair-expression "\]"]    ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\`}          { set n [read-quasiquoted-expression]  ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\d}          { set n [read-number-expression $c]    ; set c [skip-ws $c]; read-eof $n; return $n }
-        {[[:graph:]]} { error "character $c" ; set n [read-identifier-expression $c]; set c [skip-ws $c]; read-eof $n; return $n }
+        {\"}          { set n [read-string-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\#}          { set n [read-sharp]                   ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\'}          { set n [read-quoted-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\.}          { set n [Dot new]                      ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; set unget [skip-ws $c]; return $n }
         default {
             read-eof $c
             ::error "unexpected character ($c)"
@@ -826,33 +838,97 @@ proc ::constcl::read-expression {args} {
 CB
 
 TT(
-::tcltest::test read-read-1.0 {try read-expression on a string} -setup {
+::tcltest::test read-1.0 {try read-expression on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
-} -constraints knownBug -body {
-    set p [::constcl::open-input-file testrr.lsp]
-    set expr [::constcl::read $p]
-    ::constcl::write $expr
-} -cleanup {
-    ::tcltest::removeFile testrr.lsp
-} -output "\"foo bar\"\n"
-
-::tcltest::test read-read-1.1 {try read-expression on a string/eof} -setup {
-    ::tcltest::makeFile {"foo } testrr.lsp ; #"
-} -constraints knownBug -body {
-    set p [::constcl::open-input-file testrr.lsp]
-    set expr [::constcl::read $p]
-    ::constcl::write $expr
-} -cleanup {
-    ::tcltest::removeFile testrr.lsp
-} -output "#<eof>\n"
-
-::tcltest::test read-read-1.2 {try read-expression on a vector} -setup {
-    ::tcltest::makeFile {  #(1 2 3)  } testrr.lsp
 } -constraints knownBug -body {
     ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
 } -cleanup {
     ::tcltest::removeFile testrr.lsp
-} -output "#(1 2 3)\n"
+} -output "\"foo bar\"\n"
+
+::tcltest::test read-1.1 {try read-expression on a string/eof} -setup {
+    ::tcltest::makeFile {"foo } testrr.lsp ; #"
+} -constraints knownBug -body {
+    ::constcl::write [::constcl::read [::constcl::open-input-file testrr.lsp]]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -returnCodes error -result {malformed string (no ending double quote)}
+
+::tcltest::test read-1.2 {try read-expression on a couple of vectors} -setup {
+    ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "#(1 2 3)\n#(11 22 33)\n"
+
+::tcltest::test read-1.3 {try read-expression on booleans} -setup {
+    ::tcltest::makeFile {  #t  #f} testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "#t\n#f\n"
+
+::tcltest::test read-1.4 {try read-expression on characters} -setup {
+    ::tcltest::makeFile {  #\A  #\space} testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "#\\A\n#\\space\n"
+
+::tcltest::test read-1.5 {try read-expression on quoted expr} -setup {
+    ::tcltest::makeFile {  'foo } testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "(quote foo)\n"
+
+::tcltest::test read-1.6 {try read-expression on pair expr} -setup {
+    ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "(a b c)\n"
+
+::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
+    ::tcltest::makeFile {  ([d e] f)} testrr.lsp
+} -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "((d e) f)\n"
+
+::tcltest::test read-1.8 {try read-expression on pair expr} -setup {
+    ::tcltest::makeFile {  (def ghi (jkl mno) pqr)} testrr.lsp
+} -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "(def ghi (jkl mno) pqr)\n"
+
+::tcltest::test read-1.9 {try read-expression on identifiers} -setup {
+    ::tcltest::makeFile {  foo    bar } testrr.lsp
+} -constraints knownBug -body {
+    set p [::constcl::open-input-file testrr.lsp]
+    ::constcl::write [::constcl::read $p]
+    ::constcl::write [::constcl::read $p]
+} -cleanup {
+    ::tcltest::removeFile testrr.lsp
+} -output "foo\nbar\n"
 TT)
 
 CB
@@ -870,8 +946,19 @@ proc readc {} {
     return $c
 }
 
+proc read-find {char} {
+    upvar c c unget unget
+    while {[::string is space -strict $c]} {
+        set c [readc]
+        read-eof $c
+    }
+    set unget $c
+    return [expr {$c eq $char}]
+}
+
 proc skip-ws {char} {
     upvar unget unget
+    read-eof $char
     while true {
         switch -regexp $char {
             {[[:space:]]} {
@@ -884,7 +971,8 @@ proc skip-ws {char} {
             }
             default {
                 read-eof $char
-                set unget $char
+                #set unget $char
+                return $char
             }
         }
     }
@@ -913,23 +1001,21 @@ PR)
 
 CB
 proc ::constcl::read-string-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set str {}
     set c [readc]
     read-eof $c
     while {$c ne "\"" && $c ne "#EOF"} {
         ::if {$c eq "\\"} {
             set c [readc]
-            read-eof $c
         }
         ::append str $c
-error strfoo
         set c [readc]
-        read-eof $c
     }
     ::if {$c ne "\""} {
-        ::error "malformed string (no ending double quote)"
+        error "malformed string (no ending double quote)"
     }
+    set c [readc]
     set expr [MkString $str]
     $expr mkconstant
     return $expr
@@ -949,14 +1035,14 @@ PR)
 
 CB
 proc ::constcl::read-sharp {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     switch $c {
-        (    { return [read-vector-expression] }
-        t    { return #t }
-        f    { return #f }
-        "\\" { return [read-character-expression] }
+        (    { set n [read-vector-expression]   ; set c [readc]; return $n }
+        t    { set n #t                         ; set c [readc]; return $n }
+        f    { set n #f                         ; set c [readc]; return $n }
+        "\\" { set n [read-character-expression];                return $n }
         default {
             read-eof $c
             ::error "Illegal #-literal: #$c"
@@ -977,18 +1063,14 @@ PR)
 
 CB
 proc ::constcl::read-vector-expression {} {
-    upvar c c unget unget
-    set c [readc]
-    read-eof $c
-    set c [skip-ws $c]
-    read-eof $c
+    upvar c c unget unget p p
     set res {}
+    set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
-        lappend res [read-expression]
+        lappend res [read-expression $c]
         set c [skip-ws $c]
         read-eof $c
     }
-error foo
     set expr [MkVector $res]
     $expr mkconstant
     ::if {$c ne ")"} {
@@ -1012,9 +1094,11 @@ PR)
 
 CB
 proc ::constcl::read-character-expression {} {
-    upvar c c unget unget
-    set name "#"
-    while {[interspace $c] ne "#t" && $c ni {) ]}} {
+    upvar c c unget unget p p
+    set name "#\\"
+    set c [readc]
+    read-eof $c
+    while {[::string is alpha $c]} {
         ::append name $c
         set c [readc]
         read-eof $c
@@ -1038,7 +1122,7 @@ PR)
 
 CB
 proc ::constcl::read-quoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set expr [read-expression]
     read-eof $expr
     make-constant $expr
@@ -1059,49 +1143,62 @@ PR)
 
 CB
 proc ::constcl::read-pair-expression {char} {
-    upvar c c unget unget
-    set c [readc]
-    read-eof $c
-    set c [skip-ws $c]
-    read-eof $c
+    upvar c c unget unget p p
+write [MkString "Beginning a pair expression, c='$c', char='$char'"] $p
     set expr [read-pair $char]
     set c [skip-ws $c]
     read-eof $c
+write [MkString "Skipped ws, c='$c', is it = $char?"] $p
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
         } else {
             ::error "Missing right bracket (first=$c)."
         }
+    } else {
+        while {$c eq $char} {
+            set c [readc]
+        }
+write [MkString "Consumed $char, c='$c'"] $p
     }
     return $expr
 }
 
 proc ::constcl::read-pair {char} {
-    upvar c c unget unget
+    upvar c c unget unget p p
+write [MkString "Inside pair reader, c='$c', char='$char'"] $p
     ::if {[read-find $char]} {
+        # read right paren/brack
+        set c [readc]
+write [MkString "Found $char, c='$c'"] $p
         return #NIL
     }
-    set c [skip-ws $c]
+    set c [readc]
     read-eof $c
     set a [read-expression]
-    set c [skip-ws $c]
-    read-eof $c
     set res $a
+write [MkString "Read car, c='$c'"] $p
+    set c [skip-ws $c]
+write [MkString "Skipped ws, c='$c'"] $p
     set prev #NIL
     while {![read-find $char]} {
         set x [read-expression]
+write [MkString "Read next in chain, c='$c'"] $p
         set c [skip-ws $c]
         read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
         ::if {[dot? $x] ne "#f"} {
             set prev [read-expression]
             set c [skip-ws $c]
             read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
         } else {
             lappend res $x
         }
         ::if {[llength $res] > 999} break
     }
+write [MkString "Found $char, c='$c'"] $p
+    # read right paren/brack
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
     }
@@ -1122,7 +1219,7 @@ PR)
 
 CB
 proc ::constcl::read-plus-minus {char} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
@@ -1152,14 +1249,14 @@ PR)
 
 CB
 proc ::constcl::read-number-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
-        set c $char
+        lassign $args c
     } else {
         set c [readc]
     }
     read-eof $c
-    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+    while {[interspace $c] ne "#t" && $c ne "#EOF" && $c ni {) \]}} {
         ::append num $c
         set c [readc]
     }
@@ -1183,7 +1280,7 @@ PR)
 
 CB
 proc ::constcl::read-unquoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
@@ -1210,7 +1307,7 @@ PR)
 
 CB
 proc ::constcl::read-quasiquoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set expr [read-expression]
     set c [skip-ws $c]
     read-eof $expr
@@ -1231,20 +1328,31 @@ PR)
 
 CB
 proc ::constcl::read-identifier-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
         set c [lindex $args 0]
+write [MkString "$c passed to read-identifier-expression"] $p
     } else {
         set c [readc]
+write [MkString "no character passed, $c read"] $p
     }
     read-eof $c
-    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+    set name {}
+    while {[::string is graph -strict $c]} {
+        ::if {$c eq "#EOF" || $c in {) \]}} {
+            break
+        }
         ::append name $c
         set c [readc]
     }
-    set unget $c
+    ::if {$c ne "#EOF"} {
+write [MkString "ungetting $c"] $p
+        set unget $c
+    }
     # idcheck throws error if invalid identifier
-    return [MkSymbol [idcheck $name]]
+    idcheck $name
+write [MkString "name $name passed to MkSymbol"] $p
+    return [MkSymbol $name]
 }
 CB
 

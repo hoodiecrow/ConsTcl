@@ -37,6 +37,7 @@ proc ::constcl::idchecksubs {subs} {
 }
 
 proc ::constcl::idcheck {sym} {
+::if {$sym eq {}} {return $sym}
     ::if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
         ::error "Identifier expected ($sym)"

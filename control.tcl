@@ -27,9 +27,9 @@ oo::class create ::constcl::Procedure {
         set env $e           ;# the closed over environment
     }
     method value {} {}
-    method write {} {
+    method write {handle} {
         regexp {(\d+)} [self] -> num
-        puts -nonewline "#<proc-$num>"
+        puts -nonewline $handle "#<proc-$num>"
     }
     method display {} {my write}
     method show {} { return [self] }

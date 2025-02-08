@@ -11,7 +11,7 @@ oo::class create ::constcl::Symbol {
     superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
-        ::if {$n eq {}} {
+        ::if {   no &&   $n eq {}} {
             ::error "a symbol must have a name"
         }
         ::constcl::idcheck $n
@@ -25,7 +25,7 @@ oo::class create ::constcl::Symbol {
     method constant {} {return 1}
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
-    method write {} { puts -nonewline [my name] }
+    method write {handle} { puts -nonewline $handle [my name] }
     method display {} { puts -nonewline [my name] }
     method show {} {set name}
 }

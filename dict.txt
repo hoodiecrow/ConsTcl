@@ -18,6 +18,7 @@ pm        -> either the symbols + or - or a number
 lvfalse   -> a Lisp list of values OR #f
 alist     -> an association list
 plist     -> a property list
+handle    -> a channel handle
 pred      -> a predicate
 epred     -> an equivalence predicate
 val       -> a Lisp value

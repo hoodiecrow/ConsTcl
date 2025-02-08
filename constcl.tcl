@@ -85,7 +85,7 @@ oo::class create ::constcl::NIL {
     method set-car! {v} {::error "PAIR expected"}
     method set-cdr! {v} {::error "PAIR expected"}
     method numval {} {::error "Not a number"}
-    method write {} {puts -nonewline "()"}
+    method write {handle} {puts -nonewline $handle "()"}
     method display {} { puts -nonewline "()" }
     method show {} {format "()"}
 }
@@ -111,7 +111,7 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
-    method write {} {puts -nonewline "."}
+    method write {handle} {puts -nonewline $handle "."}
     method display {} { puts -nonewline "." }
 }
 
@@ -145,7 +145,7 @@ catch { ::constcl::EndOfFile destroy }
 
 oo::class create ::constcl::EndOfFile {
     method mkconstant {} {}
-    method write {} {puts -nonewline #<eof>}
+    method write {handle} {puts -nonewline #<eof>}
 }
 
 
@@ -457,7 +457,8 @@ proc ::constcl::parse-quasiquoted-expression {} {
 
 
 proc ::constcl::interspace {c} {
-    ::if {$c eq "#EOF" || [::string is space -strict $c] || $c eq ";"} {
+    # don't add #EOF: parse-* uses this one too
+    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
         return #t
     } else {
         return #f
@@ -542,9 +543,12 @@ proc ::constcl::parse-vector-expression {} {
 
 reg read ::constcl::read
 
+set ::constcl::global_unget {}
+
 proc ::constcl::read {args} {
     set c {}
-    set unget {}
+    set unget $::constcl::global_unget
+    set ::constcl::global_unget {}
     ::if {[llength $args]} {
         lassign $args port
     } else {
@@ -552,38 +556,46 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
+set p [open-output-file foo[clock microseconds].txt]
     set expr [read-expression]
+close-output-port $p; 
     set ::constcl::Input_port $oldport
+    ::if {$unget ne "#EOF"} {
+        set ::constcl::global_unget $unget
+    }
     return $expr
 }
 
 
 
 proc ::constcl::read-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
-        set c $char
+        lassign $args c
+write [MkString "Beginning an expression, args='$c'"] $p
     } else {
         set c [readc]
+write [MkString "Beginning an expression, c='$c'"] $p
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
         set c [skip-ws $c]
         read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
     }
     switch -regexp $c {
         {^$}          { return #NONE}
-        {\"}          { set n [read-string-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\#}          { set n [read-sharp]                   ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\'}          { set n [read-quoted-expression]       ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\(}          { set n [read-pair-expression ")"]     ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\+} - {\-}   { set n [read-plus-minus $c]           ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\,}          { set n [read-unquoted-expression]     ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\.}          { set n [Dot new]                      ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\[}          { set n [read-pair-expression "\]"]    ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\`}          { set n [read-quasiquoted-expression]  ; set c [skip-ws $c]; read-eof $n; return $n }
-        {\d}          { set n [read-number-expression $c]    ; set c [skip-ws $c]; read-eof $n; return $n }
-        {[[:graph:]]} { error "character $c" ; set n [read-identifier-expression $c]; set c [skip-ws $c]; read-eof $n; return $n }
+        {\"}          { set n [read-string-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\#}          { set n [read-sharp]                   ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\'}          { set n [read-quoted-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\.}          { set n [Dot new]                      ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
+        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; set unget [skip-ws $c]; return $n }
         default {
             read-eof $c
             ::error "unexpected character ($c)"
@@ -606,8 +618,19 @@ proc readc {} {
     return $c
 }
 
+proc read-find {char} {
+    upvar c c unget unget
+    while {[::string is space -strict $c]} {
+        set c [readc]
+        read-eof $c
+    }
+    set unget $c
+    return [expr {$c eq $char}]
+}
+
 proc skip-ws {char} {
     upvar unget unget
+    read-eof $char
     while true {
         switch -regexp $char {
             {[[:space:]]} {
@@ -620,7 +643,8 @@ proc skip-ws {char} {
             }
             default {
                 read-eof $char
-                set unget $char
+                #set unget $char
+                return $char
             }
         }
     }
@@ -637,23 +661,21 @@ proc read-eof {args} {
 
 
 proc ::constcl::read-string-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set str {}
     set c [readc]
     read-eof $c
     while {$c ne "\"" && $c ne "#EOF"} {
         ::if {$c eq "\\"} {
             set c [readc]
-            read-eof $c
         }
         ::append str $c
-error strfoo
         set c [readc]
-        read-eof $c
     }
     ::if {$c ne "\""} {
-        ::error "malformed string (no ending double quote)"
+        error "malformed string (no ending double quote)"
     }
+    set c [readc]
     set expr [MkString $str]
     $expr mkconstant
     return $expr
@@ -662,14 +684,14 @@ error strfoo
 
 
 proc ::constcl::read-sharp {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     switch $c {
-        (    { return [read-vector-expression] }
-        t    { return #t }
-        f    { return #f }
-        "\\" { return [read-character-expression] }
+        (    { set n [read-vector-expression]   ; set c [readc]; return $n }
+        t    { set n #t                         ; set c [readc]; return $n }
+        f    { set n #f                         ; set c [readc]; return $n }
+        "\\" { set n [read-character-expression];                return $n }
         default {
             read-eof $c
             ::error "Illegal #-literal: #$c"
@@ -680,18 +702,14 @@ proc ::constcl::read-sharp {} {
 
 
 proc ::constcl::read-vector-expression {} {
-    upvar c c unget unget
-    set c [readc]
-    read-eof $c
-    set c [skip-ws $c]
-    read-eof $c
+    upvar c c unget unget p p
     set res {}
+    set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
-        lappend res [read-expression]
+        lappend res [read-expression $c]
         set c [skip-ws $c]
         read-eof $c
     }
-error foo
     set expr [MkVector $res]
     $expr mkconstant
     ::if {$c ne ")"} {
@@ -704,9 +722,11 @@ error foo
 
 
 proc ::constcl::read-character-expression {} {
-    upvar c c unget unget
-    set name "#"
-    while {[interspace $c] ne "#t" && $c ni {) ]}} {
+    upvar c c unget unget p p
+    set name "#\\"
+    set c [readc]
+    read-eof $c
+    while {[::string is alpha $c]} {
         ::append name $c
         set c [readc]
         read-eof $c
@@ -719,7 +739,7 @@ proc ::constcl::read-character-expression {} {
 
 
 proc ::constcl::read-quoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set expr [read-expression]
     read-eof $expr
     make-constant $expr
@@ -729,49 +749,62 @@ proc ::constcl::read-quoted-expression {} {
 
 
 proc ::constcl::read-pair-expression {char} {
-    upvar c c unget unget
-    set c [readc]
-    read-eof $c
-    set c [skip-ws $c]
-    read-eof $c
+    upvar c c unget unget p p
+write [MkString "Beginning a pair expression, c='$c', char='$char'"] $p
     set expr [read-pair $char]
     set c [skip-ws $c]
     read-eof $c
+write [MkString "Skipped ws, c='$c', is it = $char?"] $p
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
         } else {
             ::error "Missing right bracket (first=$c)."
         }
+    } else {
+        while {$c eq $char} {
+            set c [readc]
+        }
+write [MkString "Consumed $char, c='$c'"] $p
     }
     return $expr
 }
 
 proc ::constcl::read-pair {char} {
-    upvar c c unget unget
+    upvar c c unget unget p p
+write [MkString "Inside pair reader, c='$c', char='$char'"] $p
     ::if {[read-find $char]} {
+        # read right paren/brack
+        set c [readc]
+write [MkString "Found $char, c='$c'"] $p
         return #NIL
     }
-    set c [skip-ws $c]
+    set c [readc]
     read-eof $c
     set a [read-expression]
-    set c [skip-ws $c]
-    read-eof $c
     set res $a
+write [MkString "Read car, c='$c'"] $p
+    set c [skip-ws $c]
+write [MkString "Skipped ws, c='$c'"] $p
     set prev #NIL
     while {![read-find $char]} {
         set x [read-expression]
+write [MkString "Read next in chain, c='$c'"] $p
         set c [skip-ws $c]
         read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
         ::if {[dot? $x] ne "#f"} {
             set prev [read-expression]
             set c [skip-ws $c]
             read-eof $c
+write [MkString "Skipped ws, c='$c'"] $p
         } else {
             lappend res $x
         }
         ::if {[llength $res] > 999} break
     }
+write [MkString "Found $char, c='$c'"] $p
+    # read right paren/brack
     foreach r [lreverse $res] {
         set prev [cons $r $prev]
     }
@@ -781,7 +814,7 @@ proc ::constcl::read-pair {char} {
 
 
 proc ::constcl::read-plus-minus {char} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
@@ -801,14 +834,14 @@ proc ::constcl::read-plus-minus {char} {
 
 
 proc ::constcl::read-number-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
-        set c $char
+        lassign $args c
     } else {
         set c [readc]
     }
     read-eof $c
-    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+    while {[interspace $c] ne "#t" && $c ne "#EOF" && $c ni {) \]}} {
         ::append num $c
         set c [readc]
     }
@@ -820,7 +853,7 @@ proc ::constcl::read-number-expression {args} {
 
 
 proc ::constcl::read-unquoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
@@ -837,7 +870,7 @@ proc ::constcl::read-unquoted-expression {} {
 
 
 proc ::constcl::read-quasiquoted-expression {} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     set expr [read-expression]
     set c [skip-ws $c]
     read-eof $expr
@@ -848,20 +881,31 @@ proc ::constcl::read-quasiquoted-expression {} {
 
 
 proc ::constcl::read-identifier-expression {args} {
-    upvar c c unget unget
+    upvar c c unget unget p p
     ::if {[llength $args]} {
         set c [lindex $args 0]
+write [MkString "$c passed to read-identifier-expression"] $p
     } else {
         set c [readc]
+write [MkString "no character passed, $c read"] $p
     }
     read-eof $c
-    while {[interspace $c] ne "#t" && $c ni {) \]}} {
+    set name {}
+    while {[::string is graph -strict $c]} {
+        ::if {$c eq "#EOF" || $c in {) \]}} {
+            break
+        }
         ::append name $c
         set c [readc]
     }
-    set unget $c
+    ::if {$c ne "#EOF"} {
+write [MkString "ungetting $c"] $p
+        set unget $c
+    }
     # idcheck throws error if invalid identifier
-    return [MkSymbol [idcheck $name]]
+    idcheck $name
+write [MkString "name $name passed to MkSymbol"] $p
+    return [MkSymbol $name]
 }
 
 # vim: ft=tcl tw=80
@@ -1552,16 +1596,23 @@ reg write ::constcl::write
 
 proc ::constcl::write {val args} {
     ::if {$val ne "#NONE"} {
-        ::constcl::write-value $val
-        puts {}
+        ::if {[llength $args]} {
+            lassign $args port
+        } else {
+            set port [MkOutputPort stdout]
+        }
+        set ::constcl::Output_port $port
+        write-value [$::constcl::Output_port handle] $val
+        puts [$::constcl::Output_port handle] {}
+        set ::constcl::Output_port [MkOutputPort stdout]
     }
     return
 }
 
 
 
-proc ::constcl::write-value {val} {
-    $val write
+proc ::constcl::write-value {handle val} {
+    $val write $handle
     return
 }
 
@@ -1579,23 +1630,23 @@ proc ::constcl::display {val args} {
 
 
 
-proc ::constcl::write-pair {pair} {
+proc ::constcl::write-pair {handle pair} {
     # take an object and print the car and the cdr of the stored value
     set a [car $pair]
     set d [cdr $pair]
     # print car
-    write-value $a
+    write-value $handle $a
     ::if {[pair? $d] ne "#f"} {
         # cdr is a cons pair
-        puts -nonewline " "
-        write-pair $d
+        puts -nonewline $handle " "
+        write-pair $handle $d
     } elseif {[null? $d] ne "#f"} {
         # cdr is nil
         return
     } else {
         # it is an atom
-        puts -nonewline " . "
-        write-value $d
+        puts -nonewline $handle " . "
+        write-value $handle $d
     }
     return
 }
@@ -1689,7 +1740,7 @@ oo::class create ::constcl::Number {
     method numval {} {set value}
     method mkconstant {} {}
     method constant {} {return 1}
-    method write {} { puts -nonewline [my value] }
+    method write {handle} { puts -nonewline $handle [my value] }
     method display {} { puts -nonewline [my value] }
     method show {} { set value }
 }
@@ -2245,7 +2296,7 @@ oo::class create ::constcl::Boolean {
     method constant {} {return 1}
     method bvalue {} { set bvalue }
     method value {} { set bvalue }
-    method write {} { puts -nonewline [my bvalue] }
+    method write {handle} { puts -nonewline $handle [my bvalue] }
     method display {} { puts -nonewline [my bvalue] }
     method show {} {set bvalue}
 }
@@ -2359,7 +2410,7 @@ oo::class create ::constcl::Char {
     method mkconstant {} {}
     method constant {} {return 1}
     method value {} {return $value}
-    method write {} { puts -nonewline $value }
+    method write {handle} { puts -nonewline $handle $value }
     method display {} { puts -nonewline [my char] }
     method show {} {set value}
 }
@@ -2632,9 +2683,9 @@ oo::class create ::constcl::Procedure {
         set env $e           ;# the closed over environment
     }
     method value {} {}
-    method write {} {
+    method write {handle} {
         regexp {(\d+)} [self] -> num
-        puts -nonewline "#<proc-$num>"
+        puts -nonewline $handle "#<proc-$num>"
     }
     method display {} {my write}
     method show {} { return [self] }
@@ -2795,7 +2846,6 @@ interp alias {} ::constcl::MkOutputPort {} OutputPort new
 
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
-set ::constcl::END_OF_FILE -4
 
 proc ::constcl::port? {val} {
     ::if {[info object isa typeof $val ::constcl::Port]} {
@@ -2853,6 +2903,8 @@ proc ::constcl::with-output-to-file {string thunk} {
     # TODO
 }
 
+reg open-input-file
+
 proc ::constcl::open-input-file {filename} {
     set p [MkInputPort]
     $p open $filename
@@ -2862,11 +2914,13 @@ proc ::constcl::open-input-file {filename} {
     return $p
 }
 
+reg open-output-file
+
 proc ::constcl::open-output-file {filename} {
     ::if {[file exists $filename]} {
         error "open-output-file: file already exists $filename"
     }
-    set p MkOutputPort]
+    set p [MkOutputPort]
     $p open $filename
     ::if {[$p handle] eq "#NIL"} {
         error "open-output-file: could not open file $filename"
@@ -3003,10 +3057,10 @@ oo::class create ::constcl::Pair {
     method mkconstant {} {set constant 1}
     method constant {} {return $constant}
     method mutable? {} {expr {$constant?"#f":"#t"}}
-    method write {} {
-        puts -nonewline "("
-        ::constcl::write-pair [self]
-        puts -nonewline ")"
+    method write {handle} {
+        puts -nonewline $handle "("
+        ::constcl::write-pair $handle [self]
+        puts -nonewline $handle ")"
     }
     method display {} { [my write] }
     method show {} {format "(%s)" [::constcl::show-pair [self]]}
@@ -3434,7 +3488,7 @@ oo::class create ::constcl::String {
     }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
-    method write {} { puts -nonewline "\"[my value]\"" }
+    method write {handle} { puts -nonewline $handle "\"[my value]\"" }
     method display {} { puts -nonewline [my value] }
     method show {} {format "\"[my value]\""}
 }
@@ -3728,7 +3782,7 @@ oo::class create ::constcl::Symbol {
     superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
-        ::if {$n eq {}} {
+        ::if {   no &&   $n eq {}} {
             ::error "a symbol must have a name"
         }
         ::constcl::idcheck $n
@@ -3742,7 +3796,7 @@ oo::class create ::constcl::Symbol {
     method constant {} {return 1}
     method make-case-constant {} {set caseconstant 1}
     method case-constant {} {set caseconstant}
-    method write {} { puts -nonewline [my name] }
+    method write {handle} { puts -nonewline $handle [my name] }
     method display {} { puts -nonewline [my name] }
     method show {} {set name}
 }
@@ -3859,7 +3913,7 @@ oo::class create ::constcl::Vector {
     }
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
-    method write {} {puts -nonewline [my show]}
+    method write {handle} { puts -nonewline $handle [my show]}
     method display {} {puts -nonewline [my show]}
     method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
@@ -3992,6 +4046,7 @@ proc ::constcl::idchecksubs {subs} {
 }
 
 proc ::constcl::idcheck {sym} {
+::if {$sym eq {}} {return $sym}
     ::if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
         ::error "Identifier expected ($sym)"

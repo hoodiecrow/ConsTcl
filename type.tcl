@@ -113,7 +113,7 @@ oo::class create ::constcl::NIL {
     method set-car! {v} {::error "PAIR expected"}
     method set-cdr! {v} {::error "PAIR expected"}
     method numval {} {::error "Not a number"}
-    method write {} {puts -nonewline "()"}
+    method write {handle} {puts -nonewline $handle "()"}
     method display {} { puts -nonewline "()" }
     method show {} {format "()"}
 }
@@ -158,7 +158,7 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
-    method write {} {puts -nonewline "."}
+    method write {handle} {puts -nonewline $handle "."}
     method display {} { puts -nonewline "." }
 }
 
@@ -207,7 +207,7 @@ catch { ::constcl::EndOfFile destroy }
 
 oo::class create ::constcl::EndOfFile {
     method mkconstant {} {}
-    method write {} {puts -nonewline #<eof>}
+    method write {handle} {puts -nonewline #<eof>}
 }
 CB
 
