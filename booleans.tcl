@@ -6,6 +6,8 @@ Booleans are logic values, either true (`#t`) or false (`#f`).
 All predicates (procedures whose name end with -?) return
 boolean values. The conditional `if` operator considers all
 values except for `#f` to be true.
+
+**Boolean** class
 MD)
 
 CB

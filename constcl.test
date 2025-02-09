@@ -232,7 +232,7 @@ source constcl.tcl
 } -output "(a b c)\n"
 
 ::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
-    ::tcltest::makeFile {  ([d e] f)  } testrr.lsp
+    ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
     ::constcl::write [::constcl::read $p]

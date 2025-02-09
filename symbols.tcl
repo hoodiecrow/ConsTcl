@@ -4,6 +4,8 @@ MD(
 
 Symbols are like little strings that are used to refer to things (variables, including
 procedure names, etc) or for comparing against each other.
+
+**Symbol** class
 MD)
 
 CB

@@ -755,7 +755,7 @@ proc ::constcl::read-pair-expression {char} {
     upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    #read-eof $c
+    read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
@@ -1650,7 +1650,7 @@ proc ::constcl::eq? {val1 val2} {
         return #t
     } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 numval] eq [$val2 numval]} {
         return #t
     } elseif {[char? $val1] ne "#f" && [char? $val2] ne "#f" && $val1 eq $val2} {
         return #t

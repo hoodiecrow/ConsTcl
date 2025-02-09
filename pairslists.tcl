@@ -3,6 +3,8 @@ MD(
 ### Pairs and lists
 
 List processing is another of Lisp's great strengths.
+
+**Pair** class
 MD)
 
 CB

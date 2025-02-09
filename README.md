@@ -278,6 +278,7 @@ proc ::constcl::read_c_ci {} {
 `read` represents the interpreter's input facility. Currently input is faked with input
 strings.
 
+**IB** class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
 characters to be read. The `fill` method fills the buffer and sets the first
@@ -1088,7 +1089,7 @@ proc ::constcl::read-pair-expression {char} {
     upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    #read-eof $c
+    read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."
@@ -2342,9 +2343,10 @@ proc ::constcl::write-pair {handle pair} {
 
 **equal**
 
-Of the three equivalence predicates, `eq` generally tests for identity (with exceptions for numbers
-and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
-identity), and `equal` tests for whether the output strings are equal.
+Of the three equivalence predicates, `eq` generally tests for identity (with
+exceptions for numbers), `eqv` tests for value equality (except for booleans and
+procedures, where it tests for identity), and `equal` tests for whether the
+output strings are equal.
 
 <table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -2356,7 +2358,7 @@ proc ::constcl::eq? {val1 val2} {
         return #t
     } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 numval] eq [$val2 numval]} {
         return #t
     } elseif {[char? $val1] ne "#f" && [char? $val2] ne "#f" && $val1 eq $val2} {
         return #t
@@ -2424,6 +2426,8 @@ I have only implemented a bare-bones version of Scheme's numerical
 library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
+
+**Number** class
 
 ```
 oo::class create ::constcl::Number {
@@ -3273,6 +3277,8 @@ All predicates (procedures whose name end with -?) return
 boolean values. The conditional `if` operator considers all
 values except for `#f` to be true.
 
+**Boolean** class
+
 ```
 oo::class create ::constcl::Boolean {
     superclass ::constcl::NIL
@@ -3354,6 +3360,8 @@ proc ::constcl::not {val} {
 ### Characters
 
 Characters are any Unicode printing character, and also space and newline space characters.
+
+**Char** class
 
 ```
 oo::class create ::constcl::Char {
@@ -3805,6 +3813,7 @@ When a `Procedure` object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
 goes to the closure environment.
 
+**Procedure** class
 
 ```
 catch { ::constcl::Procedure destroy }
@@ -4283,6 +4292,8 @@ proc ::constcl::transcript-off {} {
 ### Pairs and lists
 
 List processing is another of Lisp's great strengths.
+
+**Pair** class
 
 ```
 catch { ::constcl::Pair destroy }
@@ -4891,6 +4902,8 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 
 Procedures for dealing with strings of characters.
 
+**String** class
+
 ```
 oo::class create ::constcl::String {
     superclass ::constcl::NIL
@@ -5416,6 +5429,8 @@ proc ::constcl::string-fill! {str char} {
 Symbols are like little strings that are used to refer to things (variables, including
 procedure names, etc) or for comparing against each other.
 
+**Symbol** class
+
 ```
 oo::class create ::constcl::Symbol {
     superclass ::constcl::NIL
@@ -5530,6 +5545,8 @@ They are implemented as Tcl lists of Lisp values.
 
 The number of elements that a vector contains (the _length_) is set when the vector is created.
 Elements can be indexed by integers from zero to length minus one.
+
+**Vector** class
 
 ```
 oo::class create ::constcl::Vector {
@@ -6016,6 +6033,8 @@ by the find method to find which innermost environment a given symbol is bound i
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
 can be empty, a proper list, a symbol, or a dotted list.
+
+**Environment** class
 
 ```
 catch { ::constcl::Environment destroy }

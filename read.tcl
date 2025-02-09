@@ -7,6 +7,7 @@ strings.
 MD)
 
 MD(
+**IB** class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
 characters to be read. The `fill` method fills the buffer and sets the first
@@ -1252,7 +1253,7 @@ proc ::constcl::read-pair-expression {char} {
     upvar c c unget unget
     set expr [read-pair $char]
     set c [skip-ws $c]
-    #read-eof $c
+    read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
             ::error "Missing right parenthesis (first=$c)."

@@ -3,6 +3,8 @@ MD(
 ### Characters
 
 Characters are any Unicode printing character, and also space and newline space characters.
+
+**Char** class
 MD)
 
 CB

@@ -6,6 +6,8 @@ I have only implemented a bare-bones version of Scheme's numerical
 library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
+
+**Number** class
 MD)
 
 CB

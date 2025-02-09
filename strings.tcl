@@ -3,6 +3,8 @@ MD(
 ### Strings
 
 Procedures for dealing with strings of characters.
+
+**String** class
 MD)
 
 CB

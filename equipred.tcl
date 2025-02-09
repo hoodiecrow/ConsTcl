@@ -9,9 +9,10 @@ MD(
 
 **equal**
 
-Of the three equivalence predicates, `eq` generally tests for identity (with exceptions for numbers
-and strings), `eqv` tests for value equality (except for booleans and procedures, where it tests for
-identity), and `equal` tests for whether the output strings are equal.
+Of the three equivalence predicates, `eq` generally tests for identity (with
+exceptions for numbers), `eqv` tests for value equality (except for booleans and
+procedures, where it tests for identity), and `equal` tests for whether the
+output strings are equal.
 MD)
 
 PR(
@@ -26,7 +27,7 @@ proc ::constcl::eq? {val1 val2} {
         return #t
     } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && $val1 eq $val2} {
         return #t
-    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 numval] eq [$val2 numval]} {
         return #t
     } elseif {[char? $val1] ne "#f" && [char? $val2] ne "#f" && $val1 eq $val2} {
         return #t

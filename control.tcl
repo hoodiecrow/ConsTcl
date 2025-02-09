@@ -13,6 +13,7 @@ When a `Procedure` object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
 goes to the closure environment.
 
+**Procedure** class
 MD)
 
 CB

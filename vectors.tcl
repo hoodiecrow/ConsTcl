@@ -7,6 +7,8 @@ They are implemented as Tcl lists of Lisp values.
 
 The number of elements that a vector contains (the _length_) is set when the vector is created.
 Elements can be indexed by integers from zero to length minus one.
+
+**Vector** class
 MD)
 
 CB
