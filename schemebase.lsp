@@ -41,4 +41,16 @@
       (cdr item)
       #f)))
 
+(define (pairlis a b)
+  (if (null? a)
+    ()
+    (cons (cons (car a) (car b)) (pairlis (cdr a) (cdr b)))))
+
+(define (set-alist! lst key val)
+  (let ((item (assq key lst)))
+    (if item
+      (begin (set-cdr! item val) lst)
+      lst)))
+
+
 ; vim: ft=lisp tw=80
