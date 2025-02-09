@@ -11,12 +11,10 @@ of times while working, and as a result is fairly slow.
 
 #### Benchmark
 
-On my cheap computer, the following code takes 0.024 seconds to run.
 
 ```
 namespace eval ::constcl {
     eval [parse "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"]
-    time {eval [parse "(fact 100)"]} 10
 }
 ```
 
@@ -46,10 +44,8 @@ will show up a lot in the test cases.
 ```
 # utility functions
 proc ::reg {key args} {
-    ::if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
-        set val [lindex $args 0]
     }
     dict set ::constcl::defreg $key $val
 }
@@ -68,8 +64,8 @@ proc ::prp {str} {
     set args [::constcl::cdr $val]
     set env ::constcl::global_env
     while {[$op name] in {
-        and case cond define for for/and for/list
-        for/or let or put! quasiquote unless when}} {
+            and case cond define del! for for/and for/list for/or
+            let or pop! push! put! quasiquote unless when}} {
             ::constcl::expand-macro $env
     }
     set args [::constcl::resolve-local-defines $args]
@@ -91,7 +87,6 @@ proc ::constcl::check {cond msg} {
 }
 
 proc ::pn {} {
-    lindex [split [lindex [info level -1] 0] :] end
 }
 
 ```
@@ -105,7 +100,6 @@ reg in-range ::constcl::in-range
 
 #started out as DKF's code
 proc ::constcl::in-range {args} {
-    set start 0
     set step 1
     switch [llength $args] {
         1 { lassign $args e ; set end [$e value]}
@@ -113,7 +107,6 @@ proc ::constcl::in-range {args} {
         3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
     }
     set res $start
-    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
         lappend res $start
     }
     return [list {*}[lmap r $res {MkNumber $r}]]
@@ -231,7 +224,6 @@ reg error
 proc ::constcl::error {msg args} {
     ::if {[llength $args]} {
         lappend msg "("
-        set times 0
         foreach arg $args {
             ::if {$times} {
                 ::append msg " "
@@ -266,17 +258,18 @@ proc cons3 {pcar pcdr ptag} {
 }
 ```
 
+```
 proc ::constcl::xread {} {
     ::if {[$::constcl::InputPort handle] eq "#NIL"} {
         error "input port is not open"
     }
-    set ::constcl::Level 0
-    return [read-form 0]
 }
 
 proc ::constcl::read_c_ci {} {
     return [tolower [::read [$::constcl::Input_port handle] 1]]
 }
+```
+
 
 
 ## read
@@ -310,7 +303,6 @@ oo::class create ::constcl::IB {
         ::if {$buffer eq {}} {
             set peekc {}
         } else {
-            set peekc [::string index $buffer 0]
             set buffer [::string range $buffer 1 end]
         }
     }
@@ -323,7 +315,6 @@ oo::class create ::constcl::IB {
     }
     method find {char} {
         ::if {[::string is space -strict $peekc]} {
-            for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
                 ::if {![::string is space -strict [::string index $buffer $cp]]} {
                     break
                 }
@@ -737,7 +728,6 @@ proc ::constcl::parse-identifier-expression {} {
 **character-check**
 
 The `character-check` helper procedure compares a potential
-character constant to the valid kinds. Returns Tcl truth (1/0).
 
 ```
 proc ::constcl::character-check {name} {
@@ -894,7 +884,6 @@ proc readc {} {
 ```
 
 `read-find` reads ahead through whitespace to find a given character. Returns 1
-if it has found the character, and 0 if it has stopped at some other character.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
@@ -1240,7 +1229,6 @@ proc ::constcl::read-quasiquoted-expression {} {
 proc ::constcl::read-identifier-expression {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
-        set c [lindex $args 0]
     } else {
         set c [readc]
     }
@@ -1269,15 +1257,8 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 | Syntactic form | Syntax | Semantics |
 |----------------|--------|-----------|
-| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
 | [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
 | [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
-| [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expressions_ are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
-| [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
-| [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
-| [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
-| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
-| [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
 
 
 
@@ -1291,7 +1272,8 @@ car and cdr of the expression) before processing them in the big `switch`. See
 the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 The evaluator also resolves local defines, acting on expressions of the form
-"(begin (define ...". See the part about [resolving local
+"(begin (define ..." when the environment is other than the global one. See the
+part about [resolving local
 defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
@@ -1314,9 +1296,9 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
             ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
-            set args [resolve-local-defines $args]
-            set op [car $args]
-            set args [cdr $args]
+            set expr [resolve-local-defines $args]
+            set op [car $expr]
+            set args [cdr $expr]
         }
         switch [$op name] {
             quote   { car $args }
@@ -1488,7 +1470,6 @@ as a Lisp list.
 
 ```
 proc ::constcl::eval-list {exps env} {
-    # don't convert to ::constcl::if, it breaks (fact 100)
     ::if {[pair? $exps] ne "#f"} {
         return [cons [eval [car $exps] $env] [eval-list [cdr $exps] $env]]
     } {
@@ -1582,13 +1563,11 @@ proc ::constcl::expand-macro {env} {
 **expand-and**
 
 `expand-and` expands the `and` macro. It returns a `begin`-expression if the macro
-has 0 or 1 elements, and a nested `if` construct otherwise.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-and {tail env} {
-    if {eq? [length $tail] #0} {
         return [list #B #t]
     } {
         if {eq? [length $tail] #1} {
@@ -1605,7 +1584,6 @@ proc ::constcl::expand-and {tail env} {
 ```
 proc ::constcl::do-and {tail prev env} {
     set env [::constcl::Environment new #NIL {} $env]
-    if {eq? [length $tail] #0} {
         return $prev
     } {
         $env setstr "first" [car $tail]
@@ -1625,7 +1603,6 @@ and nested `if` constructs if there are some.
 
 ```
 proc ::constcl::expand-case {keyexpr clauses} {
-    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set keyl [caar $clauses]
@@ -1651,7 +1628,6 @@ clauses (left), and nested `if` constructs if there are some.
 
 ```
 proc ::constcl::expand-cond {clauses} {
-    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set pred [caar $clauses]
@@ -1704,7 +1680,6 @@ is present, or leaves the list untouched if it isn't.
 ```
 proc ::constcl::expand-del! {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
-    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 2 expected, got 0"}
     $env setstr "listname" [car $tail]
     ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 2 expected, got 1"}
     $env setstr "key" [cadr $tail]
@@ -1749,7 +1724,6 @@ proc ::constcl::do-for {tail env} {
     set body [cdr $tail]
     set ids {}
     set seqs {}
-    for {set i 0} {$i < [llength $clauses]} {incr i} {
         set clause [lindex $clauses $i]
         # insert the first part of the clause in the ids structure
         lset ids $i [car $clause]
@@ -1757,10 +1731,8 @@ proc ::constcl::do-for {tail env} {
         lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
-    for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
         # for each iteration of the sequences
         set x {}
-        for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
             # for each clause
             # list append to x the Lisp list of the id and the iteration
             lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
@@ -1876,13 +1848,11 @@ proc ::constcl::parse-bindings {name bindings} {
 **expand-or**
 
 `expand-or` expands the `or` macro. It returns a `begin`-expression if the macro
-has 0 or 1 elements, and a nested `if` construct otherwise.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-or (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::expand-or {tail env} {
-    ::if {[eq? [length $tail] #0] ne "#f"} {
         return [list #B #f]
     } elseif {[eq? [length $tail] #1] ne "#f"} {
         return [cons #B $tail]
@@ -1897,7 +1867,6 @@ proc ::constcl::expand-or {tail env} {
 ```
 proc ::constcl::do-or {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
-    if {eq? [length $tail] #0} {
         return #f
     } {
         $env setstr "first" [car $tail]
@@ -1956,14 +1925,12 @@ isn't present, or changes the value in place if it is.
 ```
 proc ::constcl::expand-put! {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
-    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
     $env set [MkSymbol "listname"] [car $tail]
     ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
     $env set [MkSymbol "key"] [cadr $tail]
     ::if {[null? [cddr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
     $env set [MkSymbol "val"] [caddr $tail]
     set qq "`(let ((idx (list-find-key ,listname ,key)))
-               (if (< idx 0)
                  (set! ,listname (append (list ,key ,val) ,listname))
                  (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
     return [expand-quasiquote [cdr [parse $qq]] $env]
@@ -1980,20 +1947,16 @@ brittle and sprawling and I barely understand it myself.
 
 ```
 proc ::constcl::qq-visit-child {node qqlevel env} {
-    ::if {$qqlevel < 0} {
-        set qqlevel 0
     }
     ::if {[list? $node] ne "#f"} {
         set res {}
         foreach child [splitlist $node] {
             ::if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
-                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $child] $env]
                 } else {
                     lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
-                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $child] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "quasiquote"]] ne "#f"} {
@@ -2013,22 +1976,17 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 
 ```
 proc ::constcl::expand-quasiquote {tail env} {
-    set qqlevel 0
     ::if {[list? [car $tail]] ne "#f"} {
         set node [car $tail]
-        return [qq-visit-child $node 0 $env]
     } elseif {[vector? [car $tail]] ne "#f"} {
         set vect [car $tail]
         set res {}
-        for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
             set vecref [vector-ref $vect $idx]
             ::if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
-                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $vecref] $env]
                 }
             } elseif {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] ne "#f"} {
-                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $vecref] $env]]
                 }
             } elseif {[atom? $vecref] ne "#f"} {
@@ -2494,10 +2452,6 @@ oo::class create ::constcl::Number {
             ::error "NUMBER expected\n$v"
         }
     }
-    method zero? {} {::if {$value == 0} then {return #t} else {return #f}}
-    method positive? {} {::if {$value > 0} then {return #t} else {return #f}}
-    method negative? {} {::if {$value < 0} then {return #t} else {return #f}}
-    method even? {} {::if {$value % 2 == 0} then {return #t} else {return #f}}
     method odd? {} {::if {$value % 2 == 1} then {return #t} else {return #f}}
     method value {} { set value }
     method numval {} {set value}
@@ -2719,8 +2673,6 @@ selects the smallest number.
 Example:
 
 ```
-(max 7 1 10 3)   ⇒  10
-(min 7 1 10 3)   ⇒  1
 ```
 
 ```
@@ -2770,13 +2722,11 @@ at least one for `-` and `/`.
 Example:
 
 ```
-(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   ⇒  (4 4 4 4)
 (+ 21 7 3)                                 ⇒  31
 (* 21 7 3)                                 ⇒  441
 (- 21 7 3)                                 ⇒  11
 (/ 21 7 3)                                 ⇒  1
 (- 5)                                      ⇒  -5
-(/ 5)                                      ⇒  0.2
 ```
 
 ```
@@ -2864,7 +2814,6 @@ proc ::constcl::abs {num} {
 Example:
 
 ```
-(quotient 7 3)   ⇒  2.0
 ```
 
 ```
@@ -2872,12 +2821,9 @@ reg quotient
 
 proc ::constcl::quotient {num1 num2} {
     set q [::tcl::mathop::/ [$num1 numval] [$num2 numval]]
-    ::if {$q > 0} {
         return [MkNumber [::tcl::mathfunc::floor $q]]
-    } elseif {$q < 0} {
         return [MkNumber [::tcl::mathfunc::ceil $q]]
     } else {
-        return #0
     }
 }
 ```
@@ -2966,9 +2912,6 @@ converting a real number to an integer.
 Example:
 
 ```
-(floor 7.5)      ⇒  7.0
-(ceiling 7.5)    ⇒  8.0
-(truncate 7.5)   ⇒  7.0
 (round 7.5)      ⇒  8
 ```
 
@@ -3125,7 +3068,6 @@ reg atan ::constcl::atan
 
 proc ::constcl::atan {args} {
     ::if {[llength $args] == 1} {
-        set num [lindex $args 0]
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         MkNumber [::tcl::mathfunc::atan [$num numval]]
     } else {
@@ -3230,7 +3172,6 @@ Example:
 
 ```
 (number->string 23)      ⇒  "23"
-(number->string 23 2)    ⇒  "10111"
 (number->string 23 8)    ⇒  "27"
 (number->string 23 16)   ⇒  "17"
 ```
@@ -3239,15 +3180,12 @@ Example:
 reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
-    ::if {[llength $args] == 0} {
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         return [MkString [$num numval]]
     } else {
         lassign $args radix
         check {number? $num} {NUMBER expected\n([pn] [$num show])}
         check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
-        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
-        ::if {[$radix numval] == 10} {
             return [MkString [$num numval]]
         } else {
             return [MkString [base [$radix numval] [$num numval]]]
@@ -3258,7 +3196,6 @@ proc ::constcl::number->string {num args} {
 # due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc base {base number} {
     set negative [regexp ^-(.+) $number -> number]
-    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
     set res {}
     while {$number} {
         set digit [expr {$number % $base}]
@@ -3281,7 +3218,6 @@ Example:
 
 ```
 (string->number "23")        ⇒  23
-(string->number "10111" 2)   ⇒  23
 (string->number "27" 8)      ⇒  23
 (string->number "17" 16)     ⇒  23
 ```
@@ -3290,14 +3226,11 @@ Example:
 reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
-    ::if {[llength $args] == 0} {
         check {string? $str} {STRING expected\n([pn] [$str show])}
         return [MkNumber [$str value]]
     } else {
         lassign $args radix
         check {string? $str} {STRING expected\n([pn] [$str show])}
-        check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
-        ::if {[$radix numval] == 10} {
             return [MkNumber [$str value]]
         } else {
             return [MkNumber [frombase [$radix numval] [$str value]]]
@@ -3307,12 +3240,9 @@ proc ::constcl::string->number {str args} {
 
 # due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc frombase {base number} {
-    set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
     set negative [regexp ^-(.+) $number -> number]
-    set res 0
     foreach digit [split $number {}] {
         set decimalvalue [lsearch $digits $digit]
-        ::if {$decimalvalue < 0 || $decimalvalue >= $base} {
             ::error "bad digit $decimalvalue for base $base"
         }
         set res [expr {$res * $base + $decimalvalue}]
@@ -3805,7 +3735,6 @@ Example:
 reg integer->char
 
 proc ::constcl::integer->char {int} {
-    ::if {$int == 10} {
         return [MkChar #\\newline]
     } elseif {$int == 32} {
         return [MkChar #\\space]
@@ -3950,7 +3879,6 @@ returned.
 Example:
 
 ```
-(map + '(1 2 3) '(5 6 7))   ⇒ (6 8 10)
 ```
 
 ```
@@ -3959,13 +3887,10 @@ reg map ::constcl::map
 proc ::constcl::map {pr args} {
     check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
     set arglists $args
-    for {set i 0} {$i < [llength $arglists]} {incr i} {
         lset arglists $i [splitlist [lindex $arglists $i]]
     }
     set res {}
-    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
         set arguments {}
-        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
             lappend arguments [lindex $arglists $arg $item]
         }
         lappend res [invoke $pr [list {*}$arguments]]
@@ -3989,8 +3914,6 @@ it.)
 (let ((v (make-vector 5)))
   (for-each (lambda (i)
               (vector-set! v i (* i i)))
-            '(0 1 2 3 4))
-  v)                                      ⇒  #(0 1 4 9 16)
 ```
 
 ```
@@ -3999,12 +3922,9 @@ reg for-each ::constcl::for-each
 proc ::constcl::for-each {proc args} {
     check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
     set arglists $args
-    for {set i 0} {$i < [llength $arglists]} {incr i} {
         lset arglists $i [splitlist [lindex $arglists $i]]
     }
-    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
         set arguments {}
-        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
             lappend arguments [lindex $arglists $arg $item]
         }
         invoke $proc [list {*}$arguments]
@@ -4223,7 +4143,6 @@ proc ::constcl::close-output-port {port} {
 ```
 proc ::constcl::__read {args} {
     ::if {[llength $args]} {
-        set new_port [lindex $args 0]
     } else {
         set new_port $::constcl::Input_port
     }
@@ -4308,7 +4227,6 @@ proc ::constcl::__load {filename} {
     set-cdr! ::constcl::S_loading $outer_loading
     set ::constcl::File_list [cdr $::constcl::File_list]
     set env $save_env
-    return 0
 }
 
 proc ::constcl::____load {filename} {
@@ -4360,7 +4278,6 @@ oo::class create ::constcl::Pair {
     constructor {a d} {
         set car $a
         set cdr $d
-        set constant 0
     }
     method name {} {} ;# for eval to call when dealing with an application form
     method value {} {my show}
@@ -4656,7 +4573,6 @@ Example:
 reg list ::constcl::list
 
 proc ::constcl::list {args} {
-    ::if {[llength $args] == 0} {
         return #NIL
     } else {
         set prev #NIL
@@ -4695,7 +4611,6 @@ proc ::constcl::length {pair} {
 ```
 proc ::constcl::length-helper {pair} {
     ::if {[null? $pair] ne "#f"} {
-        return 0
     } else {
         return [expr {1 + [length-helper [cdr $pair]]}]
     }
@@ -4720,7 +4635,6 @@ reg append ::constcl::append
 
 proc ::constcl::append {args} {
     set prev [lindex $args end]
-    foreach r [lreverse [lrange $args 0 end-1]] {
         set prev [copy-list $r $prev]
     }
     set prev
@@ -4980,14 +4894,12 @@ oo::class create ::constcl::String {
             incr idx
         }
         set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
     }
     method = {str} {::string equal [my value] [$str value]}
     method cmp {str} {::string compare [my value] [$str value]}
     method length {} {::constcl::cdr $data}
     method ref {k} {
         set k [$k numval]
-        ::if {$k < 0 || $k >= [[my length] numval]} {
             ::error "index out of range\n$k"
         }
         lindex [my store] $k
@@ -5005,7 +4917,6 @@ oo::class create ::constcl::String {
             ::error "string is constant"
         } else {
             set k [$k numval]
-            ::if {$k < 0 || $k >= [[my length] numval]} {
                 ::error "index out of range\n$k"
             }
             set base [[::constcl::car $data] numval]
@@ -5073,7 +4984,6 @@ Example:
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {k args} {
-    ::if {[llength $args] == 0} {
         return [MkString [::string repeat " " [$k numval]]]
     } else {
         lassign $args char
@@ -5133,7 +5043,6 @@ proc ::constcl::string-length {str} {
 
 **string-ref**
 
-`string-ref` yields the _k_-th character (0-based) in _str_.
 
 <table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -5443,7 +5352,6 @@ proc ::constcl::list->string {list} {
 Example:
 
 ```
-(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            ⇒  "xbc"
 ```
 
 ```
@@ -5497,7 +5405,6 @@ oo::class create ::constcl::Symbol {
         }
         ::constcl::idcheck $n
         set name $n
-        set caseconstant 0
     }
     method name {} {set name}
     method value {} {set name}
@@ -5617,12 +5524,10 @@ oo::class create ::constcl::Vector {
             incr idx
         }
         set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
     }
     method length {} {::constcl::cdr $data}
     method ref {k} {
         set k [$k numval]
-        ::if {$k < 0 || $k >= [[my length] numval]} {
             ::error "index out of range\n$k"
         }
         lindex [my store] $k
@@ -5640,7 +5545,6 @@ oo::class create ::constcl::Vector {
             ::error "vector is constant"
         } else {
             set k [$k numval]
-            ::if {$k < 0 || $k >= [[my length] numval]} {
                 ::error "index out of range\n$k"
             }
             set base [[::constcl::car $data] numval]
@@ -5707,7 +5611,6 @@ Example:
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
-    ::if {[llength $args] == 0} {
         set fill #NIL
     } else {
         lassign $args fill
@@ -5761,7 +5664,6 @@ proc ::constcl::vector-length {vec} {
 
 **vector-ref**
 
-`vector-ref` returns the element of _vec_ at index _k_ (0-based).
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -5910,7 +5812,6 @@ proc ::constcl::idchecksubs {subs} {
 
 proc ::constcl::idcheck {sym} {
 ::if {$sym eq {}} {return $sym}
-    ::if {(![idcheckinit [::string index $sym 0]] ||
         ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
         ::error "Identifier expected ($sym)"
     }
@@ -5931,9 +5832,7 @@ proc ::constcl::varcheck {sym} {
 Initialize the memory space for vector contents.
 
 ```
-set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
-set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
     # TODO calculate free space
@@ -5944,7 +5843,6 @@ proc ::constcl::vsAlloc {num} {
 ```
 
 ```
-set ::constcl::gensymnum 0
 ```
 
 Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
@@ -5959,7 +5857,6 @@ interp alias {} #f {} [::constcl::MkBoolean #f]
 
 interp alias {} #-1 {} [::constcl::MkNumber -1]
 
-interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
 
@@ -6033,7 +5930,6 @@ proc ::constcl::atom? {val} {
 
 ## The REPL
 
-The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)) is a
 loop that repeatedly _reads_ a Scheme source string from the user through the
 command `::constcl::input` (breaking the loop if given an empty line) and
 `::constcl::parse`, _evaluates_ it using `::constcl::eval`, and _prints_ using
@@ -6116,7 +6012,6 @@ oo::class create ::constcl::Environment {
         } else {
             while true {
                 if {[llength $vals] < 1} { error "too few arguments" }
-                my set [::constcl::car $syms] [lindex $vals 0]
                 set vals [lrange $vals 1 end]
                 if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
                     my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
@@ -6148,6 +6043,7 @@ oo::class create ::constcl::Environment {
 }
 ```
 
+# vim: set filetype=tcl:
 
 On startup, two `Environment` objects called `null_env` (the null environment, not the same
 as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
@@ -6192,12 +6088,10 @@ Example:
 
 ```
 ConsTcl> (define (circle-area r) (* pi (* r r)))
-ConsTcl> (circle-area 10)
 314.1592653589793
 ```
 
 During a call to the procedure `circle-area`, the symbol `r` is bound to the
-value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of `r`. The solution is to use
 separate (but linked) environments, making `r`'s binding a
 _[local variable](https://en.wikipedia.org/wiki/Local_variable)_

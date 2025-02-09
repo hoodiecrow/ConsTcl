@@ -21,6 +21,7 @@ proc cons3 {pcar pcdr ptag} {
 }
 CB
 
+CB
 proc ::constcl::xread {} {
     ::if {[$::constcl::InputPort handle] eq "#NIL"} {
         error "input port is not open"
@@ -32,4 +33,6 @@ proc ::constcl::xread {} {
 proc ::constcl::read_c_ci {} {
     return [tolower [::read [$::constcl::Input_port handle] 1]]
 }
+CB
+
 

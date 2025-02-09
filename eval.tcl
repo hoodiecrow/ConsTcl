@@ -30,7 +30,8 @@ car and cdr of the expression) before processing them in the big `switch`. See
 the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 The evaluator also resolves local defines, acting on expressions of the form
-"(begin (define ...". See the part about [resolving local
+"(begin (define ..." when the environment is other than the global one. See the
+part about [resolving local
 defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 MD)
 
@@ -56,9 +57,9 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
             ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
-            set args [resolve-local-defines $args]
-            set op [car $args]
-            set args [cdr $args]
+            set expr [resolve-local-defines $args]
+            set op [car $expr]
+            set args [cdr $expr]
         }
         switch [$op name] {
             quote   { car $args }

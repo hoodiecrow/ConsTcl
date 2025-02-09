@@ -43,8 +43,8 @@ proc ::prp {str} {
     set args [::constcl::cdr $val]
     set env ::constcl::global_env
     while {[$op name] in {
-        and case cond define for for/and for/list
-        for/or let or put! quasiquote unless when}} {
+            and case cond define del! for for/and for/list for/or
+            let or pop! push! put! quasiquote unless when}} {
             ::constcl::expand-macro $env
     }
     set args [::constcl::resolve-local-defines $args]
