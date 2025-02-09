@@ -117,6 +117,15 @@ CB
 CB
 
 MD(
+An alist can also be created from scratch using the `pairlis` procedure:
+MD)
+
+CB
+> (define alist (pairlis '(a b c) '(1 2 3)))
+((a . 1) (b . 2) (c . 3))
+CB
+
+MD(
 The procedure `assq` retrieves one pair based on the key:
 MD)
 
@@ -139,6 +148,27 @@ CB
 1
 > (get-alist 'x)
 #f
+CB
+
+MD(
+We can add another item to the alist with the `push!` macro:
+MD)
+
+CB
+> (push! (cons 'e 5) alist)
+((e . 5) (a . 1) (b . 2) (c . 3) (d . 4))
+CB
+
+MD(
+The `set-alist!` procedure can be used to update a value (it returns the alist
+unchanged if the key isn't present):
+MD)
+
+CB
+> alist
+((a . 1) (b . 2) (c . 3) (d . 4))
+> (set-alist! alist 'b 7)
+((a . 1) (b . 7) (c . 3) (d . 4))
 CB
 
 }

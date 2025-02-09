@@ -10,7 +10,7 @@ MD(
 **equal**
 
 Of the three equivalence predicates, `eq` generally tests for identity (with
-exceptions for numbers), `eqv` tests for value equality (except for booleans and
+exception for numbers), `eqv` tests for value equality (except for booleans and
 procedures, where it tests for identity), and `equal` tests for whether the
 output strings are equal.
 MD)

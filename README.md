@@ -1298,7 +1298,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set args [cdr $expr]
         while {[$op name] in {
             and case cond define del! for for/and for/list
-            for/or let or put! quasiquote unless when}} {
+            for/or let or push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -1535,6 +1535,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        push! {
+            set expr [expand-push! $args $env]
         }
         put! {
             set expr [expand-put! $args $env]
@@ -1881,6 +1884,25 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+```
+
+**expand-push!**
+
+The macro `push!` updates a list. It adds a new element as the new first element.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-push! (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::expand-push! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cons ,obj ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 ```
 
@@ -2336,7 +2358,7 @@ proc ::constcl::write-pair {handle pair} {
 **equal**
 
 Of the three equivalence predicates, `eq` generally tests for identity (with
-exceptions for numbers), `eqv` tests for value equality (except for booleans and
+exception for numbers), `eqv` tests for value equality (except for booleans and
 procedures, where it tests for identity), and `equal` tests for whether the
 output strings are equal.
 
@@ -3987,6 +4009,8 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 
 ```
+catch { Port destroy }
+
 oo::class create Port {
     variable handle
     constructor {args} {
@@ -6239,6 +6263,13 @@ value as the `cdr`. Example:
 ((a . 1) (b . 2) (c . 3) (d . 4))
 ```
 
+An alist can also be created from scratch using the `pairlis` procedure:
+
+```
+> (define alist (pairlis '(a b c) '(1 2 3)))
+((a . 1) (b . 2) (c . 3))
+```
+
 The procedure `assq` retrieves one pair based on the key:
 
 ```
@@ -6258,6 +6289,23 @@ for a missing item:
 1
 > (get-alist 'x)
 #f
+```
+
+We can add another item to the alist with the `push!` macro:
+
+```
+> (push! (cons 'e 5) alist)
+((e . 5) (a . 1) (b . 2) (c . 3) (d . 4))
+```
+
+The `set-alist!` procedure can be used to update a value (it returns the alist
+unchanged if the key isn't present):
+
+```
+> alist
+((a . 1) (b . 2) (c . 3) (d . 4))
+> (set-alist! alist 'b 7)
+((a . 1) (b . 7) (c . 3) (d . 4))
 ```
 
 }

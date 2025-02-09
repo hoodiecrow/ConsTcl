@@ -5,6 +5,8 @@ MD(
 MD)
 
 CB
+catch { Port destroy }
+
 oo::class create Port {
     variable handle
     constructor {args} {

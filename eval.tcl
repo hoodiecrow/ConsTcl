@@ -46,7 +46,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set args [cdr $expr]
         while {[$op name] in {
             and case cond define del! for for/and for/list
-            for/or let or put! quasiquote unless when}} {
+            for/or let or push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -328,6 +328,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        push! {
+            set expr [expand-push! $args $env]
         }
         put! {
             set expr [expand-put! $args $env]
@@ -726,6 +729,29 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+CB
+
+MD(
+**expand-push!**
+
+The macro `push!` updates a list. It adds a new element as the new first element.
+MD)
+
+PR(
+expand-push! (internal);tail exprtail env env -> expr
+PR)
+
+CB
+proc ::constcl::expand-push! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cons ,obj ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 

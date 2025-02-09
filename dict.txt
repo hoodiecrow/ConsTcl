@@ -7,6 +7,7 @@ lisp      -> Lisp source text
 inpbuf    -> an input buffer
 strinpbuf -> a string or an input buffer
 none      -> nothing
+noneeof   -> nothing, or end of file
 varsvals  -> a flag, VARS or VALS
 pterm     -> the terminating paren or bracket
 pstr      -> a structure of pair expressions

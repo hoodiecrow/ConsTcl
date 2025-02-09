@@ -905,7 +905,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set args [cdr $expr]
         while {[$op name] in {
             and case cond define del! for for/and for/list
-            for/or let or put! quasiquote unless when}} {
+            for/or let or push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -1055,6 +1055,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        push! {
+            set expr [expand-push! $args $env]
         }
         put! {
             set expr [expand-put! $args $env]
@@ -1301,6 +1304,19 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+
+
+
+proc ::constcl::expand-push! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cons ,obj ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 
 
@@ -2772,6 +2788,8 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 # vim: ft=tcl tw=80
 
+
+catch { Port destroy }
 
 oo::class create Port {
     variable handle
@@ -4293,6 +4311,10 @@ if no {
 ((a . 1) (b . 2) (c . 3) (d . 4))
 
 
+> (define alist (pairlis '(a b c) '(1 2 3)))
+((a . 1) (b . 2) (c . 3))
+
+
 > (assq 'a alist)
 (a . 1)
 > (cdr (assq 'a alist))
@@ -4305,6 +4327,16 @@ if no {
 1
 > (get-alist 'x)
 #f
+
+
+> (push! (cons 'e 5) alist)
+((e . 5) (a . 1) (b . 2) (c . 3) (d . 4))
+
+
+> alist
+((a . 1) (b . 2) (c . 3) (d . 4))
+> (set-alist! alist 'b 7)
+((a . 1) (b . 7) (c . 3) (d . 4))
 
 }
 
