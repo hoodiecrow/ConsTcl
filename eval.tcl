@@ -23,10 +23,15 @@ MD(
 **eval**
 
 `eval` processes an _expression_ to get a _value_. The exact method depends on
-the form of expression, see above.  The evaluator also does a simple form of
-macro expansion on `op` and `args` (the car and cdr of the expression) before
-processing them in the big `switch`. See the part about
-[macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+the form of expression, see above.
+
+The evaluator also does a simple form of macro expansion on `op` and `args` (the
+car and cdr of the expression) before processing them in the big `switch`. See
+the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+
+The evaluator also resolves local defines, acting on expressions of the form
+"(begin (define ...". See the part about [resolving local
+defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 MD)
 
 PR(
@@ -45,8 +50,8 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-            and case cond define del! for for/and for/list
-            for/or let or push! put! quasiquote unless when}} {
+            and case cond define del! for for/and for/list for/or
+            let or pop! push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -280,9 +285,16 @@ MD(
 
 **expand-macro**
 
-Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong
-points. This interpreter does macro expansion, but the user can't define new macros--the ones
-available are hardcoded in the code below.
+Macros that rewrite expressions into other, more concrete expressions is one of
+Lisp's strong points. This interpreter does macro expansion, but the user can't
+define new macros--the ones available are hardcoded in the code below.
+
+`expand-macro` only takes the environment as a parameter, but internally it uses
+variable sharing to get the expression it is to process. It shares the variables
+`op` and `args` with its caller, `eval`. `op` is used to delegate to the correct
+expansion procedure, and the value of `args` is passed to the expansion
+procedures. In the end, the expanded expression is passed back to `eval` by
+assigning to `op` and `args`.
 MD)
 
 PR(
@@ -328,6 +340,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        pop! {
+            set expr [expand-pop! $args $env]
         }
         push! {
             set expr [expand-push! $args $env]
@@ -729,6 +744,29 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+CB
+
+MD(
+**expand-pop!**
+
+The macro `push!` updates a list. It adds a new element as the new first element.
+MD)
+
+PR(
+expand-pop! (internal);tail exprtail env env -> expr
+PR)
+
+CB
+proc ::constcl::expand-pop! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cdr ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
 

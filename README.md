@@ -1284,10 +1284,15 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 **eval**
 
 `eval` processes an _expression_ to get a _value_. The exact method depends on
-the form of expression, see above.  The evaluator also does a simple form of
-macro expansion on `op` and `args` (the car and cdr of the expression) before
-processing them in the big `switch`. See the part about
-[macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+the form of expression, see above.
+
+The evaluator also does a simple form of macro expansion on `op` and `args` (the
+car and cdr of the expression) before processing them in the big `switch`. See
+the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+
+The evaluator also resolves local defines, acting on expressions of the form
+"(begin (define ...". See the part about [resolving local
+defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1303,8 +1308,8 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-            and case cond define del! for for/and for/list
-            for/or let or push! put! quasiquote unless when}} {
+            and case cond define del! for for/and for/list for/or
+            let or pop! push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -1496,9 +1501,16 @@ proc ::constcl::eval-list {exps env} {
 
 **expand-macro**
 
-Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong
-points. This interpreter does macro expansion, but the user can't define new macros--the ones
-available are hardcoded in the code below.
+Macros that rewrite expressions into other, more concrete expressions is one of
+Lisp's strong points. This interpreter does macro expansion, but the user can't
+define new macros--the ones available are hardcoded in the code below.
+
+`expand-macro` only takes the environment as a parameter, but internally it uses
+variable sharing to get the expression it is to process. It shares the variables
+`op` and `args` with its caller, `eval`. `op` is used to delegate to the correct
+expansion procedure, and the value of `args` is passed to the expansion
+procedures. In the end, the expanded expression is passed back to `eval` by
+assigning to `op` and `args`.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
 
@@ -1541,6 +1553,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        pop! {
+            set expr [expand-pop! $args $env]
         }
         push! {
             set expr [expand-push! $args $env]
@@ -1890,6 +1905,25 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+```
+
+**expand-pop!**
+
+The macro `push!` updates a list. It adds a new element as the new first element.
+
+<table border=1><thead><tr><th colspan=2 align="left">expand-pop! (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::expand-pop! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cdr ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 ```
 
@@ -6316,3 +6350,62 @@ unchanged if the key isn't present):
 
 }
 
+## A Scheme base
+
+```
+
+; An assortment of procedures to supplement the builtins.
+
+(define (get plist key)
+  (let ((v (memq key plist)))
+    (if v
+      (cadr v)
+      #f)))
+
+(define (list-find-key lst key)
+
+(define (lfk lst key count)
+  (if (null? lst)
+    -1
+    (if (eq? (car lst) key)
+      count
+      (lfk (cddr lst) key (+ count 2)))))
+
+(define (list-set! lst idx val)
+  (if (zero? idx)
+    (set-car! lst val)
+    (list-set! (cdr lst) (- idx 1) val)))
+
+(define (delete! lst key)
+  (let ((idx (list-find-key lst key)))
+      lst
+        (set! lst (cddr lst))
+        (let ((node-before (delete-seek lst (- idx 1)))
+              (node-after (delete-seek lst (+ idx 2))))
+          (set-cdr! node-before node-after))))
+    lst))
+
+(define (delete-seek lst idx)
+  (if (zero? idx)
+    lst
+    (delete-seek (cdr lst) (- idx 1))))
+
+(define (get-alist lst key)
+  (let ((item (assq key lst)))
+    (if item
+      (cdr item)
+      #f)))
+
+(define (pairlis a b)
+  (if (null? a)
+    ()
+    (cons (cons (car a) (car b)) (pairlis (cdr a) (cdr b)))))
+
+(define (set-alist! lst key val)
+  (let ((item (assq key lst)))
+    (if item
+      (begin (set-cdr! item val) lst)
+      lst)))
+
+
+```

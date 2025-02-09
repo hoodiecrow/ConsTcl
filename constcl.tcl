@@ -904,8 +904,8 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
         set op [car $expr]
         set args [cdr $expr]
         while {[$op name] in {
-            and case cond define del! for for/and for/list
-            for/or let or push! put! quasiquote unless when}} {
+            and case cond define del! for for/and for/list for/or
+            let or pop! push! put! quasiquote unless when}} {
                 expand-macro $env
         }
         ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
@@ -1055,6 +1055,9 @@ proc ::constcl::expand-macro {env} {
         }
         or {
             set expr [expand-or $args $env]
+        }
+        pop! {
+            set expr [expand-pop! $args $env]
         }
         push! {
             set expr [expand-push! $args $env]
@@ -1304,6 +1307,19 @@ proc ::constcl::do-or {tail env} {
         set qq "`(let ((x ,first)) (if x x ,rest))"
         return [expand-quasiquote [cdr [parse $qq]] $env]
     }
+}
+
+
+
+proc ::constcl::expand-pop! {tail env} {
+    set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    $env set [MkSymbol "obj"] [car $tail]
+    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+    ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
+    $env set [MkSymbol "listname"] [cadr $tail]
+    set qq "`(set! ,listname (cdr ,listname))"
+    return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 
 
