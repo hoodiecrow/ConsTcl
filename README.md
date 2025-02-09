@@ -805,12 +805,9 @@ similar manner to how `parse` parses a string buffer.
 ```
 reg read ::constcl::read
 
-set ::constcl::global_unget {}
-
 proc ::constcl::read {args} {
     set c {}
-    set unget $::constcl::global_unget
-    set ::constcl::global_unget {}
+    set unget {}
     ::if {[llength $args]} {
         lassign $args port
     } else {
@@ -820,9 +817,7 @@ proc ::constcl::read {args} {
     set ::constcl::Input_port $port
     set expr [read-expression]
     set ::constcl::Input_port $oldport
-    ::if {$unget ne "#EOF"} {
-        set ::constcl::global_unget $unget
-    }
+    set unget {}
     return $expr
 }
 ```
@@ -846,22 +841,22 @@ proc ::constcl::read-expression {args} {
     }
     read-eof $c
     ::if {[::string is space $c] || $c eq ";"} {
-        set c [skip-ws $c]
+        skip-ws
         read-eof $c
     }
     switch -regexp $c {
         {^$}          { return #NONE}
-        {\"}          { set n [read-string-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\#}          { set n [read-sharp]                   ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\'}          { set n [read-quoted-expression]       ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {\d}          { set n [read-number-expression $c]    ; read-eof $n; set unget [skip-ws $c]; return $n }
-        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; set unget [skip-ws $c]; return $n }
+        {\"}          { set n [read-string-expression]       ; read-eof $n; return $n }
+        {\#}          { set n [read-sharp]                   ; read-eof $n; return $n }
+        {\'}          { set n [read-quoted-expression]       ; read-eof $n; return $n }
+        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; return $n }
+        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; return $n }
+        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; return $n }
+        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; return $n }
+        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; return $n }
+        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; return $n }
+        {\d}          { set n [read-number-expression $c]    ; read-eof $n; return $n }
+        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; return $n }
         default {
             read-eof $c
             ::error "unexpected character ($c)"
@@ -903,35 +898,32 @@ proc read-find {char} {
     while {[::string is space -strict $c]} {
         set c [readc]
         read-eof $c
+        set unget $c
     }
-    set unget $c
     return [expr {$c eq $char}]
 }
 ```
 
-`skip-ws` skips whitespace and comments (the ; to end of line kind). Expects a
-character argument to start the skipping with.
+`skip-ws` skips whitespace and comments (the ; to end of line kind). Uses the
+shared _c_ character. It leaves the first character not to be skipped in _c_.
 
-<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc skip-ws {char} {
-    upvar unget unget
-    read-eof $char
+proc skip-ws {} {
+    upvar c c unget unget
     while true {
-        switch -regexp $char {
+        switch -regexp $c {
             {[[:space:]]} {
-                set char [readc]
+                set c [readc]
             }
             {;} {
-                while {$char ne "\n" && $char ne "#EOF"}  {
-                    set char [readc]
+                while {$c ne "\n" && $c ne "#EOF"}  {
+                    set c [readc]
                 }
             }
             default {
-                read-eof $char
-                #set unget $char
-                return $char
+                return
             }
         }
     }
@@ -1023,7 +1015,7 @@ proc ::constcl::read-vector-expression {} {
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
         lappend res [read-expression $c]
-        set c [skip-ws $c]
+        skip-ws
         read-eof $c
     }
     set expr [MkVector $res]
@@ -1088,7 +1080,7 @@ The `read-pair-expression` procedure parses input and produces a structure of
 proc ::constcl::read-pair-expression {char} {
     upvar c c unget unget
     set expr [read-pair $char]
-    set c [skip-ws $c]
+    skip-ws
     read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
@@ -1112,17 +1104,17 @@ proc ::constcl::read-pair {char} {
     }
     set c [readc]
     read-eof $c
-    set a [read-expression]
+    set a [read-expression $c]
     set res $a
-    set c [skip-ws $c]
+    skip-ws
     set prev #NIL
     while {![read-find $char]} {
-        set x [read-expression]
-        set c [skip-ws $c]
+        set x [read-expression $c]
+        skip-ws
         read-eof $c
         ::if {[dot? $x] ne "#f"} {
-            set prev [read-expression]
-            set c [skip-ws $c]
+            set prev [read-expression $c]
+            skip-ws $c]
             read-eof $c
         } else {
             lappend res $x
@@ -1225,7 +1217,7 @@ proc ::constcl::read-unquoted-expression {} {
 proc ::constcl::read-quasiquoted-expression {} {
     upvar c c unget unget
     set expr [read-expression]
-    set c [skip-ws $c]
+    skip-ws
     read-eof $expr
     make-constant $expr
     return [list [MkSymbol "quasiquote"] $expr]
@@ -4255,7 +4247,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::_____load {filename} {
+proc ::constcl::____load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f

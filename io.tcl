@@ -273,7 +273,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::_____load {filename} {
+proc ::constcl::____load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
