@@ -1,7 +1,10 @@
+
+; An assortment of procedures to supplement the builtins.
+
 (define (get plist key)
   (let ((v (memq key plist)))
     (if v
-      (set! v (cadr v))
+      (cadr v)
       #f)))
 
 (define (list-find-key lst key)
