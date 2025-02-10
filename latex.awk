@@ -2,6 +2,7 @@
 
 BEGIN {
 	print "\\documentclass{report}"
+	print "\\usepackage{newpxmath}"
 	print "\\usepackage{graphicx}"
 	print "\\usepackage{listings}"
 	print "\\lstset{"
@@ -22,26 +23,20 @@ BEGIN {
 
 /^# /    { next }
 /^## /   {
-    label = substr($0, 4)
-    printf "\\section{%s}\n", label
-    gsub(/ /, "-", label)
-    printf "\\label{%s}\n", tolower(label)
+    printf "\\section{%s}\n", substr($0, 4)
+    printf "\\label{%s}\n", makelabel(substr($0, 4))
     next
 }
 
 /^### /  {
-    label = substr($0, 5)
-    printf "\\subsection{%s}\n", label
-    gsub(/ /, "-", label)
-    printf "\\label{%s}\n", tolower(label)
+    printf "\\subsection{%s}\n", substr($0, 5)
+    printf "\\label{%s}\n", makelabel(substr($0, 5))
     next
 }
 
 /^#### / {
-    label = substr($0, 6)
-    printf "\\subsubsection{%s}\n", label
-    gsub(/ /, "-", label)
-    printf "\\label{%s}\n", tolower(label)
+    printf "\\subsubsection{%s}\n", substr($0, 6)
+    printf "\\label{%s}\n", makelabel(substr($0, 6))
     next
 }
 
@@ -57,15 +52,58 @@ BEGIN {
        };
        next
 }
-/^[-*] /            { if (!inul) print "\\begin{itemize}"; inul = 1; print "\\item " render(substr($0, 3)); next }
-inul && !/^[-*] /   { print "\\end{itemize}"; inul = 0; next }
+/^[-*] / { if (!init) print "\\begin{itemize}";init = 1; print "\\item " render(substr($0, 3));next }
+init && !/^[-*] /   { print "\\end{itemize}"; init = 0; next }
 
-/<table/ { next }
+/^[0-9]+\. / { if (!inen) print "\\begin{enumerate}";inen = 1; print "\\item " render(substr($0, 3));next }
+inen && !/^[0-9]+\. /   { print "\\end{enumerate}"; inen = 0; next }
+
+/<table id="syntaxforms"/ {
+    if (!intsf) {
+	print "\\begin{tabular}{|l l l|}\n\\hline"
+	print "Syntactic form & Syntax & Example \\\\\n\\hline"
+    }
+    intsf = 1
+    next
+}
+
+intsf && $1 == "<tr>" {
+    patsplit($0, sftablefs, />[^<]+<\//)
+    printf "%s & %s & %s \\\\\n", clean(sftablefs[1]), clean(sftablefs[2]), clean(sftablefs[3])
+}
+
+intsf && /^</ { next }
+
+intsf && !/^</ { print "\\hline\n\\end{tabular}\n" ; intsf = 0 ; next }
+
+/<table border/ {
+    patsplit($0, tablefs, />[^<]+<\//)
+    printf "\\begin{tabular}{ |l l| }\n"
+    printf "\\hline\n"
+    printf "\\multicolumn{2}{|l|}{%s} \\\\\n", clean(tablefs[1])
+    printf "\\hline\n"
+    for (i=2 ; i in tablefs ; i += 2) {
+        printf "%s & %s \\\\\n", clean(tablefs[i]), clean(tablefs[i+1])
+    }
+    printf "\\hline\n"
+    printf "\\end{tabular}\n\n"
+    next
+}
 
 /./  { if (!in_listing) {for (i=1; i<=NF; i++) collect($i) } else { print }}
 /^$/ { if (!in_listing) {flushp()} else { print " " }}
 
 END { print "\n\\end{document}" }
+
+function clean (str) {
+    gsub(/[<>/]/, "", str)
+    gsub(/&lt;/, "<", str)
+    gsub(/&gt;/, ">", str)
+    gsub(/&amp;/, "&", str)
+    if (match(str, /#/)) { gsub(/#/, "\\#", str) }
+    if (str == "Returns:") str = sprintf("\\textit{%s}", str)
+    return str
+}
 
 # Concatenate our multi-line string
 function collect(v) {
@@ -82,25 +120,30 @@ function flushp() {
 }
 
 function render(line) {
-    if (match(line, /__([^_]+)__/)) {
-        gsub(/__([^_]+)__/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
+    while (match(line, /__([^_]+)__/)) {
+        sub(/__([^_]+)__/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
     }
     
-    if (match(line, /\*\*([^*]+)\*\*/)) {
-        gsub(/\*\*([^*]+)\*\*/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
+    while (match(line, /\*\*([^*]+)\*\*/)) {
+        sub(/\*\*([^*]+)\*\*/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
     }
     
-    if (match(line, /\*([^*]+)\*/)) {
-        gsub(/\*([^*]+)\*/, sprintf("\\emph{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
+    while (match(line, /\*\*([^*]+)\*\*/)) {
+        sub(/\*\*([^*]+)\*\*/, sprintf("\\emph{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
     }
 
-    if (match(line, /`([^`]+)`/)) {
-        gsub(/`([^`]+)`/, sprintf("\\texttt{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
+    while (match(line, /`([^`]+)`/)) {
+        sub(/`([^`]+)`/, sprintf("\\texttt{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
     }
 
     if (match(line, /\[#\]\(.+\)/)) {
         inner = substr(line, RSTART+4, RLENGTH-5)
-        gsub(/\[#\]\(.+\)/, sprintf("\\footnote{See \\texttt{%s}}", inner), line)
+	if (match(inner, /ConsTcl#.*/)) {
+	    label = substr(inner, RSTART+8)
+	    gsub(/\[#\]\(.+\)/, sprintf(" (see page \\pageref{%s})", label), line)
+        } else {
+	    gsub(/\[#\]\(.+\)/, sprintf("\\footnote{See \\texttt{%s}}", inner), line)
+    	}
     }
 
     if (match(line, /\$/)) { gsub(/\$/, "\\$", line) }
@@ -111,6 +154,8 @@ function render(line) {
 
     if (match(line, /_/)) { gsub(/_/, "\\_", line) }
 
+    if (match(line, /⇒/)) { gsub(/⇒/, "=>", line) }
+
 	if (match($0, /\{/)) { gsub(/\{/, "\\{", $0) }
 	if (match($0, /\}/)) { gsub(/\}/, "\\}", $0) }
 
@@ -118,3 +163,17 @@ function render(line) {
 
     return line
 }
+
+function makelabel (str) {
+    gsub(/ /, "-", str)
+    str = tolower(str)
+    while (str c in labels) {
+	c++
+	str = str c
+    }
+    labels[str] = 1
+    c = ""
+    return str
+}
+
+# Vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab:

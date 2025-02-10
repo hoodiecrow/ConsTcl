@@ -30,11 +30,16 @@ proc ::reg {key args} {
 }
 
 proc ::pep {str} {
-    ::constcl::write [::constcl::eval [::constcl::parse [::constcl::IB new $str]]]
+    ::constcl::write [
+        ::constcl::eval [
+            ::constcl::parse [
+                ::constcl::IB new $str]]]
 }
 
 proc ::pp {str} {
-    ::constcl::write [::constcl::parse [::constcl::IB new $str]]
+    ::constcl::write [
+        ::constcl::parse [
+            ::constcl::IB new $str]]
 }
 
 proc ::prp {str} {
@@ -43,9 +48,10 @@ proc ::prp {str} {
     set args [::constcl::cdr $val]
     set env ::constcl::global_env
     while {[$op name] in {
-            and case cond define del! for for/and for/list for/or
-            let or pop! push! put! quasiquote unless when}} {
-            ::constcl::expand-macro $env
+            and case cond define del! for for/and
+            for/list for/or let or pop! push! put!
+            quasiquote unless when}} {
+        ::constcl::expand-macro $env
     }
     set args [::constcl::resolve-local-defines $args]
     ::constcl::write $args
@@ -73,8 +79,8 @@ CB
 
 MD(
 This one is a little bit of both, a utility function that is also among the
-builtins in the library. It started out as a one-liner by Donal K. Fellows,
-but has grown a bit since then to suit my needs.
+builtins in the library. It started out as a one-liner by Donal K. Fellows, but
+has grown a bit since then to suit my needs.
 MD)
 
 CB
@@ -85,12 +91,25 @@ proc ::constcl::in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
-        1 { lassign $args e ; set end [$e value]}
-        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
-        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+        1 {
+            lassign $args e
+            set end [$e value]
+        }
+        2 {
+            lassign $args s e
+            set start [$s value]
+            set end [$e value]
+        }
+        3 {
+            lassign $args s e t
+            set start [$s value]
+            set end [$e value]
+            set step [$t value]
+        }
     }
     set res $start
-    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+    while {$step > 0 && $end > [incr start $step] ||
+            $step < 0 && $end < [incr start $step]} {
         lappend res $start
     }
     return [list {*}[lmap r $res {MkNumber $r}]]
@@ -217,7 +236,7 @@ optional arguments being values to show after the message.
 MD)
 
 PR(
-error (public);msg msg args exprs
+error (public);msg msg args exprs -> dc
 PR)
 
 CB

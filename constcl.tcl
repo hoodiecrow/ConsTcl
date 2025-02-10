@@ -15,11 +15,16 @@ proc ::reg {key args} {
 }
 
 proc ::pep {str} {
-    ::constcl::write [::constcl::eval [::constcl::parse [::constcl::IB new $str]]]
+    ::constcl::write [
+        ::constcl::eval [
+            ::constcl::parse [
+                ::constcl::IB new $str]]]
 }
 
 proc ::pp {str} {
-    ::constcl::write [::constcl::parse [::constcl::IB new $str]]
+    ::constcl::write [
+        ::constcl::parse [
+            ::constcl::IB new $str]]
 }
 
 proc ::prp {str} {
@@ -28,9 +33,10 @@ proc ::prp {str} {
     set args [::constcl::cdr $val]
     set env ::constcl::global_env
     while {[$op name] in {
-            and case cond define del! for for/and for/list for/or
-            let or pop! push! put! quasiquote unless when}} {
-            ::constcl::expand-macro $env
+            and case cond define del! for for/and
+            for/list for/or let or pop! push! put!
+            quasiquote unless when}} {
+        ::constcl::expand-macro $env
     }
     set args [::constcl::resolve-local-defines $args]
     ::constcl::write $args
@@ -63,12 +69,25 @@ proc ::constcl::in-range {args} {
     set start 0
     set step 1
     switch [llength $args] {
-        1 { lassign $args e ; set end [$e value]}
-        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
-        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+        1 {
+            lassign $args e
+            set end [$e value]
+        }
+        2 {
+            lassign $args s e
+            set start [$s value]
+            set end [$e value]
+        }
+        3 {
+            lassign $args s e t
+            set start [$s value]
+            set end [$e value]
+            set step [$t value]
+        }
     }
     set res $start
-    while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+    while {$step > 0 && $end > [incr start $step] ||
+            $step < 0 && $end < [incr start $step]} {
         lappend res $start
     }
     return [list {*}[lmap r $res {MkNumber $r}]]
@@ -934,6 +953,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
 proc ::constcl::lookup {sym env} {
     [$env find $sym] get $sym
 }
+
 
 
 
@@ -3004,7 +3024,7 @@ proc ::constcl::write-char {args} {
 }
 
 
-proc ::constcl::__load {filename} {
+proc ::constcl::--load {filename} {
     set new_port [MkInputPort]
     $new_port open $filename
     if {[$new_port handle] eq "#NIL"} {
@@ -3035,7 +3055,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::____load {filename} {
+proc ::constcl::----load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f

@@ -17,11 +17,10 @@ of times while working, and as a result is fairly slow.
 
 #### Benchmark
 
-On my cheap computer, the following code takes 0.024 seconds to run.
+On my cheap computer, the following code takes 0.027 seconds to run.
 
 ```
 namespace eval ::constcl {
-    eval [parse "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"]
     time {eval [parse "(fact 100)"]} 10
 }
 ```

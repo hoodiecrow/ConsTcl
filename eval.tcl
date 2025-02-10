@@ -4,35 +4,18 @@ MD(
 
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes it according to its form.
 
-| Syntactic form | Syntax | Semantics |
-|----------------|--------|-----------|
-| variable reference | *variable* | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
-| constant literal | *number* or *boolean*, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
-| quotation | __quote__ *datum* | (__quote__ *datum*) evaluates to *datum*, making it a constant. Example: `(quote r)` ⇒ r
-| sequence | __begin__ *expression*... | The *expressions* are evaluated sequentially, and the value of the last *expression* is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
-| conditional | __if__ *test* *conseq* *alt* | An __if__ expression is evaluated like this: first, *test* is evaluated. If it yields a true value, then *conseq* is evaluated and its value is returned. Otherwise *alt* is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
-| definition | __define__ *identifier* *expression* | A definition binds the *identifier_ to the location where the value of the *expression* is stored. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
-| assignment | __set!__ *variable* *expression* | *Expression* is evaluated, and the resulting value is stored in the location to which *variable* is bound. It is an error to assign to an unbound *identifier*. Example: `(set! r 20)` ⇒ 20 |
-| procedure definition | __lambda__ *formals* *body* | *Formals* is a list of identifiers. *Body* is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
-| procedure call | *operator* *operand*... | If *operator* is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate *operator* and all the *operands*, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
-
+TblSynForms
 
 MD)
 
 MD(
 **eval**
 
-`eval` processes an _expression_ to get a _value_. The exact method depends on
-the form of expression, see above.
+`eval` 
 
-The evaluator also does a simple form of macro expansion on `op` and `args` (the
-car and cdr of the expression) before processing them in the big `switch`. See
-the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
-
-The evaluator also resolves local defines, acting on expressions of the form
-"(begin (define ..." when the environment is other than the global one. See the
-part about resolving local
-defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+1. processes an _expression_ to get a _value_. The exact method depends on the form of expression, see above and below.
+1. does a simple form of macro expansion on `op` and `args` (the car and cdr of the expression) before processing them in the big `switch`. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
+1. resolves local defines, acting on expressions of the form "(begin (define ..." when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 MD)
 
 PR(
@@ -77,11 +60,16 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
 CB
 
 MD(
-**lookup**
 
-_Variable reference_ is handled by the helper `lookup`. It searches the
-environment chain for the symbol's name, and returns the value it is bound to.
-It is an error to lookup an unbound symbol.
+**Variable reference**
+
+A variable is an identifier (symbol) bound to a location in the environment. If
+an expression consists of the identifier it is evaluated to the value stored in
+that location. This is handled by the helper procedure `lookup`. It searches the
+environment chain for the identifier, and returns the value stored in the
+location it is bound to.  It is an error to lookup an unbound symbol.
+
+**lookup**
 MD)
 
 PR(
@@ -95,13 +83,27 @@ proc ::constcl::lookup {sym env} {
 CB
 
 MD(
-**if**
+**Quotation**
 
-The _conditional_ form evaluates a Lisp list of three expressions. The first,
-the _condition_, is evaluated first. If it evaluates to anything other than
-`#f`, the second expression (the _consequent_) is evaluated and the value
+According to the rules of Variable reference, a symbol evaluates to its stored
+value. Well, sometimes one wishes to use the symbol itself as a value. That is
+what quotation is for. `(quote x)` evaluates to the symbol x itself and not to
+any value that might be stored under it. This is so common that there is a
+shorthand notation for it: `'x` is interpreted as `(quote x)` by the Lisp
+reader.
+MD)
+
+MD(
+**Conditional**
+
+The conditional form `if` evaluates a Lisp list of three expressions. The first,
+the _condition_, is evaluated first. If it evaluates to anything other than `#f`
+(false), the second expression (the _consequent_) is evaluated and the value
 returned. Otherwise, the third expression (the _alternate_) is evaluated and the
-value returned.
+value returned. One of the two latter expressions will be evaluated, and the
+other will remain unevaluated.
+
+**if**
 MD)
 
 PR(
@@ -115,10 +117,16 @@ proc ::constcl::if {cond conseq altern} {
 CB
 
 MD(
-**eprogn**
+**Sequence**
 
-The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
-_sequence_, returning the value of the last one.
+When expressions are evaluated in sequence, the order is important for two
+reasons. If the expressions have any side effects, they happen in the same order
+of sequence. Also, if expressions are part of a pipeline of calculations, then
+they need to be processed in the order of that pipeline. The `eprogn` helper
+procedure takes a Lisp list of expressions and evaluates them in sequence,
+returning the value of the last one.
+
+**eprogn**
 MD)
 
 PR(
@@ -141,10 +149,15 @@ proc ::constcl::eprogn {exps env} {
 CB
 
 MD(
-**declare**
+**Definition**
 
-The `declare` helper adds a variable to the current environment. It first checks that the
-symbol name is a valid identifier, then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. A symbol is
+bound to a value (or rather to the location the value is in), creating a
+variable, through definition. The `declare` helper procedure adds a variable to
+the current environment. It first checks that the symbol name is a valid
+identifier, then it updates the environment with the new binding.
+
+**declare**
 MD)
 
 PR(
@@ -160,12 +173,17 @@ proc ::constcl::declare {sym val env} {
 CB
 
 MD(
-**update!**
+**Assignment**
 
-The `update!` helper does _assignment_: it modifies an existing variable that is bound
-somewhere in the environment chain. It finds the variable's environment and updates the
-binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
-sets both variables to 99.
+Once a variable has been created, the value at the location it is bound to can
+be changed (hence the name "variable", something that can be modified). The
+process is called assignment. The `update!` helper does assignment: it modifies
+an existing variable that is bound somewhere in the environment chain. It finds
+the variable's environment and updates the binding. It returns the value, so
+calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
+to 99.
+
+**update!**
 MD)
 
 PR(
@@ -180,11 +198,37 @@ proc ::constcl::update! {var val env} {
 CB
 
 MD(
-**make-function**
+**Procedure definition**
 
-`make-function` makes a Procedure[#](https://github.com/hoodiecrow/ConsTcl#control)
-object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
-if it has more than one expression, and taken out of its list if not. The Lisp list
+In Lisp, procedures are values just like numbers or characters. They can be
+defined as the value of a symbol, passed to other procedures, and returned from
+procedures. One diffence from most values is that procedures need to be defined.
+Two questions must answered: what is the procedure meant to do? The code that
+does that will form the body of the procedure. Also, what, if any, items of data
+will have to be provided to the procedure to make it possible to calculate its
+result?
+
+As an example, imagine that we want to have a procedure that calculates the
+square (`x · x`) of a given number. In Lisp, expressions are written with
+the operator first and then the operands: `(* x x)`. That is the body of the
+procedure. Now, what data will we have to provide to the procedure to make it
+work? A value stored in the variable `x` will do. It's only a single variable,
+but by custom we need to put it in a list: `(x)`. The operator that defines
+procedures is called `lambda`, and we define the function with `(lambda (x) (* x
+x))`.
+
+One more step is needed before we can use the procedure. It must have a name. We
+could define it like this: `(define square (lambda (x) (* x x)))` but there is
+actually a shortcut notation for it: `(define (square x) (* x x))`.
+
+Now, `square` is pretty tame. How about the `hypotenuse` procedure? `(define
+(hypotenuse a b) (sqrt (+ (square a) (square b))))`. It calculates the square
+root of the sum of two squares.
+
+Under the hood, the helper `make-function` makes a
+Procedure[#](https://github.com/hoodiecrow/ConsTcl#control) object. First it
+needs to convert the Lisp list `body`. It is packed inside a `begin` if it has
+more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
 A Scheme formals list is either:
@@ -193,6 +237,8 @@ A Scheme formals list is either:
 * A *proper list*, `(a b c)`, meaning it accepts three arguments, one in each symbol,
 * A *symbol*, `a`, meaning that all arguments go into `a`, or
 * A *dotted list*, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+
+**make-function**
 MD)
 
 PR(
@@ -211,10 +257,19 @@ proc ::constcl::make-function {formals body env} {
 CB
 
 MD(
-**invoke**
+**Procedure call**
 
-`invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
-_pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+Once we have procedures, we can call them to have their calculations performed
+and yield results. The procedure name is put in the operator position at the
+front of a list, and the operands follow in the rest of the list. Our `square`
+procedure would be called for instance like this: `(square 11)`, and it will
+return 121.
+
+`invoke` arranges for a procedure to be called with each of the values in
+the _argument list_ (the list of operands). It checks if pr really is a
+procedure, and determines whether to call pr as an object or as a Tcl command.
+
+**invoke**
 MD)
 
 PR(

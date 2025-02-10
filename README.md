@@ -20,7 +20,6 @@ of times while working, and as a result is fairly slow.
 
 ```
 namespace eval ::constcl {
-    eval [parse "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"]
 }
 ```
 
@@ -57,11 +56,16 @@ proc ::reg {key args} {
 }
 
 proc ::pep {str} {
-    ::constcl::write [::constcl::eval [::constcl::parse [::constcl::IB new $str]]]
+    ::constcl::write [
+        ::constcl::eval [
+            ::constcl::parse [
+                ::constcl::IB new $str]]]
 }
 
 proc ::pp {str} {
-    ::constcl::write [::constcl::parse [::constcl::IB new $str]]
+    ::constcl::write [
+        ::constcl::parse [
+            ::constcl::IB new $str]]
 }
 
 proc ::prp {str} {
@@ -70,9 +74,10 @@ proc ::prp {str} {
     set args [::constcl::cdr $val]
     set env ::constcl::global_env
     while {[$op name] in {
-            and case cond define del! for for/and for/list for/or
-            let or pop! push! put! quasiquote unless when}} {
-            ::constcl::expand-macro $env
+            and case cond define del! for for/and
+            for/list for/or let or pop! push! put!
+            quasiquote unless when}} {
+        ::constcl::expand-macro $env
     }
     set args [::constcl::resolve-local-defines $args]
     ::constcl::write $args
@@ -98,8 +103,8 @@ proc ::pn {} {
 ```
 
 This one is a little bit of both, a utility function that is also among the
-builtins in the library. It started out as a one-liner by Donal K. Fellows,
-but has grown a bit since then to suit my needs.
+builtins in the library. It started out as a one-liner by Donal K. Fellows, but
+has grown a bit since then to suit my needs.
 
 ```
 reg in-range ::constcl::in-range
@@ -108,9 +113,21 @@ reg in-range ::constcl::in-range
 proc ::constcl::in-range {args} {
     set step 1
     switch [llength $args] {
-        1 { lassign $args e ; set end [$e value]}
-        2 { lassign $args s e ; set start [$s value] ; set end [$e value]}
-        3 { lassign $args s e t ; set start [$s value] ; set end [$e value] ; set step [$t value]}
+        1 {
+            lassign $args e
+            set end [$e value]
+        }
+        2 {
+            lassign $args s e
+            set start [$s value]
+            set end [$e value]
+        }
+        3 {
+            lassign $args s e t
+            set start [$s value]
+            set end [$e value]
+            set step [$t value]
+        }
     }
     set res $start
         lappend res $start
@@ -222,7 +239,7 @@ oo::class create ::constcl::EndOfFile {
 `error` is used to signal an error, with _msg_ being a message string and the
 optional arguments being values to show after the message.
 
-<table border=1><thead><tr><th colspan=2 align="left">error (public)</th></tr></thead><tr><td>msg</td><td>a message string</td></tr><tr><td>args</td><td>some expressions</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">error (public)</th></tr></thead><tr><td>msg</td><td>a message string</td></tr><tr><td>args</td><td>some expressions</td></tr><tr><td><i>Returns:</i></td><td>-don't care-</td></tr></table>
 
 ```
 reg error
@@ -1261,26 +1278,29 @@ proc ::constcl::read-identifier-expression {args} {
 
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes it according to its form.
 
-| Syntactic form | Syntax | Semantics |
-|----------------|--------|-----------|
-| constant literal | *number* or *boolean*, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
-| quotation | __quote__ *datum* | (__quote__ *datum*) evaluates to *datum*, making it a constant. Example: `(quote r)` ⇒ r
-
+<table id="syntaxforms"><thead>
+<tr><th>Syntactic form</th> <th>Syntax</th> <th>Example</th> </tr>
+</thead>
+<tbody>
+<tr> <td>Variable reference</td><td>variable</td><td>r =&gt; 10</td></tr>
+<tr> <td>Constant literal</td><td>number or boolean, etc</td><td>99 =&gt; 99</td></tr>
+<tr> <td>Quotation</td><td>quote datum</td><td>(quote r) =&gt; r</td></tr>
+<tr> <td>Sequence</td><td>begin expression...</td><td>(begin (define r 10) (* r r)) =&gt; 100</td></tr>
+<tr> <td>Conditional</td><td>if test conseq alt</td><td>(if (&gt; 99 100) (* 2 2) (+ 2 4)) =&gt; 6</td></tr>
+<tr> <td>Definition</td><td>define identifier expression</td><td>(define r 10) =&gt;</td></tr>
+<tr> <td>Assignment</td><td>set! variable expression</td><td>(set! r 20) =&gt; 20</td></tr>
+<tr> <td>Procedure definition</td><td>lambda formals body</td><td>(lambda (r) (* r r)) =&gt; ::oo::Obj3601</td></tr>
+<tr> <td>Procedure call</td><td>operator operand...</td><td>(+ 1 6) =&gt; 7</td></tr>
+</tbody></table>
 
 
 **eval**
 
-`eval` processes an _expression_ to get a _value_. The exact method depends on
-the form of expression, see above.
+`eval` 
 
-The evaluator also does a simple form of macro expansion on `op` and `args` (the
-car and cdr of the expression) before processing them in the big `switch`. See
-the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
-
-The evaluator also resolves local defines, acting on expressions of the form
-"(begin (define ..." when the environment is other than the global one. See the
-part about resolving local
-defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+1. processes an _expression_ to get a _value_. The exact method depends on the form of expression, see above and below.
+1. does a simple form of macro expansion on `op` and `args` (the car and cdr of the expression) before processing them in the big `switch`. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
+1. resolves local defines, acting on expressions of the form "(begin (define ..." when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1321,11 +1341,16 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
 }
 ```
 
-**lookup**
 
-_Variable reference_ is handled by the helper `lookup`. It searches the
-environment chain for the symbol's name, and returns the value it is bound to.
-It is an error to lookup an unbound symbol.
+**Variable reference**
+
+A variable is an identifier (symbol) bound to a location in the environment. If
+an expression consists of the identifier it is evaluated to the value stored in
+that location. This is handled by the helper procedure `lookup`. It searches the
+environment chain for the identifier, and returns the value stored in the
+location it is bound to.  It is an error to lookup an unbound symbol.
+
+**lookup**
 
 <table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1335,13 +1360,25 @@ proc ::constcl::lookup {sym env} {
 }
 ```
 
-**if**
+**Quotation**
 
-The _conditional_ form evaluates a Lisp list of three expressions. The first,
-the _condition_, is evaluated first. If it evaluates to anything other than
-`#f`, the second expression (the _consequent_) is evaluated and the value
+According to the rules of Variable reference, a symbol evaluates to its stored
+value. Well, sometimes one wishes to use the symbol itself as a value. That is
+what quotation is for. `(quote x)` evaluates to the symbol x itself and not to
+any value that might be stored under it. This is so common that there is a
+shorthand notation for it: `'x` is interpreted as `(quote x)` by the Lisp
+reader.
+
+**Conditional**
+
+The conditional form `if` evaluates a Lisp list of three expressions. The first,
+the _condition_, is evaluated first. If it evaluates to anything other than `#f`
+(false), the second expression (the _consequent_) is evaluated and the value
 returned. Otherwise, the third expression (the _alternate_) is evaluated and the
-value returned.
+value returned. One of the two latter expressions will be evaluated, and the
+other will remain unevaluated.
+
+**if**
 
 <table border=1><thead><tr><th colspan=2 align="left">if (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1351,10 +1388,16 @@ proc ::constcl::if {cond conseq altern} {
 }
 ```
 
-**eprogn**
+**Sequence**
 
-The `eprogn` helper procedure takes a Lisp list of expressions and evaluates them in
-_sequence_, returning the value of the last one.
+When expressions are evaluated in sequence, the order is important for two
+reasons. If the expressions have any side effects, they happen in the same order
+of sequence. Also, if expressions are part of a pipeline of calculations, then
+they need to be processed in the order of that pipeline. The `eprogn` helper
+procedure takes a Lisp list of expressions and evaluates them in sequence,
+returning the value of the last one.
+
+**eprogn**
 
 <table border=1><thead><tr><th colspan=2 align="left">eprogn (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1373,10 +1416,15 @@ proc ::constcl::eprogn {exps env} {
 }
 ```
 
-**declare**
+**Definition**
 
-The `declare` helper adds a variable to the current environment. It first checks that the
-symbol name is a valid identifier, then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. A symbol is
+bound to a value (or rather to the location the value is in), creating a
+variable, through definition. The `declare` helper procedure adds a variable to
+the current environment. It first checks that the symbol name is a valid
+identifier, then it updates the environment with the new binding.
+
+**declare**
 
 <table border=1><thead><tr><th colspan=2 align="left">declare (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -1388,12 +1436,17 @@ proc ::constcl::declare {sym val env} {
 }
 ```
 
-**update!**
+**Assignment**
 
-The `update!` helper does _assignment_: it modifies an existing variable that is bound
-somewhere in the environment chain. It finds the variable's environment and updates the
-binding. It returns the value, so calls to `set!` can be chained: `(set! foo (set! bar 99))`
-sets both variables to 99.
+Once a variable has been created, the value at the location it is bound to can
+be changed (hence the name "variable", something that can be modified). The
+process is called assignment. The `update!` helper does assignment: it modifies
+an existing variable that is bound somewhere in the environment chain. It finds
+the variable's environment and updates the binding. It returns the value, so
+calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
+to 99.
+
+**update!**
 
 <table border=1><thead><tr><th colspan=2 align="left">update! (internal)</th></tr></thead><tr><td>var</td><td>a bound symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1404,11 +1457,37 @@ proc ::constcl::update! {var val env} {
 }
 ```
 
-**make-function**
+**Procedure definition**
 
-`make-function` makes a Procedure[#](https://github.com/hoodiecrow/ConsTcl#control)
-object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
-if it has more than one expression, and taken out of its list if not. The Lisp list
+In Lisp, procedures are values just like numbers or characters. They can be
+defined as the value of a symbol, passed to other procedures, and returned from
+procedures. One diffence from most values is that procedures need to be defined.
+Two questions must answered: what is the procedure meant to do? The code that
+does that will form the body of the procedure. Also, what, if any, items of data
+will have to be provided to the procedure to make it possible to calculate its
+result?
+
+As an example, imagine that we want to have a procedure that calculates the
+square (`x · x`) of a given number. In Lisp, expressions are written with
+the operator first and then the operands: `(* x x)`. That is the body of the
+procedure. Now, what data will we have to provide to the procedure to make it
+work? A value stored in the variable `x` will do. It's only a single variable,
+but by custom we need to put it in a list: `(x)`. The operator that defines
+procedures is called `lambda`, and we define the function with `(lambda (x) (* x
+x))`.
+
+One more step is needed before we can use the procedure. It must have a name. We
+could define it like this: `(define square (lambda (x) (* x x)))` but there is
+actually a shortcut notation for it: `(define (square x) (* x x))`.
+
+Now, `square` is pretty tame. How about the `hypotenuse` procedure? `(define
+(hypotenuse a b) (sqrt (+ (square a) (square b))))`. It calculates the square
+root of the sum of two squares.
+
+Under the hood, the helper `make-function` makes a
+Procedure[#](https://github.com/hoodiecrow/ConsTcl#control) object. First it
+needs to convert the Lisp list `body`. It is packed inside a `begin` if it has
+more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
 A Scheme formals list is either:
@@ -1417,6 +1496,8 @@ A Scheme formals list is either:
 * A *proper list*, `(a b c)`, meaning it accepts three arguments, one in each symbol,
 * A *symbol*, `a`, meaning that all arguments go into `a`, or
 * A *dotted list*, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+
+**make-function**
 
 <table border=1><thead><tr><th colspan=2 align="left">make-function (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
@@ -1431,10 +1512,19 @@ proc ::constcl::make-function {formals body env} {
 }
 ```
 
-**invoke**
+**Procedure call**
 
-`invoke` arranges for a procedure to be called with each of the values in _vals_. It checks if
-_pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+Once we have procedures, we can call them to have their calculations performed
+and yield results. The procedure name is put in the operator position at the
+front of a list, and the operands follow in the rest of the list. Our `square`
+procedure would be called for instance like this: `(square 11)`, and it will
+return 121.
+
+`invoke` arranges for a procedure to be called with each of the values in
+the _argument list_ (the list of operands). It checks if pr really is a
+procedure, and determines whether to call pr as an object or as a Tcl command.
+
+**invoke**
 
 <table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
@@ -4211,11 +4301,11 @@ proc ::constcl::write-char {args} {
 }
 ```
 
-`__load` is a raw port of the S9fES implementation. `____load` is my original
+`--load` is a raw port of the S9fES implementation. `----load` is my original
 straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
 
 ```
-proc ::constcl::__load {filename} {
+proc ::constcl::--load {filename} {
     set new_port [MkInputPort]
     $new_port open $filename
     if {[$new_port handle] eq "#NIL"} {
@@ -4245,7 +4335,7 @@ proc ::constcl::__load {filename} {
     set env $save_env
 }
 
-proc ::constcl::____load {filename} {
+proc ::constcl::----load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
@@ -6317,5 +6407,9 @@ unchanged if the key isn't present):
       (begin (set-cdr! item val) lst)
       lst)))
 
+(define (fact n)
+  (if (<= n 1)
+    1
+    (* n (fact (- n 1)))))
 
 ```

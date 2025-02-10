@@ -239,12 +239,12 @@ proc ::constcl::write-char {args} {
 CB
 
 MD(
-`__load` is a raw port of the S9fES implementation. `____load` is my original
+`--load` is a raw port of the S9fES implementation. `----load` is my original
 straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
 MD)
 
 CB
-proc ::constcl::__load {filename} {
+proc ::constcl::--load {filename} {
     set new_port [MkInputPort]
     $new_port open $filename
     if {[$new_port handle] eq "#NIL"} {
@@ -275,7 +275,7 @@ proc ::constcl::__load {filename} {
     return 0
 }
 
-proc ::constcl::____load {filename} {
+proc ::constcl::----load {filename} {
     set f [open $filename]
     set src [::read $f]
     close $f
