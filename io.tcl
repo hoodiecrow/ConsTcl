@@ -175,7 +175,7 @@ proc ::constcl::close-output-port {port} {
 CB
 
 MD(
-`read` is implemented in the [read](https://github.com/hoodiecrow/ConsTcl#read) section.
+`read` is implemented in the read[#](https://github.com/hoodiecrow/ConsTcl#read) section.
 MD)
 
 CB
@@ -212,11 +212,11 @@ proc ::constcl::char-ready? {args} {
 CB
 
 MD(
-`write` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`write` is implemented in the write[#](https://github.com/hoodiecrow/ConsTcl#write) section.
 MD)
 
 MD(
-`display` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`display` is implemented in the write section.
 MD)
 
 CB

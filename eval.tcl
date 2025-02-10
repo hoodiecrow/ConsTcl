@@ -6,15 +6,15 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 | Syntactic form | Syntax | Semantics |
 |----------------|--------|-----------|
-| [variable reference](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1) | _variable_ | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
-| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
-| [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
-| [sequence](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.3) | __begin__ _expression_... | The _expressions_ are evaluated sequentially, and the value of the last <expression> is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
-| [conditional](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5) | __if__ _test_ _conseq_ _alt_ | An __if__ expression is evaluated like this: first, _test_ is evaluated. If it yields a true value, then _conseq_ is evaluated and its value is returned. Otherwise _alt_ is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
-| [definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2) | __define__ _identifier_ _expression_ | A definition binds the _identifier_ to the value of the _expression_. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
-| [assignment](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6) | __set!__ _variable_ _expression_ | _Expression_ is evaluated, and the resulting value is stored in the location to which _variable_ is bound. It is an error to assign to an unbound _identifier_. Example: `(set! r 20)` ⇒ 20 |
-| [procedure definition](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4) | __lambda__ _formals_ _body_ | _Formals_ is a list of identifiers. _Body_ is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
-| [procedure call](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3) | _operator_ _operand_... | If _operator_ is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate _operator_ and all the _operands_, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
+| variable reference | *variable* | An expression consisting of an identifier is a variable reference. It evaluates to the value the identifier is bound to. An unbound identifier can't be evaluated. Example: `r` ⇒ 10 if _r_ is bound to 10 |
+| constant literal | *number* or *boolean*, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
+| quotation | __quote__ *datum* | (__quote__ *datum*) evaluates to *datum*, making it a constant. Example: `(quote r)` ⇒ r
+| sequence | __begin__ *expression*... | The *expressions* are evaluated sequentially, and the value of the last *expression* is returned. Example: `(begin (define r 10) (* r r))` ⇒ the square of 10 |
+| conditional | __if__ *test* *conseq* *alt* | An __if__ expression is evaluated like this: first, *test* is evaluated. If it yields a true value, then *conseq* is evaluated and its value is returned. Otherwise *alt* is evaluated and its value is returned. Example: `(if (> 99 100) (* 2 2) (+ 2 4))` ⇒ 6 |
+| definition | __define__ *identifier* *expression* | A definition binds the *identifier_ to the location where the value of the *expression* is stored. A definition does not evaluate to anything. Example: `(define r 10)` ⇒ |
+| assignment | __set!__ *variable* *expression* | *Expression* is evaluated, and the resulting value is stored in the location to which *variable* is bound. It is an error to assign to an unbound *identifier*. Example: `(set! r 20)` ⇒ 20 |
+| procedure definition | __lambda__ *formals* *body* | *Formals* is a list of identifiers. *Body* is zero or more expressions. A __lambda__ expression evaluates to a Procedure object. Example: `(lambda (r) (* r r))` ⇒ ::oo::Obj3601 |
+| procedure call | *operator* *operand*... | If *operator* is anything other than __quote__, __begin__, __if__, __define__, __set!__, or __lambda__, it is treated as a procedure. Evaluate *operator* and all the *operands*, and then the resulting procedure is applied to the resulting list of argument values. Example: `(sqrt (+ 4 12))` ⇒ 4.0 |
 
 
 MD)
@@ -27,12 +27,12 @@ the form of expression, see above.
 
 The evaluator also does a simple form of macro expansion on `op` and `args` (the
 car and cdr of the expression) before processing them in the big `switch`. See
-the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 The evaluator also resolves local defines, acting on expressions of the form
 "(begin (define ..." when the environment is other than the global one. See the
-part about [resolving local
-defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+part about resolving local
+defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 MD)
 
 PR(
@@ -182,17 +182,17 @@ CB
 MD(
 **make-function**
 
-`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control)
+`make-function` makes a Procedure[#](https://github.com/hoodiecrow/ConsTcl#control)
 object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
 A Scheme formals list is either:
 
-* An _empty list_, `()`, meaning that no arguments are accepted,
-* A _proper list_, `(a b c)`, meaning it accepts three arguments, one in each symbol,
-* A _symbol_, `a`, meaning that all arguments go into `a`, or
-* A _dotted list_, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+* An *empty list*, `()`, meaning that no arguments are accepted,
+* A *proper list*, `(a b c)`, meaning it accepts three arguments, one in each symbol,
+* A *symbol*, `a`, meaning that all arguments go into `a`, or
+* A *dotted list*, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
 MD)
 
 PR(

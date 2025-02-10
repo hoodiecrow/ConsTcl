@@ -59,11 +59,11 @@ During a call to the procedure `circle-area`, the symbol `r` is bound to the
 value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of `r`. The solution is to use
 separate (but linked) environments, making `r`'s binding a
-_[local variable](https://en.wikipedia.org/wiki/Local_variable)_
+*local variable[#](https://en.wikipedia.org/wiki/Local_variable)*
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of
-_[lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)_.
+*lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)*.
 
 In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):

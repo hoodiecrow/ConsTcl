@@ -1,11 +1,17 @@
 # ConsTcl
 
+## Introduction
+
+### To run the software
+
 To run, source the file __constcl.tcl__ (with __schemebase.lsp__ in the directory)
 in a Tcl console (I use __tkcon__) and use the command `::constcl::repl` for a
 primitive command dialog.  Source __all.tcl__ to run the test suite.
 
-ConsTcl is a second try at a Lisp interpreter written in Tcl (the first one was 
-[Thtcl](https://github.com/hoodiecrow/thtcl)), this time with a real Lisp-like 
+### Background
+
+ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
+Thtcl[#](https://github.com/hoodiecrow/thtcl), this time with a real Lisp-like 
 type system. It steps over and back over the border between Tcl and Lisp a lot
 of times while working, and as a result is fairly slow.
 

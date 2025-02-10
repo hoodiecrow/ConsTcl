@@ -196,7 +196,7 @@ MD(
 
 `parse-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression--a String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
@@ -325,7 +325,7 @@ MD(
 **parse-pair-expression**
 
 The `parse-pair-expression` procedure parses input and produces a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
 
 PR(
@@ -542,7 +542,7 @@ CB
 MD(
 **parse-number-expression**
 
-`parse-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
@@ -603,7 +603,7 @@ TT)
 MD(
 **parse-identifier-expression**
 
-`parse-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(
@@ -665,7 +665,7 @@ MD(
 **parse-character-expression**
 
 `parse-character-expression` parses input, producing a character and returning
-a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
@@ -713,7 +713,7 @@ TT)
 MD(
 **parse-vector-expression**
 
-`parse-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(
@@ -1090,8 +1090,8 @@ MD(
 
 `read-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (an immutable
-[String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression--an immutable
+String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
@@ -1153,7 +1153,7 @@ CB
 MD(
 **read-vector-expression**
 
-`read-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`read-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(
@@ -1184,7 +1184,7 @@ MD(
 **read-character-expression**
 
 `read-character-expression` parses input, producing a character and returning
-a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
@@ -1233,7 +1233,7 @@ MD(
 **read-pair-expression**
 
 The `read-pair-expression` procedure parses input and produces a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
 
 PR(
@@ -1328,7 +1328,7 @@ CB
 MD(
 **read-number-expression**
 
-`read-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`read-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
@@ -1407,7 +1407,7 @@ CB
 MD(
 **read-identifier-expression**
 
-`read-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`read-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(

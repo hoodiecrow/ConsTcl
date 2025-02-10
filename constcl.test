@@ -592,6 +592,14 @@ if no {
 } -output "(a b c)\n"
 
 
+::tcltest::test equipred-1.0 {try comparing a boolean and a symbol} -body {
+    pep "(eq? #t 'a)"
+} -output "#f\n"
+
+::tcltest::test equipred-1.1 {try comparing two booleans} -body {
+    pep "(eq? #t #t)"
+} -output "#t\n"
+
 
 ::tcltest::test number-1.0 {try number?} -body {
     pep "(number? 99.99)"

@@ -1,11 +1,17 @@
 # ConsTcl
 
+## Introduction
+
+### To run the software
+
 To run, source the file __constcl.tcl__ (with __schemebase.lsp__ in the directory)
 in a Tcl console (I use __tkcon__) and use the command `::constcl::repl` for a
 primitive command dialog.  Source __all.tcl__ to run the test suite.
 
-ConsTcl is a second try at a Lisp interpreter written in Tcl (the first one was 
-[Thtcl](https://github.com/hoodiecrow/thtcl)), this time with a real Lisp-like 
+### Background
+
+ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
+Thtcl[#](https://github.com/hoodiecrow/thtcl), this time with a real Lisp-like 
 type system. It steps over and back over the border between Tcl and Lisp a lot
 of times while working, and as a result is fairly slow.
 
@@ -452,7 +458,7 @@ proc ::constcl::parse-expression {} {
 
 `parse-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (a [String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression--a String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -547,7 +553,7 @@ proc ::constcl::parse-quoted-expression {} {
 **parse-pair-expression**
 
 The `parse-pair-expression` procedure parses input and produces a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
 
@@ -687,7 +693,7 @@ proc ::constcl::interspace {c} {
 
 **parse-number-expression**
 
-`parse-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-number-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -707,7 +713,7 @@ proc ::constcl::parse-number-expression {} {
 
 **parse-identifier-expression**
 
-`parse-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -742,7 +748,7 @@ proc ::constcl::character-check {name} {
 **parse-character-expression**
 
 `parse-character-expression` parses input, producing a character and returning
-a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-character-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -763,7 +769,7 @@ proc ::constcl::parse-character-expression {} {
 
 **parse-vector-expression**
 
-`parse-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-vector-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -944,8 +950,8 @@ proc read-eof {args} {
 
 `read-string-expression` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression (an immutable
-[String](https://github.com/hoodiecrow/ConsTcl#strings) object).
+string expression--an immutable
+String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -999,7 +1005,7 @@ proc ::constcl::read-sharp {} {
 
 **read-vector-expression**
 
-`read-vector-expression` parses input, producing a vector expression and returning a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`read-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1026,7 +1032,7 @@ proc ::constcl::read-vector-expression {} {
 **read-character-expression**
 
 `read-character-expression` parses input, producing a character and returning
-a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expression (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -1067,7 +1073,7 @@ proc ::constcl::read-quoted-expression {} {
 **read-pair-expression**
 
 The `read-pair-expression` procedure parses input and produces a structure of
-[Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expression (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
 
@@ -1154,7 +1160,7 @@ proc ::constcl::read-plus-minus {char} {
 
 **read-number-expression**
 
-`read-number-expression` parses input, producing a number and returning a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`read-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -1221,7 +1227,7 @@ proc ::constcl::read-quasiquoted-expression {} {
 
 **read-identifier-expression**
 
-`read-identifier-expression` parses input, producing an identifier expression and returning a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`read-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expression (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -1257,8 +1263,8 @@ The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes 
 
 | Syntactic form | Syntax | Semantics |
 |----------------|--------|-----------|
-| [constant literal](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | _number_ or _boolean_, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
-| [quotation](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2) | __quote__ _datum_ | (__quote__ _datum_) evaluates to _datum_, making it a constant. Example: `(quote r)` ⇒ r
+| constant literal | *number* or *boolean*, etc | Constants evaluate to themselves. Example: `99` ⇒ 99 |
+| quotation | __quote__ *datum* | (__quote__ *datum*) evaluates to *datum*, making it a constant. Example: `(quote r)` ⇒ r
 
 
 
@@ -1269,12 +1275,12 @@ the form of expression, see above.
 
 The evaluator also does a simple form of macro expansion on `op` and `args` (the
 car and cdr of the expression) before processing them in the big `switch`. See
-the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below.
+the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
 
 The evaluator also resolves local defines, acting on expressions of the form
 "(begin (define ..." when the environment is other than the global one. See the
-part about [resolving local
-defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+part about resolving local
+defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1400,17 +1406,17 @@ proc ::constcl::update! {var val env} {
 
 **make-function**
 
-`make-function` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control)
+`make-function` makes a Procedure[#](https://github.com/hoodiecrow/ConsTcl#control)
 object. First it needs to convert the Lisp list `body`. It is packed inside a `begin`
 if it has more than one expression, and taken out of its list if not. The Lisp list
 `formals` is passed on as is.
 
 A Scheme formals list is either:
 
-* An _empty list_, `()`, meaning that no arguments are accepted,
-* A _proper list_, `(a b c)`, meaning it accepts three arguments, one in each symbol,
-* A _symbol_, `a`, meaning that all arguments go into `a`, or
-* A _dotted list_, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
+* An *empty list*, `()`, meaning that no arguments are accepted,
+* A *proper list*, `(a b c)`, meaning it accepts three arguments, one in each symbol,
+* A *symbol*, `a`, meaning that all arguments go into `a`, or
+* A *dotted list*, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
 
 <table border=1><thead><tr><th colspan=2 align="left">make-function (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
@@ -2366,51 +2372,61 @@ output strings are equal.
 reg eq? ::constcl::eq?
 
 proc ::constcl::eq? {val1 val2} {
-    ::if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
+    ::if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq symbol? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 numval] eq [$val2 numval]} {
+    } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
         return #t
-    } elseif {[char? $val1] ne "#f" && [char? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq char? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[null? $val1] ne "#f" && [null? $val2] ne "#f"} {
+    } elseif {[typeeq null? $val1 $val2]} {
         return #t
-    } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq pair? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq string? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq vector? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[procedure? $val1] ne "#f" && [procedure? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
         return #t
     } else {
         return #f
     }
 }
+
+proc ::constcl::typeeq {typep val1 val2} {
+    return [expr {[$typep $val1] ne "#f" && [$typep $val2] ne "#f"}]
+}
+
+proc ::constcl::valeq {val1 val2} {
+    return [expr {[$val1 value] eq [$val2 value]}]
+}
 ```
+
 
 ```
 reg eqv? ::constcl::eqv?
 
 proc ::constcl::eqv? {val1 val2} {
-    ::if {[boolean? $val1] ne "#f" && [boolean? $val2] ne "#f" && $val1 eq $val2} {
+    ::if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
         return #t
-    } elseif {[symbol? $val1] ne "#f" && [symbol? $val2] ne "#f" && [$val1 name] eq [$val2 name]} {
+    } elseif {[typeeq symbol? $val1 $val2] && [valeq $val1 $val2]} {
         return #t
-    } elseif {[number? $val1] ne "#f" && [number? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
         return #t
-    } elseif {[char? $val1] ne "#f" && [char? $val2] ne "#f" && [$val1 char] eq [$val2 char]} {
+    } elseif {[typeeq char? $val1 $val2] && [valeq $val1 eq $val2]} {
         return #t
-    } elseif {[null? $val1] ne "#f" && [null? $val2] ne "#f"} {
+    } elseif {[typeeq null? $val1 $val2]} {
         return #t
-    } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
+    } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" &&
+        [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
         return #t
-    } elseif {[string? $val1] ne "#f" && [string? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[typeeq string? $val1 $val2] && [valeq $val1 $val2]} {
         return #t
-    } elseif {[vector? $val1] ne "#f" && [vector? $val2] ne "#f" && [$val1 value] eq [$val2 value]} {
+    } elseif {[typeeq vector? $val1 $val2] && [valeq $val1 $val2]} {
         return #t
-    } elseif {[procedure? $val1] ne "#f" && [procedure? $val2] ne "#f" && $val1 eq $val2} {
+    } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
         return #t
     } else {
         return #f
@@ -3788,9 +3804,9 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 A `Procedure` object is a
-[closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
+closure[#](https://en.wikipedia.org/wiki/Closure_(computer_programming)),
 storing the procedure's parameter list, the body, and the environment that is current
-when the object is created (when the procedure is defined).
+when the object is created, i.e. when the procedure is defined.
 
 When a `Procedure` object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
@@ -4138,7 +4154,7 @@ proc ::constcl::close-output-port {port} {
 }
 ```
 
-`read` is implemented in the [read](https://github.com/hoodiecrow/ConsTcl#read) section.
+`read` is implemented in the read[#](https://github.com/hoodiecrow/ConsTcl#read) section.
 
 ```
 proc ::constcl::__read {args} {
@@ -4172,9 +4188,9 @@ proc ::constcl::char-ready? {args} {
 }
 ```
 
-`write` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`write` is implemented in the write[#](https://github.com/hoodiecrow/ConsTcl#write) section.
 
-`display` is implemented in the [write](https://github.com/hoodiecrow/ConsTcl#write) section.
+`display` is implemented in the write section.
 
 ```
 reg newline
@@ -6094,11 +6110,11 @@ ConsTcl> (define (circle-area r) (* pi (* r r)))
 During a call to the procedure `circle-area`, the symbol `r` is bound to the
 possibly clobbering an earlier definition of `r`. The solution is to use
 separate (but linked) environments, making `r`'s binding a
-_[local variable](https://en.wikipedia.org/wiki/Local_variable)_
+*local variable[#](https://en.wikipedia.org/wiki/Local_variable)*
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of
-_[lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)_.
+*lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)*.
 
 In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):
