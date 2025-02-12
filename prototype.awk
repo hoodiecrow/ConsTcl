@@ -37,24 +37,24 @@ inside_pr_block {
 
 $1 == "TblSynForms" {
     print "<table id=\"syntaxforms\"><thead>"
-    print "<tr><th>Syntactic form</th> <th>Syntax</th> <th>Example</th> </tr>"
+    print "<tr><th>Syntactic form</th> <th>Syntax</th> </tr>"
     print "</thead>"
     print "<tbody>"
-    print "<tr> <td>Variable reference</td><td>variable</td><td>r =&gt; 10</td></tr>"
-    print "<tr> <td>Constant literal</td><td>number or boolean, etc</td><td>99 =&gt; 99</td></tr>"
-    print "<tr> <td>Quotation</td><td>quote datum</td><td>(quote r) =&gt; r</td></tr>"
-    print "<tr> <td>Sequence</td><td>begin expression...</td><td>(begin (define r 10) (* r r)) =&gt; 100</td></tr>"
-    print "<tr> <td>Conditional</td><td>if test conseq alt</td><td>(if (&gt; 99 100) (* 2 2) (+ 2 4)) =&gt; 6</td></tr>"
-    print "<tr> <td>Definition</td><td>define identifier expression</td><td>(define r 10) =&gt;</td></tr>"
-    print "<tr> <td>Assignment</td><td>set! variable expression</td><td>(set! r 20) =&gt; 20</td></tr>"
-    print "<tr> <td>Procedure definition</td><td>lambda formals body</td><td>(lambda (r) (* r r)) =&gt; ::oo::Obj3601</td></tr>"
-    print "<tr> <td>Procedure call</td><td>operator operand...</td><td>(+ 1 6) =&gt; 7</td></tr>"
+    print "<tr> <td>Variable reference</td><td>variable</td></tr>"
+    print "<tr> <td>Constant literal</td><td>number or boolean, etc</td></tr>"
+    print "<tr> <td>Quotation</td><td>quote datum</td></tr>"
+    print "<tr> <td>Sequence</td><td>begin expression...</td></tr>"
+    print "<tr> <td>Conditional</td><td>if test conseq alt</td></tr>"
+    print "<tr> <td>Definition</td><td>define identifier expression</td></tr>"
+    print "<tr> <td>Assignment</td><td>set! variable expression</td><td></tr>"
+    print "<tr> <td>Procedure definition</td><td>lambda formals body</td></tr>"
+    print "<tr> <td>Procedure call</td><td>operator operand...</td></tr>"
     print "</tbody></table>"
     next
 }
 
 # skip any modeline
-$0 ~ modeline { next; }
+#$0 ~ modeline { next; }
 
 # output non PR lines
 { print; }

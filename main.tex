@@ -1,4 +1,5 @@
-\documentclass{report}
+\documentclass[twoside,9pt]{report}
+\usepackage[a5paper]{geometry}
 \usepackage{newpxmath}
 \usepackage{graphicx}
 \usepackage{listings}
@@ -11,6 +12,7 @@
 \author{Peter Lewerin}
 \date{\today}
 \begin{document}
+\pagestyle{headings}
 \maketitle
 \tableofcontents
  
@@ -54,63 +56,99 @@ First, I need to create the namespace that will be used for most identifiers:
 namespace eval ::constcl {}
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\subsection{Utility commands}
+\label{utility-commands}
 
-Next, some procedures that make my life as developer somewhat easier, but don't really matter to the interpreter (except the first one, \texttt{reg}, which registers built-in procedures in the definitions register). The other ones will show up a lot in the test cases.
+Next, some procedures that make my life as developer somewhat easier, but don't really matter to the interpreter (except the two first ones). The other ones will show up a lot in the test cases.
+
+
+\texttt{reg} registers selected built-in procedures in the standard library.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::reg {key args} {
+    ::if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
+        lassign $args val
     }
     dict set ::constcl::defreg $key $val
 }
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::regmacro {name} {
+    lappend ::constcl::macrolist $name
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{pep} started out life as parse-eval-print, and I never changed the name. It reads and evals an expression, and prints the result.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::pep {str} {
     ::constcl::write [
         ::constcl::eval [
-            ::constcl::parse [
-                ::constcl::IB new $str]]]
+            ::constcl::parse $str]]
 }
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{pp} is the same, but it doesn't eval the expression. It just prints what is read.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::pp {str} {
     ::constcl::write [
-        ::constcl::parse [
-            ::constcl::IB new $str]]
+        ::constcl::parse $str]
 }
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{prp} is a busy thing. It reads an expression, expands macros in it, resolves defines, and prints the result.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::prp {str} {
-    set val [::constcl::parse [::constcl::IB new $str]]
-    set op [::constcl::car $val]
-    set args [::constcl::cdr $val]
+    set expr [::constcl::parse $str]
+    set op [::constcl::car $expr]
+    set args [::constcl::cdr $expr]
     set env ::constcl::global_env
-    while {[$op name] in {
-            and case cond define del! for for/and
-            for/list for/or let or pop! push! put!
-            quasiquote unless when}} {
+    while {[$op name] in $::constcl::macrolist} {
         ::constcl::expand-macro $env
     }
-    set args [::constcl::resolve-local-defines $args]
-    ::constcl::write $args
+    set expr [::constcl::resolve-local-defines $args]
+    ::constcl::write $expr
 }
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{pxp} attempts to macro-expand whatever it reads, and prints the result. I know that 'expand' doesn't start with an 'x'.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::pxp {str} {
-    set val [::constcl::parse [::constcl::IB new $str]]
-    set op [::constcl::car $val]
-    set args [::constcl::cdr $val]
+    set expr [::constcl::parse $str]
+    set op [::constcl::car $expr]
+    set args [::constcl::cdr $expr]
     ::constcl::expand-macro ::constcl::global_env
     ::constcl::write [::constcl::cons $op $args]
 }
- 
-proc ::constcl::check {cond msg} {
-    ::if {[uplevel $cond] eq "#f"} {
-        ::error [uplevel [::list subst $msg]]
-    }
-}
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+When called, tells the caller the name of its command.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::pn {} {
+    lindex [split [lindex [info level -1] 0] :] end
 }
- 
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
@@ -118,10 +156,11 @@ This one is a little bit of both, a utility function that is also among the buil
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg in-range ::constcl::in-range
+reg in-range
  
 #started out as DKF's code
 proc ::constcl::in-range {args} {
+    set start 0
     set step 1
     switch [llength $args] {
         1 {
@@ -141,12 +180,16 @@ proc ::constcl::in-range {args} {
         }
     }
     set res $start
+    while {$step > 0 && $end > [incr start $step] ||
+            $step < 0 && $end < [incr start $step]} {
         lappend res $start
     }
     return [list {*}[lmap r $res {MkNumber $r}]]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\subsection{The NIL class}
+\label{the-nil-class}
 
 The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It is also base class for many other type classes.
 
@@ -174,12 +217,21 @@ oo::class create ::constcl::NIL {
 
 The \texttt{null?} standard predicate recognizes the empty list. Predicates in ConsTcl return \#t or \#f for true or false, so some care is necessary when calling them from Tcl code.
 
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{null? (public)} \\
+\hline
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg null? ::constcl::null?
+reg null?
  
-proc ::constcl::null? {obj} {
-    ::if {$obj eq "#NIL"} {
+proc ::constcl::null? {val} {
+    ::if {$val eq "#NIL"} {
         return #t
     } else {
         return #f
@@ -187,6 +239,8 @@ proc ::constcl::null? {obj} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\subsection{The classes None, Dot, Unspecific, Undefined, and EndOfFile}
+\label{the-classes-none,-dot,-unspecific,-undefined,-and-endoffile}
 
 The \texttt{None} class serves but one purpose: to avoid printing a result after \texttt{define}.
 
@@ -209,11 +263,23 @@ oo::class create ::constcl::Dot {
     method write {handle} {puts -nonewline $handle "."}
     method display {} { puts -nonewline "." }
 }
- 
-proc ::constcl::dot? {obj} {
-    ::if {[info object isa typeof $obj Dot]} {
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{dot? (internal)} \\
+\hline
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::dot? {val} {
+    ::if {[info object isa typeof $val Dot]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+    } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
         return #t
     } else {
         return #f
@@ -259,15 +325,17 @@ oo::class create ::constcl::EndOfFile {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\subsection{The error and check procedures}
+\label{the-error-and-check-procedures}
 
-\texttt{error} is used to signal an error, with \_msg\_ being a message string and the optional arguments being values to show after the message.
+\texttt{error} is used to signal an error, with \emph{msg} being a message string and the optional arguments being values to show after the message.
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{error (public)} \\
 \hline
 msg & a message string \\
-args & some expressions \\
+?args? & some expressions \\
 \textit{Returns:} & -don't care- \\
 \hline
 \end{tabular}
@@ -279,6 +347,7 @@ reg error
 proc ::constcl::error {msg args} {
     ::if {[llength $args]} {
         lappend msg "("
+        set times 0
         foreach arg $args {
             ::if {$times} {
                 ::append msg " "
@@ -292,10 +361,25 @@ proc ::constcl::error {msg args} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{check} does a check (usually a type check) on something and throws an error if it fails.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::check {cond msg} {
+    ::if {[uplevel $cond] eq "#f"} {
+        ::error [
+            uplevel [
+                ::list subst [
+                        ::string trim $msg]]]
+    }
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \section{S9fES}
 \label{s9fes}
 
-I've begun porting parts of S9fES (\_Scheme 9 from Empty Space\_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+I've begun porting parts of S9fES (\emph{Scheme 9 from Empty Space}, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
 
 
 I've already mixed this up with my own stuff.
@@ -323,6 +407,8 @@ proc ::constcl::xread {} {
     ::if {[$::constcl::InputPort handle] eq "#NIL"} {
         error "input port is not open"
     }
+    set ::constcl::Level 0
+    return [read-form 0]
 }
  
 proc ::constcl::read_c_ci {} {
@@ -330,10 +416,10 @@ proc ::constcl::read_c_ci {} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\section{read}
-\label{read}
+\section{Input}
+\label{input}
 
-\texttt{read} represents the interpreter's input facility. Currently input is faked with input strings.
+The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. \texttt{read} represents the interpreter's main input facility. As a complement, a similar set of procedures that read input from an input buffer exists (the \texttt{parse-} procedures). The main set (the \texttt{read-} procedures) read from standard input.
 
 
 \textbf{IB} class
@@ -356,6 +442,7 @@ oo::class create ::constcl::IB {
         ::if {$buffer eq {}} {
             set peekc {}
         } else {
+            set peekc [::string index $buffer 0]
             set buffer [::string range $buffer 1 end]
         }
     }
@@ -368,6 +455,7 @@ oo::class create ::constcl::IB {
     }
     method find {char} {
         ::if {[::string is space -strict $peekc]} {
+            for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
                 ::if {![::string is space -strict [::string index $buffer $cp]]} {
                     break
                 }
@@ -403,18 +491,17 @@ The parsing procedure translates an expression from external representation to i
 
 \subsection{parse}
 \label{parse}
+\subsubsection{Parsing}
+\label{parsing}
 
-\textbf{parse}
-
-
-Given a string, \texttt{parse} fills the input buffer. It then parses the input and produces an expression.
+Given a string, \texttt{parse} fills the input buffer. It then parses the input and produces the internal representation of an expression.
 
 
 Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-% ::constcl::parse "(+ 2 3)"
+> ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -423,9 +510,9 @@ Here, \texttt{parse} parsed the external representation of a list with three ele
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-% ::constcl::write ::oo::Obj491
+> ::constcl::write ::oo::Obj491
 (+ 2 3)
-% ::constcl::write [::constcl::eval ::oo::Obj491]
+> ::constcl::write [::constcl::eval ::oo::Obj491]
 5
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -445,13 +532,16 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 Anyway, here is how it really looks like. \texttt{::oo::Obj491} was just the head of the list.
 
 
-![intreplist](/images/intreplist.png)
+\includegraphics{images/intreplist.png}
+
+
+\textbf{parse}
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{parse (public)} \\
 \hline
-inp & a string or an input buffer \\
+inp & a Tcl string or an input buffer \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
@@ -466,19 +556,19 @@ proc ::constcl::parse {inp} {
     } else {
         set ib [IB new $inp]
     }
-    return [parse-expression]
+    return [parse-expr]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-expression}
+\textbf{parse-expr}
 
 
-The procedure \texttt{parse-expression} parses input by peeking at the first available character and delegating to one of the more detailed parsing procedures based on that, producing an expression of any kind.
+The procedure \texttt{parse-expr} parses input by peeking at the first available character and delegating to one of the more detailed parsing procedures based on that, producing an expression of any kind.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-expr (internal)} \\
 \hline
 \textit{Returns:} & an expression \\
 \hline
@@ -486,22 +576,22 @@ The procedure \texttt{parse-expression} parses input by peeking at the first ava
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-expression {} {
+proc ::constcl::parse-expr {} {
     upvar ib ib
     $ib skip-ws
     switch -regexp [$ib first] {
         {^$}          { return #NONE}
-        {\"}          { return [parse-string-expression] }
+        {\"}          { return [parse-string-expr] }
         {\#}          { return [parse-sharp] }
-        {\'}          { return [parse-quoted-expression] }
-        {\(}          { return [parse-pair-expression ")"] }
+        {\'}          { return [parse-quoted-expr] }
+        {\(}          { return [parse-pair-expr ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\,}          { return [parse-unquoted-expression] }
+        {\,}          { return [parse-unquoted-expr] }
         {\.}          { $ib advance ; return [Dot new] }
-        {\[}          { return [parse-pair-expression "\]"] }
-        {\`}          { return [parse-quasiquoted-expression] }
-        {\d}          { return [parse-number-expression] }
-        {[[:graph:]]} { return [parse-identifier-expression] }
+        {\[}          { return [parse-pair-expr "\]"] }
+        {\`}          { return [parse-quasiquoted-expr] }
+        {\d}          { return [parse-number-expr] }
+        {[[:graph:]]} { return [parse-identifier-expr] }
         default {
             ::error "unexpected character ([$ib first])"
         }
@@ -510,14 +600,14 @@ proc ::constcl::parse-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-string-expression}
+\textbf{parse-string-expr}
 
 
-\texttt{parse-string-expression} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--a String (see page \pageref{strings}) object.
+\texttt{parse-string-expr} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--a String (see page \pageref{strings}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-string-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-string-expr (internal)} \\
 \hline
 \textit{Returns:} & a string \\
 \hline
@@ -525,7 +615,7 @@ proc ::constcl::parse-expression {} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-string-expression {} {
+proc ::constcl::parse-string-expr {} {
     upvar ib ib
     set str {}
     $ib advance
@@ -570,10 +660,10 @@ proc ::constcl::parse-sharp {} {
     upvar ib ib
     $ib advance
     switch [$ib first] {
-        (    { return [parse-vector-expression] }
+        (    { return [parse-vector-expr] }
         t    { $ib advance ; $ib skip-ws ; return #t }
         f    { $ib advance ; $ib skip-ws ; return #f }
-        "\\" { return [parse-character-expression] }
+        "\\" { return [parse-character-expr] }
         default {
             ::error "Illegal #-literal: #[$ib first]"
         }
@@ -603,14 +693,14 @@ proc ::constcl::make-constant {val} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-quoted-expression}
+\textbf{parse-quoted-expr}
 
 
-\texttt{parse-quoted-expression} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
+\texttt{parse-quoted-expr} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-quoted-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-quoted-expr (internal)} \\
 \hline
 \textit{Returns:} & an expression wrapped in the quote symbol \\
 \hline
@@ -618,10 +708,10 @@ proc ::constcl::make-constant {val} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-quoted-expression {} {
+proc ::constcl::parse-quoted-expr {} {
     upvar ib ib
     $ib advance
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     make-constant $expr
     return [list #Q $expr]
@@ -629,14 +719,14 @@ proc ::constcl::parse-quoted-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-pair-expression}
+\textbf{parse-pair-expr}
 
 
-The \texttt{parse-pair-expression} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
+The \texttt{parse-pair-expr} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-pair-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-pair-expr (internal)} \\
 \hline
 char & the terminating paren or bracket \\
 \textit{Returns:} & a structure of pair expressions \\
@@ -652,15 +742,15 @@ proc ::constcl::parse-pair {char} {
         return #NIL
     }
     $ib skip-ws
-    set a [parse-expression]
+    set a [parse-expr]
     $ib skip-ws
     set res $a
     set prev #NIL
     while {![$ib find $char]} {
-        set x [parse-expression]
+        set x [parse-expr]
         $ib skip-ws
         ::if {[dot? $x] ne "#f"} {
-            set prev [parse-expression]
+            set prev [parse-expr]
             $ib skip-ws
         } else {
             lappend res $x
@@ -673,7 +763,7 @@ proc ::constcl::parse-pair {char} {
     return $prev
 }
  
-proc ::constcl::parse-pair-expression {char} {
+proc ::constcl::parse-pair-expr {char} {
     upvar ib ib
     $ib advance
     $ib skip-ws
@@ -681,9 +771,11 @@ proc ::constcl::parse-pair-expression {char} {
     $ib skip-ws
     ::if {[$ib first] ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=[$ib first])."
+            ::error \
+                "Missing right paren. ([$ib first])."
         } else {
-            ::error "Missing right bracket (first=[$ib first])."
+            ::error \
+                "Missing right bracket ([$ib first])."
         }
     }
     $ib advance
@@ -714,7 +806,7 @@ proc ::constcl::parse-plus-minus {} {
     $ib advance
     ::if {[::string is digit -strict [$ib first]]} {
         $ib unget $c
-        return [::constcl::parse-number-expression]
+        return [::constcl::parse-number-expr]
     } else {
         ::if {$c eq "+"} {
             $ib skip-ws
@@ -728,22 +820,22 @@ proc ::constcl::parse-plus-minus {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-unquoted-expression}
+\textbf{parse-unquoted-expr}
 
 
-\texttt{parse-unquoted-expression} parses input, producing an expression and returning it wrapped in \texttt{unquote}, or in \texttt{unquote-splicing} if an @-sign is present in the input stream.
+\texttt{parse-unquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{unquote}, or in \texttt{unquote-splicing} if an @-sign is present in the input stream.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-unquoted-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-unquoted-expr (internal)} \\
 \hline
-\textit{Returns:} & an expression wrapped in the unquote-splicing symbol \\
+\textit{Returns:} & an expression wrapped in the unquote/-splicing symbol \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-unquoted-expression {} {
+proc ::constcl::parse-unquoted-expr {} {
     upvar ib ib
     $ib advance
     set symbol "unquote"
@@ -751,21 +843,21 @@ proc ::constcl::parse-unquoted-expression {} {
         set symbol "unquote-splicing"
         $ib advance
     }
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     return [list [MkSymbol $symbol] $expr]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-quasiquoted-expression}
+\textbf{parse-quasiquoted-expr}
 
 
-\texttt{parse-quasiquoted-expression} parses input, producing an expression and returning it wrapped in \texttt{quasiquote}.
+\texttt{parse-quasiquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{quasiquote}.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-quasiquoted-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-quasiquoted-expr (internal)} \\
 \hline
 \textit{Returns:} & an expression wrapped in the quasiquote symbol \\
 \hline
@@ -773,10 +865,10 @@ proc ::constcl::parse-unquoted-expression {} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-quasiquoted-expression {} {
+proc ::constcl::parse-quasiquoted-expr {} {
     upvar ib ib
     $ib advance
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     make-constant $expr
     return [list [MkSymbol "quasiquote"] $expr]
@@ -787,13 +879,15 @@ proc ::constcl::parse-quasiquoted-expression {} {
 \textbf{interspace}
 
 
-The \texttt{interspace} helper procedure recognizes whitespace or comments between value representations.
+The \texttt{interspace} helper procedure recognizes whitespace between value representations.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::interspace {c} {
     # don't add #EOF: parse-* uses this one too
-    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+    ::if {$c eq {} ||
+        [::string is space $c] ||
+        $c eq ";"} {
         return #t
     } else {
         return #f
@@ -802,14 +896,14 @@ proc ::constcl::interspace {c} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-number-expression}
+\textbf{parse-number-expr}
 
 
-\texttt{parse-number-expression} parses input, producing a number and returning a Number (see page \pageref{numbers}) object.
+\texttt{parse-number-expr} parses input, producing a number and returning a Number (see page \pageref{numbers}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-number-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-number-expr (internal)} \\
 \hline
 \textit{Returns:} & a number \\
 \hline
@@ -817,7 +911,7 @@ proc ::constcl::interspace {c} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-number-expression {} {
+proc ::constcl::parse-number-expr {} {
     upvar ib ib
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
         ::append num [$ib first]
@@ -830,14 +924,14 @@ proc ::constcl::parse-number-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-identifier-expression}
+\textbf{parse-identifier-expr}
 
 
-\texttt{parse-identifier-expression} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
+\texttt{parse-identifier-expr} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-identifier-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-identifier-expr (internal)} \\
 \hline
 \textit{Returns:} & a symbol \\
 \hline
@@ -845,7 +939,7 @@ proc ::constcl::parse-number-expression {} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-identifier-expression {} {
+proc ::constcl::parse-identifier-expr {} {
     upvar ib ib
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
         ::append name [$ib first]
@@ -862,6 +956,7 @@ proc ::constcl::parse-identifier-expression {} {
 
 
 The \texttt{character-check} helper procedure compares a potential
+character constant to the valid kinds. Returns Tcl truth (1/0).
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -875,14 +970,14 @@ proc ::constcl::character-check {name} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-character-expression}
+\textbf{parse-character-expr}
 
 
-\texttt{parse-character-expression} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
+\texttt{parse-character-expr} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-character-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-character-expr (internal)} \\
 \hline
 \textit{Returns:} & a character \\
 \hline
@@ -890,7 +985,7 @@ proc ::constcl::character-check {name} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-character-expression {} {
+proc ::constcl::parse-character-expr {} {
     upvar ib ib
     set name "#"
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
@@ -904,14 +999,14 @@ proc ::constcl::parse-character-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-vector-expression}
+\textbf{parse-vector-expr}
 
 
-\texttt{parse-vector-expression} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
+\texttt{parse-vector-expr} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{parse-vector-expression (internal)} \\
+\multicolumn{2}{|l|}{parse-vector-expr (internal)} \\
 \hline
 \textit{Returns:} & a vector \\
 \hline
@@ -919,13 +1014,13 @@ proc ::constcl::parse-character-expression {} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::parse-vector-expression {} {
+proc ::constcl::parse-vector-expr {} {
     upvar ib ib
     $ib advance
     $ib skip-ws
     set res {}
     while {[$ib first] ne {} && [$ib first] ne ")"} {
-        lappend res [parse-expression]
+        lappend res [parse-expr]
         $ib skip-ws
     }
     set vec [MkVector $res]
@@ -940,7 +1035,7 @@ proc ::constcl::parse-vector-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \subsection{read}
-\label{read1}
+\label{read}
 
 \textbf{read}
 
@@ -958,7 +1053,7 @@ The standard builtin \texttt{read} reads and parses input into a Lisp expression
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg read ::constcl::read
+reg read
  
 proc ::constcl::read {args} {
     set c {}
@@ -970,7 +1065,7 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
-    set expr [read-expression]
+    set expr [read-expr]
     set ::constcl::Input_port $oldport
     set unget {}
     return $expr
@@ -978,23 +1073,23 @@ proc ::constcl::read {args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-expression}
+\textbf{read-expr}
 
 
-The procedure \texttt{read-expression} parses input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream.
+The procedure \texttt{read-expr} parses input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If the end of file is encountered before an expression can be read in full, the procedure returns end of file.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-expression (internal)} \\
+\multicolumn{2}{|l|}{read-expr (internal)} \\
 \hline
 ?char? & a Tcl character \\
-\textit{Returns:} & an expression \\
+\textit{Returns:} & an expression or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-expression {args} {
+proc ::constcl::read-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
@@ -1008,17 +1103,17 @@ proc ::constcl::read-expression {args} {
     }
     switch -regexp $c {
         {^$}          { return #NONE}
-        {\"}          { set n [read-string-expression]       ; read-eof $n; return $n }
-        {\#}          { set n [read-sharp]                   ; read-eof $n; return $n }
-        {\'}          { set n [read-quoted-expression]       ; read-eof $n; return $n }
-        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; return $n }
-        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; return $n }
-        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; return $n }
-        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; return $n }
-        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; return $n }
-        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; return $n }
-        {\d}          { set n [read-number-expression $c]    ; read-eof $n; return $n }
-        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; return $n }
+        {\"}          { return [read-string-expr] }
+        {\#}          { return [read-sharp] }
+        {\'}          { return [read-quoted-expr] }
+        {\(}          { return [read-pair-expr ")"] }
+        {\+} - {\-}   { return [read-plus-minus $c] }
+        {\,}          { return [read-unquoted-expr] }
+        {\.}          { return [Dot new]; set c [readc] }
+        {\[}          { return [read-pair-expr "\]"] }
+        {\`}          { return [read-quasiquoted-expr] }
+        {\d}          { return [read-number-expr $c] }
+        {[[:graph:]]} { return [read-identifier-expr $c] }
         default {
             read-eof $c
             ::error "unexpected character ($c)"
@@ -1057,13 +1152,15 @@ proc readc {} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
 \texttt{read-find} reads ahead through whitespace to find a given character. Returns 1
+if it has found the character, and 0 if it has stopped at some other character.
+Returns end of file if eof is encountered.
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{read-find (internal)} \\
 \hline
 char & a Tcl character \\
-\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\textit{Returns:} & a Tcl truth value (1 or 0) or end of file \\
 \hline
 \end{tabular}
 
@@ -1114,7 +1211,7 @@ proc skip-ws {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{read-eof} checks a number of characters for possible end-of-file objects. If it finds one, it returns \_from its caller\_ with the EOF value.
+\texttt{read-eof} checks a number of characters for possible end-of-file objects. If it finds one, it returns \emph{from its caller} with the EOF value.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1136,22 +1233,22 @@ proc read-eof {args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-string-expression}
+\textbf{read-string-expr}
 
 
-\texttt{read-string-expression} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
+\texttt{read-string-expr} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-string-expression (internal)} \\
+\multicolumn{2}{|l|}{read-string-expr (internal)} \\
 \hline
-\textit{Returns:} & a string \\
+\textit{Returns:} & a string or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-string-expression {} {
+proc ::constcl::read-string-expr {} {
     upvar c c unget unget
     set str {}
     set c [readc]
@@ -1168,6 +1265,7 @@ proc ::constcl::read-string-expression {} {
     }
     set c [readc]
     set expr [MkString $str]
+    read-eof $expr
     $expr mkconstant
     return $expr
 }
@@ -1183,7 +1281,7 @@ proc ::constcl::read-string-expression {} {
 \hline
 \multicolumn{2}{|l|}{read-sharp (internal)} \\
 \hline
-\textit{Returns:} & a vector, boolean, or character value \\
+\textit{Returns:} & a vector, boolean, or character value or end of file \\
 \hline
 \end{tabular}
 
@@ -1194,44 +1292,47 @@ proc ::constcl::read-sharp {} {
     set c [readc]
     read-eof $c
     switch $c {
-        (    { set n [read-vector-expression]   ; set c [readc]; return $n }
-        t    { set n #t                         ; set c [readc]; return $n }
-        f    { set n #f                         ; set c [readc]; return $n }
-        "\\" { set n [read-character-expression];                return $n }
+        (    { set n [read-vector-expr] }
+        t    { set n #t }
+        f    { set n #f }
+        "\\" { set n [read-character-expr] }
         default {
             read-eof $c
             ::error "Illegal #-literal: #$c"
         }
     }
+    set c [readc]
+    return $n
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-vector-expression}
+\textbf{read-vector-expr}
 
 
-\texttt{read-vector-expression} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
+\texttt{read-vector-expr} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-vector-expression (internal)} \\
+\multicolumn{2}{|l|}{read-vector-expr (internal)} \\
 \hline
-\textit{Returns:} & an expression \\
+\textit{Returns:} & a vector or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-vector-expression {} {
+proc ::constcl::read-vector-expr {} {
     upvar c c unget unget
     set res {}
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
-        lappend res [read-expression $c]
+        lappend res [read-expr $c]
         skip-ws
         read-eof $c
     }
     set expr [MkVector $res]
+    read-eof $expr
     $expr mkconstant
     ::if {$c ne ")"} {
         ::error "Missing right parenthesis (first=$c)."
@@ -1242,22 +1343,22 @@ proc ::constcl::read-vector-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-character-expression}
+\textbf{read-character-expr}
 
 
-\texttt{read-character-expression} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
+\texttt{read-character-expr} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-character-expression (internal)} \\
+\multicolumn{2}{|l|}{read-character-expr (internal)} \\
 \hline
-\textit{Returns:} & a character \\
+\textit{Returns:} & a character or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-character-expression {} {
+proc ::constcl::read-character-expr {} {
     upvar c c unget unget
     set name "#\\"
     set c [readc]
@@ -1269,29 +1370,30 @@ proc ::constcl::read-character-expression {} {
     }
     check {character-check $name} {Invalid character constant $name}
     set expr [MkChar $name]
+    read-eof $expr
     return $expr
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-quoted-expression}
+\textbf{read-quoted-expr}
 
 
-\texttt{read-quoted-expression} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
+\texttt{read-quoted-expr} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-quoted-expression (internal)} \\
+\multicolumn{2}{|l|}{read-quoted-expr (internal)} \\
 \hline
-\textit{Returns:} & an expression wrapped in the quote symbol \\
+\textit{Returns:} & an expression wrapped in the quote symbol or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-quoted-expression {} {
+proc ::constcl::read-quoted-expr {} {
     upvar c c unget unget
-    set expr [read-expression]
+    set expr [read-expr]
     read-eof $expr
     make-constant $expr
     return [list #Q $expr]
@@ -1299,32 +1401,35 @@ proc ::constcl::read-quoted-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-pair-expression}
+\textbf{read-pair-expr}
 
 
-The \texttt{read-pair-expression} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
+The \texttt{read-pair-expr} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-pair-expression (internal)} \\
+\multicolumn{2}{|l|}{read-pair-expr (internal)} \\
 \hline
 char & the terminating paren or bracket \\
-\textit{Returns:} & a structure of pair expressions \\
+\textit{Returns:} & a structure of pair expressions or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-pair-expression {char} {
+proc ::constcl::read-pair-expr {char} {
     upvar c c unget unget
     set expr [read-pair $char]
+    read-eof $expr
     skip-ws
     read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=$c)."
+            ::error \
+                "Missing right paren. ($c)."
         } else {
-            ::error "Missing right bracket (first=$c)."
+            ::error \
+                "Missing right bracket ($c)."
         }
     } else {
         set unget {}
@@ -1342,16 +1447,16 @@ proc ::constcl::read-pair {char} {
     }
     set c [readc]
     read-eof $c
-    set a [read-expression $c]
+    set a [read-expr $c]
     set res $a
     skip-ws
     set prev #NIL
     while {![read-find $char]} {
-        set x [read-expression $c]
+        set x [read-expr $c]
         skip-ws
         read-eof $c
         ::if {[dot? $x] ne "#f"} {
-            set prev [read-expression $c]
+            set prev [read-expr $c]
             skip-ws $c]
             read-eof $c
         } else {
@@ -1377,7 +1482,7 @@ proc ::constcl::read-pair {char} {
 \hline
 \multicolumn{2}{|l|}{read-plus-minus (internal)} \\
 \hline
-\textit{Returns:} & either the symbols + or - or a number \\
+\textit{Returns:} & either the symbols + or - or a number or end of file \\
 \hline
 \end{tabular}
 
@@ -1388,7 +1493,7 @@ proc ::constcl::read-plus-minus {char} {
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
-        set n [read-number-expression $c]
+        set n [read-number-expr $c]
         ::if {$char eq "-"} {
             set n [- $n]
         }
@@ -1404,23 +1509,23 @@ proc ::constcl::read-plus-minus {char} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-number-expression}
+\textbf{read-number-expr}
 
 
-\texttt{read-number-expression} parses input, producing a number and returning a Number (see page \pageref{numbers}) object.
+\texttt{read-number-expr} parses input, producing a number and returning a Number (see page \pageref{numbers}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-number-expression (internal)} \\
+\multicolumn{2}{|l|}{read-number-expr (internal)} \\
 \hline
 ?char? & a Tcl character \\
-\textit{Returns:} & a number \\
+\textit{Returns:} & a number or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-number-expression {args} {
+proc ::constcl::read-number-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
@@ -1434,36 +1539,38 @@ proc ::constcl::read-number-expression {args} {
     }
     set unget $c
     check {::string is double -strict $num} {Invalid numeric constant $num}
-    return [MkNumber $num]
+    set expr [MkNumber $num]
+    read-eof $expr
+    return $expr
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-unquoted-expression}
+\textbf{read-unquoted-expr}
 
 
-\texttt{read-unquoted-expression} parses input, producing an expression and returning it wrapped in \texttt{unquote}, or in \texttt{unquote-splicing} if an @-sign is present in the input stream.
+\texttt{read-unquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{unquote}, or in \texttt{unquote-splicing} if an @-sign is present in the input stream.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-unquoted-expression (internal)} \\
+\multicolumn{2}{|l|}{read-unquoted-expr (internal)} \\
 \hline
-\textit{Returns:} & an expression wrapped in the unquote-splicing symbol \\
+\textit{Returns:} & an expression wrapped in the unquote/-splicing symbol or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-unquoted-expression {} {
+proc ::constcl::read-unquoted-expr {} {
     upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
         set symbol "unquote-splicing"
-        set expr [read-expression]
+        set expr [read-expr]
     } else {
         set symbol "unquote"
-        set expr [read-expression $c]
+        set expr [read-expr $c]
     }
     read-eof $expr
     return [list [MkSymbol $symbol] $expr]
@@ -1471,24 +1578,24 @@ proc ::constcl::read-unquoted-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-quasiquoted-expression}
+\textbf{read-quasiquoted-expr}
 
 
-\texttt{read-quasiquoted-expression} parses input, producing an expression and returning it wrapped in \texttt{quasiquote}.
+\texttt{read-quasiquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{quasiquote}.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-quasiquoted-expression (internal)} \\
+\multicolumn{2}{|l|}{read-quasiquoted-expr (internal)} \\
 \hline
-\textit{Returns:} & an expression wrapped in the quasiquote symbol \\
+\textit{Returns:} & an expression wrapped in the quasiquote symbol or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-quasiquoted-expression {} {
+proc ::constcl::read-quasiquoted-expr {} {
     upvar c c unget unget
-    set expr [read-expression]
+    set expr [read-expr]
     skip-ws
     read-eof $expr
     make-constant $expr
@@ -1497,25 +1604,26 @@ proc ::constcl::read-quasiquoted-expression {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{read-identifier-expression}
+\textbf{read-identifier-expr}
 
 
-\texttt{read-identifier-expression} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
+\texttt{read-identifier-expr} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{read-identifier-expression (internal)} \\
+\multicolumn{2}{|l|}{read-identifier-expr (internal)} \\
 \hline
 ?char? & a Tcl character \\
-\textit{Returns:} & a symbol \\
+\textit{Returns:} & a symbol or end of file \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::read-identifier-expression {args} {
+proc ::constcl::read-identifier-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
+        lassign $args c
     } else {
         set c [readc]
     }
@@ -1531,6 +1639,7 @@ proc ::constcl::read-identifier-expression {args} {
     ::if {$c ne "#EOF"} {
         set unget $c
     }
+    read-eof $name
     # idcheck throws error if invalid identifier
     idcheck $name
     return [MkSymbol $name]
@@ -1540,21 +1649,24 @@ proc ::constcl::read-identifier-expression {args} {
 \section{eval}
 \label{eval}
 
-The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form.
+The second thing an interpreter must be able to do is to reduce expressions to their normal form, or \emph{evaluate} them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
+
+
+There are nine diffent forms or classes of expressions in Lisp.
 
 \begin{tabular}{|l l l|}
 \hline
 Syntactic form & Syntax & Example \\
 \hline
-Variable reference & variable & r => 10 \\
-Constant literal & number or boolean, etc & 99 => 99 \\
-Quotation & quote datum & (quote r) => r \\
-Sequence & begin expression... & (begin (define r 10) (* r r)) => 100 \\
-Conditional & if test conseq alt & (if (> 99 100) (* 2 2) (+ 2 4)) => 6 \\
-Definition & define identifier expression & (define r 10) => \\
-Assignment & set! variable expression & (set! r 20) => 20 \\
-Procedure definition & lambda formals body & (lambda (r) (* r r)) => ::oo::Obj3601 \\
-Procedure call & operator operand... & (+ 1 6) => 7 \\
+Variable reference & variable \\
+Constant literal & number or boolean, etc \\
+Quotation & quote datum \\
+Sequence & begin expression... \\
+Conditional & if test conseq alt \\
+Definition & define identifier expression \\
+Assignment & set! variable expression \\
+Procedure definition & lambda formals body \\
+Procedure call & operator operand... \\
 \hline
 \end{tabular}
 
@@ -1562,12 +1674,15 @@ Procedure call & operator operand... & (+ 1 6) => 7 \\
 \textbf{eval}
 
 
-\texttt{eval}
+The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form.
+
+
+\texttt{eval}:
 
 \begin{enumerate}
-\item  processes an \_expression\_ to get a \_value\_. The exact method depends on the form of expression, see above and below.
-\item  does a simple form of macro expansion on \texttt{op} and \texttt{args} (the car and cdr of the expression) before processing them in the big \texttt{switch}. See the part about macros (see page \pageref{macros}) below.
-\item  resolves local defines, acting on expressions of the form "(begin (define ..." when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
+\item  processes an \emph{expression} to get a \emph{value}. The exact method depends on the form of expression, see above and below.
+\item  does a form of \emph{macro expansion} on the car and cdr of a non-atomic expression before processing it further. See the part about macros (see page \pageref{macros}) below.
+\item  resolves \emph{local defines}, acting on expressions of the form \texttt{(begin (define ...} when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
 \end{enumerate}
 \begin{tabular}{ |l l| }
 \hline
@@ -1586,40 +1701,48 @@ reg eval ::constcl::eval
 proc ::constcl::eval {expr {env ::constcl::global_env}} {
     ::if {[symbol? $expr] ne "#f"} {
         lookup $expr $env
-    } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+    } elseif {[null? $expr] ne "#f" ||
+        [atom? $expr] ne "#f"} {
         set expr
     } else {
         set op [car $expr]
         set args [cdr $expr]
-        while {[$op name] in {
-            and case cond define del! for for/and for/list for/or
-            let or pop! push! put! quasiquote unless when}} {
-                expand-macro $env
+        while {[$op name] in $::constcl::macrolist} {
+            expand-macro $env
         }
-        ::if {$env ne "::constcl::global_env" && [$op name] eq "begin" &&
-            ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+        ::if {$env ne "::constcl::global_env" &&
+            [$op name] eq "begin" &&
+            ([pair? [car $args]] ne "#f" &&
+            [[caar $args] name] eq "define")} {
             set expr [resolve-local-defines $args]
             set op [car $expr]
             set args [cdr $expr]
         }
         switch [$op name] {
-            quote   { car $args }
-            if      { ::if {[eval [car $args] $env] ne "#f"} \
-                        {eval [cadr $args] $env} \
-                        {eval [caddr $args] $env} }
-            begin   { eprogn $args $env }
-            define  { declare [car $args] [eval [cadr $args] $env] $env }
-            set!    { update! [car $args] [eval [cadr $args] $env] $env }
-            lambda  { make-function [car $args] [cdr $args] $env }
-            default { invoke [eval $op $env] [eval-list $args $env] }
+            quote { car $args }
+            if { ::if {[eval [car $args] $env] ne "#f"} \
+                {eval [cadr $args] $env} \
+                {eval [caddr $args] $env} }
+            begin { eprogn $args $env }
+            define { declare [car $args] \
+                [eval [cadr $args] $env] $env }
+            set! { update! [car $args] [eval \
+                [cadr $args] $env] $env }
+            lambda { make-function [car $args] \
+                [cdr $args] $env }
+            default { invoke [eval $op $env] \
+                [eval-list $args $env] }
         }
     }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\subsubsection{Syntactic forms}
+\label{syntactic-forms}
+\paragraph{Variable reference}
+\label{variable-reference}
 
-\textbf{Variable reference}
-
+Example: \texttt{r} => 10 (a symbol \texttt{r} is evaluated to 10)
 
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of the identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to lookup an unbound symbol.
 
@@ -1643,15 +1766,25 @@ proc ::constcl::lookup {sym env} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\paragraph{Constant literal}
+\label{constant-literal}
 
-\textbf{Quotation}
+Example: 99 => 99 (a number evaluates to itself)
 
+
+Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value.
+
+\paragraph{Quotation}
+\label{quotation}
+
+Example: \texttt{(quote r)} => \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)
 
 According to the rules of Variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. \texttt{(quote x)} evaluates to the symbol x itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader.
 
+\paragraph{Conditional}
+\label{conditional}
 
-\textbf{Conditional}
-
+Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} => 6
 
 The conditional form \texttt{if} evaluates a Lisp list of three expressions. The first, the \_condition\_, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \_consequent\_) is evaluated and the value returned. Otherwise, the third expression (the \_alternate\_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
@@ -1672,16 +1805,17 @@ alternate & an expression \\
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::if {cond conseq altern} {
-    ::if {[uplevel $cond] ne "#f"} {uplevel $conseq} {uplevel $altern}
+    ::if {[uplevel $cond] ne "#f"} \
+        {uplevel $conseq} {uplevel $altern}
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\paragraph{Sequence}
+\label{sequence}
 
-\textbf{Sequence}
-
+Example: \texttt{(begin (define r 10) (* r r))} => 100
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The \texttt{eprogn} helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
-
 
 \textbf{eprogn}
 
@@ -1711,12 +1845,12 @@ proc ::constcl::eprogn {exps env} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\paragraph{Definition}
+\label{definition}
 
-\textbf{Definition}
-
+Example: \texttt{(define r 10)} => ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. A symbol is bound to a value (or rather to the location the value is in), creating a variable, through definition. The \texttt{declare} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
-
 
 \textbf{declare}
 
@@ -1740,9 +1874,11 @@ proc ::constcl::declare {sym val env} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\paragraph{Assignment}
+\label{assignment}
 
-\textbf{Assignment}
-
+Example: \texttt{(set! r 20)} => 20 (\texttt{r} is a bound symbol, so it's allowed to assign
+to it)
 
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name "variable", something that can be modified). The process is called assignment. The \texttt{update!} helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99.
 
@@ -1768,9 +1904,8 @@ proc ::constcl::update! {var val env} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
-\textbf{Procedure definition}
-
+\paragraph{Procedure definition}
+\label{procedure-definition}
 
 In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
 
@@ -1790,10 +1925,10 @@ Under the hood, the helper \texttt{make-function} makes a Procedure (see page \p
 A Scheme formals list is either:
 
 \begin{itemize}
-\item An *empty list*, \texttt{()}, meaning that no arguments are accepted,
-\item A *proper list*, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol,
-\item A *symbol*, \texttt{a}, meaning that all arguments go into \texttt{a}, or
-\item A *dotted list*, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
+\item An \emph{empty list}, \texttt{()}, meaning that no arguments are accepted,
+\item A \emph{proper list}, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol,
+\item A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or
+\item A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
 \end{itemize}
 
 \textbf{make-function}
@@ -1821,9 +1956,8 @@ proc ::constcl::make-function {formals body env} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
-\textbf{Procedure call}
-
+\paragraph{Procedure call}
+\label{procedure-call}
 
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it will return 121.
 
@@ -1846,7 +1980,9 @@ vals & a Lisp list of Lisp values \\
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::invoke {pr vals} {
-    check {procedure? $pr} {PROCEDURE expected\n([$pr show] val ...)}
+    check {procedure? $pr} {
+        PROCEDURE expected\n([$pr show] val ...)
+    }
     ::if {[info object isa object $pr]} {
         $pr call {*}[splitlist $vals]
     } else {
@@ -1886,7 +2022,7 @@ proc ::constcl::splitlist {vals} {
 \textbf{eval-list}
 
 
-\texttt{eval-list} successively evaluates the elements of a Lisp list and returns the results as a Lisp list.
+\texttt{eval-list} successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1902,7 +2038,8 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::eval-list {exps env} {
     ::if {[pair? $exps] ne "#f"} {
-        return [cons [eval [car $exps] $env] [eval-list [cdr $exps] $env]]
+        return [cons [eval [car $exps] $env] \
+            [eval-list [cdr $exps] $env]]
     } {
         return #NIL
     }
@@ -1920,6 +2057,9 @@ Macros that rewrite expressions into other, more concrete expressions is one of 
 
 \texttt{expand-macro} only takes the environment as a parameter, but internally it uses variable sharing to get the expression it is to process. It shares the variables \texttt{op} and \texttt{args} with its caller, \texttt{eval}. \texttt{op} is used to delegate to the correct expansion procedure, and the value of \texttt{args} is passed to the expansion procedures. In the end, the expanded expression is passed back to \texttt{eval} by assigning to \texttt{op} and \texttt{args}.
 
+
+Before it gets to the expansion call, the procedure does some extra processing if the operator is \texttt{define}. If the car of the \texttt{args} is something other than a Pair, or if the caar of the \texttt{args} is the symbol \texttt{lambda}, then no expansion is needed and the procedure returns with a code to break the while loop in \texttt{eval}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{expand-macro (internal)} \\
@@ -1933,62 +2073,12 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::expand-macro {env} {
     upvar op op args args
-    ::if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
+    ::if {[$op name] eq "define" &&
+        ([pair? [car $args]] eq "#f" ||
+        [[caar $args] name] eq "lambda")} {
         return -code break
     }
-    switch [$op name] {
-        and {
-            set expr [expand-and $args $env]
-        }
-        case {
-            set expr [expand-case [car $args] [cdr $args]]
-        }
-        cond {
-            set expr [expand-cond $args]
-        }
-        define {
-            set expr [expand-define $args $env]
-        }
-        del! {
-            set expr [expand-del! $args $env]
-        }
-        for {
-            set expr [expand-for $args $env]
-        }
-        for/and {
-            set expr [expand-for/and $args $env]
-        }
-        for/list {
-            set expr [expand-for/list $args $env]
-        }
-        for/or {
-            set expr [expand-for/or $args $env]
-        }
-        let {
-            set expr [expand-let $args $env]
-        }
-        or {
-            set expr [expand-or $args $env]
-        }
-        pop! {
-            set expr [expand-pop! $args $env]
-        }
-        push! {
-            set expr [expand-push! $args $env]
-        }
-        put! {
-            set expr [expand-put! $args $env]
-        }
-        quasiquote {
-            set expr [expand-quasiquote $args $env]
-        }
-        unless {
-            set expr [expand-unless $args $env]
-        }
-        when {
-            set expr [expand-when $args $env]
-        }
-    }
+    set expr [expand-[$op name] [cons $op $args] $env]
     set op [car $expr]
     set args [cdr $expr]
     return #NIL
@@ -1999,13 +2089,15 @@ proc ::constcl::expand-macro {env} {
 \textbf{expand-and}
 
 
-\texttt{expand-and} expands the \texttt{and} macro. It returns a \texttt{begin}-expression if the macro
+\texttt{expand-and} expands the \texttt{and} macro. It returns a \texttt{begin}-expression if the
+macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
+
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{expand-and (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2013,7 +2105,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-and {tail env} {
+regmacro and
+ 
+proc ::constcl::expand-and {expr env} {
+    set tail [cdr $expr]
         return [list #B #t]
     } {
         if {eq? [length $tail] #1} {
@@ -2043,9 +2138,10 @@ proc ::constcl::do-and {tail prev env} {
         return $prev
     } {
         $env setstr "first" [car $tail]
-        $env setstr "rest" [do-and [cdr $tail] [car $tail] $env]
+        $env setstr "rest" [do-and [cdr $tail] \
+            [car $tail] $env]
         set qq "`(if ,first ,rest #f)"
-        return [expand-quasiquote [cdr [parse $qq]] $env]
+        return [expand-quasiquote [parse $qq] $env]
     }
 }
 \end{lstlisting}
@@ -2060,26 +2156,36 @@ The \texttt{case} macro is expanded by \texttt{expand-case}. It returns \texttt{
 \hline
 \multicolumn{2}{|l|}{expand-case (internal)} \\
 \hline
-keyexpr & an expression \\
-clauses & a Lisp list of Lisp values \\
+expr & an expression \\
+env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-case {keyexpr clauses} {
+regmacro case
+ 
+proc ::constcl::expand-case {expr env} {
+    set tail [cdr $expr]
+    do-case [car $tail] [cdr $tail]
+}
+ 
+proc ::constcl::do-case {keyexpr clauses} {
         return [list #Q #NIL]
     } else {
         set keyl [caar $clauses]
         set body [cdar $clauses]
-        set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+        set keyl [list [MkSymbol "memv"] $keyexpr \
+            [list #Q $keyl]]
         ::if {[eq? [length $clauses] #1] ne "#f"} {
-            ::if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
+            ::if {[eq? [caar $clauses] [MkSymbol "else"]]
+                ne "#f"} {
                 set keyl #t
             }
         }
-        return [list #I $keyl [cons #B $body] [expand-case $keyexpr [cdr $clauses]]]
+        return [list #I $keyl [cons #B $body] \
+            [do-case $keyexpr [cdr $clauses]]]
     }
 }
 \end{lstlisting}
@@ -2094,28 +2200,40 @@ The \texttt{cond} macro is expanded by \texttt{expand-cond}. It returns \texttt{
 \hline
 \multicolumn{2}{|l|}{expand-cond (internal)} \\
 \hline
-clauses & a Lisp list of Lisp values \\
+expr & an expression \\
+env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-cond {clauses} {
+regmacro cond
+ 
+proc ::constcl::expand-cond {expr env} {
+    return [do-cond [cdr $expr] $env]
+}
+ 
+proc ::constcl::do-cond {tail env} {
+    set clauses $tail
+    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set pred [caar $clauses]
         set body [cdar $clauses]
-        ::if {[symbol? [car $body]] ne "#f" && [[car $body] name] eq "=>"} {
+        ::if {[symbol? [car $body]] ne "#f" && \
+            [[car $body] name] eq "=>"} {
             set body [cddar $clauses]
         }
         ::if {[eq? [length $clauses] #1] ne "#f"} {
-            ::if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
+            ::if {[eq? $pred [MkSymbol "else"]]
+                ne "#f"} {
                 set pred #t
             }
         }
         ::if {[null? $body] ne "#f"} {set body $pred}
-        return [list #I $pred [cons #B $body] [expand-cond [cdr $clauses]]]
+        return [list #I $pred [cons #B $body] \
+            [do-cond [cdr $clauses] $env]]
     }
 }
 \end{lstlisting}
@@ -2127,22 +2245,22 @@ proc ::constcl::expand-cond {clauses} {
 \texttt{define} has two variants, one of which requires some rewriting. It's the one with an implied \texttt{lambda} call, the one that defines a procedure.
 
 
-(\textbf{define} (\_symbol\_ \_formals\_) \_body\_)
+(define (\emph{symbol} \emph{formals}) \emph{body})
 
 
 is transformed into
 
 
-(\textbf{define} \_symbol\_ (\textbf{lambda} \_formals\_ \_body\_))
+(define \emph{symbol} (lambda \emph{formals} \emph{body}))
 
 
-which conforms better to \texttt{eval}'s standard of (\textbf{define} \_symbol\_ \_value\_).
+which conforms better to \texttt{eval}'s standard of (define \emph{symbol} \emph{value}).
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{expand-define (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2150,11 +2268,15 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-define {tail env} {
+regmacro define
+ 
+proc ::constcl::expand-define {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     $env setstr "tail" $tail
-    set qq "`(define ,(caar tail) (lambda ,(cdar tail) ,@(cdr tail)))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    set qq "`(define ,(caar tail)
+                (lambda ,(cdar tail) ,@(cdr tail)))"
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2168,7 +2290,7 @@ The macro \texttt{del!} updates a property list. It removes a key-value pair if 
 \hline
 \multicolumn{2}{|l|}{expand-del! (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2176,13 +2298,21 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-del! {tail env} {
+regmacro del!
+ 
+proc ::constcl::expand-del! {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {
+        ::error "too few arguments, 2 expected, got 0"
+    }
     $env setstr "listname" [car $tail]
-    ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 2 expected, got 1"}
+    ::if {[null? [cdr $tail]] ne "#f"} {
+        ::error "too few arguments, 2 expected, got 1"
+    }
     $env setstr "key" [cadr $tail]
     set qq "`(set! ,listname (delete! ,listname ,key))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2204,6 +2334,8 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
+regmacro for
+ 
 proc ::constcl::for-seq {seq env} {
     ::if {[number? $seq] ne "#f"} {
         set seq [in-range $seq]
@@ -2263,7 +2395,7 @@ proc ::constcl::do-for {tail env} {
 \hline
 \multicolumn{2}{|l|}{expand-for (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2271,7 +2403,8 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-for {tail env} {
+proc ::constcl::expand-for {expr env} {
+    set tail [cdr $expr]
     set res [do-for $tail $env]
     lappend res [list #Q #NIL]
     return [list #B {*}$res]
@@ -2288,7 +2421,7 @@ The \texttt{expand-for/and} procedure expands the \texttt{for/and} macro. It ret
 \hline
 \multicolumn{2}{|l|}{expand-forand (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2296,7 +2429,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-for/and {tail env} {
+regmacro for/and
+ 
+proc ::constcl::expand-for/and {expr env} {
+    set tail [cdr $expr]
     set res [do-for $tail $env]
     return [list [MkSymbol "and"] {*}$res]
 }
@@ -2312,7 +2448,7 @@ The \texttt{expand-for/list} procedure expands the \texttt{for/list} macro. It r
 \hline
 \multicolumn{2}{|l|}{expand forlist (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2320,7 +2456,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-for/list {tail env} {
+regmacro for/list
+ 
+proc ::constcl::expand-for/list {expr env} {
+    set tail [cdr $expr]
     set res [do-for $tail $env]
     return [list [MkSymbol "list"] {*}$res]
 }
@@ -2336,7 +2475,7 @@ The \texttt{expand-for/or} procedure expands the \texttt{for/or} macro. It retur
 \hline
 \multicolumn{2}{|l|}{expand-foror (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2344,7 +2483,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-for/or {tail env} {
+regmacro for/or
+ 
+proc ::constcl::expand-for/or {expr env} {
+    set tail [cdr $expr]
     set res [do-for $tail $env]
     return [list [MkSymbol "or"] {*}$res]
 }
@@ -2360,7 +2502,7 @@ proc ::constcl::expand-for/or {tail env} {
 \hline
 \multicolumn{2}{|l|}{expand-let (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2368,7 +2510,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-let {tail env} {
+regmacro let
+ 
+proc ::constcl::expand-let {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     ::if {[symbol? [car $tail]] ne "#f"} {
         # named let
@@ -2383,7 +2528,7 @@ proc ::constcl::expand-let {tail env} {
         $env setstr "body" $body
         $env setstr "call" [list {*}[dict keys $vars]]
         set qq "`(let ,decl (set! ,variable (lambda ,varlist ,@body)) ,call)"
-        return [expand-quasiquote [cdr [parse $qq]] $env]
+        return [expand-quasiquote [parse $qq] $env]
     } else {
         # regular let
         set bindings [car $tail]
@@ -2394,7 +2539,7 @@ proc ::constcl::expand-let {tail env} {
         $env setstr "body" $body
         $env setstr "vallist" [list {*}[dict values $vars]]
         set qq "`((lambda ,varlist ,@body) ,@vallist)"
-        return [expand-quasiquote [cdr [parse $qq]] $env]
+        return [expand-quasiquote [parse $qq] $env]
     }
 }
  
@@ -2419,7 +2564,7 @@ proc ::constcl::parse-bindings {name bindings} {
 \hline
 \multicolumn{2}{|l|}{expand-or (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2427,7 +2572,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-or {tail env} {
+regmacro or
+ 
+proc ::constcl::expand-or {expr env} {
+    set tail [cdr $expr]
         return [list #B #f]
     } elseif {[eq? [length $tail] #1] ne "#f"} {
         return [cons #B $tail]
@@ -2456,7 +2604,7 @@ proc ::constcl::do-or {tail env} {
         $env setstr "first" [car $tail]
         $env setstr "rest" [do-or [cdr $tail] $env]
         set qq "`(let ((x ,first)) (if x x ,rest))"
-        return [expand-quasiquote [cdr [parse $qq]] $env]
+        return [expand-quasiquote [parse $qq] $env]
     }
 }
 \end{lstlisting}
@@ -2471,7 +2619,7 @@ The macro \texttt{push!} updates a list. It adds a new element as the new first 
 \hline
 \multicolumn{2}{|l|}{expand-pop! (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2479,7 +2627,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-pop! {tail env} {
+regmacro pop!
+ 
+proc ::constcl::expand-pop! {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
     $env set [MkSymbol "obj"] [car $tail]
@@ -2487,7 +2638,7 @@ proc ::constcl::expand-pop! {tail env} {
     ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
     $env set [MkSymbol "listname"] [cadr $tail]
     set qq "`(set! ,listname (cdr ,listname))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2501,7 +2652,7 @@ The macro \texttt{push!} updates a list. It adds a new element as the new first 
 \hline
 \multicolumn{2}{|l|}{expand-push! (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2509,7 +2660,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-push! {tail env} {
+regmacro push!
+ 
+proc ::constcl::expand-push! {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     ::if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
     $env set [MkSymbol "obj"] [car $tail]
@@ -2517,7 +2671,7 @@ proc ::constcl::expand-push! {tail env} {
     ::if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
     $env set [MkSymbol "listname"] [cadr $tail]
     set qq "`(set! ,listname (cons ,obj ,listname))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2531,7 +2685,7 @@ The macro \texttt{put!} updates a property list. It adds a key-value pair if the
 \hline
 \multicolumn{2}{|l|}{expand-put! (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2539,7 +2693,10 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-put! {tail env} {
+regmacro put!
+ 
+proc ::constcl::expand-put! {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     $env set [MkSymbol "listname"] [car $tail]
     ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
@@ -2549,7 +2706,7 @@ proc ::constcl::expand-put! {tail env} {
     set qq "`(let ((idx (list-find-key ,listname ,key)))
                  (set! ,listname (append (list ,key ,val) ,listname))
                  (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2572,6 +2729,8 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
+regmacro quasiquote
+ 
 proc ::constcl::qq-visit-child {node qqlevel env} {
     }
     ::if {[list? $node] ne "#f"} {
@@ -2602,7 +2761,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 \hline
 \multicolumn{2}{|l|}{expand-quasiquote (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2610,7 +2769,8 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-quasiquote {tail env} {
+proc ::constcl::expand-quasiquote {expr env} {
+    set tail [cdr $expr]
     ::if {[list? [car $tail]] ne "#f"} {
         set node [car $tail]
     } elseif {[vector? [car $tail]] ne "#f"} {
@@ -2641,7 +2801,7 @@ proc ::constcl::expand-quasiquote {tail env} {
 \hline
 \multicolumn{2}{|l|}{expand-unless (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2649,11 +2809,14 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-unless {tail env} {
+regmacro unless
+ 
+proc ::constcl::expand-unless {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     $env setstr "tail" $tail
     set qq "`(if ,(car tail) (quote ()) (begin ,@(cdr tail)))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -2664,7 +2827,7 @@ proc ::constcl::expand-unless {tail env} {
 \hline
 \multicolumn{2}{|l|}{expand-when (internal)} \\
 \hline
-tail & an expression tail \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
@@ -2672,11 +2835,14 @@ env & an environment \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::constcl::expand-when {tail env} {
+regmacro when
+ 
+proc ::constcl::expand-when {expr env} {
+    set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
     $env setstr "tail" $tail
     set qq "`(if ,(car tail) (begin ,@(cdr tail)) (quote ()))"
-    return [expand-quasiquote [cdr [parse $qq]] $env]
+    return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}

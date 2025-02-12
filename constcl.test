@@ -119,7 +119,7 @@ source constcl.tcl
 
 ::tcltest::test parse-5.1 {try reading an identifier} -body {
     set ib [::constcl::IB new "+foo"]
-    set expr [::constcl::parse-identifier-expression]
+    set expr [::constcl::parse-identifier-expr]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
@@ -158,7 +158,7 @@ source constcl.tcl
 } -output "#(1 2 3)\n"
 
 
-::tcltest::test read-1.0 {try read-expression on a string} -setup {
+::tcltest::test read-1.0 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -168,7 +168,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "\"foo bar\"\n"
 
-::tcltest::test read-1.1 {try read-expression on a string/eof} -setup {
+::tcltest::test read-1.1 {try read-expr on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -178,7 +178,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -returnCodes error -result {malformed string (no ending double quote)}
 
-::tcltest::test read-1.2 {try read-expression on a couple of vectors} -setup {
+::tcltest::test read-1.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -189,7 +189,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
-::tcltest::test read-1.3 {try read-expression on booleans} -setup {
+::tcltest::test read-1.3 {try read-expr on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -200,7 +200,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "#t\n#f\n"
 
-::tcltest::test read-1.4 {try read-expression on characters} -setup {
+::tcltest::test read-1.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -211,7 +211,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "#\\A\n#\\space\n"
 
-::tcltest::test read-1.5 {try read-expression on quoted expr} -setup {
+::tcltest::test read-1.5 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -221,7 +221,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
 
-::tcltest::test read-1.6 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.6 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -231,7 +231,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
-::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -241,7 +241,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
-::tcltest::test read-1.8 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -251,7 +251,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(def ghi (jkl mno))\n"
 
-::tcltest::test read-1.9 {try read-expression on plus/minus} -setup {
+::tcltest::test read-1.9 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -263,7 +263,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "+\n-\n-99\n"
 
-::tcltest::test read-1.10 {try read-expression on unquoted expr} -setup {
+::tcltest::test read-1.10 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -274,7 +274,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(unquote foo)\n(unquote-splicing bar)\n"
 
-::tcltest::test read-1.11 {try read-expression on dot expr} -setup {
+::tcltest::test read-1.11 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -286,7 +286,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "a\n.\nb\n"
 
-::tcltest::test read-1.12 {try read-expression on quasiquoted expr} -setup {
+::tcltest::test read-1.12 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -296,7 +296,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(quasiquote (a b))\n"
 
-::tcltest::test read-1.13 {try read-expression on numeric expr} -setup {
+::tcltest::test read-1.13 {try read-expr on numeric expr} -setup {
     ::tcltest::makeFile {  99 } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -306,7 +306,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "99\n"
 
-::tcltest::test read-1.14 {try read-expression on identifiers} -setup {
+::tcltest::test read-1.14 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -466,19 +466,19 @@ source constcl.tcl
 } -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 ::tcltest::test eval-6.1 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,(+ 1 2) 4)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`(list ,(+ 1 2) 4)}] ::constcl::global_env]
     ::constcl::global_env set [::constcl::list [::constcl::MkSymbol "name"]] a
     pep {(define name 'a)}
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(list ,name ',name)}]]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}]]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}]]] ::constcl::global_env]
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`(list ,name ',name)}] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}] ::constcl::global_env]
 if no {
 }
 } -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
 
 ::tcltest::test eval-6.2 {quasiquotation} -body {
-    ::constcl::write [::constcl::expand-quasiquote [::constcl::cdr [::constcl::parse [::constcl::IB new {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}]]] ::constcl::global_env]
+    ::constcl::write [::constcl::expand-quasiquote [::constcl::parse {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}] ::constcl::global_env]
 if no {
     pep {(let ((name1 'x)
       (name2 'y))

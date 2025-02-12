@@ -12,69 +12,106 @@ namespace eval ::constcl {}
 CB
 
 MD(
+### Utility commands
+
 Next, some procedures that make my life as developer somewhat easier, but
-don't really matter to the interpreter (except the first one, `reg`, which
-registers built-in procedures in the definitions register). The other ones
+don't really matter to the interpreter (except the two first ones). The other ones
 will show up a lot in the test cases.
 MD)
 
+MD(
+`reg` registers selected built-in procedures in the standard library.
+MD)
+
 CB
-# utility functions
 proc ::reg {key args} {
     ::if {[llength $args] == 0} {
         set val ::constcl::$key
     } else {
-        set val [lindex $args 0]
+        lassign $args val
     }
     dict set ::constcl::defreg $key $val
 }
+CB
 
+MD(
+`regmacro` registers macro names in the macro list, so the evaluator knows what
+to expand.
+MD)
+
+CB
+proc ::regmacro {name} {
+    lappend ::constcl::macrolist $name
+}
+CB
+
+MD(
+`pep` started out life as parse-eval-print, and I never changed the name. It
+reads and evals an expression, and prints the result.
+MD)
+
+CB
 proc ::pep {str} {
     ::constcl::write [
         ::constcl::eval [
-            ::constcl::parse [
-                ::constcl::IB new $str]]]
+            ::constcl::parse $str]]
 }
+CB
 
+MD(
+`pp` is the same, but it doesn't eval the expression. It just prints what is
+read.
+MD)
+
+CB
 proc ::pp {str} {
     ::constcl::write [
-        ::constcl::parse [
-            ::constcl::IB new $str]]
+        ::constcl::parse $str]
 }
+CB
 
+MD(
+`prp` is a busy thing. It reads an expression, expands macros in it, resolves
+defines, and prints the result.
+MD)
+
+CB
 proc ::prp {str} {
-    set val [::constcl::parse [::constcl::IB new $str]]
-    set op [::constcl::car $val]
-    set args [::constcl::cdr $val]
+    set expr [::constcl::parse $str]
+    set op [::constcl::car $expr]
+    set args [::constcl::cdr $expr]
     set env ::constcl::global_env
-    while {[$op name] in {
-            and case cond define del! for for/and
-            for/list for/or let or pop! push! put!
-            quasiquote unless when}} {
+    while {[$op name] in $::constcl::macrolist} {
         ::constcl::expand-macro $env
     }
-    set args [::constcl::resolve-local-defines $args]
-    ::constcl::write $args
+    set expr [::constcl::resolve-local-defines $args]
+    ::constcl::write $expr
 }
+CB
 
+MD(
+`pxp` attempts to macro-expand whatever it reads, and prints the result. I know
+that 'expand' doesn't start with an 'x'.
+MD)
+
+CB
 proc ::pxp {str} {
-    set val [::constcl::parse [::constcl::IB new $str]]
-    set op [::constcl::car $val]
-    set args [::constcl::cdr $val]
+    set expr [::constcl::parse $str]
+    set op [::constcl::car $expr]
+    set args [::constcl::cdr $expr]
     ::constcl::expand-macro ::constcl::global_env
     ::constcl::write [::constcl::cons $op $args]
 }
+CB
 
-proc ::constcl::check {cond msg} {
-    ::if {[uplevel $cond] eq "#f"} {
-        ::error [uplevel [::list subst $msg]]
-    }
-}
+MD(
+When called, tells the caller the name of its command.
+MD)
 
+CB
 proc ::pn {} {
     lindex [split [lindex [info level -1] 0] :] end
 }
-
 CB
 
 MD(
@@ -84,7 +121,7 @@ has grown a bit since then to suit my needs.
 MD)
 
 CB
-reg in-range ::constcl::in-range
+reg in-range
 
 #started out as DKF's code
 proc ::constcl::in-range {args} {
@@ -117,6 +154,8 @@ proc ::constcl::in-range {args} {
 CB
 
 MD(
+### The NIL class
+
 The `NIL` class has one object: the empty list called `#NIL`. It is also base class for many other
 type classes.
 MD)
@@ -139,18 +178,22 @@ oo::class create ::constcl::NIL {
 CB
 
 MD(
-**null?**
+__null?__
 
 The `null?` standard predicate recognizes the empty list. Predicates
 in ConsTcl return #t or #f for true or false, so some care is necessary
 when calling them from Tcl code.
 MD)
 
-CB
-reg null? ::constcl::null?
+PR(
+null? (public);val val -> bool
+PR)
 
-proc ::constcl::null? {obj} {
-    ::if {$obj eq "#NIL"} {
+CB
+reg null?
+
+proc ::constcl::null? {val} {
+    ::if {$val eq "#NIL"} {
         return #t
     } else {
         return #f
@@ -159,6 +202,8 @@ proc ::constcl::null? {obj} {
 CB
 
 MD(
+### The classes None, Dot, Unspecific, Undefined, and EndOfFile
+
 The `None` class serves but one purpose: to avoid printing a result after `define`.
 MD)
 
@@ -180,11 +225,17 @@ oo::class create ::constcl::Dot {
     method write {handle} {puts -nonewline $handle "."}
     method display {} { puts -nonewline "." }
 }
+CB
 
-proc ::constcl::dot? {obj} {
-    ::if {[info object isa typeof $obj Dot]} {
+PR(
+dot? (internal);val val -> bool
+PR)
+
+CB
+proc ::constcl::dot? {val} {
+    ::if {[info object isa typeof $val Dot]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $obj] Dot]} {
+    } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
         return #t
     } else {
         return #f
@@ -231,12 +282,14 @@ oo::class create ::constcl::EndOfFile {
 CB
 
 MD(
-`error` is used to signal an error, with _msg_ being a message string and the
+### The error and check procedures
+
+`error` is used to signal an error, with **msg** being a message string and the
 optional arguments being values to show after the message.
 MD)
 
 PR(
-error (public);msg msg args exprs -> dc
+error (public);msg msg ?args? exprs -> dc
 PR)
 
 CB
@@ -256,6 +309,22 @@ proc ::constcl::error {msg args} {
         lappend msg ")"
     }
     ::error $msg
+}
+CB
+
+MD(
+`check` does a check (usually a type check) on something and throws an error if
+it fails.
+MD)
+
+CB
+proc ::constcl::check {cond msg} {
+    ::if {[uplevel $cond] eq "#f"} {
+        ::error [
+            uplevel [
+                ::list subst [
+                        ::string trim $msg]]]
+    }
 }
 CB
 

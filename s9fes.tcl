@@ -1,7 +1,7 @@
 MD(
 ## S9fES
 
-I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+I've begun porting parts of S9fES (**Scheme 9 from Empty Space**, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
 
 I've already mixed this up with my own stuff.
 MD)

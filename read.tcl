@@ -1,13 +1,16 @@
 
 MD(
-## read
+## Input
 
-`read` represents the interpreter's input facility. Currently input is faked with input
-strings.
+The first thing an interpreter must be able to do is to take in the user's code
+and data input, whether from the keyboard or from a source file.  `read`
+represents the interpreter's main input facility. As a complement, a similar set
+of procedures that read input from an input buffer exists (the `parse-`
+procedures). The main set (the `read-` procedures) read from standard input.
 MD)
 
 MD(
-**IB** class
+__IB__ class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
 characters to be read. The `fill` method fills the buffer and sets the first
@@ -95,15 +98,15 @@ MD)
 MD(
 ### parse
 
-**parse**
+#### Parsing
 
 Given a string, `parse` fills the input buffer. It then parses the input and
-produces an expression.
+produces the internal representation of an expression.
 
 Example:
 
 ```
-% ::constcl::parse "(+ 2 3)"
+> ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
 ```
 
@@ -114,9 +117,9 @@ expression into a value, and `write`, which prints a printed representation of
 expressions and values. Putting them together: we can see
 
 ```
-% ::constcl::write ::oo::Obj491
+> ::constcl::write ::oo::Obj491
 (+ 2 3)
-% ::constcl::write [::constcl::eval ::oo::Obj491]
+> ::constcl::write [::constcl::eval ::oo::Obj491]
 5
 ```
 
@@ -136,10 +139,11 @@ the list.
 
 ![intreplist](/images/intreplist.png)
 
+__parse__
 MD)
 
 PR(
-parse (public);inp strinpbuf -> expr
+parse (public);inp tstrinpbuf -> expr
 PR)
 
 CB
@@ -151,39 +155,39 @@ proc ::constcl::parse {inp} {
     } else {
         set ib [IB new $inp]
     }
-    return [parse-expression]
+    return [parse-expr]
 }
 CB
 
 MD(
-**parse-expression**
+__parse-expr__
 
-The procedure `parse-expression` parses input by peeking at the first available
+The procedure `parse-expr` parses input by peeking at the first available
 character and delegating to one of the more detailed parsing procedures based on
 that, producing an expression of any kind.
 MD)
 
 PR(
-parse-expression (internal);-> expr
+parse-expr (internal);-> expr
 PR)
 
 CB
-proc ::constcl::parse-expression {} {
+proc ::constcl::parse-expr {} {
     upvar ib ib
     $ib skip-ws
     switch -regexp [$ib first] {
         {^$}          { return #NONE}
-        {\"}          { return [parse-string-expression] }
+        {\"}          { return [parse-string-expr] }
         {\#}          { return [parse-sharp] }
-        {\'}          { return [parse-quoted-expression] }
-        {\(}          { return [parse-pair-expression ")"] }
+        {\'}          { return [parse-quoted-expr] }
+        {\(}          { return [parse-pair-expr ")"] }
         {\+} - {\-}   { return [parse-plus-minus] }
-        {\,}          { return [parse-unquoted-expression] }
+        {\,}          { return [parse-unquoted-expr] }
         {\.}          { $ib advance ; return [Dot new] }
-        {\[}          { return [parse-pair-expression "\]"] }
-        {\`}          { return [parse-quasiquoted-expression] }
-        {\d}          { return [parse-number-expression] }
-        {[[:graph:]]} { return [parse-identifier-expression] }
+        {\[}          { return [parse-pair-expr "\]"] }
+        {\`}          { return [parse-quasiquoted-expr] }
+        {\d}          { return [parse-number-expr] }
+        {[[:graph:]]} { return [parse-identifier-expr] }
         default {
             ::error "unexpected character ([$ib first])"
         }
@@ -192,19 +196,19 @@ proc ::constcl::parse-expression {} {
 CB
 
 MD(
-**parse-string-expression**
+__parse-string-expr__
 
-`parse-string-expression` parses input starting with a double quote and collects
+`parse-string-expr` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
 string expression--a String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
-parse-string-expression (internal);-> str
+parse-string-expr (internal);-> str
 PR)
 
 CB
-proc ::constcl::parse-string-expression {} {
+proc ::constcl::parse-string-expr {} {
     upvar ib ib
     set str {}
     $ib advance
@@ -244,7 +248,7 @@ TT(
 TT)
 
 MD(
-**parse-sharp**
+__parse-sharp__
 
 `parse-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
 expressions whose external representation begins with a sharp sign.
@@ -259,10 +263,10 @@ proc ::constcl::parse-sharp {} {
     upvar ib ib
     $ib advance
     switch [$ib first] {
-        (    { return [parse-vector-expression] }
+        (    { return [parse-vector-expr] }
         t    { $ib advance ; $ib skip-ws ; return #t }
         f    { $ib advance ; $ib skip-ws ; return #f }
-        "\\" { return [parse-character-expression] }
+        "\\" { return [parse-character-expr] }
         default {
             ::error "Illegal #-literal: #[$ib first]"
         }
@@ -271,7 +275,7 @@ proc ::constcl::parse-sharp {} {
 CB
 
 MD(
-**make-constant**
+__make-constant__
 
 The `make-constant` helper procedure is called to set components of expressions to
 constants when read as a quoted literal.
@@ -292,21 +296,21 @@ proc ::constcl::make-constant {val} {
 CB
 
 MD(
-**parse-quoted-expression**
+__parse-quoted-expr__
 
-`parse-quoted-expression` parses input starting with a "'", and then parses an entire
+`parse-quoted-expr` parses input starting with a "'", and then parses an entire
 expression beyond that, returning it wrapped in a list with `quote`.
 MD)
 
 PR(
-parse-quoted-expression (internal);-> quote
+parse-quoted-expr (internal);-> quote
 PR)
 
 CB
-proc ::constcl::parse-quoted-expression {} {
+proc ::constcl::parse-quoted-expr {} {
     upvar ib ib
     $ib advance
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     make-constant $expr
     return [list #Q $expr]
@@ -322,14 +326,14 @@ TT(
 TT)
 
 MD(
-**parse-pair-expression**
+__parse-pair-expr__
 
-The `parse-pair-expression` procedure parses input and produces a structure of
+The `parse-pair-expr` procedure parses input and produces a structure of
 Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
 
 PR(
-parse-pair-expression (internal);char pterm -> pstr
+parse-pair-expr (internal);char pterm -> pstr
 PR)
 
 CB
@@ -340,15 +344,15 @@ proc ::constcl::parse-pair {char} {
         return #NIL
     }
     $ib skip-ws
-    set a [parse-expression]
+    set a [parse-expr]
     $ib skip-ws
     set res $a
     set prev #NIL
     while {![$ib find $char]} {
-        set x [parse-expression]
+        set x [parse-expr]
         $ib skip-ws
         ::if {[dot? $x] ne "#f"} {
-            set prev [parse-expression]
+            set prev [parse-expr]
             $ib skip-ws
         } else {
             lappend res $x
@@ -361,7 +365,7 @@ proc ::constcl::parse-pair {char} {
     return $prev
 }
 
-proc ::constcl::parse-pair-expression {char} {
+proc ::constcl::parse-pair-expr {char} {
     upvar ib ib
     $ib advance
     $ib skip-ws
@@ -369,9 +373,11 @@ proc ::constcl::parse-pair-expression {char} {
     $ib skip-ws
     ::if {[$ib first] ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=[$ib first])."
+            ::error \
+                "Missing right paren. ([$ib first])."
         } else {
-            ::error "Missing right bracket (first=[$ib first])."
+            ::error \
+                "Missing right bracket ([$ib first])."
         }
     }
     $ib advance
@@ -427,7 +433,7 @@ TT(
 TT)
 
 MD(
-**parse-plus-minus**
+__parse-plus-minus__
 
 `parse-plus-minus` reacts to a plus or minus in the input buffer, and either
 returns a `+` or `-` symbol, or a number.
@@ -444,7 +450,7 @@ proc ::constcl::parse-plus-minus {} {
     $ib advance
     ::if {[::string is digit -strict [$ib first]]} {
         $ib unget $c
-        return [::constcl::parse-number-expression]
+        return [::constcl::parse-number-expr]
     } else {
         ::if {$c eq "+"} {
             $ib skip-ws
@@ -458,19 +464,19 @@ proc ::constcl::parse-plus-minus {} {
 CB
 
 MD(
-**parse-unquoted-expression**
+__parse-unquoted-expr__
 
-`parse-unquoted-expression` parses input, producing an expression and returning
+`parse-unquoted-expr` parses input, producing an expression and returning
 it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
 the input stream.
 MD)
 
 PR(
-parse-unquoted-expression (internal);-> unquote
+parse-unquoted-expr (internal);-> unquote
 PR)
 
 CB
-proc ::constcl::parse-unquoted-expression {} {
+proc ::constcl::parse-unquoted-expr {} {
     upvar ib ib
     $ib advance
     set symbol "unquote"
@@ -478,7 +484,7 @@ proc ::constcl::parse-unquoted-expression {} {
         set symbol "unquote-splicing"
         $ib advance
     }
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     return [list [MkSymbol $symbol] $expr]
 }
@@ -493,20 +499,20 @@ TT(
 TT)
 
 MD(
-**parse-quasiquoted-expression**
+__parse-quasiquoted-expr__
 
-`parse-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
+`parse-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
 MD)
 
 PR(
-parse-quasiquoted-expression (internal);-> qquote
+parse-quasiquoted-expr (internal);-> qquote
 PR)
 
 CB
-proc ::constcl::parse-quasiquoted-expression {} {
+proc ::constcl::parse-quasiquoted-expr {} {
     upvar ib ib
     $ib advance
-    set expr [parse-expression]
+    set expr [parse-expr]
     $ib skip-ws
     make-constant $expr
     return [list [MkSymbol "quasiquote"] $expr]
@@ -522,16 +528,18 @@ TT(
 TT)
 
 MD(
-**interspace**
+__interspace__
 
-The `interspace` helper procedure recognizes whitespace or comments between
-value representations.
+The `interspace` helper procedure recognizes whitespace between value
+representations.
 MD)
 
 CB
 proc ::constcl::interspace {c} {
     # don't add #EOF: parse-* uses this one too
-    ::if {$c eq {} || [::string is space -strict $c] || $c eq ";"} {
+    ::if {$c eq {} ||
+        [::string is space $c] ||
+        $c eq ";"} {
         return #t
     } else {
         return #f
@@ -540,17 +548,17 @@ proc ::constcl::interspace {c} {
 CB
 
 MD(
-**parse-number-expression**
+__parse-number-expr__
 
-`parse-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expr` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
-parse-number-expression (internal);-> num
+parse-number-expr (internal);-> num
 PR)
 
 CB
-proc ::constcl::parse-number-expression {} {
+proc ::constcl::parse-number-expr {} {
     upvar ib ib
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
         ::append num [$ib first]
@@ -601,17 +609,17 @@ TT(
 TT)
 
 MD(
-**parse-identifier-expression**
+__parse-identifier-expr__
 
-`parse-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expr` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(
-parse-identifier-expression (internal);-> sym
+parse-identifier-expr (internal);-> sym
 PR)
 
 CB
-proc ::constcl::parse-identifier-expression {} {
+proc ::constcl::parse-identifier-expr {} {
     upvar ib ib
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
         ::append name [$ib first]
@@ -632,7 +640,7 @@ TT(
 
 ::tcltest::test parse-5.1 {try reading an identifier} -body {
     set ib [::constcl::IB new "+foo"]
-    set expr [::constcl::parse-identifier-expression]
+    set expr [::constcl::parse-identifier-expr]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
@@ -645,7 +653,7 @@ TT(
 TT)
 
 MD(
-**character-check**
+__character-check__
 
 The `character-check` helper procedure compares a potential
 character constant to the valid kinds. Returns Tcl truth (1/0).
@@ -662,18 +670,18 @@ proc ::constcl::character-check {name} {
 CB
 
 MD(
-**parse-character-expression**
+__parse-character-expr__
 
-`parse-character-expression` parses input, producing a character and returning
+`parse-character-expr` parses input, producing a character and returning
 a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
-parse-character-expression (internal);-> char
+parse-character-expr (internal);-> char
 PR)
 
 CB
-proc ::constcl::parse-character-expression {} {
+proc ::constcl::parse-character-expr {} {
     upvar ib ib
     set name "#"
     while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
@@ -711,23 +719,23 @@ TT(
 TT)
 
 MD(
-**parse-vector-expression**
+__parse-vector-expr__
 
-`parse-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expr` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(
-parse-vector-expression (internal);-> vec
+parse-vector-expr (internal);-> vec
 PR)
 
 CB
-proc ::constcl::parse-vector-expression {} {
+proc ::constcl::parse-vector-expr {} {
     upvar ib ib
     $ib advance
     $ib skip-ws
     set res {}
     while {[$ib first] ne {} && [$ib first] ne ")"} {
-        lappend res [parse-expression]
+        lappend res [parse-expr]
         $ib skip-ws
     }
     set vec [MkVector $res]
@@ -752,7 +760,7 @@ TT)
 MD(
 ### read
 
-**read**
+__read__
 
 The standard builtin `read` reads and parses input into a Lisp expression in a
 similar manner to how `parse` parses a string buffer.
@@ -763,7 +771,7 @@ read (public);?port? port -> expr
 PR)
 
 CB
-reg read ::constcl::read
+reg read
 
 proc ::constcl::read {args} {
     set c {}
@@ -775,7 +783,7 @@ proc ::constcl::read {args} {
     }
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $port
-    set expr [read-expression]
+    set expr [read-expr]
     set ::constcl::Input_port $oldport
     set unget {}
     return $expr
@@ -783,20 +791,22 @@ proc ::constcl::read {args} {
 CB
 
 MD(
-**read-expression**
+__read-expr__
 
-The procedure `read-expression` parses input by reading the first available
+The procedure `read-expr` parses input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
 that, producing an expression of any kind. A Tcl character value can be passed
 to it, that character will be used first before reading from the input stream.
+If the end of file is encountered before an expression can be read in full, the
+procedure returns end of file.
 MD)
 
 PR(
-read-expression (internal);?char? tchar -> expr
+read-expr (internal);?char? tchar -> expreof
 PR)
 
 CB
-proc ::constcl::read-expression {args} {
+proc ::constcl::read-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
@@ -810,17 +820,17 @@ proc ::constcl::read-expression {args} {
     }
     switch -regexp $c {
         {^$}          { return #NONE}
-        {\"}          { set n [read-string-expression]       ; read-eof $n; return $n }
-        {\#}          { set n [read-sharp]                   ; read-eof $n; return $n }
-        {\'}          { set n [read-quoted-expression]       ; read-eof $n; return $n }
-        {\(}          { set n [read-pair-expression ")"]     ; read-eof $n; return $n }
-        {\+} - {\-}   { set n [read-plus-minus $c]           ; read-eof $n; return $n }
-        {\,}          { set n [read-unquoted-expression]     ; read-eof $n; return $n }
-        {\.}          { set n [Dot new]; set c [readc]       ; read-eof $n; return $n }
-        {\[}          { set n [read-pair-expression "\]"]    ; read-eof $n; return $n }
-        {\`}          { set n [read-quasiquoted-expression]  ; read-eof $n; return $n }
-        {\d}          { set n [read-number-expression $c]    ; read-eof $n; return $n }
-        {[[:graph:]]} { set n [read-identifier-expression $c]; read-eof $n; return $n }
+        {\"}          { return [read-string-expr] }
+        {\#}          { return [read-sharp] }
+        {\'}          { return [read-quoted-expr] }
+        {\(}          { return [read-pair-expr ")"] }
+        {\+} - {\-}   { return [read-plus-minus $c] }
+        {\,}          { return [read-unquoted-expr] }
+        {\.}          { return [Dot new]; set c [readc] }
+        {\[}          { return [read-pair-expr "\]"] }
+        {\`}          { return [read-quasiquoted-expr] }
+        {\d}          { return [read-number-expr $c] }
+        {[[:graph:]]} { return [read-identifier-expr $c] }
         default {
             read-eof $c
             ::error "unexpected character ($c)"
@@ -830,7 +840,7 @@ proc ::constcl::read-expression {args} {
 CB
 
 TT(
-::tcltest::test read-1.0 {try read-expression on a string} -setup {
+::tcltest::test read-1.0 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -840,7 +850,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "\"foo bar\"\n"
 
-::tcltest::test read-1.1 {try read-expression on a string/eof} -setup {
+::tcltest::test read-1.1 {try read-expr on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -850,7 +860,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -returnCodes error -result {malformed string (no ending double quote)}
 
-::tcltest::test read-1.2 {try read-expression on a couple of vectors} -setup {
+::tcltest::test read-1.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -861,7 +871,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
-::tcltest::test read-1.3 {try read-expression on booleans} -setup {
+::tcltest::test read-1.3 {try read-expr on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -872,7 +882,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "#t\n#f\n"
 
-::tcltest::test read-1.4 {try read-expression on characters} -setup {
+::tcltest::test read-1.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -883,7 +893,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "#\\A\n#\\space\n"
 
-::tcltest::test read-1.5 {try read-expression on quoted expr} -setup {
+::tcltest::test read-1.5 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -893,7 +903,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
 
-::tcltest::test read-1.6 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.6 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -903,7 +913,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
-::tcltest::test read-1.7 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -913,7 +923,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
-::tcltest::test read-1.8 {try read-expression on pair expr} -setup {
+::tcltest::test read-1.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -923,7 +933,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "(def ghi (jkl mno))\n"
 
-::tcltest::test read-1.9 {try read-expression on plus/minus} -setup {
+::tcltest::test read-1.9 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -935,7 +945,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "+\n-\n-99\n"
 
-::tcltest::test read-1.10 {try read-expression on unquoted expr} -setup {
+::tcltest::test read-1.10 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -946,7 +956,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "(unquote foo)\n(unquote-splicing bar)\n"
 
-::tcltest::test read-1.11 {try read-expression on dot expr} -setup {
+::tcltest::test read-1.11 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -958,7 +968,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "a\n.\nb\n"
 
-::tcltest::test read-1.12 {try read-expression on quasiquoted expr} -setup {
+::tcltest::test read-1.12 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -968,7 +978,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "(quasiquote (a b))\n"
 
-::tcltest::test read-1.13 {try read-expression on numeric expr} -setup {
+::tcltest::test read-1.13 {try read-expr on numeric expr} -setup {
     ::tcltest::makeFile {  99 } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -978,7 +988,7 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "99\n"
 
-::tcltest::test read-1.14 {try read-expression on identifiers} -setup {
+::tcltest::test read-1.14 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
     set p [::constcl::open-input-file testrr.lsp]
 } -body {
@@ -1018,10 +1028,11 @@ CB
 MD(
 `read-find` reads ahead through whitespace to find a given character. Returns 1
 if it has found the character, and 0 if it has stopped at some other character.
+Returns end of file if eof is encountered.
 MD)
 
 PR(
-read-find (internal);char tchar -> tbool
+read-find (internal);char tchar -> tbooleof
 PR)
 
 CB
@@ -1068,7 +1079,7 @@ CB
 
 MD(
 `read-eof` checks a number of characters for possible end-of-file objects. If it
-finds one, it returns _from its caller_ with the EOF value.
+finds one, it returns **from its caller** with the EOF value.
 MD)
 
 PR(
@@ -1086,20 +1097,20 @@ proc read-eof {args} {
 CB
 
 MD(
-**read-string-expression**
+__read-string-expr__
 
-`read-string-expression` parses input starting with a double quote and collects
+`read-string-expr` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
 string expression--an immutable
 String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
-read-string-expression (internal);-> str
+read-string-expr (internal);-> streof
 PR)
 
 CB
-proc ::constcl::read-string-expression {} {
+proc ::constcl::read-string-expr {} {
     upvar c c unget unget
     set str {}
     set c [readc]
@@ -1116,20 +1127,21 @@ proc ::constcl::read-string-expression {} {
     }
     set c [readc]
     set expr [MkString $str]
+    read-eof $expr
     $expr mkconstant
     return $expr
 }
 CB
 
 MD(
-**read-sharp**
+__read-sharp__
 
 `read-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
 expressions whose external representation begins with a sharp sign.
 MD)
 
 PR(
-read-sharp (internal);-> sharp
+read-sharp (internal);-> sharpeof
 PR)
 
 CB
@@ -1138,39 +1150,42 @@ proc ::constcl::read-sharp {} {
     set c [readc]
     read-eof $c
     switch $c {
-        (    { set n [read-vector-expression]   ; set c [readc]; return $n }
-        t    { set n #t                         ; set c [readc]; return $n }
-        f    { set n #f                         ; set c [readc]; return $n }
-        "\\" { set n [read-character-expression];                return $n }
+        (    { set n [read-vector-expr] }
+        t    { set n #t }
+        f    { set n #f }
+        "\\" { set n [read-character-expr] }
         default {
             read-eof $c
             ::error "Illegal #-literal: #$c"
         }
     }
+    set c [readc]
+    return $n
 }
 CB
 
 MD(
-**read-vector-expression**
+__read-vector-expr__
 
-`read-vector-expression` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`read-vector-expr` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 MD)
 
 PR(
-read-vector-expression (internal);-> expr
+read-vector-expr (internal);-> veceof
 PR)
 
 CB
-proc ::constcl::read-vector-expression {} {
+proc ::constcl::read-vector-expr {} {
     upvar c c unget unget
     set res {}
     set c [readc]
     while {$c ne "#EOF" && $c ne ")"} {
-        lappend res [read-expression $c]
+        lappend res [read-expr $c]
         skip-ws
         read-eof $c
     }
     set expr [MkVector $res]
+    read-eof $expr
     $expr mkconstant
     ::if {$c ne ")"} {
         ::error "Missing right parenthesis (first=$c)."
@@ -1181,18 +1196,18 @@ proc ::constcl::read-vector-expression {} {
 CB
 
 MD(
-**read-character-expression**
+__read-character-expr__
 
-`read-character-expression` parses input, producing a character and returning
+`read-character-expr` parses input, producing a character and returning
 a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
 PR(
-read-character-expression (internal);-> char
+read-character-expr (internal);-> chareof
 PR)
 
 CB
-proc ::constcl::read-character-expression {} {
+proc ::constcl::read-character-expr {} {
     upvar c c unget unget
     set name "#\\"
     set c [readc]
@@ -1204,25 +1219,26 @@ proc ::constcl::read-character-expression {} {
     }
     check {character-check $name} {Invalid character constant $name}
     set expr [MkChar $name]
+    read-eof $expr
     return $expr
 }
 CB
 
 MD(
-**read-quoted-expression**
+__read-quoted-expr__
 
-`read-quoted-expression` parses input starting with a "'", and then parses an entire
+`read-quoted-expr` parses input starting with a "'", and then parses an entire
 expression beyond that, returning it wrapped in a list with `quote`.
 MD)
 
 PR(
-read-quoted-expression (internal);-> quote
+read-quoted-expr (internal);-> quoteeof
 PR)
 
 CB
-proc ::constcl::read-quoted-expression {} {
+proc ::constcl::read-quoted-expr {} {
     upvar c c unget unget
-    set expr [read-expression]
+    set expr [read-expr]
     read-eof $expr
     make-constant $expr
     return [list #Q $expr]
@@ -1230,27 +1246,30 @@ proc ::constcl::read-quoted-expression {} {
 CB
 
 MD(
-**read-pair-expression**
+__read-pair-expr__
 
-The `read-pair-expression` procedure parses input and produces a structure of
+The `read-pair-expr` procedure parses input and produces a structure of
 Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
 MD)
 
 PR(
-read-pair-expression (internal);char pterm -> pstr
+read-pair-expr (internal);char pterm -> pstreof
 PR)
 
 CB
-proc ::constcl::read-pair-expression {char} {
+proc ::constcl::read-pair-expr {char} {
     upvar c c unget unget
     set expr [read-pair $char]
+    read-eof $expr
     skip-ws
     read-eof $c
     ::if {$c ne $char} {
         ::if {$char eq ")"} {
-            ::error "Missing right parenthesis (first=$c)."
+            ::error \
+                "Missing right paren. ($c)."
         } else {
-            ::error "Missing right bracket (first=$c)."
+            ::error \
+                "Missing right bracket ($c)."
         }
     } else {
         set unget {}
@@ -1268,16 +1287,16 @@ proc ::constcl::read-pair {char} {
     }
     set c [readc]
     read-eof $c
-    set a [read-expression $c]
+    set a [read-expr $c]
     set res $a
     skip-ws
     set prev #NIL
     while {![read-find $char]} {
-        set x [read-expression $c]
+        set x [read-expr $c]
         skip-ws
         read-eof $c
         ::if {[dot? $x] ne "#f"} {
-            set prev [read-expression $c]
+            set prev [read-expr $c]
             skip-ws $c]
             read-eof $c
         } else {
@@ -1294,14 +1313,14 @@ proc ::constcl::read-pair {char} {
 CB
 
 MD(
-**read-plus-minus**
+__read-plus-minus__
 
 `read-plus-minus` reacts to a plus or minus in the input stream, and either
 returns a `+` or `-` symbol, or a number.
 MD)
 
 PR(
-read-plus-minus (internal);-> pm
+read-plus-minus (internal);-> pmeof
 PR)
 
 CB
@@ -1310,7 +1329,7 @@ proc ::constcl::read-plus-minus {char} {
     set c [readc]
     read-eof $c
     ::if {[::string is digit -strict $c]} {
-        set n [read-number-expression $c]
+        set n [read-number-expr $c]
         ::if {$char eq "-"} {
             set n [- $n]
         }
@@ -1326,17 +1345,17 @@ proc ::constcl::read-plus-minus {char} {
 CB
 
 MD(
-**read-number-expression**
+__read-number-expr__
 
-`read-number-expression` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`read-number-expr` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
-read-number-expression (internal);?char? tchar -> num
+read-number-expr (internal);?char? tchar -> numeof
 PR)
 
 CB
-proc ::constcl::read-number-expression {args} {
+proc ::constcl::read-number-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
         lassign $args c
@@ -1350,33 +1369,35 @@ proc ::constcl::read-number-expression {args} {
     }
     set unget $c
     check {::string is double -strict $num} {Invalid numeric constant $num}
-    return [MkNumber $num]
+    set expr [MkNumber $num]
+    read-eof $expr
+    return $expr
 }
 CB
 
 MD(
-**read-unquoted-expression**
+__read-unquoted-expr__
 
-`read-unquoted-expression` parses input, producing an expression and returning
+`read-unquoted-expr` parses input, producing an expression and returning
 it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
 the input stream.
 MD)
 
 PR(
-read-unquoted-expression (internal);-> unquote
+read-unquoted-expr (internal);-> unquoteeof
 PR)
 
 CB
-proc ::constcl::read-unquoted-expression {} {
+proc ::constcl::read-unquoted-expr {} {
     upvar c c unget unget
     set c [readc]
     read-eof $c
     ::if {$c eq "@"} {
         set symbol "unquote-splicing"
-        set expr [read-expression]
+        set expr [read-expr]
     } else {
         set symbol "unquote"
-        set expr [read-expression $c]
+        set expr [read-expr $c]
     }
     read-eof $expr
     return [list [MkSymbol $symbol] $expr]
@@ -1384,19 +1405,19 @@ proc ::constcl::read-unquoted-expression {} {
 CB
 
 MD(
-**read-quasiquoted-expression**
+__read-quasiquoted-expr__
 
-`read-quasiquoted-expression` parses input, producing an expression and returning it wrapped in `quasiquote`.
+`read-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
 MD)
 
 PR(
-read-quasiquoted-expression (internal);-> qquote
+read-quasiquoted-expr (internal);-> qquoteeof
 PR)
 
 CB
-proc ::constcl::read-quasiquoted-expression {} {
+proc ::constcl::read-quasiquoted-expr {} {
     upvar c c unget unget
-    set expr [read-expression]
+    set expr [read-expr]
     skip-ws
     read-eof $expr
     make-constant $expr
@@ -1405,20 +1426,20 @@ proc ::constcl::read-quasiquoted-expression {} {
 CB
 
 MD(
-**read-identifier-expression**
+__read-identifier-expr__
 
-`read-identifier-expression` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`read-identifier-expr` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(
-read-identifier-expression (internal);?char? tchar -> sym
+read-identifier-expr (internal);?char? tchar -> symeof
 PR)
 
 CB
-proc ::constcl::read-identifier-expression {args} {
+proc ::constcl::read-identifier-expr {args} {
     upvar c c unget unget
     ::if {[llength $args]} {
-        set c [lindex $args 0]
+        lassign $args c
     } else {
         set c [readc]
     }
@@ -1434,6 +1455,7 @@ proc ::constcl::read-identifier-expression {args} {
     ::if {$c ne "#EOF"} {
         set unget $c
     }
+    read-eof $name
     # idcheck throws error if invalid identifier
     idcheck $name
     return [MkSymbol $name]
