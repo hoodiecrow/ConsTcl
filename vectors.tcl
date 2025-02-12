@@ -29,7 +29,7 @@ oo::class create ::constcl::Vector {
     method length {} {::constcl::cdr $data}
     method ref {k} {
         set k [$k numval]
-        ::if {$k < 0 || $k >= [[my length] numval]} {
+        if {$k < 0 || $k >= [[my length] numval]} {
             ::error "index out of range\n$k"
         }
         lindex [my store] $k
@@ -43,11 +43,11 @@ oo::class create ::constcl::Vector {
         my store
     }
     method set! {k obj} {
-        ::if {[my constant]} {
+        if {[my constant]} {
             ::error "vector is constant"
         } else {
             set k [$k numval]
-            ::if {$k < 0 || $k >= [[my length] numval]} {
+            if {$k < 0 || $k >= [[my length] numval]} {
                 ::error "index out of range\n$k"
             }
             set base [[::constcl::car $data] numval]
@@ -56,7 +56,7 @@ oo::class create ::constcl::Vector {
         return [self]
     }
     method fill! {val} {
-        ::if {[my constant]} {
+        if {[my constant]} {
             ::error "vector is constant"
         } else {
             set base [[::constcl::car $data] numval]
@@ -89,7 +89,7 @@ CB
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {val} {
-    ::if {[info object isa typeof $val ::constcl::Vector]} {
+    if {[info object isa typeof $val ::constcl::Vector]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
         return #t
@@ -133,7 +133,7 @@ CB
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
-    ::if {[llength $args] == 0} {
+    if {[llength $args] == 0} {
         set fill #NIL
     } else {
         lassign $args fill

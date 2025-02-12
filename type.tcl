@@ -25,12 +25,12 @@ MD)
 
 CB
 proc ::reg {key args} {
-    ::if {[llength $args] == 0} {
-        set val ::constcl::$key
-    } else {
-        lassign $args val
-    }
-    dict set ::constcl::defreg $key $val
+  if {[llength $args] == 0} {
+    set val ::constcl::$key
+  } else {
+    lassign $args val
+  }
+  dict set ::constcl::defreg $key $val
 }
 CB
 
@@ -41,7 +41,7 @@ MD)
 
 CB
 proc ::regmacro {name} {
-    lappend ::constcl::macrolist $name
+  lappend ::constcl::macrolist $name
 }
 CB
 
@@ -52,9 +52,9 @@ MD)
 
 CB
 proc ::pep {str} {
-    ::constcl::write [
-        ::constcl::eval [
-            ::constcl::parse $str]]
+  ::constcl::write [
+    ::constcl::eval [
+      ::constcl::parse $str]]
 }
 CB
 
@@ -65,8 +65,8 @@ MD)
 
 CB
 proc ::pp {str} {
-    ::constcl::write [
-        ::constcl::parse $str]
+  ::constcl::write [
+    ::constcl::parse $str]
 }
 CB
 
@@ -77,15 +77,15 @@ MD)
 
 CB
 proc ::prp {str} {
-    set expr [::constcl::parse $str]
-    set op [::constcl::car $expr]
-    set args [::constcl::cdr $expr]
-    set env ::constcl::global_env
-    while {[$op name] in $::constcl::macrolist} {
-        ::constcl::expand-macro $env
-    }
-    set expr [::constcl::resolve-local-defines $args]
-    ::constcl::write $expr
+  set expr [::constcl::parse $str]
+  set op [::constcl::car $expr]
+  set args [::constcl::cdr $expr]
+  set env ::constcl::global_env
+  while {[$op name] in $::constcl::macrolist} {
+    ::constcl::expand-macro $env
+  }
+  set expr [::constcl::resolve-local-defines $args]
+  ::constcl::write $expr
 }
 CB
 
@@ -96,11 +96,11 @@ MD)
 
 CB
 proc ::pxp {str} {
-    set expr [::constcl::parse $str]
-    set op [::constcl::car $expr]
-    set args [::constcl::cdr $expr]
-    ::constcl::expand-macro ::constcl::global_env
-    ::constcl::write [::constcl::cons $op $args]
+  set expr [::constcl::parse $str]
+  set op [::constcl::car $expr]
+  set args [::constcl::cdr $expr]
+  ::constcl::expand-macro ::constcl::global_env
+  ::constcl::write [::constcl::cons $op $args]
 }
 CB
 
@@ -110,7 +110,7 @@ MD)
 
 CB
 proc ::pn {} {
-    lindex [split [lindex [info level -1] 0] :] end
+  lindex [split [lindex [info level -1] 0] :] end
 }
 CB
 
@@ -125,31 +125,30 @@ reg in-range
 
 #started out as DKF's code
 proc ::constcl::in-range {args} {
-    set start 0
-    set step 1
-    switch [llength $args] {
-        1 {
-            lassign $args e
-            set end [$e value]
-        }
-        2 {
-            lassign $args s e
-            set start [$s value]
-            set end [$e value]
-        }
-        3 {
-            lassign $args s e t
-            set start [$s value]
-            set end [$e value]
-            set step [$t value]
-        }
+  set start 0
+  set step 1
+  switch [llength $args] {
+    1 {
+      lassign $args e
+      set end [$e value]
     }
-    set res $start
-    while {$step > 0 && $end > [incr start $step] ||
-            $step < 0 && $end < [incr start $step]} {
-        lappend res $start
+    2 {
+      lassign $args s e
+      set start [$s value]
+      set end [$e value]
     }
-    return [list {*}[lmap r $res {MkNumber $r}]]
+    3 {
+      lassign $args s e t
+      set start [$s value]
+      set end [$e value]
+      set step [$t value]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
 }
 CB
 
@@ -164,16 +163,34 @@ CB
 catch { ::constcl::NIL destroy }
 
 oo::class create ::constcl::NIL {
-    constructor {} {}
-    method bvalue {} {return #NIL}
-    method car {} {::error "PAIR expected"}
-    method cdr {} {::error "PAIR expected"}
-    method set-car! {v} {::error "PAIR expected"}
-    method set-cdr! {v} {::error "PAIR expected"}
-    method numval {} {::error "Not a number"}
-    method write {handle} {puts -nonewline $handle "()"}
-    method display {} { puts -nonewline "()" }
-    method show {} {format "()"}
+  constructor {} {}
+  method bvalue {} {
+    return #NIL
+  }
+  method car {} {
+    ::error "PAIR expected"
+  }
+  method cdr {} {
+    ::error "PAIR expected"
+  }
+  method set-car! {v} {
+    ::error "PAIR expected"
+  }
+  method set-cdr! {v} {
+    ::error "PAIR expected"
+  }
+  method numval {} {
+    ::error "NUMBER expected"
+  }
+  method write {handle} {
+    puts -nonewline $handle "()"
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "()"
+  }
 }
 CB
 
@@ -193,11 +210,11 @@ CB
 reg null?
 
 proc ::constcl::null? {val} {
-    ::if {$val eq "#NIL"} {
-        return #t
-    } else {
-        return #f
-    }
+  if {$val eq "#NIL"} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -221,9 +238,13 @@ CB
 catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
-    method mkconstant {} {}
-    method write {handle} {puts -nonewline $handle "."}
-    method display {} { puts -nonewline "." }
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "."
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 CB
 
@@ -233,13 +254,13 @@ PR)
 
 CB
 proc ::constcl::dot? {val} {
-    ::if {[info object isa typeof $val Dot]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val Dot]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -251,7 +272,13 @@ CB
 catch { ::constcl::Unspecific destroy }
 
 oo::class create ::constcl::Unspecific {
-    method mkconstant {} {}
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<unspecific>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 CB
 
@@ -263,8 +290,13 @@ CB
 catch { ::constcl::Undefined destroy }
 
 oo::class create ::constcl::Undefined {
-    method mkconstant {} {}
-    method write {} {puts -nonewline #<undefined>}
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<undefined>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 CB
 
@@ -276,8 +308,13 @@ CB
 catch { ::constcl::EndOfFile destroy }
 
 oo::class create ::constcl::EndOfFile {
-    method mkconstant {} {}
-    method write {handle} {puts -nonewline #<eof>}
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<end-of-file>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 CB
 
@@ -296,19 +333,19 @@ CB
 reg error
 
 proc ::constcl::error {msg args} {
-    ::if {[llength $args]} {
-        lappend msg "("
-        set times 0
-        foreach arg $args {
-            ::if {$times} {
-                ::append msg " "
-            }
-            ::append msg [$arg show]
-            incr times
-        }
-        lappend msg ")"
+  if {[llength $args]} {
+    lappend msg "("
+    set times 0
+    foreach arg $args {
+      if {$times} {
+        ::append msg " "
+      }
+      ::append msg [$arg show]
+      incr times
     }
-    ::error $msg
+    lappend msg ")"
+  }
+  ::error $msg
 }
 CB
 
@@ -319,13 +356,13 @@ MD)
 
 CB
 proc ::constcl::check {cond msg} {
-    ::if {[uplevel $cond] eq "#f"} {
-        ::error [
-            uplevel [
-                ::list subst [
-                        ::string trim $msg]]]
-    }
+  if {[uplevel $cond] eq "#f"} {
+    ::error [
+      uplevel [
+        ::list subst [
+          ::string trim $msg]]]
+  }
 }
 CB
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

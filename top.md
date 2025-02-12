@@ -21,7 +21,7 @@ On my cheap computer, the following code takes 0.027 seconds to run.
 
 ```
 namespace eval ::constcl {
-    time {eval [parse "(fact 100)"]} 10
+  time {eval [parse "(fact 100)"]} 10
 }
 ```
 
@@ -34,3 +34,8 @@ near to having call/cc or tail recursion. It doesn't have exact/inexact
 numbers, or most of the numerical tower. Error reporting is spotty, and there
 is no error recovery.
 
+About the program listings: I have tried to write clear, readable code, but
+the page format forces me to shorten lines. I have used two-space indents
+instead of four-space, and broken off long lines with a \ at the end of the
+first line (a so-called "tucked-in tail"). Neither of these measures improve
+readability, but the alternative is overwriting the margins.

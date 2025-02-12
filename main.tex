@@ -199,15 +199,33 @@ catch { ::constcl::NIL destroy }
  
 oo::class create ::constcl::NIL {
     constructor {} {}
-    method bvalue {} {return #NIL}
-    method car {} {::error "PAIR expected"}
-    method cdr {} {::error "PAIR expected"}
-    method set-car! {v} {::error "PAIR expected"}
-    method set-cdr! {v} {::error "PAIR expected"}
-    method numval {} {::error "Not a number"}
-    method write {handle} {puts -nonewline $handle "()"}
-    method display {} { puts -nonewline "()" }
-    method show {} {format "()"}
+    method bvalue {} {
+        return #NIL
+    }
+    method car {} {
+        ::error "PAIR expected"
+    }
+    method cdr {} {
+        ::error "PAIR expected"
+    }
+    method set-car! {v} {
+        ::error "PAIR expected"
+    }
+    method set-cdr! {v} {
+        ::error "PAIR expected"
+    }
+    method numval {} {
+        ::error "Not a number"
+    }
+    method write {handle} {
+        puts -nonewline $handle "()"
+    }
+    method display {handle} {
+        my write $handle
+    }
+    method show {} {
+        format "()"
+    }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -260,8 +278,12 @@ catch { ::constcl::Dot destroy }
  
 oo::class create ::constcl::Dot {
     method mkconstant {} {}
-    method write {handle} {puts -nonewline $handle "."}
-    method display {} { puts -nonewline "." }
+    method write {handle} {
+        puts -nonewline $handle "."
+    }
+    method display {handle} {
+        my write $handle
+    }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -279,7 +301,8 @@ val & a Lisp value \\
 proc ::constcl::dot? {val} {
     ::if {[info object isa typeof $val Dot]} {
         return #t
-    } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
+    } elseif {[info object isa typeof \
+        [interp alias {} $val] Dot]} {
         return #t
     } else {
         return #f
@@ -296,6 +319,12 @@ catch { ::constcl::Unspecific destroy }
  
 oo::class create ::constcl::Unspecific {
     method mkconstant {} {}
+    method write {handle} {
+        puts -nonewline $handle "#<unspecific>"
+    }
+    method display {handle} {
+        my write $handle
+    }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -308,7 +337,12 @@ catch { ::constcl::Undefined destroy }
  
 oo::class create ::constcl::Undefined {
     method mkconstant {} {}
-    method write {} {puts -nonewline #<undefined>}
+    method write {handle} {
+        puts -nonewline $handle "#<undefined>"
+    }
+    method display {handle} {
+        my write $handle
+    }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -321,7 +355,12 @@ catch { ::constcl::EndOfFile destroy }
  
 oo::class create ::constcl::EndOfFile {
     method mkconstant {} {}
-    method write {handle} {puts -nonewline #<eof>}
+    method write {handle} {
+        puts -nonewline $handle "#<end-of-file>"
+    }
+    method display {handle} {
+        my write $handle
+    }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -412,7 +451,9 @@ proc ::constcl::xread {} {
 }
  
 proc ::constcl::read_c_ci {} {
-    return [tolower [::read [$::constcl::Input_port handle] 1]]
+    tolower [
+        ::read [
+            $::constcl::Input_port handle] 1]]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -455,12 +496,16 @@ oo::class create ::constcl::IB {
     }
     method find {char} {
         ::if {[::string is space -strict $peekc]} {
-            for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
-                ::if {![::string is space -strict [::string index $buffer $cp]]} {
+            for {set cp 0} \
+                {$cp < [::string length $buffer]} \
+                {incr cp} {
+                ::if {![::string is space -strict \
+                    [::string index $buffer $cp]]} {
                     break
                 }
             }
-            return [expr {[::string index $buffer $cp] eq $char}]
+            return [expr {[::string index $buffer $cp]
+                eq $char}]
         } else {
             return [expr {$peekc eq $char}]
         }
@@ -472,7 +517,8 @@ oo::class create ::constcl::IB {
                     my advance
                 }
                 {;} {
-                    while {$peekc ne "\n" && $peekc ne {}}  {
+                    while {$peekc ne "\n" &&
+                        $peekc ne {}}  {
                         my advance
                     }
                 }
@@ -501,7 +547,7 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-> ::constcl::parse "(+ 2 3)"
+% ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -510,9 +556,11 @@ Here, \texttt{parse} parsed the external representation of a list with three ele
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-> ::constcl::write ::oo::Obj491
+% ::constcl::write ::oo::Obj491
 (+ 2 3)
-> ::constcl::write [::constcl::eval ::oo::Obj491]
+% ::constcl::eval ::oo::Obj491
+::oo::Obj494
+% ::constcl::write ::oo::Obj494
 5
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -955,8 +1003,7 @@ proc ::constcl::parse-identifier-expr {} {
 \textbf{character-check}
 
 
-The \texttt{character-check} helper procedure compares a potential
-character constant to the valid kinds. Returns Tcl truth (1/0).
+The \texttt{character-check} helper procedure compares a potential character constant to the valid kinds. Returns Tcl truth (1/0).
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -1151,9 +1198,7 @@ proc readc {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{read-find} reads ahead through whitespace to find a given character. Returns 1
-if it has found the character, and 0 if it has stopped at some other character.
-Returns end of file if eof is encountered.
+\texttt{read-find} reads ahead through whitespace to find a given character. Returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1744,6 +1789,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
 
 Example: \texttt{r} => 10 (a symbol \texttt{r} is evaluated to 10)
 
+
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of the identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to lookup an unbound symbol.
 
 
@@ -1769,15 +1815,16 @@ proc ::constcl::lookup {sym env} {
 \paragraph{Constant literal}
 \label{constant-literal}
 
-Example: 99 => 99 (a number evaluates to itself)
+Example: \texttt{99} => 99 (a number evaluates to itself)
 
 
-Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value.
+Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
 
 \paragraph{Quotation}
 \label{quotation}
 
 Example: \texttt{(quote r)} => \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)
+
 
 According to the rules of Variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. \texttt{(quote x)} evaluates to the symbol x itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader.
 
@@ -1785,6 +1832,7 @@ According to the rules of Variable reference, a symbol evaluates to its stored v
 \label{conditional}
 
 Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} => 6
+
 
 The conditional form \texttt{if} evaluates a Lisp list of three expressions. The first, the \_condition\_, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \_consequent\_) is evaluated and the value returned. Otherwise, the third expression (the \_alternate\_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
@@ -1815,7 +1863,9 @@ proc ::constcl::if {cond conseq altern} {
 
 Example: \texttt{(begin (define r 10) (* r r))} => 100
 
+
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The \texttt{eprogn} helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
+
 
 \textbf{eprogn}
 
@@ -1850,7 +1900,9 @@ proc ::constcl::eprogn {exps env} {
 
 Example: \texttt{(define r 10)} => ... (a definition doesn't evaluate to anything)
 
+
 We've already seen the relationship between symbols and values. A symbol is bound to a value (or rather to the location the value is in), creating a variable, through definition. The \texttt{declare} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
+
 
 \textbf{declare}
 
@@ -1877,8 +1929,8 @@ proc ::constcl::declare {sym val env} {
 \paragraph{Assignment}
 \label{assignment}
 
-Example: \texttt{(set! r 20)} => 20 (\texttt{r} is a bound symbol, so it's allowed to assign
-to it)
+Example: \texttt{(set! r 20)} => 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)
+
 
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name "variable", something that can be modified). The process is called assignment. The \texttt{update!} helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99.
 
@@ -1906,6 +1958,9 @@ proc ::constcl::update! {var val env} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \paragraph{Procedure definition}
 \label{procedure-definition}
+
+Example: \texttt{(lambda (r) (* r r))} => ::oo::Obj3601 (it will be a different object each time)
+
 
 In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
 
@@ -1958,6 +2013,9 @@ proc ::constcl::make-function {formals body env} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \paragraph{Procedure call}
 \label{procedure-call}
+
+Example: \texttt{(+ 1 6)} => 7
+
 
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it will return 121.
 
@@ -2037,6 +2095,7 @@ env & an environment \\
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::eval-list {exps env} {
+    # don't convert to ::constcl::if, it breaks (fact 100)
     ::if {[pair? $exps] ne "#f"} {
         return [cons [eval [car $exps] $env] \
             [eval-list [cdr $exps] $env]]
@@ -2089,9 +2148,7 @@ proc ::constcl::expand-macro {env} {
 \textbf{expand-and}
 
 
-\texttt{expand-and} expands the \texttt{and} macro. It returns a \texttt{begin}-expression if the
-macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
-
+\texttt{expand-and} expands the \texttt{and} macro. It returns a \texttt{begin}-expression if the macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2109,6 +2166,7 @@ regmacro and
  
 proc ::constcl::expand-and {expr env} {
     set tail [cdr $expr]
+    if {eq? [length $tail] #0} {
         return [list #B #t]
     } {
         if {eq? [length $tail] #1} {
@@ -2135,6 +2193,7 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::do-and {tail prev env} {
     set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
         return $prev
     } {
         $env setstr "first" [car $tail]
@@ -2172,6 +2231,7 @@ proc ::constcl::expand-case {expr env} {
 }
  
 proc ::constcl::do-case {keyexpr clauses} {
+    ::if {[eq? [length $clauses] #0] ne "#f"} {
         return [list #Q #NIL]
     } else {
         set keyl [caar $clauses]
@@ -2371,6 +2431,7 @@ proc ::constcl::do-for {tail env} {
     set body [cdr $tail]
     set ids {}
     set seqs {}
+    for {set i 0} {$i < [llength $clauses]} {incr i} {
         set clause [lindex $clauses $i]
         # insert the first part of the clause in the ids structure
         lset ids $i [car $clause]
@@ -2378,8 +2439,10 @@ proc ::constcl::do-for {tail env} {
         lset seqs $i [for-seq [cadr $clause] $env]
     }
     set res {}
+    for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
         # for each iteration of the sequences
         set x {}
+        for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
             # for each clause
             # list append to x the Lisp list of the id and the iteration
             lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
@@ -2558,7 +2621,7 @@ proc ::constcl::parse-bindings {name bindings} {
 \textbf{expand-or}
 
 
-\texttt{expand-or} expands the \texttt{or} macro. It returns a \texttt{begin}-expression if the macro
+\texttt{expand-or} expands the \texttt{or} macro. It returns a \texttt{begin}-expression if the macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2576,6 +2639,7 @@ regmacro or
  
 proc ::constcl::expand-or {expr env} {
     set tail [cdr $expr]
+    ::if {[eq? [length $tail] #0] ne "#f"} {
         return [list #B #f]
     } elseif {[eq? [length $tail] #1] ne "#f"} {
         return [cons #B $tail]
@@ -2599,6 +2663,7 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::do-or {tail env} {
     set env [::constcl::Environment new #NIL {} $env]
+    if {eq? [length $tail] #0} {
         return #f
     } {
         $env setstr "first" [car $tail]
@@ -2698,12 +2763,14 @@ regmacro put!
 proc ::constcl::expand-put! {expr env} {
     set tail [cdr $expr]
     set env [::constcl::Environment new #NIL {} $env]
+    ::if {[null? $tail] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
     $env set [MkSymbol "listname"] [car $tail]
     ::if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
     $env set [MkSymbol "key"] [cadr $tail]
     ::if {[null? [cddr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
     $env set [MkSymbol "val"] [caddr $tail]
     set qq "`(let ((idx (list-find-key ,listname ,key)))
+               (if (< idx 0)
                  (set! ,listname (append (list ,key ,val) ,listname))
                  (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
     return [expand-quasiquote [parse $qq] $env]
@@ -2732,16 +2799,20 @@ env & an environment \\
 regmacro quasiquote
  
 proc ::constcl::qq-visit-child {node qqlevel env} {
+    ::if {$qqlevel < 0} {
+        set qqlevel 0
     }
     ::if {[list? $node] ne "#f"} {
         set res {}
         foreach child [splitlist $node] {
             ::if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $child] $env]
                 } else {
                     lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $child] $env]]
                 }
             } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "quasiquote"]] ne "#f"} {
@@ -2771,17 +2842,22 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::expand-quasiquote {expr env} {
     set tail [cdr $expr]
+    set qqlevel 0
     ::if {[list? [car $tail]] ne "#f"} {
         set node [car $tail]
+        return [qq-visit-child $node 0 $env]
     } elseif {[vector? [car $tail]] ne "#f"} {
         set vect [car $tail]
         set res {}
+        for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
             set idx [MkNumber $i]
             set vecref [vector-ref $vect $idx]
             ::if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res [eval [cadr $vecref] $env]
                 }
             } elseif {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] ne "#f"} {
+                ::if {$qqlevel == 0} {
                     lappend res {*}[splitlist [eval [cadr $vecref] $env]]
                 }
             } elseif {[atom? $vecref] ne "#f"} {

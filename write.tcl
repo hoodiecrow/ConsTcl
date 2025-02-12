@@ -1,6 +1,6 @@
 
 MD(
-## write
+## Output
 
 **write**
 
@@ -10,25 +10,25 @@ a newline.
 MD)
 
 PR(
-write (public);val val args dc -> none
+write (public);val val ?port? port -> none
 PR)
 
 CB
 reg write ::constcl::write
 
 proc ::constcl::write {val args} {
-    ::if {$val ne "#NONE"} {
-        ::if {[llength $args]} {
-            lassign $args port
-        } else {
-            set port [MkOutputPort stdout]
-        }
-        set ::constcl::Output_port $port
-        write-value [$::constcl::Output_port handle] $val
-        puts [$::constcl::Output_port handle] {}
-        set ::constcl::Output_port [MkOutputPort stdout]
+  if {$val ne "#NONE"} {
+    if {[llength $args]} {
+      lassign $args port
+    } else {
+      set port [MkOutputPort stdout]
     }
-    return
+    set ::constcl::Output_port $port
+    write-value [$::constcl::Output_port handle] $val
+    puts [$::constcl::Output_port handle] {}
+    set ::constcl::Output_port [MkOutputPort stdout]
+  }
+  return
 }
 CB
 
@@ -45,8 +45,8 @@ PR)
 
 CB
 proc ::constcl::write-value {handle val} {
-    $val write $handle
-    return
+  $val write $handle
+  return
 }
 CB
 
@@ -64,11 +64,11 @@ CB
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-    ::if {$val ne "#NONE"} {
-        $val display
-        flush stdout
-    }
-    return
+  if {$val ne "#NONE"} {
+    $val display
+    flush stdout
+  }
+  return
 }
 CB
 
@@ -84,24 +84,24 @@ PR)
 
 CB
 proc ::constcl::write-pair {handle pair} {
-    # take an object and print the car and the cdr of the stored value
-    set a [car $pair]
-    set d [cdr $pair]
-    # print car
-    write-value $handle $a
-    ::if {[pair? $d] ne "#f"} {
-        # cdr is a cons pair
-        puts -nonewline $handle " "
-        write-pair $handle $d
-    } elseif {[null? $d] ne "#f"} {
-        # cdr is nil
-        return
-    } else {
-        # it is an atom
-        puts -nonewline $handle " . "
-        write-value $handle $d
-    }
+  # take an object and print the car and the cdr of the stored value
+  set a [car $pair]
+  set d [cdr $pair]
+  # print car
+  write-value $handle $a
+  if {[pair? $d] ne "#f"} {
+    # cdr is a cons pair
+    puts -nonewline $handle " "
+    write-pair $handle $d
+  } elseif {[null? $d] ne "#f"} {
+    # cdr is nil
     return
+  } else {
+    # it is an atom
+    puts -nonewline $handle " . "
+    write-value $handle $d
+  }
+  return
 }
 CB
 
@@ -121,4 +121,4 @@ TT(
 
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

@@ -23,27 +23,27 @@ CB
 reg eq? ::constcl::eq?
 
 proc ::constcl::eq? {val1 val2} {
-    ::if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq symbol? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
-        return #t
-    } elseif {[typeeq char? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq null? $val1 $val2]} {
-        return #t
-    } elseif {[typeeq pair? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq string? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq vector? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq symbol? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
+    return #t
+  } elseif {[typeeq char? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq null? $val1 $val2]} {
+    return #t
+  } elseif {[typeeq pair? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq string? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq vector? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } else {
+    return #f
+  }
 }
 
 proc ::constcl::typeeq {typep val1 val2} {
@@ -69,28 +69,27 @@ CB
 reg eqv? ::constcl::eqv?
 
 proc ::constcl::eqv? {val1 val2} {
-    ::if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } elseif {[typeeq symbol? $val1 $val2] && [valeq $val1 $val2]} {
-        return #t
-    } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
-        return #t
-    } elseif {[typeeq char? $val1 $val2] && [valeq $val1 eq $val2]} {
-        return #t
-    } elseif {[typeeq null? $val1 $val2]} {
-        return #t
-    } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" &&
-        [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
-        return #t
-    } elseif {[typeeq string? $val1 $val2] && [valeq $val1 $val2]} {
-        return #t
-    } elseif {[typeeq vector? $val1 $val2] && [valeq $val1 $val2]} {
-        return #t
-    } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } elseif {[typeeq symbol? $val1 $val2] && [valeq $val1 $val2]} {
+    return #t
+  } elseif {[typeeq number? $val1 $val2] && [valeq $val1 $val2]} {
+    return #t
+  } elseif {[typeeq char? $val1 $val2] && [valeq $val1 eq $val2]} {
+    return #t
+  } elseif {[typeeq null? $val1 $val2]} {
+    return #t
+  } elseif {[pair? $val1] ne "#f" && [pair? $val2] ne "#f" && [$val1 car] eq [$val2 car] && [$val1 cdr] eq [$val2 cdr]} {
+    return #t
+  } elseif {[typeeq string? $val1 $val2] && [valeq $val1 $val2]} {
+    return #t
+  } elseif {[typeeq vector? $val1 $val2] && [valeq $val1 $val2]} {
+    return #t
+  } elseif {[typeeq procedure? $val1 $val2] && $val1 eq $val2} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -98,13 +97,13 @@ CB
 reg equal? ::constcl::equal?
 
 proc ::constcl::equal? {val1 val2} {
-    ::if {[$val1 show] eq [$val2 show]} {
-        return #t
-    } else {
-        return #f
-    }
-    # TODO
+  if {[$val1 show] eq [$val2 show]} {
+    return #t
+  } else {
+    return #f
+  }
+  # TODO
 }
 CB
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

@@ -10,9 +10,9 @@ CB
 ::constcl::Environment create ::constcl::null_env #NIL {}
 
 oo::objdefine ::constcl::null_env {
-    method find {sym} {self}
-    method get {sym} {::error "Unbound variable: [$sym name]"}
-    method set {sym val} {::error "Unbound variable: [$sym name]"}
+  method find {sym} {self}
+  method get {sym} {::error "Unbound variable: [$sym name]"}
+  method set {sym val} {::error "Unbound variable: [$sym name]"}
 }
 CB
 
@@ -23,9 +23,9 @@ MD)
 
 CB
 namespace eval ::constcl {
-    set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
-    set vals [dict values $defreg]
-    Environment create global_env $keys $vals ::constcl::null_env
+  set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
+  set vals [dict values $defreg]
+  Environment create global_env $keys $vals ::constcl::null_env
 }
 CB
 
@@ -97,4 +97,4 @@ TT(
 } -returnCodes error -result "Unbound variable: foo"
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

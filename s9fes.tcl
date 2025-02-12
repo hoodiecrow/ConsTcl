@@ -8,31 +8,34 @@ MD)
 
 CB
 proc ::constcl::new-atom {pa pd} {
-    cons3 $pa $pd $::constcl::ATOM_TAG
+  cons3 $pa $pd $::constcl::ATOM_TAG
 }
 CB
 
 CB
 proc cons3 {pcar pcdr ptag} {
-    # TODO counters
-    set n [MkPair $pcar $pcdr]
-    $n settag $ptag
-    return $n
+  # TODO counters
+  set n [MkPair $pcar $pcdr]
+  $n settag $ptag
+  return $n
 }
 CB
 
 CB
 proc ::constcl::xread {} {
-    ::if {[$::constcl::InputPort handle] eq "#NIL"} {
-        error "input port is not open"
-    }
-    set ::constcl::Level 0
-    return [read-form 0]
+  if {[$::constcl::InputPort handle] eq "#NIL"} {
+    error "input port is not open"
+  }
+  set ::constcl::Level 0
+  return [read-form 0]
 }
 
 proc ::constcl::read_c_ci {} {
-    return [tolower [::read [$::constcl::Input_port handle] 1]]
+  tolower [
+    ::read [
+      $::constcl::Input_port handle] 1]]
 }
 CB
 
 
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

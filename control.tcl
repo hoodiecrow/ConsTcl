@@ -20,23 +20,23 @@ CB
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
-    superclass ::constcl::NIL
-    variable parms body env
-    constructor {p b e} {
-        set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
-        set body $b          ;# a Lisp list of expressions under 'begin, or a single expression
-        set env $e           ;# the closed over environment
-    }
-    method value {} {}
-    method write {handle} {
-        regexp {(\d+)} [self] -> num
-        puts -nonewline $handle "#<proc-$num>"
-    }
-    method display {} {my write}
-    method show {} { return [self] }
-    method call {args} {
-        ::constcl::eval $body [::constcl::Environment new $parms $args $env]
-    }
+  superclass ::constcl::NIL
+  variable parms body env
+  constructor {p b e} {
+    set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
+    set body $b          ;# a Lisp list of expressions under 'begin, or a single expression
+    set env $e           ;# the closed over environment
+  }
+  method value {} {}
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<proc-$num>"
+  }
+  method display {} {my write}
+  method show {} { return [self] }
+  method call {args} {
+    ::constcl::eval $body [::constcl::Environment new $parms $args $env]
+  }
 
 }
 
@@ -55,15 +55,15 @@ CB
 reg procedure? ::constcl::procedure?
 
 proc ::constcl::procedure? {val} {
-    ::if {[info object isa typeof $val ::constcl::Procedure]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
-        return #t
-    } elseif {[::string match "::constcl::*" $val]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Procedure]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
+    return #t
+  } elseif {[::string match "::constcl::*" $val]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -99,8 +99,8 @@ CB
 reg apply ::constcl::apply
 
 proc ::constcl::apply {pr vals} {
-    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
-    invoke $pr $vals
+  check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+  invoke $pr $vals
 }
 CB
 
@@ -145,20 +145,20 @@ CB
 reg map ::constcl::map
 
 proc ::constcl::map {pr args} {
-    check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
-    set arglists $args
-    for {set i 0} {$i < [llength $arglists]} {incr i} {
-        lset arglists $i [splitlist [lindex $arglists $i]]
+  check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+  set arglists $args
+  for {set i 0} {$i < [llength $arglists]} {incr i} {
+    lset arglists $i [splitlist [lindex $arglists $i]]
+  }
+  set res {}
+  for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+    set arguments {}
+    for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+      lappend arguments [lindex $arglists $arg $item]
     }
-    set res {}
-    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-        set arguments {}
-        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-            lappend arguments [lindex $arglists $arg $item]
-        }
-        lappend res [invoke $pr [list {*}$arguments]]
-    }
-    return [list {*}$res]
+    lappend res [invoke $pr [list {*}$arguments]]
+  }
+  return [list {*}$res]
 }
 CB
 
@@ -205,19 +205,19 @@ CB
 reg for-each ::constcl::for-each
 
 proc ::constcl::for-each {proc args} {
-    check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
-    set arglists $args
-    for {set i 0} {$i < [llength $arglists]} {incr i} {
-        lset arglists $i [splitlist [lindex $arglists $i]]
+  check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
+  set arglists $args
+  for {set i 0} {$i < [llength $arglists]} {incr i} {
+    lset arglists $i [splitlist [lindex $arglists $i]]
+  }
+  for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+    set arguments {}
+    for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
+      lappend arguments [lindex $arglists $arg $item]
     }
-    for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
-        set arguments {}
-        for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-            lappend arguments [lindex $arglists $arg $item]
-        }
-        invoke $proc [list {*}$arguments]
-    }
-    return [list]
+    invoke $proc [list {*}$arguments]
+  }
+  return [list]
 }
 CB
 
@@ -259,4 +259,4 @@ proc ::constcl::dynamic-wind {before thunk after} {
 }
 CB
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

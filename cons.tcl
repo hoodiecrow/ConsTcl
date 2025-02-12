@@ -10,10 +10,10 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-    # TODO calculate free space
-    set va $::constcl::vectorAssign
-    incr ::constcl::vectorAssign $num
-    return $va
+  # TODO calculate free space
+  set va $::constcl::vectorAssign
+  incr ::constcl::vectorAssign $num
+  return $va
 }
 CB
 
@@ -102,13 +102,11 @@ CB
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-    ::if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" ||
-        [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" ||
-        [port? $val] ne "#f"} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" || [port? $val] ne "#f"} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -351,4 +349,4 @@ TT(
 
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

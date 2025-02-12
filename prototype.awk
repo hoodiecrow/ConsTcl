@@ -3,7 +3,7 @@
 # remove the potential CR characters in the input line
 { gsub(/\r/, ""); }
 
-BEGIN { modeline = " [#;] v" + "im:" }
+BEGIN { modeline = " [#;] v" "im:" }
 
 # load the key/values pairs from dict.txt
 # NOTE: NR is equal to FNR only while processing the first file
@@ -54,7 +54,7 @@ $1 == "TblSynForms" {
 }
 
 # skip any modeline
-#$0 ~ modeline { next; }
+$0 ~ modeline { next; }
 
 # output non PR lines
 { print; }

@@ -11,37 +11,37 @@ CB
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
-    superclass ::constcl::NIL
-    variable car cdr constant
-    constructor {a d} {
-        set car $a
-        set cdr $d
-        set constant 0
-    }
-    method name {} {} ;# for eval to call when dealing with an application form
-    method value {} {my show}
-    method car {} { set car }
-    method cdr {} { set cdr }
-    method set-car! {val} {
-        ::constcl::check {my mutable?} {Can't modify a constant pair}
-        set car $val
-        self
-    }
-    method set-cdr! {val} {
-        ::constcl::check {my mutable?} {Can't modify a constant pair}
-        set cdr $val
-        self
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {return $constant}
-    method mutable? {} {expr {$constant?"#f":"#t"}}
-    method write {handle} {
-        puts -nonewline $handle "("
-        ::constcl::write-pair $handle [self]
-        puts -nonewline $handle ")"
-    }
-    method display {} { [my write] }
-    method show {} {format "(%s)" [::constcl::show-pair [self]]}
+  superclass ::constcl::NIL
+  variable car cdr constant
+  constructor {a d} {
+    set car $a
+    set cdr $d
+    set constant 0
+  }
+  method name {} {} ;# for eval to call when dealing with an application form
+  method value {} {my show}
+  method car {} { set car }
+  method cdr {} { set cdr }
+  method set-car! {val} {
+    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    set car $val
+    self
+  }
+  method set-cdr! {val} {
+    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    set cdr $val
+    self
+  }
+  method mkconstant {} {set constant 1}
+  method constant {} {return $constant}
+  method mutable? {} {expr {$constant?"#f":"#t"}}
+  method write {handle} {
+    puts -nonewline $handle "("
+    ::constcl::write-pair $handle [self]
+    puts -nonewline $handle ")"
+  }
+  method display {} { [my write] }
+  method show {} {format "(%s)" [::constcl::show-pair [self]]}
 }
 
 
@@ -60,13 +60,13 @@ CB
 reg pair? ::constcl::pair?
 
 proc ::constcl::pair? {val} {
-    ::if {[info object isa typeof $val ::constcl::Pair]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Pair]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -82,25 +82,25 @@ PR)
 
 CB
 proc ::constcl::show-pair {pair} {
-    # take an object and print the car and the cdr of the stored value
-    set str {}
-    set a [car $pair]
-    set d [cdr $pair]
-    # print car
-    ::append str [$a show]
-    ::if {[pair? $d] ne "#f"} {
-        # cdr is a cons pair
-        ::append str " "
-        ::append str [show-pair $d]
-    } elseif {[null? $d] ne "#f"} {
-        # cdr is nil
-        return $str
-    } else {
-        # it is an atom
-        ::append str " . "
-        ::append str [$d show]
-    }
+  # take an object and print the car and the cdr of the stored value
+  set str {}
+  set a [car $pair]
+  set d [cdr $pair]
+  # print car
+  ::append str [$a show]
+  if {[pair? $d] ne "#f"} {
+    # cdr is a cons pair
+    ::append str " "
+    ::append str [show-pair $d]
+  } elseif {[null? $d] ne "#f"} {
+    # cdr is nil
     return $str
+  } else {
+    # it is an atom
+    ::append str " . "
+    ::append str [$d show]
+  }
+  return $str
 }
 CB
 
@@ -165,7 +165,7 @@ CB
 reg cons ::constcl::cons
 
 proc ::constcl::cons {car cdr} {
-    MkPair $car $cdr
+  MkPair $car $cdr
 }
 CB
 
@@ -203,7 +203,7 @@ CB
 reg car ::constcl::car
 
 proc ::constcl::car {pair} {
-    $pair car
+  $pair car
 }
 CB
 
@@ -243,7 +243,7 @@ CB
 reg cdr ::constcl::cdr
 
 proc ::constcl::cdr {pair} {
-    $pair cdr
+  $pair cdr
 }
 CB
 
@@ -269,40 +269,40 @@ MD)
 
 CB
 foreach ads {
-    aa
-    ad
-    da
-    dd
-    aaa
-    ada
-    daa
-    dda
-    aad
-    add
-    dad
-    ddd
-    aaaa
-    adaa
-    daaa
-    ddaa
-    aada
-    adda
-    dada
-    ddda
-    aaad
-    adad
-    daad
-    ddad
-    aadd
-    addd
-    dadd
-    dddd
+  aa
+  ad
+  da
+  dd
+  aaa
+  ada
+  daa
+  dda
+  aad
+  add
+  dad
+  ddd
+  aaaa
+  adaa
+  daaa
+  ddaa
+  aada
+  adda
+  dada
+  ddda
+  aaad
+  adad
+  daad
+  ddad
+  aadd
+  addd
+  dadd
+  dddd
 } {
     reg c${ads}r
 
     proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
-            ::if {\$c eq \"a\"} {
+            if {\$c eq \"a\"} {
                 set pair \[car \$pair\]
             } else {
                 set pair \[cdr \$pair\]
@@ -336,7 +336,7 @@ CB
 reg set-car! ::constcl::set-car!
 
 proc ::constcl::set-car! {pair val} {
-    $pair set-car! $val
+  $pair set-car! $val
 }
 CB
 
@@ -376,7 +376,7 @@ CB
 reg set-cdr! ::constcl::set-cdr!
 
 proc ::constcl::set-cdr! {pair val} {
-    $pair set-cdr! $val
+  $pair set-cdr! $val
 }
 CB
 
@@ -409,8 +409,8 @@ CB
 reg list? ::constcl::list?
 
 proc ::constcl::list? {pair} {
-    set visited {}
-    return [listp $pair]
+  set visited {}
+  return [listp $pair]
 }
 CB
 
@@ -420,18 +420,18 @@ PR)
 
 CB
 proc ::constcl::listp {pair} {
-    upvar visited visited
-    ::if {$pair in $visited} {
-        return #f
-    }
-    lappend visited $pair
-    ::if {[null? $pair] ne "#f"} {
-        return #t
-    } elseif {[pair? $pair] ne "#f"} {
-        return [listp [cdr $pair]]
-    } else {
-        return #f
-    }
+  upvar visited visited
+  if {$pair in $visited} {
+    return #f
+  }
+  lappend visited $pair
+  if {[null? $pair] ne "#f"} {
+    return #t
+  } elseif {[pair? $pair] ne "#f"} {
+    return [listp [cdr $pair]]
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -473,15 +473,15 @@ CB
 reg list ::constcl::list
 
 proc ::constcl::list {args} {
-    ::if {[llength $args] == 0} {
-        return #NIL
-    } else {
-        set prev #NIL
-        foreach obj [lreverse $args] {
-            set prev [cons $obj $prev]
-        }
-        return $prev
+  if {[llength $args] == 0} {
+    return #NIL
+  } else {
+    set prev #NIL
+    foreach obj [lreverse $args] {
+      set prev [cons $obj $prev]
     }
+    return $prev
+  }
 }
 CB
 
@@ -516,8 +516,8 @@ CB
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-    check {list? $pair} {LIST expected\n([pn] lst)}
-    MkNumber [length-helper $pair]
+  check {list? $pair} {LIST expected\n([pn] lst)}
+  MkNumber [length-helper $pair]
 }
 CB
 
@@ -527,11 +527,11 @@ PR)
 
 CB
 proc ::constcl::length-helper {pair} {
-    ::if {[null? $pair] ne "#f"} {
-        return 0
-    } else {
-        return [expr {1 + [length-helper [cdr $pair]]}]
-    }
+  if {[null? $pair] ne "#f"} {
+    return 0
+  } else {
+    return [expr {1 + [length-helper [cdr $pair]]}]
+  }
 }
 CB
 
@@ -567,11 +567,11 @@ CB
 reg append ::constcl::append
 
 proc ::constcl::append {args} {
-    set prev [lindex $args end]
-    foreach r [lreverse [lrange $args 0 end-1]] {
-        set prev [copy-list $r $prev]
-    }
-    set prev
+  set prev [lindex $args end]
+  foreach r [lreverse [lrange $args 0 end-1]] {
+    set prev [copy-list $r $prev]
+  }
+  set prev
 }
 CB
 
@@ -581,14 +581,14 @@ PR)
 
 CB
 proc ::constcl::copy-list {pair next} {
-    # TODO only fresh conses in the direct chain to NIL
-    ::if {[null? $pair] ne "#f"} {
-        set next
-    } elseif {[null? [cdr $pair]] ne "#f"} {
-        cons [car $pair] $next
-    } else {
-        cons [car $pair] [copy-list [cdr $pair] $next]
-    }
+  # TODO only fresh conses in the direct chain to NIL
+  if {[null? $pair] ne "#f"} {
+    set next
+  } elseif {[null? [cdr $pair]] ne "#f"} {
+    cons [car $pair] $next
+  } else {
+    cons [car $pair] [copy-list [cdr $pair] $next]
+  }
 }
 CB
 
@@ -626,7 +626,7 @@ CB
 reg reverse ::constcl::reverse
 
 proc ::constcl::reverse {vals} {
-    list {*}[lreverse [splitlist $vals]]
+  list {*}[lreverse [splitlist $vals]]
 }
 CB
 
@@ -661,11 +661,11 @@ CB
 reg list-tail ::constcl::list-tail
 
 proc ::constcl::list-tail {vals k} {
-    ::if {[zero? $k] ne "#f"} {
-        return $vals
-    } else {
-        list-tail [cdr $vals] [- $k #1]
-    }
+  if {[zero? $k] ne "#f"} {
+    return $vals
+  } else {
+    list-tail [cdr $vals] [- $k #1]
+  }
 }
 CB
 
@@ -699,7 +699,7 @@ CB
 reg list-ref ::constcl::list-ref
 
 proc ::constcl::list-ref {vals k} {
-    car [list-tail $vals $k]
+  car [list-tail $vals $k]
 }
 CB
 
@@ -739,7 +739,7 @@ CB
 reg memq ::constcl::memq
 
 proc ::constcl::memq {val1 val2} {
-    return [member-proc eq? $val1 $val2]
+  return [member-proc eq? $val1 $val2]
 }
 CB
 
@@ -768,7 +768,7 @@ CB
 reg memv ::constcl::memv
 
 proc ::constcl::memv {val1 val2} {
-    return [member-proc eqv? $val1 $val2]
+  return [member-proc eqv? $val1 $val2]
 }
 CB
 
@@ -780,7 +780,7 @@ CB
 reg member ::constcl::member
 
 proc ::constcl::member {val1 val2} {
-    return [member-proc equal? $val1 $val2]
+  return [member-proc equal? $val1 $val2]
 }
 CB
 
@@ -791,21 +791,21 @@ PR)
 CB
 
 proc ::constcl::member-proc {epred val1 val2} {
-    switch $epred {
-        eq? { set name "memq" }
-        eqv? { set name "memv" }
-        equal? { set name "member" }
+  switch $epred {
+    eq? { set name "memq" }
+    eqv? { set name "memv" }
+    equal? { set name "member" }
+  }
+  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  if {[null? $val2] ne "#f"} {
+    return #f
+  } elseif {[pair? $val2] ne "#f"} {
+    if {[$epred $val1 [car $val2]] ne "#f"} {
+      return $val2
+    } else {
+      return [member-proc $epred $val1 [cdr $val2]]
     }
-    check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
-    ::if {[null? $val2] ne "#f"} {
-        return #f
-    } elseif {[pair? $val2] ne "#f"} {
-        ::if {[$epred $val1 [car $val2]] ne "#f"} {
-            return $val2
-        } else {
-            return [member-proc $epred $val1 [cdr $val2]]
-        }
-    }
+  }
 }
 CB
 
@@ -837,7 +837,7 @@ CB
 reg assq
 
 proc ::constcl::assq {val1 val2} {
-    return [assoc-proc eq? $val1 $val2]
+  return [assoc-proc eq? $val1 $val2]
 }
 CB
 
@@ -850,7 +850,7 @@ CB
 reg assv
 
 proc ::constcl::assv {val1 val2} {
-    return [assoc-proc eqv? $val1 $val2]
+  return [assoc-proc eqv? $val1 $val2]
 }
 CB
 
@@ -863,7 +863,7 @@ CB
 reg assoc
 
 proc ::constcl::assoc {val1 val2} {
-    return [assoc-proc equal? $val1 $val2]
+  return [assoc-proc equal? $val1 $val2]
 }
 CB
 
@@ -873,21 +873,21 @@ PR)
 
 CB
 proc ::constcl::assoc-proc {epred val1 val2} {
-    switch $epred {
-        eq? { set name "assq" }
-        eqv? { set name "assv" }
-        equal? { set name "assoc" }
+  switch $epred {
+    eq? { set name "assq" }
+    eqv? { set name "assv" }
+    equal? { set name "assoc" }
+  }
+  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  if {[null? $val2] ne "#f"} {
+    return #f
+  } elseif {[pair? $val2] ne "#f"} {
+    if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+      return [car $val2]
+    } else {
+      return [assoc-proc $epred $val1 [cdr $val2]]
     }
-    check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
-    ::if {[null? $val2] ne "#f"} {
-        return #f
-    } elseif {[pair? $val2] ne "#f"} {
-        ::if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
-            return [car $val2]
-        } else {
-            return [assoc-proc $epred $val1 [cdr $val2]]
-        }
-    }
+  }
 }
 CB
 
@@ -904,4 +904,4 @@ TT(
 } -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

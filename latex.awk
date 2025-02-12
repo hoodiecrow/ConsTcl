@@ -1,7 +1,8 @@
 # see https://www.mgmarlow.com/words/2024-03-23-markdown-awk/
 
 BEGIN {
-	print "\\documentclass{report}"
+	print "\\documentclass[twoside,9pt]{report}"
+	print "\\usepackage[a5paper]{geometry}"
 	print "\\usepackage{newpxmath}"
 	print "\\usepackage{graphicx}"
 	print "\\usepackage{listings}"
@@ -9,11 +10,29 @@ BEGIN {
 	print "  showstringspaces=false,"
 	print "  language=tcl,"
 	print "}"
-	print "\\renewcommand{\\thesection}{\\arabic{section}}"
+	print "%\\renewcommand{\\thesection}{\\arabic{section}}"
 	print "\\title{ConsTcl}"
 	print "\\author{Peter Lewerin}"
 	print "\\date{\\today}"
+	print "\\makeatletter"
+        print "\\def\\@makechapterhead#1{%"
+        print "  \\vspace*{50\\p@}%"
+        print "    {\\parindent \\z@ \\raggedright \\normalfont"
+        print "      \\ifnum \\c@secnumdepth >\\m@ne"
+        print "        %\\if@mainmatter"
+        print "          %\\huge\\bfseries \\@chapapp\\space \\thechapter"
+        print "          \\Huge\\bfseries \\thechapter.\\space%"
+        print "          %\\par\\nobreak"
+        print "          %\\vskip 20\\p@"
+        print "        %\\fi"
+        print "      \\fi"
+        print "      \\interlinepenalty\\@M"
+        print "      \\Huge \\bfseries #1\\par\\nobreak"
+        print "      \\vskip 40\\p@"
+        print "   }}"
+        print "\\makeatother"
 	print "\\begin{document}"
+	print "\\pagestyle{headings}"
 	print "\\maketitle"
 	print "\\tableofcontents"
 	print " "
@@ -23,20 +42,32 @@ BEGIN {
 
 /^# /    { next }
 /^## /   {
-    printf "\\section{%s}\n", substr($0, 4)
+    printf "\\chapter{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
     next
 }
 
-/^### /  {
-    printf "\\subsection{%s}\n", substr($0, 5)
+/^### /   {
+    printf "\\section{%s}\n", substr($0, 5)
     printf "\\label{%s}\n", makelabel(substr($0, 5))
     next
 }
 
-/^#### / {
-    printf "\\subsubsection{%s}\n", substr($0, 6)
+/^#### /  {
+    printf "\\subsection{%s}\n", substr($0, 6)
     printf "\\label{%s}\n", makelabel(substr($0, 6))
+    next
+}
+
+/^##### / {
+    printf "\\subsubsection{%s}\n", substr($0, 7)
+    printf "\\label{%s}\n", makelabel(substr($0, 7))
+    next
+}
+
+/^###### / {
+    printf "\\paragraph{%s}\n", substr($0, 8)
+    printf "\\label{%s}\n", makelabel(substr($0, 8))
     next
 }
 
@@ -60,8 +91,8 @@ inen && !/^[0-9]+\. /   { print "\\end{enumerate}"; inen = 0; next }
 
 /<table id="syntaxforms"/ {
     if (!intsf) {
-	print "\\begin{tabular}{|l l l|}\n\\hline"
-	print "Syntactic form & Syntax & Example \\\\\n\\hline"
+	print "\\begin{tabular}{|l l|}\n\\hline"
+	print "Syntactic form & Syntax \\\\\n\\hline"
     }
     intsf = 1
     next
@@ -69,7 +100,7 @@ inen && !/^[0-9]+\. /   { print "\\end{enumerate}"; inen = 0; next }
 
 intsf && $1 == "<tr>" {
     patsplit($0, sftablefs, />[^<]+<\//)
-    printf "%s & %s & %s \\\\\n", clean(sftablefs[1]), clean(sftablefs[2]), clean(sftablefs[3])
+    printf "%s & %s \\\\\n", clean(sftablefs[1]), clean(sftablefs[2])
 }
 
 intsf && /^</ { next }
@@ -96,10 +127,12 @@ intsf && !/^</ { print "\\hline\n\\end{tabular}\n" ; intsf = 0 ; next }
 END { print "\n\\end{document}" }
 
 function clean (str) {
-    gsub(/[<>/]/, "", str)
+    gsub(/<\//, "", str)
+    gsub(/>/, "", str)
     gsub(/&lt;/, "<", str)
     gsub(/&gt;/, ">", str)
     gsub(/&amp;/, "&", str)
+    if (match(str, /_/)) { gsub(/_/, "\\_", str) }
     if (match(str, /#/)) { gsub(/#/, "\\#", str) }
     if (str == "Returns:") str = sprintf("\\textit{%s}", str)
     return str
@@ -120,20 +153,24 @@ function flushp() {
 }
 
 function render(line) {
+    if (match(line, /\\/)) { gsub(/\\/, "\\textbackslash\\ ", line) }
+
     while (match(line, /__([^_]+)__/)) {
         sub(/__([^_]+)__/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
     }
     
     while (match(line, /\*\*([^*]+)\*\*/)) {
-        sub(/\*\*([^*]+)\*\*/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
-    }
-    
-    while (match(line, /\*\*([^*]+)\*\*/)) {
-        sub(/\*\*([^*]+)\*\*/, sprintf("\\emph{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
+        sub(/\*\*([^*]+)\*\*/, sprintf("\\emph{%s}", substr(line, RSTART+2, RLENGTH-4)), line)
     }
 
     while (match(line, /`([^`]+)`/)) {
         sub(/`([^`]+)`/, sprintf("\\texttt{%s}", substr(line, RSTART+1, RLENGTH-2)), line)
+    }
+
+    if (match(line, /!\[[^]]+\]\(.+\)/)) {
+        inner = substr(line, RSTART, RLENGTH)
+	match(inner, /\(.+\)/)
+	line = sprintf("\\includegraphics{%s}", substr(inner, RSTART+2, RLENGTH-3))
     }
 
     if (match(line, /\[#\]\(.+\)/)) {
@@ -153,6 +190,8 @@ function render(line) {
     if (match(line, /&/)) { gsub(/&/, "\\&", line) }
 
     if (match(line, /_/)) { gsub(/_/, "\\_", line) }
+
+    if (match(line, /%/)) { gsub(/%/, "\\%", line) }
 
     if (match(line, /⇒/)) { gsub(/⇒/, "=>", line) }
 

@@ -12,30 +12,30 @@ MD)
 
 CB
 oo::class create ::constcl::Boolean {
-    superclass ::constcl::NIL
-    variable bvalue
-    constructor {v} {
-        ::if {$v ni {#t #f}} {
-            ::error "bad boolean value $v"
-        }
-        set bvalue $v
+  superclass ::constcl::NIL
+  variable bvalue
+  constructor {v} {
+    if {$v ni {#t #f}} {
+      ::error "bad boolean value $v"
     }
-    method mkconstant {} {}
-    method constant {} {return 1}
-    method bvalue {} { set bvalue }
-    method value {} { set bvalue }
-    method write {handle} { puts -nonewline $handle [my bvalue] }
-    method display {} { puts -nonewline [my bvalue] }
-    method show {} {set bvalue}
+    set bvalue $v
+  }
+  method mkconstant {} {}
+  method constant {} {return 1}
+  method bvalue {} { set bvalue }
+  method value {} { set bvalue }
+  method write {handle} { puts -nonewline $handle [my bvalue] }
+  method display {} { puts -nonewline [my bvalue] }
+  method show {} {set bvalue}
 }
 
 proc ::constcl::MkBoolean {v} {
-    foreach instance [info class instances ::constcl::Boolean] {
-        ::if {[$instance bvalue] eq $v} {
-            return $instance
-        }
+  foreach instance [info class instances ::constcl::Boolean] {
+    if {[$instance bvalue] eq $v} {
+      return $instance
     }
-    return [::constcl::Boolean new $v]
+  }
+  return [::constcl::Boolean new $v]
 }
 CB
 
@@ -69,13 +69,13 @@ CB
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {val} {
-    ::if {[info object isa typeof $val ::constcl::Boolean]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Boolean]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -118,11 +118,11 @@ CB
 reg not ::constcl::not
 
 proc ::constcl::not {val} {
-    ::if {[$val bvalue] eq "#f"} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[$val bvalue] eq "#f"} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -158,4 +158,4 @@ TT(
 
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

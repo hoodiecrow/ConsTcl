@@ -13,7 +13,7 @@ oo::class create ::constcl::Symbol {
     superclass ::constcl::NIL
     variable name caseconstant
     constructor {n} {
-        ::if {   no &&   $n eq {}} {
+        if {   no &&   $n eq {}} {
             ::error "a symbol must have a name"
         }
         ::constcl::idcheck $n
@@ -34,7 +34,7 @@ oo::class create ::constcl::Symbol {
 
 proc ::constcl::MkSymbol {n} {
     foreach instance [info class instances ::constcl::Symbol] {
-        ::if {[$instance name] eq $n} {
+        if {[$instance name] eq $n} {
             return $instance
         }
     }
@@ -50,7 +50,7 @@ CB
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {val} {
-    ::if {[info object isa typeof $val ::constcl::Symbol]} {
+    if {[info object isa typeof $val ::constcl::Symbol]} {
         return #t
     } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
         return #t
@@ -90,7 +90,7 @@ reg symbol->string ::constcl::symbol->string
 
 proc ::constcl::symbol->string {sym} {
     check {symbol? $sym} {SYMBOL expected\n([pn] [$sym show])}
-    ::if {![$sym case-constant]} {
+    if {![$sym case-constant]} {
         set str [MkString [::string tolower [$sym name]]]
     } else {
         set str [MkString [$sym name]]
