@@ -46,8 +46,8 @@ proc ::regmacro {name} {
 CB
 
 MD(
-`pep` started out life as parse-eval-print, and I never changed the name. It
-reads and evals an expression, and prints the result.
+`pep` was named after the sequence parse-eval-print, and I never changed the
+name. It reads and evals an expression, and prints the result.
 MD)
 
 CB
@@ -66,6 +66,18 @@ MD)
 CB
 proc ::pp {str} {
   ::constcl::write [
+    ::constcl::parse $str]
+}
+CB
+
+MD(
+`pe` is still the same, but it doesn't print the expression. It just evals what
+is read.
+MD)
+
+CB
+proc ::pe {str} {
+  ::constcl::eval [
     ::constcl::parse $str]
 }
 CB

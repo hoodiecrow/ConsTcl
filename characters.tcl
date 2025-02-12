@@ -4,7 +4,7 @@ MD(
 
 Characters are any Unicode printing character, and also space and newline space characters.
 
-**Char** class
+__Char__ class
 MD)
 
 CB
@@ -94,7 +94,7 @@ proc ::constcl::MkChar {v} {
 CB
 
 MD(
-**char?**
+__char?__
 
 `char?` recognizes Char values by type.
 MD)
@@ -126,15 +126,15 @@ TT(
 TT)
 
 MD(
-**char=?**
+__char=?__
 
-**char<?**
+__char<?__
 
-**char>?**
+__char>?__
 
-**char<=?**
+__char<=?__
 
-**char>=?**
+__char>=?__
 
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
@@ -269,15 +269,15 @@ TT(
 TT)
 
 MD(
-**char-ci=?**
+__char-ci=?__
 
-**char-ci<?**
+__char-ci<?__
 
-**char-ci>?**
+__char-ci>?__
 
-**char-ci<=?**
+__char-ci<=?__
 
-**char-ci>=?**
+__char-ci>=?__
 
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
@@ -409,15 +409,15 @@ TT(
 TT)
 
 MD(
-**char-alphabetic**
+__char-alphabetic__
 
-**char-numeric**
+__char-numeric__
 
-**char-whitespace**
+__char-whitespace__
 
-**char-upper-case**
+__char-upper-case__
 
-**char-lower-case**
+__char-lower-case__
 
 The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
@@ -539,9 +539,9 @@ TT(
 TT)
 
 MD(
-**char->integer**
+__char->integer__
 
-**integer->char**
+__integer->char__
 
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
@@ -603,9 +603,9 @@ TT(
 TT)
 
 MD(
-**char-upcase**
+__char-upcase__
 
-**char-downcase**
+__char-downcase__
 
 `char-upcase` and `char-downcase` alter the case of a character.
 MD)

@@ -13,7 +13,7 @@ When a `Procedure` object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
 goes to the closure environment.
 
-**Procedure** class
+__Procedure__ class
 MD)
 
 CB
@@ -44,7 +44,7 @@ interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 CB
 
 MD(
-**procedure?**
+__procedure?__
 MD)
 
 PR(
@@ -78,7 +78,7 @@ TT(
 TT)
 
 MD(
-**apply**
+__apply__
 
 `apply` applies a procedure to a Lisp list of Lisp arguments.
 MD)
@@ -122,7 +122,7 @@ TT(
 TT)
 
 MD(
-**map**
+__map__
 
 `map` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The Lisp list of the results of the invocations is 
@@ -178,7 +178,7 @@ TT(
 TT)
 
 MD(
-**for-each**
+__for-each__
 
 `for-each` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.

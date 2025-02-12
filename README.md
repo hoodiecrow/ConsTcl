@@ -4,27 +4,29 @@
 
 ### To run the software
 
-To run, source the file __constcl.tcl__ (with __schemebase.lsp__ in the directory)
-in a Tcl console (I use __tkcon__) and use the command `::constcl::repl` for a
-primitive command dialog.  Source __all.tcl__ to run the test suite.
+First things first. To run, source the file __constcl.tcl__ (with
+__schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use
+the command `__repl__` for a primitive command dialog.  Source
+__all.tcl__ to run the test suite (you need __constcl.test__ for that).
 
 ### Background
 
 ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
-Thtcl[#](https://github.com/hoodiecrow/thtcl), this time with a real Lisp-like 
-type system. It steps over and back over the border between Tcl and Lisp a lot
+Thtcl[#](https://github.com/hoodiecrow/thtcl)--this time with a real Lisp-like 
+type system. 
+
+### About ConsTcl
+
+It's written with Vim, the one and only editor. 
+
+It steps over and back over the border between Tcl and Lisp a lot
 of times while working, and as a result is fairly slow.
-
-#### Benchmark
-
-On my cheap computer, the following code takes 0.027 seconds to run.
+On my cheap computer, the following code (which calculates the factorial of
+100) takes 0.027 seconds to run.
 
 ```
-namespace eval ::constcl {
-  time {eval [parse "(fact 100)"]} 10
-}
+time {pe "(fact 100)"} 10
 ```
-
 
 Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO
 classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
@@ -34,11 +36,34 @@ near to having call/cc or tail recursion. It doesn't have exact/inexact
 numbers, or most of the numerical tower. Error reporting is spotty, and there
 is no error recovery.
 
-About the program listings: I have tried to write clear, readable code, but
-the page format forces me to shorten lines. I have used two-space indents
-instead of four-space, and broken off long lines with a \ at the end of the
-first line (a so-called "tucked-in tail"). Neither of these measures improve
-readability, but the alternative is overwriting the margins.
+### About the book
+
+I like writing documentation, and occasionally I'm good at it. When I work on a
+software project, I like to annotate the source code with bits of
+documentation, which I then extract and put together using document stream
+editing tools like `sed` and `awk` (The pipeline is Vim to create annotated
+source > sed/awk > a markdown README document for GitHub's benefit > awk > a
+(La)TeX document > TeXworks > a PDF document: all the steps except the last are
+automated using make). On finishing up ConsTcl, it struck me that the
+documentation for this piece of software was fit for a book.
+
+### About the program listings
+
+I have tried to write clear, readable code, but the page format forces me to
+shorten lines. I have used two-space indents instead of four-space, a smaller
+font, and broken off long lines with a \ at the end of the first line (a
+so-called "tucked-in tail"). Neither of these measures improve readability, but
+the alternative is overwriting the margins.
+
+### About me
+
+I'm a 60 year old former system manager who has dabbled in programming since
+1979--46 years. Currently, since around 25 years, my language of choice is the
+rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits
+me, and there are things that one can do in Tcl that one can't easily do in
+other languages. Lisp is a runner-up in my affections, a language that
+fascinates me but doesn't fit my brain very well (though I have written one
+large piece of software in AutoLisp).
 
 ## Initial declarations
 
@@ -76,8 +101,8 @@ proc ::regmacro {name} {
 }
 ```
 
-`pep` started out life as parse-eval-print, and I never changed the name. It
-reads and evals an expression, and prints the result.
+`pep` was named after the sequence parse-eval-print, and I never changed the
+name. It reads and evals an expression, and prints the result.
 
 ```
 proc ::pep {str} {
@@ -93,6 +118,16 @@ read.
 ```
 proc ::pp {str} {
   ::constcl::write [
+    ::constcl::parse $str]
+}
+```
+
+`pe` is still the same, but it doesn't print the expression. It just evals what
+is read.
+
+```
+proc ::pe {str} {
+  ::constcl::eval [
     ::constcl::parse $str]
 }
 ```
@@ -360,7 +395,6 @@ proc ::constcl::check {cond msg} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 ## S9fES
 
 I've begun porting parts of S9fES (**Scheme 9 from Empty Space**, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
@@ -399,7 +433,6 @@ proc ::constcl::read_c_ci {} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ## Input
 
@@ -407,19 +440,13 @@ The first thing an interpreter must be able to do is to take in the user's code
 and data input, whether from the keyboard or from a source file.  `read`
 represents the interpreter's main input facility. As a complement, a similar set
 of procedures that read input from an input buffer exists (the `parse-`
-procedures). The main set (the `read-` procedures) read from standard input.
+procedures). The main set (the `read-` procedures) read from standard input,
+or--if a port is provided--from the port's channel.
 
 __IB__ class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
-characters to be read. The `fill` method fills the buffer and sets the first
-character in the peek position.  The `advance` method consumes one character
-from the buffer. `first` peeks at the next character to be read. `skip-ws`
-advances past whitespace and comments.  `unget` backs up one position and sets a
-given character in the peek position. The `find` method looks past whitespace
-and comments to find a given character. It returns Tcl truth if it is found.  Or
-it gets the hose again.
-
+characters to be read.
 
 ```
 catch { ::constcl::IB destroy }
@@ -428,55 +455,92 @@ oo::class create ::constcl::IB {
   variable peekc buffer
   constructor {str} {
     set peekc {}
-    set buffer $str
-    my advance
+    my fill $str
   }
-  method advance {} {
-    if {$buffer eq {}} {
-      set peekc {}
-    } else {
-      set peekc [::string index $buffer 0]
-      set buffer [::string range $buffer 1 end]
-    }
+}
+```
+
+The `fill` method fills the buffer and sets the first character in the peek position.  
+
+```
+oo::define ::constcl::IB method fill {str} {
+  set buffer $str
+  my advance
+}
+```
+
+The `advance` method consumes one character from the buffer. 
+
+```
+oo::define ::constcl::IB method advance {} {
+  if {$buffer eq {}} {
+    set peekc {}
+  } else {
+    set peekc [::string index $buffer 0]
+    set buffer [::string range $buffer 1 end]
   }
-  method first {} {
-    return $peekc
-  }
-  method unget {char} {
-    set buffer $peekc$buffer
-    set peekc $char
-  }
-  method find {char} {
-    if {[::string is space -strict $peekc]} {
-      for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
-        if {![::string is space -strict [::string index $buffer $cp]]} {
-          break
-        }
+}
+```
+
+`peek` peeks at the next character to be read. 
+
+```
+oo::define ::constcl::IB method peek {} {
+  return $peekc
+}
+```
+
+`unget` backs up one position and sets a given character in the peek position. 
+
+```
+oo::define ::constcl::IB method unget {char} {
+  set buffer $peekc$buffer
+  set peekc $char
+}
+```
+
+The `find` method looks past whitespace to find a given character. It returns
+Tcl truth if it is found.  Or it gets the hose again. 
+
+```
+oo::define ::constcl::IB method find {char} {
+  if {[::string is space -strict $peekc]} {
+    for {set cp 0} \
+        {$cp < [::string length $buffer]} \
+        {incr cp} {
+      if {![::string is space -strict [
+        ::string index $buffer $cp]]} {
+        break
       }
-      return [expr {[::string index $buffer $cp] eq $char}]
-    } else {
-      return [expr {$peekc eq $char}]
     }
+    return [expr {[
+      ::string index $buffer $cp] eq $char}]
+  } else {
+    return [expr {$peekc eq $char}]
   }
-  method skip-ws {} {
-    while true {
-      switch -regexp $peekc {
-        {[[:space:]]} {
+}
+```
+
+`skip-ws` advances past whitespace and comments.  
+
+```
+oo::define ::constcl::IB method skip-ws {} {
+  while true {
+    switch -regexp $peekc {
+      {[[:space:]]} {
+        my advance
+      }
+      {;} {
+        while {$peekc ne "\n" && $peekc ne {}} {
           my advance
         }
-        {;} {
-          while {$peekc ne "\n" && $peekc ne {}}  {
-            my advance
-          }
-        }
-        default {
-          return
-        }
+      }
+      default {
+        return
       }
     }
   }
 }
-
 ```
 
 
@@ -565,7 +629,7 @@ that, producing an expression of any kind.
 proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
-  switch -regexp [$ib first] {
+  switch -regexp [$ib peek] {
     {^$}          { return #NONE}
     {\"}          { return [parse-string-expr] }
     {\#}          { return [parse-sharp] }
@@ -579,7 +643,7 @@ proc ::constcl::parse-expr {} {
     {\d}          { return [parse-number-expr] }
     {[[:graph:]]} { return [parse-identifier-expr] }
     default {
-      ::error "unexpected character ([$ib first])"
+      ::error "unexpected character ([$ib peek])"
     }
   }
 }
@@ -598,17 +662,17 @@ proc ::constcl::parse-string-expr {} {
   upvar ib ib
   set str {}
   $ib advance
-  while {[$ib first] ne "\"" && [$ib first] ne {}} {
-    set c [$ib first]
+  while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
+    set c [$ib peek]
     if {$c eq "\\"} {
       $ib advance
-      ::append str [$ib first]
+      ::append str [$ib peek]
     } else {
       ::append str $c
     }
     $ib advance
   }
-  if {[$ib first] ne "\""} {
+  if {[$ib peek] ne "\""} {
     ::error "no ending double quote"
   }
   $ib advance
@@ -631,13 +695,13 @@ expressions whose external representation begins with a sharp sign.
 proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
-  switch [$ib first] {
+  switch [$ib peek] {
     (    { return [parse-vector-expr] }
     t    { $ib advance ; $ib skip-ws ; return #t }
     f    { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
-      ::error "Illegal #-literal: #[$ib first]"
+      ::error "Illegal #-literal: #[$ib peek]"
     }
   }
 }
@@ -723,13 +787,13 @@ proc ::constcl::parse-pair-expr {char} {
   $ib skip-ws
   set expr [parse-pair $char]
   $ib skip-ws
-  if {[$ib first] ne $char} {
+  if {[$ib peek] ne $char} {
     if {$char eq ")"} {
       ::error \
-        "Missing right paren. ([$ib first])."
+        "Missing right paren. ([$ib peek])."
     } else {
       ::error \
-        "Missing right bracket ([$ib first])."
+        "Missing right bracket ([$ib peek])."
     }
   }
   $ib advance
@@ -749,9 +813,9 @@ returns a `+` or `-` symbol, or a number.
 ```
 proc ::constcl::parse-plus-minus {} {
   upvar ib ib
-  set c [$ib first]
+  set c [$ib peek]
   $ib advance
-  if {[::string is digit -strict [$ib first]]} {
+  if {[::string is digit -strict [$ib peek]]} {
     $ib unget $c
     return [::constcl::parse-number-expr]
   } else {
@@ -779,7 +843,7 @@ proc ::constcl::parse-unquoted-expr {} {
   upvar ib ib
   $ib advance
   set symbol "unquote"
-  if {[$ib first] eq "@"} {
+  if {[$ib peek] eq "@"} {
     set symbol "unquote-splicing"
     $ib advance
   }
@@ -835,9 +899,9 @@ __parse-number-expr__
 ```
 proc ::constcl::parse-number-expr {} {
   upvar ib ib
-  while {[interspace [$ib first]] ne "#t" && \
-    [$ib first] ni {) \]}} {
-      ::append num [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && \
+    [$ib peek] ni {) \]}} {
+      ::append num [$ib peek]
       $ib advance
     }
     $ib skip-ws
@@ -858,8 +922,8 @@ __parse-identifier-expr__
 ```
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
-    ::append name [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
     $ib advance
   }
   $ib skip-ws
@@ -895,8 +959,8 @@ a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 proc ::constcl::parse-character-expr {} {
   upvar ib ib
   set name "#"
-  while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
-    ::append name [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) ]}} {
+    ::append name [$ib peek]
     $ib advance
   }
   check {character-check $name} {
@@ -920,14 +984,14 @@ proc ::constcl::parse-vector-expr {} {
   $ib advance
   $ib skip-ws
   set res {}
-  while {[$ib first] ne {} && [$ib first] ne ")"} {
+  while {[$ib peek] ne {} && [$ib peek] ne ")"} {
     lappend res [parse-expr]
     $ib skip-ws
   }
   set vec [MkVector $res]
   $vec mkconstant
-  if {[$ib first] ne ")"} {
-    ::error "Missing right paren. ([$ib first])."
+  if {[$ib peek] ne ")"} {
+    ::error "Missing right paren. ([$ib peek])."
   }
   $ib advance
   $ib skip-ws
@@ -1171,7 +1235,7 @@ proc ::constcl::read-vector-expr {} {
   read-eof $expr
   $expr mkconstant
   if {$c ne ")"} {
-    ::error "Missing right parenthesis (first=$c)."
+    ::error "Missing right paren. ($c)."
   }
   set c [readc]
   return $expr
@@ -1413,7 +1477,6 @@ proc ::constcl::read-identifier-expr {args} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ## Evaluation
 
@@ -2307,6 +2370,8 @@ proc ::constcl::expand-quasiquote {expr env} {
 }
 ```
 
+__expand-unless__
+
 `unless` is a conditional like `if`, with the differences that it takes a number
 of expressions and only executes them for a false outcome of `car $tail`.
 
@@ -2323,6 +2388,8 @@ proc ::constcl::expand-unless {expr env} {
   return [expand-quasiquote [parse $qq] $env]
 }
 ```
+
+__expand-when__
 
 `when` is a conditional like `if`, with the differences that it takes a number
 of expressions and only executes them for a true outcome of `car $tail`.
@@ -2350,6 +2417,8 @@ defines in the beginning of the list. It builds a double lambda expression with
 the variables and values, and the rest of the expressions from the original list
 as body.
 
+__resolve-local-defines__
+
 <table border=1><thead><tr><th colspan=2 align="left">resolve-local-defines</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -2365,6 +2434,8 @@ proc ::constcl::resolve-local-defines {exps} {
   return [make-recursive-lambda $v $a $rest]
 }
 ```
+
+__extract-from-defines__
 
 `extract-from-defines` visits every define in the given list of expressions and
 extracts either a variable name or a value, depending on the state of the _part_
@@ -2410,6 +2481,8 @@ proc ::constcl::extract-from-defines {exps part} {
 }
 ```
 
+__argument-list?__
+
 `argument-list?` accepts a Scheme formals list and rejects other values.
 
 <table border=1><thead><tr><th colspan=2 align="left">argument-list? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
@@ -2437,6 +2510,8 @@ proc ::constcl::argument-list? {val} {
 }
 ```
 
+__make-recursive-lambda__
+
 `make-recursive-lambda` builds the `letrec` structure.
 
 <table border=1><thead><tr><th colspan=2 align="left">make-recursive-lambda (internal)</th></tr></thead><tr><td>vars</td><td>a Lisp list of symbols</td></tr><tr><td>args</td><td>a Lisp list of expressions</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
@@ -2457,6 +2532,8 @@ proc ::constcl::make-recursive-lambda {vars args body} {
 }
 ```
 
+__make-temporaries__
+
 `make-temporaries` creates the symbols that will act as middlemen in
 transferring the values to the variables.
 
@@ -2474,6 +2551,8 @@ proc ::constcl::make-temporaries {vals} {
 }
 ```
 
+__gensym__
+
 `gensym` generates an unique symbol.
 
 <table border=1><thead><tr><th colspan=2 align="left">gensym (internal)</th></tr></thead><tr><td>prefix</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
@@ -2488,6 +2567,8 @@ proc ::constcl::gensym {prefix} {
   return [MkSymbol $s]
 }
 ```
+
+__append-b__
 
 `append-b` joins two lists together.
 
@@ -2511,6 +2592,8 @@ proc ::constcl::append-b {a b} {
 }
 ```
 
+__make-assignments__
+
 `make-assignments` creates the structure that holds the assignment statements.
 Later on, it will be joined to the body of the finished expression.
 
@@ -2530,6 +2613,8 @@ proc ::constcl::make-assignments {vars tmps} {
   return [cons #B $n]
 }
 ```
+
+__make-undefineds__
 
 Due to a mysterious bug, `make-undefineds` actually creates a list of NIL
 values instead of undefined values.
@@ -2567,7 +2652,6 @@ proc ::constcl::interaction-environment {} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ## Output
 
@@ -2660,7 +2744,6 @@ proc ::constcl::write-pair {handle pair} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 ## Built-in procedures
 
 ### Equivalence predicates
@@ -2676,10 +2759,12 @@ exception for numbers), `eqv` tests for value equality (except for booleans and
 procedures, where it tests for identity), and `equal` tests for whether the
 output strings are equal.
 
+__eq?__
+
 <table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
-reg eq? ::constcl::eq?
+reg eq?
 
 proc ::constcl::eq? {val1 val2} {
   if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
@@ -2715,6 +2800,8 @@ proc ::constcl::valeq {val1 val2} {
 ```
 
 
+__eqv?__
+
 ```
 reg eqv? ::constcl::eqv?
 
@@ -2743,6 +2830,8 @@ proc ::constcl::eqv? {val1 val2} {
 }
 ```
 
+__equal?__
+
 ```
 reg equal? ::constcl::equal?
 
@@ -2756,7 +2845,6 @@ proc ::constcl::equal? {val1 val2} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Numbers
 
@@ -2765,7 +2853,7 @@ library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
 
-**Number** class
+__Number__ class
 
 ```
 oo::class create ::constcl::Number {
@@ -2796,7 +2884,7 @@ interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 ```
 
-**number?**
+__number?__
 
 `number?` recognizes a number by object type, not by content.
 
@@ -2817,15 +2905,15 @@ proc ::constcl::number? {val} {
 ```
 
 
-**=**
+__=__
 
-**<**
+__<__
 
-**>**
+__>__
 
-**<=**
+__<=__
 
-**>=**
+__>=__
 
 The predicates `=`, `<`, `>`, `<=`, and `>=` are implemented.
 
@@ -2922,7 +3010,7 @@ proc ::constcl::>= {args} {
 ```
 
 
-**zero?**
+__zero?__
 
 The `zero?` predicate tests if a given number is equal to zero.
 
@@ -2938,13 +3026,13 @@ proc ::constcl::zero? {num} {
 ```
 
 
-**positive?**
+__positive?__
 
-**negative?**
+__negative?__
 
-**even?**
+__even?__
 
-**odd?**
+__odd?__
 
 The `positive?`/`negative?`/`even?`/`odd?` predicates test a number
 for those traits.
@@ -2991,9 +3079,9 @@ proc ::constcl::odd? {num} {
 ```
 
 
-**max**
+__max__
 
-**min**
+__min__
 
 The `max` function selects the largest number, and the `min` function
 selects the smallest number.
@@ -3035,13 +3123,13 @@ proc ::constcl::min {num args} {
 ```
 
 
-**+**
+__+__
 
 __*__
 
-**-**
+__-__
 
-**/**
+__/__
 
 The operators `+`, `*`, `-`, and `/` stand for the respective
 mathematical operations. They take a number of operands, but
@@ -3119,7 +3207,7 @@ proc ::constcl::/ {num args} {
 ```
 
 
-**abs**
+__abs__
 
 The `abs` function yields the absolute value of a number.
 
@@ -3139,7 +3227,7 @@ proc ::constcl::abs {num} {
 ```
 
 
-**quotient**
+__quotient__
 
 `quotient` calculates the quotient between two numbers.
 
@@ -3166,7 +3254,7 @@ proc ::constcl::quotient {num1 num2} {
 }
 ```
 
-**remainder**
+__remainder__
 
 `remainder` is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
@@ -3191,7 +3279,7 @@ proc ::constcl::remainder {num1 num2} {
 }
 ```
 
-**modulo**
+__modulo__
 
 <table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -3234,13 +3322,13 @@ proc ::constcl::denominator {q} {
 }
 ```
 
-**floor**
+__floor__
 
-**ceiling**
+__ceiling__
 
-**truncate**
+__truncate__
 
-**round**
+__round__
 
 `floor`, `ceiling`, `truncate`, and `round` are different methods for
 converting a real number to an integer.
@@ -3306,21 +3394,21 @@ proc ::constcl::rationalize {x y} {
 }
 ```
 
-**exp**
+__exp__
 
-**log**
+__log__
 
-**sin**
+__sin__
 
-**cos**
+__cos__
 
-**tan**
+__tan__
 
-**asin**
+__asin__
 
-**acos**
+__acos__
 
-**atan**
+__atan__
 
 The mathematical functions _e<sup>x</sup>_, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
@@ -3422,7 +3510,7 @@ proc ::constcl::atan {args} {
 ```
 
 
-**sqrt**
+__sqrt__
 
 `sqrt` calculates the square root.
 
@@ -3438,7 +3526,7 @@ proc ::constcl::sqrt {num} {
 ```
 
 
-**expt**
+__expt__
 
 `expt` calculates the _x_ to the power of _y_, or _x<sup>y</sup>_.
 
@@ -3503,7 +3591,7 @@ proc ::constcl::inexact->exact {z} {
 }
 ```
 
-**number->string**
+__number->string__
 
 The procedures `number->string` and `string->number` convert between
 number and string with optional radix conversion.
@@ -3524,13 +3612,22 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
+    check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+    }
     return [MkString [$num numval]]
   } else {
     lassign $args radix
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
-    check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
-    check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
+    check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+    }
+    check {number? $radix} {
+      NUMBER expected\n([pn] [$num show] [$radix show])
+    }
+    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    check {memv $radix $radices} {
+      Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])
+    }
     if {[$radix numval] == 10} {
       return [MkString [$num numval]]
     } else {
@@ -3539,7 +3636,8 @@ proc ::constcl::number->string {num args} {
   }
 }
 
-# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+# due to Richard Suchenwirth,
+# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -3555,7 +3653,7 @@ proc base {base number} {
 ```
 
 
-**string->number**
+__string->number__
 
 As with `number->string`, above.
 
@@ -3575,12 +3673,19 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
-    check {string? $str} {STRING expected\n([pn] [$str show])}
+    check {string? $str} {
+      STRING expected\n([pn] [$str show])
+    }
     return [MkNumber [$str value]]
   } else {
     lassign $args radix
-    check {string? $str} {STRING expected\n([pn] [$str show])}
-    check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
+    check {string? $str} {
+      STRING expected\n([pn] [$str show])
+    }
+    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    check {memv $radix $radices} {
+      Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])
+    }
     if {[$radix numval] == 10} {
       return [MkNumber [$str value]]
     } else {
@@ -3589,7 +3694,8 @@ proc ::constcl::string->number {str args} {
   }
 }
 
-# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+# due to Richard Suchenwirth,
+# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
@@ -3607,7 +3713,6 @@ proc frombase {base number} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Booleans
 
@@ -3616,7 +3721,7 @@ All predicates (procedures whose name end with -?) return
 boolean values. The conditional `if` operator considers all
 values except for `#f` to be true.
 
-**Boolean** class
+__Boolean__ class
 
 ```
 oo::class create ::constcl::Boolean {
@@ -3648,7 +3753,7 @@ proc ::constcl::MkBoolean {v} {
 ```
 
 
-**boolean?**
+__boolean?__
 
 The `boolean?` predicate recognizes a Boolean by type.
 
@@ -3669,7 +3774,7 @@ proc ::constcl::boolean? {val} {
 ```
 
 
-**not**
+__not__
 
 The only operation on booleans: `not`, or logical negation.
 
@@ -3695,13 +3800,12 @@ proc ::constcl::not {val} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Characters
 
 Characters are any Unicode printing character, and also space and newline space characters.
 
-**Char** class
+__Char__ class
 
 ```
 oo::class create ::constcl::Char {
@@ -3789,7 +3893,7 @@ proc ::constcl::MkChar {v} {
 }
 ```
 
-**char?**
+__char?__
 
 `char?` recognizes Char values by type.
 
@@ -3810,15 +3914,15 @@ proc ::constcl::char? {val} {
 ```
 
 
-**char=?**
+__char=?__
 
-**char<?**
+__char<?__
 
-**char>?**
+__char>?__
 
-**char<=?**
+__char<=?__
 
-**char>=?**
+__char>=?__
 
 `char=?`, `char<?`, `char>?`, `char<=?`, and `char>=?` compare character
 values. They only compare two characters at a time.
@@ -3900,15 +4004,15 @@ proc ::constcl::char>=? {char1 char2} {
 ```
 
 
-**char-ci=?**
+__char-ci=?__
 
-**char-ci<?**
+__char-ci<?__
 
-**char-ci>?**
+__char-ci>?__
 
-**char-ci<=?**
+__char-ci<=?__
 
-**char-ci>=?**
+__char-ci>=?__
 
 `char-ci=?`, `char-ci<?`, `char-ci>?`, `char-ci<=?`, and `char-ci>=?` compare character
 values in a case insensitive manner. They only compare two characters at a time.
@@ -3990,15 +4094,15 @@ proc ::constcl::char-ci>=? {char1 char2} {
 ```
 
 
-**char-alphabetic**
+__char-alphabetic__
 
-**char-numeric**
+__char-numeric__
 
-**char-whitespace**
+__char-whitespace__
 
-**char-upper-case**
+__char-upper-case__
 
-**char-lower-case**
+__char-lower-case__
 
 The predicates `char-alphabetic`, `char-numeric`, `char-whitespace`,
 `char-upper-case`, and `char-lower-case` test a character for these
@@ -4056,9 +4160,9 @@ proc ::constcl::char-lower-case? {char} {
 ```
 
 
-**char->integer**
+__char->integer__
 
-**integer->char**
+__integer->char__
 
 `char->integer` and `integer->char` convert between characters and their
 16-bit numeric codes.
@@ -4102,9 +4206,9 @@ proc ::constcl::integer->char {int} {
 ```
 
 
-**char-upcase**
+__char-upcase__
 
-**char-downcase**
+__char-downcase__
 
 `char-upcase` and `char-downcase` alter the case of a character.
 
@@ -4139,7 +4243,6 @@ proc ::constcl::char-downcase {char} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Control
 
@@ -4154,7 +4257,7 @@ When a `Procedure` object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
 goes to the closure environment.
 
-**Procedure** class
+__Procedure__ class
 
 ```
 catch { ::constcl::Procedure destroy }
@@ -4183,7 +4286,7 @@ oo::class create ::constcl::Procedure {
 interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
 ```
 
-**procedure?**
+__procedure?__
 
 <table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4204,7 +4307,7 @@ proc ::constcl::procedure? {val} {
 ```
 
 
-**apply**
+__apply__
 
 `apply` applies a procedure to a Lisp list of Lisp arguments.
 
@@ -4226,7 +4329,7 @@ proc ::constcl::apply {pr vals} {
 ```
 
 
-**map**
+__map__
 
 `map` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The Lisp list of the results of the invocations is 
@@ -4262,7 +4365,7 @@ proc ::constcl::map {pr args} {
 ```
 
 
-**for-each**
+__for-each__
 
 `for-each` iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
@@ -4331,7 +4434,6 @@ proc ::constcl::dynamic-wind {before thunk after} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Input and output
 
@@ -4632,13 +4734,12 @@ proc ::constcl::transcript-off {} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Pairs and lists
 
 List processing is another of Lisp's great strengths.
 
-**Pair** class
+__Pair__ class
 
 ```
 catch { ::constcl::Pair destroy }
@@ -4681,7 +4782,7 @@ oo::class create ::constcl::Pair {
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 ```
 
-**pair?**
+__pair?__
 
 <table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4699,7 +4800,7 @@ proc ::constcl::pair? {val} {
 }
 ```
 
-**show-pair**
+__show-pair__
 
 Helper procedure to make a string representation of a list.
 
@@ -4730,7 +4831,7 @@ proc ::constcl::show-pair {pair} {
 ```
 
 
-**cons**
+__cons__
 
 `cons` joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
@@ -4740,9 +4841,9 @@ a new value onto a list.
 Example:
 
 ```
-(cons 'a 'b)              ⇒  (a . b)
-(cons 'a nil)             ⇒  (a)
-(cons 'a (cons 'b nil))   ⇒  (a b)
+(cons 'a 'b)              =>  (a . b)
+(cons 'a nil)             =>  (a)
+(cons 'a (cons 'b nil))   =>  (a b)
 ```
 
 ![a small schematic to make it clearer](/images/consing.png)
@@ -4757,7 +4858,7 @@ proc ::constcl::cons {car cdr} {
 ```
 
 
-**car**
+__car__
 
 `car` gets the contents of the first cell in a pair.
 
@@ -4766,7 +4867,7 @@ proc ::constcl::cons {car cdr} {
 Example:
 
 ```
-(car '(a b))   ⇒  a
+(car '(a b))   =>  a
 ```
 
 ```
@@ -4778,7 +4879,7 @@ proc ::constcl::car {pair} {
 ```
 
 
-**cdr**
+__cdr__
 
 `cdr` gets the contents of the second cell in a pair.
 
@@ -4787,7 +4888,7 @@ proc ::constcl::car {pair} {
 Example:
 
 ```
-(cdr '(a b))   ⇒  (b)
+(cdr '(a b))   =>  (b)
 ```
 
 ```
@@ -4799,7 +4900,7 @@ proc ::constcl::cdr {pair} {
 ```
 
 
-**caar** to **cddddr**
+__caar__ to __cddddr__
 
 `car` and `cdr` can be combined to form 28 composite access
 operations.
@@ -4851,7 +4952,7 @@ foreach ads {
 }
 ```
 
-**set-car!**
+__set-car!__
 
 `set-car!` sets the contents of the first cell in a pair.
 
@@ -4860,7 +4961,7 @@ foreach ads {
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   ⇒  (x . b)
+(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   =>  (x . b)
 ```
 
 ```
@@ -4872,7 +4973,7 @@ proc ::constcl::set-car! {pair val} {
 ```
 
 
-**set-cdr!**
+__set-cdr!__
 
 `set-cdr!` sets the contents of the second cell in a pair.
 
@@ -4881,7 +4982,7 @@ proc ::constcl::set-car! {pair val} {
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   ⇒  (a . x)
+(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   =>  (a . x)
 ```
 
 ```
@@ -4893,7 +4994,7 @@ proc ::constcl::set-cdr! {pair val} {
 ```
 
 
-**list?**
+__list?__
 
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
@@ -4929,7 +5030,7 @@ proc ::constcl::listp {pair} {
 ```
 
 
-**list**
+__list__
 
 `list` constructs a Lisp list from a number of values.
 
@@ -4938,7 +5039,7 @@ proc ::constcl::listp {pair} {
 Example:
 
 ```
-(list 1 2 3)   ⇒  (1 2 3)
+(list 1 2 3)   =>  (1 2 3)
 ```
 
 ```
@@ -4958,7 +5059,7 @@ proc ::constcl::list {args} {
 ```
 
 
-**length**
+__length__
 
 `length` reports the length of a Lisp list.
 
@@ -4967,7 +5068,7 @@ proc ::constcl::list {args} {
 Example:
 
 ```
-(length '(a b c d))   ⇒  4
+(length '(a b c d))   =>  4
 ```
 
 ```
@@ -4992,14 +5093,14 @@ proc ::constcl::length-helper {pair} {
 ```
 
 
-**append**
+__append__
 
 `append` joins lists together.
 
 Example:
 
 ```
-(append '(a b) '(c d))   ⇒  (a b c d)
+(append '(a b) '(c d))   =>  (a b c d)
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
@@ -5032,7 +5133,7 @@ proc ::constcl::copy-list {pair next} {
 ```
 
 
-**reverse**
+__reverse__
 
 `reverse` produces a reversed copy of a Lisp list.
 
@@ -5041,7 +5142,7 @@ proc ::constcl::copy-list {pair next} {
 Example:
 
 ```
-(reverse '(a b c))   ⇒  (c b a)
+(reverse '(a b c))   =>  (c b a)
 ```
 
 ```
@@ -5053,7 +5154,7 @@ proc ::constcl::reverse {vals} {
 ```
 
 
-**list-tail**
+__list-tail__
 
 Given a list index, `list-tail` yields the sublist starting from that index.
 
@@ -5062,7 +5163,7 @@ Given a list index, `list-tail` yields the sublist starting from that index.
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   ⇒  (d e f)
+(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   =>  (d e f)
 ```
 
 ```
@@ -5078,7 +5179,7 @@ proc ::constcl::list-tail {vals k} {
 ```
 
 
-**list-ref**
+__list-ref__
 
 `list-ref` yields the list item at a given index.
 
@@ -5087,7 +5188,7 @@ proc ::constcl::list-tail {vals k} {
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   ⇒  d
+(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   =>  d
 ```
 
 ```
@@ -5099,11 +5200,11 @@ proc ::constcl::list-ref {vals k} {
 ```
 
 
-**memq**
+__memq__
 
-**memv**
+__memv__
 
-**member**
+__member__
 
 `memq`, `memv`, and `member` return the sublist starting with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
@@ -5114,7 +5215,7 @@ respectively, for the comparison.
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   ⇒  (d e f)
+(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   =>  (d e f)
 ```
 
 ```
@@ -5169,11 +5270,11 @@ proc ::constcl::member-proc {epred val1 val2} {
 }
 ```
 
-**assq**
+__assq__
 
-**assv**
+__assv__
 
-**assoc**
+__assoc__
 
 `assq`, `assv`, and `assoc` return the associative item marked with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
@@ -5184,7 +5285,7 @@ Example:
 
 ```
 (define e '((a 1) (b 2) (c 3)))
-(assq 'a e)                       ⇒ (a 1)
+(assq 'a e)                       => (a 1)
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
@@ -5242,7 +5343,6 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 ### Strings
 
@@ -5769,7 +5869,6 @@ proc ::constcl::string-fill! {str char} {
 ```
 
 
-# vim: ft=tcl tw=80
 
 ### Symbols
 
@@ -5884,7 +5983,6 @@ proc ::constcl::string->symbol {str} {
 }
 ```
 
-# vim: ft=tcl tw=80
 
 ### Vectors
 
@@ -6164,7 +6262,6 @@ proc ::constcl::vector-fill! {vec fill} {
 ```
 
 
-# vim: ft=tcl tw=80
 
 ## Identifier validation
 
@@ -6217,7 +6314,6 @@ proc ::constcl::varcheck {sym} {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 ## Initialization
 
 Initialize the memory space for vector contents.
@@ -6300,7 +6396,7 @@ In this interpreter, `nil` refers to the empty list.
 reg nil #NIL
 ```
 
-**atom?**
+__atom?__
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
 
@@ -6319,7 +6415,6 @@ proc ::constcl::atom? {val} {
 ```
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 
 ## The REPL
@@ -6361,16 +6456,15 @@ string until given a blank input. Given non-blank input, it parses and evaluates
 the string, printing the resulting value.
 
 ```
-proc ::constcl::repl {{prompt "ConsTcl> "}} {
-    set str [input $prompt]
+proc ::repl {{prompt "ConsTcl> "}} {
+    set str [::constcl::input $prompt]
     while {$str ne ""} {
-        write [eval [parse $str]]
-        set str [input $prompt]
+        pep $str
+        set str [::constcl::input $prompt]
     }
 }
 ```
 
-# vim: ft=tcl tw=80
 
 ## Environment class and objects
 
@@ -6440,7 +6534,6 @@ oo::class create ::constcl::Environment {
 }
 ```
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 On startup, two `Environment` objects called `null_env` (the null environment, not the same
 as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
@@ -6516,7 +6609,6 @@ After the call, we are back to the first state again.
 
 
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 if no {
 
 ## Lookup tables
@@ -6644,7 +6736,6 @@ unchanged if the key isn't present):
 
 }
 
-# vim: ft=tcl tw=80
 ## A Scheme base
 
 ```

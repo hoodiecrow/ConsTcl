@@ -4,7 +4,7 @@ MD(
 
 List processing is another of Lisp's great strengths.
 
-**Pair** class
+__Pair__ class
 MD)
 
 CB
@@ -49,7 +49,7 @@ interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 CB
 
 MD(
-**pair?**
+__pair?__
 MD)
 
 PR(
@@ -71,7 +71,7 @@ proc ::constcl::pair? {val} {
 CB
 
 MD(
-**show-pair**
+__show-pair__
 
 Helper procedure to make a string representation of a list.
 MD)
@@ -138,7 +138,7 @@ TT(
 TT)
 
 MD(
-**cons**
+__cons__
 
 `cons` joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
@@ -152,9 +152,9 @@ MD(
 Example:
 
 ```
-(cons 'a 'b)              ⇒  (a . b)
-(cons 'a nil)             ⇒  (a)
-(cons 'a (cons 'b nil))   ⇒  (a b)
+(cons 'a 'b)              =>  (a . b)
+(cons 'a nil)             =>  (a)
+(cons 'a (cons 'b nil))   =>  (a b)
 ```
 
 ![a small schematic to make it clearer](/images/consing.png)
@@ -182,7 +182,7 @@ TT(
 TT)
 
 MD(
-**car**
+__car__
 
 `car` gets the contents of the first cell in a pair.
 MD)
@@ -195,7 +195,7 @@ MD(
 Example:
 
 ```
-(car '(a b))   ⇒  a
+(car '(a b))   =>  a
 ```
 MD)
 
@@ -222,7 +222,7 @@ TT(
 TT)
 
 MD(
-**cdr**
+__cdr__
 
 `cdr` gets the contents of the second cell in a pair.
 MD)
@@ -235,7 +235,7 @@ MD(
 Example:
 
 ```
-(cdr '(a b))   ⇒  (b)
+(cdr '(a b))   =>  (b)
 ```
 MD)
 
@@ -261,7 +261,7 @@ TT(
 TT)
 
 MD(
-**caar** to **cddddr**
+__caar__ to __cddddr__
 
 `car` and `cdr` can be combined to form 28 composite access
 operations.
@@ -315,7 +315,7 @@ foreach ads {
 CB
 
 MD(
-**set-car!**
+__set-car!__
 
 `set-car!` sets the contents of the first cell in a pair.
 MD)
@@ -328,7 +328,7 @@ MD(
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   ⇒  (x . b)
+(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   =>  (x . b)
 ```
 MD)
 
@@ -355,7 +355,7 @@ TT(
 TT)
 
 MD(
-**set-cdr!**
+__set-cdr!__
 
 `set-cdr!` sets the contents of the second cell in a pair.
 MD)
@@ -368,7 +368,7 @@ MD(
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   ⇒  (a . x)
+(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   =>  (a . x)
 ```
 MD)
 
@@ -395,7 +395,7 @@ TT(
 TT)
 
 MD(
-**list?**
+__list?__
 
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
@@ -452,7 +452,7 @@ TT(
 TT)
 
 MD(
-**list**
+__list__
 
 `list` constructs a Lisp list from a number of values.
 MD)
@@ -465,7 +465,7 @@ MD(
 Example:
 
 ```
-(list 1 2 3)   ⇒  (1 2 3)
+(list 1 2 3)   =>  (1 2 3)
 ```
 MD)
 
@@ -495,7 +495,7 @@ TT(
 TT)
 
 MD(
-**length**
+__length__
 
 `length` reports the length of a Lisp list.
 MD)
@@ -508,7 +508,7 @@ MD(
 Example:
 
 ```
-(length '(a b c d))   ⇒  4
+(length '(a b c d))   =>  4
 ```
 MD)
 
@@ -546,7 +546,7 @@ TT(
 TT)
 
 MD(
-**append**
+__append__
 
 `append` joins lists together.
 MD)
@@ -555,7 +555,7 @@ MD(
 Example:
 
 ```
-(append '(a b) '(c d))   ⇒  (a b c d)
+(append '(a b) '(c d))   =>  (a b c d)
 ```
 MD)
 
@@ -605,7 +605,7 @@ TT(
 TT)
 
 MD(
-**reverse**
+__reverse__
 
 `reverse` produces a reversed copy of a Lisp list.
 MD)
@@ -618,7 +618,7 @@ MD(
 Example:
 
 ```
-(reverse '(a b c))   ⇒  (c b a)
+(reverse '(a b c))   =>  (c b a)
 ```
 MD)
 
@@ -640,7 +640,7 @@ TT(
 TT)
 
 MD(
-**list-tail**
+__list-tail__
 
 Given a list index, `list-tail` yields the sublist starting from that index.
 MD)
@@ -653,7 +653,7 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   ⇒  (d e f)
+(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   =>  (d e f)
 ```
 MD)
 
@@ -678,7 +678,7 @@ TT(
 TT)
 
 MD(
-**list-ref**
+__list-ref__
 
 `list-ref` yields the list item at a given index.
 MD)
@@ -691,7 +691,7 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   ⇒  d
+(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   =>  d
 ```
 MD)
 
@@ -712,11 +712,11 @@ TT(
 TT)
 
 MD(
-**memq**
+__memq__
 
-**memv**
+__memv__
 
-**member**
+__member__
 
 `memq`, `memv`, and `member` return the sublist starting with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
@@ -731,7 +731,7 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   ⇒  (d e f)
+(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   =>  (d e f)
 ```
 MD)
 
@@ -810,11 +810,11 @@ proc ::constcl::member-proc {epred val1 val2} {
 CB
 
 MD(
-**assq**
+__assq__
 
-**assv**
+__assv__
 
-**assoc**
+__assoc__
 
 `assq`, `assv`, and `assoc` return the associative item marked with a given
 item, or `#f` if there is none. They use `eq?`, `eqv?`, and `equal?`, 
@@ -825,7 +825,7 @@ Example:
 
 ```
 (define e '((a 1) (b 2) (c 3)))
-(assq 'a e)                       ⇒ (a 1)
+(assq 'a e)                       => (a 1)
 ```
 MD)
 

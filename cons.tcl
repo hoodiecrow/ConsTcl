@@ -89,7 +89,7 @@ reg nil #NIL
 CB
 
 MD(
-**atom?**
+__atom?__
 
 `atom?` recognizes an atom by checking for membership in one of the atomic types.
 MD)

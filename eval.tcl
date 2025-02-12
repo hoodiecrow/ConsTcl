@@ -1004,6 +1004,8 @@ proc ::constcl::expand-quasiquote {expr env} {
 CB
 
 MD(
+__expand-unless__
+
 `unless` is a conditional like `if`, with the differences that it takes a number
 of expressions and only executes them for a false outcome of `car $tail`.
 MD)
@@ -1025,6 +1027,8 @@ proc ::constcl::expand-unless {expr env} {
 CB
 
 MD(
+__expand-when__
+
 `when` is a conditional like `if`, with the differences that it takes a number
 of expressions and only executes them for a true outcome of `car $tail`.
 MD)
@@ -1054,6 +1058,8 @@ form. It takes a list of expressions and extracts variables and values from the
 defines in the beginning of the list. It builds a double lambda expression with
 the variables and values, and the rest of the expressions from the original list
 as body.
+
+__resolve-local-defines__
 MD)
 
 PR(
@@ -1075,6 +1081,8 @@ proc ::constcl::resolve-local-defines {exps} {
 CB
 
 MD(
+__extract-from-defines__
+
 `extract-from-defines` visits every define in the given list of expressions and
 extracts either a variable name or a value, depending on the state of the _part_
 flag, from each one of them. A Tcl list of 1) the resulting list of names or
@@ -1123,6 +1131,8 @@ proc ::constcl::extract-from-defines {exps part} {
 CB
 
 MD(
+__argument-list?__
+
 `argument-list?` accepts a Scheme formals list and rejects other values.
 MD)
 
@@ -1154,6 +1164,8 @@ proc ::constcl::argument-list? {val} {
 CB
 
 MD(
+__make-recursive-lambda__
+
 `make-recursive-lambda` builds the `letrec` structure.
 MD)
 
@@ -1178,6 +1190,8 @@ proc ::constcl::make-recursive-lambda {vars args body} {
 CB
 
 MD(
+__make-temporaries__
+
 `make-temporaries` creates the symbols that will act as middlemen in
 transferring the values to the variables.
 MD)
@@ -1199,6 +1213,8 @@ proc ::constcl::make-temporaries {vals} {
 CB
 
 MD(
+__gensym__
+
 `gensym` generates an unique symbol.
 MD)
 
@@ -1218,6 +1234,8 @@ proc ::constcl::gensym {prefix} {
 CB
 
 MD(
+__append-b__
+
 `append-b` joins two lists together.
 MD)
 
@@ -1244,6 +1262,8 @@ proc ::constcl::append-b {a b} {
 CB
 
 MD(
+__make-assignments__
+
 `make-assignments` creates the structure that holds the assignment statements.
 Later on, it will be joined to the body of the finished expression.
 MD)
@@ -1268,6 +1288,8 @@ proc ::constcl::make-assignments {vars tmps} {
 CB
 
 MD(
+__make-undefineds__
+
 Due to a mysterious bug, `make-undefineds` actually creates a list of NIL
 values instead of undefined values.
 MD)

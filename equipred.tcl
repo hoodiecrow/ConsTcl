@@ -13,6 +13,8 @@ Of the three equivalence predicates, `eq` generally tests for identity (with
 exception for numbers), `eqv` tests for value equality (except for booleans and
 procedures, where it tests for identity), and `equal` tests for whether the
 output strings are equal.
+
+__eq?__
 MD)
 
 PR(
@@ -20,7 +22,7 @@ eq?, eqv?, equal? (public);val1 val val2 val -> bool
 PR)
 
 CB
-reg eq? ::constcl::eq?
+reg eq?
 
 proc ::constcl::eq? {val1 val2} {
   if {[typeeq boolean? $val1 $val2] && $val1 eq $val2} {
@@ -65,6 +67,10 @@ TT(
 } -output "#t\n"
 TT)
 
+MD(
+__eqv?__
+MD)
+
 CB
 reg eqv? ::constcl::eqv?
 
@@ -92,6 +98,10 @@ proc ::constcl::eqv? {val1 val2} {
   }
 }
 CB
+
+MD(
+__equal?__
+MD)
 
 CB
 reg equal? ::constcl::equal?

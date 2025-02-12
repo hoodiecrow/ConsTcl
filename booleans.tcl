@@ -7,7 +7,7 @@ All predicates (procedures whose name end with -?) return
 boolean values. The conditional `if` operator considers all
 values except for `#f` to be true.
 
-**Boolean** class
+__Boolean__ class
 MD)
 
 CB
@@ -56,7 +56,7 @@ TT(
 TT)
 
 MD(
-**boolean?**
+__boolean?__
 
 The `boolean?` predicate recognizes a Boolean by type.
 MD)
@@ -96,7 +96,7 @@ TT(
 TT)
 
 MD(
-**not**
+__not__
 
 The only operation on booleans: `not`, or logical negation.
 MD)

@@ -6,21 +6,15 @@ The first thing an interpreter must be able to do is to take in the user's code
 and data input, whether from the keyboard or from a source file.  `read`
 represents the interpreter's main input facility. As a complement, a similar set
 of procedures that read input from an input buffer exists (the `parse-`
-procedures). The main set (the `read-` procedures) read from standard input.
+procedures). The main set (the `read-` procedures) read from standard input,
+or--if a port is provided--from the port's channel.
 MD)
 
 MD(
 __IB__ class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
-characters to be read. The `fill` method fills the buffer and sets the first
-character in the peek position.  The `advance` method consumes one character
-from the buffer. `first` peeks at the next character to be read. `skip-ws`
-advances past whitespace and comments.  `unget` backs up one position and sets a
-given character in the peek position. The `find` method looks past whitespace
-and comments to find a given character. It returns Tcl truth if it is found.  Or
-it gets the hose again.
-
+characters to be read.
 MD)
 
 CB
@@ -30,55 +24,104 @@ oo::class create ::constcl::IB {
   variable peekc buffer
   constructor {str} {
     set peekc {}
-    set buffer $str
-    my advance
+    my fill $str
   }
-  method advance {} {
-    if {$buffer eq {}} {
-      set peekc {}
-    } else {
-      set peekc [::string index $buffer 0]
-      set buffer [::string range $buffer 1 end]
-    }
+}
+CB
+
+MD(
+The `fill` method fills the buffer and sets the first character in the peek position.  
+MD)
+
+CB
+oo::define ::constcl::IB method fill {str} {
+  set buffer $str
+  my advance
+}
+CB
+
+MD(
+The `advance` method consumes one character from the buffer. 
+MD)
+
+CB
+oo::define ::constcl::IB method advance {} {
+  if {$buffer eq {}} {
+    set peekc {}
+  } else {
+    set peekc [::string index $buffer 0]
+    set buffer [::string range $buffer 1 end]
   }
-  method first {} {
-    return $peekc
-  }
-  method unget {char} {
-    set buffer $peekc$buffer
-    set peekc $char
-  }
-  method find {char} {
-    if {[::string is space -strict $peekc]} {
-      for {set cp 0} {$cp < [::string length $buffer]} {incr cp} {
-        if {![::string is space -strict [::string index $buffer $cp]]} {
-          break
-        }
+}
+CB
+
+MD(
+`peek` peeks at the next character to be read. 
+MD)
+
+CB
+oo::define ::constcl::IB method peek {} {
+  return $peekc
+}
+CB
+
+MD(
+`unget` backs up one position and sets a given character in the peek position. 
+MD)
+
+CB
+oo::define ::constcl::IB method unget {char} {
+  set buffer $peekc$buffer
+  set peekc $char
+}
+CB
+
+MD(
+The `find` method looks past whitespace to find a given character. It returns
+Tcl truth if it is found.  Or it gets the hose again. 
+MD)
+
+CB
+oo::define ::constcl::IB method find {char} {
+  if {[::string is space -strict $peekc]} {
+    for {set cp 0} \
+        {$cp < [::string length $buffer]} \
+        {incr cp} {
+      if {![::string is space -strict [
+        ::string index $buffer $cp]]} {
+        break
       }
-      return [expr {[::string index $buffer $cp] eq $char}]
-    } else {
-      return [expr {$peekc eq $char}]
     }
+    return [expr {[
+      ::string index $buffer $cp] eq $char}]
+  } else {
+    return [expr {$peekc eq $char}]
   }
-  method skip-ws {} {
-    while true {
-      switch -regexp $peekc {
-        {[[:space:]]} {
+}
+CB
+
+MD(
+`skip-ws` advances past whitespace and comments.  
+MD)
+
+CB
+oo::define ::constcl::IB method skip-ws {} {
+  while true {
+    switch -regexp $peekc {
+      {[[:space:]]} {
+        my advance
+      }
+      {;} {
+        while {$peekc ne "\n" && $peekc ne {}} {
           my advance
         }
-        {;} {
-          while {$peekc ne "\n" && $peekc ne {}}  {
-            my advance
-          }
-        }
-        default {
-          return
-        }
+      }
+      default {
+        return
       }
     }
   }
 }
-
 CB
 
 MD(
@@ -177,7 +220,7 @@ CB
 proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
-  switch -regexp [$ib first] {
+  switch -regexp [$ib peek] {
     {^$}          { return #NONE}
     {\"}          { return [parse-string-expr] }
     {\#}          { return [parse-sharp] }
@@ -191,7 +234,7 @@ proc ::constcl::parse-expr {} {
     {\d}          { return [parse-number-expr] }
     {[[:graph:]]} { return [parse-identifier-expr] }
     default {
-      ::error "unexpected character ([$ib first])"
+      ::error "unexpected character ([$ib peek])"
     }
   }
 }
@@ -214,17 +257,17 @@ proc ::constcl::parse-string-expr {} {
   upvar ib ib
   set str {}
   $ib advance
-  while {[$ib first] ne "\"" && [$ib first] ne {}} {
-    set c [$ib first]
+  while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
+    set c [$ib peek]
     if {$c eq "\\"} {
       $ib advance
-      ::append str [$ib first]
+      ::append str [$ib peek]
     } else {
       ::append str $c
     }
     $ib advance
   }
-  if {[$ib first] ne "\""} {
+  if {[$ib peek] ne "\""} {
     ::error "no ending double quote"
   }
   $ib advance
@@ -264,13 +307,13 @@ CB
 proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
-  switch [$ib first] {
+  switch [$ib peek] {
     (    { return [parse-vector-expr] }
     t    { $ib advance ; $ib skip-ws ; return #t }
     f    { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
-      ::error "Illegal #-literal: #[$ib first]"
+      ::error "Illegal #-literal: #[$ib peek]"
     }
   }
 }
@@ -373,13 +416,13 @@ proc ::constcl::parse-pair-expr {char} {
   $ib skip-ws
   set expr [parse-pair $char]
   $ib skip-ws
-  if {[$ib first] ne $char} {
+  if {[$ib peek] ne $char} {
     if {$char eq ")"} {
       ::error \
-        "Missing right paren. ([$ib first])."
+        "Missing right paren. ([$ib peek])."
     } else {
       ::error \
-        "Missing right bracket ([$ib first])."
+        "Missing right bracket ([$ib peek])."
     }
   }
   $ib advance
@@ -448,9 +491,9 @@ PR)
 CB
 proc ::constcl::parse-plus-minus {} {
   upvar ib ib
-  set c [$ib first]
+  set c [$ib peek]
   $ib advance
-  if {[::string is digit -strict [$ib first]]} {
+  if {[::string is digit -strict [$ib peek]]} {
     $ib unget $c
     return [::constcl::parse-number-expr]
   } else {
@@ -482,7 +525,7 @@ proc ::constcl::parse-unquoted-expr {} {
   upvar ib ib
   $ib advance
   set symbol "unquote"
-  if {[$ib first] eq "@"} {
+  if {[$ib peek] eq "@"} {
     set symbol "unquote-splicing"
     $ib advance
   }
@@ -562,9 +605,9 @@ PR)
 CB
 proc ::constcl::parse-number-expr {} {
   upvar ib ib
-  while {[interspace [$ib first]] ne "#t" && \
-    [$ib first] ni {) \]}} {
-      ::append num [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && \
+    [$ib peek] ni {) \]}} {
+      ::append num [$ib peek]
       $ib advance
     }
     $ib skip-ws
@@ -626,8 +669,8 @@ PR)
 CB
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) \]}} {
-    ::append name [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
     $ib advance
   }
   $ib skip-ws
@@ -689,8 +732,8 @@ CB
 proc ::constcl::parse-character-expr {} {
   upvar ib ib
   set name "#"
-  while {[interspace [$ib first]] ne "#t" && [$ib first] ni {) ]}} {
-    ::append name [$ib first]
+  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) ]}} {
+    ::append name [$ib peek]
     $ib advance
   }
   check {character-check $name} {
@@ -741,14 +784,14 @@ proc ::constcl::parse-vector-expr {} {
   $ib advance
   $ib skip-ws
   set res {}
-  while {[$ib first] ne {} && [$ib first] ne ")"} {
+  while {[$ib peek] ne {} && [$ib peek] ne ")"} {
     lappend res [parse-expr]
     $ib skip-ws
   }
   set vec [MkVector $res]
   $vec mkconstant
-  if {[$ib first] ne ")"} {
-    ::error "Missing right paren. ([$ib first])."
+  if {[$ib peek] ne ")"} {
+    ::error "Missing right paren. ([$ib peek])."
   }
   $ib advance
   $ib skip-ws
@@ -1195,7 +1238,7 @@ proc ::constcl::read-vector-expr {} {
   read-eof $expr
   $expr mkconstant
   if {$c ne ")"} {
-    ::error "Missing right parenthesis (first=$c)."
+    ::error "Missing right paren. ($c)."
   }
   set c [readc]
   return $expr

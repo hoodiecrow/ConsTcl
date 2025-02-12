@@ -45,11 +45,11 @@ the string, printing the resulting value.
 MD)
 
 CB
-proc ::constcl::repl {{prompt "ConsTcl> "}} {
-    set str [input $prompt]
+proc ::repl {{prompt "ConsTcl> "}} {
+    set str [::constcl::input $prompt]
     while {$str ne ""} {
-        write [eval [parse $str]]
-        set str [input $prompt]
+        pep $str
+        set str [::constcl::input $prompt]
     }
 }
 CB

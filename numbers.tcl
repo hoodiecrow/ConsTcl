@@ -7,7 +7,7 @@ library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
 
-**Number** class
+__Number__ class
 MD)
 
 CB
@@ -40,7 +40,7 @@ interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 CB
 
 MD(
-**number?**
+__number?__
 
 `number?` recognizes a number by object type, not by content.
 MD)
@@ -76,15 +76,15 @@ TT(
 TT)
 
 MD(
-**=**
+__=__
 
-**<**
+__<__
 
-**>**
+__>__
 
-**<=**
+__<=__
 
-**>=**
+__>=__
 
 The predicates `=`, `<`, `>`, `<=`, and `>=` are implemented.
 
@@ -220,7 +220,7 @@ TT(
 TT)
 
 MD(
-**zero?**
+__zero?__
 
 The `zero?` predicate tests if a given number is equal to zero.
 MD)
@@ -247,13 +247,13 @@ TT(
 TT)
 
 MD(
-**positive?**
+__positive?__
 
-**negative?**
+__negative?__
 
-**even?**
+__even?__
 
-**odd?**
+__odd?__
 
 The `positive?`/`negative?`/`even?`/`odd?` predicates test a number
 for those traits.
@@ -332,9 +332,9 @@ TT(
 TT)
 
 MD(
-**max**
+__max__
 
-**min**
+__min__
 
 The `max` function selects the largest number, and the `min` function
 selects the smallest number.
@@ -396,13 +396,13 @@ TT(
 TT)
 
 MD(
-**+**
+__+__
 
 __*__
 
-**-**
+__-__
 
-**/**
+__/__
 
 The operators `+`, `*`, `-`, and `/` stand for the respective
 mathematical operations. They take a number of operands, but
@@ -530,7 +530,7 @@ TT(
 TT)
 
 MD(
-**abs**
+__abs__
 
 The `abs` function yields the absolute value of a number.
 MD)
@@ -564,7 +564,7 @@ TT(
 TT)
 
 MD(
-**quotient**
+__quotient__
 
 `quotient` calculates the quotient between two numbers.
 MD)
@@ -597,7 +597,7 @@ proc ::constcl::quotient {num1 num2} {
 CB
 
 MD(
-**remainder**
+__remainder__
 
 `remainder` is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
@@ -628,7 +628,7 @@ proc ::constcl::remainder {num1 num2} {
 CB
 
 MD(
-**modulo**
+__modulo__
 MD)
 
 PR(
@@ -692,13 +692,13 @@ proc ::constcl::denominator {q} {
 CB
 
 MD(
-**floor**
+__floor__
 
-**ceiling**
+__ceiling__
 
-**truncate**
+__truncate__
 
-**round**
+__round__
 
 `floor`, `ceiling`, `truncate`, and `round` are different methods for
 converting a real number to an integer.
@@ -807,21 +807,21 @@ proc ::constcl::rationalize {x y} {
 CB
 
 MD(
-**exp**
+__exp__
 
-**log**
+__log__
 
-**sin**
+__sin__
 
-**cos**
+__cos__
 
-**tan**
+__tan__
 
-**asin**
+__asin__
 
-**acos**
+__acos__
 
-**atan**
+__atan__
 
 The mathematical functions _e<sup>x</sup>_, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
@@ -966,7 +966,7 @@ TT(
 TT)
 
 MD(
-**sqrt**
+__sqrt__
 
 `sqrt` calculates the square root.
 MD)
@@ -993,7 +993,7 @@ TT(
 TT)
 
 MD(
-**expt**
+__expt__
 
 `expt` calculates the _x_ to the power of _y_, or _x<sup>y</sup>_.
 MD)
@@ -1069,7 +1069,7 @@ proc ::constcl::inexact->exact {z} {
 CB
 
 MD(
-**number->string**
+__number->string__
 
 The procedures `number->string` and `string->number` convert between
 number and string with optional radix conversion.
@@ -1095,13 +1095,22 @@ reg number->string ::constcl::number->string
 
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
+    check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+    }
     return [MkString [$num numval]]
   } else {
     lassign $args radix
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
-    check {number? $radix} {NUMBER expected\n([pn] [$num show] [$radix show])}
-    check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])}
+    check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+    }
+    check {number? $radix} {
+      NUMBER expected\n([pn] [$num show] [$radix show])
+    }
+    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    check {memv $radix $radices} {
+      Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])
+    }
     if {[$radix numval] == 10} {
       return [MkString [$num numval]]
     } else {
@@ -1110,7 +1119,8 @@ proc ::constcl::number->string {num args} {
   }
 }
 
-# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+# due to Richard Suchenwirth,
+# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -1141,7 +1151,7 @@ TT(
 TT)
 
 MD(
-**string->number**
+__string->number__
 
 As with `number->string`, above.
 MD)
@@ -1166,12 +1176,19 @@ reg string->number ::constcl::string->number
 
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
-    check {string? $str} {STRING expected\n([pn] [$str show])}
+    check {string? $str} {
+      STRING expected\n([pn] [$str show])
+    }
     return [MkNumber [$str value]]
   } else {
     lassign $args radix
-    check {string? $str} {STRING expected\n([pn] [$str show])}
-    check {memv $radix [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]} {Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])}
+    check {string? $str} {
+      STRING expected\n([pn] [$str show])
+    }
+    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    check {memv $radix $radices} {
+      Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])
+    }
     if {[$radix numval] == 10} {
       return [MkNumber [$str value]]
     } else {
@@ -1180,7 +1197,8 @@ proc ::constcl::string->number {str args} {
   }
 }
 
-# due to Richard Suchenwirth, <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+# due to Richard Suchenwirth,
+# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
