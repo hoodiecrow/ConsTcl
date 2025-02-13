@@ -81,23 +81,29 @@ will show up a lot in the test cases.
 
 `reg` registers selected built-in procedures in the standard library.
 
+<table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>key</td><td>a Tcl string</td></tr><tr><td>?val?</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 proc ::reg {key args} {
-  if {[llength $args] == 0} {
-    set val ::constcl::$key
-  } else {
+  if {[llength $args]} {
     lassign $args val
+  } else {
+    set val ::constcl::$key
   }
   dict set ::constcl::defreg $key $val
+  return
 }
 ```
 
 `regmacro` registers macro names in the macro list, so the evaluator knows what
 to expand.
 
+<table border=1><thead><tr><th colspan=2 align="left">regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 proc ::regmacro {name} {
   lappend ::constcl::macrolist $name
+  return
 }
 ```
 
@@ -425,6 +431,25 @@ proc ::constcl::check {cond msg} {
         ::list subst [
           ::string trim $msg]]]
   }
+}
+```
+
+### The atom? predicate
+
+`atom?` recognizes an atom by checking for membership in one of the atomic types.
+
+<table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg atom? ::constcl::atom?
+
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string char boolean vector port} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
 }
 ```
 
@@ -2748,7 +2773,7 @@ proc ::constcl::make-undefineds {vals} {
 
 ## Output
 
-**write**
+__write__
 
 The third member in the great triad is `write`. As long as the object
 given to it isn't `#NONE`, it passes it to `write-value` and prints
@@ -2775,7 +2800,7 @@ proc ::constcl::write {val args} {
 }
 ```
 
-**write-value**
+__write-value__
 
 `write-value` simply calls an object's `write` method, letting the object
 write itself.
@@ -2789,7 +2814,7 @@ proc ::constcl::write-value {handle val} {
 }
 ```
 
-**display**
+__display__
 
 The `display` procedure is like `write` but doesn't print a newline.
 
@@ -2814,7 +2839,7 @@ proc ::constcl::display {val args} {
 }
 ```
 
-**write-pair**
+__write-pair__
 
 The `write-pair` procedure prints a Pair object.
 
@@ -2848,11 +2873,11 @@ proc ::constcl::write-pair {handle pair} {
 
 ### Equivalence predicates
 
-**eq**
+__eq__
 
-**eqv**
+__eqv__
 
-**equal**
+__equal__
 
 Of the three equivalence predicates, `eq` generally tests for identity (with
 exception for numbers), `eqv` tests for value equality (except for booleans and
@@ -3803,8 +3828,8 @@ proc ::constcl::number->string {num args} {
   }
 }
 
-# due to Richard Suchenwirth,
-# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+ # due to Richard Suchenwirth,
+ # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -3861,8 +3886,8 @@ proc ::constcl::string->number {str args} {
   }
 }
 
-# due to Richard Suchenwirth,
-# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+ # due to Richard Suchenwirth,
+ # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
@@ -4964,12 +4989,16 @@ oo::class create ::constcl::Pair {
     set cdr
   }
   method set-car! {val} {
-    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
     set car $val
     self
   }
   method set-cdr! {val} {
-    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
     set cdr $val
     self
   }
@@ -5300,7 +5329,9 @@ Example:
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-  check {list? $pair} {LIST expected\n([pn] lst)}
+  check {list? $pair} {
+    LIST expected\n([pn] lst)
+  }
   MkNumber [length-helper $pair]
 }
 ```
@@ -5482,7 +5513,9 @@ proc ::constcl::member-proc {epred val1 val2} {
     eqv? { set name "memv" }
     equal? { set name "member" }
   }
-  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
   if {[null? $val2] ne "#f"} {
     return #f
   } elseif {[pair? $val2] ne "#f"} {
@@ -5554,7 +5587,9 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     eqv? { set name "assv" }
     equal? { set name "assoc" }
   }
-  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
   if {[null? $val2] ne "#f"} {
     return #f
   } elseif {[pair? $val2] ne "#f"} {
@@ -5573,83 +5608,99 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 
 Procedures for dealing with strings of characters.
 
-**String** class
+__String__ class
 
 ```
 oo::class create ::constcl::String {
-    superclass ::constcl::NIL
-    variable data constant
-    constructor {v} {
-        set len [::string length $v]
-        set vsa [::constcl::vsAlloc $len]
-        set idx $vsa
-        foreach elt [split $v {}] {
-            if {$elt eq " "} {
-                set c #\\space
-            } elseif {$elt eq "\n"} {
-                set c #\\newline
-            } else {
-                set c #\\$elt
-            }
-            lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
-            incr idx
-        }
-        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set len [::string length $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt [split $v {}] {
+      if {$elt eq " "} {
+        set c #\\space
+      } elseif {$elt eq "\n"} {
+        set c #\\newline
+      } else {
+        set c #\\$elt
+      }
+      lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+      incr idx
     }
-    method = {str} {::string equal [my value] [$str value]}
-    method cmp {str} {::string compare [my value] [$str value]}
-    method length {} {::constcl::cdr $data}
-    method ref {k} {
-        set k [$k numval]
-        if {$k < 0 || $k >= [[my length] numval]} {
-            ::error "index out of range\n$k"
-        }
-        lindex [my store] $k
+    set data [
+      ::constcl::cons [
+        ::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set constant 0
+  }
+  method = {str} {
+    ::string equal [my value] [$str value]
+  }
+  method cmp {str} {
+    ::string compare [my value] [$str value]
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
     }
-    method store {} {
-        set base [[::constcl::car $data] numval]
-        set end [expr {[[my length] numval] + $base - 1}]
-        lrange $::constcl::vectorSpace $base $end
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[::constcl::car $data] numval]
+    set end [expr {[[my length] numval] + $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    join [lmap c [my store] {$c char}] {}
+  }
+  method set! {k c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[::constcl::car $data] numval]
+      lset ::constcl::vectorSpace $k+$base $c
     }
-    method value {} {
-        join [lmap c [my store] {$c char}] {}
+    return [self]
+  }
+  method fill! {c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set base [[::constcl::car $data] numval]
+      set len [[my length] numval]
+      for {set idx $base} {$idx < $len+$base} {incr idx} {
+        lset ::constcl::vectorSpace $idx $c
+      }
     }
-    method set! {k c} {
-        if {[my constant]} {
-            ::error "string is constant"
-        } else {
-            set k [$k numval]
-            if {$k < 0 || $k >= [[my length] numval]} {
-                ::error "index out of range\n$k"
-            }
-            set base [[::constcl::car $data] numval]
-            lset ::constcl::vectorSpace $k+$base $c
-        }
-        return [self]
-    }
-    method fill! {c} {
-        if {[my constant]} {
-            ::error "string is constant"
-        } else {
-            set base [[::constcl::car $data] numval]
-            set len [[my length] numval]
-            for {set idx $base} {$idx < $len+$base} {incr idx} {
-                lset ::constcl::vectorSpace $idx $c
-            }
-        }
-        return [self]
-    }
-    method substring {from to} {
-        join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {set constant}
-    method write {handle} { puts -nonewline $handle "\"[my value]\"" }
-    method display {handle} {
-        puts -nonewline $handle [my value]
-    }
-    method show {} {format "\"[my value]\""}
+    return [self]
+  }
+  method substring {from to} {
+    join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
+  }
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle "\"[my value]\""
+  }
+  method display {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method show {} {
+    format "\"[my value]\""
+  }
 }
 
 interp alias {} MkString {} ::constcl::String new
@@ -5661,18 +5712,18 @@ interp alias {} MkString {} ::constcl::String new
 reg string? ::constcl::string?
 
 proc ::constcl::string? {val} {
-    if {[info object isa typeof $val ::constcl::String]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::String]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
 
-**make-string**
+__make-string__
 
 `make-string` creates a string of _k_ characters, optionally filled with _char_
 characters. If _char_ is omitted, the string will be filled with space characters.
@@ -5682,25 +5733,25 @@ characters. If _char_ is omitted, the string will be filled with space character
 Example:
 
 ```
-(let ((k 5)) (make-string k))                   ⇒  "     "
-(let ((k 5) (char #\A)) (make-string k char))   ⇒  "AAAAA"
+(let ((k 5)) (make-string k))                   =>  "     "
+(let ((k 5) (char #\A)) (make-string k char))   =>  "AAAAA"
 ```
 
 ```
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {k args} {
-    if {[llength $args] == 0} {
-        return [MkString [::string repeat " " [$k numval]]]
-    } else {
-        lassign $args char
-        return [MkString [::string repeat [$char char] [$k numval]]]
-    }
+  if {[llength $args] == 0} {
+    return [MkString [::string repeat " " [$k numval]]]
+  } else {
+    lassign $args char
+    return [MkString [::string repeat [$char char] [$k numval]]]
+  }
 }
 ```
 
 
-**string**
+__string__
 
 `string` constructs a string from a number of Lisp characters.
 
@@ -5709,24 +5760,26 @@ proc ::constcl::make-string {k args} {
 Example:
 
 ```
-(string #\f #\o #\o)   ⇒  "foo"
+(string #\f #\o #\o)   =>  "foo"
 ```
 
 ```
 reg string ::constcl::string
 
 proc ::constcl::string {args} {
-    set str {}
-    foreach char $args {
-        check {::constcl::char? $char} {CHAR expected\n([pn] [lmap c $args {$c show}])}
-        ::append str [$char char]
+  set str {}
+  foreach char $args {
+    check {::constcl::char? $char} {
+      CHAR expected\n([pn] [lmap c $args {$c show}])
     }
-    return [MkString $str]
+    ::append str [$char char]
+  }
+  return [MkString $str]
 }
 ```
 
 
-**string-length**
+__string-length__
 
 `string-length` reports a string's length.
 
@@ -5735,20 +5788,22 @@ proc ::constcl::string {args} {
 Example:
 
 ```
-(string-length "foobar")   ⇒ 6
+(string-length "foobar")   => 6
 ```
 
 ```
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkNumber [[$str length] numval]]
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [MkNumber [[$str length] numval]]
 }
 ```
 
 
-**string-ref**
+__string-ref__
 
 `string-ref` yields the _k_-th character (0-based) in _str_.
 
@@ -5757,21 +5812,25 @@ proc ::constcl::string-length {str} {
 Example:
 
 ```
-(string-ref "foobar" 3)   ⇒ #\b
+(string-ref "foobar" 3)   => #\b
 ```
 
 ```
 reg string-ref ::constcl::string-ref
 
 proc ::constcl::string-ref {str k} {
-    check {::constcl::string? $str} {STRING expected\n([pn] [$str show] [$k show])}
-    check {::constcl::number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show])}
-    return [$str ref $k]
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show] [$k show])
+  }
+  check {::constcl::number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] [$k show])
+  }
+  return [$str ref $k]
 }
 ```
 
 
-**string-set!**
+__string-set!__
 
 `string-set!` replaces the character at _k_ with _char_ in a non-constant string.
 
@@ -5780,31 +5839,37 @@ proc ::constcl::string-ref {str k} {
 Example:
 
 ```
-(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   ⇒  "fox"
+(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   =>  "fox"
 ```
 
 ```
 reg string-set!
 
 proc ::constcl::string-set! {str k char} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
-    check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
-    check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
-    $str set! $k $char
-    return $str
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  check {number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  check {char? $char} {
+    CHAR expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  $str set! $k $char
+  return $str
 }
 ```
 
 
-**string=?**, **string-ci=?**
+__string=?__, __string-ci=?__
 
-**string<?**, **string-ci<?**
+__string<?__, __string-ci<?__
 
-**string>?**, **string-ci>?**
+__string>?__, __string-ci>?__
 
-**string<=?**, **string-ci<=?**
+__string<=?__, __string-ci<=?__
 
-**string>=?**, **string-ci>=?**
+__string>=?__, __string-ci>=?__
 
 `string=?`, `string<?`, `string>?`, `string<=?`, `string>=?` and their
 case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
@@ -5818,13 +5883,17 @@ case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] eq [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] eq [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5833,13 +5902,17 @@ proc ::constcl::string=? {str1 str2} {
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5848,13 +5921,17 @@ proc ::constcl::string-ci=? {str1 str2} {
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] < [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] < [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5863,13 +5940,17 @@ proc ::constcl::string<? {str1 str2} {
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5878,13 +5959,17 @@ proc ::constcl::string-ci<? {str1 str2} {
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] > [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] > [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5893,13 +5978,17 @@ proc ::constcl::string>? {str1 str2} {
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5908,13 +5997,17 @@ proc ::constcl::string-ci>? {str1 str2} {
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] <= [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] <= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5923,13 +6016,17 @@ proc ::constcl::string<=? {str1 str2} {
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5938,13 +6035,17 @@ proc ::constcl::string-ci<=? {str1 str2} {
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] >= [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] >= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -5953,18 +6054,22 @@ proc ::constcl::string>=? {str1 str2} {
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
 
-**substring**
+__substring__
 
 `substring` yields the substring of _str_ that starts at _start_ and ends at _end_.
 
@@ -5973,22 +6078,28 @@ proc ::constcl::string-ci>=? {str1 str2} {
 Example:
 
 ```
-(substring "foobar" 2 4)   ⇒ "oba"
+(substring "foobar" 2 4)   => "oba"
 ```
 
 ```
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$start show] [$end show])}
-    check {number? $start} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    return [MkString [$str substring $start $end]]
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  check {number? $start} {
+    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  check {number? $end} {
+    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  return [MkString [$str substring $start $end]]
 }
 ```
 
 
-**string-append**
+__string-append__
 
 `string-append` joins strings together.
 
@@ -5997,7 +6108,7 @@ proc ::constcl::substring {str start end} {
 Example:
 
 ```
-(string-append "foo" "bar")   ⇒  "foobar"
+(string-append "foo" "bar")   =>  "foobar"
 ```
 
 ```
@@ -6009,7 +6120,7 @@ proc ::constcl::string-append {args} {
 ```
 
 
-**string->list**
+__string->list__
 
 `string->list` converts a string to a Lisp list of characters.
 
@@ -6018,19 +6129,19 @@ proc ::constcl::string-append {args} {
 Example:
 
 ```
-(string->list "foo")   ⇒  (#\f #\o #\o)
+(string->list "foo")   =>  (#\f #\o #\o)
 ```
 
 ```
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    list {*}[$str store]
+  list {*}[$str store]
 }
 ```
 
 
-**list->string**
+__list->string__
 
 `list->string` converts a Lisp list of characters to a string.
 
@@ -6039,19 +6150,19 @@ proc ::constcl::string->list {str} {
 Example:
 
 ```
-(list->string '(#\1 #\2 #\3))   ⇒ "123"
+(list->string '(#\1 #\2 #\3))   => "123"
 ```
 
 ```
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
-    MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
+  MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
 ```
 
 
-**string-copy**
+__string-copy__
 
 `string-copy` makes a copy of a string.
 
@@ -6060,20 +6171,22 @@ proc ::constcl::list->string {list} {
 Example:
 
 ```
-(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            ⇒  "xbc"
+(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            =>  "xbc"
 ```
 
 ```
 reg string-copy ::constcl::string-copy
 
 proc ::constcl::string-copy {str} {
-    check {string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkString [$str value]]
+  check {string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [MkString [$str value]]
 }
 ```
 
 
-**string-fill!**
+__string-fill!__
 
 `string-fill!` _str_ _char_ fills a non-constant string with _char_.
 
@@ -6082,16 +6195,18 @@ proc ::constcl::string-copy {str} {
 Example:
 
 ```
-(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   ⇒  "XXXXXX"
+(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   =>  "XXXXXX"
 ```
 
 ```
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$char show])}
-    $str fill! $char
-    return $str
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$char show])
+  }
+  $str fill! $char
+  return $str
 }
 ```
 
@@ -6106,35 +6221,35 @@ procedure names, etc) or for comparing against each other.
 
 ```
 oo::class create ::constcl::Symbol {
-    superclass ::constcl::NIL
-    variable name caseconstant
-    constructor {n} {
-        if {   no &&   $n eq {}} {
-            ::error "a symbol must have a name"
-        }
-        ::constcl::idcheck $n
-        set name $n
-        set caseconstant 0
+  superclass ::constcl::NIL
+  variable name caseconstant
+  constructor {n} {
+    if {   no &&   $n eq {}} {
+      ::error "a symbol must have a name"
     }
-    method name {} {set name}
-    method value {} {set name}
-    method = {symname} {expr {$name eq $symname}}
-    method mkconstant {} {}
-    method constant {} {return 1}
-    method make-case-constant {} {set caseconstant 1}
-    method case-constant {} {set caseconstant}
-    method write {handle} { puts -nonewline $handle [my name] }
-    method display {} { puts -nonewline [my name] }
-    method show {} {set name}
+    ::constcl::idcheck $n
+    set name $n
+    set caseconstant 0
+  }
+  method name {} {set name}
+  method value {} {set name}
+  method = {symname} {expr {$name eq $symname}}
+  method mkconstant {} {}
+  method constant {} {return 1}
+  method make-case-constant {} {set caseconstant 1}
+  method case-constant {} {set caseconstant}
+  method write {handle} { puts -nonewline $handle [my name] }
+  method display {} { puts -nonewline [my name] }
+  method show {} {set name}
 }
 
 proc ::constcl::MkSymbol {n} {
-    foreach instance [info class instances ::constcl::Symbol] {
-        if {[$instance name] eq $n} {
-            return $instance
-        }
+  foreach instance [info class instances ::constcl::Symbol] {
+    if {[$instance name] eq $n} {
+      return $instance
     }
-    return [::constcl::Symbol new $n]
+  }
+  return [::constcl::Symbol new $n]
 }
 ```
 
@@ -6144,13 +6259,13 @@ proc ::constcl::MkSymbol {n} {
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {val} {
-    if {[info object isa typeof $val ::constcl::Symbol]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Symbol]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
@@ -6166,21 +6281,23 @@ lower-cased.
 reg symbol->string ::constcl::symbol->string
 
 proc ::constcl::symbol->string {sym} {
-    check {symbol? $sym} {SYMBOL expected\n([pn] [$sym show])}
-    if {![$sym case-constant]} {
-        set str [MkString [::string tolower [$sym name]]]
-    } else {
-        set str [MkString [$sym name]]
-    }
-    $str mkconstant
-    return $str
+  check {symbol? $sym} {
+    SYMBOL expected\n([pn] [$sym show])
+  }
+  if {![$sym case-constant]} {
+    set str [MkString [::string tolower [$sym name]]]
+  } else {
+    set str [MkString [$sym name]]
+  }
+  $str mkconstant
+  return $str
 }
 ```
 
 Example:
 
 ```
-(let ((sym 'Foobar)) (symbol->string sym))   ⇒  "foobar"
+(let ((sym 'Foobar)) (symbol->string sym))   =>  "foobar"
 ```
 
 
@@ -6195,18 +6312,20 @@ Example:
 
 ```
 (define sym (let ((str "Foobar")) (string->symbol str)))
-sym                                                        ⇒  Foobar
-(symbol->string sym)                                       ⇒  "Foobar"
+sym                                                        =>  Foobar
+(symbol->string sym)                                       =>  "Foobar"
 ```
 
 ```
 reg string->symbol ::constcl::string->symbol
 
 proc ::constcl::string->symbol {str} {
-    check {string? $str} {STRING expected\n([pn] [$obj show])}
-    set sym [MkSymbol [$str value]]
-    $sym make-case-constant
-    return $sym
+  check {string? $str} {
+    STRING expected\n([pn] [$obj show])
+  }
+  set sym [MkSymbol [$str value]]
+  $sym make-case-constant
+  return $sym
 }
 ```
 
@@ -6219,75 +6338,75 @@ They are implemented as Tcl lists of Lisp values.
 The number of elements that a vector contains (the _length_) is set when the vector is created.
 Elements can be indexed by integers from zero to length minus one.
 
-**Vector** class
+__Vector__ class
 
 ```
 oo::class create ::constcl::Vector {
-    superclass ::constcl::NIL
-    variable data constant
-    constructor {v} {
-        set len [llength $v]
-        set vsa [::constcl::vsAlloc $len]
-        set idx $vsa
-        foreach elt $v {
-            lset ::constcl::vectorSpace $idx $elt
-            incr idx
-        }
-        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set len [llength $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt $v {
+      lset ::constcl::vectorSpace $idx $elt
+      incr idx
     }
-    method length {} {::constcl::cdr $data}
-    method ref {k} {
-        set k [$k numval]
-        if {$k < 0 || $k >= [[my length] numval]} {
-            ::error "index out of range\n$k"
-        }
-        lindex [my store] $k
+    set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set constant 0
+  }
+  method length {} {::constcl::cdr $data}
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
     }
-    method store {} {
-        set base [[::constcl::car $data] numval]
-        set end [expr {[[my length] numval] + $base - 1}]
-        lrange $::constcl::vectorSpace $base $end
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[::constcl::car $data] numval]
+    set end [expr {[[my length] numval] + $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    my store
+  }
+  method set! {k obj} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[::constcl::car $data] numval]
+      lset ::constcl::vectorSpace $k+$base $obj
     }
-    method value {} {
-        my store
+    return [self]
+  }
+  method fill! {val} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set base [[::constcl::car $data] numval]
+      set len [[my length] numval]
+      for {set idx $base} {$idx < $len+$base} {incr idx} {
+        lset ::constcl::vectorSpace $idx $val
+      }
     }
-    method set! {k obj} {
-        if {[my constant]} {
-            ::error "vector is constant"
-        } else {
-            set k [$k numval]
-            if {$k < 0 || $k >= [[my length] numval]} {
-                ::error "index out of range\n$k"
-            }
-            set base [[::constcl::car $data] numval]
-            lset ::constcl::vectorSpace $k+$base $obj
-        }
-        return [self]
-    }
-    method fill! {val} {
-        if {[my constant]} {
-            ::error "vector is constant"
-        } else {
-            set base [[::constcl::car $data] numval]
-            set len [[my length] numval]
-            for {set idx $base} {$idx < $len+$base} {incr idx} {
-                lset ::constcl::vectorSpace $idx $val
-            }
-        }
-        return [self]
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {set constant}
-    method write {handle} { puts -nonewline $handle [my show]}
-    method display {} {puts -nonewline [my show]}
-    method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
+    return [self]
+  }
+  method mkconstant {} {set constant 1}
+  method constant {} {set constant}
+  method write {handle} { puts -nonewline $handle [my show]}
+  method display {} {puts -nonewline [my show]}
+  method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
 interp alias {} ::constcl::MkVector {} ::constcl::Vector new
 ```
 
-**vector?**
+__vector?__
 
 <table border=1><thead><tr><th colspan=2 align="left">vector? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6295,18 +6414,18 @@ interp alias {} ::constcl::MkVector {} ::constcl::Vector new
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {val} {
-    if {[info object isa typeof $val ::constcl::Vector]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Vector]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 
 
-**make-vector**
+__make-vector__
 
 `make-vector` creates a vector with a given length and optionally a fill value.
 If a fill value isn't given, the empty list will be used.
@@ -6316,24 +6435,24 @@ If a fill value isn't given, the empty list will be used.
 Example:
 
 ```
-(let ((k 5)) (make-vector k))                  ⇒  #(() () () () ())
-(let ((k 5) (fill #\A)) (make-vector k fill))  ⇒  #(#\A #\A #\A #\A #\A)
+(let ((k 5)) (make-vector k))                  =>  #(() () () () ())
+(let ((k 5) (fill #\A)) (make-vector k fill))  =>  #(#\A #\A #\A #\A #\A)
 ```
 
 ```
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
-    if {[llength $args] == 0} {
-        set fill #NIL
-    } else {
-        lassign $args fill
-    }
-    MkVector [lrepeat [$k numval] $fill]
+  if {[llength $args] == 0} {
+    set fill #NIL
+  } else {
+    lassign $args fill
+  }
+  MkVector [lrepeat [$k numval] $fill]
 }
 ```
 
-**vector**
+__vector__
 
 Given a number of Lisp values, `vector` creates a vector containing them.
 
@@ -6342,19 +6461,19 @@ Given a number of Lisp values, `vector` creates a vector containing them.
 Example:
 
 ```
-(vector 'a 'b 'c)   ⇒  #(a b c)
+(vector 'a 'b 'c)   =>  #(a b c)
 ```
 
 ```
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
-    MkVector $args
+  MkVector $args
 }
 ```
 
 
-**vector-length**
+__vector-length__
 
 `vector-length` returns the length of a vector.
 
@@ -6363,20 +6482,22 @@ proc ::constcl::vector {args} {
 Example:
 
 ```
-(vector-length '#(a b c))   ⇒  3
+(vector-length '#(a b c))   =>  3
 ```
 
 ```
 reg vector-length
 
 proc ::constcl::vector-length {vec} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
-    return [$vec length]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show])
+  }
+  return [$vec length]
 }
 ```
 
 
-**vector-ref**
+__vector-ref__
 
 `vector-ref` returns the element of _vec_ at index _k_ (0-based).
 
@@ -6385,21 +6506,25 @@ proc ::constcl::vector-length {vec} {
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   ⇒  b
+(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   =>  b
 ```
 
 ```
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
-    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec ref $k]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec ref $k]
 }
 ```
 
 
-**vector-set!**
+__vector-set!__
 
 `vector-set!`, for a non-constant vector, sets the element at index _k_ to _val_.
 
@@ -6408,22 +6533,26 @@ proc ::constcl::vector-ref {vec k} {
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           ⇒  *error*
-(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   ⇒  #(a x c)
+(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           =>  *error*
+(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   =>  #(a x c)
 ```
 
 ```
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
-    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec set! $k $val]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec set! $k $val]
 }
 ```
 
 
-**vector->list**
+__vector->list__
 
 `vector->list` converts a vector value to a Lisp list.
 
@@ -6432,19 +6561,19 @@ proc ::constcl::vector-set! {vec k val} {
 Example:
 
 ```
-(vector->list '#(a b c))   ⇒  (a b c)
+(vector->list '#(a b c))   =>  (a b c)
 ```
 
 ```
 reg vector->list ::constcl::vector->list
 
 proc ::constcl::vector->list {vec} {
-    list {*}[$vec value]
+  list {*}[$vec value]
 }
 ```
 
 
-**list->vector**
+__list->vector__
 
 `list->vector` converts a Lisp list value to a vector.
 
@@ -6453,19 +6582,19 @@ proc ::constcl::vector->list {vec} {
 Example:
 
 ```
-(list->vector '(1 2 3))   ⇒  #(1 2 3)
+(list->vector '(1 2 3))   =>  #(1 2 3)
 ```
 
 ```
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
-    vector {*}[splitlist $list]
+  vector {*}[splitlist $list]
 }
 ```
 
 
-**vector-fill!**
+__vector-fill!__
 
 `vector-fill!` fills a non-constant vector with a given value.
 
@@ -6475,16 +6604,18 @@ Example:
 
 ```
 (define vec (vector 'a 'b 'c))
-(vector-fill! vec 'x)             ⇒  #(x x x)
-vec                               ⇒  #(x x x)
+(vector-fill! vec 'x)             =>  #(x x x)
+vec                               =>  #(x x x)
 ```
 
 ```
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$fill show])}
-    $vec fill! $fill
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$fill show])
+  }
+  $vec fill! $fill
 }
 ```
 
@@ -6492,13 +6623,13 @@ proc ::constcl::vector-fill! {vec fill} {
 
 ## Identifier validation
 
-**idcheckinit**
+__idcheckinit__
 
-**idchecksubs**
+__idchecksubs__
 
-**idcheck**
+__idcheck__
 
-**varcheck**
+__varcheck__
 
 Some routines for checking if a string is a valid identifier. `idcheckinit`
 checks the first character, `idchecksubs` checks the rest. `idcheck` calls the
@@ -6623,24 +6754,6 @@ In this interpreter, `nil` refers to the empty list.
 reg nil #NIL
 ```
 
-__atom?__
-
-`atom?` recognizes an atom by checking for membership in one of the atomic types.
-
-<table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg atom? ::constcl::atom?
-
-proc ::constcl::atom? {val} {
-  if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" || [port? $val] ne "#f"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-```
-
 
 
 
@@ -6652,31 +6765,31 @@ command `::constcl::input` (breaking the loop if given an empty line) and
 `::constcl::parse`, _evaluates_ it using `::constcl::eval`, and _prints_ using
 `::constcl::write`.
 
-**input**
+__input__
 
 `input` is modelled after the Python 3 function. It displays a prompt and reads a string.
 
 ```
 proc ::constcl::input {prompt} {
-    puts -nonewline $prompt
-    flush stdout
-    set buf [gets stdin]
+  puts -nonewline $prompt
+  flush stdout
+  set buf [gets stdin]
+  set openpars [regexp -all -inline {\(} $buf]
+  set clsepars [regexp -all -inline {\)} $buf]
+  set openbrak [regexp -all -inline {\[} $buf]
+  set clsebrak [regexp -all -inline {\]} $buf]
+  while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
+    ::append buf [gets stdin]
     set openpars [regexp -all -inline {\(} $buf]
     set clsepars [regexp -all -inline {\)} $buf]
     set openbrak [regexp -all -inline {\[} $buf]
     set clsebrak [regexp -all -inline {\]} $buf]
-    while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
-        ::append buf [gets stdin]
-        set openpars [regexp -all -inline {\(} $buf]
-        set clsepars [regexp -all -inline {\)} $buf]
-        set openbrak [regexp -all -inline {\[} $buf]
-        set clsebrak [regexp -all -inline {\]} $buf]
-    }
-    return $buf
+  }
+  return $buf
 }
 ```
 
-**repl**
+__repl__
 
 `repl` puts the loop in the read-eval-print loop. It repeats prompting for a
 string until given a blank input. Given non-blank input, it parses and evaluates
@@ -6684,11 +6797,11 @@ the string, printing the resulting value.
 
 ```
 proc ::repl {{prompt "ConsTcl> "}} {
+  set str [::constcl::input $prompt]
+  while {$str ne ""} {
+    pep $str
     set str [::constcl::input $prompt]
-    while {$str ne ""} {
-        pep $str
-        set str [::constcl::input $prompt]
-    }
+  }
 }
 ```
 
@@ -6703,7 +6816,7 @@ by the find method to find which innermost environment a given symbol is bound i
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
 can be empty, a proper list, a symbol, or a dotted list.
 
-**Environment** class
+__Environment__ class
 
 ```
 catch { ::constcl::Environment destroy }
@@ -6762,10 +6875,12 @@ oo::class create ::constcl::Environment {
 ```
 
 
-On startup, two `Environment` objects called `null_env` (the null environment, not the same
-as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
+On startup, two `Environment` objects called `null_env` (the null environment,
+not the same as `null-environment` in Scheme) and `global_env` (the global
+environment) are created. 
 
-Make `null_env` empty and unresponsive: this is where searches for unbound symbols end up.
+Make `null_env` empty and unresponsive: this is where searches for unbound
+symbols end up.
 
 ```
 ::constcl::Environment create ::constcl::null_env #NIL {}
@@ -6777,8 +6892,8 @@ oo::objdefine ::constcl::null_env {
 }
 ```
 
-Meanwhile, `global_env` is populated with all the definitions from the definitions register,
-`defreg`. This is where top level evaluation happens.
+Meanwhile, `global_env` is populated with all the definitions from the
+definitions register, `defreg`. This is where top level evaluation happens.
 
 ```
 namespace eval ::constcl {
@@ -6788,15 +6903,15 @@ namespace eval ::constcl {
 }
 ```
 
-Thereafter, each time a user-defined procedure is called, a new `Environment` object is
-created to hold the bindings introduced by the call, and also a link to the outer environment
-(the one closed over when the procedure was defined).
-
-Load the Scheme base.
+Load the Scheme base to add more definitions to the global environment.
 
 ```
 pe {(load "schemebase.lsp")}
 ```
+
+Thereafter, each time a user-defined procedure is called, a new `Environment`
+object is created to hold the bindings introduced by the call, and also a link
+to the outer environment (the one closed over when the procedure was defined).
 
 #### Lexical scoping
 
@@ -6817,7 +6932,7 @@ separate (but linked) environments, making `r`'s binding a
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of
-*lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)*.
+**lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)**.
 
 In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):

@@ -88,28 +88,6 @@ CB
 reg nil #NIL
 CB
 
-MD(
-__atom?__
-
-`atom?` recognizes an atom by checking for membership in one of the atomic types.
-MD)
-
-PR(
-atom? (public);val val -> bool
-PR)
-
-CB
-reg atom? ::constcl::atom?
-
-proc ::constcl::atom? {val} {
-  if {[symbol? $val] ne "#f" || [number? $val] ne "#f" || [string? $val] ne "#f" || [char? $val] ne "#f" || [boolean? $val] ne "#f" || [vector? $val] ne "#f" || [port? $val] ne "#f"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-CB
-
 TT(
 ::tcltest::test cons-1.0 {calculate circle area} -body {
     pep "(define (circle-area r) (* pi (* r r)))"
@@ -141,7 +119,7 @@ TT(
 } -output 3\n
 
 ::tcltest::test cons-3.1 {count} -body {
-    pep "(count (quote the) (quote (the more the merrier the bigger the better)))"
+    pep "(count 'the '(the more the merrier the bigger the better))"
 } -output 4\n
 
 ::tcltest::test cons-4.0 {twice} -body {

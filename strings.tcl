@@ -4,84 +4,100 @@ MD(
 
 Procedures for dealing with strings of characters.
 
-**String** class
+__String__ class
 MD)
 
 CB
 oo::class create ::constcl::String {
-    superclass ::constcl::NIL
-    variable data constant
-    constructor {v} {
-        set len [::string length $v]
-        set vsa [::constcl::vsAlloc $len]
-        set idx $vsa
-        foreach elt [split $v {}] {
-            if {$elt eq " "} {
-                set c #\\space
-            } elseif {$elt eq "\n"} {
-                set c #\\newline
-            } else {
-                set c #\\$elt
-            }
-            lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
-            incr idx
-        }
-        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set len [::string length $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt [split $v {}] {
+      if {$elt eq " "} {
+        set c #\\space
+      } elseif {$elt eq "\n"} {
+        set c #\\newline
+      } else {
+        set c #\\$elt
+      }
+      lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+      incr idx
     }
-    method = {str} {::string equal [my value] [$str value]}
-    method cmp {str} {::string compare [my value] [$str value]}
-    method length {} {::constcl::cdr $data}
-    method ref {k} {
-        set k [$k numval]
-        if {$k < 0 || $k >= [[my length] numval]} {
-            ::error "index out of range\n$k"
-        }
-        lindex [my store] $k
+    set data [
+      ::constcl::cons [
+        ::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set constant 0
+  }
+  method = {str} {
+    ::string equal [my value] [$str value]
+  }
+  method cmp {str} {
+    ::string compare [my value] [$str value]
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
     }
-    method store {} {
-        set base [[::constcl::car $data] numval]
-        set end [expr {[[my length] numval] + $base - 1}]
-        lrange $::constcl::vectorSpace $base $end
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[::constcl::car $data] numval]
+    set end [expr {[[my length] numval] + $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    join [lmap c [my store] {$c char}] {}
+  }
+  method set! {k c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[::constcl::car $data] numval]
+      lset ::constcl::vectorSpace $k+$base $c
     }
-    method value {} {
-        join [lmap c [my store] {$c char}] {}
+    return [self]
+  }
+  method fill! {c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set base [[::constcl::car $data] numval]
+      set len [[my length] numval]
+      for {set idx $base} {$idx < $len+$base} {incr idx} {
+        lset ::constcl::vectorSpace $idx $c
+      }
     }
-    method set! {k c} {
-        if {[my constant]} {
-            ::error "string is constant"
-        } else {
-            set k [$k numval]
-            if {$k < 0 || $k >= [[my length] numval]} {
-                ::error "index out of range\n$k"
-            }
-            set base [[::constcl::car $data] numval]
-            lset ::constcl::vectorSpace $k+$base $c
-        }
-        return [self]
-    }
-    method fill! {c} {
-        if {[my constant]} {
-            ::error "string is constant"
-        } else {
-            set base [[::constcl::car $data] numval]
-            set len [[my length] numval]
-            for {set idx $base} {$idx < $len+$base} {incr idx} {
-                lset ::constcl::vectorSpace $idx $c
-            }
-        }
-        return [self]
-    }
-    method substring {from to} {
-        join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {set constant}
-    method write {handle} { puts -nonewline $handle "\"[my value]\"" }
-    method display {handle} {
-        puts -nonewline $handle [my value]
-    }
-    method show {} {format "\"[my value]\""}
+    return [self]
+  }
+  method substring {from to} {
+    join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
+  }
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle "\"[my value]\""
+  }
+  method display {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method show {} {
+    format "\"[my value]\""
+  }
 }
 
 interp alias {} MkString {} ::constcl::String new
@@ -95,13 +111,13 @@ CB
 reg string? ::constcl::string?
 
 proc ::constcl::string? {val} {
-    if {[info object isa typeof $val ::constcl::String]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::String]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -115,7 +131,7 @@ TT(
 TT)
 
 MD(
-**make-string**
+__make-string__
 
 `make-string` creates a string of _k_ characters, optionally filled with _char_
 characters. If _char_ is omitted, the string will be filled with space characters.
@@ -129,8 +145,8 @@ MD(
 Example:
 
 ```
-(let ((k 5)) (make-string k))                   ⇒  "     "
-(let ((k 5) (char #\A)) (make-string k char))   ⇒  "AAAAA"
+(let ((k 5)) (make-string k))                   =>  "     "
+(let ((k 5) (char #\A)) (make-string k char))   =>  "AAAAA"
 ```
 MD)
 
@@ -138,12 +154,12 @@ CB
 reg make-string ::constcl::make-string
 
 proc ::constcl::make-string {k args} {
-    if {[llength $args] == 0} {
-        return [MkString [::string repeat " " [$k numval]]]
-    } else {
-        lassign $args char
-        return [MkString [::string repeat [$char char] [$k numval]]]
-    }
+  if {[llength $args] == 0} {
+    return [MkString [::string repeat " " [$k numval]]]
+  } else {
+    lassign $args char
+    return [MkString [::string repeat [$char char] [$k numval]]]
+  }
 }
 CB
 
@@ -156,7 +172,7 @@ TT(
 TT)
 
 MD(
-**string**
+__string__
 
 `string` constructs a string from a number of Lisp characters.
 MD)
@@ -169,7 +185,7 @@ MD(
 Example:
 
 ```
-(string #\f #\o #\o)   ⇒  "foo"
+(string #\f #\o #\o)   =>  "foo"
 ```
 MD)
 
@@ -177,12 +193,14 @@ CB
 reg string ::constcl::string
 
 proc ::constcl::string {args} {
-    set str {}
-    foreach char $args {
-        check {::constcl::char? $char} {CHAR expected\n([pn] [lmap c $args {$c show}])}
-        ::append str [$char char]
+  set str {}
+  foreach char $args {
+    check {::constcl::char? $char} {
+      CHAR expected\n([pn] [lmap c $args {$c show}])
     }
-    return [MkString $str]
+    ::append str [$char char]
+  }
+  return [MkString $str]
 }
 CB
 
@@ -199,7 +217,7 @@ TT(
 TT)
 
 MD(
-**string-length**
+__string-length__
 
 `string-length` reports a string's length.
 MD)
@@ -212,7 +230,7 @@ MD(
 Example:
 
 ```
-(string-length "foobar")   ⇒ 6
+(string-length "foobar")   => 6
 ```
 MD)
 
@@ -220,8 +238,10 @@ CB
 reg string-length ::constcl::string-length
 
 proc ::constcl::string-length {str} {
-    check {::constcl::string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkNumber [[$str length] numval]]
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [MkNumber [[$str length] numval]]
 }
 CB
 
@@ -234,7 +254,7 @@ TT(
 TT)
 
 MD(
-**string-ref**
+__string-ref__
 
 `string-ref` yields the _k_-th character (0-based) in _str_.
 MD)
@@ -247,7 +267,7 @@ MD(
 Example:
 
 ```
-(string-ref "foobar" 3)   ⇒ #\b
+(string-ref "foobar" 3)   => #\b
 ```
 MD)
 
@@ -255,9 +275,13 @@ CB
 reg string-ref ::constcl::string-ref
 
 proc ::constcl::string-ref {str k} {
-    check {::constcl::string? $str} {STRING expected\n([pn] [$str show] [$k show])}
-    check {::constcl::number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show])}
-    return [$str ref $k]
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show] [$k show])
+  }
+  check {::constcl::number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] [$k show])
+  }
+  return [$str ref $k]
 }
 CB
 
@@ -270,7 +294,7 @@ TT(
 TT)
 
 MD(
-**string-set!**
+__string-set!__
 
 `string-set!` replaces the character at _k_ with _char_ in a non-constant string.
 MD)
@@ -283,7 +307,7 @@ MD(
 Example:
 
 ```
-(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   ⇒  "fox"
+(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   =>  "fox"
 ```
 MD)
 
@@ -291,11 +315,17 @@ CB
 reg string-set!
 
 proc ::constcl::string-set! {str k char} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$k show] [$char show])}
-    check {number? $k} {Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])}
-    check {char? $char} {CHAR expected\n([pn] [$str show] [$k show] [$char show])}
-    $str set! $k $char
-    return $str
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  check {number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  check {char? $char} {
+    CHAR expected\n([pn] [$str show] [$k show] [$char show])
+  }
+  $str set! $k $char
+  return $str
 }
 CB
 
@@ -318,15 +348,15 @@ TT(
 TT)
 
 MD(
-**string=?**, **string-ci=?**
+__string=?__, __string-ci=?__
 
-**string<?**, **string-ci<?**
+__string<?__, __string-ci<?__
 
-**string>?**, **string-ci>?**
+__string>?__, __string-ci>?__
 
-**string<=?**, **string-ci<=?**
+__string<=?__, __string-ci<=?__
 
-**string>=?**, **string-ci>=?**
+__string>=?__, __string-ci>=?__
 
 `string=?`, `string<?`, `string>?`, `string<=?`, `string>=?` and their
 case insensitive variants `string-ci=?`, `string-ci<?`, `string-ci>?`,
@@ -345,13 +375,17 @@ CB
 reg string=? ::constcl::string=?
 
 proc ::constcl::string=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] eq [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] eq [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -369,13 +403,17 @@ CB
 reg string-ci=? ::constcl::string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -393,13 +431,17 @@ CB
 reg string<? ::constcl::string<?
 
 proc ::constcl::string<? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] < [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] < [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -417,13 +459,17 @@ CB
 reg string-ci<? ::constcl::string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -441,13 +487,17 @@ CB
 reg string>? ::constcl::string>?
 
 proc ::constcl::string>? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] > [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] > [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -465,13 +515,17 @@ CB
 reg string-ci>? ::constcl::string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -489,13 +543,17 @@ CB
 reg string<=? ::constcl::string<=?
 
 proc ::constcl::string<=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] <= [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] <= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -513,13 +571,17 @@ CB
 reg string-ci<=? ::constcl::string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -537,13 +599,17 @@ CB
 reg string>=? ::constcl::string>=?
 
 proc ::constcl::string>=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[$str1 value] >= [$str2 value]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[$str1 value] >= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -561,13 +627,17 @@ CB
 reg string-ci>=? ::constcl::string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
-    check {string? $str1} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    check {string? $str2} {STRING expected\n([pn] [$str1 show] [$str2 show])}
-    if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
-        return #t
-    } else {
-        return #f
-    }
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -582,7 +652,7 @@ TT(
 TT)
 
 MD(
-**substring**
+__substring__
 
 `substring` yields the substring of _str_ that starts at _start_ and ends at _end_.
 MD)
@@ -595,7 +665,7 @@ MD(
 Example:
 
 ```
-(substring "foobar" 2 4)   ⇒ "oba"
+(substring "foobar" 2 4)   => "oba"
 ```
 MD)
 
@@ -603,10 +673,16 @@ CB
 reg substring ::constcl::substring
 
 proc ::constcl::substring {str start end} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$start show] [$end show])}
-    check {number? $start} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    check {number? $end} {NUMBER expected\n([pn] [$str show] [$start show] [$end show])}
-    return [MkString [$str substring $start $end]]
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  check {number? $start} {
+    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  check {number? $end} {
+    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+  }
+  return [MkString [$str substring $start $end]]
 }
 CB
 
@@ -619,7 +695,7 @@ TT(
 TT)
 
 MD(
-**string-append**
+__string-append__
 
 `string-append` joins strings together.
 MD)
@@ -632,7 +708,7 @@ MD(
 Example:
 
 ```
-(string-append "foo" "bar")   ⇒  "foobar"
+(string-append "foo" "bar")   =>  "foobar"
 ```
 MD)
 
@@ -653,7 +729,7 @@ TT(
 TT)
 
 MD(
-**string->list**
+__string->list__
 
 `string->list` converts a string to a Lisp list of characters.
 MD)
@@ -666,7 +742,7 @@ MD(
 Example:
 
 ```
-(string->list "foo")   ⇒  (#\f #\o #\o)
+(string->list "foo")   =>  (#\f #\o #\o)
 ```
 MD)
 
@@ -674,7 +750,7 @@ CB
 reg string->list ::constcl::string->list
 
 proc ::constcl::string->list {str} {
-    list {*}[$str store]
+  list {*}[$str store]
 }
 CB
 
@@ -687,7 +763,7 @@ TT(
 TT)
 
 MD(
-**list->string**
+__list->string__
 
 `list->string` converts a Lisp list of characters to a string.
 MD)
@@ -700,7 +776,7 @@ MD(
 Example:
 
 ```
-(list->string '(#\1 #\2 #\3))   ⇒ "123"
+(list->string '(#\1 #\2 #\3))   => "123"
 ```
 MD)
 
@@ -708,7 +784,7 @@ CB
 reg list->string ::constcl::list->string
 
 proc ::constcl::list->string {list} {
-    MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
+  MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
 }
 CB
 
@@ -721,7 +797,7 @@ TT(
 TT)
 
 MD(
-**string-copy**
+__string-copy__
 
 `string-copy` makes a copy of a string.
 MD)
@@ -734,7 +810,7 @@ MD(
 Example:
 
 ```
-(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            ⇒  "xbc"
+(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            =>  "xbc"
 ```
 MD)
 
@@ -742,8 +818,10 @@ CB
 reg string-copy ::constcl::string-copy
 
 proc ::constcl::string-copy {str} {
-    check {string? $str} {STRING expected\n([pn] [$str show])}
-    return [MkString [$str value]]
+  check {string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [MkString [$str value]]
 }
 CB
 
@@ -761,7 +839,7 @@ TT(
 TT)
 
 MD(
-**string-fill!**
+__string-fill!__
 
 `string-fill!` _str_ _char_ fills a non-constant string with _char_.
 MD)
@@ -774,7 +852,7 @@ MD(
 Example:
 
 ```
-(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   ⇒  "XXXXXX"
+(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   =>  "XXXXXX"
 ```
 MD)
 
@@ -782,9 +860,11 @@ CB
 reg string-fill! ::constcl::string-fill!
 
 proc ::constcl::string-fill! {str char} {
-    check {string? $str} {STRING expected\n([pn] [$str show] [$char show])}
-    $str fill! $char
-    return $str
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$char show])
+  }
+  $str fill! $char
+  return $str
 }
 CB
 
@@ -797,4 +877,4 @@ TT(
 
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

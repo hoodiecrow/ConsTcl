@@ -1,9 +1,11 @@
 
 MD(
-On startup, two `Environment` objects called `null_env` (the null environment, not the same
-as `null-environment` in Scheme) and `global_env` (the global environment) are created. 
+On startup, two `Environment` objects called `null_env` (the null environment,
+not the same as `null-environment` in Scheme) and `global_env` (the global
+environment) are created. 
 
-Make `null_env` empty and unresponsive: this is where searches for unbound symbols end up.
+Make `null_env` empty and unresponsive: this is where searches for unbound
+symbols end up.
 MD)
 
 CB
@@ -17,8 +19,8 @@ oo::objdefine ::constcl::null_env {
 CB
 
 MD(
-Meanwhile, `global_env` is populated with all the definitions from the definitions register,
-`defreg`. This is where top level evaluation happens.
+Meanwhile, `global_env` is populated with all the definitions from the
+definitions register, `defreg`. This is where top level evaluation happens.
 MD)
 
 CB
@@ -30,18 +32,18 @@ namespace eval ::constcl {
 CB
 
 MD(
-Thereafter, each time a user-defined procedure is called, a new `Environment` object is
-created to hold the bindings introduced by the call, and also a link to the outer environment
-(the one closed over when the procedure was defined).
-MD)
-
-MD(
-Load the Scheme base.
+Load the Scheme base to add more definitions to the global environment.
 MD)
 
 CB
 pe {(load "schemebase.lsp")}
 CB
+
+MD(
+Thereafter, each time a user-defined procedure is called, a new `Environment`
+object is created to hold the bindings introduced by the call, and also a link
+to the outer environment (the one closed over when the procedure was defined).
+MD)
 
 MD(
 #### Lexical scoping
@@ -63,7 +65,7 @@ separate (but linked) environments, making `r`'s binding a
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of
-*lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)*.
+**lexical scoping[#](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope)**.
 
 In the first image, we see the global environment before we call `circle-area`
 (and also the empty null environment which the global environment links to):

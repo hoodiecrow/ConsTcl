@@ -1612,7 +1612,7 @@ if no {
 } -output 3\n
 
 ::tcltest::test cons-3.1 {count} -body {
-    pep "(count (quote the) (quote (the more the merrier the bigger the better)))"
+    pep "(count 'the '(the more the merrier the bigger the better))"
 } -output 4\n
 
 ::tcltest::test cons-4.0 {twice} -body {

@@ -29,12 +29,16 @@ oo::class create ::constcl::Pair {
     set cdr
   }
   method set-car! {val} {
-    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
     set car $val
     self
   }
   method set-cdr! {val} {
-    ::constcl::check {my mutable?} {Can't modify a constant pair}
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
     set cdr $val
     self
   }
@@ -555,7 +559,9 @@ CB
 reg length ::constcl::length
 
 proc ::constcl::length {pair} {
-  check {list? $pair} {LIST expected\n([pn] lst)}
+  check {list? $pair} {
+    LIST expected\n([pn] lst)
+  }
   MkNumber [length-helper $pair]
 }
 CB
@@ -839,7 +845,9 @@ proc ::constcl::member-proc {epred val1 val2} {
     eqv? { set name "memv" }
     equal? { set name "member" }
   }
-  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
   if {[null? $val2] ne "#f"} {
     return #f
   } elseif {[pair? $val2] ne "#f"} {
@@ -921,7 +929,9 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     eqv? { set name "assv" }
     equal? { set name "assoc" }
   }
-  check {list? $val2} {LIST expected\n($name [$val1 show] [$val2 show])}
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
   if {[null? $val2] ne "#f"} {
     return #f
   } elseif {[pair? $val2] ne "#f"} {

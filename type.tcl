@@ -23,14 +23,19 @@ MD(
 `reg` registers selected built-in procedures in the standard library.
 MD)
 
+PR(
+reg (internal);key tstr ?val? tstr -> none
+PR)
+
 CB
 proc ::reg {key args} {
-  if {[llength $args] == 0} {
-    set val ::constcl::$key
-  } else {
+  if {[llength $args]} {
     lassign $args val
+  } else {
+    set val ::constcl::$key
   }
   dict set ::constcl::defreg $key $val
+  return
 }
 CB
 
@@ -39,9 +44,14 @@ MD(
 to expand.
 MD)
 
+PR(
+regmacro (internal);name tstr -> none
+PR)
+
 CB
 proc ::regmacro {name} {
   lappend ::constcl::macrolist $name
+  return
 }
 CB
 
@@ -415,6 +425,29 @@ proc ::constcl::check {cond msg} {
         ::list subst [
           ::string trim $msg]]]
   }
+}
+CB
+
+MD(
+### The atom? predicate
+
+`atom?` recognizes an atom by checking for membership in one of the atomic types.
+MD)
+
+PR(
+atom? (public);val val -> bool
+PR)
+
+CB
+reg atom? ::constcl::atom?
+
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string char boolean vector port} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
 }
 CB
 

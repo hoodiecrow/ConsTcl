@@ -1198,8 +1198,8 @@ proc ::constcl::number->string {num args} {
   }
 }
 
-# due to Richard Suchenwirth,
-# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+ # due to Richard Suchenwirth,
+ # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -1276,8 +1276,8 @@ proc ::constcl::string->number {str args} {
   }
 }
 
-# due to Richard Suchenwirth,
-# <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+ # due to Richard Suchenwirth,
+ # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]

@@ -3,11 +3,11 @@ MD(
 
 ### Equivalence predicates
 
-**eq**
+__eq__
 
-**eqv**
+__eqv__
 
-**equal**
+__equal__
 
 Of the three equivalence predicates, `eq` generally tests for identity (with
 exception for numbers), `eqv` tests for value equality (except for booleans and

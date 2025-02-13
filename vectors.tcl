@@ -8,77 +8,77 @@ They are implemented as Tcl lists of Lisp values.
 The number of elements that a vector contains (the _length_) is set when the vector is created.
 Elements can be indexed by integers from zero to length minus one.
 
-**Vector** class
+__Vector__ class
 MD)
 
 CB
 oo::class create ::constcl::Vector {
-    superclass ::constcl::NIL
-    variable data constant
-    constructor {v} {
-        set len [llength $v]
-        set vsa [::constcl::vsAlloc $len]
-        set idx $vsa
-        foreach elt $v {
-            lset ::constcl::vectorSpace $idx $elt
-            incr idx
-        }
-        set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
-        set constant 0
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set len [llength $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt $v {
+      lset ::constcl::vectorSpace $idx $elt
+      incr idx
     }
-    method length {} {::constcl::cdr $data}
-    method ref {k} {
-        set k [$k numval]
-        if {$k < 0 || $k >= [[my length] numval]} {
-            ::error "index out of range\n$k"
-        }
-        lindex [my store] $k
+    set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set constant 0
+  }
+  method length {} {::constcl::cdr $data}
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
     }
-    method store {} {
-        set base [[::constcl::car $data] numval]
-        set end [expr {[[my length] numval] + $base - 1}]
-        lrange $::constcl::vectorSpace $base $end
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[::constcl::car $data] numval]
+    set end [expr {[[my length] numval] + $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    my store
+  }
+  method set! {k obj} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[::constcl::car $data] numval]
+      lset ::constcl::vectorSpace $k+$base $obj
     }
-    method value {} {
-        my store
+    return [self]
+  }
+  method fill! {val} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set base [[::constcl::car $data] numval]
+      set len [[my length] numval]
+      for {set idx $base} {$idx < $len+$base} {incr idx} {
+        lset ::constcl::vectorSpace $idx $val
+      }
     }
-    method set! {k obj} {
-        if {[my constant]} {
-            ::error "vector is constant"
-        } else {
-            set k [$k numval]
-            if {$k < 0 || $k >= [[my length] numval]} {
-                ::error "index out of range\n$k"
-            }
-            set base [[::constcl::car $data] numval]
-            lset ::constcl::vectorSpace $k+$base $obj
-        }
-        return [self]
-    }
-    method fill! {val} {
-        if {[my constant]} {
-            ::error "vector is constant"
-        } else {
-            set base [[::constcl::car $data] numval]
-            set len [[my length] numval]
-            for {set idx $base} {$idx < $len+$base} {incr idx} {
-                lset ::constcl::vectorSpace $idx $val
-            }
-        }
-        return [self]
-    }
-    method mkconstant {} {set constant 1}
-    method constant {} {set constant}
-    method write {handle} { puts -nonewline $handle [my show]}
-    method display {} {puts -nonewline [my show]}
-    method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
+    return [self]
+  }
+  method mkconstant {} {set constant 1}
+  method constant {} {set constant}
+  method write {handle} { puts -nonewline $handle [my show]}
+  method display {} {puts -nonewline [my show]}
+  method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
 }
 
 interp alias {} ::constcl::MkVector {} ::constcl::Vector new
 CB
 
 MD(
-**vector?**
+__vector?__
 MD)
 
 PR(
@@ -89,13 +89,13 @@ CB
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {val} {
-    if {[info object isa typeof $val ::constcl::Vector]} {
-        return #t
-    } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
-        return #t
-    } else {
-        return #f
-    }
+  if {[info object isa typeof $val ::constcl::Vector]} {
+    return #t
+  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB
 
@@ -110,7 +110,7 @@ TT(
 TT)
 
 MD(
-**make-vector**
+__make-vector__
 
 `make-vector` creates a vector with a given length and optionally a fill value.
 If a fill value isn't given, the empty list will be used.
@@ -124,8 +124,8 @@ MD(
 Example:
 
 ```
-(let ((k 5)) (make-vector k))                  ⇒  #(() () () () ())
-(let ((k 5) (fill #\A)) (make-vector k fill))  ⇒  #(#\A #\A #\A #\A #\A)
+(let ((k 5)) (make-vector k))                  =>  #(() () () () ())
+(let ((k 5) (fill #\A)) (make-vector k fill))  =>  #(#\A #\A #\A #\A #\A)
 ```
 MD)
 
@@ -133,17 +133,17 @@ CB
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
-    if {[llength $args] == 0} {
-        set fill #NIL
-    } else {
-        lassign $args fill
-    }
-    MkVector [lrepeat [$k numval] $fill]
+  if {[llength $args] == 0} {
+    set fill #NIL
+  } else {
+    lassign $args fill
+  }
+  MkVector [lrepeat [$k numval] $fill]
 }
 CB
 
 MD(
-**vector**
+__vector__
 
 Given a number of Lisp values, `vector` creates a vector containing them.
 MD)
@@ -156,7 +156,7 @@ MD(
 Example:
 
 ```
-(vector 'a 'b 'c)   ⇒  #(a b c)
+(vector 'a 'b 'c)   =>  #(a b c)
 ```
 MD)
 
@@ -164,7 +164,7 @@ CB
 reg vector ::constcl::vector
 
 proc ::constcl::vector {args} {
-    MkVector $args
+  MkVector $args
 }
 CB
 
@@ -178,7 +178,7 @@ TT(
 TT)
 
 MD(
-**vector-length**
+__vector-length__
 
 `vector-length` returns the length of a vector.
 MD)
@@ -191,7 +191,7 @@ MD(
 Example:
 
 ```
-(vector-length '#(a b c))   ⇒  3
+(vector-length '#(a b c))   =>  3
 ```
 MD)
 
@@ -199,8 +199,10 @@ CB
 reg vector-length
 
 proc ::constcl::vector-length {vec} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show])}
-    return [$vec length]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show])
+  }
+  return [$vec length]
 }
 CB
 
@@ -213,7 +215,7 @@ TT(
 TT)
 
 MD(
-**vector-ref**
+__vector-ref__
 
 `vector-ref` returns the element of _vec_ at index _k_ (0-based).
 MD)
@@ -226,7 +228,7 @@ MD(
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   ⇒  b
+(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   =>  b
 ```
 MD)
 
@@ -234,9 +236,13 @@ CB
 reg vector-ref ::constcl::vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
-    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec ref $k]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec ref $k]
 }
 CB
 
@@ -249,7 +255,7 @@ TT(
 TT)
 
 MD(
-**vector-set!**
+__vector-set!__
 
 `vector-set!`, for a non-constant vector, sets the element at index _k_ to _val_.
 MD)
@@ -262,8 +268,8 @@ MD(
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           ⇒  *error*
-(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   ⇒  #(a x c)
+(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           =>  *error*
+(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   =>  #(a x c)
 ```
 MD)
 
@@ -271,9 +277,13 @@ CB
 reg vector-set! ::constcl::vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$k show])}
-    check {number? $k} {NUMBER expected\n([pn] [$vec show] [$k show])}
-    return [$vec set! $k $val]
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec set! $k $val]
 }
 CB
 
@@ -287,7 +297,7 @@ TT(
 TT)
 
 MD(
-**vector->list**
+__vector->list__
 
 `vector->list` converts a vector value to a Lisp list.
 MD)
@@ -300,7 +310,7 @@ MD(
 Example:
 
 ```
-(vector->list '#(a b c))   ⇒  (a b c)
+(vector->list '#(a b c))   =>  (a b c)
 ```
 MD)
 
@@ -308,7 +318,7 @@ CB
 reg vector->list ::constcl::vector->list
 
 proc ::constcl::vector->list {vec} {
-    list {*}[$vec value]
+  list {*}[$vec value]
 }
 CB
 
@@ -321,7 +331,7 @@ TT(
 TT)
 
 MD(
-**list->vector**
+__list->vector__
 
 `list->vector` converts a Lisp list value to a vector.
 MD)
@@ -334,7 +344,7 @@ MD(
 Example:
 
 ```
-(list->vector '(1 2 3))   ⇒  #(1 2 3)
+(list->vector '(1 2 3))   =>  #(1 2 3)
 ```
 MD)
 
@@ -342,7 +352,7 @@ CB
 reg list->vector ::constcl::list->vector
 
 proc ::constcl::list->vector {list} {
-    vector {*}[splitlist $list]
+  vector {*}[splitlist $list]
 }
 CB
 
@@ -355,7 +365,7 @@ TT(
 TT)
 
 MD(
-**vector-fill!**
+__vector-fill!__
 
 `vector-fill!` fills a non-constant vector with a given value.
 MD)
@@ -369,8 +379,8 @@ Example:
 
 ```
 (define vec (vector 'a 'b 'c))
-(vector-fill! vec 'x)             ⇒  #(x x x)
-vec                               ⇒  #(x x x)
+(vector-fill! vec 'x)             =>  #(x x x)
+vec                               =>  #(x x x)
 ```
 MD)
 
@@ -378,8 +388,10 @@ CB
 reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-    check {vector? $vec} {VECTOR expected\n([pn] [$vec show] [$fill show])}
-    $vec fill! $fill
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$fill show])
+  }
+  $vec fill! $fill
 }
 CB
 
@@ -391,4 +403,4 @@ TT(
 
 TT)
 
-# vim: ft=tcl tw=80
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

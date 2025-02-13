@@ -2,13 +2,13 @@
 MD(
 ## Identifier validation
 
-**idcheckinit**
+__idcheckinit__
 
-**idchecksubs**
+__idchecksubs__
 
-**idcheck**
+__idcheck__
 
-**varcheck**
+__varcheck__
 
 Some routines for checking if a string is a valid identifier. `idcheckinit`
 checks the first character, `idchecksubs` checks the rest. `idcheck` calls the
