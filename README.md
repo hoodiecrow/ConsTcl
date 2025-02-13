@@ -663,7 +663,6 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {^$}          { return #NONE}
     {\"}          { return [parse-string-expr] }
     {\#}          { return [parse-sharp] }
     {\'}          { return [parse-quoted-expr] }
@@ -671,9 +670,11 @@ proc ::constcl::parse-expr {} {
     {\+} - {\-}   { return [parse-plus-minus] }
     {\,}          { return [parse-unquoted-expr] }
     {\.}          { $ib advance ; return [Dot new] }
+    {\:}          { return [parse-object-expr] }
     {\[}          { return [parse-pair-expr "\]"] }
     {\`}          { return [parse-quasiquoted-expr] }
     {\d}          { return [parse-number-expr] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [parse-identifier-expr] }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -1033,6 +1034,31 @@ proc ::constcl::parse-vector-expr {} {
 ```
 
 
+__parse-object-expr__
+
+A non-standard extension, `parse-object-expr` reads one of the ConsTcl objects
+and passes its name along.
+
+<table border=1><thead><tr><th colspan=2 align="left">parse-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object</td></tr></table>
+
+```
+proc ::constcl::parse-object-expr {} {
+  upvar ib ib
+  foreach ch [split "::oo::Obj" {}] {
+    if {[$ib peek] ne $ch} {
+      error "bad object name"
+    }
+    $ib advance
+  }
+  set res "::oo::Obj"
+  while {[::string is digit [$ib peek]]} {
+    ::append res [$ib peek]
+    $ib advance
+  }
+  return $res
+}
+```
+
 ### read
 
 __read__
@@ -1057,7 +1083,6 @@ proc ::constcl::read {args} {
   set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
-  set unget {}
   return $expr
 }
 ```
@@ -1087,7 +1112,6 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {^$}          { return #NONE}
     {\"}          { return [read-string-expr] }
     {\#}          { return [read-sharp] }
     {\'}          { return [read-quoted-expr] }
@@ -1095,9 +1119,11 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { return [read-plus-minus $c] }
     {\,}          { return [read-unquoted-expr] }
     {\.}          { return [Dot new]; set c [readc] }
+    {\:}          { return [read-object-expr] }
     {\[}          { return [read-pair-expr "\]"] }
     {\`}          { return [read-quasiquoted-expr] }
     {\d}          { return [read-number-expr $c] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [read-identifier-expr $c] }
     default {
       read-eof $c
@@ -1457,6 +1483,36 @@ proc ::constcl::read-unquoted-expr {} {
   }
   read-eof $expr
   return [list [MkSymbol $symbol] $expr]
+}
+```
+
+__read-object-expr__
+
+A non-standard extension, `read-object-expr` reads one of the ConsTcl objects
+and passes its name along.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
+
+```
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 ```
 
@@ -4652,6 +4708,8 @@ interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
 
+reg port?
+
 proc ::constcl::port? {val} {
   if {[info object isa typeof $val ::constcl::Port]} {
     return #t
@@ -4676,6 +4734,8 @@ proc ::constcl::call-with-output-file {string proc} {
 ```
 
 ```
+reg input-port?
+
 proc ::constcl::input-port? {obj} {
   if {[info object isa typeof $val ::constcl::InputPort]} {
     return #t
@@ -4688,6 +4748,8 @@ proc ::constcl::input-port? {obj} {
 ```
 
 ```
+reg output-port?
+
 proc ::constcl::output-port? {obj} {
   if {[info object isa typeof $val ::constcl::OutputPort]} {
     return #t
@@ -4700,12 +4762,16 @@ proc ::constcl::output-port? {obj} {
 ```
 
 ```
+reg current-input-port
+
 proc ::constcl::current-input-port {} {
   return $::constcl::Input_port
 }
 ```
 
 ```
+reg current-output-port
+
 proc ::constcl::current-output-port {} {
   return $::constcl::Output_port
 }
@@ -4793,23 +4859,6 @@ proc ::constcl::close-output-port {port} {
 }
 ```
 
-`read` is implemented in the read[#](https://github.com/hoodiecrow/ConsTcl#read) section.
-
-```
-proc ::constcl::--read {args} {
-  if {[llength $args]} {
-    set new_port [lindex $args 0]
-  } else {
-    set new_port $::constcl::Input_port
-  }
-  set old_port $::constcl::Input_port
-  set ::constcl::Input_port $new_port
-  set n [xread]
-  set ::constcl::Input_port $old_port
-  return $n
-}
-```
-
 ```
 proc ::constcl::read-char {args} {
     # TODO
@@ -4832,6 +4881,9 @@ proc ::constcl::char-ready? {args} {
 
 `display` is implemented in the write section.
 
+`newline` outputs a newline character. Especially helpful when using `display`
+for output, since it doesn't end lines with newline.
+
 ```
 reg newline
 
@@ -4842,7 +4894,6 @@ proc ::constcl::newline {args} {
     set port [current-output-port]
   }
   pe "(display #\\newline $port)"
-#  display [p "#\\A"] $port
 }
 ```
 
@@ -4853,58 +4904,19 @@ proc ::constcl::write-char {args} {
 }
 ```
 
-`--load` is a raw port of the S9fES implementation. `----load` is my original
-straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
+`load` reads a Lisp source file and evals the expressions in it in the global
+environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+
+<table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::constcl::--load {filename} {
-  set new_port [MkInputPort]
-  $new_port open $filename
-  if {[$new_port handle] eq "#NIL"} {
-    return -1
-  }
-  set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
-  set save_env $env
-  set env ::constcl::global_env
-  set outer_loading [$::constcl::S_loading cdr]
-  set-cdr! ::constcl::S_loading #t
-  set old_port $::constcl::Input_port
-  set outer_lno $::constcl::Line_no
-  set ::constcl::Line_no 1
-  while true {
-    set ::constcl::Input_port $new_port
-    set n [xread]
-    set ::constcl::Input_port $old_port
-    if {$n == $::constcl::END_OF_FILE} {
-      break
-    }
-    set n [eval $n $env]
-  }
-  $new_port close
-  set $::constcl::Line_no $outer_lno
-  set-cdr! ::constcl::S_loading $outer_loading
-  set ::constcl::File_list [cdr $::constcl::File_list]
-  set env $save_env
-  return 0
-}
-
-proc ::constcl::----load {filename} {
-  set f [open $filename]
-  set src [::read $f]
-  close $f
-  set ib [::constcl::IB new $src]
-  while {[$ib first] ne {}} {
-    eval [parse $ib]
-  }
-}
-
 reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
   set n [read $p]
   while {$n ne "#EOF"} {
-    eval $n ::constcl::global_env
+    eval $n
     set n [read $p]
   }
   close-input-port $p
@@ -4941,10 +4953,16 @@ oo::class create ::constcl::Pair {
     set cdr $d
     set constant 0
   }
-  method name {} {} ;# for eval to call when dealing with an application form
-  method value {} {my show}
-  method car {} { set car }
-  method cdr {} { set cdr }
+  method name {} {}
+  method value {} {
+    my show
+  }
+  method car {} {
+    set car
+  }
+  method cdr {} {
+    set cdr
+  }
   method set-car! {val} {
     ::constcl::check {my mutable?} {Can't modify a constant pair}
     set car $val
@@ -4955,28 +4973,39 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {return $constant}
-  method mutable? {} {expr {$constant?"#f":"#t"}}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    return $constant
+  }
+  method mutable? {} {
+    expr {$constant ? "#f" : "#t"}
+  }
   method write {handle} {
     puts -nonewline $handle "("
     ::constcl::write-pair $handle [self]
     puts -nonewline $handle ")"
   }
-  method display {} { [my write] }
-  method show {} {format "(%s)" [::constcl::show-pair [self]]}
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "(%s)" [::constcl::show-pair [self]]
+  }
 }
 
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 ```
 
+
 __pair?__
 
 <table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
-reg pair? ::constcl::pair?
+reg pair?
 
 proc ::constcl::pair? {val} {
   if {[info object isa typeof $val ::constcl::Pair]} {
@@ -4988,6 +5017,7 @@ proc ::constcl::pair? {val} {
   }
 }
 ```
+
 
 __show-pair__
 
@@ -5188,14 +5218,20 @@ __list?__
 The `list?` predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 
-<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg list? ::constcl::list?
 
-proc ::constcl::list? {pair} {
+proc ::constcl::list? {val} {
   set visited {}
-  return [listp $pair]
+  if {[null? $val] ne "#f"} {
+      return #t
+  } elseif {[pair? $val] ne "#f"} {
+      return [listp $val]
+  } else {
+      return #f
+  }
 }
 ```
 
@@ -5295,7 +5331,7 @@ Example:
 <table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
-reg append ::constcl::append
+reg append
 
 proc ::constcl::append {args} {
   set prev [lindex $args end]

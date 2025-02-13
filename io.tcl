@@ -80,6 +80,8 @@ interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
 
+reg port?
+
 proc ::constcl::port? {val} {
   if {[info object isa typeof $val ::constcl::Port]} {
     return #t
@@ -104,6 +106,8 @@ proc ::constcl::call-with-output-file {string proc} {
 CB
 
 CB
+reg input-port?
+
 proc ::constcl::input-port? {obj} {
   if {[info object isa typeof $val ::constcl::InputPort]} {
     return #t
@@ -116,6 +120,8 @@ proc ::constcl::input-port? {obj} {
 CB
 
 CB
+reg output-port?
+
 proc ::constcl::output-port? {obj} {
   if {[info object isa typeof $val ::constcl::OutputPort]} {
     return #t
@@ -128,12 +134,16 @@ proc ::constcl::output-port? {obj} {
 CB
 
 CB
+reg current-input-port
+
 proc ::constcl::current-input-port {} {
   return $::constcl::Input_port
 }
 CB
 
 CB
+reg current-output-port
+
 proc ::constcl::current-output-port {} {
   return $::constcl::Output_port
 }
@@ -230,25 +240,6 @@ proc ::constcl::close-output-port {port} {
 }
 CB
 
-MD(
-`read` is implemented in the read[#](https://github.com/hoodiecrow/ConsTcl#read) section.
-MD)
-
-CB
-proc ::constcl::--read {args} {
-  if {[llength $args]} {
-    set new_port [lindex $args 0]
-  } else {
-    set new_port $::constcl::Input_port
-  }
-  set old_port $::constcl::Input_port
-  set ::constcl::Input_port $new_port
-  set n [xread]
-  set ::constcl::Input_port $old_port
-  return $n
-}
-CB
-
 CB
 proc ::constcl::read-char {args} {
     # TODO
@@ -275,6 +266,11 @@ MD(
 `display` is implemented in the write section.
 MD)
 
+MD(
+`newline` outputs a newline character. Especially helpful when using `display`
+for output, since it doesn't end lines with newline.
+MD)
+
 CB
 reg newline
 
@@ -285,7 +281,6 @@ proc ::constcl::newline {args} {
     set port [current-output-port]
   }
   pe "(display #\\newline $port)"
-#  display [p "#\\A"] $port
 }
 CB
 
@@ -304,59 +299,22 @@ proc ::constcl::write-char {args} {
 CB
 
 MD(
-`--load` is a raw port of the S9fES implementation. `----load` is my original
-straight-Tcl version. `load` is my ConsTcl mix of Scheme calls and Tcl syntax.
+`load` reads a Lisp source file and evals the expressions in it in the global
+environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 MD)
 
+PR(
+load (public);filename str -> none
+PR)
+
 CB
-proc ::constcl::--load {filename} {
-  set new_port [MkInputPort]
-  $new_port open $filename
-  if {[$new_port handle] eq "#NIL"} {
-    return -1
-  }
-  set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
-  set save_env $env
-  set env ::constcl::global_env
-  set outer_loading [$::constcl::S_loading cdr]
-  set-cdr! ::constcl::S_loading #t
-  set old_port $::constcl::Input_port
-  set outer_lno $::constcl::Line_no
-  set ::constcl::Line_no 1
-  while true {
-    set ::constcl::Input_port $new_port
-    set n [xread]
-    set ::constcl::Input_port $old_port
-    if {$n == $::constcl::END_OF_FILE} {
-      break
-    }
-    set n [eval $n $env]
-  }
-  $new_port close
-  set $::constcl::Line_no $outer_lno
-  set-cdr! ::constcl::S_loading $outer_loading
-  set ::constcl::File_list [cdr $::constcl::File_list]
-  set env $save_env
-  return 0
-}
-
-proc ::constcl::----load {filename} {
-  set f [open $filename]
-  set src [::read $f]
-  close $f
-  set ib [::constcl::IB new $src]
-  while {[$ib first] ne {}} {
-    eval [parse $ib]
-  }
-}
-
 reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
   set n [read $p]
   while {$n ne "#EOF"} {
-    eval $n ::constcl::global_env
+    eval $n
     set n [read $p]
   }
   close-input-port $p

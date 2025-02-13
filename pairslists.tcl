@@ -18,10 +18,16 @@ oo::class create ::constcl::Pair {
     set cdr $d
     set constant 0
   }
-  method name {} {} ;# for eval to call when dealing with an application form
-  method value {} {my show}
-  method car {} { set car }
-  method cdr {} { set cdr }
+  method name {} {}
+  method value {} {
+    my show
+  }
+  method car {} {
+    set car
+  }
+  method cdr {} {
+    set cdr
+  }
   method set-car! {val} {
     ::constcl::check {my mutable?} {Can't modify a constant pair}
     set car $val
@@ -32,21 +38,58 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {return $constant}
-  method mutable? {} {expr {$constant?"#f":"#t"}}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    return $constant
+  }
+  method mutable? {} {
+    expr {$constant ? "#f" : "#t"}
+  }
   method write {handle} {
     puts -nonewline $handle "("
     ::constcl::write-pair $handle [self]
     puts -nonewline $handle ")"
   }
-  method display {} { [my write] }
-  method show {} {format "(%s)" [::constcl::show-pair [self]]}
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "(%s)" [::constcl::show-pair [self]]
+  }
 }
 
 
 interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 CB
+
+TT(
+
+::tcltest::test pairslists-1.0 {playing with lists} -body {
+    pep {(define x (list 'a 'b 'c))}
+    pep {(define y x)}
+    pep {y}
+    pep {(list? y)}
+} -output "(a b c)\n#t\n"
+
+::tcltest::test pairslists-1.2 {playing with lists} -body {
+    pep {(set-cdr! x 4)}
+    pep {x}
+} -output "(a . 4)\n(a . 4)\n"
+
+::tcltest::test pairslists-1.3 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+} -output "#t\n(a . 4)\n"
+
+::tcltest::test pairslists-1.4 {playing with lists} -body {
+    pep {(eqv? x y)}
+    pep {y}
+    pep {(list? y)}
+} -output "#t\n(a . 4)\n#f\n"
+
+TT)
 
 MD(
 __pair?__
@@ -57,7 +100,7 @@ pair? (public);val val -> bool
 PR)
 
 CB
-reg pair? ::constcl::pair?
+reg pair?
 
 proc ::constcl::pair? {val} {
   if {[info object isa typeof $val ::constcl::Pair]} {
@@ -69,6 +112,16 @@ proc ::constcl::pair? {val} {
   }
 }
 CB
+
+TT(
+
+::tcltest::test pairslists-2.0 {try pair?} -body {
+    pep {(pair? '(a . b))}
+    pep {(pair? '(a b c))}
+    pep {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+TT)
 
 MD(
 __show-pair__
@@ -106,34 +159,12 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.0 {playing with lists} -body {
-    pep {(define x (list 'a 'b 'c))}
-    pep {(define y x)}
-    pep {y}
-    pep {(list? y)}
-} -output "(a b c)\n#t\n"
-
-::tcltest::test pairslists-1.2 {playing with lists} -body {
-    pep {(set-cdr! x 4)}
-    pep {x}
-} -output "(a . 4)\n(a . 4)\n"
-
-::tcltest::test pairslists-1.3 {playing with lists} -body {
-    pep {(eqv? x y)}
-    pep {y}
-} -output "#t\n(a . 4)\n"
-
-::tcltest::test pairslists-1.4 {playing with lists} -body {
-    pep {(eqv? x y)}
-    pep {y}
-    pep {(list? y)}
-} -output "#t\n(a . 4)\n#f\n"
-
-::tcltest::test pairslists-1.5 {try pair?} -body {
-    pep {(pair? '(a . b))}
-    pep {(pair? '(a b c))}
-    pep {(pair? '())}
-} -output "#t\n#t\n#f\n"
+::tcltest::test pairslists-3.0 {try show-pair} -body {
+    puts [::constcl::show-pair [p {(a . b)}]]
+    puts [::constcl::show-pair [p {(a b c)}]]
+    puts [::constcl::show-pair [p {(a b . c)}]]
+    puts [::constcl::show-pair [p {(a)}]]
+} -output "a . b\na b c\na b . c\na\n"
 
 TT)
 
@@ -171,7 +202,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.6 {try cons} -body {
+::tcltest::test pairslists-4.0 {try cons} -body {
     pep {(cons 'a '())}
     pep {(cons '(a) '(b c d))}
     pep {(cons "a" '(b c))}
@@ -209,13 +240,13 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.7 {try car} -body {
+::tcltest::test pairslists-5.0 {try car} -body {
     pep {(car '(a b c))}
     pep {(car '((a) b c d))}
     pep {(car '(1 . 2))}
 } -output "a\n(a)\n1\n"
 
-::tcltest::test pairslists-1.8 {try car} -body {
+::tcltest::test pairslists-5.1 {try car} -body {
     pep {(car '())}
 } -returnCodes error -result "PAIR expected"
 
@@ -249,12 +280,12 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.9 {try cdr} -body {
+::tcltest::test pairslists-6.0 {try cdr} -body {
     pep {(cdr '((a) b c d))}
     pep {(cdr '(1 . 2))}
 } -output "(b c d)\n2\n"
 
-::tcltest::test pairslists-1.10 {try cdr} -body {
+::tcltest::test pairslists-6.1 {try cdr} -body {
     pep {(cdr '())}
 } -returnCodes error -result "PAIR expected"
 
@@ -342,13 +373,13 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.11 {try set-car!} -body {
-    pep {(define f (lambda () (list 'not-a-constant-list)))}
-    pep {(define g (lambda () '(constant-list)))}
+::tcltest::test pairslists-7.0 {try set-car!} -body {
+    pep {(define (f) (list 'not-a-constant-list)))}
+    pep {(define (g) '(constant-list)))}
     pep {(set-car! (f) 3)}
 } -output "(3)\n"
 
-::tcltest::test pairslists-1.12 {try set-car!} -body {
+::tcltest::test pairslists-7.1 {try set-car!} -body {
     pep {(set-car! (g) 3)}
 } -returnCodes error -result "Can't modify a constant pair"
 
@@ -382,13 +413,13 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.13 {try set-cdr!} -body {
-    pep {(define f (lambda () (list 'not-a-constant-list)))}
-    pep {(define g (lambda () '(constant-list)))}
+::tcltest::test pairslists-8.0 {try set-cdr!} -body {
+    pep {(define (f) (list 'not-a-constant-list)))}
+    pep {(define (g) '(constant-list)))}
     pep {(set-cdr! (f) 3)}
 } -output "(not-a-constant-list . 3)\n"
 
-::tcltest::test pairslists-1.14 {try set-cdr!} -body {
+::tcltest::test pairslists-8.1 {try set-cdr!} -body {
     pep {(set-cdr! (g) 3)}
 } -returnCodes error -result "Can't modify a constant pair"
 
@@ -402,15 +433,21 @@ ends with NIL.
 MD)
 
 PR(
-list? (public);pair pair -> bool
+list? (public);val val -> bool
 PR)
 
 CB
 reg list? ::constcl::list?
 
-proc ::constcl::list? {pair} {
+proc ::constcl::list? {val} {
   set visited {}
-  return [listp $pair]
+  if {[null? $val] ne "#f"} {
+      return #t
+  } elseif {[pair? $val] ne "#f"} {
+      return [listp $val]
+  } else {
+      return #f
+  }
 }
 CB
 
@@ -437,13 +474,15 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.15 {try list?} -body {
+::tcltest::test pairslists-9.0 {try list?} -body {
     pep {(list? '(a b c))}
     pep {(list? '())}
     pep {(list? '(a . b))}
-} -output "#t\n#t\n#f\n"
+    pep {(list? #\A)}
+} -output "#t\n#t\n#f\n#f\n"
 
-::tcltest::test pairslists-1.16 {try list?} -body { ;# "bug": list is infinite and list? must detect that
+::tcltest::test pairslists-9.1 {try list?} -body {
+    # "bug": list is infinite and list? must detect that
     pep {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}
@@ -487,7 +526,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.17 {try list} -body {
+::tcltest::test pairslists-10.0 {try list} -body {
     pep {(list 'a (+ 3 4) 'c)}
     pep {(list)}
 } -output "(a 7 c)\n()\n"
@@ -537,7 +576,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.18 {try length} -body {
+::tcltest::test pairslists-11.0 {try length} -body {
     pep {(length '(a b c))}
     pep {(length '(a (b) (c d e)))}
     pep {(length '())}
@@ -564,7 +603,7 @@ append (public);args lists -> lvals
 PR)
 
 CB
-reg append ::constcl::append
+reg append
 
 proc ::constcl::append {args} {
   set prev [lindex $args end]
@@ -593,14 +632,18 @@ proc ::constcl::copy-list {pair next} {
 CB
 
 TT(
-
-::tcltest::test pairslists-1.19 {try append} -body {
+::tcltest::test pairslists-12.0 {try append} -body {
+    pep "(append '(a b) '(c) '(d e))"
     pep {(append '(x) '(y))}
     pep {(append '(a) '(b c d))}
     pep {(append '(a (b)) '((c)))}
     pep {(append '(a b) '(c . d))}
     pep {(append '() 'a)}
-} -output "(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+} -output "(a b c d e)\n(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+::tcltest::test pairslists-12.1 {try append} -body {
+    pep "(append '(a b) 'c '(d e))"
+} -returnCodes error -result "PAIR expected"
 
 TT)
 
@@ -632,7 +675,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.20 {try reverse} -body {
+::tcltest::test pairslists-13.0 {try reverse} -body {
     pep {(reverse '(a b c))}
     pep {(reverse '(a (b c) d (e (f))))}
 } -output "(c b a)\n((e (f)) d (b c) a)\n"
@@ -671,7 +714,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.21 {try list-tail} -body {
+::tcltest::test pairslists-14.0 {try list-tail} -body {
     pep {(list-tail '(a b c d) 2)}
 } -output "(c d)\n"
 
@@ -705,7 +748,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.22 {try list-ref} -body {
+::tcltest::test pairslists-15.0 {try list-ref} -body {
     pep {(list-ref '(a b c d) 2)}
 } -output "c\n"
 
@@ -745,7 +788,7 @@ CB
 
 TT(
 
-::tcltest::test pairslists-1.23 {try memq, memv} -body {
+::tcltest::test pairslists-16.0 {try memq, memv} -body {
     pep {(memq 'a '(a b c))}
     pep {(memq 'b '(a b c))}
     pep {(memq 'a '(b c d))}
@@ -754,7 +797,7 @@ TT(
     pep {(memv 101 '(100 101 102))}
 } -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
 
-::tcltest::test pairslists-1.24 {try member} -body {
+::tcltest::test pairslists-16.1 {try member} -body {
     pep {(member (list 'a) '(b (a) c))}
 } -output "((a) c)\n"
 
@@ -892,7 +935,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 CB
 
 TT(
-::tcltest::test pairslists-1.25 {try member} -body {
+::tcltest::test pairslists-17.0 {try member} -body {
     pep {(define e '((a 1) (b 2) (c 3)))}
     pep {(assq 'a e)}
     pep {(assq 'b e)}

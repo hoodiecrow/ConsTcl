@@ -221,7 +221,6 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {^$}          { return #NONE}
     {\"}          { return [parse-string-expr] }
     {\#}          { return [parse-sharp] }
     {\'}          { return [parse-quoted-expr] }
@@ -229,9 +228,11 @@ proc ::constcl::parse-expr {} {
     {\+} - {\-}   { return [parse-plus-minus] }
     {\,}          { return [parse-unquoted-expr] }
     {\.}          { $ib advance ; return [Dot new] }
+    {\:}          { return [parse-object-expr] }
     {\[}          { return [parse-pair-expr "\]"] }
     {\`}          { return [parse-quasiquoted-expr] }
     {\d}          { return [parse-number-expr] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [parse-identifier-expr] }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -808,6 +809,35 @@ TT(
 TT)
 
 MD(
+__parse-object-expr__
+
+A non-standard extension, `parse-object-expr` reads one of the ConsTcl objects
+and passes its name along.
+MD)
+
+PR(
+parse-object-expr (internal);-> obj
+PR)
+
+CB
+proc ::constcl::parse-object-expr {} {
+  upvar ib ib
+  foreach ch [split "::oo::Obj" {}] {
+    if {[$ib peek] ne $ch} {
+      error "bad object name"
+    }
+    $ib advance
+  }
+  set res "::oo::Obj"
+  while {[::string is digit [$ib peek]]} {
+    ::append res [$ib peek]
+    $ib advance
+  }
+  return $res
+}
+CB
+
+MD(
 ### read
 
 __read__
@@ -835,7 +865,6 @@ proc ::constcl::read {args} {
   set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
-  set unget {}
   return $expr
 }
 CB
@@ -869,7 +898,6 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {^$}          { return #NONE}
     {\"}          { return [read-string-expr] }
     {\#}          { return [read-sharp] }
     {\'}          { return [read-quoted-expr] }
@@ -877,9 +905,11 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { return [read-plus-minus $c] }
     {\,}          { return [read-unquoted-expr] }
     {\.}          { return [Dot new]; set c [readc] }
+    {\:}          { return [read-object-expr] }
     {\[}          { return [read-pair-expr "\]"] }
     {\`}          { return [read-quasiquoted-expr] }
     {\d}          { return [read-number-expr $c] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [read-identifier-expr $c] }
     default {
       read-eof $c
@@ -1451,6 +1481,40 @@ proc ::constcl::read-unquoted-expr {} {
   }
   read-eof $expr
   return [list [MkSymbol $symbol] $expr]
+}
+CB
+
+MD(
+__read-object-expr__
+
+A non-standard extension, `read-object-expr` reads one of the ConsTcl objects
+and passes its name along.
+MD)
+
+PR(
+read-object-expr (internal);-> objeof
+PR)
+
+CB
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 CB
 

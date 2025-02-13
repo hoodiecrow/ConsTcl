@@ -68,3 +68,53 @@ proc ::constcl::expand-put! {exps} {
     return [expand-quasiquote [cdr [parse $qq]] $env]
 }
 CB
+
+
+MD(
+`--load` is a raw port of the S9fES implementation. `----load` is my original
+straight-Tcl version.
+MD)
+
+CB
+proc ::constcl::--load {filename} {
+  set new_port [MkInputPort]
+  $new_port open $filename
+  if {[$new_port handle] eq "#NIL"} {
+    return -1
+  }
+  set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
+  set save_env $env
+  set env ::constcl::global_env
+  set outer_loading [$::constcl::S_loading cdr]
+  set-cdr! ::constcl::S_loading #t
+  set old_port $::constcl::Input_port
+  set outer_lno $::constcl::Line_no
+  set ::constcl::Line_no 1
+  while true {
+    set ::constcl::Input_port $new_port
+    set n [xread]
+    set ::constcl::Input_port $old_port
+    if {$n == $::constcl::END_OF_FILE} {
+      break
+    }
+    set n [eval $n $env]
+  }
+  $new_port close
+  set $::constcl::Line_no $outer_lno
+  set-cdr! ::constcl::S_loading $outer_loading
+  set ::constcl::File_list [cdr $::constcl::File_list]
+  set env $save_env
+  return 0
+}
+
+proc ::constcl::----load {filename} {
+  set f [open $filename]
+  set src [::read $f]
+  close $f
+  set ib [::constcl::IB new $src]
+  while {[$ib first] ne {}} {
+    eval [parse $ib]
+  }
+}
+CB
+

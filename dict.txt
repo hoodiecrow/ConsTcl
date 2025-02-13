@@ -22,6 +22,8 @@ qquote     -> an expression wrapped in the quasiquote symbol
 qquoteeof  -> an expression wrapped in the quasiquote symbol or end of file
 pm         -> either the symbols + or - or a number
 pmeof      -> either the symbols + or - or a number or end of file
+obj        -> a ConsTcl object
+objeof     -> a ConsTcl object or end of file
 lvfalse    -> a Lisp list of values OR #f
 alist      -> an association list
 plist      -> a property list

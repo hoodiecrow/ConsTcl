@@ -386,7 +386,6 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {^$}          { return #NONE}
     {\"}          { return [parse-string-expr] }
     {\#}          { return [parse-sharp] }
     {\'}          { return [parse-quoted-expr] }
@@ -394,9 +393,11 @@ proc ::constcl::parse-expr {} {
     {\+} - {\-}   { return [parse-plus-minus] }
     {\,}          { return [parse-unquoted-expr] }
     {\.}          { $ib advance ; return [Dot new] }
+    {\:}          { return [parse-object-expr] }
     {\[}          { return [parse-pair-expr "\]"] }
     {\`}          { return [parse-quasiquoted-expr] }
     {\d}          { return [parse-number-expr] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [parse-identifier-expr] }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -664,6 +665,24 @@ proc ::constcl::parse-vector-expr {} {
 
 
 
+proc ::constcl::parse-object-expr {} {
+  upvar ib ib
+  foreach ch [split "::oo::Obj" {}] {
+    if {[$ib peek] ne $ch} {
+      error "bad object name"
+    }
+    $ib advance
+  }
+  set res "::oo::Obj"
+  while {[::string is digit [$ib peek]]} {
+    ::append res [$ib peek]
+    $ib advance
+  }
+  return $res
+}
+
+
+
 reg read
 
 proc ::constcl::read {args} {
@@ -678,7 +697,6 @@ proc ::constcl::read {args} {
   set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
-  set unget {}
   return $expr
 }
 
@@ -697,7 +715,6 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {^$}          { return #NONE}
     {\"}          { return [read-string-expr] }
     {\#}          { return [read-sharp] }
     {\'}          { return [read-quoted-expr] }
@@ -705,9 +722,11 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { return [read-plus-minus $c] }
     {\,}          { return [read-unquoted-expr] }
     {\.}          { return [Dot new]; set c [readc] }
+    {\:}          { return [read-object-expr] }
     {\[}          { return [read-pair-expr "\]"] }
     {\`}          { return [read-quasiquoted-expr] }
     {\d}          { return [read-number-expr $c] }
+    {^$}          { return #NONE}
     {[[:graph:]]} { return [read-identifier-expr $c] }
     default {
       read-eof $c
@@ -982,6 +1001,29 @@ proc ::constcl::read-unquoted-expr {} {
   }
   read-eof $expr
   return [list [MkSymbol $symbol] $expr]
+}
+
+
+
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 
 
@@ -3163,6 +3205,8 @@ interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
 
+reg port?
+
 proc ::constcl::port? {val} {
   if {[info object isa typeof $val ::constcl::Port]} {
     return #t
@@ -3181,6 +3225,8 @@ proc ::constcl::call-with-output-file {string proc} {
     # TODO
 }
 
+reg input-port?
+
 proc ::constcl::input-port? {obj} {
   if {[info object isa typeof $val ::constcl::InputPort]} {
     return #t
@@ -3190,6 +3236,8 @@ proc ::constcl::input-port? {obj} {
     return #f
   }
 }
+
+reg output-port?
 
 proc ::constcl::output-port? {obj} {
   if {[info object isa typeof $val ::constcl::OutputPort]} {
@@ -3201,9 +3249,13 @@ proc ::constcl::output-port? {obj} {
   }
 }
 
+reg current-input-port
+
 proc ::constcl::current-input-port {} {
   return $::constcl::Input_port
 }
+
+reg current-output-port
 
 proc ::constcl::current-output-port {} {
   return $::constcl::Output_port
@@ -3279,20 +3331,6 @@ proc ::constcl::close-output-port {port} {
   $port close
 }
 
-
-proc ::constcl::--read {args} {
-  if {[llength $args]} {
-    set new_port [lindex $args 0]
-  } else {
-    set new_port $::constcl::Input_port
-  }
-  set old_port $::constcl::Input_port
-  set ::constcl::Input_port $new_port
-  set n [xread]
-  set ::constcl::Input_port $old_port
-  return $n
-}
-
 proc ::constcl::read-char {args} {
     # TODO
 }
@@ -3307,6 +3345,7 @@ proc ::constcl::char-ready? {args} {
 
 
 
+
 reg newline
 
 proc ::constcl::newline {args} {
@@ -3316,7 +3355,6 @@ proc ::constcl::newline {args} {
     set port [current-output-port]
   }
   pe "(display #\\newline $port)"
-#  display [p "#\\A"] $port
 }
 
 
@@ -3325,46 +3363,6 @@ proc ::constcl::write-char {args} {
 }
 
 
-proc ::constcl::--load {filename} {
-  set new_port [MkInputPort]
-  $new_port open $filename
-  if {[$new_port handle] eq "#NIL"} {
-    return -1
-  }
-  set ::constcl::File_list [cons [MkString $filename] $::constcl::File_list]
-  set save_env $env
-  set env ::constcl::global_env
-  set outer_loading [$::constcl::S_loading cdr]
-  set-cdr! ::constcl::S_loading #t
-  set old_port $::constcl::Input_port
-  set outer_lno $::constcl::Line_no
-  set ::constcl::Line_no 1
-  while true {
-    set ::constcl::Input_port $new_port
-    set n [xread]
-    set ::constcl::Input_port $old_port
-    if {$n == $::constcl::END_OF_FILE} {
-      break
-    }
-    set n [eval $n $env]
-  }
-  $new_port close
-  set $::constcl::Line_no $outer_lno
-  set-cdr! ::constcl::S_loading $outer_loading
-  set ::constcl::File_list [cdr $::constcl::File_list]
-  set env $save_env
-  return 0
-}
-
-proc ::constcl::----load {filename} {
-  set f [open $filename]
-  set src [::read $f]
-  close $f
-  set ib [::constcl::IB new $src]
-  while {[$ib first] ne {}} {
-    eval [parse $ib]
-  }
-}
 
 reg load
 
@@ -3372,7 +3370,7 @@ proc ::constcl::load {filename} {
   set p [open-input-file $filename]
   set n [read $p]
   while {$n ne "#EOF"} {
-    eval $n ::constcl::global_env
+    eval $n
     set n [read $p]
   }
   close-input-port $p
@@ -3399,10 +3397,16 @@ oo::class create ::constcl::Pair {
     set cdr $d
     set constant 0
   }
-  method name {} {} ;# for eval to call when dealing with an application form
-  method value {} {my show}
-  method car {} { set car }
-  method cdr {} { set cdr }
+  method name {} {}
+  method value {} {
+    my show
+  }
+  method car {} {
+    set car
+  }
+  method cdr {} {
+    set cdr
+  }
   method set-car! {val} {
     ::constcl::check {my mutable?} {Can't modify a constant pair}
     set car $val
@@ -3413,16 +3417,26 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {return $constant}
-  method mutable? {} {expr {$constant?"#f":"#t"}}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    return $constant
+  }
+  method mutable? {} {
+    expr {$constant ? "#f" : "#t"}
+  }
   method write {handle} {
     puts -nonewline $handle "("
     ::constcl::write-pair $handle [self]
     puts -nonewline $handle ")"
   }
-  method display {} { [my write] }
-  method show {} {format "(%s)" [::constcl::show-pair [self]]}
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "(%s)" [::constcl::show-pair [self]]
+  }
 }
 
 
@@ -3430,7 +3444,8 @@ interp alias {} ::constcl::MkPair {} ::constcl::Pair new
 
 
 
-reg pair? ::constcl::pair?
+
+reg pair?
 
 proc ::constcl::pair? {val} {
   if {[info object isa typeof $val ::constcl::Pair]} {
@@ -3441,6 +3456,7 @@ proc ::constcl::pair? {val} {
     return #f
   }
 }
+
 
 
 
@@ -3567,9 +3583,15 @@ proc ::constcl::set-cdr! {pair val} {
 
 reg list? ::constcl::list?
 
-proc ::constcl::list? {pair} {
+proc ::constcl::list? {val} {
   set visited {}
-  return [listp $pair]
+  if {[null? $val] ne "#f"} {
+      return #t
+  } elseif {[pair? $val] ne "#f"} {
+      return [listp $val]
+  } else {
+      return #f
+  }
 }
 
 
@@ -3630,7 +3652,7 @@ proc ::constcl::length-helper {pair} {
 
 
 
-reg append ::constcl::append
+reg append
 
 proc ::constcl::append {args} {
   set prev [lindex $args end]
