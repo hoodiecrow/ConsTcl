@@ -24,11 +24,13 @@ proc ::regmacro {name} {
 }
 
 
+
 proc ::pep {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
 }
+
 
 
 proc ::pp {str} {
@@ -37,10 +39,12 @@ proc ::pp {str} {
 }
 
 
+
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
 }
+
 
 
 proc ::p {str} {
@@ -48,9 +52,11 @@ proc ::p {str} {
 }
 
 
-proc ::e {val} {
-  ::constcl::eval $val
+
+proc ::e {expr} {
+  ::constcl::eval $expr
 }
+
 
 
 proc ::w {val} {
@@ -58,9 +64,11 @@ proc ::w {val} {
 }
 
 
+
 proc ::r {args} {
   ::constcl::read {*}$args
 }
+
 
 
 proc ::prp {str} {
@@ -76,6 +84,7 @@ proc ::prp {str} {
 }
 
 
+
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
@@ -85,36 +94,54 @@ proc ::pxp {str} {
 }
 
 
+
 proc ::pn {} {
   lindex [split [lindex [info level -1] 0] :] end
 }
 
 
+
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+
+
+
 reg in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::in-range {x args} {
   set start 0
   set step 1
   switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
     1 {
+      set s $x
       lassign $args e
-      set end [$e value]
+      set start [$s numval]
+      set end [$e numval]
     }
     2 {
-      lassign $args s e
-      set start [$s value]
-      set end [$e value]
-    }
-    3 {
-      lassign $args s e t
-      set start [$s value]
-      set end [$e value]
-      set step [$t value]
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
     }
   }
   set res $start
-  while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
@@ -185,14 +212,9 @@ oo::class create ::constcl::Dot {
 }
 
 
+
 proc ::constcl::dot? {val} {
-  if {[info object isa typeof $val Dot]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val "Dot"]
 }
 
 
@@ -269,7 +291,8 @@ proc ::constcl::check {cond msg} {
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-  foreach type {symbol number string char boolean vector port} {
+  foreach type {symbol number string
+      char boolean vector port} {
     if {[$type? $val] eq "#t"} {
       return #t
     }
@@ -385,7 +408,6 @@ oo::define ::constcl::IB method skip-ws {} {
 
 
 
-
 reg parse
 
 proc ::constcl::parse {inp} {
@@ -403,19 +425,19 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {\"}          { return [parse-string-expr] }
-    {\#}          { return [parse-sharp] }
-    {\'}          { return [parse-quoted-expr] }
-    {\(}          { return [parse-pair-expr ")"] }
-    {\+} - {\-}   { return [parse-plus-minus] }
-    {\,}          { return [parse-unquoted-expr] }
-    {\.}          { $ib advance ; return [Dot new] }
-    {\:}          { return [parse-object-expr] }
-    {\[}          { return [parse-pair-expr "\]"] }
-    {\`}          { return [parse-quasiquoted-expr] }
-    {\d}          { return [parse-number-expr] }
+    {\"}          { parse-string-expr }
+    {\#}          { parse-sharp }
+    {\'}          { parse-quoted-expr }
+    {\(}          { parse-pair-expr ")" }
+    {\+} - {\-}   { parse-plus-minus }
+    {\,}          { parse-unquoted-expr }
+    {\.} { $ib advance ; return [Dot new] }
+    {\:}          { parse-object-expr }
+    {\[}          { parse-pair-expr "\]" }
+    {\`}          { parse-quasiquoted-expr }
+    {\d}          { parse-number-expr }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [parse-identifier-expr] }
+    {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
     }
@@ -622,7 +644,8 @@ proc ::constcl::parse-number-expr {} {
 
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -633,8 +656,10 @@ proc ::constcl::parse-identifier-expr {} {
 
 
 
+
 proc ::constcl::character-check {name} {
-  if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
     return #t
   } else {
     return #f

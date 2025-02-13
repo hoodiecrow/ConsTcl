@@ -108,4 +108,12 @@ port       -> a port
 ports      -> some ports
 lports     -> a Lisp list of ports
 tports     -> a Tcl list of ports
+iport      -> an input port
+iports     -> some input ports
+liports    -> a Lisp list of input ports
+tiports    -> a Tcl list of input ports
+oport      -> an output port
+oports     -> some output ports
+loports    -> a Lisp list of output ports
+toports    -> a Tcl list of output ports
 

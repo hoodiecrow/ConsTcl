@@ -79,6 +79,9 @@ I have tried to write clear, readable code, but the page format forces me to sho
 
 I'm a 60 year old former system manager who has dabbled in programming since 1979--46 years. Currently, since around 25 years, my language of choice is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits me, and there are things that one can do in Tcl that one can't easily do in other languages. Lisp is a runner-up in my affections, a language that fascinates me but doesn't fit my brain very well (though I have written one large piece of software in AutoLisp).
 
+
+In addition to my terms as programmer and system manager, I have worked as a teacher (teaching C/C++ in upper secondary school) and for a short while I produced teaching materials for the department for information technology at the University of Skövde. I've also been active writing answers at question-and-answer sites on the web, mainly Stack Overflow.
+
 \chapter{Initial declarations}
 \label{initial-declarations}
 
@@ -93,6 +96,9 @@ namespace eval ::constcl {}
 \label{utility-commands}
 
 Next, some procedures that make my life as developer somewhat easier, but don't really matter to the interpreter (except the two first ones). The other ones will show up a lot in the test cases.
+
+
+\textbf{reg}
 
 
 \texttt{reg} registers selected built-in procedures in the standard library.
@@ -121,6 +127,9 @@ proc ::reg {key args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{regmacro}
+
+
 \texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
 
 \begin{tabular}{ |l l| }
@@ -141,7 +150,19 @@ proc ::regmacro {name} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{pep}
+
+
 \texttt{pep} was named after the sequence parse-eval-print, and I never changed the name. It reads and evals an expression, and prints the result.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pep (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -153,7 +174,19 @@ proc ::pep {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{pp} is the same, but it doesn't eval the expression. It just prints what is read.
+\textbf{pp}
+
+
+\texttt{pp} is the same, only it doesn't eval the expression. It just prints what is parsed.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pp (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -164,7 +197,19 @@ proc ::pp {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{pe}
+
+
 \texttt{pe} is still the same, but it doesn't print the expression. It just evals what is read.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pe (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -175,7 +220,19 @@ proc ::pe {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{p} is mostly the same, but it only parses the input, returning an object.
+\textbf{p}
+
+
+\texttt{p} is mostly the same, but it only parses the input, returning an expression.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{p (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -185,17 +242,41 @@ proc ::p {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{e} is another single-action procedure, eval-ing an object and returning another object.
+\textbf{e}
+
+
+\texttt{e} is another single-action procedure, eval-ing an expression and returning a value.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{e (internal)} \\
+\hline
+expr & an expression \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::e {val} {
-  ::constcl::eval $val
+proc ::e {expr} {
+  ::constcl::eval $expr
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{w} is the third single-action procedure, printing an object and that's all.
+\textbf{w}
+
+
+\texttt{w} is the third single-action procedure, printing a value and that's all.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{w (internal)} \\
+\hline
+val & a Lisp value \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -205,7 +286,19 @@ proc ::w {val} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{r} is an extra single-action procedure, reading from default input and returning an object.
+\textbf{r}
+
+
+\texttt{r} is an extra single-action procedure, reading from default input or from a port and returning an expression.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{r (internal)} \\
+\hline
+?port? & an input port \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -215,7 +308,19 @@ proc ::r {args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{prp}
+
+
 \texttt{prp} is a busy thing. It reads an expression, expands macros in it, resolves defines, and prints the result.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{prp (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -233,7 +338,19 @@ proc ::prp {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{pxp}
+
+
 \texttt{pxp} attempts to macro-expand whatever it reads, and prints the result. I know that 'expand' doesn't start with an 'x'.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pxp (internal)} \\
+\hline
+str & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -247,7 +364,18 @@ proc ::pxp {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-When called, tells the caller the name of its command.
+\textbf{pn}
+
+
+"Procedure name" When called, tells the caller the name of its command.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pn (internal)} \\
+\hline
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -257,35 +385,85 @@ proc ::pn {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{typeof?}
+
+
+\texttt{typeof?} looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms the type, the procedure returns \#t.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{typeof? (internal)} \\
+\hline
+val & a Lisp value \\
+type & a Tcl string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\textbf{in-range}
+
+
 This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs.
+
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{in-range (public)} \\
+\hline
+x & a number \\
+?e? & a number \\
+?t? & a number \\
+\textit{Returns:} & a Lisp list of numbers \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 reg in-range
  
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::in-range {x args} {
   set start 0
   set step 1
   switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
     1 {
+      set s $x
       lassign $args e
-      set end [$e value]
+      set start [$s numval]
+      set end [$e numval]
     }
     2 {
-      lassign $args s e
-      set start [$s value]
-      set end [$e value]
-    }
-    3 {
-      lassign $args s e t
-      set start [$s value]
-      set end [$e value]
-      set step [$t value]
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
     }
   }
   set res $start
-  while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
@@ -337,7 +515,7 @@ oo::class create ::constcl::NIL {
 \textbf{null?}
 
 
-The \texttt{null?} standard predicate recognizes the empty list. Predicates in ConsTcl return \#t or \#f for true or false, so some care is necessary when calling them from Tcl code.
+The \texttt{null?} standard predicate recognizes the empty list. Predicates in ConsTcl return \#t or \#f for true or false, so some care is necessary when calling them from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values).
 
 \begin{tabular}{ |l l| }
 \hline
@@ -391,6 +569,12 @@ oo::class create ::constcl::Dot {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\textbf{dot?}
+
+
+\texttt{dot?} is a type predicate that checks for membership in the type \texttt{Dot}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{dot? (internal)} \\
@@ -403,13 +587,7 @@ val & a Lisp value \\
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::dot? {val} {
-  if {[info object isa typeof $val Dot]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val "Dot"]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -470,6 +648,9 @@ oo::class create ::constcl::EndOfFile {
 \section{The error and check procedures}
 \label{the-error-and-check-procedures}
 
+\textbf{error}
+
+
 \texttt{error} is used to signal an error, with \emph{msg} being a message string and the optional arguments being values to show after the message.
 
 \begin{tabular}{ |l l| }
@@ -477,7 +658,7 @@ oo::class create ::constcl::EndOfFile {
 \multicolumn{2}{|l|}{error (public)} \\
 \hline
 msg & a message string \\
-?args? & some expressions \\
+?exprs? & some expressions \\
 \textit{Returns:} & -don't care- \\
 \hline
 \end{tabular}
@@ -504,6 +685,9 @@ proc ::constcl::error {msg args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{check}
+
+
 \texttt{check} does a check (usually a type check) on something and throws an error if it fails.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -521,7 +705,10 @@ proc ::constcl::check {cond msg} {
 \section{The atom? predicate}
 \label{the-atom?-predicate}
 
-\texttt{atom?} recognizes an atom by checking for membership in one of the atomic types.
+\textbf{atom?}
+
+
+\texttt{atom?} recognizes an atom by checking for membership in any one of the atomic types.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -537,7 +724,8 @@ val & a Lisp value \\
 reg atom? ::constcl::atom?
  
 proc ::constcl::atom? {val} {
-  foreach type {symbol number string char boolean vector port} {
+  foreach type {symbol number string
+      char boolean vector port} {
     if {[$type? $val] eq "#t"} {
       return #t
     }
@@ -706,13 +894,22 @@ oo::define ::constcl::IB method skip-ws {} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
-The parsing procedure translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way. For example, the external representation for a vector is a sharp sign (\#), a left parenthesis ((), the external representation for some values, and a right parenthesis ()). The parser takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates an object, which is the internal representation of an expression. The object can then be passed to the evaluator.
-
-\section{parse}
-\label{parse}
+\section{The parse procedure}
+\label{the-parse-procedure}
 \subsection{Parsing}
 \label{parsing}
+
+Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of \emph{external representation}. The result of parsing is an \emph{expression} in internal form.
+
+
+The parsing process translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way. For example, the external representation for a vector is a sharp sign (\#), a left parenthesis ((), the external representation for some values, and a right parenthesis ()).
+
+
+\includegraphics{images/vector-representation}
+
+
+The \texttt{parse} procedure takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+
 
 Given a string, \texttt{parse} fills the input buffer. It then parses the input and produces the internal representation of an expression.
 
@@ -726,7 +923,7 @@ Example:
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-Here, \texttt{parse} parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has the internal representation \texttt{::oo::Obj491}. We will later meet procedures like \texttt{eval}, which transforms an expression into a value, and \texttt{write}, which prints a printed representation of expressions and values. Putting them together: we can see
+Here, \texttt{parse} parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled \texttt{::oo::Obj491}. We will later meet procedures like \texttt{eval}, which transforms an expression into a value, and \texttt{write}, which prints a printed representation of expressions and values. Putting them together: we can see
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -802,19 +999,19 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {\"}          { return [parse-string-expr] }
-    {\#}          { return [parse-sharp] }
-    {\'}          { return [parse-quoted-expr] }
-    {\(}          { return [parse-pair-expr ")"] }
-    {\+} - {\-}   { return [parse-plus-minus] }
-    {\,}          { return [parse-unquoted-expr] }
-    {\.}          { $ib advance ; return [Dot new] }
-    {\:}          { return [parse-object-expr] }
-    {\[}          { return [parse-pair-expr "\]"] }
-    {\`}          { return [parse-quasiquoted-expr] }
-    {\d}          { return [parse-number-expr] }
+    {\"}          { parse-string-expr }
+    {\#}          { parse-sharp }
+    {\'}          { parse-quoted-expr }
+    {\(}          { parse-pair-expr ")" }
+    {\+} - {\-}   { parse-plus-minus }
+    {\,}          { parse-unquoted-expr }
+    {\.} { $ib advance ; return [Dot new] }
+    {\:}          { parse-object-expr }
+    {\[}          { parse-pair-expr "\]" }
+    {\`}          { parse-quasiquoted-expr }
+    {\d}          { parse-number-expr }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [parse-identifier-expr] }
+    {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
     }
@@ -1167,7 +1364,8 @@ proc ::constcl::parse-number-expr {} {
 \begin{lstlisting}
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -1181,12 +1379,22 @@ proc ::constcl::parse-identifier-expr {} {
 \textbf{character-check}
 
 
-The \texttt{character-check} helper procedure compares a potential character constant to the valid kinds. Returns Tcl truth (1/0).
+The \texttt{character-check} helper procedure compares a potential character constant to the valid kinds.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{character-check (internal)} \\
+\hline
+name & a Tcl string \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::character-check {name} {
-  if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
     return #t
   } else {
     return #f

@@ -20,6 +20,8 @@ will show up a lot in the test cases.
 MD)
 
 MD(
+__reg__
+
 `reg` registers selected built-in procedures in the standard library.
 MD)
 
@@ -40,6 +42,8 @@ proc ::reg {key args} {
 CB
 
 MD(
+__regmacro__
+
 `regmacro` registers macro names in the macro list, so the evaluator knows what
 to expand.
 MD)
@@ -56,9 +60,15 @@ proc ::regmacro {name} {
 CB
 
 MD(
+__pep__
+
 `pep` was named after the sequence parse-eval-print, and I never changed the
 name. It reads and evals an expression, and prints the result.
 MD)
+
+PR(
+pep (internal);str tstr -> none
+PR)
 
 CB
 proc ::pep {str} {
@@ -69,9 +79,15 @@ proc ::pep {str} {
 CB
 
 MD(
-`pp` is the same, but it doesn't eval the expression. It just prints what is
-read.
+__pp__
+
+`pp` is the same, only it doesn't eval the expression. It just prints what is
+parsed.
 MD)
+
+PR(
+pp (internal);str tstr -> none
+PR)
 
 CB
 proc ::pp {str} {
@@ -81,9 +97,15 @@ proc ::pp {str} {
 CB
 
 MD(
+__pe__
+
 `pe` is still the same, but it doesn't print the expression. It just evals what
 is read.
 MD)
+
+PR(
+pe (internal);str tstr -> val
+PR)
 
 CB
 proc ::pe {str} {
@@ -93,8 +115,14 @@ proc ::pe {str} {
 CB
 
 MD(
-`p` is mostly the same, but it only parses the input, returning an object.
+__p__
+
+`p` is mostly the same, but it only parses the input, returning an expression.
 MD)
+
+PR(
+p (internal);str tstr -> expr
+PR)
 
 CB
 proc ::p {str} {
@@ -103,18 +131,31 @@ proc ::p {str} {
 CB
 
 MD(
-`e` is another single-action procedure, eval-ing an object and returning another object.
+__e__
+
+`e` is another single-action procedure, eval-ing an expression and returning a
+value.
 MD)
 
+PR(
+e (internal);expr expr -> val
+PR)
+
 CB
-proc ::e {val} {
-  ::constcl::eval $val
+proc ::e {expr} {
+  ::constcl::eval $expr
 }
 CB
 
 MD(
-`w` is the third single-action procedure, printing an object and that's all.
+__w__
+
+`w` is the third single-action procedure, printing a value and that's all.
 MD)
+
+PR(
+w (internal);val val -> none
+PR)
 
 CB
 proc ::w {val} {
@@ -123,9 +164,15 @@ proc ::w {val} {
 CB
 
 MD(
-`r` is an extra single-action procedure, reading from default input and
-returning an object.
+__r__
+
+`r` is an extra single-action procedure, reading from default input or from a
+port and returning an expression.
 MD)
+
+PR(
+r (internal);?port? iport -> expr
+PR)
 
 CB
 proc ::r {args} {
@@ -134,9 +181,15 @@ proc ::r {args} {
 CB
 
 MD(
+__prp__
+
 `prp` is a busy thing. It reads an expression, expands macros in it, resolves
 defines, and prints the result.
 MD)
+
+PR(
+prp (internal);str tstr -> none
+PR)
 
 CB
 proc ::prp {str} {
@@ -153,9 +206,15 @@ proc ::prp {str} {
 CB
 
 MD(
+__pxp__
+
 `pxp` attempts to macro-expand whatever it reads, and prints the result. I know
 that 'expand' doesn't start with an 'x'.
 MD)
+
+PR(
+pxp (internal);str tstr -> none
+PR)
 
 CB
 proc ::pxp {str} {
@@ -168,8 +227,14 @@ proc ::pxp {str} {
 CB
 
 MD(
-When called, tells the caller the name of its command.
+__pn__
+
+"Procedure name" When called, tells the caller the name of its command.
 MD)
+
+PR(
+pn (internal);-> tstr
+PR)
 
 CB
 proc ::pn {} {
@@ -178,37 +243,81 @@ proc ::pn {} {
 CB
 
 MD(
+__typeof?__
+
+`typeof?` looks at a value's type and reports if it is the same as the given
+type. To be certain, it looks at the value in two ways: once assuming that the value
+is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
+interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
+the type, the procedure returns #t.
+MD)
+
+PR(
+typeof? (internal);val val type tstr -> bool
+PR)
+
+CB
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB
+
+MD(
+__in-range__
+
 This one is a little bit of both, a utility function that is also among the
 builtins in the library. It started out as a one-liner by Donal K. Fellows, but
 has grown a bit since then to suit my needs.
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
+Number objects. If one is passed to the procedure, it is used as the end of the
+sequence: the sequence will end just before it. If two numbers are passed, the
+first one becomes the start of the sequence: the first number in it. The second
+number will become the end of the sequence. If three numbers are passed, they
+become start, end, and step, i.e. how much is added to the current number to
+find next number in the sequence.
 MD)
+
+PR(
+in-range (public);x num ?e? num ?t? num -> lnums
+PR)
 
 CB
 reg in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::in-range {x args} {
   set start 0
   set step 1
   switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
     1 {
+      set s $x
       lassign $args e
-      set end [$e value]
+      set start [$s numval]
+      set end [$e numval]
     }
     2 {
-      lassign $args s e
-      set start [$s value]
-      set end [$e value]
-    }
-    3 {
-      lassign $args s e t
-      set start [$s value]
-      set end [$e value]
-      set step [$t value]
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
     }
   }
   set res $start
-  while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
@@ -260,9 +369,9 @@ CB
 MD(
 __null?__
 
-The `null?` standard predicate recognizes the empty list. Predicates
-in ConsTcl return #t or #f for true or false, so some care is necessary
-when calling them from Tcl code.
+The `null?` standard predicate recognizes the empty list. Predicates in ConsTcl
+return #t or #f for true or false, so some care is necessary when calling them
+from Tcl code (the Tcl `if` command expects 1 or 0 as truth values).
 MD)
 
 PR(
@@ -311,19 +420,19 @@ oo::class create ::constcl::Dot {
 }
 CB
 
+MD(
+__dot?__
+
+`dot?` is a type predicate that checks for membership in the type `Dot`.
+MD)
+
 PR(
 dot? (internal);val val -> bool
 PR)
 
 CB
 proc ::constcl::dot? {val} {
-  if {[info object isa typeof $val Dot]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val "Dot"]
 }
 CB
 
@@ -384,12 +493,14 @@ CB
 MD(
 ### The error and check procedures
 
+__error__
+
 `error` is used to signal an error, with **msg** being a message string and the
 optional arguments being values to show after the message.
 MD)
 
 PR(
-error (public);msg msg ?args? exprs -> dc
+error (public);msg msg ?exprs? exprs -> dc
 PR)
 
 CB
@@ -413,6 +524,8 @@ proc ::constcl::error {msg args} {
 CB
 
 MD(
+__check__
+
 `check` does a check (usually a type check) on something and throws an error if
 it fails.
 MD)
@@ -431,7 +544,9 @@ CB
 MD(
 ### The atom? predicate
 
-`atom?` recognizes an atom by checking for membership in one of the atomic types.
+__atom?__
+
+`atom?` recognizes an atom by checking for membership in any one of the atomic types.
 MD)
 
 PR(
@@ -442,7 +557,8 @@ CB
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-  foreach type {symbol number string char boolean vector port} {
+  foreach type {symbol number string
+      char boolean vector port} {
     if {[$type? $val] eq "#t"} {
       return #t
     }

@@ -6,7 +6,7 @@
 
 First things first. To run, source the file __constcl.tcl__ (with
 __schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use
-the command `__repl__` for a primitive command dialog.  Source
+the command __repl__ for a primitive command dialog.  Source
 __all.tcl__ to run the test suite (you need __constcl.test__ for that).
 
 ### Background
@@ -64,3 +64,9 @@ me, and there are things that one can do in Tcl that one can't easily do in
 other languages. Lisp is a runner-up in my affections, a language that
 fascinates me but doesn't fit my brain very well (though I have written one
 large piece of software in AutoLisp).
+
+In addition to my terms as programmer and system manager, I have worked as a
+teacher (teaching C/C++ in upper secondary school) and for a short while I
+produced teaching materials for the department for information technology at
+the University of Skövde. I've also been active writing answers at
+question-and-answer sites on the web, mainly Stack Overflow.

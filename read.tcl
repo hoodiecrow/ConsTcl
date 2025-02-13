@@ -125,23 +125,27 @@ oo::define ::constcl::IB method skip-ws {} {
 CB
 
 MD(
+### The parse procedure
 
-The parsing procedure translates an expression from external representation to
+#### Parsing
+
+Parsing[#](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is
+analyzing a sequence of letters, digits, and other characters, conforming to the
+rules of **external representation**. The result of parsing is an **expression**
+in internal form.
+
+The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
 expression that expresses it in a unique way. For example, the external
 representation for a vector is a sharp sign (#), a left parenthesis ((), the
-external representation for some values, and a right parenthesis ()). The parser
-takes in the input buffer character by character, matching each character
-against a fitting external representation. When done, it creates an object,
-which is the internal representation of an expression.  The object can then be
-passed to the evaluator.
+external representation for some values, and a right parenthesis ()).
 
-MD)
+![vrep](/images/vector-representation)
 
-MD(
-### parse
-
-#### Parsing
+The `parse` procedure takes in the input buffer character by character, matching
+each character against a fitting external representation. When done, it creates
+a ConsTcl object, which is the internal representation of an expression.  The
+object can then be passed to the evaluator.
 
 Given a string, `parse` fills the input buffer. It then parses the input and
 produces the internal representation of an expression.
@@ -154,10 +158,10 @@ Example:
 ```
 
 Here, `parse` parsed the external representation of a list with three elements,
-+, 2, and 3. It produced the expression that has the internal representation
-`::oo::Obj491`. We will later meet procedures like `eval`, which transforms an
-expression into a value, and `write`, which prints a printed representation of
-expressions and values. Putting them together: we can see
++, 2, and 3. It produced the expression that has an internal representation
+labeled `::oo::Obj491`. We will later meet procedures like `eval`, which
+transforms an expression into a value, and `write`, which prints a printed
+representation of expressions and values. Putting them together: we can see
 
 ```
 % ::constcl::write ::oo::Obj491
@@ -221,19 +225,19 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {\"}          { return [parse-string-expr] }
-    {\#}          { return [parse-sharp] }
-    {\'}          { return [parse-quoted-expr] }
-    {\(}          { return [parse-pair-expr ")"] }
-    {\+} - {\-}   { return [parse-plus-minus] }
-    {\,}          { return [parse-unquoted-expr] }
-    {\.}          { $ib advance ; return [Dot new] }
-    {\:}          { return [parse-object-expr] }
-    {\[}          { return [parse-pair-expr "\]"] }
-    {\`}          { return [parse-quasiquoted-expr] }
-    {\d}          { return [parse-number-expr] }
+    {\"}          { parse-string-expr }
+    {\#}          { parse-sharp }
+    {\'}          { parse-quoted-expr }
+    {\(}          { parse-pair-expr ")" }
+    {\+} - {\-}   { parse-plus-minus }
+    {\,}          { parse-unquoted-expr }
+    {\.} { $ib advance ; return [Dot new] }
+    {\:}          { parse-object-expr }
+    {\[}          { parse-pair-expr "\]" }
+    {\`}          { parse-quasiquoted-expr }
+    {\d}          { parse-number-expr }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [parse-identifier-expr] }
+    {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
     }
@@ -670,7 +674,8 @@ PR)
 CB
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -705,12 +710,17 @@ MD(
 __character-check__
 
 The `character-check` helper procedure compares a potential
-character constant to the valid kinds. Returns Tcl truth (1/0).
+character constant to the valid kinds.
 MD)
+
+PR(
+character-check (internal);name tstr -> tbool
+PR)
 
 CB
 proc ::constcl::character-check {name} {
-  if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
     return #t
   } else {
     return #f

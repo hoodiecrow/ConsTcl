@@ -65,6 +65,12 @@ other languages. Lisp is a runner-up in my affections, a language that
 fascinates me but doesn't fit my brain very well (though I have written one
 large piece of software in AutoLisp).
 
+In addition to my terms as programmer and system manager, I have worked as a
+teacher (teaching C/C++ in upper secondary school) and for a short while I
+produced teaching materials for the department for information technology at
+the University of Skövde. I've also been active writing answers at
+question-and-answer sites on the web, mainly Stack Overflow.
+
 ## Initial declarations
 
 First, I need to create the namespace that will be used for most identifiers:
@@ -78,6 +84,8 @@ namespace eval ::constcl {}
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the two first ones). The other ones
 will show up a lot in the test cases.
+
+__reg__
 
 `reg` registers selected built-in procedures in the standard library.
 
@@ -95,6 +103,8 @@ proc ::reg {key args} {
 }
 ```
 
+__regmacro__
+
 `regmacro` registers macro names in the macro list, so the evaluator knows what
 to expand.
 
@@ -107,8 +117,12 @@ proc ::regmacro {name} {
 }
 ```
 
+__pep__
+
 `pep` was named after the sequence parse-eval-print, and I never changed the
 name. It reads and evals an expression, and prints the result.
+
+<table border=1><thead><tr><th colspan=2 align="left">pep (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pep {str} {
@@ -118,8 +132,12 @@ proc ::pep {str} {
 }
 ```
 
-`pp` is the same, but it doesn't eval the expression. It just prints what is
-read.
+__pp__
+
+`pp` is the same, only it doesn't eval the expression. It just prints what is
+parsed.
+
+<table border=1><thead><tr><th colspan=2 align="left">pp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pp {str} {
@@ -128,8 +146,12 @@ proc ::pp {str} {
 }
 ```
 
+__pe__
+
 `pe` is still the same, but it doesn't print the expression. It just evals what
 is read.
+
+<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::pe {str} {
@@ -138,7 +160,11 @@ proc ::pe {str} {
 }
 ```
 
-`p` is mostly the same, but it only parses the input, returning an object.
+__p__
+
+`p` is mostly the same, but it only parses the input, returning an expression.
+
+<table border=1><thead><tr><th colspan=2 align="left">p (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::p {str} {
@@ -146,15 +172,24 @@ proc ::p {str} {
 }
 ```
 
-`e` is another single-action procedure, eval-ing an object and returning another object.
+__e__
+
+`e` is another single-action procedure, eval-ing an expression and returning a
+value.
+
+<table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::e {val} {
-  ::constcl::eval $val
+proc ::e {expr} {
+  ::constcl::eval $expr
 }
 ```
 
-`w` is the third single-action procedure, printing an object and that's all.
+__w__
+
+`w` is the third single-action procedure, printing a value and that's all.
+
+<table border=1><thead><tr><th colspan=2 align="left">w (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::w {val} {
@@ -162,8 +197,12 @@ proc ::w {val} {
 }
 ```
 
-`r` is an extra single-action procedure, reading from default input and
-returning an object.
+__r__
+
+`r` is an extra single-action procedure, reading from default input or from a
+port and returning an expression.
+
+<table border=1><thead><tr><th colspan=2 align="left">r (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::r {args} {
@@ -171,8 +210,12 @@ proc ::r {args} {
 }
 ```
 
+__prp__
+
 `prp` is a busy thing. It reads an expression, expands macros in it, resolves
 defines, and prints the result.
+
+<table border=1><thead><tr><th colspan=2 align="left">prp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::prp {str} {
@@ -188,8 +231,12 @@ proc ::prp {str} {
 }
 ```
 
+__pxp__
+
 `pxp` attempts to macro-expand whatever it reads, and prints the result. I know
 that 'expand' doesn't start with an 'x'.
+
+<table border=1><thead><tr><th colspan=2 align="left">pxp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pxp {str} {
@@ -201,7 +248,11 @@ proc ::pxp {str} {
 }
 ```
 
-When called, tells the caller the name of its command.
+__pn__
+
+"Procedure name" When called, tells the caller the name of its command.
+
+<table border=1><thead><tr><th colspan=2 align="left">pn (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
 ```
 proc ::pn {} {
@@ -209,36 +260,74 @@ proc ::pn {} {
 }
 ```
 
+__typeof?__
+
+`typeof?` looks at a value's type and reports if it is the same as the given
+type. To be certain, it looks at the value in two ways: once assuming that the value
+is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
+interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
+the type, the procedure returns #t.
+
+<table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+```
+
+__in-range__
+
 This one is a little bit of both, a utility function that is also among the
 builtins in the library. It started out as a one-liner by Donal K. Fellows, but
 has grown a bit since then to suit my needs.
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
+Number objects. If one is passed to the procedure, it is used as the end of the
+sequence: the sequence will end just before it. If two numbers are passed, the
+first one becomes the start of the sequence: the first number in it. The second
+number will become the end of the sequence. If three numbers are passed, they
+become start, end, and step, i.e. how much is added to the current number to
+find next number in the sequence.
+
+<table border=1><thead><tr><th colspan=2 align="left">in-range (public)</th></tr></thead><tr><td>x</td><td>a number</td></tr><tr><td>?e?</td><td>a number</td></tr><tr><td>?t?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of numbers</td></tr></table>
 
 ```
 reg in-range
 
 #started out as DKF's code
-proc ::constcl::in-range {args} {
+proc ::constcl::in-range {x args} {
   set start 0
   set step 1
   switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
     1 {
+      set s $x
       lassign $args e
-      set end [$e value]
+      set start [$s numval]
+      set end [$e numval]
     }
     2 {
-      lassign $args s e
-      set start [$s value]
-      set end [$e value]
-    }
-    3 {
-      lassign $args s e t
-      set start [$s value]
-      set end [$e value]
-      set step [$t value]
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
     }
   }
   set res $start
-  while {$step > 0 && $end > [incr start $step] || $step < 0 && $end < [incr start $step]} {
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
@@ -287,9 +376,9 @@ oo::class create ::constcl::NIL {
 
 __null?__
 
-The `null?` standard predicate recognizes the empty list. Predicates
-in ConsTcl return #t or #f for true or false, so some care is necessary
-when calling them from Tcl code.
+The `null?` standard predicate recognizes the empty list. Predicates in ConsTcl
+return #t or #f for true or false, so some care is necessary when calling them
+from Tcl code (the Tcl `if` command expects 1 or 0 as truth values).
 
 <table border=1><thead><tr><th colspan=2 align="left">null? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -331,17 +420,15 @@ oo::class create ::constcl::Dot {
 }
 ```
 
+__dot?__
+
+`dot?` is a type predicate that checks for membership in the type `Dot`.
+
 <table border=1><thead><tr><th colspan=2 align="left">dot? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::dot? {val} {
-  if {[info object isa typeof $val Dot]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] Dot]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val "Dot"]
 }
 ```
 
@@ -395,10 +482,12 @@ oo::class create ::constcl::EndOfFile {
 
 ### The error and check procedures
 
+__error__
+
 `error` is used to signal an error, with **msg** being a message string and the
 optional arguments being values to show after the message.
 
-<table border=1><thead><tr><th colspan=2 align="left">error (public)</th></tr></thead><tr><td>msg</td><td>a message string</td></tr><tr><td>?args?</td><td>some expressions</td></tr><tr><td><i>Returns:</i></td><td>-don't care-</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">error (public)</th></tr></thead><tr><td>msg</td><td>a message string</td></tr><tr><td>?exprs?</td><td>some expressions</td></tr><tr><td><i>Returns:</i></td><td>-don't care-</td></tr></table>
 
 ```
 reg error
@@ -420,6 +509,8 @@ proc ::constcl::error {msg args} {
 }
 ```
 
+__check__
+
 `check` does a check (usually a type check) on something and throws an error if
 it fails.
 
@@ -436,7 +527,9 @@ proc ::constcl::check {cond msg} {
 
 ### The atom? predicate
 
-`atom?` recognizes an atom by checking for membership in one of the atomic types.
+__atom?__
+
+`atom?` recognizes an atom by checking for membership in any one of the atomic types.
 
 <table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -444,7 +537,8 @@ proc ::constcl::check {cond msg} {
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
-  foreach type {symbol number string char boolean vector port} {
+  foreach type {symbol number string
+      char boolean vector port} {
     if {[$type? $val] eq "#t"} {
       return #t
     }
@@ -601,21 +695,27 @@ oo::define ::constcl::IB method skip-ws {} {
 }
 ```
 
+### The parse procedure
 
-The parsing procedure translates an expression from external representation to
+#### Parsing
+
+Parsing[#](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is
+analyzing a sequence of letters, digits, and other characters, conforming to the
+rules of **external representation**. The result of parsing is an **expression**
+in internal form.
+
+The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
 expression that expresses it in a unique way. For example, the external
 representation for a vector is a sharp sign (#), a left parenthesis ((), the
-external representation for some values, and a right parenthesis ()). The parser
-takes in the input buffer character by character, matching each character
-against a fitting external representation. When done, it creates an object,
-which is the internal representation of an expression.  The object can then be
-passed to the evaluator.
+external representation for some values, and a right parenthesis ()).
 
+![vrep](/images/vector-representation)
 
-### parse
-
-#### Parsing
+The `parse` procedure takes in the input buffer character by character, matching
+each character against a fitting external representation. When done, it creates
+a ConsTcl object, which is the internal representation of an expression.  The
+object can then be passed to the evaluator.
 
 Given a string, `parse` fills the input buffer. It then parses the input and
 produces the internal representation of an expression.
@@ -628,10 +728,10 @@ Example:
 ```
 
 Here, `parse` parsed the external representation of a list with three elements,
-+, 2, and 3. It produced the expression that has the internal representation
-`::oo::Obj491`. We will later meet procedures like `eval`, which transforms an
-expression into a value, and `write`, which prints a printed representation of
-expressions and values. Putting them together: we can see
++, 2, and 3. It produced the expression that has an internal representation
+labeled `::oo::Obj491`. We will later meet procedures like `eval`, which
+transforms an expression into a value, and `write`, which prints a printed
+representation of expressions and values. Putting them together: we can see
 
 ```
 % ::constcl::write ::oo::Obj491
@@ -688,19 +788,19 @@ proc ::constcl::parse-expr {} {
   upvar ib ib
   $ib skip-ws
   switch -regexp [$ib peek] {
-    {\"}          { return [parse-string-expr] }
-    {\#}          { return [parse-sharp] }
-    {\'}          { return [parse-quoted-expr] }
-    {\(}          { return [parse-pair-expr ")"] }
-    {\+} - {\-}   { return [parse-plus-minus] }
-    {\,}          { return [parse-unquoted-expr] }
-    {\.}          { $ib advance ; return [Dot new] }
-    {\:}          { return [parse-object-expr] }
-    {\[}          { return [parse-pair-expr "\]"] }
-    {\`}          { return [parse-quasiquoted-expr] }
-    {\d}          { return [parse-number-expr] }
+    {\"}          { parse-string-expr }
+    {\#}          { parse-sharp }
+    {\'}          { parse-quoted-expr }
+    {\(}          { parse-pair-expr ")" }
+    {\+} - {\-}   { parse-plus-minus }
+    {\,}          { parse-unquoted-expr }
+    {\.} { $ib advance ; return [Dot new] }
+    {\:}          { parse-object-expr }
+    {\[}          { parse-pair-expr "\]" }
+    {\`}          { parse-quasiquoted-expr }
+    {\d}          { parse-number-expr }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [parse-identifier-expr] }
+    {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
     }
@@ -981,7 +1081,8 @@ __parse-identifier-expr__
 ```
 proc ::constcl::parse-identifier-expr {} {
   upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) \]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -995,11 +1096,14 @@ proc ::constcl::parse-identifier-expr {} {
 __character-check__
 
 The `character-check` helper procedure compares a potential
-character constant to the valid kinds. Returns Tcl truth (1/0).
+character constant to the valid kinds.
+
+<table border=1><thead><tr><th colspan=2 align="left">character-check (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
 ```
 proc ::constcl::character-check {name} {
-  if {[regexp -nocase {^#\\([[:graph:]]|space|newline)$} $name]} {
+  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
     return #t
   } else {
     return #f
