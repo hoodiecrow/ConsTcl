@@ -21,12 +21,24 @@ oo::class create ::constcl::Boolean {
     set bvalue $v
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method bvalue {} { set bvalue }
-  method value {} { set bvalue }
-  method write {handle} { puts -nonewline $handle [my bvalue] }
-  method display {} { puts -nonewline [my bvalue] }
-  method show {} {set bvalue}
+  method constant {} {
+    return 1
+  }
+  method bvalue {} {
+    set bvalue
+  }
+  method value {} {
+    set bvalue
+  }
+  method write {handle} {
+    puts -nonewline $handle [my bvalue]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set bvalue
+  }
 }
 
 proc ::constcl::MkBoolean {v} {

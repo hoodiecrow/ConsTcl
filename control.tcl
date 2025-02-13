@@ -32,10 +32,15 @@ oo::class create ::constcl::Procedure {
     regexp {(\d+)} [self] -> num
     puts -nonewline $handle "#<proc-$num>"
   }
-  method display {} {my write}
-  method show {} { return [self] }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    return [self]
+  }
   method call {args} {
-    ::constcl::eval $body [::constcl::Environment new $parms $args $env]
+    ::constcl::eval $body [
+      ::constcl::Environment new $parms $args $env]
   }
 
 }
@@ -106,7 +111,7 @@ CB
 
 TT(
 
-::tcltest::test control-1.1 {try apply)} -body {
+::tcltest::test control-2.0 {try apply)} -body {
     pep {(apply + (list 3 4))}
     pep {(define compose
   (lambda (f g)
@@ -115,7 +120,7 @@ TT(
     pep {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
 
-::tcltest::test control-check-1.0 {try triggering a check} -body {
+::tcltest::test control-2.1 {try triggering a check} -body {
     pep {(apply #\+ (list 3 4))}
 } -returnCodes error -result "PROCEDURE expected\n(apply #\\+ ...)"
 
@@ -164,7 +169,7 @@ CB
 
 TT(
 
-::tcltest::test control-1.2 {try map)} -body {
+::tcltest::test control-3.0 {try map)} -body {
     pep {(map cadr '((a b) (d e) (g h)))}
     pep {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
     pep {(map + '(1 2 3) '(4 5 6))}
@@ -223,7 +228,7 @@ CB
 
 TT(
 
-::tcltest::test control-1.3 {try for-each)} -body {
+::tcltest::test control-4.0 {try for-each)} -body {
     pep {(for-each display '(1 2 3))}
 } -output "123()\n"
 

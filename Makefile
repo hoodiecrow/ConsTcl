@@ -17,7 +17,7 @@ EXE      =
 .PHONY: all
 all: README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = type.tcl s9fes.tcl read.tcl eval.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl lutables.tcl
+source_files = type.tcl s9fes.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl lutables.tcl
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf

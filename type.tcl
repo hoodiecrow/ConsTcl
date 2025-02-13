@@ -83,6 +83,47 @@ proc ::pe {str} {
 CB
 
 MD(
+`p` is mostly the same, but it only parses the input, returning an object.
+MD)
+
+CB
+proc ::p {str} {
+  ::constcl::parse $str
+}
+CB
+
+MD(
+`e` is another single-action procedure, eval-ing an object and returning another object.
+MD)
+
+CB
+proc ::e {val} {
+  ::constcl::eval $val
+}
+CB
+
+MD(
+`w` is the third single-action procedure, printing an object and that's all.
+MD)
+
+CB
+proc ::w {val} {
+  ::constcl::write $val
+}
+CB
+
+MD(
+`r` is an extra single-action procedure, reading from default input and
+returning an object.
+MD)
+
+CB
+proc ::r {args} {
+  ::constcl::read {*}$args
+}
+CB
+
+MD(
 `prp` is a busy thing. It reads an expression, expands macros in it, resolves
 defines, and prints the result.
 MD)

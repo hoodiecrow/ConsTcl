@@ -892,9 +892,9 @@ CB
 TT(
 ::tcltest::test read-1.0 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -902,9 +902,9 @@ TT(
 
 ::tcltest::test read-1.1 {try read-expr on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -912,10 +912,10 @@ TT(
 
 ::tcltest::test read-1.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -923,10 +923,10 @@ TT(
 
 ::tcltest::test read-1.3 {try read-expr on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -934,10 +934,10 @@ TT(
 
 ::tcltest::test read-1.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -945,9 +945,9 @@ TT(
 
 ::tcltest::test read-1.5 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -955,9 +955,9 @@ TT(
 
 ::tcltest::test read-1.6 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -965,9 +965,9 @@ TT(
 
 ::tcltest::test read-1.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -975,9 +975,9 @@ TT(
 
 ::tcltest::test read-1.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -985,11 +985,11 @@ TT(
 
 ::tcltest::test read-1.9 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -997,10 +997,10 @@ TT(
 
 ::tcltest::test read-1.10 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1008,11 +1008,11 @@ TT(
 
 ::tcltest::test read-1.11 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1020,9 +1020,9 @@ TT(
 
 ::tcltest::test read-1.12 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1030,9 +1030,9 @@ TT(
 
 ::tcltest::test read-1.13 {try read-expr on numeric expr} -setup {
     ::tcltest::makeFile {  99 } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1040,10 +1040,10 @@ TT(
 
 ::tcltest::test read-1.14 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
-    set p [::constcl::open-input-file testrr.lsp]
+    set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    ::constcl::write [::constcl::read $p]
-    ::constcl::write [::constcl::read $p]
+    w [r $p]
+    w [r $p]
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp

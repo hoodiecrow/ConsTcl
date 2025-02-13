@@ -132,6 +132,39 @@ proc ::pe {str} {
 }
 ```
 
+`p` is mostly the same, but it only parses the input, returning an object.
+
+```
+proc ::p {str} {
+  ::constcl::parse $str
+}
+```
+
+`e` is another single-action procedure, eval-ing an object and returning another object.
+
+```
+proc ::e {val} {
+  ::constcl::eval $val
+}
+```
+
+`w` is the third single-action procedure, printing an object and that's all.
+
+```
+proc ::w {val} {
+  ::constcl::write $val
+}
+```
+
+`r` is an extra single-action procedure, reading from default input and
+returning an object.
+
+```
+proc ::r {args} {
+  ::constcl::read {*}$args
+}
+```
+
 `prp` is a busy thing. It reads an expression, expands macros in it, resolves
 defines, and prints the result.
 
@@ -1814,6 +1847,26 @@ proc ::constcl::eval-list {exps env} {
 }
 ```
 
+
+```
+proc ::constcl::scheme-report-environment {version} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::null-environment {version} {
+    # TODO
+}
+```
+
+```
+proc ::constcl::interaction-environment {} {
+    # TODO
+}
+```
+
+
 ### Macros
 
 __expand-macro__
@@ -2408,6 +2461,8 @@ proc ::constcl::expand-when {expr env} {
 }
 ```
 
+
+
 ### Resolving local defines
 
 This section is ported from 'Scheme 9 from Empty Space'. `resolve-local-defines`
@@ -2634,24 +2689,6 @@ proc ::constcl::make-undefineds {vals} {
 ```
 
 
-```
-proc ::constcl::scheme-report-environment {version} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::null-environment {version} {
-    # TODO
-}
-```
-
-```
-proc ::constcl::interaction-environment {} {
-    # TODO
-}
-```
-
 
 ## Output
 
@@ -2700,15 +2737,22 @@ proc ::constcl::write-value {handle val} {
 
 The `display` procedure is like `write` but doesn't print a newline.
 
-<table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>args</td><td>-don't care-</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
   if {$val ne "#NONE"} {
-    $val display
-    flush stdout
+    if {[llength $args]} {
+      lassign $args port
+    } else {
+      set port [MkOutputPort stdout]
+    }
+    set ::constcl::Output_port $port
+    $val display [$::constcl::Output_port handle]
+    flush [$::constcl::Output_port handle]
+    set ::constcl::Output_port [MkOutputPort stdout]
   }
   return
 }
@@ -2866,22 +2910,43 @@ oo::class create ::constcl::Number {
       ::error "NUMBER expected\n$v"
     }
   }
-  method zero? {} {if {$value == 0} then {return #t} else {return #f}}
-  method positive? {} {if {$value > 0} then {return #t} else {return #f}}
-  method negative? {} {if {$value < 0} then {return #t} else {return #f}}
-  method even? {} {if {$value % 2 == 0} then {return #t} else {return #f}}
-  method odd? {} {if {$value % 2 == 1} then {return #t} else {return #f}}
-  method value {} { set value }
-  method numval {} {set value}
+  method zero? {} {
+    if {$value == 0} then {return #t} else {return #f}
+  }
+  method positive? {} {
+    if {$value > 0} then {return #t} else {return #f}
+  }
+  method negative? {} {
+    if {$value < 0} then {return #t} else {return #f}
+  }
+  method even? {} {
+    if {$value % 2 == 0} then {return #t} else {return #f}
+  }
+  method odd? {} {
+    if {$value % 2 == 1} then {return #t} else {return #f}
+  }
+  method value {} {
+    set value
+  }
+  method numval {} {
+    set value
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method write {handle} { puts -nonewline $handle [my value] }
-  method display {} { puts -nonewline [my value] }
-  method show {} { set value }
+  method constant {} {
+    return 1
+  }
+  method write {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set value
+  }
 }
 
 interp alias {} ::constcl::MkNumber {} ::constcl::Number new
-
 ```
 
 __number?__
@@ -2891,7 +2956,7 @@ __number?__
 <table border=1><thead><tr><th colspan=2 align="left">number? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
-reg number? ::constcl::number?
+reg number?
 
 proc ::constcl::number? {val} {
   if {[info object isa typeof $val ::constcl::Number]} {
@@ -3020,7 +3085,9 @@ The `zero?` predicate tests if a given number is equal to zero.
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num zero?]
 }
 ```
@@ -3043,7 +3110,9 @@ for those traits.
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num positive?]
 }
 ```
@@ -3053,7 +3122,9 @@ proc ::constcl::positive? {num} {
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num negative?]
 }
 ```
@@ -3063,7 +3134,9 @@ proc ::constcl::negative? {num} {
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num even?]
 }
 ```
@@ -3073,7 +3146,9 @@ proc ::constcl::even? {num} {
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num odd?]
 }
 ```
@@ -3091,8 +3166,8 @@ selects the smallest number.
 Example:
 
 ```
-(max 7 1 10 3)   ⇒  10
-(min 7 1 10 3)   ⇒  1
+(max 7 1 10 3)   =>  10
+(min 7 1 10 3)   =>  1
 ```
 
 ```
@@ -3142,13 +3217,13 @@ at least one for `-` and `/`.
 Example:
 
 ```
-(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   ⇒  (4 4 4 4)
-(+ 21 7 3)                                 ⇒  31
-(* 21 7 3)                                 ⇒  441
-(- 21 7 3)                                 ⇒  11
-(/ 21 7 3)                                 ⇒  1
-(- 5)                                      ⇒  -5
-(/ 5)                                      ⇒  0.2
+(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   =>  (4 4 4 4)
+(+ 21 7 3)                                 =>  31
+(* 21 7 3)                                 =>  441
+(- 21 7 3)                                 =>  11
+(/ 21 7 3)                                 =>  1
+(- 5)                                      =>  -5
+(/ 5)                                      =>  0.2
 ```
 
 ```
@@ -3217,7 +3292,9 @@ The `abs` function yields the absolute value of a number.
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     return [MkNumber [expr {[$num numval] * -1}]]
   } else {
@@ -3236,7 +3313,7 @@ __quotient__
 Example:
 
 ```
-(quotient 7 3)   ⇒  2.0
+(quotient 7 3)   =>  2.0
 ```
 
 ```
@@ -3264,7 +3341,7 @@ a mathematician!)
 Example:
 
 ```
-(remainder 7 3)   ⇒  1
+(remainder 7 3)   =>  1
 ```
 
 ```
@@ -3286,7 +3363,7 @@ __modulo__
 Example:
 
 ```
-(modulo 7 3)   ⇒  1
+(modulo 7 3)   =>  1
 ```
 
 ```
@@ -3338,17 +3415,19 @@ converting a real number to an integer.
 Example:
 
 ```
-(floor 7.5)      ⇒  7.0
-(ceiling 7.5)    ⇒  8.0
-(truncate 7.5)   ⇒  7.0
-(round 7.5)      ⇒  8
+(floor 7.5)      =>  7.0
+(ceiling 7.5)    =>  8.0
+(truncate 7.5)   =>  7.0
+(round 7.5)      =>  8
 ```
 
 ```
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 ```
@@ -3358,7 +3437,9 @@ proc ::constcl::floor {num} {
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 ```
@@ -3368,7 +3449,9 @@ proc ::constcl::ceiling {num} {
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     MkNumber [::tcl::mathfunc::ceil [$num numval]]
   } else {
@@ -3382,7 +3465,9 @@ proc ::constcl::truncate {num} {
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 ```
@@ -3422,15 +3507,17 @@ and `atan`, respectively.
 Example:
 
 ```
-(let ((x (log 2))) (= 2 (exp x)))                         ⇒  #t
-(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   ⇒  #t
+(let ((x (log 2))) (= 2 (exp x)))                         =>  #t
+(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   =>  #t
 ```
 
 ```
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 ```
@@ -3440,7 +3527,9 @@ proc ::constcl::exp {num} {
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 ```
@@ -3450,7 +3539,9 @@ proc ::constcl::log {num} {
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 ```
@@ -3459,7 +3550,9 @@ proc ::constcl::sin {num} {
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 ```
@@ -3468,7 +3561,9 @@ proc ::constcl::cos {num} {
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 ```
@@ -3478,7 +3573,9 @@ proc ::constcl::tan {num} {
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 ```
@@ -3487,7 +3584,9 @@ proc ::constcl::asin {num} {
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 ```
@@ -3498,12 +3597,18 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
+    check {number? $num} {
+        NUMBER expected\n([pn] [$num show])
+    }
     MkNumber [::tcl::mathfunc::atan [$num numval]]
   } else {
     lassign $args num1 num2
-    check {number? $num1} {NUMBER expected\n([pn] [$num1 show])}
-    check {number? $num2} {NUMBER expected\n([pn] [$num2 show])}
+    check {number? $num1} {
+        NUMBER expected\n([pn] [$num1 show])
+    }
+    check {number? $num2} {
+        NUMBER expected\n([pn] [$num2 show])
+    }
     MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
   }
 }
@@ -3520,7 +3625,9 @@ __sqrt__
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 ```
@@ -3536,8 +3643,12 @@ __expt__
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
-  check {number? $num2} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
+  check {number? $num1} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
+  check {number? $num2} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
   MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 ```
@@ -3601,10 +3712,10 @@ number and string with optional radix conversion.
 Example:
 
 ```
-(number->string 23)      ⇒  "23"
-(number->string 23 2)    ⇒  "10111"
-(number->string 23 8)    ⇒  "27"
-(number->string 23 16)   ⇒  "17"
+(number->string 23)      =>  "23"
+(number->string 23 2)    =>  "10111"
+(number->string 23 8)    =>  "27"
+(number->string 23 16)   =>  "17"
 ```
 
 ```
@@ -3662,10 +3773,10 @@ As with `number->string`, above.
 Example:
 
 ```
-(string->number "23")        ⇒  23
-(string->number "10111" 2)   ⇒  23
-(string->number "27" 8)      ⇒  23
-(string->number "17" 16)     ⇒  23
+(string->number "23")        =>  23
+(string->number "10111" 2)   =>  23
+(string->number "27" 8)      =>  23
+(string->number "17" 16)     =>  23
 ```
 
 ```
@@ -3734,12 +3845,24 @@ oo::class create ::constcl::Boolean {
     set bvalue $v
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method bvalue {} { set bvalue }
-  method value {} { set bvalue }
-  method write {handle} { puts -nonewline $handle [my bvalue] }
-  method display {} { puts -nonewline [my bvalue] }
-  method show {} {set bvalue}
+  method constant {} {
+    return 1
+  }
+  method bvalue {} {
+    set bvalue
+  }
+  method value {} {
+    set bvalue
+  }
+  method write {handle} {
+    puts -nonewline $handle [my bvalue]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set bvalue
+  }
 }
 
 proc ::constcl::MkBoolean {v} {
@@ -3873,11 +3996,21 @@ oo::class create ::constcl::Char {
     }
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method value {} {return $value}
-  method write {handle} { puts -nonewline $handle $value }
-  method display {} { puts -nonewline [my char] }
-  method show {} {set value}
+  method constant {} {
+    return 1
+  }
+  method value {} {
+    return $value
+  }
+  method write {handle} {
+    puts -nonewline $handle $value
+  }
+  method display {handle} {
+    puts -nonewline $handle [my char]
+  }
+  method show {} {
+    set value
+  }
 }
 
 proc ::constcl::MkChar {v} {
@@ -4275,10 +4408,15 @@ oo::class create ::constcl::Procedure {
     regexp {(\d+)} [self] -> num
     puts -nonewline $handle "#<proc-$num>"
   }
-  method display {} {my write}
-  method show {} { return [self] }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    return [self]
+  }
   method call {args} {
-    ::constcl::eval $body [::constcl::Environment new $parms $args $env]
+    ::constcl::eval $body [
+      ::constcl::Environment new $parms $args $env]
   }
 
 }
@@ -4439,9 +4577,9 @@ proc ::constcl::dynamic-wind {before thunk after} {
 
 
 ```
-catch { Port destroy }
+catch { ::constcl::Port destroy }
 
-oo::class create Port {
+oo::class create ::constcl::Port {
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -4450,41 +4588,66 @@ oo::class create Port {
       set handle #NIL
     }
   }
-  method handle {} {set handle}
+  method handle {} {
+    set handle
+  }
   method close {} {
     close $handle
     set handle #NIL
   }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<port-$num>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 
-oo::class create InputPort {
-  superclass Port
+oo::class create ::constcl::InputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "r"]
+      set handle [open [$name value] "r"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<input-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-oo::class create OutputPort {
-  superclass Port
+oo::class create ::constcl::OutputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "w"]
+      set handle [open [$name value] "w"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<output-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-interp alias {} ::constcl::MkInputPort {} InputPort new
-interp alias {} ::constcl::MkOutputPort {} OutputPort new
+interp alias {} ::constcl::MkInputPort {} ::constcl::InputPort new
+interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
@@ -4549,15 +4712,33 @@ proc ::constcl::current-output-port {} {
 ```
 
 ```
+reg with-input-from-file
+
 proc ::constcl::with-input-from-file {string thunk} {
-    # TODO
+  set newport [open-input-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Input_port
+    set ::constcl::Input_port $newport
+    eval $thunk
+    set ::constcl::Input_port $oldport
+    close-input-port $newport
+  }
 }
 ```
 
 
 ```
+reg with-output-to-file
+
 proc ::constcl::with-output-to-file {string thunk} {
-    # TODO
+  set newport [open-output-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Output_port
+    set ::constcl::Output_port $newport
+    eval $thunk
+    set ::constcl::Output_port $oldport
+    close-input-port $newport
+  }
 }
 ```
 
@@ -4591,6 +4772,8 @@ proc ::constcl::open-output-file {filename} {
 ```
 
 ```
+reg close-input-port
+
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
     error "don't close the standard input port"
@@ -4600,6 +4783,8 @@ proc ::constcl::close-input-port {port} {
 ```
 
 ```
+reg close-output-port
+
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
     error "don't close the standard output port"
@@ -4656,9 +4841,11 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  write #\\newline $port
+  pe "(display #\\newline $port)"
+#  display [p "#\\A"] $port
 }
 ```
+
 
 ```
 proc ::constcl::write-char {args} {
@@ -4710,6 +4897,8 @@ proc ::constcl::----load {filename} {
     eval [parse $ib]
   }
 }
+
+reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
@@ -5421,7 +5610,9 @@ oo::class create ::constcl::String {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {handle} { puts -nonewline $handle "\"[my value]\"" }
-    method display {} { puts -nonewline [my value] }
+    method display {handle} {
+        puts -nonewline $handle [my value]
+    }
     method show {} {format "\"[my value]\""}
 }
 
@@ -6568,7 +6759,7 @@ created to hold the bindings introduced by the call, and also a link to the oute
 Load the Scheme base.
 
 ```
-::constcl::load schemebase.lsp
+pe {(load "schemebase.lsp")}
 ```
 
 #### Lexical scoping

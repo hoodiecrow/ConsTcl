@@ -73,11 +73,21 @@ oo::class create ::constcl::Char {
     }
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method value {} {return $value}
-  method write {handle} { puts -nonewline $handle $value }
-  method display {} { puts -nonewline [my char] }
-  method show {} {set value}
+  method constant {} {
+    return 1
+  }
+  method value {} {
+    return $value
+  }
+  method write {handle} {
+    puts -nonewline $handle $value
+  }
+  method display {handle} {
+    puts -nonewline $handle [my char]
+  }
+  method show {} {
+    set value
+  }
 }
 
 proc ::constcl::MkChar {v} {

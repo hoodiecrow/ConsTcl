@@ -21,22 +21,43 @@ oo::class create ::constcl::Number {
       ::error "NUMBER expected\n$v"
     }
   }
-  method zero? {} {if {$value == 0} then {return #t} else {return #f}}
-  method positive? {} {if {$value > 0} then {return #t} else {return #f}}
-  method negative? {} {if {$value < 0} then {return #t} else {return #f}}
-  method even? {} {if {$value % 2 == 0} then {return #t} else {return #f}}
-  method odd? {} {if {$value % 2 == 1} then {return #t} else {return #f}}
-  method value {} { set value }
-  method numval {} {set value}
+  method zero? {} {
+    if {$value == 0} then {return #t} else {return #f}
+  }
+  method positive? {} {
+    if {$value > 0} then {return #t} else {return #f}
+  }
+  method negative? {} {
+    if {$value < 0} then {return #t} else {return #f}
+  }
+  method even? {} {
+    if {$value % 2 == 0} then {return #t} else {return #f}
+  }
+  method odd? {} {
+    if {$value % 2 == 1} then {return #t} else {return #f}
+  }
+  method value {} {
+    set value
+  }
+  method numval {} {
+    set value
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method write {handle} { puts -nonewline $handle [my value] }
-  method display {} { puts -nonewline [my value] }
-  method show {} { set value }
+  method constant {} {
+    return 1
+  }
+  method write {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set value
+  }
 }
 
 interp alias {} ::constcl::MkNumber {} ::constcl::Number new
-
 CB
 
 MD(
@@ -50,7 +71,7 @@ number? (public);val val -> bool
 PR)
 
 CB
-reg number? ::constcl::number?
+reg number?
 
 proc ::constcl::number? {val} {
   if {[info object isa typeof $val ::constcl::Number]} {
@@ -65,13 +86,17 @@ CB
 
 TT(
 
-::tcltest::test number-1.0 {try number?} -body {
+::tcltest::test numbers-1.0 {try number?} -body {
     pep "(number? 99.99)"
 } -output "#t\n"
 
-::tcltest::test number-1.1 {try number?} -body {
+::tcltest::test numbers-1.1 {try number?} -body {
     ::constcl::MkNumber foo
 } -returnCodes error -result "NUMBER expected\nfoo"
+
+::tcltest::test numbers-1.2 {try number?} -body {
+    ::constcl::MkNumber 4294967295
+} -match glob -result "::oo::Obj*"
 
 TT)
 
@@ -113,8 +138,12 @@ CB
 
 TT(
 
-::tcltest::test number-1.2 {try =} -body {
+::tcltest::test numbers-2.0 {try =} -body {
         pep "(= 9 9 9 9)"
+} -output "#t\n"
+
+::tcltest::test numbers-2.1 {try =} -body {
+        pep "(= 9 9 9 9.0)"
 } -output "#t\n"
 
 TT)
@@ -138,7 +167,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.3 {try <} -body {
+::tcltest::test numbers-3.0 {try <} -body {
         pep "(< 1 2 4 7)"
 } -output "#t\n"
 
@@ -163,7 +192,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.4 {try >} -body {
+::tcltest::test numbers-4.0 {try >} -body {
         pep "(> 7 4 2 1)"
 } -output "#t\n"
 
@@ -188,7 +217,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.5 {try <=} -body {
+::tcltest::test numbers-5.0 {try <=} -body {
         pep "(<= 1 4 4 7)"
 } -output "#t\n"
 
@@ -213,7 +242,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.6 {try >=} -body {
+::tcltest::test numbers-6.0 {try >=} -body {
         pep "(>= 7 4 4 1)"
 } -output "#t\n"
 
@@ -233,16 +262,22 @@ CB
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num zero?]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.7 {try zero?} -body {
+::tcltest::test numbers-7.0 {try zero?} -body {
         pep "(zero? 77)"
 } -output "#f\n"
+
+::tcltest::test numbers-7.1 {check zero?} -body {
+        pep "(zero? \"foo\")"
+} -returnCodes error -result "NUMBER expected\n(zero? \"foo\")"
 
 TT)
 
@@ -267,14 +302,16 @@ CB
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num positive?]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.8 {try positive?} -body {
+::tcltest::test numbers-8.0 {try positive?} -body {
         pep "(positive? 77)"
 } -output "#t\n"
 
@@ -284,14 +321,16 @@ CB
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num negative?]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.9 {try negative?} -body {
+::tcltest::test numbers-9.0 {try negative?} -body {
         pep "(negative? 77)"
 } -output "#f\n"
 
@@ -301,14 +340,16 @@ CB
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num even?]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.10 {try even?} -body {
+::tcltest::test numbers-10.0 {try even?} -body {
         pep "(even? 77)"
 } -output "#f\n"
 
@@ -318,14 +359,16 @@ CB
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num odd?]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.11 {try odd?} -body {
+::tcltest::test numbers-11.0 {try odd?} -body {
         pep "(odd? 77)"
 } -output "#t\n"
 
@@ -348,8 +391,8 @@ MD(
 Example:
 
 ```
-(max 7 1 10 3)   ⇒  10
-(min 7 1 10 3)   ⇒  1
+(max 7 1 10 3)   =>  10
+(min 7 1 10 3)   =>  1
 ```
 MD)
 
@@ -368,7 +411,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.12 {try max} -body {
+::tcltest::test numbers-12.0 {try max} -body {
     pep "(max 7 1 10 3)"
 } -output "10\n"
 
@@ -389,7 +432,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.13 {try min} -body {
+::tcltest::test numbers-13.0 {try min} -body {
         pep "(min 7 1 10 3)"
 } -output "1\n"
 
@@ -421,13 +464,13 @@ MD(
 Example:
 
 ```
-(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   ⇒  (4 4 4 4)
-(+ 21 7 3)                                 ⇒  31
-(* 21 7 3)                                 ⇒  441
-(- 21 7 3)                                 ⇒  11
-(/ 21 7 3)                                 ⇒  1
-(- 5)                                      ⇒  -5
-(/ 5)                                      ⇒  0.2
+(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   =>  (4 4 4 4)
+(+ 21 7 3)                                 =>  31
+(* 21 7 3)                                 =>  441
+(- 21 7 3)                                 =>  11
+(/ 21 7 3)                                 =>  1
+(- 5)                                      =>  -5
+(/ 5)                                      =>  0.2
 ```
 MD)
 
@@ -446,7 +489,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.14 {try +} -body {
+::tcltest::test numbers-14.0 {try +} -body {
     pep "(+)"
     pep "(+ 5)"
     pep "(+ 7 1 10 3)"
@@ -469,7 +512,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.15 {try *} -body {
+::tcltest::test numbers-15.0 {try *} -body {
     pep "(*)"
     pep "(* 5)"
     pep "(* 7 1 10 3)"
@@ -492,11 +535,11 @@ CB
 
 TT(
 
-::tcltest::test number-1.16 {try -} -body {
+::tcltest::test numbers-16.0 {try -} -body {
     pep "(-)"
 } -returnCodes error -result {wrong # args: should be "::constcl::- num ?arg ...?"}
 
-::tcltest::test number-1.16 {try -} -body {
+::tcltest::test numbers-16.1 {try -} -body {
     pep "(- 5)"
     pep "(- 7 1 10 3)"
 } -output "-5\n-7\n"
@@ -518,11 +561,11 @@ CB
 
 TT(
 
-::tcltest::test number-1.17 {try /} -body {
+::tcltest::test numbers-17.0 {try /} -body {
     pep "(/)"
 } -returnCodes error -result {wrong # args: should be "::constcl::/ num ?arg ...?"}
 
-::tcltest::test number-1.17 {try /} -body {
+::tcltest::test numbers-17.1 {try /} -body {
     pep "(/ 5)"
     pep "(/ 21 7 3)"
 } -output "0.2\n1\n"
@@ -543,7 +586,9 @@ CB
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     return [MkNumber [expr {[$num numval] * -1}]]
   } else {
@@ -554,11 +599,11 @@ CB
 
 TT(
 
-::tcltest::test number-1.18 {try abs} -body {
+::tcltest::test numbers-18.0 {try abs} -body {
     pep "(abs -99)"
 } -output "99\n"
 
-::tcltest::test number-check-1.0 {try check} -body {
+::tcltest::test numbers-18.1 {try check} -body {
     pep "(abs \"foo\")"
 } -returnCodes error -result "NUMBER expected\n(abs \"foo\")"
 TT)
@@ -577,7 +622,7 @@ MD(
 Example:
 
 ```
-(quotient 7 3)   ⇒  2.0
+(quotient 7 3)   =>  2.0
 ```
 MD)
 
@@ -611,7 +656,7 @@ MD(
 Example:
 
 ```
-(remainder 7 3)   ⇒  1
+(remainder 7 3)   =>  1
 ```
 MD)
 
@@ -639,7 +684,7 @@ MD(
 Example:
 
 ```
-(modulo 7 3)   ⇒  1
+(modulo 7 3)   =>  1
 ```
 MD)
 
@@ -653,7 +698,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.19 {try quotient, remainder, modulo} -body {
+::tcltest::test numbers-19.0 {try quotient, remainder, modulo} -body {
     pep "(quotient 13 4)"
     pep "(modulo 13 4)"
     pep "(remainder 13 4)"
@@ -712,10 +757,10 @@ MD(
 Example:
 
 ```
-(floor 7.5)      ⇒  7.0
-(ceiling 7.5)    ⇒  8.0
-(truncate 7.5)   ⇒  7.0
-(round 7.5)      ⇒  8
+(floor 7.5)      =>  7.0
+(ceiling 7.5)    =>  8.0
+(truncate 7.5)   =>  7.0
+(round 7.5)      =>  8
 ```
 MD)
 
@@ -723,14 +768,16 @@ CB
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.20 {try floor} -body {
+::tcltest::test numbers-20.0 {try floor} -body {
     pep "(floor 99.9)"
 } -output "99.0\n"
 
@@ -740,14 +787,16 @@ CB
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.21 {try ceiling} -body {
+::tcltest::test numbers-21.0 {try ceiling} -body {
     pep "(ceiling 99.9)"
 } -output "100.0\n"
 
@@ -757,7 +806,9 @@ CB
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     MkNumber [::tcl::mathfunc::ceil [$num numval]]
   } else {
@@ -768,7 +819,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.22 {try truncate} -body {
+::tcltest::test numbers-22.0 {try truncate} -body {
     pep "(truncate 99.9)"
     pep "(truncate -99.9)"
 } -output "99.0\n-99.0\n"
@@ -779,19 +830,21 @@ CB
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.23 {try round} -body {
+::tcltest::test numbers-23.0 {try round} -body {
     pep "(round 99.9)"
     pep "(round 99.3)"
 } -output "100\n99\n"
 
-::tcltest::test number-1.24 {try various} -body {
+::tcltest::test numbers-23.1 {try various} -body {
     pep "(floor 3.5)"
     pep "(ceiling 3.5)"
     pep "(truncate 3.5)"
@@ -841,8 +894,8 @@ MD(
 Example:
 
 ```
-(let ((x (log 2))) (= 2 (exp x)))                         ⇒  #t
-(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   ⇒  #t
+(let ((x (log 2))) (= 2 (exp x)))                         =>  #t
+(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   =>  #t
 ```
 MD)
 
@@ -850,14 +903,16 @@ CB
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.25 {try exp} -body {
+::tcltest::test numbers-24.0 {try exp} -body {
     pep "(exp 3)"
 } -output "20.085536923187668\n"
 
@@ -867,14 +922,16 @@ CB
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.26 {try log} -body {
+::tcltest::test numbers-25.0 {try log} -body {
     pep "(log 3)"
 } -output "1.0986122886681098\n"
 
@@ -884,7 +941,9 @@ CB
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 CB
@@ -893,7 +952,9 @@ CB
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 CB
@@ -902,20 +963,22 @@ CB
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.27 {try trig} -body {
+::tcltest::test numbers-26.0 {try trig} -body {
     pep "(sin (/ pi 3))"
     pep "(cos (/ pi 3))"
     pep "(tan (/ pi 3))"
 } -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
 
-::tcltest::test number-check-1.0 {try triggering tan} -body {
+::tcltest::test numbers-26.1 {try triggering tan} -body {
     pep "(tan #\\A)"
 } -returnCodes error -result "NUMBER expected\n(tan #\\A)"
 TT)
@@ -924,7 +987,9 @@ CB
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 CB
@@ -933,7 +998,9 @@ CB
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 CB
@@ -944,12 +1011,18 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
+    check {number? $num} {
+        NUMBER expected\n([pn] [$num show])
+    }
     MkNumber [::tcl::mathfunc::atan [$num numval]]
   } else {
     lassign $args num1 num2
-    check {number? $num1} {NUMBER expected\n([pn] [$num1 show])}
-    check {number? $num2} {NUMBER expected\n([pn] [$num2 show])}
+    check {number? $num1} {
+        NUMBER expected\n([pn] [$num1 show])
+    }
+    check {number? $num2} {
+        NUMBER expected\n([pn] [$num2 show])
+    }
     MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
   }
 }
@@ -957,7 +1030,7 @@ CB
 
 TT(
 
-::tcltest::test number-1.28 {try trig} -body {
+::tcltest::test numbers-27.0 {try trig} -body {
     pep "(asin 0.3)"
     pep "(acos 0.3)"
     pep "(atan 0.3)"
@@ -979,14 +1052,16 @@ CB
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.29 {try sqrt} -body {
+::tcltest::test numbers-28.0 {try sqrt} -body {
     pep "(sqrt 16)"
 } -output "4.0\n"
 
@@ -1006,15 +1081,19 @@ CB
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
-  check {number? $num2} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
+  check {number? $num1} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
+  check {number? $num2} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
   MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 CB
 
 TT(
 
-::tcltest::test number-1.30 {try expt} -body {
+::tcltest::test numbers-29.0 {try expt} -body {
     pep "(expt 4 2)"
 } -output "16.0\n"
 
@@ -1083,10 +1162,10 @@ MD(
 Example:
 
 ```
-(number->string 23)      ⇒  "23"
-(number->string 23 2)    ⇒  "10111"
-(number->string 23 8)    ⇒  "27"
-(number->string 23 16)   ⇒  "17"
+(number->string 23)      =>  "23"
+(number->string 23 2)    =>  "10111"
+(number->string 23 8)    =>  "27"
+(number->string 23 16)   =>  "17"
 ```
 MD)
 
@@ -1137,14 +1216,14 @@ CB
 
 TT(
 
-::tcltest::test number-1.31 {try number->string} -body {
+::tcltest::test numbers-30.0 {try number->string} -body {
     pep "(number->string 23)"
     pep "(number->string 23 2)"
     pep "(number->string 23 8)"
     pep "(number->string 23 16)"
 } -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
 
-::tcltest::test number-1.32 {try number->string} -body {
+::tcltest::test numbers-30.1 {try number->string} -body {
     pep "(number->string 23 13)"
 } -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string 23 13)"
 
@@ -1164,10 +1243,10 @@ MD(
 Example:
 
 ```
-(string->number "23")        ⇒  23
-(string->number "10111" 2)   ⇒  23
-(string->number "27" 8)      ⇒  23
-(string->number "17" 16)     ⇒  23
+(string->number "23")        =>  23
+(string->number "10111" 2)   =>  23
+(string->number "27" 8)      =>  23
+(string->number "17" 16)     =>  23
 ```
 MD)
 
@@ -1217,14 +1296,14 @@ CB
 
 TT(
 
-::tcltest::test number-1.33 {try string->number} -body {
+::tcltest::test numbers-31.0 {try string->number} -body {
     pep {(string->number "23")}
     pep {(string->number "10111" 2)}
     pep {(string->number "27" 8)}
     pep {(string->number "17" 16)}
 } -output "23\n23\n23\n23\n"
 
-::tcltest::test number-1.34 {try string->number} -body {
+::tcltest::test numbers-31.1 {try string->number} -body {
     pep {(string->number "23" 13)}
 } -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\" 13)"
 

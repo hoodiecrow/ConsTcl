@@ -5,9 +5,9 @@ MD(
 MD)
 
 CB
-catch { Port destroy }
+catch { ::constcl::Port destroy }
 
-oo::class create Port {
+oo::class create ::constcl::Port {
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -16,41 +16,66 @@ oo::class create Port {
       set handle #NIL
     }
   }
-  method handle {} {set handle}
+  method handle {} {
+    set handle
+  }
   method close {} {
     close $handle
     set handle #NIL
   }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<port-$num>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 
-oo::class create InputPort {
-  superclass Port
+oo::class create ::constcl::InputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "r"]
+      set handle [open [$name value] "r"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<input-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-oo::class create OutputPort {
-  superclass Port
+oo::class create ::constcl::OutputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "w"]
+      set handle [open [$name value] "w"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<output-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-interp alias {} ::constcl::MkInputPort {} InputPort new
-interp alias {} ::constcl::MkOutputPort {} OutputPort new
+interp alias {} ::constcl::MkInputPort {} ::constcl::InputPort new
+interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
@@ -115,15 +140,42 @@ proc ::constcl::current-output-port {} {
 CB
 
 CB
+reg with-input-from-file
+
 proc ::constcl::with-input-from-file {string thunk} {
-    # TODO
+  set newport [open-input-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Input_port
+    set ::constcl::Input_port $newport
+    eval $thunk
+    set ::constcl::Input_port $oldport
+    close-input-port $newport
+  }
 }
 CB
 
+TT(
+::tcltest::test io-1.0 {try with-input-from-file} -setup {
+  ::tcltest::makeFile {42} foo.txt
+} -body {
+  pep "(with-input-from-file \"foo.txt\" '(write (read)))"
+} -cleanup {
+  ::tcltest::removeFile foo.txt
+} -output "42\n()\n"
+TT)
 
 CB
+reg with-output-to-file
+
 proc ::constcl::with-output-to-file {string thunk} {
-    # TODO
+  set newport [open-output-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Output_port
+    set ::constcl::Output_port $newport
+    eval $thunk
+    set ::constcl::Output_port $oldport
+    close-input-port $newport
+  }
 }
 CB
 
@@ -157,6 +209,8 @@ proc ::constcl::open-output-file {filename} {
 CB
 
 CB
+reg close-input-port
+
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
     error "don't close the standard input port"
@@ -166,6 +220,8 @@ proc ::constcl::close-input-port {port} {
 CB
 
 CB
+reg close-output-port
+
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
     error "don't close the standard output port"
@@ -228,9 +284,18 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  write #\\newline $port
+  pe "(display #\\newline $port)"
+#  display [p "#\\A"] $port
 }
 CB
+
+TT(
+::tcltest::test io-2.0 {try newline} -body {
+  pe "(display \"foo\")"
+  pe "(newline)"
+  pe "(display \"bar\")"
+} -output "foo\nbar"
+TT)
 
 CB
 proc ::constcl::write-char {args} {
@@ -284,6 +349,8 @@ proc ::constcl::----load {filename} {
     eval [parse $ib]
   }
 }
+
+reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]

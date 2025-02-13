@@ -39,6 +39,26 @@ proc ::pe {str} {
 }
 
 
+proc ::p {str} {
+  ::constcl::parse $str
+}
+
+
+proc ::e {val} {
+  ::constcl::eval $val
+}
+
+
+proc ::w {val} {
+  ::constcl::write $val
+}
+
+
+proc ::r {args} {
+  ::constcl::read {*}$args
+}
+
+
 proc ::prp {str} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
@@ -1130,6 +1150,21 @@ proc ::constcl::eval-list {exps env} {
 }
 
 
+proc ::constcl::scheme-report-environment {version} {
+    # TODO
+}
+
+proc ::constcl::null-environment {version} {
+    # TODO
+}
+
+proc ::constcl::interaction-environment {} {
+    # TODO
+}
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+
+
 
 proc ::constcl::expand-macro {env} {
   upvar op op args args
@@ -1558,6 +1593,9 @@ proc ::constcl::expand-when {expr env} {
 }
 
 
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+
+
 
 proc ::constcl::resolve-local-defines {exps} {
   set rest [lassign [extract-from-defines $exps VALS] a error]
@@ -1715,18 +1753,6 @@ proc ::constcl::make-undefineds {vals} {
 }
 
 
-proc ::constcl::scheme-report-environment {version} {
-    # TODO
-}
-
-proc ::constcl::null-environment {version} {
-    # TODO
-}
-
-proc ::constcl::interaction-environment {} {
-    # TODO
-}
-
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 
@@ -1761,8 +1787,15 @@ reg display ::constcl::display
 
 proc ::constcl::display {val args} {
   if {$val ne "#NONE"} {
-    $val display
-    flush stdout
+    if {[llength $args]} {
+      lassign $args port
+    } else {
+      set port [MkOutputPort stdout]
+    }
+    set ::constcl::Output_port $port
+    $val display [$::constcl::Output_port handle]
+    flush [$::constcl::Output_port handle]
+    set ::constcl::Output_port [MkOutputPort stdout]
   }
   return
 }
@@ -1881,26 +1914,47 @@ oo::class create ::constcl::Number {
       ::error "NUMBER expected\n$v"
     }
   }
-  method zero? {} {if {$value == 0} then {return #t} else {return #f}}
-  method positive? {} {if {$value > 0} then {return #t} else {return #f}}
-  method negative? {} {if {$value < 0} then {return #t} else {return #f}}
-  method even? {} {if {$value % 2 == 0} then {return #t} else {return #f}}
-  method odd? {} {if {$value % 2 == 1} then {return #t} else {return #f}}
-  method value {} { set value }
-  method numval {} {set value}
+  method zero? {} {
+    if {$value == 0} then {return #t} else {return #f}
+  }
+  method positive? {} {
+    if {$value > 0} then {return #t} else {return #f}
+  }
+  method negative? {} {
+    if {$value < 0} then {return #t} else {return #f}
+  }
+  method even? {} {
+    if {$value % 2 == 0} then {return #t} else {return #f}
+  }
+  method odd? {} {
+    if {$value % 2 == 1} then {return #t} else {return #f}
+  }
+  method value {} {
+    set value
+  }
+  method numval {} {
+    set value
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method write {handle} { puts -nonewline $handle [my value] }
-  method display {} { puts -nonewline [my value] }
-  method show {} { set value }
+  method constant {} {
+    return 1
+  }
+  method write {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set value
+  }
 }
 
 interp alias {} ::constcl::MkNumber {} ::constcl::Number new
 
 
 
-
-reg number? ::constcl::number?
+reg number?
 
 proc ::constcl::number? {val} {
   if {[info object isa typeof $val ::constcl::Number]} {
@@ -2000,7 +2054,9 @@ proc ::constcl::>= {args} {
 reg zero? ::constcl::zero?
 
 proc ::constcl::zero? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num zero?]
 }
 
@@ -2010,7 +2066,9 @@ proc ::constcl::zero? {num} {
 reg positive? ::constcl::positive?
 
 proc ::constcl::positive? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num positive?]
 }
 
@@ -2018,7 +2076,9 @@ proc ::constcl::positive? {num} {
 reg negative? ::constcl::negative?
 
 proc ::constcl::negative? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num negative?]
 }
 
@@ -2026,7 +2086,9 @@ proc ::constcl::negative? {num} {
 reg even? ::constcl::even?
 
 proc ::constcl::even? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num even?]
 }
 
@@ -2034,7 +2096,9 @@ proc ::constcl::even? {num} {
 reg odd? ::constcl::odd?
 
 proc ::constcl::odd? {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   return [$num odd?]
 }
 
@@ -2123,7 +2187,9 @@ proc ::constcl::/ {num args} {
 reg abs ::constcl::abs
 
 proc ::constcl::abs {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     return [MkNumber [expr {[$num numval] * -1}]]
   } else {
@@ -2193,7 +2259,9 @@ proc ::constcl::denominator {q} {
 reg floor ::constcl::floor
 
 proc ::constcl::floor {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::floor [$num numval]]
 }
 
@@ -2201,7 +2269,9 @@ proc ::constcl::floor {num} {
 reg ceiling ::constcl::ceiling
 
 proc ::constcl::ceiling {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::ceil [$num numval]]
 }
 
@@ -2209,7 +2279,9 @@ proc ::constcl::ceiling {num} {
 reg truncate ::constcl::truncate
 
 proc ::constcl::truncate {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   if {[$num negative?] ne "#f"} {
     MkNumber [::tcl::mathfunc::ceil [$num numval]]
   } else {
@@ -2221,7 +2293,9 @@ proc ::constcl::truncate {num} {
 reg round ::constcl::round
 
 proc ::constcl::round {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::round [$num numval]]
 }
 
@@ -2237,7 +2311,9 @@ proc ::constcl::rationalize {x y} {
 reg exp ::constcl::exp
 
 proc ::constcl::exp {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::exp [$num numval]]
 }
 
@@ -2245,7 +2321,9 @@ proc ::constcl::exp {num} {
 reg log ::constcl::log
 
 proc ::constcl::log {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::log [$num numval]]
 }
 
@@ -2253,21 +2331,27 @@ proc ::constcl::log {num} {
 reg sin ::constcl::sin
 
 proc ::constcl::sin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sin [$num numval]]
 }
 
 reg cos ::constcl::cos
 
 proc ::constcl::cos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::cos [$num numval]]
 }
 
 reg tan ::constcl::tan
 
 proc ::constcl::tan {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::tan [$num numval]]
 }
 
@@ -2275,14 +2359,18 @@ proc ::constcl::tan {num} {
 reg asin ::constcl::asin
 
 proc ::constcl::asin {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::asin [$num numval]]
 }
 
 reg acos ::constcl::acos
 
 proc ::constcl::acos {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::acos [$num numval]]
 }
 
@@ -2291,12 +2379,18 @@ reg atan ::constcl::atan
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
-    check {number? $num} {NUMBER expected\n([pn] [$num show])}
+    check {number? $num} {
+        NUMBER expected\n([pn] [$num show])
+    }
     MkNumber [::tcl::mathfunc::atan [$num numval]]
   } else {
     lassign $args num1 num2
-    check {number? $num1} {NUMBER expected\n([pn] [$num1 show])}
-    check {number? $num2} {NUMBER expected\n([pn] [$num2 show])}
+    check {number? $num1} {
+        NUMBER expected\n([pn] [$num1 show])
+    }
+    check {number? $num2} {
+        NUMBER expected\n([pn] [$num2 show])
+    }
     MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
   }
 }
@@ -2307,7 +2401,9 @@ proc ::constcl::atan {args} {
 reg sqrt ::constcl::sqrt
 
 proc ::constcl::sqrt {num} {
-  check {number? $num} {NUMBER expected\n([pn] [$num show])}
+  check {number? $num} {
+      NUMBER expected\n([pn] [$num show])
+  }
   MkNumber [::tcl::mathfunc::sqrt [$num numval]]
 }
 
@@ -2317,8 +2413,12 @@ proc ::constcl::sqrt {num} {
 reg expt ::constcl::expt
 
 proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
-  check {number? $num2} {NUMBER expected\n([pn] [$num1 show] [$num2 show])}
+  check {number? $num1} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
+  check {number? $num2} {
+      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+  }
   MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
 }
 
@@ -2461,12 +2561,24 @@ oo::class create ::constcl::Boolean {
     set bvalue $v
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method bvalue {} { set bvalue }
-  method value {} { set bvalue }
-  method write {handle} { puts -nonewline $handle [my bvalue] }
-  method display {} { puts -nonewline [my bvalue] }
-  method show {} {set bvalue}
+  method constant {} {
+    return 1
+  }
+  method bvalue {} {
+    set bvalue
+  }
+  method value {} {
+    set bvalue
+  }
+  method write {handle} {
+    puts -nonewline $handle [my bvalue]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set bvalue
+  }
 }
 
 proc ::constcl::MkBoolean {v} {
@@ -2576,11 +2688,21 @@ oo::class create ::constcl::Char {
     }
   }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method value {} {return $value}
-  method write {handle} { puts -nonewline $handle $value }
-  method display {} { puts -nonewline [my char] }
-  method show {} {set value}
+  method constant {} {
+    return 1
+  }
+  method value {} {
+    return $value
+  }
+  method write {handle} {
+    puts -nonewline $handle $value
+  }
+  method display {handle} {
+    puts -nonewline $handle [my char]
+  }
+  method show {} {
+    set value
+  }
 }
 
 proc ::constcl::MkChar {v} {
@@ -2855,10 +2977,15 @@ oo::class create ::constcl::Procedure {
     regexp {(\d+)} [self] -> num
     puts -nonewline $handle "#<proc-$num>"
   }
-  method display {} {my write}
-  method show {} { return [self] }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    return [self]
+  }
   method call {args} {
-    ::constcl::eval $body [::constcl::Environment new $parms $args $env]
+    ::constcl::eval $body [
+      ::constcl::Environment new $parms $args $env]
   }
 
 }
@@ -2961,9 +3088,9 @@ proc ::constcl::dynamic-wind {before thunk after} {
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 
-catch { Port destroy }
+catch { ::constcl::Port destroy }
 
-oo::class create Port {
+oo::class create ::constcl::Port {
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -2972,41 +3099,66 @@ oo::class create Port {
       set handle #NIL
     }
   }
-  method handle {} {set handle}
+  method handle {} {
+    set handle
+  }
   method close {} {
     close $handle
     set handle #NIL
   }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<port-$num>"
+  }
+  method display {handle} {
+    my write $handle
+  }
 }
 
-oo::class create InputPort {
-  superclass Port
+oo::class create ::constcl::InputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "r"]
+      set handle [open [$name value] "r"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<input-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-oo::class create OutputPort {
-  superclass Port
+oo::class create ::constcl::OutputPort {
+  superclass ::constcl::Port
   variable handle
   method open {name} {
     try {
-      set handle [open $name "w"]
+      set handle [open [$name value] "w"]
     } on error {} {
       set handle #NIL
       return -1
     }
+    return $handle
+  }
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<output-port-$num>"
+  }
+  method display {handle} {
+    my write $handle
   }
 }
 
-interp alias {} ::constcl::MkInputPort {} InputPort new
-interp alias {} ::constcl::MkOutputPort {} OutputPort new
+interp alias {} ::constcl::MkInputPort {} ::constcl::InputPort new
+interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
 
 set ::constcl::Input_port [::constcl::MkInputPort stdin]
 set ::constcl::Output_port [::constcl::MkOutputPort stdout]
@@ -3057,13 +3209,31 @@ proc ::constcl::current-output-port {} {
   return $::constcl::Output_port
 }
 
+reg with-input-from-file
+
 proc ::constcl::with-input-from-file {string thunk} {
-    # TODO
+  set newport [open-input-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Input_port
+    set ::constcl::Input_port $newport
+    eval $thunk
+    set ::constcl::Input_port $oldport
+    close-input-port $newport
+  }
 }
 
 
+reg with-output-to-file
+
 proc ::constcl::with-output-to-file {string thunk} {
-    # TODO
+  set newport [open-output-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Output_port
+    set ::constcl::Output_port $newport
+    eval $thunk
+    set ::constcl::Output_port $oldport
+    close-input-port $newport
+  }
 }
 
 reg open-input-file
@@ -3091,12 +3261,16 @@ proc ::constcl::open-output-file {filename} {
   return $p
 }
 
+reg close-input-port
+
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
     error "don't close the standard input port"
   }
   $port close
 }
+
+reg close-output-port
 
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
@@ -3141,8 +3315,10 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  write #\\newline $port
+  pe "(display #\\newline $port)"
+#  display [p "#\\A"] $port
 }
+
 
 proc ::constcl::write-char {args} {
     # TODO
@@ -3189,6 +3365,8 @@ proc ::constcl::----load {filename} {
     eval [parse $ib]
   }
 }
+
+reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
@@ -3670,7 +3848,9 @@ oo::class create ::constcl::String {
     method mkconstant {} {set constant 1}
     method constant {} {set constant}
     method write {handle} { puts -nonewline $handle "\"[my value]\"" }
-    method display {} { puts -nonewline [my value] }
+    method display {handle} {
+        puts -nonewline $handle [my value]
+    }
     method show {} {format "\"[my value]\""}
 }
 
@@ -4427,7 +4607,7 @@ namespace eval ::constcl {
 
 
 
-::constcl::load schemebase.lsp
+pe {(load "schemebase.lsp")}
 
 
 

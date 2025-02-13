@@ -40,7 +40,7 @@ Load the Scheme base.
 MD)
 
 CB
-::constcl::load schemebase.lsp
+pe {(load "schemebase.lsp")}
 CB
 
 MD(

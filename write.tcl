@@ -57,7 +57,7 @@ The `display` procedure is like `write` but doesn't print a newline.
 MD)
 
 PR(
-display (public);val val args dc -> none
+display (public);val val ?port? port -> none
 PR)
 
 CB
@@ -65,8 +65,15 @@ reg display ::constcl::display
 
 proc ::constcl::display {val args} {
   if {$val ne "#NONE"} {
-    $val display
-    flush stdout
+    if {[llength $args]} {
+      lassign $args port
+    } else {
+      set port [MkOutputPort stdout]
+    }
+    set ::constcl::Output_port $port
+    $val display [$::constcl::Output_port handle]
+    flush [$::constcl::Output_port handle]
+    set ::constcl::Output_port [MkOutputPort stdout]
   }
   return
 }
