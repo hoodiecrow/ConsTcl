@@ -1509,7 +1509,7 @@ regmacro let
 
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [Environment new #NIL {} $env]
   if {[symbol? [car $tail]] ne "#f"} {
     # named let
     set variable [car $tail]
@@ -1517,12 +1517,18 @@ proc ::constcl::expand-let {expr env} {
     set body [cddr $tail]
     set vars [dict create $variable #f]
     parse-bindings vars $bindings
-    $env set [S decl] [list {*}[dict values [dict map {k v} $vars {list $k $v}]]]
+    $env set [S decl] [list {*}[dict values [
+      dict map {k v} $vars {list $k $v}]]]
     $env set [S variable] $variable
-    $env set [S varlist] [list {*}[lrange [dict keys $vars] 1 end]]
+    $env set [S varlist] [list {*}[lrange [
+      dict keys $vars] 1 end]]
     $env set [S body] $body
-    $env set [S call] [list {*}[dict keys $vars]]
-    set qq "`(let ,decl (set! ,variable (lambda ,varlist ,@body)) ,call)"
+    $env set [S call] [list {*}[
+      dict keys $vars]]
+    set qq "`(let ,decl
+               (set!
+                 ,variable
+                 (lambda ,varlist ,@body)) ,call)"
     return [expand-quasiquote [parse $qq] $env]
   } else {
     # regular let
@@ -1530,10 +1536,13 @@ proc ::constcl::expand-let {expr env} {
     set body [cdr $tail]
     set vars [dict create]
     parse-bindings vars $bindings
-    $env set [S varlist] [list {*}[dict keys $vars]]
+    $env set [S varlist] [list {*}[
+      dict keys $vars]]
     $env set [S body] $body
-    $env set [S vallist] [list {*}[dict values $vars]]
-    set qq "`((lambda ,varlist ,@body) ,@vallist)"
+    $env set [S vallist] [list {*}[
+      dict values $vars]]
+    set qq "`((lambda ,varlist ,@body)
+               ,@vallist)"
     return [expand-quasiquote [parse $qq] $env]
   }
 }
@@ -1543,7 +1552,9 @@ proc ::constcl::parse-bindings {name bindings} {
   foreach binding [splitlist $bindings] {
     set var [car $binding]
     set val [cadr $binding]
-    if {$var in [dict keys $vars]} {::error "variable '$var' occurs more than once in let construct"}
+    if {$var in [dict keys $vars]} {
+        ::error "'$var' occurs more than once"
+    }
     dict set vars $var $val
   }
 }
@@ -1565,7 +1576,7 @@ proc ::constcl::expand-or {expr env} {
 
 
 proc ::constcl::do-or {tail env} {
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [Environment new #NIL {} $env]
   /if {eq? [length $tail] #0} {
     return #f
   } {
@@ -1582,12 +1593,15 @@ regmacro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
+  set env [Environment new #NIL {} $env]
+  if {[null? $tail] ne "#f"} {
+      ::error "too few arguments:\n(pop! listname)"
+  }
   $env set [MkSymbol "obj"] [car $tail]
-  if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
-  if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
-  $env set [MkSymbol "listname"] [cadr $tail]
+  if {[symbol? [car $tail]] eq "#f"} {
+      ::error "SYMBOL expected:\n(pop! listname)"
+  }
+  $env set [S listname] [car $tail]
   set qq "`(set! ,listname (cdr ,listname))"
   return [expand-quasiquote [parse $qq] $env]
 }
@@ -1598,12 +1612,21 @@ regmacro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
-  $env set [MkSymbol "obj"] [car $tail]
-  if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments:\n(push! obj listname)"}
-  if {[symbol? [cadr $tail]] eq "#f"} {::error "SYMBOL expected:\n(push! obj listname)"}
-  $env set [MkSymbol "listname"] [cadr $tail]
+  set env [Environment new #NIL {} $env]
+  if {[null? $tail] ne "#f"} {
+    ::error \
+      "too few arguments:\n(push! obj listname)"
+  }
+  $env set [S obj] [car $tail]
+  if {[null? [cdr $tail]] ne "#f"} {
+    ::error \
+      "too few arguments:\n(push! obj listname)"
+  }
+  if {[symbol? [cadr $tail]] eq "#f"} {
+    ::error \
+      "SYMBOL expected:\n(push! obj listname)"
+  }
+  $env set [S listname] [cadr $tail]
   set qq "`(set! ,listname (cons ,obj ,listname))"
   return [expand-quasiquote [parse $qq] $env]
 }
