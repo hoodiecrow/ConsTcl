@@ -64,7 +64,7 @@ proc ::constcl::extract-from-defines {exps part} {
         } else {
           set a [cons #NIL $a]
           set new [cons [cdadr $n] [cddr $n]]
-          set new [cons #λ $new]
+          set new [cons [S lambda] $new]
           set-car! $a $new
         }
       } else {
@@ -129,11 +129,11 @@ proc ::constcl::make-recursive-lambda {vars args body} {
   set body [append-b [make-assignments $vars $tmps] $body]
   set body [cons $body #NIL]
   set n [cons $tmps $body]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n $args]
   set n [cons $n #NIL]
   set n [cons $vars $n]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n [make-undefineds $vars]]
   return $n
 }
@@ -228,12 +228,12 @@ proc ::constcl::make-assignments {vars tmps} {
   while {$vars ne "#NIL"} {
     set asg [cons [car $tmps] #NIL]
     set asg [cons [car $vars] $asg]
-    set asg [cons #S $asg]
+    set asg [cons [S set!] $asg]
     set n [cons $asg $n]
     set vars [cdr $vars]
     set tmps [cdr $tmps]
   }
-  return [cons #B $n]
+  return [cons [S begin] $n]
 }
 CB
 

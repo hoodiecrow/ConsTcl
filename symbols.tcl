@@ -40,6 +40,7 @@ proc ::constcl::MkSymbol {n} {
   }
   return [::constcl::Symbol new $n]
 }
+interp alias {} S {} ::constcl::Symbol new
 CB
 
 PR(
@@ -69,7 +70,7 @@ TT(
     pep {(symbol? 'nil)}
     pep {(symbol? '())}
     pep {(symbol? #f)}
-    puts [::constcl::symbol? #Q]
+    puts [::constcl::symbol? [S quote]]
 } -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
 
 TT)

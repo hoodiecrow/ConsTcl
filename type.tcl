@@ -219,10 +219,8 @@ PR)
 CB
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  ::constcl::expand-macro ::constcl::global_env
-  ::constcl::write [::constcl::cons $op $args]
+  set expr [::constcl::expand-macro $expr ::constcl::global_env]
+  ::constcl::write $expr
 }
 CB
 

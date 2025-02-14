@@ -2,6 +2,8 @@
 MD(
 ## Evaluation
 
+### Syntactic forms
+
 The second thing an interpreter must be able to do is to reduce expressions to
 their normal form, or **evaluate** them. As an example, 2 + 6 and 8 are two
 expressions that have the same value, but the latter is in normal form (can't be
@@ -17,7 +19,7 @@ MD(
 __eval__
 
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes
-it according to its form.
+it according to its syntactic form.
 
 `eval`:
 
@@ -33,30 +35,42 @@ PR)
 CB
 reg eval ::constcl::eval
 
-proc ::constcl::eval {expr {env ::constcl::global_env}} {
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
   if {[symbol? $expr] ne "#f"} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+  } elseif {[null? $expr] ne "#f" ||
+    [atom? $expr] ne "#f"} {
     set expr
   } else {
+    while {[[car $expr] name] in
+      $::constcl::macrolist} {
+      set expr [expand-macro $expr $env]
+    }
     set op [car $expr]
     set args [cdr $expr]
-    while {[$op name] in $::constcl::macrolist} {
-      expand-macro $env
-    }
-    if {$env ne "::constcl::global_env" && [$op name] eq "begin" && ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+    if {$env ne "::constcl::global_env" &&
+      [$op name] eq "begin" &&
+      ([pair? [car $args]] ne "#f" &&
+      [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
       set args [cdr $expr]
     }
     switch [$op name] {
       quote { car $args }
-      if { if {[eval [car $args] $env] ne "#f"} {eval [cadr $args] $env} {eval [caddr $args] $env} }
-      begin { eprogn $args $env }
-      define { declare [car $args] [eval [cadr $args] $env] $env }
-      set! { update! [car $args] [eval [cadr $args] $env] $env }
-      lambda { make-function [car $args] [cdr $args] $env }
-      default { invoke [eval $op $env] [eval-list $args $env] }
+      if { if {[eval [car $args] $env] ne "#f"} \
+        {eval [cadr $args] $env} \
+        {eval [caddr $args] $env} }
+      begin { /begin $args $env }
+      define { /define [car $args] [
+        eval [cadr $args] $env] $env }
+      set! { /set! [car $args] [
+        eval [cadr $args] $env] $env }
+      lambda { /lambda [car $args] [
+        cdr $args] $env }
+      default { invoke [eval $op $env] [
+        eval-list $args $env] }
     }
   }
 }
@@ -64,9 +78,7 @@ CB
 
 MD(
 
-#### Syntactic forms
-
-##### Variable reference
+#### Variable reference
 
 Example: `r` => 10 (a symbol `r` is evaluated to 10)
 
@@ -90,7 +102,7 @@ proc ::constcl::lookup {sym env} {
 CB
 
 MD(
-##### Constant literal
+#### Constant literal
 
 Example: `99` => 99 (a number evaluates to itself)
 
@@ -100,7 +112,7 @@ types (see next paragraph).
 MD)
 
 MD(
-##### Quotation
+#### Quotation
 
 Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
 constant)
@@ -114,7 +126,7 @@ reader.
 MD)
 
 MD(
-##### Conditional
+#### Conditional
 
 Example: `(if (> 99 100) (* 2 2) (+ 2 4))` => 6
 
@@ -125,44 +137,48 @@ returned. Otherwise, the third expression (the _alternate_) is evaluated and the
 value returned. One of the two latter expressions will be evaluated, and the
 other will remain unevaluated.
 
-__if__
+__/if__
 MD)
 
 PR(
-_if (internal);condition expr consequent expr alternate expr -> val
+/if (internal);condition expr consequent expr alternate expr -> val
 PR)
 
 CB
-proc ::constcl::_if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {uplevel $conseq} {uplevel $altern}
+proc ::constcl::/if {cond conseq altern} {
+  if {[uplevel $cond] ne "#f"} {
+    uplevel $conseq
+  } {
+    uplevel $altern
+  }
 }
 CB
 
 MD(
-##### Sequence
+#### Sequence
 
 Example: `(begin (define r 10) (* r r))` => 100
 
 When expressions are evaluated in sequence, the order is important for two
 reasons. If the expressions have any side effects, they happen in the same order
 of sequence. Also, if expressions are part of a pipeline of calculations, then
-they need to be processed in the order of that pipeline. The `eprogn` helper
+they need to be processed in the order of that pipeline. The `/begin` helper
 procedure takes a Lisp list of expressions and evaluates them in sequence,
 returning the value of the last one.
 
-__eprogn__
+__/begin__
 MD)
 
 PR(
-eprogn (internal);exps lexprs env env -> val
+/begin (internal);exps lexprs env env -> val
 PR)
 
 CB
-proc ::constcl::eprogn {exps env} {
-  _if {pair? $exps} {
-    _if {pair? [cdr $exps]} {
+proc ::constcl::/begin {exps env} {
+  /if {pair? $exps} {
+    /if {pair? [cdr $exps]} {
       eval [car $exps] $env
-      return [eprogn [cdr $exps] $env]
+      return [/begin [cdr $exps] $env]
     } {
       return [eval [car $exps] $env]
     }
@@ -173,25 +189,25 @@ proc ::constcl::eprogn {exps env} {
 CB
 
 MD(
-##### Definition
+#### Definition
 
 Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. A symbol is
 bound to a value (or rather to the location the value is in), creating a
-variable, through definition. The `declare` helper procedure adds a variable to
+variable, through definition. The `/define` helper procedure adds a variable to
 the current environment. It first checks that the symbol name is a valid
 identifier, then it updates the environment with the new binding.
 
-__declare__
+__/define__
 MD)
 
 PR(
-declare (internal);sym sym val val env env -> none
+/define (internal);sym sym val val env env -> none
 PR)
 
 CB
-proc ::constcl::declare {sym val env} {
+proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
   return #NONE
@@ -199,35 +215,35 @@ proc ::constcl::declare {sym val env} {
 CB
 
 MD(
-##### Assignment
+#### Assignment
 
 Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
 to it)
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
-process is called assignment. The `update!` helper does assignment: it modifies
+process is called assignment. The `/set!` helper does assignment: it modifies
 an existing variable that is bound somewhere in the environment chain. It finds
 the variable's environment and updates the binding. It returns the value, so
 calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
 to 99.
 
-__update!__
+__/set!__
 MD)
 
 PR(
-update! (internal);var bsym val val env env -> val
+/set! (internal);var bsym val val env env -> val
 PR)
 
 CB
-proc ::constcl::update! {var val env} {
+proc ::constcl::/set! {var val env} {
   [$env find $var] set $var $val
   set val
 }
 CB
 
 MD(
-##### Procedure definition
+#### Procedure definition
 
 Example: `(lambda (r) (* r r))` => ::oo::Obj3601 (it will be a different object
 each time)
@@ -257,7 +273,7 @@ Now, `square` is pretty tame. How about the `hypotenuse` procedure? `(define
 (hypotenuse a b) (sqrt (+ (square a) (square b))))`. It calculates the square
 root of the sum of two squares.
 
-Under the hood, the helper `make-function` makes a
+Under the hood, the helper `/lambda` makes a
 Procedure[#](https://github.com/hoodiecrow/ConsTcl#control) object. First it
 needs to convert the Lisp list `body`. It is packed inside a `begin` if it has
 more than one expression, and taken out of its list if not. The Lisp list
@@ -270,17 +286,17 @@ A Scheme formals list is either:
 * A **symbol**, `a`, meaning that all arguments go into `a`, or
 * A **dotted list**, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
 
-__make-function__
+__/lambda__
 MD)
 
 PR(
-make-function (internal);formals formals body lexprs env env -> proc
+/lambda (internal);formals formals body lexprs env env -> proc
 PR)
 
 CB
-proc ::constcl::make-function {formals body env} {
+proc ::constcl::/lambda {formals body env} {
   if {[[length $body] value] > 1} {
-    set body [cons #B $body]
+    set body [cons [S begin] $body]
   } else {
     set body [car $body]
   }
@@ -289,7 +305,7 @@ proc ::constcl::make-function {formals body env} {
 CB
 
 MD(
-##### Procedure call
+#### Procedure call
 
 Example: `(+ 1 6)` => 7
 
@@ -363,7 +379,7 @@ PR)
 
 CB
 proc ::constcl::eval-list {exps env} {
-  # don't convert to ::constcl::if, it breaks (fact 100)
+  # don't convert to /if, it breaks (fact 100)
   if {[pair? $exps] ne "#f"} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]

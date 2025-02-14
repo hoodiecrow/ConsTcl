@@ -614,6 +614,9 @@ reg append
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
+    check {list? $r} {
+      LIST expected\n([pn] [$r show])
+    }
     set prev [copy-list $r $prev]
   }
   set prev
@@ -649,7 +652,7 @@ TT(
 
 ::tcltest::test pairslists-12.1 {try append} -body {
     pep "(append '(a b) 'c '(d e))"
-} -returnCodes error -result "PAIR expected"
+} -returnCodes error -result "LIST expected\n(append c)"
 
 TT)
 

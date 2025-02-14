@@ -8,33 +8,30 @@ Macros that rewrite expressions into other, more concrete expressions is one of
 Lisp's strong points. This interpreter does macro expansion, but the user can't
 define new macros--the ones available are hardcoded in the code below.
 
-`expand-macro` only takes the environment as a parameter, but internally it uses
-variable sharing to get the expression it is to process. It shares the variables
-`op` and `args` with its caller, `eval`. `op` is used to delegate to the correct
-expansion procedure, and the value of `args` is passed to the expansion
-procedures. In the end, the expanded expression is passed back to `eval` by
-assigning to `op` and `args`.
+`expand-macro` takes an expression and an environment as a parameter. First, the
+operator (`op`) and operands (`args`) are extracted to check if expansion is
+necessary. If the operator is the symbol `define` and the first of the
+operands is something other than a Pair, then expansion is unnecessary and the procedure
+returns with a code to break the while loop in `eval`.
 
-Before it gets to the expansion call, the procedure does some extra processing
-if the operator is `define`. If the car of the `args` is something other than a
-Pair, or if the caar of the `args` is the symbol `lambda`, then no expansion is
-needed and the procedure returns with a code to break the while loop in `eval`.
+The operator's symbol name is then used to select the right expansion procedure,
+and the whole expression and the environment is passed to it. In the end, the
+expanded expression is passed back to `eval`.
 MD)
 
 PR(
-expand-macro (internal);env env -> nil
+expand-macro (internal);expr expr env env -> expr
 PR)
 
 CB
-proc ::constcl::expand-macro {env} {
-  upvar op op args args
-  if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
-    return -code break
-  }
-  set expr [expand-[$op name] [cons $op $args] $env]
+proc ::constcl::expand-macro {expr env} {
   set op [car $expr]
   set args [cdr $expr]
-  return #NIL
+  if {[$op name] eq "define" &&
+      [pair? [car $args]] eq "#f"} {
+    return -code break
+  }
+  return [expand-[$op name] $expr $env]
 }
 CB
 
@@ -54,14 +51,12 @@ regmacro and
 
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
-  _if {eq? [length $tail] #0} {
-    return [list #B #t]
-  } {
-    _if {eq? [length $tail] #1} {
-      return [cons #B $tail]
-    } {
-      return [do-and $tail #NIL $env]
-    }
+  if {[[length $tail] numval] == 0} {
+    list [S begin] #t
+  } elseif {[[length $tail] numval] == 1} {
+    cons [S begin] $tail
+  } else {
+    do-and $tail #t $env
   }
 }
 CB
@@ -72,10 +67,10 @@ PR)
 
 CB
 proc ::constcl::do-and {tail prev env} {
-  set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  set env [Environment new #NIL {} $env]
+  if {[[length $tail] numval] == 0} {
     return $prev
-  } {
+  } else {
     $env setstr "first" [car $tail]
     $env setstr "rest" [do-and [cdr $tail] \
       [car $tail] $env]
@@ -106,17 +101,17 @@ proc ::constcl::expand-case {expr env} {
 
 proc ::constcl::do-case {keyexpr clauses} {
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set keyl [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+    set keyl [list [MkSymbol "memv"] $keyexpr [list [S quote] $keyl]]
     if {[eq? [length $clauses] #1] ne "#f"} {
       if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
         set keyl #t
       }
     }
-    return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+    return [list [S if] $keyl [cons [S begin] $body] [do-case $keyexpr [cdr $clauses]]]
   }
 }
 CB
@@ -143,7 +138,7 @@ proc ::constcl::expand-cond {expr env} {
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
@@ -156,7 +151,7 @@ proc ::constcl::do-cond {tail env} {
       }
     }
     if {[null? $body] ne "#f"} {set body $pred}
-    return [list #I $pred [cons #B $body] [do-cond [cdr $clauses] $env]]
+    return [list [S if] $pred [cons [S begin] $body] [do-cond [cdr $clauses] $env]]
   }
 }
 CB
@@ -284,7 +279,7 @@ proc ::constcl::do-for {tail env} {
       lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
     }
     # list append to res a let expression with the ids and iterations and the body
-    lappend res [list #L [list {*}$x] {*}[splitlist $body]]
+    lappend res [list [S let] [list {*}$x] {*}[splitlist $body]]
   }
   return $res
 }
@@ -298,8 +293,8 @@ CB
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  lappend res [list #Q #NIL]
-  return [list #B {*}$res]
+  lappend res [list [S quote] #NIL]
+  return [list [S begin] {*}$res]
 }
 CB
 
@@ -439,9 +434,9 @@ regmacro or
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[eq? [length $tail] #0] ne "#f"} {
-    return [list #B #f]
+    return [list [S begin] #f]
   } elseif {[eq? [length $tail] #1] ne "#f"} {
-    return [cons #B $tail]
+    return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
   }
@@ -455,7 +450,7 @@ PR)
 CB
 proc ::constcl::do-or {tail env} {
   set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  /if {eq? [length $tail] #0} {
     return #f
   } {
     $env setstr "first" [car $tail]
@@ -575,7 +570,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
-          lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
+          lappend res [list [S unquote] [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
         }
       } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
         if {$qqlevel == 0} {

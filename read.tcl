@@ -136,9 +136,15 @@ in internal form.
 
 The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
-expression that expresses it in a unique way. For example, the external
-representation for a vector is a sharp sign (#), a left parenthesis ((), the
-external representation for some values, and a right parenthesis ()).
+expression that expresses it in a unique way. 
+
+For example, the external representation for a vector is a sharp sign (#), a
+left parenthesis ((), the external representation for some values, and a right
+parenthesis ()). When the reader or parser is working through input, a `#(`
+symbol signals that a vector structure is being read. A number of subexpressions
+for the elements of the vector follow, and then a closing parenthesis `)`
+signals that the vector is done. The elements are saved in vector memory and the
+vector gets the address to the first element and the number of elements.
 
 ![vrep](/images/vector-representation)
 
@@ -363,7 +369,7 @@ proc ::constcl::parse-quoted-expr {} {
   set expr [parse-expr]
   $ib skip-ws
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 CB
 
@@ -719,7 +725,7 @@ PR)
 
 CB
 proc ::constcl::character-check {name} {
-  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
     return #t
   } else {
@@ -743,7 +749,8 @@ CB
 proc ::constcl::parse-character-expr {} {
   upvar ib ib
   set name "#"
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) ]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) ]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -802,7 +809,7 @@ proc ::constcl::parse-vector-expr {} {
   set vec [MkVector $res]
   $vec mkconstant
   if {[$ib peek] ne ")"} {
-    ::error "Missing right paren. ([$ib peek])."
+    ::error "Missing right parenthesis."
   }
   $ib advance
   $ib skip-ws
@@ -908,19 +915,19 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {\"}          { return [read-string-expr] }
-    {\#}          { return [read-sharp] }
-    {\'}          { return [read-quoted-expr] }
-    {\(}          { return [read-pair-expr ")"] }
-    {\+} - {\-}   { return [read-plus-minus $c] }
-    {\,}          { return [read-unquoted-expr] }
-    {\.}          { return [Dot new]; set c [readc] }
-    {\:}          { return [read-object-expr] }
-    {\[}          { return [read-pair-expr "\]"] }
-    {\`}          { return [read-quasiquoted-expr] }
-    {\d}          { return [read-number-expr $c] }
+    {\"}          { read-string-expr }
+    {\#}          { read-sharp }
+    {\'}          { read-quoted-expr }
+    {\(}          { read-pair-expr ")" }
+    {\+} - {\-}   { read-plus-minus $c }
+    {\,}          { read-unquoted-expr }
+    {\.}          { Dot new }
+    {\:}          { read-object-expr }
+    {\[}          { read-pair-expr "\]" }
+    {\`}          { read-quasiquoted-expr }
+    {\d}          { read-number-expr $c }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [read-identifier-expr $c] }
+    {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
       ::error "unexpected character ($c)"
@@ -948,7 +955,7 @@ TT(
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
-} -returnCodes error -result {malformed string (no ending double quote)}
+} -returnCodes error -result {bad string (no ending double quote)}
 
 ::tcltest::test read-1.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
@@ -1213,7 +1220,7 @@ proc ::constcl::read-string-expr {} {
     set c [readc]
   }
   if {$c ne "\""} {
-    error "malformed string (no ending double quote)"
+    error "bad string (no ending double quote)"
   }
   set c [readc]
   set expr [MkString $str]
@@ -1307,7 +1314,9 @@ proc ::constcl::read-character-expr {} {
     set c [readc]
     read-eof $c
   }
-  check {character-check $name} {Invalid character constant $name}
+  check {character-check $name} {
+      Invalid character constant $name
+  }
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -1331,7 +1340,7 @@ proc ::constcl::read-quoted-expr {} {
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 CB
 
@@ -1453,12 +1462,15 @@ proc ::constcl::read-number-expr {args} {
     set c [readc]
   }
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" && $c ni {) \]}} {
+  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+      $c ni {) \]}} {
     ::append num $c
     set c [readc]
   }
   set unget $c
-  check {::string is double -strict $num} {Invalid numeric constant $num}
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
   set expr [MkNumber $num]
   read-eof $expr
   return $expr

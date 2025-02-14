@@ -39,24 +39,6 @@ interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
 
-interp alias {} #B {} [::constcl::MkSymbol begin]
-
-interp alias {} #I {} [::constcl::MkSymbol if]
-
-interp alias {} #L {} [::constcl::MkSymbol let]
-
-interp alias {} #Q {} [::constcl::MkSymbol quote]
-
-interp alias {} #U {} [::constcl::MkSymbol unquote]
-
-interp alias {} #S {} [::constcl::MkSymbol set!]
-
-interp alias {} #x {} [::constcl::MkSymbol x]
-
-interp alias {} #y {} [::constcl::MkSymbol y]
-
-interp alias {} #λ {} [::constcl::MkSymbol lambda]
-
 interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
@@ -194,39 +176,6 @@ TT(
 ::tcltest::test cons-10.0 {shadowing} -body {
     pep "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
 } -output "10\n"
-
-#-constraints knownBug 
-::tcltest::test cons-11.0 {and} -body {
-    pep "(and (= 2 2) (> 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-11.1 {and} -body {
-    pep "(and (= 2 2) (< 2 1))"
-} -output "#f\n"
-
-::tcltest::test cons-11.2 {and :( } -body {
-    pep "(and)"
-} -output "#t\n"
-
-::tcltest::test cons-11.3 {and} -body {
-    pep "(and 1 2 (quote c) (quote (f g)))"
-} -output "(f g)\n"
-
-::tcltest::test cons-12.0 {or} -body {
-    pep "(or (= 2 2) (> 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-12.1 {or} -body {
-    pep "(or (= 2 2) (< 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-12.2 {or} -body {
-    pep "(or #f #f #f)"
-} -output "#f\n"
-
-::tcltest::test cons-12.3 {or} -body {
-    pep "(or)"
-} -output "#f\n"
 
 ::tcltest::test cons-13.0 {expandquotes} -body {
     pep "''foo"

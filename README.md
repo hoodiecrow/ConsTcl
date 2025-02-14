@@ -241,10 +241,8 @@ that 'expand' doesn't start with an 'x'.
 ```
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  ::constcl::expand-macro ::constcl::global_env
-  ::constcl::write [::constcl::cons $op $args]
+  set expr [::constcl::expand-macro $expr ::constcl::global_env]
+  ::constcl::write $expr
 }
 ```
 
@@ -706,9 +704,15 @@ in internal form.
 
 The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
-expression that expresses it in a unique way. For example, the external
-representation for a vector is a sharp sign (#), a left parenthesis ((), the
-external representation for some values, and a right parenthesis ()).
+expression that expresses it in a unique way. 
+
+For example, the external representation for a vector is a sharp sign (#), a
+left parenthesis ((), the external representation for some values, and a right
+parenthesis ()). When the reader or parser is working through input, a `#(`
+symbol signals that a vector structure is being read. A number of subexpressions
+for the elements of the vector follow, and then a closing parenthesis `)`
+signals that the vector is done. The elements are saved in vector memory and the
+vector gets the address to the first element and the number of elements.
 
 ![vrep](/images/vector-representation)
 
@@ -899,7 +903,7 @@ proc ::constcl::parse-quoted-expr {} {
   set expr [parse-expr]
   $ib skip-ws
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 ```
 
@@ -1102,7 +1106,7 @@ character constant to the valid kinds.
 
 ```
 proc ::constcl::character-check {name} {
-  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
     return #t
   } else {
@@ -1122,7 +1126,8 @@ a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 proc ::constcl::parse-character-expr {} {
   upvar ib ib
   set name "#"
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) ]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) ]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -1154,7 +1159,7 @@ proc ::constcl::parse-vector-expr {} {
   set vec [MkVector $res]
   $vec mkconstant
   if {[$ib peek] ne ")"} {
-    ::error "Missing right paren. ([$ib peek])."
+    ::error "Missing right parenthesis."
   }
   $ib advance
   $ib skip-ws
@@ -1241,19 +1246,19 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {\"}          { return [read-string-expr] }
-    {\#}          { return [read-sharp] }
-    {\'}          { return [read-quoted-expr] }
-    {\(}          { return [read-pair-expr ")"] }
-    {\+} - {\-}   { return [read-plus-minus $c] }
-    {\,}          { return [read-unquoted-expr] }
-    {\.}          { return [Dot new]; set c [readc] }
-    {\:}          { return [read-object-expr] }
-    {\[}          { return [read-pair-expr "\]"] }
-    {\`}          { return [read-quasiquoted-expr] }
-    {\d}          { return [read-number-expr $c] }
+    {\"}          { read-string-expr }
+    {\#}          { read-sharp }
+    {\'}          { read-quoted-expr }
+    {\(}          { read-pair-expr ")" }
+    {\+} - {\-}   { read-plus-minus $c }
+    {\,}          { read-unquoted-expr }
+    {\.}          { Dot new }
+    {\:}          { read-object-expr }
+    {\[}          { read-pair-expr "\]" }
+    {\`}          { read-quasiquoted-expr }
+    {\d}          { read-number-expr $c }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [read-identifier-expr $c] }
+    {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
       ::error "unexpected character ($c)"
@@ -1366,7 +1371,7 @@ proc ::constcl::read-string-expr {} {
     set c [readc]
   }
   if {$c ne "\""} {
-    error "malformed string (no ending double quote)"
+    error "bad string (no ending double quote)"
   }
   set c [readc]
   set expr [MkString $str]
@@ -1448,7 +1453,9 @@ proc ::constcl::read-character-expr {} {
     set c [readc]
     read-eof $c
   }
-  check {character-check $name} {Invalid character constant $name}
+  check {character-check $name} {
+      Invalid character constant $name
+  }
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -1468,7 +1475,7 @@ proc ::constcl::read-quoted-expr {} {
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 ```
 
@@ -1578,12 +1585,15 @@ proc ::constcl::read-number-expr {args} {
     set c [readc]
   }
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" && $c ni {) \]}} {
+  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+      $c ni {) \]}} {
     ::append num $c
     set c [readc]
   }
   set unget $c
-  check {::string is double -strict $num} {Invalid numeric constant $num}
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
   set expr [MkNumber $num]
   read-eof $expr
   return $expr
@@ -1596,7 +1606,7 @@ __read-unquoted-expr__
 it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
 the input stream.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-unquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the unquote/-splicing symbol or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-unquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the unquote/-splicing symbol or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-unquoted-expr {} {
@@ -1649,7 +1659,7 @@ __read-quasiquoted-expr__
 
 `read-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-quasiquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quasiquote symbol or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-quasiquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the quasiquote symbol or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-quasiquoted-expr {} {
@@ -1698,6 +1708,8 @@ proc ::constcl::read-identifier-expr {args} {
 
 ## Evaluation
 
+### Syntactic forms
+
 The second thing an interpreter must be able to do is to reduce expressions to
 their normal form, or **evaluate** them. As an example, 2 + 6 and 8 are two
 expressions that have the same value, but the latter is in normal form (can't be
@@ -1724,7 +1736,7 @@ There are nine diffent forms or classes of expressions in Lisp.
 __eval__
 
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes
-it according to its form.
+it according to its syntactic form.
 
 `eval`:
 
@@ -1737,39 +1749,49 @@ it according to its form.
 ```
 reg eval ::constcl::eval
 
-proc ::constcl::eval {expr {env ::constcl::global_env}} {
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
   if {[symbol? $expr] ne "#f"} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+  } elseif {[null? $expr] ne "#f" ||
+    [atom? $expr] ne "#f"} {
     set expr
   } else {
+    while {[[car $expr] name] in
+      $::constcl::macrolist} {
+      set expr [expand-macro $expr $env]
+    }
     set op [car $expr]
     set args [cdr $expr]
-    while {[$op name] in $::constcl::macrolist} {
-      expand-macro $env
-    }
-    if {$env ne "::constcl::global_env" && [$op name] eq "begin" && ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+    if {$env ne "::constcl::global_env" &&
+      [$op name] eq "begin" &&
+      ([pair? [car $args]] ne "#f" &&
+      [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
       set args [cdr $expr]
     }
     switch [$op name] {
       quote { car $args }
-      if { if {[eval [car $args] $env] ne "#f"} {eval [cadr $args] $env} {eval [caddr $args] $env} }
-      begin { eprogn $args $env }
-      define { declare [car $args] [eval [cadr $args] $env] $env }
-      set! { update! [car $args] [eval [cadr $args] $env] $env }
-      lambda { make-function [car $args] [cdr $args] $env }
-      default { invoke [eval $op $env] [eval-list $args $env] }
+      if { if {[eval [car $args] $env] ne "#f"} \
+        {eval [cadr $args] $env} \
+        {eval [caddr $args] $env} }
+      begin { /begin $args $env }
+      define { /define [car $args] [
+        eval [cadr $args] $env] $env }
+      set! { /set! [car $args] [
+        eval [cadr $args] $env] $env }
+      lambda { /lambda [car $args] [
+        cdr $args] $env }
+      default { invoke [eval $op $env] [
+        eval-list $args $env] }
     }
   }
 }
 ```
 
 
-#### Syntactic forms
-
-##### Variable reference
+#### Variable reference
 
 Example: `r` => 10 (a symbol `r` is evaluated to 10)
 
@@ -1789,7 +1811,7 @@ proc ::constcl::lookup {sym env} {
 }
 ```
 
-##### Constant literal
+#### Constant literal
 
 Example: `99` => 99 (a number evaluates to itself)
 
@@ -1797,7 +1819,7 @@ Not just numbers but booleans, characters, strings, and vectors evaluate to
 themselves, to their innate value. Because of this, they are called autoquoting
 types (see next paragraph).
 
-##### Quotation
+#### Quotation
 
 Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
 constant)
@@ -1809,7 +1831,7 @@ any value that might be stored under it. This is so common that there is a
 shorthand notation for it: `'x` is interpreted as `(quote x)` by the Lisp
 reader.
 
-##### Conditional
+#### Conditional
 
 Example: `(if (> 99 100) (* 2 2) (+ 2 4))` => 6
 
@@ -1820,37 +1842,41 @@ returned. Otherwise, the third expression (the _alternate_) is evaluated and the
 value returned. One of the two latter expressions will be evaluated, and the
 other will remain unevaluated.
 
-__if__
+__/if__
 
-<table border=1><thead><tr><th colspan=2 align="left">_if (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::constcl::_if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {uplevel $conseq} {uplevel $altern}
+proc ::constcl::/if {cond conseq altern} {
+  if {[uplevel $cond] ne "#f"} {
+    uplevel $conseq
+  } {
+    uplevel $altern
+  }
 }
 ```
 
-##### Sequence
+#### Sequence
 
 Example: `(begin (define r 10) (* r r))` => 100
 
 When expressions are evaluated in sequence, the order is important for two
 reasons. If the expressions have any side effects, they happen in the same order
 of sequence. Also, if expressions are part of a pipeline of calculations, then
-they need to be processed in the order of that pipeline. The `eprogn` helper
+they need to be processed in the order of that pipeline. The `/begin` helper
 procedure takes a Lisp list of expressions and evaluates them in sequence,
 returning the value of the last one.
 
-__eprogn__
+__/begin__
 
-<table border=1><thead><tr><th colspan=2 align="left">eprogn (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/begin (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::constcl::eprogn {exps env} {
-  _if {pair? $exps} {
-    _if {pair? [cdr $exps]} {
+proc ::constcl::/begin {exps env} {
+  /if {pair? $exps} {
+    /if {pair? [cdr $exps]} {
       eval [car $exps] $env
-      return [eprogn [cdr $exps] $env]
+      return [/begin [cdr $exps] $env]
     } {
       return [eval [car $exps] $env]
     }
@@ -1860,53 +1886,53 @@ proc ::constcl::eprogn {exps env} {
 }
 ```
 
-##### Definition
+#### Definition
 
 Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. A symbol is
 bound to a value (or rather to the location the value is in), creating a
-variable, through definition. The `declare` helper procedure adds a variable to
+variable, through definition. The `/define` helper procedure adds a variable to
 the current environment. It first checks that the symbol name is a valid
 identifier, then it updates the environment with the new binding.
 
-__declare__
+__/define__
 
-<table border=1><thead><tr><th colspan=2 align="left">declare (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/define (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::constcl::declare {sym val env} {
+proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
   return #NONE
 }
 ```
 
-##### Assignment
+#### Assignment
 
 Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
 to it)
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
-process is called assignment. The `update!` helper does assignment: it modifies
+process is called assignment. The `/set!` helper does assignment: it modifies
 an existing variable that is bound somewhere in the environment chain. It finds
 the variable's environment and updates the binding. It returns the value, so
 calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
 to 99.
 
-__update!__
+__/set!__
 
-<table border=1><thead><tr><th colspan=2 align="left">update! (internal)</th></tr></thead><tr><td>var</td><td>a bound symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/set! (internal)</th></tr></thead><tr><td>var</td><td>a bound symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::constcl::update! {var val env} {
+proc ::constcl::/set! {var val env} {
   [$env find $var] set $var $val
   set val
 }
 ```
 
-##### Procedure definition
+#### Procedure definition
 
 Example: `(lambda (r) (* r r))` => ::oo::Obj3601 (it will be a different object
 each time)
@@ -1936,7 +1962,7 @@ Now, `square` is pretty tame. How about the `hypotenuse` procedure? `(define
 (hypotenuse a b) (sqrt (+ (square a) (square b))))`. It calculates the square
 root of the sum of two squares.
 
-Under the hood, the helper `make-function` makes a
+Under the hood, the helper `/lambda` makes a
 Procedure[#](https://github.com/hoodiecrow/ConsTcl#control) object. First it
 needs to convert the Lisp list `body`. It is packed inside a `begin` if it has
 more than one expression, and taken out of its list if not. The Lisp list
@@ -1949,14 +1975,14 @@ A Scheme formals list is either:
 * A **symbol**, `a`, meaning that all arguments go into `a`, or
 * A **dotted list**, `(a b . c)`, meaning that two arguments go into `a` and `b`, and the rest into `c`.
 
-__make-function__
+__/lambda__
 
-<table border=1><thead><tr><th colspan=2 align="left">make-function (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/lambda (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
-proc ::constcl::make-function {formals body env} {
+proc ::constcl::/lambda {formals body env} {
   if {[[length $body] value] > 1} {
-    set body [cons #B $body]
+    set body [cons [S begin] $body]
   } else {
     set body [car $body]
   }
@@ -1964,7 +1990,7 @@ proc ::constcl::make-function {formals body env} {
 }
 ```
 
-##### Procedure call
+#### Procedure call
 
 Example: `(+ 1 6)` => 7
 
@@ -2022,7 +2048,7 @@ collected results as a Lisp list.
 
 ```
 proc ::constcl::eval-list {exps env} {
-  # don't convert to ::constcl::if, it breaks (fact 100)
+  # don't convert to /if, it breaks (fact 100)
   if {[pair? $exps] ne "#f"} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
@@ -2060,30 +2086,27 @@ Macros that rewrite expressions into other, more concrete expressions is one of
 Lisp's strong points. This interpreter does macro expansion, but the user can't
 define new macros--the ones available are hardcoded in the code below.
 
-`expand-macro` only takes the environment as a parameter, but internally it uses
-variable sharing to get the expression it is to process. It shares the variables
-`op` and `args` with its caller, `eval`. `op` is used to delegate to the correct
-expansion procedure, and the value of `args` is passed to the expansion
-procedures. In the end, the expanded expression is passed back to `eval` by
-assigning to `op` and `args`.
+`expand-macro` takes an expression and an environment as a parameter. First, the
+operator (`op`) and operands (`args`) are extracted to check if expansion is
+necessary. If the operator is the symbol `define` and the first of the
+operands is something other than a Pair, then expansion is unnecessary and the procedure
+returns with a code to break the while loop in `eval`.
 
-Before it gets to the expansion call, the procedure does some extra processing
-if the operator is `define`. If the car of the `args` is something other than a
-Pair, or if the caar of the `args` is the symbol `lambda`, then no expansion is
-needed and the procedure returns with a code to break the while loop in `eval`.
+The operator's symbol name is then used to select the right expansion procedure,
+and the whole expression and the environment is passed to it. In the end, the
+expanded expression is passed back to `eval`.
 
-<table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc ::constcl::expand-macro {env} {
-  upvar op op args args
-  if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
-    return -code break
-  }
-  set expr [expand-[$op name] [cons $op $args] $env]
+proc ::constcl::expand-macro {expr env} {
   set op [car $expr]
   set args [cdr $expr]
-  return #NIL
+  if {[$op name] eq "define" &&
+      [pair? [car $args]] eq "#f"} {
+    return -code break
+  }
+  return [expand-[$op name] $expr $env]
 }
 ```
 
@@ -2099,14 +2122,12 @@ regmacro and
 
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
-  _if {eq? [length $tail] #0} {
-    return [list #B #t]
-  } {
-    _if {eq? [length $tail] #1} {
-      return [cons #B $tail]
-    } {
-      return [do-and $tail #NIL $env]
-    }
+  if {[[length $tail] numval] == 0} {
+    list [S begin] #t
+  } elseif {[[length $tail] numval] == 1} {
+    cons [S begin] $tail
+  } else {
+    do-and $tail #t $env
   }
 }
 ```
@@ -2115,10 +2136,10 @@ proc ::constcl::expand-and {expr env} {
 
 ```
 proc ::constcl::do-and {tail prev env} {
-  set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  set env [Environment new #NIL {} $env]
+  if {[[length $tail] numval] == 0} {
     return $prev
-  } {
+  } else {
     $env setstr "first" [car $tail]
     $env setstr "rest" [do-and [cdr $tail] \
       [car $tail] $env]
@@ -2145,17 +2166,17 @@ proc ::constcl::expand-case {expr env} {
 
 proc ::constcl::do-case {keyexpr clauses} {
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set keyl [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+    set keyl [list [MkSymbol "memv"] $keyexpr [list [S quote] $keyl]]
     if {[eq? [length $clauses] #1] ne "#f"} {
       if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
         set keyl #t
       }
     }
-    return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+    return [list [S if] $keyl [cons [S begin] $body] [do-case $keyexpr [cdr $clauses]]]
   }
 }
 ```
@@ -2178,7 +2199,7 @@ proc ::constcl::expand-cond {expr env} {
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
@@ -2191,7 +2212,7 @@ proc ::constcl::do-cond {tail env} {
       }
     }
     if {[null? $body] ne "#f"} {set body $pred}
-    return [list #I $pred [cons #B $body] [do-cond [cdr $clauses] $env]]
+    return [list [S if] $pred [cons [S begin] $body] [do-cond [cdr $clauses] $env]]
   }
 }
 ```
@@ -2305,7 +2326,7 @@ proc ::constcl::do-for {tail env} {
       lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
     }
     # list append to res a let expression with the ids and iterations and the body
-    lappend res [list #L [list {*}$x] {*}[splitlist $body]]
+    lappend res [list [S let] [list {*}$x] {*}[splitlist $body]]
   }
   return $res
 }
@@ -2317,8 +2338,8 @@ proc ::constcl::do-for {tail env} {
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  lappend res [list #Q #NIL]
-  return [list #B {*}$res]
+  lappend res [list [S quote] #NIL]
+  return [list [S begin] {*}$res]
 }
 ```
 
@@ -2438,9 +2459,9 @@ regmacro or
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[eq? [length $tail] #0] ne "#f"} {
-    return [list #B #f]
+    return [list [S begin] #f]
   } elseif {[eq? [length $tail] #1] ne "#f"} {
-    return [cons #B $tail]
+    return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
   }
@@ -2452,7 +2473,7 @@ proc ::constcl::expand-or {expr env} {
 ```
 proc ::constcl::do-or {tail env} {
   set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  /if {eq? [length $tail] #0} {
     return #f
   } {
     $env setstr "first" [car $tail]
@@ -2556,7 +2577,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
-          lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
+          lappend res [list [S unquote] [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
         }
       } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
         if {$qqlevel == 0} {
@@ -2705,7 +2726,7 @@ proc ::constcl::extract-from-defines {exps part} {
         } else {
           set a [cons #NIL $a]
           set new [cons [cdadr $n] [cddr $n]]
-          set new [cons #λ $new]
+          set new [cons [S lambda] $new]
           set-car! $a $new
         }
       } else {
@@ -2762,11 +2783,11 @@ proc ::constcl::make-recursive-lambda {vars args body} {
   set body [append-b [make-assignments $vars $tmps] $body]
   set body [cons $body #NIL]
   set n [cons $tmps $body]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n $args]
   set n [cons $n #NIL]
   set n [cons $vars $n]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n [make-undefineds $vars]]
   return $n
 }
@@ -2845,12 +2866,12 @@ proc ::constcl::make-assignments {vars tmps} {
   while {$vars ne "#NIL"} {
     set asg [cons [car $tmps] #NIL]
     set asg [cons [car $vars] $asg]
-    set asg [cons #S $asg]
+    set asg [cons [S set!] $asg]
     set n [cons $asg $n]
     set vars [cdr $vars]
     set tmps [cdr $tmps]
   }
-  return [cons #B $n]
+  return [cons [S begin] $n]
 }
 ```
 
@@ -5471,6 +5492,9 @@ reg append
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
+    check {list? $r} {
+      LIST expected\n([pn] [$r show])
+    }
     set prev [copy-list $r $prev]
   }
   set prev
@@ -6355,6 +6379,7 @@ proc ::constcl::MkSymbol {n} {
   }
   return [::constcl::Symbol new $n]
 }
+interp alias {} S {} ::constcl::Symbol new
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
@@ -6812,24 +6837,6 @@ interp alias {} #-1 {} [::constcl::MkNumber -1]
 interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
-
-interp alias {} #B {} [::constcl::MkSymbol begin]
-
-interp alias {} #I {} [::constcl::MkSymbol if]
-
-interp alias {} #L {} [::constcl::MkSymbol let]
-
-interp alias {} #Q {} [::constcl::MkSymbol quote]
-
-interp alias {} #U {} [::constcl::MkSymbol unquote]
-
-interp alias {} #S {} [::constcl::MkSymbol set!]
-
-interp alias {} #x {} [::constcl::MkSymbol x]
-
-interp alias {} #y {} [::constcl::MkSymbol y]
-
-interp alias {} #λ {} [::constcl::MkSymbol lambda]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 

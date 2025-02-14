@@ -87,10 +87,8 @@ proc ::prp {str} {
 
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  ::constcl::expand-macro ::constcl::global_env
-  ::constcl::write [::constcl::cons $op $args]
+  set expr [::constcl::expand-macro $expr ::constcl::global_env]
+  ::constcl::write $expr
 }
 
 
@@ -508,7 +506,7 @@ proc ::constcl::parse-quoted-expr {} {
   set expr [parse-expr]
   $ib skip-ws
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 
 
@@ -658,7 +656,7 @@ proc ::constcl::parse-identifier-expr {} {
 
 
 proc ::constcl::character-check {name} {
-  if {[regexp {^#\\([[:graph:]]|space|newline)$} \
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
     return #t
   } else {
@@ -671,7 +669,8 @@ proc ::constcl::character-check {name} {
 proc ::constcl::parse-character-expr {} {
   upvar ib ib
   set name "#"
-  while {[interspace [$ib peek]] ne "#t" && [$ib peek] ni {) ]}} {
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) ]}} {
     ::append name [$ib peek]
     $ib advance
   }
@@ -697,7 +696,7 @@ proc ::constcl::parse-vector-expr {} {
   set vec [MkVector $res]
   $vec mkconstant
   if {[$ib peek] ne ")"} {
-    ::error "Missing right paren. ([$ib peek])."
+    ::error "Missing right parenthesis."
   }
   $ib advance
   $ib skip-ws
@@ -757,19 +756,19 @@ proc ::constcl::read-expr {args} {
     read-eof $c
   }
   switch -regexp $c {
-    {\"}          { return [read-string-expr] }
-    {\#}          { return [read-sharp] }
-    {\'}          { return [read-quoted-expr] }
-    {\(}          { return [read-pair-expr ")"] }
-    {\+} - {\-}   { return [read-plus-minus $c] }
-    {\,}          { return [read-unquoted-expr] }
-    {\.}          { return [Dot new]; set c [readc] }
-    {\:}          { return [read-object-expr] }
-    {\[}          { return [read-pair-expr "\]"] }
-    {\`}          { return [read-quasiquoted-expr] }
-    {\d}          { return [read-number-expr $c] }
+    {\"}          { read-string-expr }
+    {\#}          { read-sharp }
+    {\'}          { read-quoted-expr }
+    {\(}          { read-pair-expr ")" }
+    {\+} - {\-}   { read-plus-minus $c }
+    {\,}          { read-unquoted-expr }
+    {\.}          { Dot new }
+    {\:}          { read-object-expr }
+    {\[}          { read-pair-expr "\]" }
+    {\`}          { read-quasiquoted-expr }
+    {\d}          { read-number-expr $c }
     {^$}          { return #NONE}
-    {[[:graph:]]} { return [read-identifier-expr $c] }
+    {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
       ::error "unexpected character ($c)"
@@ -852,7 +851,7 @@ proc ::constcl::read-string-expr {} {
     set c [readc]
   }
   if {$c ne "\""} {
-    error "malformed string (no ending double quote)"
+    error "bad string (no ending double quote)"
   }
   set c [readc]
   set expr [MkString $str]
@@ -914,7 +913,9 @@ proc ::constcl::read-character-expr {} {
     set c [readc]
     read-eof $c
   }
-  check {character-check $name} {Invalid character constant $name}
+  check {character-check $name} {
+      Invalid character constant $name
+  }
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -927,7 +928,7 @@ proc ::constcl::read-quoted-expr {} {
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
-  return [list #Q $expr]
+  return [list [S quote] $expr]
 }
 
 
@@ -1017,12 +1018,15 @@ proc ::constcl::read-number-expr {args} {
     set c [readc]
   }
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" && $c ni {) \]}} {
+  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+      $c ni {) \]}} {
     ::append num $c
     set c [readc]
   }
   set unget $c
-  check {::string is double -strict $num} {Invalid numeric constant $num}
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
   set expr [MkNumber $num]
   read-eof $expr
   return $expr
@@ -1113,30 +1117,42 @@ proc ::constcl::read-identifier-expr {args} {
 
 reg eval ::constcl::eval
 
-proc ::constcl::eval {expr {env ::constcl::global_env}} {
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
   if {[symbol? $expr] ne "#f"} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" || [atom? $expr] ne "#f"} {
+  } elseif {[null? $expr] ne "#f" ||
+    [atom? $expr] ne "#f"} {
     set expr
   } else {
+    while {[[car $expr] name] in
+      $::constcl::macrolist} {
+      set expr [expand-macro $expr $env]
+    }
     set op [car $expr]
     set args [cdr $expr]
-    while {[$op name] in $::constcl::macrolist} {
-      expand-macro $env
-    }
-    if {$env ne "::constcl::global_env" && [$op name] eq "begin" && ([pair? [car $args]] ne "#f" && [[caar $args] name] eq "define")} {
+    if {$env ne "::constcl::global_env" &&
+      [$op name] eq "begin" &&
+      ([pair? [car $args]] ne "#f" &&
+      [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
       set args [cdr $expr]
     }
     switch [$op name] {
       quote { car $args }
-      if { if {[eval [car $args] $env] ne "#f"} {eval [cadr $args] $env} {eval [caddr $args] $env} }
-      begin { eprogn $args $env }
-      define { declare [car $args] [eval [cadr $args] $env] $env }
-      set! { update! [car $args] [eval [cadr $args] $env] $env }
-      lambda { make-function [car $args] [cdr $args] $env }
-      default { invoke [eval $op $env] [eval-list $args $env] }
+      if { if {[eval [car $args] $env] ne "#f"} \
+        {eval [cadr $args] $env} \
+        {eval [caddr $args] $env} }
+      begin { /begin $args $env }
+      define { /define [car $args] [
+        eval [cadr $args] $env] $env }
+      set! { /set! [car $args] [
+        eval [cadr $args] $env] $env }
+      lambda { /lambda [car $args] [
+        cdr $args] $env }
+      default { invoke [eval $op $env] [
+        eval-list $args $env] }
     }
   }
 }
@@ -1151,17 +1167,21 @@ proc ::constcl::lookup {sym env} {
 
 
 
-proc ::constcl::_if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {uplevel $conseq} {uplevel $altern}
+proc ::constcl::/if {cond conseq altern} {
+  if {[uplevel $cond] ne "#f"} {
+    uplevel $conseq
+  } {
+    uplevel $altern
+  }
 }
 
 
 
-proc ::constcl::eprogn {exps env} {
-  _if {pair? $exps} {
-    _if {pair? [cdr $exps]} {
+proc ::constcl::/begin {exps env} {
+  /if {pair? $exps} {
+    /if {pair? [cdr $exps]} {
       eval [car $exps] $env
-      return [eprogn [cdr $exps] $env]
+      return [/begin [cdr $exps] $env]
     } {
       return [eval [car $exps] $env]
     }
@@ -1172,7 +1192,7 @@ proc ::constcl::eprogn {exps env} {
 
 
 
-proc ::constcl::declare {sym val env} {
+proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
   return #NONE
@@ -1180,16 +1200,16 @@ proc ::constcl::declare {sym val env} {
 
 
 
-proc ::constcl::update! {var val env} {
+proc ::constcl::/set! {var val env} {
   [$env find $var] set $var $val
   set val
 }
 
 
 
-proc ::constcl::make-function {formals body env} {
+proc ::constcl::/lambda {formals body env} {
   if {[[length $body] value] > 1} {
-    set body [cons #B $body]
+    set body [cons [S begin] $body]
   } else {
     set body [car $body]
   }
@@ -1224,7 +1244,7 @@ proc ::constcl::splitlist {vals} {
 
 
 proc ::constcl::eval-list {exps env} {
-  # don't convert to ::constcl::if, it breaks (fact 100)
+  # don't convert to /if, it breaks (fact 100)
   if {[pair? $exps] ne "#f"} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
@@ -1250,15 +1270,14 @@ proc ::constcl::interaction-environment {} {
 
 
 
-proc ::constcl::expand-macro {env} {
-  upvar op op args args
-  if {[$op name] eq "define" && ([pair? [car $args]] eq "#f" || [[caar $args] name] eq "lambda")} {
-    return -code break
-  }
-  set expr [expand-[$op name] [cons $op $args] $env]
+proc ::constcl::expand-macro {expr env} {
   set op [car $expr]
   set args [cdr $expr]
-  return #NIL
+  if {[$op name] eq "define" &&
+      [pair? [car $args]] eq "#f"} {
+    return -code break
+  }
+  return [expand-[$op name] $expr $env]
 }
 
 
@@ -1267,23 +1286,21 @@ regmacro and
 
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
-  _if {eq? [length $tail] #0} {
-    return [list #B #t]
-  } {
-    _if {eq? [length $tail] #1} {
-      return [cons #B $tail]
-    } {
-      return [do-and $tail #NIL $env]
-    }
+  if {[[length $tail] numval] == 0} {
+    list [S begin] #t
+  } elseif {[[length $tail] numval] == 1} {
+    cons [S begin] $tail
+  } else {
+    do-and $tail #t $env
   }
 }
 
 
 proc ::constcl::do-and {tail prev env} {
-  set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  set env [Environment new #NIL {} $env]
+  if {[[length $tail] numval] == 0} {
     return $prev
-  } {
+  } else {
     $env setstr "first" [car $tail]
     $env setstr "rest" [do-and [cdr $tail] \
       [car $tail] $env]
@@ -1303,17 +1320,17 @@ proc ::constcl::expand-case {expr env} {
 
 proc ::constcl::do-case {keyexpr clauses} {
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set keyl [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [MkSymbol "memv"] $keyexpr [list #Q $keyl]]
+    set keyl [list [MkSymbol "memv"] $keyexpr [list [S quote] $keyl]]
     if {[eq? [length $clauses] #1] ne "#f"} {
       if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
         set keyl #t
       }
     }
-    return [list #I $keyl [cons #B $body] [do-case $keyexpr [cdr $clauses]]]
+    return [list [S if] $keyl [cons [S begin] $body] [do-case $keyexpr [cdr $clauses]]]
   }
 }
 
@@ -1328,7 +1345,7 @@ proc ::constcl::expand-cond {expr env} {
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list #Q #NIL]
+    return [list [S quote] #NIL]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
@@ -1341,7 +1358,7 @@ proc ::constcl::do-cond {tail env} {
       }
     }
     if {[null? $body] ne "#f"} {set body $pred}
-    return [list #I $pred [cons #B $body] [do-cond [cdr $clauses] $env]]
+    return [list [S if] $pred [cons [S begin] $body] [do-cond [cdr $clauses] $env]]
   }
 }
 
@@ -1421,7 +1438,7 @@ proc ::constcl::do-for {tail env} {
       lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
     }
     # list append to res a let expression with the ids and iterations and the body
-    lappend res [list #L [list {*}$x] {*}[splitlist $body]]
+    lappend res [list [S let] [list {*}$x] {*}[splitlist $body]]
   }
   return $res
 }
@@ -1430,8 +1447,8 @@ proc ::constcl::do-for {tail env} {
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  lappend res [list #Q #NIL]
-  return [list #B {*}$res]
+  lappend res [list [S quote] #NIL]
+  return [list [S begin] {*}$res]
 }
 
 
@@ -1516,9 +1533,9 @@ regmacro or
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[eq? [length $tail] #0] ne "#f"} {
-    return [list #B #f]
+    return [list [S begin] #f]
   } elseif {[eq? [length $tail] #1] ne "#f"} {
-    return [cons #B $tail]
+    return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
   }
@@ -1527,7 +1544,7 @@ proc ::constcl::expand-or {expr env} {
 
 proc ::constcl::do-or {tail env} {
   set env [::constcl::Environment new #NIL {} $env]
-  _if {eq? [length $tail] #0} {
+  /if {eq? [length $tail] #0} {
     return #f
   } {
     $env setstr "first" [car $tail]
@@ -1604,7 +1621,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
-          lappend res [list #U [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
+          lappend res [list [S unquote] [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
         }
       } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
         if {$qqlevel == 0} {
@@ -1714,7 +1731,7 @@ proc ::constcl::extract-from-defines {exps part} {
         } else {
           set a [cons #NIL $a]
           set new [cons [cdadr $n] [cddr $n]]
-          set new [cons #λ $new]
+          set new [cons [S lambda] $new]
           set-car! $a $new
         }
       } else {
@@ -1759,11 +1776,11 @@ proc ::constcl::make-recursive-lambda {vars args body} {
   set body [append-b [make-assignments $vars $tmps] $body]
   set body [cons $body #NIL]
   set n [cons $tmps $body]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n $args]
   set n [cons $n #NIL]
   set n [cons $vars $n]
-  set n [cons #λ $n]
+  set n [cons [S lambda] $n]
   set n [cons $n [make-undefineds $vars]]
   return $n
 }
@@ -1816,12 +1833,12 @@ proc ::constcl::make-assignments {vars tmps} {
   while {$vars ne "#NIL"} {
     set asg [cons [car $tmps] #NIL]
     set asg [cons [car $vars] $asg]
-    set asg [cons #S $asg]
+    set asg [cons [S set!] $asg]
     set n [cons $asg $n]
     set vars [cdr $vars]
     set tmps [cdr $tmps]
   }
-  return [cons #B $n]
+  return [cons [S begin] $n]
 }
 
 
@@ -3705,6 +3722,9 @@ reg append
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
+    check {list? $r} {
+      LIST expected\n([pn] [$r show])
+    }
     set prev [copy-list $r $prev]
   }
   set prev
@@ -4324,6 +4344,7 @@ proc ::constcl::MkSymbol {n} {
   }
   return [::constcl::Symbol new $n]
 }
+interp alias {} S {} ::constcl::Symbol new
 
 
 reg symbol? ::constcl::symbol?
@@ -4618,24 +4639,6 @@ interp alias {} #-1 {} [::constcl::MkNumber -1]
 interp alias {} #0 {} [::constcl::MkNumber 0]
 
 interp alias {} #1 {} [::constcl::MkNumber 1]
-
-interp alias {} #B {} [::constcl::MkSymbol begin]
-
-interp alias {} #I {} [::constcl::MkSymbol if]
-
-interp alias {} #L {} [::constcl::MkSymbol let]
-
-interp alias {} #Q {} [::constcl::MkSymbol quote]
-
-interp alias {} #U {} [::constcl::MkSymbol unquote]
-
-interp alias {} #S {} [::constcl::MkSymbol set!]
-
-interp alias {} #x {} [::constcl::MkSymbol x]
-
-interp alias {} #y {} [::constcl::MkSymbol y]
-
-interp alias {} #λ {} [::constcl::MkSymbol lambda]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 

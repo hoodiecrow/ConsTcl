@@ -17,9 +17,9 @@ sharpeof   -> a vector, boolean, or character value or end of file
 quote      -> an expression wrapped in the quote symbol
 quoteeof   -> an expression wrapped in the quote symbol or end of file
 unquote    -> an expression wrapped in the unquote/-splicing symbol
-unquoteeof -> an expression wrapped in the unquote/-splicing symbol or end of file
+unquoteeof -> an expr. wr. in the unquote/-splicing symbol or end of file
 qquote     -> an expression wrapped in the quasiquote symbol
-qquoteeof  -> an expression wrapped in the quasiquote symbol or end of file
+qquoteeof  -> an expr. wr. in the quasiquote symbol or end of file
 pm         -> either the symbols + or - or a number
 pmeof      -> either the symbols + or - or a number or end of file
 obj        -> a ConsTcl object

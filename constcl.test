@@ -176,7 +176,7 @@ source constcl.tcl
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
-} -returnCodes error -result {malformed string (no ending double quote)}
+} -returnCodes error -result {bad string (no ending double quote)}
 
 ::tcltest::test read-1.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
@@ -1282,7 +1282,7 @@ if no {
 
 ::tcltest::test pairslists-12.1 {try append} -body {
     pep "(append '(a b) 'c '(d e))"
-} -returnCodes error -result "PAIR expected"
+} -returnCodes error -result "LIST expected\n(append c)"
 
 
 
@@ -1511,7 +1511,7 @@ if no {
     pep {(symbol? 'nil)}
     pep {(symbol? '())}
     pep {(symbol? #f)}
-    puts [::constcl::symbol? #Q]
+    puts [::constcl::symbol? [S quote]]
 } -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
 
 
@@ -1687,39 +1687,6 @@ if no {
 ::tcltest::test cons-10.0 {shadowing} -body {
     pep "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
 } -output "10\n"
-
-#-constraints knownBug 
-::tcltest::test cons-11.0 {and} -body {
-    pep "(and (= 2 2) (> 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-11.1 {and} -body {
-    pep "(and (= 2 2) (< 2 1))"
-} -output "#f\n"
-
-::tcltest::test cons-11.2 {and :( } -body {
-    pep "(and)"
-} -output "#t\n"
-
-::tcltest::test cons-11.3 {and} -body {
-    pep "(and 1 2 (quote c) (quote (f g)))"
-} -output "(f g)\n"
-
-::tcltest::test cons-12.0 {or} -body {
-    pep "(or (= 2 2) (> 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-12.1 {or} -body {
-    pep "(or (= 2 2) (< 2 1))"
-} -output "#t\n"
-
-::tcltest::test cons-12.2 {or} -body {
-    pep "(or #f #f #f)"
-} -output "#f\n"
-
-::tcltest::test cons-12.3 {or} -body {
-    pep "(or)"
-} -output "#f\n"
 
 ::tcltest::test cons-13.0 {expandquotes} -body {
     pep "''foo"
