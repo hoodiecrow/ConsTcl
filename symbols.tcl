@@ -40,7 +40,7 @@ proc ::constcl::MkSymbol {n} {
   }
   return [::constcl::Symbol new $n]
 }
-interp alias {} S {} ::constcl::Symbol new
+interp alias {} S {} ::constcl::MkSymbol
 CB
 
 PR(

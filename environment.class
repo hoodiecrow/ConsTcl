@@ -63,9 +63,6 @@ oo::class create ::constcl::Environment {
   method set {sym val} {
     dict set bindings $sym $val
   }
-  method setstr {str val} {
-    dict set bindings [::constcl::MkSymbol $str] $val
-  }
 }
 CB
 

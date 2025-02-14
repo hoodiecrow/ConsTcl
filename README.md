@@ -2113,7 +2113,8 @@ proc ::constcl::expand-macro {expr env} {
 __expand-and__
 
 `expand-and` expands the `and` macro. It returns a `begin`-expression if the
-macro has 0 or 1 elements, and a nested `if` construct otherwise.
+macro has 0 or 1 elements, and a nested `if` construct otherwise. `S begin`
+stands for "the symbol begin".
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2140,9 +2141,9 @@ proc ::constcl::do-and {tail prev env} {
   if {[[length $tail] numval] == 0} {
     return $prev
   } else {
-    $env setstr "first" [car $tail]
-    $env setstr "rest" [do-and [cdr $tail] \
-      [car $tail] $env]
+    $env set [S first] [car $tail]
+    $env set [S rest] [do-and [cdr $tail] \
+        [car $tail] $env]
     set qq "`(if ,first ,rest #f)"
     return [expand-quasiquote [parse $qq] $env]
   }
@@ -2170,13 +2171,16 @@ proc ::constcl::do-case {keyexpr clauses} {
   } else {
     set keyl [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [MkSymbol "memv"] $keyexpr [list [S quote] $keyl]]
+    set keyl [list [S memv] $keyexpr \
+        [list [S quote] $keyl]]
     if {[eq? [length $clauses] #1] ne "#f"} {
-      if {[eq? [caar $clauses] [MkSymbol "else"]] ne "#f"} {
+      if {[eq? [caar $clauses] [S else]] ne "#f"} {
         set keyl #t
       }
     }
-    return [list [S if] $keyl [cons [S begin] $body] [do-case $keyexpr [cdr $clauses]]]
+    return [list [S if] $keyl \
+        [cons [S begin] $body] \
+        [do-case $keyexpr [cdr $clauses]]]
   }
 }
 ```
@@ -2203,16 +2207,21 @@ proc ::constcl::do-cond {tail env} {
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
-    if {[symbol? [car $body]] ne "#f" && [[car $body] name] eq "=>"} {
+    if {[symbol? [car $body]] ne "#f" &&
+        [[car $body] name] eq "=>"} {
       set body [cddar $clauses]
     }
     if {[eq? [length $clauses] #1] ne "#f"} {
-      if {[eq? $pred [MkSymbol "else"]] ne "#f"} {
+      if {[eq? $pred [S else]] ne "#f"} {
         set pred #t
       }
     }
-    if {[null? $body] ne "#f"} {set body $pred}
-    return [list [S if] $pred [cons [S begin] $body] [do-cond [cdr $clauses] $env]]
+    if {[null? $body] ne "#f"} {
+        set body $pred
+    }
+    return [list [S if] $pred \
+        [cons [S begin] $body] \
+        [do-cond [cdr $clauses] $env]]
   }
 }
 ```
@@ -2238,7 +2247,7 @@ regmacro define
 proc ::constcl::expand-define {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  $env setstr "tail" $tail
+  $env set [S tail] $tail
   set qq "`(define ,(caar tail)
              (lambda ,(cdar tail) ,@(cdr tail)))"
   return [expand-quasiquote [parse $qq] $env]
@@ -2257,16 +2266,17 @@ regmacro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [Environment new #NIL {} $env]
   if {[null? $tail] ne "#f"} {
-    ::error "too few arguments, 2 expected, got 0"
+    ::error "too few arguments, 0 of 2"
   }
-  $env setstr "listname" [car $tail]
+  $env set [S listname] [car $tail]
   if {[null? [cdr $tail]] ne "#f"} {
-    ::error "too few arguments, 2 expected, got 1"
+    ::error "too few arguments, 1 of 2"
   }
-  $env setstr "key" [cadr $tail]
-  set qq "`(set! ,listname (delete! ,listname ,key))"
+  $env set [S key] [cadr $tail]
+  set qq "`(set! ,listname
+             (delete! ,listname ,key))"
   return [expand-quasiquote [parse $qq] $env]
 }
 ```
@@ -2293,7 +2303,8 @@ proc ::constcl::for-seq {seq env} {
   if {[list? $seq] ne "#f"} {
     set seq [splitlist $seq]
   } elseif {[string? $seq] ne "#f"} { 
-    set seq [lmap c [split [$seq value] {}] {MkChar #\\$c}]
+    set seq [lmap c [split [$seq value] {}] \
+        {MkChar #\\$c}]
   } elseif {[vector? $seq] ne "#f"} {
     set seq [$seq value]
   }
@@ -2309,24 +2320,36 @@ proc ::constcl::do-for {tail env} {
   set body [cdr $tail]
   set ids {}
   set seqs {}
-  for {set i 0} {$i < [llength $clauses]} {incr i} {
+  for {set i 0} \
+      {$i < [llength $clauses]} \
+      {incr i} {
     set clause [lindex $clauses $i]
-    # insert the first part of the clause in the ids structure
+    # insert the first part of the
+    # clause in the ids structure
     lset ids $i [car $clause]
-    # run the second part of the clause through for-seq and insert in seqs
+    # run the second part of the clause
+    # through for-seq and insert in seqs
     lset seqs $i [for-seq [cadr $clause] $env]
   }
   set res {}
-  for {set item 0} {$item < [llength [lindex $seqs 0]]} {incr item} {
+  for {set item 0} \
+      {$item < [llength [lindex $seqs 0]]} \
+      {incr item} {
     # for each iteration of the sequences
     set x {}
-    for {set clause 0} {$clause < [llength $clauses]} {incr clause} {
+    for {set clause 0} \
+        {$clause < [llength $clauses]} \
+        {incr clause} {
       # for each clause
-      # list append to x the Lisp list of the id and the iteration
-      lappend x [list [lindex $ids $clause] [lindex $seqs $clause $item]]
+      # list append to x the Lisp list
+      # of the id and the iteration
+      lappend x [list [lindex $ids $clause] \
+          [lindex $seqs $clause $item]]
     }
-    # list append to res a let expression with the ids and iterations and the body
-    lappend res [list [S let] [list {*}$x] {*}[splitlist $body]]
+    # list append to res a let expression
+    # with the ids and iterations and the body
+    lappend res [list [S let] [
+        list {*}$x] {*}[splitlist $body]]
   }
   return $res
 }
@@ -2414,11 +2437,11 @@ proc ::constcl::expand-let {expr env} {
     set body [cddr $tail]
     set vars [dict create $variable #f]
     parse-bindings vars $bindings
-    $env setstr "decl" [list {*}[dict values [dict map {k v} $vars {list $k $v}]]]
-    $env setstr "variable" $variable
-    $env setstr "varlist" [list {*}[lrange [dict keys $vars] 1 end]]
-    $env setstr "body" $body
-    $env setstr "call" [list {*}[dict keys $vars]]
+    $env set [S decl] [list {*}[dict values [dict map {k v} $vars {list $k $v}]]]
+    $env set [S variable] $variable
+    $env set [S varlist] [list {*}[lrange [dict keys $vars] 1 end]]
+    $env set [S body] $body
+    $env set [S call] [list {*}[dict keys $vars]]
     set qq "`(let ,decl (set! ,variable (lambda ,varlist ,@body)) ,call)"
     return [expand-quasiquote [parse $qq] $env]
   } else {
@@ -2427,9 +2450,9 @@ proc ::constcl::expand-let {expr env} {
     set body [cdr $tail]
     set vars [dict create]
     parse-bindings vars $bindings
-    $env setstr "varlist" [list {*}[dict keys $vars]]
-    $env setstr "body" $body
-    $env setstr "vallist" [list {*}[dict values $vars]]
+    $env set [S varlist] [list {*}[dict keys $vars]]
+    $env set [S body] $body
+    $env set [S vallist] [list {*}[dict values $vars]]
     set qq "`((lambda ,varlist ,@body) ,@vallist)"
     return [expand-quasiquote [parse $qq] $env]
   }
@@ -2476,8 +2499,8 @@ proc ::constcl::do-or {tail env} {
   /if {eq? [length $tail] #0} {
     return #f
   } {
-    $env setstr "first" [car $tail]
-    $env setstr "rest" [do-or [cdr $tail] $env]
+    $env set [S first] [car $tail]
+    $env set [S rest] [do-or [cdr $tail] $env]
     set qq "`(let ((x ,first)) (if x x ,rest))"
     return [expand-quasiquote [parse $qq] $env]
   }
@@ -2642,7 +2665,7 @@ regmacro unless
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  $env setstr "tail" $tail
+  $env set [S tail] $tail
   set qq "`(if ,(car tail) (quote ()) (begin ,@(cdr tail)))"
   return [expand-quasiquote [parse $qq] $env]
 }
@@ -2661,7 +2684,7 @@ regmacro when
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  $env setstr "tail" $tail
+  $env set [S tail] $tail
   set qq "`(if ,(car tail) (begin ,@(cdr tail)) (quote ()))"
   return [expand-quasiquote [parse $qq] $env]
 }
@@ -6379,7 +6402,7 @@ proc ::constcl::MkSymbol {n} {
   }
   return [::constcl::Symbol new $n]
 }
-interp alias {} S {} ::constcl::Symbol new
+interp alias {} S {} ::constcl::MkSymbol
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
@@ -6978,9 +7001,6 @@ oo::class create ::constcl::Environment {
   }
   method set {sym val} {
     dict set bindings $sym $val
-  }
-  method setstr {str val} {
-    dict set bindings [::constcl::MkSymbol $str] $val
   }
 }
 ```
