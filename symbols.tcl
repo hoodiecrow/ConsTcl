@@ -32,13 +32,17 @@ oo::class create ::constcl::Symbol {
   method show {} {set name}
 }
 
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
+
 proc ::constcl::MkSymbol {n} {
-  foreach instance [info class instances ::constcl::Symbol] {
-    if {[$instance name] eq $n} {
-      return $instance
-    }
+  if {[dict exists $::constcl::symbolTable $n]} {
+    return [dict get $::constcl::symbolTable $n]
+  } else {
+    set sym [::constcl::Symbol new $n]
+    dict set ::constcl::symbolTable $n $sym
+    return $sym
   }
-  return [::constcl::Symbol new $n]
 }
 interp alias {} S {} ::constcl::MkSymbol
 CB

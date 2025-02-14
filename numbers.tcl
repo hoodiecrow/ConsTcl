@@ -22,19 +22,19 @@ oo::class create ::constcl::Number {
     }
   }
   method zero? {} {
-    if {$value == 0} then {return #t} else {return #f}
+    if {$value == 0} {return #t} {return #f}
   }
   method positive? {} {
-    if {$value > 0} then {return #t} else {return #f}
+    if {$value > 0} {return #t} {return #f}
   }
   method negative? {} {
-    if {$value < 0} then {return #t} else {return #f}
+    if {$value < 0} {return #t} {return #f}
   }
   method even? {} {
-    if {$value % 2 == 0} then {return #t} else {return #f}
+    if {$value % 2 == 0} {return #t} {return #f}
   }
   method odd? {} {
-    if {$value % 2 == 1} then {return #t} else {return #f}
+    if {$value % 2 == 1} {return #t} {return #f}
   }
   method value {} {
     set value
@@ -57,7 +57,8 @@ oo::class create ::constcl::Number {
   }
 }
 
-interp alias {} ::constcl::MkNumber {} ::constcl::Number new
+interp alias {} ::constcl::MkNumber \
+  {} ::constcl::Number new
 CB
 
 MD(
@@ -74,13 +75,7 @@ CB
 reg number?
 
 proc ::constcl::number? {val} {
-  if {[info object isa typeof $val ::constcl::Number]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Number]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val Number]
 }
 CB
 
@@ -120,7 +115,7 @@ PR(
 PR)
 
 CB
-reg = ::constcl::=
+reg =
 
 proc ::constcl::= {args} {
   try {
@@ -149,7 +144,7 @@ TT(
 TT)
 
 CB
-reg < ::constcl::<
+reg <
 
 proc ::constcl::< {args} {
   try {
@@ -174,7 +169,7 @@ TT(
 TT)
 
 CB
-reg > ::constcl::>
+reg >
 
 proc ::constcl::> {args} {
   try {
@@ -199,7 +194,7 @@ TT(
 TT)
 
 CB
-reg <= ::constcl::<=
+reg <=
 
 proc ::constcl::<= {args} {
   try {
@@ -224,7 +219,7 @@ TT(
 TT)
 
 CB
-reg >= ::constcl::>=
+reg >=
 
 proc ::constcl::>= {args} {
   try {
@@ -259,7 +254,7 @@ zero? (public);num num -> bool
 PR)
 
 CB
-reg zero? ::constcl::zero?
+reg zero?
 
 proc ::constcl::zero? {num} {
   check {number? $num} {
@@ -299,7 +294,7 @@ positive?, negative?, even?, odd? (public);num num -> bool
 PR)
 
 CB
-reg positive? ::constcl::positive?
+reg positive?
 
 proc ::constcl::positive? {num} {
   check {number? $num} {
@@ -318,7 +313,7 @@ TT(
 TT)
 
 CB
-reg negative? ::constcl::negative?
+reg negative?
 
 proc ::constcl::negative? {num} {
   check {number? $num} {
@@ -337,7 +332,7 @@ TT(
 TT)
 
 CB
-reg even? ::constcl::even?
+reg even?
 
 proc ::constcl::even? {num} {
   check {number? $num} {
@@ -356,7 +351,7 @@ TT(
 TT)
 
 CB
-reg odd? ::constcl::odd?
+reg odd?
 
 proc ::constcl::odd? {num} {
   check {number? $num} {
@@ -397,11 +392,12 @@ Example:
 MD)
 
 CB
-reg max ::constcl::max
+reg max
 
 proc ::constcl::max {num args} {
+  lappend args $num
   try {
-    set vals [lmap arg [::list $num {*}$args] {$arg numval}]
+    set vals [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(max num...)"
   }
@@ -418,11 +414,12 @@ TT(
 TT)
 
 CB
-reg min ::constcl::min
+reg min
 
 proc ::constcl::min {num args} {
+  lappend args $num
   try {
-    set vals [lmap arg [::list $num {*}$args] {$arg numval}]
+    set vals [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(min num...)"
   }
@@ -464,18 +461,19 @@ MD(
 Example:
 
 ```
-(list [+ 2 2] [* 2 2] [- 10 6] [/ 20 5])   =>  (4 4 4 4)
-(+ 21 7 3)                                 =>  31
-(* 21 7 3)                                 =>  441
-(- 21 7 3)                                 =>  11
-(/ 21 7 3)                                 =>  1
-(- 5)                                      =>  -5
-(/ 5)                                      =>  0.2
+(list (+ 2 2) (* 2 2)
+  (- 10 6) (/ 20 5))   =>  (4 4 4 4)
+(+ 21 7 3)             =>  31
+(* 21 7 3)             =>  441
+(- 21 7 3)             =>  11
+(/ 21 7 3)             =>  1
+(- 5)                  =>  -5
+(/ 5)                  =>  0.2
 ```
 MD)
 
 CB
-reg + ::constcl::+
+reg +
 
 proc ::constcl::+ {args} {
   try {
@@ -498,7 +496,7 @@ TT(
 TT)
 
 CB
-reg * ::constcl::*
+reg *
 
 proc ::constcl::* {args} {
   try {
@@ -521,7 +519,7 @@ TT(
 TT)
 
 CB
-reg - ::constcl::-
+reg -
 
 proc ::constcl::- {num args} {
   try {
@@ -547,7 +545,7 @@ TT(
 TT)
 
 CB
-reg / ::constcl::/
+reg /
 
 proc ::constcl::/ {num args} {
   try {
@@ -583,7 +581,7 @@ abs (public);num num -> num
 PR)
 
 CB
-reg abs ::constcl::abs
+reg abs
 
 proc ::constcl::abs {num} {
   check {number? $num} {
@@ -630,7 +628,8 @@ CB
 reg quotient
 
 proc ::constcl::quotient {num1 num2} {
-  set q [::tcl::mathop::/ [$num1 numval] [$num2 numval]]
+  set q [::tcl::mathop::/ [$num1 numval] \
+    [$num2 numval]]
   if {$q > 0} {
     return [MkNumber [::tcl::mathfunc::floor $q]]
   } elseif {$q < 0} {
@@ -664,7 +663,8 @@ CB
 reg remainder
 
 proc ::constcl::remainder {num1 num2} {
-  set n [::tcl::mathop::% [[abs $num1] numval] [[abs $num2] numval]]
+  set n [::tcl::mathop::% [[abs $num1] numval] \
+    [[abs $num2] numval]]
   if {[$num1 negative?] ne "#f"} {
     set n -$n
   }
@@ -692,7 +692,8 @@ CB
 reg modulo
 
 proc ::constcl::modulo {num1 num2} {
-  return [MkNumber [::tcl::mathop::% [$num1 numval] [$num2 numval]]]
+  return [MkNumber [::tcl::mathop::% [$num1 numval] \
+    [$num2 numval]]]
 }
 CB
 
@@ -765,7 +766,7 @@ Example:
 MD)
 
 CB
-reg floor ::constcl::floor
+reg floor
 
 proc ::constcl::floor {num} {
   check {number? $num} {
@@ -784,7 +785,7 @@ TT(
 TT)
 
 CB
-reg ceiling ::constcl::ceiling
+reg ceiling
 
 proc ::constcl::ceiling {num} {
   check {number? $num} {
@@ -803,7 +804,7 @@ TT(
 TT)
 
 CB
-reg truncate ::constcl::truncate
+reg truncate
 
 proc ::constcl::truncate {num} {
   check {number? $num} {
@@ -827,7 +828,7 @@ TT(
 TT)
 
 CB
-reg round ::constcl::round
+reg round
 
 proc ::constcl::round {num} {
   check {number? $num} {
@@ -894,13 +895,15 @@ MD(
 Example:
 
 ```
-(let ((x (log 2))) (= 2 (exp x)))                         =>  #t
-(let ((a (/ pi 3))) (let ((s (sin a))) (= a (asin s))))   =>  #t
+(let ((x (log 2))) (= 2 (exp x)))        =>  #t
+(letrec ((a (/ pi 3)) (s (sin a)))
+  (= a (asin s)))                        =>  #t
+
 ```
 MD)
 
 CB
-reg exp ::constcl::exp
+reg exp
 
 proc ::constcl::exp {num} {
   check {number? $num} {
@@ -919,7 +922,7 @@ TT(
 TT)
 
 CB
-reg log ::constcl::log
+reg log
 
 proc ::constcl::log {num} {
   check {number? $num} {
@@ -938,7 +941,7 @@ TT(
 TT)
 
 CB
-reg sin ::constcl::sin
+reg sin
 
 proc ::constcl::sin {num} {
   check {number? $num} {
@@ -949,7 +952,7 @@ proc ::constcl::sin {num} {
 CB
 
 CB
-reg cos ::constcl::cos
+reg cos
 
 proc ::constcl::cos {num} {
   check {number? $num} {
@@ -960,7 +963,7 @@ proc ::constcl::cos {num} {
 CB
 
 CB
-reg tan ::constcl::tan
+reg tan
 
 proc ::constcl::tan {num} {
   check {number? $num} {
@@ -984,7 +987,7 @@ TT(
 TT)
 
 CB
-reg asin ::constcl::asin
+reg asin
 
 proc ::constcl::asin {num} {
   check {number? $num} {
@@ -995,7 +998,7 @@ proc ::constcl::asin {num} {
 CB
 
 CB
-reg acos ::constcl::acos
+reg acos
 
 proc ::constcl::acos {num} {
   check {number? $num} {
@@ -1006,7 +1009,7 @@ proc ::constcl::acos {num} {
 CB
 
 CB
-reg atan ::constcl::atan
+reg atan
 
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
@@ -1023,7 +1026,8 @@ proc ::constcl::atan {args} {
     check {number? $num2} {
         NUMBER expected\n([pn] [$num2 show])
     }
-    MkNumber [::tcl::mathfunc::atan2 [$num1 numval] [$num2 numval]]
+    MkNumber [::tcl::mathfunc::atan2 \
+      [$num1 numval] [$num2 numval]]
   }
 }
 CB
@@ -1049,7 +1053,7 @@ sqrt (public);num num -> num
 PR)
 
 CB
-reg sqrt ::constcl::sqrt
+reg sqrt
 
 proc ::constcl::sqrt {num} {
   check {number? $num} {
@@ -1078,16 +1082,19 @@ expt (public);num1 num num2 num -> num
 PR)
 
 CB
-reg expt ::constcl::expt
+reg expt
 
 proc ::constcl::expt {num1 num2} {
   check {number? $num1} {
-      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+      NUMBER expected\n([pn] [$num1 show] \
+        [$num2 show])
   }
   check {number? $num2} {
-      NUMBER expected\n([pn] [$num1 show] [$num2 show])
+      NUMBER expected\n([pn] [$num1 show] \
+        [$num2 show])
   }
-  MkNumber [::tcl::mathfunc::pow [$num1 numval] [$num2 numval]]
+  MkNumber [::tcl::mathfunc::pow [$num1 numval] \
+    [$num2 numval]]
 }
 CB
 
@@ -1170,7 +1177,7 @@ Example:
 MD)
 
 CB
-reg number->string ::constcl::number->string
+reg number->string
 
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
@@ -1184,22 +1191,30 @@ proc ::constcl::number->string {num args} {
       NUMBER expected\n([pn] [$num show])
     }
     check {number? $radix} {
-      NUMBER expected\n([pn] [$num show] [$radix show])
+      NUMBER expected\n([pn] [$num show] \
+        [$radix show])
     }
-    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    set radices [list [MkNumber 2] [MkNumber 8] \
+      [MkNumber 10] [MkNumber 16]]
     check {memv $radix $radices} {
-      Radix not in 2, 8, 10, 16\n([pn] [$num show] [$radix show])
+      Radix not in 2, 8, 10, 16\n([pn] \
+        [$num show] [$radix show])
     }
     if {[$radix numval] == 10} {
       return [MkString [$num numval]]
     } else {
-      return [MkString [base [$radix numval] [$num numval]]]
+      return [MkString [base [$radix numval] \
+        [$num numval]]]
     }
   }
 }
+CB
 
- # due to Richard Suchenwirth,
- # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+MD(
+Due to Richard Suchenwirth[#](https://wiki.tcl-lang.org/page/Based+numbers).
+MD)
+
+CB
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -1251,7 +1266,7 @@ Example:
 MD)
 
 CB
-reg string->number ::constcl::string->number
+reg string->number
 
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
@@ -1264,30 +1279,38 @@ proc ::constcl::string->number {str args} {
     check {string? $str} {
       STRING expected\n([pn] [$str show])
     }
-    set radices [list [MkNumber 2] [MkNumber 8] [MkNumber 10] [MkNumber 16]]
+    set radices [list [MkNumber 2] [MkNumber 8] \
+      [MkNumber 10] [MkNumber 16]]
     check {memv $radix $radices} {
-      Radix not in 2, 8, 10, 16\n([pn] [$str show] [$radix show])
+      Radix not in 2, 8, 10, 16\n([pn] [$str show] \
+        [$radix show])
     }
     if {[$radix numval] == 10} {
       return [MkNumber [$str value]]
     } else {
-      return [MkNumber [frombase [$radix numval] [$str value]]]
+      return [MkNumber [
+        frombase [$radix numval] [$str value]]]
     }
   }
 }
+CB
 
- # due to Richard Suchenwirth,
- # <URL: https://wiki.tcl-lang.org/page/Based+numbers>
+MD(
+Due to Richard Suchenwirth[#](https://wiki.tcl-lang.org/page/Based+numbers).
+MD)
+
+CB
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
   set res 0
   foreach digit [split $number {}] {
-    set decimalvalue [lsearch $digits $digit]
-    if {$decimalvalue < 0 || $decimalvalue >= $base} {
-      ::error "bad digit $decimalvalue for base $base"
+    # dv = decimal value
+    set dv [lsearch $digits $digit]
+    if {$dv < 0 || $dv >= $base} {
+      ::error "bad digit $dv for base $base"
     }
-    set res [expr {$res * $base + $decimalvalue}]
+    set res [expr {$res * $base + $dv}]
   }
   if $negative {set res -$res}
   set res

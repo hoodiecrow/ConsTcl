@@ -18,15 +18,20 @@ PR)
 
 CB
 proc ::constcl::resolve-local-defines {exps} {
-  set rest [lassign [extract-from-defines $exps VALS] a error]
+  set rest [lassign [
+    extract-from-defines $exps VALS] a error]
   if {$error ne "#f"} {
     return #NIL
   }
-  set rest [lassign [extract-from-defines $exps VARS] v error]
+  set rest [lassign [
+    extract-from-defines $exps VARS] v error]
+  if {$error ne "#f"} {
+    return #NIL
+  }
   if {$rest eq "#NIL"} {
     set rest [cons #UNSP #NIL]
   }
-  return [make-recursive-lambda $v $a $rest]
+  return [make-lambdas $v $a $rest]
 }
 CB
 
@@ -48,15 +53,20 @@ CB
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
   while {$exps ne "#NIL"} {
-    if {[atom? $exps] ne "#f" || [atom? [car $exps]] ne "#f" || [eq? [caar $exps] [MkSymbol "define"]] eq "#f"} {
+    if {[atom? $exps] ne "#f" ||
+        [atom? [car $exps]] ne "#f" ||
+        [eq? [caar $exps] [S define]] eq "#f"} {
       break
     }
     set n [car $exps]
     set k [length $n]
-    if {[list? $n] eq "#f" || [$k numval] < 3 || [$k numval] > 3 ||
-      ([argument-list? [cadr $n]] ne "#f" || [symbol? [cadr $n]] eq "#f")
+    if {[list? $n] eq "#f" ||
+        [$k numval] < 3 ||
+        [$k numval] > 3 ||
+        ([argument-list? [cadr $n]] ne "#f" ||
+        [symbol? [cadr $n]] eq "#f")
       eq "#f"} {
-        return [::list {} "#t" {}]
+        return [::list #NIL "#t" #NIL]
       }
       if {[pair? [cadr $n]] ne "#f"} {
         if {$part eq "VARS"} {
@@ -114,19 +124,20 @@ proc ::constcl::argument-list? {val} {
 CB
 
 MD(
-__make-recursive-lambda__
+__make-lambdas__
 
-`make-recursive-lambda` builds the `letrec` structure.
+`make-lambdas` builds the `letrec` structure.
 MD)
 
 PR(
-make-recursive-lambda (internal);vars lsyms args lexprs body lexprs -> expr
+make-lambdas (internal);vars lsyms args lexprs body lexprs -> expr
 PR)
 
 CB
-proc ::constcl::make-recursive-lambda {vars args body} {
+proc ::constcl::make-lambdas {vars args body} {
   set tmps [make-temporaries $vars]
-  set body [append-b [make-assignments $vars $tmps] $body]
+  set body [append-b [
+    make-assignments $vars $tmps] $body]
   set body [cons $body #NIL]
   set n [cons $tmps $body]
   set n [cons [S lambda] $n]
@@ -152,13 +163,12 @@ PR)
 
 CB
 proc ::constcl::make-temporaries {vals} {
-  set n #NIL
+  set res #NIL
   while {$vals ne "#NIL"} {
-    set sym [gensym "g"]
-    set n [cons $sym $n]
+    set res [cons [gensym "g"] $res]
     set vals [cdr $vals]
   }
-  return $n
+  return $res
 }
 CB
 
@@ -174,7 +184,8 @@ PR)
 
 CB
 proc ::constcl::gensym {prefix} {
-  set symbolnames [lmap s [info class instances ::constcl::Symbol] {$s name}]
+  set symbolnames [
+    dict keys $::constcl::symbolTable]
   set s $prefix<[incr ::constcl::gensymnum]>
   while {$s in $symbolnames} {
     set s $prefix[incr ::constcl::gensymnum]
@@ -224,16 +235,16 @@ PR)
 
 CB
 proc ::constcl::make-assignments {vars tmps} {
-  set n #NIL
+  set res #NIL
   while {$vars ne "#NIL"} {
     set asg [cons [car $tmps] #NIL]
     set asg [cons [car $vars] $asg]
     set asg [cons [S set!] $asg]
-    set n [cons $asg $n]
+    set res [cons $asg $res]
     set vars [cdr $vars]
     set tmps [cdr $tmps]
   }
-  return [cons [S begin] $n]
+  return [cons [S begin] $res]
 }
 CB
 
@@ -250,13 +261,13 @@ PR)
 
 CB
 proc ::constcl::make-undefineds {vals} {
-  # Use #NIL instead of #UNDF because of some strange bug with eval-list.
-  set n #NIL
+  # TODO find bug, substitute #UNDF
+  set res #NIL
   while {$vals ne "#NIL"} {
-    set n [cons #NIL $n]
+    set res [cons #NIL $res]
     set vals [cdr $vals]
   }
-  return $n
+  return $res
 }
 CB
 

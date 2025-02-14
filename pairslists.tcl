@@ -65,7 +65,8 @@ oo::class create ::constcl::Pair {
 }
 
 
-interp alias {} ::constcl::MkPair {} ::constcl::Pair new
+interp alias {} ::constcl::MkPair \
+  {} ::constcl::Pair new
 CB
 
 TT(
@@ -107,13 +108,7 @@ CB
 reg pair?
 
 proc ::constcl::pair? {val} {
-  if {[info object isa typeof $val ::constcl::Pair]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Pair]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Pair
 }
 CB
 
@@ -139,7 +134,8 @@ PR)
 
 CB
 proc ::constcl::show-pair {pair} {
-  # take an object and print the car and the cdr of the stored value
+  # take an object and print the car
+  # and the cdr of the stored value
   set str {}
   set a [car $pair]
   set d [cdr $pair]
@@ -197,7 +193,7 @@ Example:
 MD)
 
 CB
-reg cons ::constcl::cons
+reg cons
 
 proc ::constcl::cons {car cdr} {
   MkPair $car $cdr
@@ -235,7 +231,7 @@ Example:
 MD)
 
 CB
-reg car ::constcl::car
+reg car
 
 proc ::constcl::car {pair} {
   $pair car
@@ -275,7 +271,7 @@ Example:
 MD)
 
 CB
-reg cdr ::constcl::cdr
+reg cdr
 
 proc ::constcl::cdr {pair} {
   $pair cdr
@@ -363,12 +359,13 @@ MD(
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   =>  (x . b)
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-car! pair val))                =>  (x . b)
 ```
 MD)
 
 CB
-reg set-car! ::constcl::set-car!
+reg set-car!
 
 proc ::constcl::set-car! {pair val} {
   $pair set-car! $val
@@ -403,12 +400,13 @@ MD(
 Example:
 
 ```
-(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   =>  (a . x)
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-cdr! pair val))                =>  (a . x)
 ```
 MD)
 
 CB
-reg set-cdr! ::constcl::set-cdr!
+reg set-cdr!
 
 proc ::constcl::set-cdr! {pair val} {
   $pair set-cdr! $val
@@ -441,7 +439,7 @@ list? (public);val val -> bool
 PR)
 
 CB
-reg list? ::constcl::list?
+reg list?
 
 proc ::constcl::list? {val} {
   set visited {}
@@ -513,7 +511,7 @@ Example:
 MD)
 
 CB
-reg list ::constcl::list
+reg list
 
 proc ::constcl::list {args} {
   if {[llength $args] == 0} {
@@ -556,7 +554,7 @@ Example:
 MD)
 
 CB
-reg length ::constcl::length
+reg length
 
 proc ::constcl::length {pair} {
   check {list? $pair} {
@@ -575,7 +573,8 @@ proc ::constcl::length-helper {pair} {
   if {[null? $pair] ne "#f"} {
     return 0
   } else {
-    return [expr {1 + [length-helper [cdr $pair]]}]
+    return [expr {1 +
+      [length-helper [cdr $pair]]}]
   }
 }
 CB
@@ -675,7 +674,7 @@ Example:
 MD)
 
 CB
-reg reverse ::constcl::reverse
+reg reverse
 
 proc ::constcl::reverse {vals} {
   list {*}[lreverse [splitlist $vals]]
@@ -705,12 +704,13 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   =>  (d e f)
+(let ((lst '(a b c d e f)) (k 3))
+  (list-tail lst k))                =>  (d e f)
 ```
 MD)
 
 CB
-reg list-tail ::constcl::list-tail
+reg list-tail
 
 proc ::constcl::list-tail {vals k} {
   if {[zero? $k] ne "#f"} {
@@ -743,12 +743,13 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (k 3)) (list-ref lst k))   =>  d
+(let ((lst '(a b c d e f)) (k 3))
+  (list-ref lst k))                 =>  d
 ```
 MD)
 
 CB
-reg list-ref ::constcl::list-ref
+reg list-ref
 
 proc ::constcl::list-ref {vals k} {
   car [list-tail $vals $k]
@@ -783,12 +784,13 @@ MD(
 Example:
 
 ```
-(let ((lst '(a b c d e f)) (val 'd)) (memq val lst))   =>  (d e f)
+(let ((lst '(a b c d e f)) (val 'd))
+  (memq val lst))                      =>  (d e f)
 ```
 MD)
 
 CB
-reg memq ::constcl::memq
+reg memq
 
 proc ::constcl::memq {val1 val2} {
   return [member-proc eq? $val1 $val2]
@@ -817,7 +819,7 @@ memv (public);val1 val val2 lvals -> lvfalse
 PR)
 
 CB
-reg memv ::constcl::memv
+reg memv
 
 proc ::constcl::memv {val1 val2} {
   return [member-proc eqv? $val1 $val2]
@@ -829,7 +831,7 @@ member (public);val1 val val2 lvals -> lvfalse
 PR)
 
 CB
-reg member ::constcl::member
+reg member
 
 proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
@@ -938,7 +940,8 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   if {[null? $val2] ne "#f"} {
     return #f
   } elseif {[pair? $val2] ne "#f"} {
-    if {[pair? [car $val2]] ne "#f" && [$epred $val1 [caar $val2]] ne "#f"} {
+    if {[pair? [car $val2]] ne "#f" && 
+      [$epred $val1 [caar $val2]] ne "#f"} {
       return [car $val2]
     } else {
       return [assoc-proc $epred $val1 [cdr $val2]]

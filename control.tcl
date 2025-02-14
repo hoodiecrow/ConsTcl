@@ -23,9 +23,9 @@ oo::class create ::constcl::Procedure {
   superclass ::constcl::NIL
   variable parms body env
   constructor {p b e} {
-    set parms $p         ;# a Lisp list|improper list|symbol denoting parameter names
-    set body $b          ;# a Lisp list of expressions under 'begin, or a single expression
-    set env $e           ;# the closed over environment
+    set parms $p
+    set body $b
+    set env $e
   }
   method value {} {}
   method write {handle} {
@@ -45,7 +45,8 @@ oo::class create ::constcl::Procedure {
 
 }
 
-interp alias {} ::constcl::MkProcedure {} ::constcl::Procedure new
+interp alias {} ::constcl::MkProcedure \
+  {} ::constcl::Procedure new
 CB
 
 MD(
@@ -57,12 +58,10 @@ procedure? (public);val val -> bool
 PR)
 
 CB
-reg procedure? ::constcl::procedure?
+reg procedure?
 
 proc ::constcl::procedure? {val} {
-  if {[info object isa typeof $val ::constcl::Procedure]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Procedure]} {
+  if {[typeof? $val Procedure] eq "#t"} {
     return #t
   } elseif {[::string match "::constcl::*" $val]} {
     return #t
@@ -96,15 +95,17 @@ MD(
 Example:
 
 ```
-(apply + (list 2 3))   ⇒  5
+(apply + (list 2 3))   =>  5
 ```
 MD)
 
 CB
-reg apply ::constcl::apply
+reg apply
 
 proc ::constcl::apply {pr vals} {
-  check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+  check {procedure? $pr} {
+    PROCEDURE expected\n([pn] [$pr show] ...)
+  }
   invoke $pr $vals
 }
 CB
@@ -142,24 +143,34 @@ MD(
 Example:
 
 ```
-(map + '(1 2 3) '(5 6 7))   ⇒ (6 8 10)
+(map + '(1 2 3) '(5 6 7))   => (6 8 10)
 ```
 MD)
 
 CB
-reg map ::constcl::map
+reg map
 
 proc ::constcl::map {pr args} {
-  check {procedure? $pr} {PROCEDURE expected\n([pn] [$pr show] ...)}
+  check {procedure? $pr} {
+    PROCEDURE expected\n([pn] [$pr show] ...)
+  }
   set arglists $args
-  for {set i 0} {$i < [llength $arglists]} {incr i} {
-    lset arglists $i [splitlist [lindex $arglists $i]]
+  for {set i 0} \
+    {$i < [llength $arglists]} \
+    {incr i} {
+    lset arglists $i [
+      splitlist [lindex $arglists $i]]
   }
   set res {}
-  for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+  for {set item 0} \
+    {$item < [llength [lindex $arglists 0]]} \
+    {incr item} {
     set arguments {}
-    for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-      lappend arguments [lindex $arglists $arg $item]
+    for {set arg 0} \
+      {$arg < [llength $arglists]} \
+      {incr arg} {
+      lappend arguments [
+        lindex $arglists $arg $item]
     }
     lappend res [invoke $pr [list {*}$arguments]]
   }
@@ -202,27 +213,37 @@ it.)
   (for-each (lambda (i)
               (vector-set! v i (* i i)))
             '(0 1 2 3 4))
-  v)                                      ⇒  #(0 1 4 9 16)
+  v)                        =>  #(0 1 4 9 16)
 ```
 MD)
 
 CB
-reg for-each ::constcl::for-each
+reg for-each
 
 proc ::constcl::for-each {proc args} {
-  check {procedure? $proc} {PROCEDURE expected\n([pn] [$proc show] ...)}
-  set arglists $args
-  for {set i 0} {$i < [llength $arglists]} {incr i} {
-    lset arglists $i [splitlist [lindex $arglists $i]]
+  check {procedure? $proc} {
+    PROCEDURE expected\n([pn] [$proc show] ...)
   }
-  for {set item 0} {$item < [llength [lindex $arglists 0]]} {incr item} {
+  set arglists $args
+  for {set i 0} \
+    {$i < [llength $arglists]} \
+    {incr i} {
+    lset arglists $i [
+      splitlist [lindex $arglists $i]]
+  }
+  for {set item 0} \
+    {$item < [llength [lindex $arglists 0]]} \
+    {incr item} {
     set arguments {}
-    for {set arg 0} {$arg < [llength $arglists]} {incr arg} {
-      lappend arguments [lindex $arglists $arg $item]
+    for {set arg 0} \
+      {$arg < [llength $arglists]} \
+      {incr arg} {
+      lappend arguments [
+        lindex $arglists $arg $item]
     }
     invoke $proc [list {*}$arguments]
   }
-  return [list]
+  return #NIL
 }
 CB
 

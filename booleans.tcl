@@ -42,7 +42,8 @@ oo::class create ::constcl::Boolean {
 }
 
 proc ::constcl::MkBoolean {v} {
-  foreach instance [info class instances ::constcl::Boolean] {
+  foreach instance [info class instances \
+    ::constcl::Boolean] {
     if {[$instance bvalue] eq $v} {
       return $instance
     }
@@ -81,13 +82,7 @@ CB
 reg boolean? ::constcl::boolean?
 
 proc ::constcl::boolean? {val} {
-  if {[info object isa typeof $val ::constcl::Boolean]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Boolean]} {
-    return #t
-  } else {
-    return #f
-  }
+  return [typeof? $val Boolean]
 }
 CB
 
@@ -121,7 +116,7 @@ MD(
 Example:
 
 ```
-(not #f)    ⇒  #t   ; the only argument that returns #t, all others return #f
+(not #f)    ⇒  #t   ; #f yields #t, all others #f
 (not nil)   ⇒  #f   ; see?
 ```
 MD)

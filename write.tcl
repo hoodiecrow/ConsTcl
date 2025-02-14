@@ -91,7 +91,8 @@ PR)
 
 CB
 proc ::constcl::write-pair {handle pair} {
-  # take an object and print the car and the cdr of the stored value
+  # take an object and print the car
+  # and the cdr of the stored value
   set a [car $pair]
   set d [cdr $pair]
   # print car

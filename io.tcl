@@ -23,12 +23,12 @@ oo::class create ::constcl::Port {
     close $handle
     set handle #NIL
   }
-  method write {handle} {
+  method write {h} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $handle "#<port-$num>"
+    puts -nonewline $h "#<port-$num>"
   }
-  method display {handle} {
-    my write $handle
+  method display {h} {
+    my write $h
   }
 }
 
@@ -44,12 +44,12 @@ oo::class create ::constcl::InputPort {
     }
     return $handle
   }
-  method write {handle} {
+  method write {h} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $handle "#<input-port-$num>"
+    puts -nonewline $h "#<input-port-$num>"
   }
-  method display {handle} {
-    my write $handle
+  method display {h} {
+    my write $h
   }
 }
 
@@ -65,71 +65,68 @@ oo::class create ::constcl::OutputPort {
     }
     return $handle
   }
-  method write {handle} {
+  method write {h} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $handle "#<output-port-$num>"
+    puts -nonewline $h "#<output-port-$num>"
   }
-  method display {handle} {
-    my write $handle
+  method display {h} {
+    my write $h
   }
 }
 
-interp alias {} ::constcl::MkInputPort {} ::constcl::InputPort new
-interp alias {} ::constcl::MkOutputPort {} ::constcl::OutputPort new
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+interp alias {} ::constcl::MkOutputPort \
+  {} ::constcl::OutputPort new
 
-set ::constcl::Input_port [::constcl::MkInputPort stdin]
-set ::constcl::Output_port [::constcl::MkOutputPort stdout]
+set ::constcl::Input_port [
+  ::constcl::MkInputPort stdin]
+set ::constcl::Output_port [
+  ::constcl::MkOutputPort stdout]
 
 reg port?
 
 proc ::constcl::port? {val} {
-  if {[info object isa typeof $val ::constcl::Port]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Port]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Port
 }
 CB
 
 CB
+reg call-with-input-file
+
 proc ::constcl::call-with-input-file {string proc} {
-    # TODO
+  set port [open-input-file $string]
+  set res [invoke $proc [list $port]]
+  close-input-port $port
+  return $res
 }
 CB
 
 CB
+reg call-with-output-file
+
 proc ::constcl::call-with-output-file {string proc} {
-    # TODO
+  ::error "remove this line to use"
+  set port [open-output-file $string]
+  set res [invoke $proc [list $port]]
+  close-output-port $port
+  return $res
 }
 CB
 
 CB
 reg input-port?
 
-proc ::constcl::input-port? {obj} {
-  if {[info object isa typeof $val ::constcl::InputPort]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::InputPort]} {
-    return #t
-  } else {
-    return #f
-  }
+proc ::constcl::input-port? {val} {
+  typeof? $val InputPort
 }
 CB
 
 CB
 reg output-port?
 
-proc ::constcl::output-port? {obj} {
-  if {[info object isa typeof $val ::constcl::OutputPort]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::OutputPort]} {
-    return #t
-  } else {
-    return #f
-  }
+proc ::constcl::output-port? {val} {
+  typeof? $val OutputPort
 }
 CB
 
@@ -178,6 +175,7 @@ CB
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {string thunk} {
+  ::error "remove this line to use"
   set newport [open-output-file $string]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
@@ -192,11 +190,14 @@ CB
 CB
 reg open-input-file
 
+proc cnof {} {return "could not open file"}
+proc fae {} {return "file already exists"}
+
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-input-file: could not open file $filename"
+    error "open-input-file: [cnof] $filename"
   }
   return $p
 }
@@ -206,13 +207,14 @@ CB
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
+  ::error "remove this line to use"
   if {[file exists $filename]} {
-    error "open-output-file: file already exists $filename"
+    error "open-output-file: [fae] $filename"
   }
   set p [MkOutputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-output-file: could not open file $filename"
+    error "open-output-file: [cnof] $filename"
   }
   return $p
 }

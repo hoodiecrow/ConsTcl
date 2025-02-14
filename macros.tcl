@@ -554,7 +554,9 @@ proc ::constcl::expand-push! {expr env} {
       "SYMBOL expected:\n(push! obj listname)"
   }
   $env set [S listname] [cadr $tail]
-  set qq "`(set! ,listname (cons ,obj ,listname))"
+  set qq "`(set!
+             ,listname
+             (cons ,obj ,listname))"
   return [expand-quasiquote [parse $qq] $env]
 }
 CB
@@ -576,16 +578,26 @@ regmacro put!
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {::error "too few arguments, 3 expected, got 0"}
-  $env set [MkSymbol "listname"] [car $tail]
-  if {[null? [cdr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 1"}
+  if {[null? $tail] ne "#f"} {
+      ::error "too few arguments, 0 of 3"
+  }
+  $env set [MkSymbol "name"] [car $tail]
+  if {[null? [cdr $tail]] ne "#f"} {
+      ::error "too few arguments, 1 of 3"
+  }
   $env set [MkSymbol "key"] [cadr $tail]
-  if {[null? [cddr $tail]] ne "#f"} {::error "too few arguments, 3 expected, got 2"}
+  if {[null? [cddr $tail]] ne "#f"} {
+      ::error "too few arguments, 2 of 3"
+  }
   $env set [MkSymbol "val"] [caddr $tail]
-  set qq "`(let ((idx (list-find-key ,listname ,key)))
+  set qq "`(let ((idx (list-find-key ,name ,key)))
              (if (< idx 0)
-               (set! ,listname (append (list ,key ,val) ,listname))
-               (begin (list-set! ,listname (+ idx 1) ,val) ,listname)))"
+               (set! 
+                 ,name
+                 (append (list ,key ,val) ,name))
+               (begin
+                 (list-set! ,name (+ idx 1) ,val)
+                 ,name)))"
   return [expand-quasiquote [parse $qq] $env]
 }
 CB
@@ -593,9 +605,10 @@ CB
 MD(
 __expand-quasiquote__
 
-A quasi-quote isn't a macro, but we will deal with it in this section anyway. `expand-quasiquote`
-traverses the quasi-quoted structure searching for `unquote` and `unquote-splicing`. This code is
-brittle and sprawling and I barely understand it myself.
+A quasi-quote isn't a macro, but we will deal with it in this section anyway.
+`expand-quasiquote` traverses the quasi-quoted structure searching for `unquote`
+and `unquote-splicing`. This code is brittle and sprawling and I barely
+understand it myself.
 MD)
 
 PR(
@@ -612,22 +625,32 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   if {[list? $node] ne "#f"} {
     set res {}
     foreach child [splitlist $node] {
-      if {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote"]] ne "#f"} {
+      if {[pair? $child] ne "#f" &&
+          [eq? [car $child] [S unquote]] ne "#f"} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
-          lappend res [list [S unquote] [qq-visit-child [cadr $child] [expr {$qqlevel - 1}] $env]]
+          lappend res [list [S unquote] [
+            qq-visit-child [cadr $child] [
+            expr {$qqlevel - 1}] $env]]
         }
-      } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "unquote-splicing"]] ne "#f"} {
+      } elseif {[pair? $child] ne "#f" &&
+          [eq? [car $child] [
+          S unquote-splicing]] ne "#f"} {
         if {$qqlevel == 0} {
-          lappend res {*}[splitlist [eval [cadr $child] $env]]
+          lappend res {*}[splitlist [
+            eval [cadr $child] $env]]
         }
-      } elseif {[pair? $child] ne "#f" && [eq? [car $child] [MkSymbol "quasiquote"]] ne "#f"} {
-        lappend res [list [MkSymbol "quasiquote"] [car [qq-visit-child [cdr $child] [expr {$qqlevel + 1}] $env]]] 
+      } elseif {[pair? $child] ne "#f" &&
+          [eq? [car $child] [S quasiquote]] ne "#f"} {
+        lappend res [list [S quasiquote] [car [
+          qq-visit-child [cdr $child] [
+            expr {$qqlevel + 1}] $env]]] 
       } elseif {[atom? $child] ne "#f"} {
         lappend res $child
       } else {
-        lappend res [qq-visit-child $child $qqlevel $env]
+        lappend res [
+          qq-visit-child $child $qqlevel $env]
       }
     }
   }
@@ -649,16 +672,22 @@ proc ::constcl::expand-quasiquote {expr env} {
   } elseif {[vector? [car $tail]] ne "#f"} {
     set vect [car $tail]
     set res {}
-    for {set i 0} {$i < [[vector-length $vect] numval]} {incr i} {
+    for {set i 0} {$i < [
+        [vector-length $vect] numval]} {incr i} {
       set idx [MkNumber $i]
       set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote"]] ne "#f"} {
+      if {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote]] ne "#f"} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $vecref] $env]
         }
-      } elseif {[pair? $vecref] ne "#f" && [eq? [car $vecref] [MkSymbol "unquote-splicing"]] ne "#f"} {
+      } elseif {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote-splicing]] ne "#f"} {
         if {$qqlevel == 0} {
-          lappend res {*}[splitlist [eval [cadr $vecref] $env]]
+          lappend res {*}[splitlist [
+            eval [cadr $vecref] $env]]
         }
       } elseif {[atom? $vecref] ne "#f"} {
         lappend res $vecref
@@ -686,9 +715,11 @@ regmacro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [Environment new #NIL {} $env]
   $env set [S tail] $tail
-  set qq "`(if ,(car tail) (quote ()) (begin ,@(cdr tail)))"
+  set qq "`(if ,(car tail)
+             '()
+             (begin ,@(cdr tail)))"
   return [expand-quasiquote [parse $qq] $env]
 }
 CB
@@ -709,9 +740,11 @@ regmacro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [Environment new #NIL {} $env]
   $env set [S tail] $tail
-  set qq "`(if ,(car tail) (begin ,@(cdr tail)) (quote ()))"
+  set qq "`(if ,(car tail)
+             (begin ,@(cdr tail))
+             '())"
   return [expand-quasiquote [parse $qq] $env]
 }
 CB
