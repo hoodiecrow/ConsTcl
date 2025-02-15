@@ -22,7 +22,7 @@ set ::constcl::gensymnum 0
 CB
 
 MD(
-Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
+Pre-make a set of constants (e.g. #NIL, #t, and #f)
 and give them aliases for use in source text.
 MD)
 
@@ -43,9 +43,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #N {} [::constcl::None new]
-
-interp alias {} #UNS {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecified new]
 
 interp alias {} #UND {} [::constcl::Undefined new]
 
@@ -63,7 +61,7 @@ dict set ::constcl::defreg pi [N 3.1415926535897931]
 CB
 
 MD(
-In this interpreter, `nil` refers to the empty list.
+In this interpreter, `nil` does refer to the empty list.
 MD)
 
 CB

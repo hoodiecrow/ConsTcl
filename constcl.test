@@ -1796,22 +1796,5 @@ if no {
     pep "(foo)"
 } -returnCodes error -result "Unbound variable: foo"
 
-::tcltest::test lutables-1.0 {test get procedure} -body {
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'c))"
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (get plist 'x))"
-} -output "3\n#f\n"
-
-::tcltest::test lutables-2.0 {test put! macro} -body {
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'd 4) plist)"
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (put! plist 'c 4) plist)"
-} -output "(d 4 a 1 b 2 c 3)\n(a 1 b 2 c 4)\n"
-
-::tcltest::test lutables-3.0 {test del! macro} -body {
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'c) plist)"
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'a) plist)"
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'b) plist)"
-    pep "(let ((plist (list 'a 1 'b 2 'c 3))) (del! plist 'x) plist)"
-} -output "(a 1 b 2)\n(b 2 c 3)\n(a 1 c 3)\n(a 1 b 2 c 3)\n"
-
 
 ::tcltest::cleanupTests

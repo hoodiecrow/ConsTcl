@@ -1,4 +1,3 @@
-if no {
 
 MD(
 ## Lookup tables
@@ -170,7 +169,5 @@ CB
 > (set-alist! alist 'b 7)
 ((a . 1) (b . 7) (c . 3) (d . 4))
 CB
-
-}
 
 # vim: ft=tcl tw=80

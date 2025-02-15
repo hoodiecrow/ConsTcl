@@ -21,13 +21,17 @@ oo::class create ::constcl::Environment {
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
     if {[::constcl::null? $syms] eq "#t"} {
-      if {[llength $vals]} { error "too many arguments" }
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
     } elseif {[::constcl::list? $syms] eq "#t"} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
       if {$symsn != $valsn} {
-        error "wrong number of arguments, $valsn instead of $symsn"
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"
       }
       foreach sym $syms val $vals {
         my set $sym $val
@@ -36,11 +40,17 @@ oo::class create ::constcl::Environment {
       my set $syms [::constcl::list {*}$vals]
     } else {
       while true {
-        if {[llength $vals] < 1} { error "too few arguments" }
-        my set [::constcl::car $syms] [lindex $vals 0]
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my set [::constcl::car $syms] \
+          [lindex $vals 0]
         set vals [lrange $vals 1 end]
-        if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
+        if {[
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]] eq "#t"} {
+          my set [::constcl::cdr $syms] \
+            [::constcl::list {*}$vals]
           set vals {}
           break
         } else {

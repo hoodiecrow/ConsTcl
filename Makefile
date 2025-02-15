@@ -17,7 +17,7 @@ EXE      =
 .PHONY: all
 all: README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = type.tcl s9fes.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl lutables.tcl
+source_files = type.tcl s9fes.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf
@@ -25,7 +25,7 @@ constcl.pdf: README.md
 constcl.tex: README.md
 	awk -f latex.awk $< >$@
 
-README.md: top.md constcl.md schemebase.md
+README.md: top.md constcl.md lutables.md schemebase.md
 	awk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files)
@@ -40,7 +40,10 @@ constcl.test: $(source_files)
 	cat $^ |sed -n '/TT/,// { //n ; p }' >>$@
 	echo '\n::tcltest::cleanupTests' >>$@
 
-schemebase.md: schemebase.lsp
+lutables.md: lutables.tcl
+	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
+
+schemebase.md: schemebase.scm
 	awk -f minimal.awk $< >$@
 
 .PHONY: clean
@@ -58,8 +61,8 @@ clean:
 .c.o:
 	$(CC) $(CFLAGS) $(FEATURES) -c $*.c
 
-.lsp.md:
-	awk -f minimal.awk $*.lsp >$*.md
+.scm.md:
+	awk -f minimal.awk $*.scm >$*.md
 
 $(PROGRAM): $(HDRS) $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(LDOUT)$@$(EXE)

@@ -389,18 +389,9 @@ proc ::constcl::null? {val} {
 CB
 
 MD(
-### The classes None, Dot, Unspecific, Undefined, and EndOfFile
+### The classes Dot, Unspecified, Undefined, and EndOfFile
 
-The `None` class serves but one purpose: to avoid printing a result after `define`.
-MD)
-
-CB
-catch { ::constcl::None destroy}
-
-oo::class create ::constcl::None {}
-CB
-
-MD(
+D(
 The `Dot` class is a helper class for the parser.
 MD)
 
@@ -430,21 +421,21 @@ PR)
 
 CB
 proc ::constcl::dot? {val} {
-  return [typeof? $val "Dot"]
+  typeof? $val "Dot"
 }
 CB
 
 MD(
-The `Unspecific` class is for unspecific things.
+The `Unspecified` class is for unspecified things.
 MD)
 
 CB
-catch { ::constcl::Unspecific destroy }
+catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecific {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<unspecific>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle

@@ -9,12 +9,19 @@ symbols end up.
 MD)
 
 CB
-::constcl::Environment create ::constcl::null_env #NIL {}
+::constcl::Environment create \
+  ::constcl::null_env #NIL {}
 
 oo::objdefine ::constcl::null_env {
-  method find {sym} {self}
-  method get {sym} {::error "Unbound variable: [$sym name]"}
-  method set {sym val} {::error "Unbound variable: [$sym name]"}
+  method find {sym} {
+    self
+  }
+  method get {sym} {
+    ::error "Unbound variable: [$sym name]"
+  }
+  method set {sym val} {
+    ::error "Unbound variable: [$sym name]"
+  }
 }
 CB
 
@@ -25,9 +32,12 @@ MD)
 
 CB
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
+  set keys [list {*}[lmap k [dict keys $defreg] {
+    S $k
+  }]]
   set vals [dict values $defreg]
-  Environment create global_env $keys $vals ::constcl::null_env
+  Environment create global_env $keys $vals \
+    ::constcl::null_env
 }
 CB
 
@@ -36,7 +46,7 @@ Load the Scheme base to add more definitions to the global environment.
 MD)
 
 CB
-pe {(load "schemebase.lsp")}
+pe {(load "schemebase.scm")}
 CB
 
 MD(
@@ -61,7 +71,7 @@ During a call to the procedure `circle-area`, the symbol `r` is bound to the
 value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of `r`. The solution is to use
 separate (but linked) environments, making `r`'s binding a
-*local variable[#](https://en.wikipedia.org/wiki/Local_variable)*
+**local variable[#](https://en.wikipedia.org/wiki/Local_variable)**
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of

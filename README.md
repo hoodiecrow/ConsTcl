@@ -392,16 +392,9 @@ proc ::constcl::null? {val} {
 }
 ```
 
-### The classes None, Dot, Unspecific, Undefined, and EndOfFile
+### The classes Dot, Unspecified, Undefined, and EndOfFile
 
-The `None` class serves but one purpose: to avoid printing a result after `define`.
-
-```
-catch { ::constcl::None destroy}
-
-oo::class create ::constcl::None {}
-```
-
+D(
 The `Dot` class is a helper class for the parser.
 
 ```
@@ -426,19 +419,19 @@ __dot?__
 
 ```
 proc ::constcl::dot? {val} {
-  return [typeof? $val "Dot"]
+  typeof? $val "Dot"
 }
 ```
 
-The `Unspecific` class is for unspecific things.
+The `Unspecified` class is for unspecified things.
 
 ```
-catch { ::constcl::Unspecific destroy }
+catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecific {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<unspecific>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle
@@ -7128,7 +7121,7 @@ proc ::constcl::vsAlloc {num} {
 set ::constcl::gensymnum 0
 ```
 
-Pre-make a set of constants (mostly symbols but also e.g. #NIL, #t, and #f)
+Pre-make a set of constants (e.g. #NIL, #t, and #f)
 and give them aliases for use in source text.
 
 ```
@@ -7148,9 +7141,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #N {} [::constcl::None new]
-
-interp alias {} #UNS {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecified new]
 
 interp alias {} #UND {} [::constcl::Undefined new]
 
@@ -7165,7 +7156,7 @@ a double-precision floating point approximation).
 dict set ::constcl::defreg pi [N 3.1415926535897931]
 ```
 
-In this interpreter, `nil` refers to the empty list.
+In this interpreter, `nil` does refer to the empty list.
 
 ```
 reg nil #NIL
@@ -7176,10 +7167,10 @@ reg nil #NIL
 
 ## The REPL
 
-The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)) is a
-loop that repeatedly _reads_ a Scheme source string from the user through the
+The REPL (read-eval-print loop) is a
+loop that repeatedly **reads** a Scheme source string from the user through the
 command `::constcl::input` (breaking the loop if given an empty line) and
-`::constcl::parse`, _evaluates_ it using `::constcl::eval`, and _prints_ using
+`::constcl::parse`, **evaluates** it using `::constcl::eval`, and **prints** using
 `::constcl::write`.
 
 __input__
@@ -7195,7 +7186,8 @@ proc ::constcl::input {prompt} {
   set clsepars [regexp -all -inline {\)} $buf]
   set openbrak [regexp -all -inline {\[} $buf]
   set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
     ::append buf [gets stdin]
     set openpars [regexp -all -inline {\(} $buf]
     set clsepars [regexp -all -inline {\)} $buf]
@@ -7208,7 +7200,7 @@ proc ::constcl::input {prompt} {
 
 __repl__
 
-`repl` puts the loop in the read-eval-print loop. It repeats prompting for a
+`repl` puts the 'loop' in the read-eval-print loop. It repeats prompting for a
 string until given a blank input. Given non-blank input, it parses and evaluates
 the string, printing the resulting value.
 
@@ -7243,13 +7235,17 @@ oo::class create ::constcl::Environment {
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
     if {[::constcl::null? $syms] eq "#t"} {
-      if {[llength $vals]} { error "too many arguments" }
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
     } elseif {[::constcl::list? $syms] eq "#t"} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
       if {$symsn != $valsn} {
-        error "wrong number of arguments, $valsn instead of $symsn"
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"
       }
       foreach sym $syms val $vals {
         my set $sym $val
@@ -7258,11 +7254,17 @@ oo::class create ::constcl::Environment {
       my set $syms [::constcl::list {*}$vals]
     } else {
       while true {
-        if {[llength $vals] < 1} { error "too few arguments" }
-        my set [::constcl::car $syms] [lindex $vals 0]
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my set [::constcl::car $syms] \
+          [lindex $vals 0]
         set vals [lrange $vals 1 end]
-        if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
+        if {[
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]] eq "#t"} {
+          my set [::constcl::cdr $syms] \
+            [::constcl::list {*}$vals]
           set vals {}
           break
         } else {
@@ -7297,12 +7299,19 @@ Make `null_env` empty and unresponsive: this is where searches for unbound
 symbols end up.
 
 ```
-::constcl::Environment create ::constcl::null_env #NIL {}
+::constcl::Environment create \
+  ::constcl::null_env #NIL {}
 
 oo::objdefine ::constcl::null_env {
-  method find {sym} {self}
-  method get {sym} {::error "Unbound variable: [$sym name]"}
-  method set {sym val} {::error "Unbound variable: [$sym name]"}
+  method find {sym} {
+    self
+  }
+  method get {sym} {
+    ::error "Unbound variable: [$sym name]"
+  }
+  method set {sym val} {
+    ::error "Unbound variable: [$sym name]"
+  }
 }
 ```
 
@@ -7311,16 +7320,19 @@ definitions register, `defreg`. This is where top level evaluation happens.
 
 ```
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
+  set keys [list {*}[lmap k [dict keys $defreg] {
+    S $k
+  }]]
   set vals [dict values $defreg]
-  Environment create global_env $keys $vals ::constcl::null_env
+  Environment create global_env $keys $vals \
+    ::constcl::null_env
 }
 ```
 
 Load the Scheme base to add more definitions to the global environment.
 
 ```
-pe {(load "schemebase.lsp")}
+pe {(load "schemebase.scm")}
 ```
 
 Thereafter, each time a user-defined procedure is called, a new `Environment`
@@ -7342,7 +7354,7 @@ During a call to the procedure `circle-area`, the symbol `r` is bound to the
 value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of `r`. The solution is to use
 separate (but linked) environments, making `r`'s binding a
-*local variable[#](https://en.wikipedia.org/wiki/Local_variable)*
+**local variable[#](https://en.wikipedia.org/wiki/Local_variable)**
 in its own environment, which the procedure will be evaluated in. The symbols
 `*` and `pi` will still be available through the local environment's link
 to the outer global environment. This is all part of
@@ -7365,7 +7377,6 @@ After the call, we are back to the first state again.
 
 
 
-if no {
 
 ## Lookup tables
 
@@ -7490,8 +7501,6 @@ unchanged if the key isn't present):
 ((a . 1) (b . 7) (c . 3) (d . 4))
 ```
 
-}
-
 ## A Scheme base
 
 ```
@@ -7522,15 +7531,15 @@ unchanged if the key isn't present):
   (let ((idx (list-find-key lst key)))
       lst
         (set! lst (cddr lst))
-        (let ((node-before (delete-seek lst (- idx 1)))
-              (node-after (delete-seek lst (+ idx 2))))
-          (set-cdr! node-before node-after))))
+        (let ((bef (del-seek lst (- idx 1)))
+              (aft (del-seek lst (+ idx 2))))
+          (set-cdr! bef aft))))
     lst))
 
-(define (delete-seek lst idx)
+(define (del-seek lst idx)
   (if (zero? idx)
     lst
-    (delete-seek (cdr lst) (- idx 1))))
+    (del-seek (cdr lst) (- idx 1))))
 
 (define (get-alist lst key)
   (let ((item (assq key lst)))
@@ -7541,7 +7550,9 @@ unchanged if the key isn't present):
 (define (pairlis a b)
   (if (null? a)
     ()
-    (cons (cons (car a) (car b)) (pairlis (cdr a) (cdr b)))))
+    (cons
+      (cons (car a) (car b))
+      (pairlis (cdr a) (cdr b)))))
 
 (define (set-alist! lst key val)
   (let ((item (assq key lst)))

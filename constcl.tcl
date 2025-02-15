@@ -192,11 +192,6 @@ proc ::constcl::null? {val} {
 }
 
 
-catch { ::constcl::None destroy}
-
-oo::class create ::constcl::None {}
-
-
 catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
@@ -212,16 +207,16 @@ oo::class create ::constcl::Dot {
 
 
 proc ::constcl::dot? {val} {
-  return [typeof? $val "Dot"]
+  typeof? $val "Dot"
 }
 
 
-catch { ::constcl::Unspecific destroy }
+catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecific {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<unspecific>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle
@@ -4911,9 +4906,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #N {} [::constcl::None new]
-
-interp alias {} #UNS {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecified new]
 
 interp alias {} #UND {} [::constcl::Undefined new]
 
@@ -4940,7 +4933,8 @@ proc ::constcl::input {prompt} {
   set clsepars [regexp -all -inline {\)} $buf]
   set openbrak [regexp -all -inline {\[} $buf]
   set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
     ::append buf [gets stdin]
     set openpars [regexp -all -inline {\(} $buf]
     set clsepars [regexp -all -inline {\)} $buf]
@@ -4968,13 +4962,17 @@ oo::class create ::constcl::Environment {
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
     if {[::constcl::null? $syms] eq "#t"} {
-      if {[llength $vals]} { error "too many arguments" }
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
     } elseif {[::constcl::list? $syms] eq "#t"} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
       if {$symsn != $valsn} {
-        error "wrong number of arguments, $valsn instead of $symsn"
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"
       }
       foreach sym $syms val $vals {
         my set $sym $val
@@ -4983,11 +4981,17 @@ oo::class create ::constcl::Environment {
       my set $syms [::constcl::list {*}$vals]
     } else {
       while true {
-        if {[llength $vals] < 1} { error "too few arguments" }
-        my set [::constcl::car $syms] [lindex $vals 0]
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my set [::constcl::car $syms] \
+          [lindex $vals 0]
         set vals [lrange $vals 1 end]
-        if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
+        if {[
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]] eq "#t"} {
+          my set [::constcl::cdr $syms] \
+            [::constcl::list {*}$vals]
           set vals {}
           break
         } else {
@@ -5015,103 +5019,36 @@ oo::class create ::constcl::Environment {
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
 
-::constcl::Environment create ::constcl::null_env #NIL {}
+::constcl::Environment create \
+  ::constcl::null_env #NIL {}
 
 oo::objdefine ::constcl::null_env {
-  method find {sym} {self}
-  method get {sym} {::error "Unbound variable: [$sym name]"}
-  method set {sym val} {::error "Unbound variable: [$sym name]"}
+  method find {sym} {
+    self
+  }
+  method get {sym} {
+    ::error "Unbound variable: [$sym name]"
+  }
+  method set {sym val} {
+    ::error "Unbound variable: [$sym name]"
+  }
 }
 
 
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
+  set keys [list {*}[lmap k [dict keys $defreg] {
+    S $k
+  }]]
   set vals [dict values $defreg]
-  Environment create global_env $keys $vals ::constcl::null_env
+  Environment create global_env $keys $vals \
+    ::constcl::null_env
 }
 
 
-pe {(load "schemebase.lsp")}
+pe {(load "schemebase.scm")}
 
 
 
 
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
-if no {
-
-
-'(a 1 b 2 c 3 d 4 e 5)
-
-
-> (define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))
-> (define v '())
-> (set! v (memq 'c plist))
-(c 3 d 4 e 5)
-> (set! v (cadr v))
-3
-
-
-> (get plist 'c)
-3
-
-
-
-
-> (set! plist (append '(f 6) plist))
-(f 6 a 1 b 2 c 3 d 4 e 5)
-
-
-> (put! plist 'c 9)
-(f 6 a 1 b 2 c 9 d 4 e 5)
-> (put! plist 'g 7)
-(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
-
-
-
-> (set! plist (append '(d #f) plist))
-(d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
-
-
-> plist
-(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
-> (del! plist 'd)
-(g 7 f 6 a 1 b 2 c 9 e 5)
-
-
-
-> (define alist (list (cons 'a 1) (cons 'b 2) (cons 'c 3) (cons 'd 4)))
-> alist
-((a . 1) (b . 2) (c . 3) (d . 4))
-
-
-> (define alist (pairlis '(a b c) '(1 2 3)))
-((a . 1) (b . 2) (c . 3))
-
-
-> (assq 'a alist)
-(a . 1)
-> (cdr (assq 'a alist))
-1
-> (assq 'x alist)
-#f
-
-
-> (get-alist 'a)
-1
-> (get-alist 'x)
-#f
-
-
-> (push! (cons 'e 5) alist)
-((e . 5) (a . 1) (b . 2) (c . 3) (d . 4))
-
-
-> alist
-((a . 1) (b . 2) (c . 3) (d . 4))
-> (set-alist! alist 'b 7)
-((a . 1) (b . 7) (c . 3) (d . 4))
-
-}
-
-# vim: ft=tcl tw=80

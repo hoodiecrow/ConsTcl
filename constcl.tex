@@ -537,20 +537,10 @@ proc ::constcl::null? {val} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\section{The classes None, Dot, Unspecific, Undefined, and EndOfFile}
-\label{the-classes-none,-dot,-unspecific,-undefined,-and-endoffile}
+\section{The classes Dot, Unspecified, Undefined, and EndOfFile}
+\label{the-classes-dot,-unspecified,-undefined,-and-endoffile}
 
-The \texttt{None} class serves but one purpose: to avoid printing a result after \texttt{define}.
-
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\begin{lstlisting}
-catch { ::constcl::None destroy}
- 
-oo::class create ::constcl::None {}
-\end{lstlisting}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
-The \texttt{Dot} class is a helper class for the parser.
+D( The \texttt{Dot} class is a helper class for the parser.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -585,21 +575,21 @@ val & a Lisp value \\
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::dot? {val} {
-  return [typeof? $val "Dot"]
+  typeof? $val "Dot"
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-The \texttt{Unspecific} class is for unspecific things.
+The \texttt{Unspecified} class is for unspecified things.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-catch { ::constcl::Unspecific destroy }
+catch { ::constcl::Unspecified destroy }
  
-oo::class create ::constcl::Unspecific {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<unspecific>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle
@@ -8945,7 +8935,7 @@ set ::constcl::gensymnum 0
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-Pre-make a set of constants (mostly symbols but also e.g. \#NIL, \#t, and \#f) and give them aliases for use in source text.
+Pre-make a set of constants (e.g. \#NIL, \#t, and \#f) and give them aliases for use in source text.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -8965,9 +8955,7 @@ interp alias {} #+ {} [::constcl::MkSymbol +]
  
 interp alias {} #- {} [::constcl::MkSymbol -]
  
-interp alias {} #N {} [::constcl::None new]
- 
-interp alias {} #UNS {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecified new]
  
 interp alias {} #UND {} [::constcl::Undefined new]
  
@@ -8984,7 +8972,7 @@ dict set ::constcl::defreg pi [N 3.1415926535897931]
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-In this interpreter, \texttt{nil} refers to the empty list.
+In this interpreter, \texttt{nil} does refer to the empty list.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -8994,7 +8982,7 @@ reg nil #NIL
 \chapter{The REPL}
 \label{the-repl}
 
-The REPL ([read-eval-print loop](https://en.wikipedia.org/wiki/Read\%E2\%80\%93eval\%E2\%80\%93print\_loop)) is a loop that repeatedly \_reads\_ a Scheme source string from the user through the command \texttt{::constcl::input} (breaking the loop if given an empty line) and \texttt{::constcl::parse}, \_evaluates\_ it using \texttt{::constcl::eval}, and \_prints\_ using \texttt{::constcl::write}.
+The REPL (read-eval-print loop) is a loop that repeatedly \emph{reads} a Scheme source string from the user through the command \texttt{::constcl::input} (breaking the loop if given an empty line) and \texttt{::constcl::parse}, \emph{evaluates} it using \texttt{::constcl::eval}, and \emph{prints} using \texttt{::constcl::write}.
 
 
 \textbf{input}
@@ -9012,7 +9000,8 @@ proc ::constcl::input {prompt} {
   set clsepars [regexp -all -inline {\)} $buf]
   set openbrak [regexp -all -inline {\[} $buf]
   set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] || [llength $openbrak] > [llength $clsebrak]} {
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
     ::append buf [gets stdin]
     set openpars [regexp -all -inline {\(} $buf]
     set clsepars [regexp -all -inline {\)} $buf]
@@ -9027,7 +9016,7 @@ proc ::constcl::input {prompt} {
 \textbf{repl}
 
 
-\texttt{repl} puts the loop in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+\texttt{repl} puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -9060,13 +9049,17 @@ oo::class create ::constcl::Environment {
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
     if {[::constcl::null? $syms] eq "#t"} {
-      if {[llength $vals]} { error "too many arguments" }
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
     } elseif {[::constcl::list? $syms] eq "#t"} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
       if {$symsn != $valsn} {
-        error "wrong number of arguments, $valsn instead of $symsn"
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"
       }
       foreach sym $syms val $vals {
         my set $sym $val
@@ -9075,11 +9068,17 @@ oo::class create ::constcl::Environment {
       my set $syms [::constcl::list {*}$vals]
     } else {
       while true {
-        if {[llength $vals] < 1} { error "too few arguments" }
-        my set [::constcl::car $syms] [lindex $vals 0]
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my set [::constcl::car $syms] \
+          [lindex $vals 0]
         set vals [lrange $vals 1 end]
-        if {[::constcl::symbol? [::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] [::constcl::list {*}$vals]
+        if {[
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]] eq "#t"} {
+          my set [::constcl::cdr $syms] \
+            [::constcl::list {*}$vals]
           set vals {}
           break
         } else {
@@ -9113,12 +9112,19 @@ Make \texttt{null\_env} empty and unresponsive: this is where searches for unbou
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-::constcl::Environment create ::constcl::null_env #NIL {}
+::constcl::Environment create \
+  ::constcl::null_env #NIL {}
  
 oo::objdefine ::constcl::null_env {
-  method find {sym} {self}
-  method get {sym} {::error "Unbound variable: [$sym name]"}
-  method set {sym val} {::error "Unbound variable: [$sym name]"}
+  method find {sym} {
+    self
+  }
+  method get {sym} {
+    ::error "Unbound variable: [$sym name]"
+  }
+  method set {sym val} {
+    ::error "Unbound variable: [$sym name]"
+  }
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -9128,9 +9134,12 @@ Meanwhile, \texttt{global\_env} is populated with all the definitions from the d
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {MkSymbol $k}]]
+  set keys [list {*}[lmap k [dict keys $defreg] {
+    S $k
+  }]]
   set vals [dict values $defreg]
-  Environment create global_env $keys $vals ::constcl::null_env
+  Environment create global_env $keys $vals \
+    ::constcl::null_env
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -9139,7 +9148,7 @@ Load the Scheme base to add more definitions to the global environment.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-pe {(load "schemebase.lsp")}
+pe {(load "schemebase.scm")}
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
@@ -9158,7 +9167,7 @@ ConsTcl> (circle-area 10)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-During a call to the procedure \texttt{circle-area}, the symbol \texttt{r} is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of \texttt{r}. The solution is to use separate (but linked) environments, making \texttt{r}'s binding a *local variable\footnote{See \texttt{https://en.wikipedia.org/wiki/Local\_variable)* in its own environment, which the procedure will be evaluated in. The symbols \texttt{*} and \texttt{pi} will still be available through the local environment's link to the outer global environment. This is all part of \emph{lexical scoping[\#](https://en.wikipedia.org/wiki/Scope\_(computer\_science)\#Lexical\_scope}}}.
+During a call to the procedure \texttt{circle-area}, the symbol \texttt{r} is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of \texttt{r}. The solution is to use separate (but linked) environments, making \texttt{r}'s binding a \emph{local variable\footnote{See \texttt{https://en.wikipedia.org/wiki/Local\_variable)} in its own environment, which the procedure will be evaluated in. The symbols \texttt{*} and \texttt{pi} will still be available through the local environment's link to the outer global environment. This is all part of \emph{lexical scoping[\#](https://en.wikipedia.org/wiki/Scope\_(computer\_science)\#Lexical\_scope}}}.
 
 
 In the first image, we see the global environment before we call \texttt{circle-area} (and also the empty null environment which the global environment links to):
@@ -9177,9 +9186,6 @@ After the call, we are back to the first state again.
 
 
 \includegraphics{images/env1.png}
-
-
-if no {
 
 \chapter{Lookup tables}
 \label{lookup-tables}
@@ -9325,9 +9331,6 @@ The \texttt{set-alist!} procedure can be used to update a value (it returns the 
 ((a . 1) (b . 7) (c . 3) (d . 4))
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
-}
-
 \chapter{A Scheme base}
 \label{a-scheme-base}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -9359,15 +9362,15 @@ The \texttt{set-alist!} procedure can be used to update a value (it returns the 
   (let ((idx (list-find-key lst key)))
       lst
         (set! lst (cddr lst))
-        (let ((node-before (delete-seek lst (- idx 1)))
-              (node-after (delete-seek lst (+ idx 2))))
-          (set-cdr! node-before node-after))))
+        (let ((bef (del-seek lst (- idx 1)))
+              (aft (del-seek lst (+ idx 2))))
+          (set-cdr! bef aft))))
     lst))
  
-(define (delete-seek lst idx)
+(define (del-seek lst idx)
   (if (zero? idx)
     lst
-    (delete-seek (cdr lst) (- idx 1))))
+    (del-seek (cdr lst) (- idx 1))))
  
 (define (get-alist lst key)
   (let ((item (assq key lst)))
@@ -9378,7 +9381,9 @@ The \texttt{set-alist!} procedure can be used to update a value (it returns the 
 (define (pairlis a b)
   (if (null? a)
     ()
-    (cons (cons (car a) (car b)) (pairlis (cdr a) (cdr b)))))
+    (cons
+      (cons (car a) (car b))
+      (pairlis (cdr a) (cdr b)))))
  
 (define (set-alist! lst key val)
   (let ((item (assq key lst)))
