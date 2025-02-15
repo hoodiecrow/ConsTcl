@@ -33,21 +33,21 @@ interp alias {} #t {} [::constcl::MkBoolean #t]
 
 interp alias {} #f {} [::constcl::MkBoolean #f]
 
-interp alias {} #-1 {} [::constcl::MkNumber -1]
+interp alias {} #-1 {} [N -1]
 
-interp alias {} #0 {} [::constcl::MkNumber 0]
+interp alias {} #0 {} [N 0]
 
-interp alias {} #1 {} [::constcl::MkNumber 1]
+interp alias {} #1 {} [N 1]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #NONE {} [::constcl::None new]
+interp alias {} #N {} [::constcl::None new]
 
-interp alias {} #UNSP {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecific new]
 
-interp alias {} #UNDF {} [::constcl::Undefined new]
+interp alias {} #UND {} [::constcl::Undefined new]
 
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 
@@ -55,11 +55,11 @@ CB
 
 MD(
 Initialize the definition register with the queen of numbers (or at least
-a double floating point approximation).
+a double-precision floating point approximation).
 MD)
 
 CB
-dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::constcl::defreg pi [N 3.1415926535897931]
 CB
 
 MD(
@@ -90,10 +90,8 @@ TT(
 } -output 41369087205782.695\n
 
 ::tcltest::test cons-3.0 {count} -body {
-    pep "(define first car)"
-    pep "(define rest cdr)"
-    pep "(define truthtoint (lambda (val) (if val 1 0)))"
-    pep "(define count (lambda (item L) (if (not (eqv? L '())) (+ (truthtoint (equal? item (first L))) (count item (rest L))) 0)))"
+    pep "(define (truthtoint val) (if val 1 0))"
+    pep "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
 } -output ""
 
 ::tcltest::test cons-3.0 {count} -body {
@@ -105,12 +103,12 @@ TT(
 } -output 4\n
 
 ::tcltest::test cons-4.0 {twice} -body {
-    pep "(define twice (lambda (x) (* 2 x)))"
+    pep "(define (twice x) (* 2 x))"
     pep "(twice 5)"
 } -output 10\n
 
 ::tcltest::test cons-4.1 {twice} -body {
-    pep "(define repeat (lambda (f) (lambda (x) (f (f x)))))"
+    pep "(define (repeat f) (lambda (x) (f (f x))))"
     pep "((repeat twice) 10)"
 } -output 40\n
 

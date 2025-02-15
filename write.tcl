@@ -5,7 +5,7 @@ MD(
 __write__
 
 The third member in the great triad is `write`. As long as the object
-given to it isn't `#NONE`, it passes it to `write-value` and prints
+given to it isn't the empty string, it passes it to `write-value` and prints
 a newline.
 MD)
 
@@ -17,7 +17,7 @@ CB
 reg write ::constcl::write
 
 proc ::constcl::write {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {
@@ -64,7 +64,7 @@ CB
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {

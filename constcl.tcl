@@ -434,7 +434,7 @@ proc ::constcl::parse-expr {} {
     {\[}          { parse-pair-expr "\]" }
     {\`}          { parse-quasiquoted-expr }
     {\d}          { parse-number-expr }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -767,7 +767,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -1195,7 +1195,7 @@ proc ::constcl::/begin {exps env} {
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
-  return #NONE
+  return
 }
 
 
@@ -1949,7 +1949,7 @@ proc ::constcl::make-undefineds {vals} {
 reg write ::constcl::write
 
 proc ::constcl::write {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {
@@ -1975,7 +1975,7 @@ proc ::constcl::write-value {handle val} {
 reg display ::constcl::display
 
 proc ::constcl::display {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {
@@ -2161,6 +2161,7 @@ oo::class create ::constcl::Number {
 
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
+interp alias {} N {} ::constcl::Number new
 
 
 
@@ -3892,7 +3893,8 @@ proc ::constcl::length-helper {pair} {
   if {[null? $pair] ne "#f"} {
     return 0
   } else {
-    return [expr {1 + [length-helper [cdr $pair]]}]
+    return [expr {1 +
+      [length-helper [cdr $pair]]}]
   }
 }
 
@@ -4071,12 +4073,12 @@ oo::class create ::constcl::String {
       } else {
         set c #\\$elt
       }
-      lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+      lset ::constcl::vectorSpace $idx \
+        [::constcl::MkChar $c]
       incr idx
     }
     set data [
-      ::constcl::cons [
-        ::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+      ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
   method = {str} {
@@ -4097,7 +4099,8 @@ oo::class create ::constcl::String {
   }
   method store {} {
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -4108,7 +4111,8 @@ oo::class create ::constcl::String {
       ::error "string is constant"
     } else {
       set k [$k numval]
-      if {$k < 0 || $k >= [[my length] numval]} {
+      if {$k < 0 ||
+        $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
       set base [[::constcl::car $data] numval]
@@ -4122,14 +4126,17 @@ oo::class create ::constcl::String {
     } else {
       set base [[::constcl::car $data] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $c
       }
     }
     return [self]
   }
   method substring {from to} {
-    join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
+    join [lmap c [lrange [my store] \
+      [$from numval] [$to numval]] {$c char}] {}
   }
   method mkconstant {} {
     set constant 1
@@ -4148,33 +4155,30 @@ oo::class create ::constcl::String {
   }
 }
 
-interp alias {} MkString {} ::constcl::String new
+interp alias {} ::constcl::MkString \
+  {} ::constcl::String new
 
 
-reg string? ::constcl::string?
+reg string?
 
 proc ::constcl::string? {val} {
-  if {[info object isa typeof $val ::constcl::String]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val String
 }
 
 
 
 
 
-reg make-string ::constcl::make-string
+reg make-string
 
 proc ::constcl::make-string {k args} {
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " [$k numval]]]
+    return [MkString [::string repeat " " \
+      [$k numval]]]
   } else {
     lassign $args char
-    return [MkString [::string repeat [$char char] [$k numval]]]
+    return [MkString [::string repeat \
+      [$char char] [$k numval]]]
   }
 }
 
@@ -4182,13 +4186,14 @@ proc ::constcl::make-string {k args} {
 
 
 
-reg string ::constcl::string
+reg string
 
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
     check {::constcl::char? $char} {
-      CHAR expected\n([pn] [lmap c $args {$c show}])
+      CHAR expected\n([pn] [lmap c $args \
+        {$c show}])
     }
     ::append str [$char char]
   }
@@ -4199,7 +4204,7 @@ proc ::constcl::string {args} {
 
 
 
-reg string-length ::constcl::string-length
+reg string-length
 
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
@@ -4212,14 +4217,16 @@ proc ::constcl::string-length {str} {
 
 
 
-reg string-ref ::constcl::string-ref
+reg string-ref
 
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show] [$k show])
+    STRING expected\n([pn] [$str show] \
+      [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show])
   }
   return [$str ref $k]
 }
@@ -4232,13 +4239,16 @@ reg string-set!
 
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$k show] [$char show])
+    STRING expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show] [$char show])
   }
   check {char? $char} {
-    CHAR expected\n([pn] [$str show] [$k show] [$char show])
+    CHAR expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   $str set! $k $char
   return $str
@@ -4248,14 +4258,17 @@ proc ::constcl::string-set! {str k char} {
 
 
 
-reg string=? ::constcl::string=?
+
+reg string=?
 
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] eq [$str2 value]} {
     return #t
@@ -4265,16 +4278,19 @@ proc ::constcl::string=? {str1 str2} {
 }
 
 
-reg string-ci=? ::constcl::string-ci=?
+reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] eq
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -4282,14 +4298,16 @@ proc ::constcl::string-ci=? {str1 str2} {
 }
 
 
-reg string<? ::constcl::string<?
+reg string<?
 
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] < [$str2 value]} {
     return #t
@@ -4299,16 +4317,19 @@ proc ::constcl::string<? {str1 str2} {
 }
 
 
-reg string-ci<? ::constcl::string-ci<?
+reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -4316,14 +4337,16 @@ proc ::constcl::string-ci<? {str1 str2} {
 }
 
 
-reg string>? ::constcl::string>?
+reg string>?
 
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] > [$str2 value]} {
     return #t
@@ -4333,16 +4356,19 @@ proc ::constcl::string>? {str1 str2} {
 }
 
 
-reg string-ci>? ::constcl::string-ci>?
+reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -4350,14 +4376,16 @@ proc ::constcl::string-ci>? {str1 str2} {
 }
 
 
-reg string<=? ::constcl::string<=?
+reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] <= [$str2 value]} {
     return #t
@@ -4367,16 +4395,19 @@ proc ::constcl::string<=? {str1 str2} {
 }
 
 
-reg string-ci<=? ::constcl::string-ci<=?
+reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -4384,14 +4415,16 @@ proc ::constcl::string-ci<=? {str1 str2} {
 }
 
 
-reg string>=? ::constcl::string>=?
+reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] >= [$str2 value]} {
     return #t
@@ -4401,16 +4434,19 @@ proc ::constcl::string>=? {str1 str2} {
 }
 
 
-reg string-ci>=? ::constcl::string-ci>=?
+reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -4421,17 +4457,20 @@ proc ::constcl::string-ci>=? {str1 str2} {
 
 
 
-reg substring ::constcl::substring
+reg substring
 
 proc ::constcl::substring {str start end} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$start show] [$end show])
+    STRING expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $start} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $end} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   return [MkString [$str substring $start $end]]
 }
@@ -4440,17 +4479,19 @@ proc ::constcl::substring {str start end} {
 
 
 
-reg string-append ::constcl::string-append
+reg string-append
 
 proc ::constcl::string-append {args} {
-    MkString [::append --> {*}[lmap arg $args {$arg value}]]
+    MkString [::append --> {*}[lmap arg $args {
+      $arg value
+    }]]
 }
 
 
 
 
 
-reg string->list ::constcl::string->list
+reg string->list
 
 proc ::constcl::string->list {str} {
   list {*}[$str store]
@@ -4460,17 +4501,18 @@ proc ::constcl::string->list {str} {
 
 
 
-reg list->string ::constcl::list->string
+reg list->string
 
 proc ::constcl::list->string {list} {
-  MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
+  MkString [::append --> {*}[
+    lmap c [splitlist $list] {$c char}]]
 }
 
 
 
 
 
-reg string-copy ::constcl::string-copy
+reg string-copy
 
 proc ::constcl::string-copy {str} {
   check {string? $str} {
@@ -4483,11 +4525,12 @@ proc ::constcl::string-copy {str} {
 
 
 
-reg string-fill! ::constcl::string-fill!
+reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$char show])
+    STRING expected\n([pn] [$str show] \
+      [$char show])
   }
   $str fill! $char
   return $str
@@ -4508,16 +4551,34 @@ oo::class create ::constcl::Symbol {
     set name $n
     set caseconstant 0
   }
-  method name {} {set name}
-  method value {} {set name}
-  method = {symname} {expr {$name eq $symname}}
+  method name {} {
+    set name
+  }
+  method value {} {
+    set name
+  }
+  method = {symname} {
+    expr {$name eq $symname}
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method make-case-constant {} {set caseconstant 1}
-  method case-constant {} {set caseconstant}
-  method write {handle} { puts -nonewline $handle [my name] }
-  method display {} { puts -nonewline [my name] }
-  method show {} {set name}
+  method constant {} {
+    return 1
+  }
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+  method case-constant {} {
+    set caseconstant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my name]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set name
+  }
 }
 
 unset -nocomplain ::constcl::symbolTable
@@ -4538,13 +4599,7 @@ interp alias {} S {} ::constcl::MkSymbol
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {val} {
-  if {[info object isa typeof $val ::constcl::Symbol]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Symbol
 }
 
 
@@ -4557,7 +4612,8 @@ proc ::constcl::symbol->string {sym} {
     SYMBOL expected\n([pn] [$sym show])
   }
   if {![$sym case-constant]} {
-    set str [MkString [::string tolower [$sym name]]]
+    set str [MkString [
+      ::string tolower [$sym name]]]
   } else {
     set str [MkString [$sym name]]
   }
@@ -4581,7 +4637,7 @@ proc ::constcl::string->symbol {str} {
   return $sym
 }
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et  
 
 
 oo::class create ::constcl::Vector {
@@ -4595,10 +4651,15 @@ oo::class create ::constcl::Vector {
       lset ::constcl::vectorSpace $idx $elt
       incr idx
     }
-    set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
-  method length {} {::constcl::cdr $data}
+  method baseadr {} {
+    ::constcl::car $data
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -4607,8 +4668,9 @@ oo::class create ::constcl::Vector {
     lindex [my store] $k
   }
   method store {} {
-    set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set base [[my baseadr] numval]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -4622,7 +4684,7 @@ oo::class create ::constcl::Vector {
       if {$k < 0 || $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       lset ::constcl::vectorSpace $k+$base $obj
     }
     return [self]
@@ -4631,35 +4693,43 @@ oo::class create ::constcl::Vector {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $val
       }
     }
     return [self]
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {set constant}
-  method write {handle} { puts -nonewline $handle [my show]}
-  method display {} {puts -nonewline [my show]}
-  method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my show]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "#(%s)" [
+      join [lmap val [my value] {$val show}]]
+  }
 }
 
-interp alias {} ::constcl::MkVector {} ::constcl::Vector new
+interp alias {} ::constcl::MkVector \
+  {} ::constcl::Vector new
 
 
 
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {val} {
-  if {[info object isa typeof $val ::constcl::Vector]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Vector
 }
 
 
@@ -4759,7 +4829,8 @@ reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$fill show])
+    VECTOR expected\n([pn] [$vec show] \
+      [$fill show])
   }
   $vec fill! $fill
 }
@@ -4769,7 +4840,8 @@ proc ::constcl::vector-fill! {vec fill} {
 
 
 proc ::constcl::idcheckinit {init} {
-  if {[::string is alpha -strict $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
     return true
   } else {
     return false
@@ -4778,7 +4850,8 @@ proc ::constcl::idcheckinit {init} {
 
 proc ::constcl::idchecksubs {subs} {
   foreach c [split $subs {}] {
-    if {!([::string is alnum -strict $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
       return false
     }
   }
@@ -4787,15 +4860,21 @@ proc ::constcl::idchecksubs {subs} {
 
 proc ::constcl::idcheck {sym} {
   if {$sym eq {}} {return $sym}
-  if {(![idcheckinit [::string index $sym 0]] || ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
     ::error "Identifier expected ($sym)"
   }
   set sym
 }
 
 proc ::constcl::varcheck {sym} {
-  if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin cond and or case let let* letrec do delay quasiquote}} {
-    ::error "Macro name can't be used as a variable: $sym"
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
   }
   return $sym
 }
@@ -4822,27 +4901,27 @@ interp alias {} #t {} [::constcl::MkBoolean #t]
 
 interp alias {} #f {} [::constcl::MkBoolean #f]
 
-interp alias {} #-1 {} [::constcl::MkNumber -1]
+interp alias {} #-1 {} [N -1]
 
-interp alias {} #0 {} [::constcl::MkNumber 0]
+interp alias {} #0 {} [N 0]
 
-interp alias {} #1 {} [::constcl::MkNumber 1]
+interp alias {} #1 {} [N 1]
 
 interp alias {} #+ {} [::constcl::MkSymbol +]
 
 interp alias {} #- {} [::constcl::MkSymbol -]
 
-interp alias {} #NONE {} [::constcl::None new]
+interp alias {} #N {} [::constcl::None new]
 
-interp alias {} #UNSP {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecific new]
 
-interp alias {} #UNDF {} [::constcl::Undefined new]
+interp alias {} #UND {} [::constcl::Undefined new]
 
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 
 
 
-dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::constcl::defreg pi [N 3.1415926535897931]
 
 
 reg nil #NIL

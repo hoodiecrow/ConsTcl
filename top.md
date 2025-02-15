@@ -22,7 +22,7 @@ It's written with Vim, the one and only editor.
 It steps over and back over the border between Tcl and Lisp a lot
 of times while working, and as a result is fairly slow.
 On my cheap computer, the following code (which calculates the factorial of
-100) takes 0.027 seconds to run.
+100) takes 0.03 seconds to run.
 
 ```
 time {pe "(fact 100)"} 10
@@ -57,11 +57,11 @@ the alternative is overwriting the margins.
 
 ### About me
 
-I'm a 60 year old former system manager who has dabbled in programming since
-1979--46 years. Currently, since around 25 years, my language of choice is the
-rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits
-me, and there are things that one can do in Tcl that one can't easily do in
-other languages. Lisp is a runner-up in my affections, a language that
+I'm a 60 year old former system manager who has been active in programming
+since 1979--46 years. Currently, since around 25 years, my language of choice
+is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl
+suits me, and there are things that one can do in Tcl that one can't easily do
+in other languages. Lisp is a runner-up in my affections, a language that
 fascinates me but doesn't fit my brain very well (though I have written one
 large piece of software in AutoLisp).
 

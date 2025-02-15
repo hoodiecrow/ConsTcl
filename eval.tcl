@@ -210,7 +210,7 @@ CB
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
-  return #NONE
+  return
 }
 CB
 

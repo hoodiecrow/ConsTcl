@@ -242,7 +242,7 @@ proc ::constcl::parse-expr {} {
     {\[}          { parse-pair-expr "\]" }
     {\`}          { parse-quasiquoted-expr }
     {\d}          { parse-number-expr }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -708,7 +708,7 @@ TT(
     ::constcl::IB create ib-read-5.2 "let"
     set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
-} -returnCodes error -result "Macro name can't be used as a variable: let"
+} -returnCodes error -result "Variable name is reserved: let"
 
 TT)
 
@@ -926,7 +926,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c

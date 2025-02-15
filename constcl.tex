@@ -51,7 +51,7 @@ ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
 It's written with Vim, the one and only editor.
 
 
-It steps over and back over the border between Tcl and Lisp a lot of times while working, and as a result is fairly slow. On my cheap computer, the following code (which calculates the factorial of 100) takes 0.027 seconds to run.
+It steps over and back over the border between Tcl and Lisp a lot of times while working, and as a result is fairly slow. On my cheap computer, the following code (which calculates the factorial of 100) takes 0.03 seconds to run.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -77,7 +77,7 @@ I have tried to write clear, readable code, but the page format forces me to sho
 \section{About me}
 \label{about-me}
 
-I'm a 60 year old former system manager who has dabbled in programming since 1979--46 years. Currently, since around 25 years, my language of choice is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits me, and there are things that one can do in Tcl that one can't easily do in other languages. Lisp is a runner-up in my affections, a language that fascinates me but doesn't fit my brain very well (though I have written one large piece of software in AutoLisp).
+I'm a 60 year old former system manager who has been active in programming since 1979--46 years. Currently, since around 25 years, my language of choice is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits me, and there are things that one can do in Tcl that one can't easily do in other languages. Lisp is a runner-up in my affections, a language that fascinates me but doesn't fit my brain very well (though I have written one large piece of software in AutoLisp).
 
 
 In addition to my terms as programmer and system manager, I have worked as a teacher (teaching C/C++ in upper secondary school) and for a short while I produced teaching materials for the department for information technology at the University of Skövde. I've also been active writing answers at question-and-answer sites on the web, mainly Stack Overflow.
@@ -1011,7 +1011,7 @@ proc ::constcl::parse-expr {} {
     {\[}          { parse-pair-expr "\]" }
     {\`}          { parse-quasiquoted-expr }
     {\d}          { parse-number-expr }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { parse-identifier-expr }
     default {
       ::error "unexpected character ([$ib peek])"
@@ -1582,7 +1582,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return #NONE}
+    {^$}          { return}
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -2393,7 +2393,7 @@ env & an environment \\
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   $env set $sym $val
-  return #NONE
+  return
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -3812,7 +3812,7 @@ proc ::constcl::make-undefineds {vals} {
 \textbf{write}
 
 
-The third member in the great triad is \texttt{write}. As long as the object given to it isn't \texttt{\#NONE}, it passes it to \texttt{write-value} and prints a newline.
+The third member in the great triad is \texttt{write}. As long as the object given to it isn't the empty string, it passes it to \texttt{write-value} and prints a newline.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -3829,7 +3829,7 @@ val & a Lisp value \\
 reg write ::constcl::write
  
 proc ::constcl::write {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {
@@ -3889,7 +3889,7 @@ val & a Lisp value \\
 reg display ::constcl::display
  
 proc ::constcl::display {val args} {
-  if {$val ne "#NONE"} {
+  if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
     } else {
@@ -4137,6 +4137,7 @@ oo::class create ::constcl::Number {
  
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
+interp alias {} N {} ::constcl::Number new
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
@@ -6857,7 +6858,8 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((pair (cons 'a 'b)) (val 'x)) (set-car! pair val))   =>  (x . b)
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-car! pair val))                =>  (x . b)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -6890,7 +6892,8 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((pair (cons 'a 'b)) (val 'x)) (set-cdr! pair val))   =>  (a . x)
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-cdr! pair val))                =>  (a . x)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -7050,7 +7053,8 @@ proc ::constcl::length-helper {pair} {
   if {[null? $pair] ne "#f"} {
     return 0
   } else {
-    return [expr {1 + [length-helper [cdr $pair]]}]
+    return [expr {1 +
+      [length-helper [cdr $pair]]}]
   }
 }
 \end{lstlisting}
@@ -7171,7 +7175,8 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((lst '(a b c d e f)) (k 3)) (list-tail lst k))   =>  (d e f)
+(let ((lst '(a b c d e f)) (k 3))
+  (list-tail lst k))                =>  (d e f)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -7472,12 +7477,12 @@ oo::class create ::constcl::String {
       } else {
         set c #\\$elt
       }
-      lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+      lset ::constcl::vectorSpace $idx \
+        [::constcl::MkChar $c]
       incr idx
     }
     set data [
-      ::constcl::cons [
-        ::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+      ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
   method = {str} {
@@ -7498,7 +7503,8 @@ oo::class create ::constcl::String {
   }
   method store {} {
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -7509,7 +7515,8 @@ oo::class create ::constcl::String {
       ::error "string is constant"
     } else {
       set k [$k numval]
-      if {$k < 0 || $k >= [[my length] numval]} {
+      if {$k < 0 ||
+        $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
       set base [[::constcl::car $data] numval]
@@ -7523,14 +7530,17 @@ oo::class create ::constcl::String {
     } else {
       set base [[::constcl::car $data] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $c
       }
     }
     return [self]
   }
   method substring {from to} {
-    join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
+    join [lmap c [lrange [my store] \
+      [$from numval] [$to numval]] {$c char}] {}
   }
   method mkconstant {} {
     set constant 1
@@ -7549,7 +7559,8 @@ oo::class create ::constcl::String {
   }
 }
  
-interp alias {} MkString {} ::constcl::String new
+interp alias {} ::constcl::MkString \
+  {} ::constcl::String new
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{tabular}{ |l l| }
@@ -7563,16 +7574,10 @@ val & a Lisp value \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string? ::constcl::string?
+reg string?
  
 proc ::constcl::string? {val} {
-  if {[info object isa typeof $val ::constcl::String]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val String
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -7580,7 +7585,7 @@ proc ::constcl::string? {val} {
 \textbf{make-string}
 
 
-\texttt{make-string} creates a string of \_k\_ characters, optionally filled with \_char\_ characters. If \_char\_ is omitted, the string will be filled with space characters.
+\texttt{make-string} creates a string of \emph{k} characters, optionally filled with \emph{char} characters. If \emph{char} is omitted, the string will be filled with space characters.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -7597,20 +7602,24 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((k 5)) (make-string k))                   =>  "     "
-(let ((k 5) (char #\A)) (make-string k char))   =>  "AAAAA"
+(let ((k 5))
+  (make-string k))        =>  "     "
+(let ((k 5) (char #\A))
+  (make-string k char))   =>  "AAAAA"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg make-string ::constcl::make-string
+reg make-string
  
 proc ::constcl::make-string {k args} {
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " [$k numval]]]
+    return [MkString [::string repeat " " \
+      [$k numval]]]
   } else {
     lassign $args char
-    return [MkString [::string repeat [$char char] [$k numval]]]
+    return [MkString [::string repeat \
+      [$char char] [$k numval]]]
   }
 }
 \end{lstlisting}
@@ -7640,13 +7649,14 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string ::constcl::string
+reg string
  
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
     check {::constcl::char? $char} {
-      CHAR expected\n([pn] [lmap c $args {$c show}])
+      CHAR expected\n([pn] [lmap c $args \
+        {$c show}])
     }
     ::append str [$char char]
   }
@@ -7679,7 +7689,7 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-length ::constcl::string-length
+reg string-length
  
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
@@ -7715,14 +7725,16 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ref ::constcl::string-ref
+reg string-ref
  
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show] [$k show])
+    STRING expected\n([pn] [$str show] \
+      [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show])
   }
   return [$str ref $k]
 }
@@ -7750,7 +7762,10 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   =>  "fox"
+(let ((str (string #\f #\o #\o))
+      (k 2)
+      (char #\x))
+  (string-set! str k char))         =>  "fox"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -7759,13 +7774,16 @@ reg string-set!
  
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$k show] [$char show])
+    STRING expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show] [$char show])
   }
   check {char? $char} {
-    CHAR expected\n([pn] [$str show] [$k show] [$char show])
+    CHAR expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   $str set! $k $char
   return $str
@@ -7802,7 +7820,17 @@ str2 & a string \\
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{string-ci=?, string-ci<?, string-ci>?, string-ci<=?, string-ci>=? (public)} \\
+\multicolumn{2}{|l|}{string-ci=?, string-ci<?, string-ci>? (public)} \\
+\hline
+str1 & a string \\
+str2 & a string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-ci<=?, string-ci>=? (public)} \\
 \hline
 str1 & a string \\
 str2 & a string \\
@@ -7812,14 +7840,16 @@ str2 & a string \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string=? ::constcl::string=?
+reg string=?
  
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] eq [$str2 value]} {
     return #t
@@ -7831,16 +7861,19 @@ proc ::constcl::string=? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ci=? ::constcl::string-ci=?
+reg string-ci=?
  
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] eq
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -7850,14 +7883,16 @@ proc ::constcl::string-ci=? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string<? ::constcl::string<?
+reg string<?
  
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] < [$str2 value]} {
     return #t
@@ -7869,16 +7904,19 @@ proc ::constcl::string<? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ci<? ::constcl::string-ci<?
+reg string-ci<?
  
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -7888,14 +7926,16 @@ proc ::constcl::string-ci<? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string>? ::constcl::string>?
+reg string>?
  
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] > [$str2 value]} {
     return #t
@@ -7907,16 +7947,19 @@ proc ::constcl::string>? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ci>? ::constcl::string-ci>?
+reg string-ci>?
  
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -7926,14 +7969,16 @@ proc ::constcl::string-ci>? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string<=? ::constcl::string<=?
+reg string<=?
  
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] <= [$str2 value]} {
     return #t
@@ -7945,16 +7990,19 @@ proc ::constcl::string<=? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ci<=? ::constcl::string-ci<=?
+reg string-ci<=?
  
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -7964,14 +8012,16 @@ proc ::constcl::string-ci<=? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string>=? ::constcl::string>=?
+reg string>=?
  
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] >= [$str2 value]} {
     return #t
@@ -7983,16 +8033,19 @@ proc ::constcl::string>=? {str1 str2} {
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-ci>=? ::constcl::string-ci>=?
+reg string-ci>=?
  
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -8004,7 +8057,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 \textbf{substring}
 
 
-\texttt{substring} yields the substring of \_str\_ that starts at \_start\_ and ends at \_end\_.
+\texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends at \emph{end}.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -8027,17 +8080,20 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg substring ::constcl::substring
+reg substring
  
 proc ::constcl::substring {str start end} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$start show] [$end show])
+    STRING expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $start} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $end} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   return [MkString [$str substring $start $end]]
 }
@@ -8068,10 +8124,12 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-append ::constcl::string-append
+reg string-append
  
 proc ::constcl::string-append {args} {
-    MkString [::append --> {*}[lmap arg $args {$arg value}]]
+    MkString [::append --> {*}[lmap arg $args {
+      $arg value
+    }]]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8100,7 +8158,7 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string->list ::constcl::string->list
+reg string->list
  
 proc ::constcl::string->list {str} {
   list {*}[$str store]
@@ -8132,10 +8190,11 @@ Example:
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg list->string ::constcl::list->string
+reg list->string
  
 proc ::constcl::list->string {list} {
-  MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
+  MkString [::append --> {*}[
+    lmap c [splitlist $list] {$c char}]]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8159,12 +8218,15 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            =>  "xbc"
+(let ((str (string-copy "abc"))
+      (k 0)
+      (char #\x))
+  (string-set! str k char))       =>  "xbc"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-copy ::constcl::string-copy
+reg string-copy
  
 proc ::constcl::string-copy {str} {
   check {string? $str} {
@@ -8178,7 +8240,7 @@ proc ::constcl::string-copy {str} {
 \textbf{string-fill!}
 
 
-\texttt{string-fill!} \_str\_ \_char\_ fills a non-constant string with \_char\_.
+\texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -8195,16 +8257,19 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   =>  "XXXXXX"
+(let ((str (string-copy "foobar"))
+      (char #\X))
+  (string-fill! str char))           =>  "XXXXXX"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-reg string-fill! ::constcl::string-fill!
+reg string-fill!
  
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$char show])
+    STRING expected\n([pn] [$str show] \
+      [$char show])
   }
   $str fill! $char
   return $str
@@ -8232,16 +8297,34 @@ oo::class create ::constcl::Symbol {
     set name $n
     set caseconstant 0
   }
-  method name {} {set name}
-  method value {} {set name}
-  method = {symname} {expr {$name eq $symname}}
+  method name {} {
+    set name
+  }
+  method value {} {
+    set name
+  }
+  method = {symname} {
+    expr {$name eq $symname}
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method make-case-constant {} {set caseconstant 1}
-  method case-constant {} {set caseconstant}
-  method write {handle} { puts -nonewline $handle [my name] }
-  method display {} { puts -nonewline [my name] }
-  method show {} {set name}
+  method constant {} {
+    return 1
+  }
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+  method case-constant {} {
+    set caseconstant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my name]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set name
+  }
 }
  
 unset -nocomplain ::constcl::symbolTable
@@ -8273,13 +8356,7 @@ val & a Lisp value \\
 reg symbol? ::constcl::symbol?
  
 proc ::constcl::symbol? {val} {
-  if {[info object isa typeof $val ::constcl::Symbol]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Symbol
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8307,7 +8384,8 @@ proc ::constcl::symbol->string {sym} {
     SYMBOL expected\n([pn] [$sym show])
   }
   if {![$sym case-constant]} {
-    set str [MkString [::string tolower [$sym name]]]
+    set str [MkString [
+      ::string tolower [$sym name]]]
   } else {
     set str [MkString [$sym name]]
   }
@@ -8321,7 +8399,8 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((sym 'Foobar)) (symbol->string sym))   =>  "foobar"
+(let ((sym 'Foobar))
+  (symbol->string sym))   =>  "foobar"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
@@ -8344,9 +8423,10 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(define sym (let ((str "Foobar")) (string->symbol str)))
-sym                                                        =>  Foobar
-(symbol->string sym)                                       =>  "Foobar"
+(define sym (let ((str "Foobar"))
+              (string->symbol str)))
+sym                                    =>  Foobar
+(symbol->string sym)                   =>  "Foobar"
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8387,10 +8467,15 @@ oo::class create ::constcl::Vector {
       lset ::constcl::vectorSpace $idx $elt
       incr idx
     }
-    set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
-  method length {} {::constcl::cdr $data}
+  method baseadr {} {
+    ::constcl::car $data
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -8399,8 +8484,9 @@ oo::class create ::constcl::Vector {
     lindex [my store] $k
   }
   method store {} {
-    set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set base [[my baseadr] numval]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -8414,7 +8500,7 @@ oo::class create ::constcl::Vector {
       if {$k < 0 || $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       lset ::constcl::vectorSpace $k+$base $obj
     }
     return [self]
@@ -8423,22 +8509,36 @@ oo::class create ::constcl::Vector {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $val
       }
     }
     return [self]
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {set constant}
-  method write {handle} { puts -nonewline $handle [my show]}
-  method display {} {puts -nonewline [my show]}
-  method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my show]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "#(%s)" [
+      join [lmap val [my value] {$val show}]]
+  }
 }
  
-interp alias {} ::constcl::MkVector {} ::constcl::Vector new
+interp alias {} ::constcl::MkVector \
+  {} ::constcl::Vector new
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
@@ -8458,13 +8558,7 @@ val & a Lisp value \\
 reg vector? ::constcl::vector?
  
 proc ::constcl::vector? {val} {
-  if {[info object isa typeof $val ::constcl::Vector]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Vector
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8489,8 +8583,10 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((k 5)) (make-vector k))                  =>  #(() () () () ())
-(let ((k 5) (fill #\A)) (make-vector k fill))  =>  #(#\A #\A #\A #\A #\A)
+(let ((k 3))
+  (make-vector k))        =>  #(() () ())
+(let ((k 3) (fill #\A))
+  (make-vector k fill))   =>  #(#\A #\A #\A)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8559,7 +8655,7 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(vector-length '#(a b c))   =>  3
+(vector-length #(a b c))   =>  3
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8578,7 +8674,7 @@ proc ::constcl::vector-length {vec} {
 \textbf{vector-ref}
 
 
-\texttt{vector-ref} returns the element of \_vec\_ at index \_k\_ (0-based).
+\texttt{vector-ref} returns the element of \emph{vec} at index \emph{k} (0-based).
 
 \begin{tabular}{ |l l| }
 \hline
@@ -8595,7 +8691,8 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   =>  b
+(let ((vec #(a b c)) (k 1))
+  (vector-ref vec k))          =>  b
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8635,8 +8732,14 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           =>  *error*
-(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   =>  #(a x c)
+(let ((vec #(a b c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  *error*
+(let ((vec (vector 'a 'b 'c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  #(a x c)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8674,7 +8777,7 @@ Example:
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-(vector->list '#(a b c))   =>  (a b c)
+(vector->list #(a b c))   =>  (a b c)
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -8750,7 +8853,8 @@ reg vector-fill! ::constcl::vector-fill!
  
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$fill show])
+    VECTOR expected\n([pn] [$vec show] \
+      [$fill show])
   }
   $vec fill! $fill
 }
@@ -8776,7 +8880,8 @@ Some routines for checking if a string is a valid identifier. \texttt{idcheckini
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 proc ::constcl::idcheckinit {init} {
-  if {[::string is alpha -strict $init] || $init in {! $ % & * / : < = > ? ^ _ ~}} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
     return true
   } else {
     return false
@@ -8785,7 +8890,8 @@ proc ::constcl::idcheckinit {init} {
  
 proc ::constcl::idchecksubs {subs} {
   foreach c [split $subs {}] {
-    if {!([::string is alnum -strict $c] || $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
       return false
     }
   }
@@ -8794,15 +8900,21 @@ proc ::constcl::idchecksubs {subs} {
  
 proc ::constcl::idcheck {sym} {
   if {$sym eq {}} {return $sym}
-  if {(![idcheckinit [::string index $sym 0]] || ![idchecksubs [::string range $sym 1 end]]) && $sym ni {+ - ...}} {
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
     ::error "Identifier expected ($sym)"
   }
   set sym
 }
  
 proc ::constcl::varcheck {sym} {
-  if {$sym in {else => define unquote unquote-splicing quote lambda if set! begin cond and or case let let* letrec do delay quasiquote}} {
-    ::error "Macro name can't be used as a variable: $sym"
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
   }
   return $sym
 }
@@ -8843,32 +8955,32 @@ interp alias {} #t {} [::constcl::MkBoolean #t]
  
 interp alias {} #f {} [::constcl::MkBoolean #f]
  
-interp alias {} #-1 {} [::constcl::MkNumber -1]
+interp alias {} #-1 {} [N -1]
  
-interp alias {} #0 {} [::constcl::MkNumber 0]
+interp alias {} #0 {} [N 0]
  
-interp alias {} #1 {} [::constcl::MkNumber 1]
+interp alias {} #1 {} [N 1]
  
 interp alias {} #+ {} [::constcl::MkSymbol +]
  
 interp alias {} #- {} [::constcl::MkSymbol -]
  
-interp alias {} #NONE {} [::constcl::None new]
+interp alias {} #N {} [::constcl::None new]
  
-interp alias {} #UNSP {} [::constcl::Unspecific new]
+interp alias {} #UNS {} [::constcl::Unspecific new]
  
-interp alias {} #UNDF {} [::constcl::Undefined new]
+interp alias {} #UND {} [::constcl::Undefined new]
  
 interp alias {} #EOF {} [::constcl::EndOfFile new]
  
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-Initialize the definition register with the queen of numbers (or at least a double floating point approximation).
+Initialize the definition register with the queen of numbers (or at least a double-precision floating point approximation).
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-dict set ::constcl::defreg pi [::constcl::MkNumber 3.1415926535897931]
+dict set ::constcl::defreg pi [N 3.1415926535897931]
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 

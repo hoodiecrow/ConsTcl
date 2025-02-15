@@ -59,6 +59,7 @@ oo::class create ::constcl::Number {
 
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
+interp alias {} N {} ::constcl::Number new
 CB
 
 MD(
@@ -86,11 +87,11 @@ TT(
 } -output "#t\n"
 
 ::tcltest::test numbers-1.1 {try number?} -body {
-    ::constcl::MkNumber foo
+    N foo
 } -returnCodes error -result "NUMBER expected\nfoo"
 
 ::tcltest::test numbers-1.2 {try number?} -body {
-    ::constcl::MkNumber 4294967295
+    N 4294967295
 } -match glob -result "::oo::Obj*"
 
 TT)
@@ -1240,7 +1241,7 @@ TT(
 
 ::tcltest::test numbers-30.1 {try number->string} -body {
     pep "(number->string 23 13)"
-} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string  23 13)"
 
 TT)
 
@@ -1328,7 +1329,7 @@ TT(
 
 ::tcltest::test numbers-31.1 {try string->number} -body {
     pep {(string->number "23" 13)}
-} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\" 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\"  13)"
 
 TT)
 

@@ -23,12 +23,12 @@ oo::class create ::constcl::String {
       } else {
         set c #\\$elt
       }
-      lset ::constcl::vectorSpace $idx [::constcl::MkChar $c]
+      lset ::constcl::vectorSpace $idx \
+        [::constcl::MkChar $c]
       incr idx
     }
     set data [
-      ::constcl::cons [
-        ::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+      ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
   method = {str} {
@@ -49,7 +49,8 @@ oo::class create ::constcl::String {
   }
   method store {} {
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -60,7 +61,8 @@ oo::class create ::constcl::String {
       ::error "string is constant"
     } else {
       set k [$k numval]
-      if {$k < 0 || $k >= [[my length] numval]} {
+      if {$k < 0 ||
+        $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
       set base [[::constcl::car $data] numval]
@@ -74,14 +76,17 @@ oo::class create ::constcl::String {
     } else {
       set base [[::constcl::car $data] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $c
       }
     }
     return [self]
   }
   method substring {from to} {
-    join [lmap c [lrange [my store] [$from numval] [$to numval]] {$c char}] {}
+    join [lmap c [lrange [my store] \
+      [$from numval] [$to numval]] {$c char}] {}
   }
   method mkconstant {} {
     set constant 1
@@ -100,7 +105,8 @@ oo::class create ::constcl::String {
   }
 }
 
-interp alias {} MkString {} ::constcl::String new
+interp alias {} ::constcl::MkString \
+  {} ::constcl::String new
 CB
 
 PR(
@@ -108,16 +114,10 @@ string? (public);val val -> bool
 PR)
 
 CB
-reg string? ::constcl::string?
+reg string?
 
 proc ::constcl::string? {val} {
-  if {[info object isa typeof $val ::constcl::String]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::String]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val String
 }
 CB
 
@@ -133,8 +133,8 @@ TT)
 MD(
 __make-string__
 
-`make-string` creates a string of _k_ characters, optionally filled with _char_
-characters. If _char_ is omitted, the string will be filled with space characters.
+`make-string` creates a string of **k** characters, optionally filled with **char**
+characters. If **char** is omitted, the string will be filled with space characters.
 MD)
 
 PR(
@@ -145,20 +145,24 @@ MD(
 Example:
 
 ```
-(let ((k 5)) (make-string k))                   =>  "     "
-(let ((k 5) (char #\A)) (make-string k char))   =>  "AAAAA"
+(let ((k 5))
+  (make-string k))        =>  "     "
+(let ((k 5) (char #\A))
+  (make-string k char))   =>  "AAAAA"
 ```
 MD)
 
 CB
-reg make-string ::constcl::make-string
+reg make-string
 
 proc ::constcl::make-string {k args} {
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " [$k numval]]]
+    return [MkString [::string repeat " " \
+      [$k numval]]]
   } else {
     lassign $args char
-    return [MkString [::string repeat [$char char] [$k numval]]]
+    return [MkString [::string repeat \
+      [$char char] [$k numval]]]
   }
 }
 CB
@@ -190,13 +194,14 @@ Example:
 MD)
 
 CB
-reg string ::constcl::string
+reg string
 
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
     check {::constcl::char? $char} {
-      CHAR expected\n([pn] [lmap c $args {$c show}])
+      CHAR expected\n([pn] [lmap c $args \
+        {$c show}])
     }
     ::append str [$char char]
   }
@@ -235,7 +240,7 @@ Example:
 MD)
 
 CB
-reg string-length ::constcl::string-length
+reg string-length
 
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
@@ -272,14 +277,16 @@ Example:
 MD)
 
 CB
-reg string-ref ::constcl::string-ref
+reg string-ref
 
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show] [$k show])
+    STRING expected\n([pn] [$str show] \
+      [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show])
   }
   return [$str ref $k]
 }
@@ -307,7 +314,10 @@ MD(
 Example:
 
 ```
-(let ((str (string #\f #\o #\o)) (k 2) (char #\x)) (string-set! str k char))   =>  "fox"
+(let ((str (string #\f #\o #\o))
+      (k 2)
+      (char #\x))
+  (string-set! str k char))         =>  "fox"
 ```
 MD)
 
@@ -316,13 +326,16 @@ reg string-set!
 
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$k show] [$char show])
+    STRING expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] [$k show] [$char show])
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show] [$char show])
   }
   check {char? $char} {
-    CHAR expected\n([pn] [$str show] [$k show] [$char show])
+    CHAR expected\n([pn] [$str show] [$k show] \
+      [$char show])
   }
   $str set! $k $char
   return $str
@@ -368,18 +381,24 @@ string=?, string<?, string>?, string<=?, string>=? (public);str1 str str2 str ->
 PR)
 
 PR(
-string-ci=?, string-ci<?, string-ci>?, string-ci<=?, string-ci>=? (public);str1 str str2 str -> bool
+string-ci=?, string-ci<?, string-ci>? (public);str1 str str2 str -> bool
+PR)
+
+PR(
+string-ci<=?, string-ci>=? (public);str1 str str2 str -> bool
 PR)
 
 CB
-reg string=? ::constcl::string=?
+reg string=?
 
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] eq [$str2 value]} {
     return #t
@@ -400,16 +419,19 @@ TT(
 TT)
 
 CB
-reg string-ci=? ::constcl::string-ci=?
+reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] eq [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] eq
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -428,14 +450,16 @@ TT(
 TT)
 
 CB
-reg string<? ::constcl::string<?
+reg string<?
 
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] < [$str2 value]} {
     return #t
@@ -456,16 +480,19 @@ TT(
 TT)
 
 CB
-reg string-ci<? ::constcl::string-ci<?
+reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] < [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -484,14 +511,16 @@ TT(
 TT)
 
 CB
-reg string>? ::constcl::string>?
+reg string>?
 
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] > [$str2 value]} {
     return #t
@@ -512,16 +541,19 @@ TT(
 TT)
 
 CB
-reg string-ci>? ::constcl::string-ci>?
+reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] > [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -540,14 +572,16 @@ TT(
 TT)
 
 CB
-reg string<=? ::constcl::string<=?
+reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] <= [$str2 value]} {
     return #t
@@ -568,16 +602,19 @@ TT(
 TT)
 
 CB
-reg string-ci<=? ::constcl::string-ci<=?
+reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] <= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] <=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -596,14 +633,16 @@ TT(
 TT)
 
 CB
-reg string>=? ::constcl::string>=?
+reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   if {[$str1 value] >= [$str2 value]} {
     return #t
@@ -624,16 +663,19 @@ TT(
 TT)
 
 CB
-reg string-ci>=? ::constcl::string-ci>=?
+reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] [$str2 show])
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
   }
-  if {[::string tolower [$str1 value]] >= [::string tolower [$str2 value]]} {
+  if {[::string tolower [$str1 value]] >=
+      [::string tolower [$str2 value]]} {
     return #t
   } else {
     return #f
@@ -654,7 +696,7 @@ TT)
 MD(
 __substring__
 
-`substring` yields the substring of _str_ that starts at _start_ and ends at _end_.
+`substring` yields the substring of **str** that starts at **start** and ends at **end**.
 MD)
 
 PR(
@@ -670,17 +712,20 @@ Example:
 MD)
 
 CB
-reg substring ::constcl::substring
+reg substring
 
 proc ::constcl::substring {str start end} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$start show] [$end show])
+    STRING expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $start} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   check {number? $end} {
-    NUMBER expected\n([pn] [$str show] [$start show] [$end show])
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
   }
   return [MkString [$str substring $start $end]]
 }
@@ -713,10 +758,12 @@ Example:
 MD)
 
 CB
-reg string-append ::constcl::string-append
+reg string-append
 
 proc ::constcl::string-append {args} {
-    MkString [::append --> {*}[lmap arg $args {$arg value}]]
+    MkString [::append --> {*}[lmap arg $args {
+      $arg value
+    }]]
 }
 CB
 
@@ -747,7 +794,7 @@ Example:
 MD)
 
 CB
-reg string->list ::constcl::string->list
+reg string->list
 
 proc ::constcl::string->list {str} {
   list {*}[$str store]
@@ -781,10 +828,11 @@ Example:
 MD)
 
 CB
-reg list->string ::constcl::list->string
+reg list->string
 
 proc ::constcl::list->string {list} {
-  MkString [::append --> {*}[lmap c [splitlist $list] {$c char}]]
+  MkString [::append --> {*}[
+    lmap c [splitlist $list] {$c char}]]
 }
 CB
 
@@ -810,12 +858,15 @@ MD(
 Example:
 
 ```
-(let ((str (string-copy "abc")) (k 0) (char #\x)) (string-set! str k char))            =>  "xbc"
+(let ((str (string-copy "abc"))
+      (k 0)
+      (char #\x))
+  (string-set! str k char))       =>  "xbc"
 ```
 MD)
 
 CB
-reg string-copy ::constcl::string-copy
+reg string-copy
 
 proc ::constcl::string-copy {str} {
   check {string? $str} {
@@ -841,7 +892,7 @@ TT)
 MD(
 __string-fill!__
 
-`string-fill!` _str_ _char_ fills a non-constant string with _char_.
+`string-fill!` **str** **char** fills a non-constant string with **char**.
 MD)
 
 PR(
@@ -852,16 +903,19 @@ MD(
 Example:
 
 ```
-(let ((str (string-copy "foobar")) (char #\X)) (string-fill! str char))   =>  "XXXXXX"
+(let ((str (string-copy "foobar"))
+      (char #\X))
+  (string-fill! str char))           =>  "XXXXXX"
 ```
 MD)
 
 CB
-reg string-fill! ::constcl::string-fill!
+reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$char show])
+    STRING expected\n([pn] [$str show] \
+      [$char show])
   }
   $str fill! $char
   return $str

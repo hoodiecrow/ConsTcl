@@ -127,7 +127,7 @@ source constcl.tcl
     ::constcl::IB create ib-read-5.2 "let"
     set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
-} -returnCodes error -result "Macro name can't be used as a variable: let"
+} -returnCodes error -result "Variable name is reserved: let"
 
 
 
@@ -607,11 +607,11 @@ if no {
 } -output "#t\n"
 
 ::tcltest::test numbers-1.1 {try number?} -body {
-    ::constcl::MkNumber foo
+    N foo
 } -returnCodes error -result "NUMBER expected\nfoo"
 
 ::tcltest::test numbers-1.2 {try number?} -body {
-    ::constcl::MkNumber 4294967295
+    N 4294967295
 } -match glob -result "::oo::Obj*"
 
 
@@ -842,7 +842,7 @@ if no {
 
 ::tcltest::test numbers-30.1 {try number->string} -body {
     pep "(number->string 23 13)"
-} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string  23 13)"
 
 
 
@@ -855,7 +855,7 @@ if no {
 
 ::tcltest::test numbers-31.1 {try string->number} -body {
     pep {(string->number "23" 13)}
-} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\" 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\"  13)"
 
 
 
@@ -1532,7 +1532,7 @@ if no {
 
 
 ::tcltest::test vectors-1.0 {try vector? (and make-vector, vector)} -body {
-    pep {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pep {(vector? #(0 (2 2 2 2) "Anna"))}
     pep {(vector? (make-vector 3 #\X))}
     pep {(vector? (vector 'a 'b 'c))}
 } -output "#t\n#t\n#t\n"
@@ -1601,10 +1601,8 @@ if no {
 } -output 41369087205782.695\n
 
 ::tcltest::test cons-3.0 {count} -body {
-    pep "(define first car)"
-    pep "(define rest cdr)"
-    pep "(define truthtoint (lambda (val) (if val 1 0)))"
-    pep "(define count (lambda (item L) (if (not (eqv? L '())) (+ (truthtoint (equal? item (first L))) (count item (rest L))) 0)))"
+    pep "(define (truthtoint val) (if val 1 0))"
+    pep "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
 } -output ""
 
 ::tcltest::test cons-3.0 {count} -body {
@@ -1616,12 +1614,12 @@ if no {
 } -output 4\n
 
 ::tcltest::test cons-4.0 {twice} -body {
-    pep "(define twice (lambda (x) (* 2 x)))"
+    pep "(define (twice x) (* 2 x))"
     pep "(twice 5)"
 } -output 10\n
 
 ::tcltest::test cons-4.1 {twice} -body {
-    pep "(define repeat (lambda (f) (lambda (x) (f (f x)))))"
+    pep "(define (repeat f) (lambda (x) (f (f x))))"
     pep "((repeat twice) 10)"
 } -output 40\n
 

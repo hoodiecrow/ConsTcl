@@ -20,16 +20,34 @@ oo::class create ::constcl::Symbol {
     set name $n
     set caseconstant 0
   }
-  method name {} {set name}
-  method value {} {set name}
-  method = {symname} {expr {$name eq $symname}}
+  method name {} {
+    set name
+  }
+  method value {} {
+    set name
+  }
+  method = {symname} {
+    expr {$name eq $symname}
+  }
   method mkconstant {} {}
-  method constant {} {return 1}
-  method make-case-constant {} {set caseconstant 1}
-  method case-constant {} {set caseconstant}
-  method write {handle} { puts -nonewline $handle [my name] }
-  method display {} { puts -nonewline [my name] }
-  method show {} {set name}
+  method constant {} {
+    return 1
+  }
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+  method case-constant {} {
+    set caseconstant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my name]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set name
+  }
 }
 
 unset -nocomplain ::constcl::symbolTable
@@ -55,13 +73,7 @@ CB
 reg symbol? ::constcl::symbol?
 
 proc ::constcl::symbol? {val} {
-  if {[info object isa typeof $val ::constcl::Symbol]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Symbol]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Symbol
 }
 CB
 
@@ -98,7 +110,8 @@ proc ::constcl::symbol->string {sym} {
     SYMBOL expected\n([pn] [$sym show])
   }
   if {![$sym case-constant]} {
-    set str [MkString [::string tolower [$sym name]]]
+    set str [MkString [
+      ::string tolower [$sym name]]]
   } else {
     set str [MkString [$sym name]]
   }
@@ -111,7 +124,8 @@ MD(
 Example:
 
 ```
-(let ((sym 'Foobar)) (symbol->string sym))   =>  "foobar"
+(let ((sym 'Foobar))
+  (symbol->string sym))   =>  "foobar"
 ```
 MD)
 
@@ -147,9 +161,10 @@ MD(
 Example:
 
 ```
-(define sym (let ((str "Foobar")) (string->symbol str)))
-sym                                                        =>  Foobar
-(symbol->string sym)                                       =>  "Foobar"
+(define sym (let ((str "Foobar"))
+              (string->symbol str)))
+sym                                    =>  Foobar
+(symbol->string sym)                   =>  "Foobar"
 ```
 MD)
 
@@ -166,4 +181,4 @@ proc ::constcl::string->symbol {str} {
 }
 CB
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et  

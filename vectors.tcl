@@ -23,10 +23,15 @@ oo::class create ::constcl::Vector {
       lset ::constcl::vectorSpace $idx $elt
       incr idx
     }
-    set data [::constcl::cons [::constcl::MkNumber $vsa] [::constcl::MkNumber $len]]
+    set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
-  method length {} {::constcl::cdr $data}
+  method baseadr {} {
+    ::constcl::car $data
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -35,8 +40,9 @@ oo::class create ::constcl::Vector {
     lindex [my store] $k
   }
   method store {} {
-    set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] + $base - 1}]
+    set base [[my baseadr] numval]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -50,7 +56,7 @@ oo::class create ::constcl::Vector {
       if {$k < 0 || $k >= [[my length] numval]} {
         ::error "index out of range\n$k"
       }
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       lset ::constcl::vectorSpace $k+$base $obj
     }
     return [self]
@@ -59,22 +65,36 @@ oo::class create ::constcl::Vector {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
-      set base [[::constcl::car $data] numval]
+      set base [[my baseadr] numval]
       set len [[my length] numval]
-      for {set idx $base} {$idx < $len+$base} {incr idx} {
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
         lset ::constcl::vectorSpace $idx $val
       }
     }
     return [self]
   }
-  method mkconstant {} {set constant 1}
-  method constant {} {set constant}
-  method write {handle} { puts -nonewline $handle [my show]}
-  method display {} {puts -nonewline [my show]}
-  method show {} {format "#(%s)" [join [lmap val [my value] {$val show}] " "]}
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my show]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "#(%s)" [
+      join [lmap val [my value] {$val show}]]
+  }
 }
 
-interp alias {} ::constcl::MkVector {} ::constcl::Vector new
+interp alias {} ::constcl::MkVector \
+  {} ::constcl::Vector new
 CB
 
 MD(
@@ -89,20 +109,14 @@ CB
 reg vector? ::constcl::vector?
 
 proc ::constcl::vector? {val} {
-  if {[info object isa typeof $val ::constcl::Vector]} {
-    return #t
-  } elseif {[info object isa typeof [interp alias {} $val] ::constcl::Vector]} {
-    return #t
-  } else {
-    return #f
-  }
+  typeof? $val Vector
 }
 CB
 
 TT(
 
 ::tcltest::test vectors-1.0 {try vector? (and make-vector, vector)} -body {
-    pep {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pep {(vector? #(0 (2 2 2 2) "Anna"))}
     pep {(vector? (make-vector 3 #\X))}
     pep {(vector? (vector 'a 'b 'c))}
 } -output "#t\n#t\n#t\n"
@@ -124,8 +138,10 @@ MD(
 Example:
 
 ```
-(let ((k 5)) (make-vector k))                  =>  #(() () () () ())
-(let ((k 5) (fill #\A)) (make-vector k fill))  =>  #(#\A #\A #\A #\A #\A)
+(let ((k 3))
+  (make-vector k))        =>  #(() () ())
+(let ((k 3) (fill #\A))
+  (make-vector k fill))   =>  #(#\A #\A #\A)
 ```
 MD)
 
@@ -191,7 +207,7 @@ MD(
 Example:
 
 ```
-(vector-length '#(a b c))   =>  3
+(vector-length #(a b c))   =>  3
 ```
 MD)
 
@@ -217,7 +233,7 @@ TT)
 MD(
 __vector-ref__
 
-`vector-ref` returns the element of _vec_ at index _k_ (0-based).
+`vector-ref` returns the element of **vec** at index **k** (0-based).
 MD)
 
 PR(
@@ -228,7 +244,8 @@ MD(
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))   =>  b
+(let ((vec #(a b c)) (k 1))
+  (vector-ref vec k))          =>  b
 ```
 MD)
 
@@ -268,8 +285,14 @@ MD(
 Example:
 
 ```
-(let ((vec '#(a b c)) (k 1) (val 'x)) (vector-set! vec k val))           =>  *error*
-(let ((vec (vector 'a 'b 'c)) (k 1) (val 'x)) (vector-set! vec k val))   =>  #(a x c)
+(let ((vec #(a b c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  *error*
+(let ((vec (vector 'a 'b 'c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  #(a x c)
 ```
 MD)
 
@@ -310,7 +333,7 @@ MD(
 Example:
 
 ```
-(vector->list '#(a b c))   =>  (a b c)
+(vector->list #(a b c))   =>  (a b c)
 ```
 MD)
 
@@ -389,7 +412,8 @@ reg vector-fill! ::constcl::vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$fill show])
+    VECTOR expected\n([pn] [$vec show] \
+      [$fill show])
   }
   $vec fill! $fill
 }
