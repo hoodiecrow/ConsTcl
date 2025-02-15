@@ -56,7 +56,7 @@ __reg__
 `reg` registers selected built-in procedures in the definitions register. That
 way I don't need to manually keep track of and list procedures. The definitions
 register's contents will eventually get dumped into the standard
-library[#](ConsTcl#environment-startup).
+library[#](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 You can call `reg` with two values: **key** and **val**. **Key** is the string
 that will eventually become the lookup symbol in the standard library, and
@@ -703,6 +703,10 @@ the list.
 
 __parse__
 
+`parse` is the entry point into the `parse-` set of commands. It can be called
+with either a Tcl or ConsTcl string, or an input buffer (instance of IB). Once
+the input buffer is established, `parse` leaves control to `parse-expr`.
+
 <table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>inp</td><td>a Tcl string or an input buffer</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -710,13 +714,21 @@ reg parse
 
 proc ::constcl::parse {inp} {
   if {[info object isa object $inp]} {
-    set ib $inp
+    if {[typeof? $inp IB] ne "#f"} {
+      set ib $inp
+    } elseif {[typeof? $inp String] ne "#f"} {
+      set ib [IB new [$inp value]]
+    } else {
+      ::error "Unknown object [$inp show]"
+    }
   } else {
+    # It's a Tcl string, we hope
     set ib [IB new $inp]
   }
   return [parse-expr]
 }
 ```
+
 
 __parse-expr__
 
@@ -755,7 +767,8 @@ __parse-string-expr__
 
 `parse-string-expr` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression--a String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
+string expression--an immutable
+String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -767,6 +780,7 @@ proc ::constcl::parse-string-expr {} {
   while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
     set c [$ib peek]
     if {$c eq "\\"} {
+      ::append str $c
       $ib advance
       ::append str [$ib peek]
     } else {
@@ -788,8 +802,9 @@ proc ::constcl::parse-string-expr {} {
 
 __parse-sharp__
 
-`parse-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
-expressions whose external representation begins with a sharp sign.
+`parse-sharp` parses input starting with a sharp sign (#) and either produces
+the boolean literals, or delegates to the vector parser (if the next character is
+a left parenthesis) or the character parser (if it is a backslash). 
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value</td></tr></table>
 
@@ -798,9 +813,9 @@ proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
   switch [$ib peek] {
-    (    { return [parse-vector-expr] }
-    t    { $ib advance ; $ib skip-ws ; return #t }
-    f    { $ib advance ; $ib skip-ws ; return #f }
+    "("  { return [parse-vector-expr] }
+    "t"  { $ib advance ; $ib skip-ws ; return #t }
+    "f"  { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
       ::error "Illegal #-literal: #[$ib peek]"
@@ -830,8 +845,9 @@ proc ::constcl::make-constant {val} {
 
 __parse-quoted-expr__
 
-`parse-quoted-expr` parses input starting with a "'", and then parses an entire
-expression beyond that, returning it wrapped in a list with `quote`.
+`parse-quoted-expr` parses input starting with an apostrophe ("'"), and then
+parses an entire expression beyond that, returning it wrapped in a list with
+`quote`. The quoted expression is made constant.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-quoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quote symbol</td></tr></table>
 
@@ -849,13 +865,46 @@ proc ::constcl::parse-quoted-expr {} {
 
 __parse-pair-expr__
 
-The `parse-pair-expr` procedure parses input and produces a structure of
-Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+The `parse-pair-expr` procedure parses everything between two matching
+parentheses, or, as the case might be, brackets. It produces a possibly
+recursive structure of
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a
+proper list (one that ends in #NIL) or an improper one (one that has an atom as
+its last member), or in some cases an empty list.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
 
 ```
+proc ::constcl::parse-pair-expr {char} {
+  upvar ib ib
+  $ib advance
+  $ib skip-ws
+  set expr [parse-pair $char]
+  $ib skip-ws
+  if {[$ib peek] ne $char} {
+    if {$char eq ")"} {
+      ::error \
+        "Missing right paren. ([$ib peek])."
+    } else {
+      ::error \
+        "Missing right bracket ([$ib peek])."
+    }
+  }
+  $ib advance
+  $ib skip-ws
+  return $expr
+}
+```
 
+`parse-pair` is a helper procedure that does the heavy lifting in parsing a pair
+structure. First it checks if the list is empty, returning #NIL in that case.
+Then it parses the first element in the list and then repeatedly the rest of
+them. If it parses a Dot object, the following element to be read is the tail of
+an improper list. When `parse-pair` has reached the ending parenthesis or
+bracket, it conses up the elements starting from the last, and returns the head
+of the list.
+
+```
 proc ::constcl::parse-pair {char} {
   upvar ib ib
   if {[$ib find $char]} {
@@ -881,26 +930,6 @@ proc ::constcl::parse-pair {char} {
     set prev [cons $r $prev]
   }
   return $prev
-}
-
-proc ::constcl::parse-pair-expr {char} {
-  upvar ib ib
-  $ib advance
-  $ib skip-ws
-  set expr [parse-pair $char]
-  $ib skip-ws
-  if {[$ib peek] ne $char} {
-    if {$char eq ")"} {
-      ::error \
-        "Missing right paren. ([$ib peek])."
-    } else {
-      ::error \
-        "Missing right bracket ([$ib peek])."
-    }
-  }
-  $ib advance
-  $ib skip-ws
-  return $expr
 }
 ```
 
@@ -1304,6 +1333,7 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
+      ::append str $v
       set c [readc]
     }
     ::append str $c
@@ -4196,7 +4226,9 @@ proc ::constcl::not {val} {
 
 ### Characters
 
-Characters are any Unicode printing character, and also space and newline space characters.
+Characters are any Unicode printing character, and also space and newline space
+characters. External representation is '#\A' (change A to relevant character)
+or #\space or #\newline. Internal representation is simply a Tcl character.
 
 __Char__ class
 
@@ -4205,31 +4237,21 @@ oo::class create ::constcl::Char {
   superclass ::constcl::NIL
   variable value
   constructor {v} {
-    if {[regexp \
-      {^#\\([[:graph:]]|space|newline)$} $v]} {
-      set value $v
-    } else {
-      if {$v eq "#\\ "} {
-        set value #\\space
-      } elseif {$v eq "#\\\n"} {
-        set value #\\newline
-      } else {
-        ::error "CHAR expected\n$v"
+    switch -regexp $v {
+      {(?i)#\\space} {
+        set v " "
+      }
+      {(?i)#\\newline} {
+        set v "\n"
+      }
+      {#\\[[:graph:]]} {
+        set v [::string index $v 2]
       }
     }
+    set value $v
   }
   method char {} {
-    switch $value {
-      "#\\space" {
-        return " "
-      }
-      "#\\newline" {
-        return "\n"
-      }
-      default {
-        return [::string index [my value] 2]
-      }
-    }
+    set value
   }
   method alphabetic? {} {
     if {[::string is alpha -strict [my char]]} {
@@ -4273,25 +4295,37 @@ oo::class create ::constcl::Char {
   method value {} {
     return $value
   }
+  method external {} {
+    switch $value {
+      " " {
+        return "#\\space"
+      }
+      "\n" {
+        return "#\\newline"
+      }
+      default {
+        return "#\\$value"
+      }
+    }
+  }
   method write {handle} {
-    puts -nonewline $handle $value
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my char]
   }
   method show {} {
-    set value
+    my external
   }
 }
 
 proc ::constcl::MkChar {v} {
-  if {[regexp -nocase \
-    {^#\\(space|newline)$} $v]} {
-    set v [::string tolower $v]
+  if {[regexp -nocase {space|newline} $v]} {
+      set v [::string tolower $v]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance value] eq $v} {
+    if {[$instance external] eq $v} {
       return $instance
     }
   }
@@ -5880,11 +5914,20 @@ Procedures for dealing with strings of characters.
 
 __String__ class
 
+Strings have the internal representation of a vector of character objects, with
+the data elements of the vector address of the first element, and the length of
+the vector. External representation is surrounded by double quotes, with double
+quotes and backslashes within the string escaped with a backslash.
+
+As a ConsTcl extension, a backslash+n pair in the external representation is
+stored as a newline character. It is restored to backslash+n on write.
+
 ```
 oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
     set idx $vsa
@@ -5967,20 +6010,25 @@ oo::class create ::constcl::String {
   method constant {} {
     set constant
   }
+  method external {} {
+    return "\"[
+      string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
+  }
   method write {handle} {
-    puts -nonewline $handle "\"[my value]\""
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my value]
   }
   method show {} {
-    format "\"[my value]\""
+    my external
   }
 }
 
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 ```
+
 
 <table border=1><thead><tr><th colspan=2 align="left">string? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 

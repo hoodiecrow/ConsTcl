@@ -2,7 +2,9 @@
 MD(
 ### Characters
 
-Characters are any Unicode printing character, and also space and newline space characters.
+Characters are any Unicode printing character, and also space and newline space
+characters. External representation is '#\A' (change A to relevant character)
+or #\space or #\newline. Internal representation is simply a Tcl character.
 
 __Char__ class
 MD)
@@ -12,31 +14,21 @@ oo::class create ::constcl::Char {
   superclass ::constcl::NIL
   variable value
   constructor {v} {
-    if {[regexp \
-      {^#\\([[:graph:]]|space|newline)$} $v]} {
-      set value $v
-    } else {
-      if {$v eq "#\\ "} {
-        set value #\\space
-      } elseif {$v eq "#\\\n"} {
-        set value #\\newline
-      } else {
-        ::error "CHAR expected\n$v"
+    switch -regexp $v {
+      {(?i)#\\space} {
+        set v " "
+      }
+      {(?i)#\\newline} {
+        set v "\n"
+      }
+      {#\\[[:graph:]]} {
+        set v [::string index $v 2]
       }
     }
+    set value $v
   }
   method char {} {
-    switch $value {
-      "#\\space" {
-        return " "
-      }
-      "#\\newline" {
-        return "\n"
-      }
-      default {
-        return [::string index [my value] 2]
-      }
-    }
+    set value
   }
   method alphabetic? {} {
     if {[::string is alpha -strict [my char]]} {
@@ -80,25 +72,37 @@ oo::class create ::constcl::Char {
   method value {} {
     return $value
   }
+  method external {} {
+    switch $value {
+      " " {
+        return "#\\space"
+      }
+      "\n" {
+        return "#\\newline"
+      }
+      default {
+        return "#\\$value"
+      }
+    }
+  }
   method write {handle} {
-    puts -nonewline $handle $value
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my char]
   }
   method show {} {
-    set value
+    my external
   }
 }
 
 proc ::constcl::MkChar {v} {
-  if {[regexp -nocase \
-    {^#\\(space|newline)$} $v]} {
-    set v [::string tolower $v]
+  if {[regexp -nocase {space|newline} $v]} {
+      set v [::string tolower $v]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance value] eq $v} {
+    if {[$instance external] eq $v} {
       return $instance
     }
   }

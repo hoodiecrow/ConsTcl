@@ -371,12 +371,20 @@ reg parse
 
 proc ::constcl::parse {inp} {
   if {[info object isa object $inp]} {
-    set ib $inp
+    if {[typeof? $inp IB] ne "#f"} {
+      set ib $inp
+    } elseif {[typeof? $inp String] ne "#f"} {
+      set ib [IB new [$inp value]]
+    } else {
+      ::error "Unknown object [$inp show]"
+    }
   } else {
+    # It's a Tcl string, we hope
     set ib [IB new $inp]
   }
   return [parse-expr]
 }
+
 
 
 
@@ -412,6 +420,7 @@ proc ::constcl::parse-string-expr {} {
   while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
     set c [$ib peek]
     if {$c eq "\\"} {
+      ::append str $c
       $ib advance
       ::append str [$ib peek]
     } else {
@@ -436,9 +445,9 @@ proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
   switch [$ib peek] {
-    (    { return [parse-vector-expr] }
-    t    { $ib advance ; $ib skip-ws ; return #t }
-    f    { $ib advance ; $ib skip-ws ; return #f }
+    "("  { return [parse-vector-expr] }
+    "t"  { $ib advance ; $ib skip-ws ; return #t }
+    "f"  { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
       ::error "Illegal #-literal: #[$ib peek]"
@@ -473,6 +482,26 @@ proc ::constcl::parse-quoted-expr {} {
 
 
 
+proc ::constcl::parse-pair-expr {char} {
+  upvar ib ib
+  $ib advance
+  $ib skip-ws
+  set expr [parse-pair $char]
+  $ib skip-ws
+  if {[$ib peek] ne $char} {
+    if {$char eq ")"} {
+      ::error \
+        "Missing right paren. ([$ib peek])."
+    } else {
+      ::error \
+        "Missing right bracket ([$ib peek])."
+    }
+  }
+  $ib advance
+  $ib skip-ws
+  return $expr
+}
+
 
 proc ::constcl::parse-pair {char} {
   upvar ib ib
@@ -499,26 +528,6 @@ proc ::constcl::parse-pair {char} {
     set prev [cons $r $prev]
   }
   return $prev
-}
-
-proc ::constcl::parse-pair-expr {char} {
-  upvar ib ib
-  $ib advance
-  $ib skip-ws
-  set expr [parse-pair $char]
-  $ib skip-ws
-  if {[$ib peek] ne $char} {
-    if {$char eq ")"} {
-      ::error \
-        "Missing right paren. ([$ib peek])."
-    } else {
-      ::error \
-        "Missing right bracket ([$ib peek])."
-    }
-  }
-  $ib advance
-  $ib skip-ws
-  return $expr
 }
 
 
@@ -806,6 +815,7 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
+      ::append str $v
       set c [readc]
     }
     ::append str $c
@@ -2803,31 +2813,21 @@ oo::class create ::constcl::Char {
   superclass ::constcl::NIL
   variable value
   constructor {v} {
-    if {[regexp \
-      {^#\\([[:graph:]]|space|newline)$} $v]} {
-      set value $v
-    } else {
-      if {$v eq "#\\ "} {
-        set value #\\space
-      } elseif {$v eq "#\\\n"} {
-        set value #\\newline
-      } else {
-        ::error "CHAR expected\n$v"
+    switch -regexp $v {
+      {(?i)#\\space} {
+        set v " "
+      }
+      {(?i)#\\newline} {
+        set v "\n"
+      }
+      {#\\[[:graph:]]} {
+        set v [::string index $v 2]
       }
     }
+    set value $v
   }
   method char {} {
-    switch $value {
-      "#\\space" {
-        return " "
-      }
-      "#\\newline" {
-        return "\n"
-      }
-      default {
-        return [::string index [my value] 2]
-      }
-    }
+    set value
   }
   method alphabetic? {} {
     if {[::string is alpha -strict [my char]]} {
@@ -2871,25 +2871,37 @@ oo::class create ::constcl::Char {
   method value {} {
     return $value
   }
+  method external {} {
+    switch $value {
+      " " {
+        return "#\\space"
+      }
+      "\n" {
+        return "#\\newline"
+      }
+      default {
+        return "#\\$value"
+      }
+    }
+  }
   method write {handle} {
-    puts -nonewline $handle $value
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my char]
   }
   method show {} {
-    set value
+    my external
   }
 }
 
 proc ::constcl::MkChar {v} {
-  if {[regexp -nocase \
-    {^#\\(space|newline)$} $v]} {
-    set v [::string tolower $v]
+  if {[regexp -nocase {space|newline} $v]} {
+      set v [::string tolower $v]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance value] eq $v} {
+    if {[$instance external] eq $v} {
       return $instance
     }
   }
@@ -4023,6 +4035,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
     set idx $vsa
@@ -4105,19 +4118,24 @@ oo::class create ::constcl::String {
   method constant {} {
     set constant
   }
+  method external {} {
+    return "\"[
+      string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
+  }
   method write {handle} {
-    puts -nonewline $handle "\"[my value]\""
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my value]
   }
   method show {} {
-    format "\"[my value]\""
+    my external
   }
 }
 
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
+
 
 
 reg string?

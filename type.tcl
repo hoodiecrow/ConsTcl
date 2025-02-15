@@ -25,7 +25,7 @@ __reg__
 `reg` registers selected built-in procedures in the definitions register. That
 way I don't need to manually keep track of and list procedures. The definitions
 register's contents will eventually get dumped into the standard
-library[#](ConsTcl#environment-startup).
+library[#](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 You can call `reg` with two values: **key** and **val**. **Key** is the string
 that will eventually become the lookup symbol in the standard library, and

@@ -5,6 +5,14 @@ MD(
 Procedures for dealing with strings of characters.
 
 __String__ class
+
+Strings have the internal representation of a vector of character objects, with
+the data elements of the vector address of the first element, and the length of
+the vector. External representation is surrounded by double quotes, with double
+quotes and backslashes within the string escaped with a backslash.
+
+As a ConsTcl extension, a backslash+n pair in the external representation is
+stored as a newline character. It is restored to backslash+n on write.
 MD)
 
 CB
@@ -12,6 +20,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
     set idx $vsa
@@ -94,20 +103,44 @@ oo::class create ::constcl::String {
   method constant {} {
     set constant
   }
+  method external {} {
+    return "\"[
+      string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
+  }
   method write {handle} {
-    puts -nonewline $handle "\"[my value]\""
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my value]
   }
   method show {} {
-    format "\"[my value]\""
+    my external
   }
 }
 
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 CB
+
+TT(
+::tcltest::test strings-1.0 {try reading a string} -body {
+    set o [p {"foo bar baz"}]
+    puts [$o value]
+} -output {foo bar baz
+}
+
+::tcltest::test strings-1.1 {try reading a string} -body {
+    set o [p {"foo \"bar\" baz\nqux\\bod"}]
+    puts [$o value]
+} -output {foo "bar" baz
+qux\bod
+}
+
+::tcltest::test strings-1.2 {try printing a read string} -body {
+    pp {"foo \"bar\" baz\nqux\\bod"}
+} -output {"foo \"bar\" baz\nqux\\bod"
+}
+TT)
 
 PR(
 string? (public);val val -> bool
@@ -123,7 +156,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.0 {try string?} -body {
+::tcltest::test strings-2.0 {try string?} -body {
     pep {(string? "foo bar")}
     pep {(string? 'foo-bar)}
 } -output "#t\n#f\n"
@@ -169,7 +202,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.1 {try make-string} -body {
+::tcltest::test strings-3.0 {try make-string} -body {
     pep {(make-string 5 #\x)}
 } -output "\"xxxxx\"\n"
 
@@ -211,11 +244,11 @@ CB
 
 TT(
 
-::tcltest::test strings-1.2 {try string} -body {
+::tcltest::test strings-4.0 {try string} -body {
     pep {(string #\f #\o #\o)}
 } -output "\"foo\"\n"
 
-::tcltest::test strings-1.3 {try string} -body {
+::tcltest::test strings-4.1 {try string} -body {
     pep {(string #\f #\o 'a #\o)}
 } -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
 
@@ -252,7 +285,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.4 {try string-length} -body {
+::tcltest::test strings-5.0 {try string-length} -body {
     pep {(string-length "foo bar")}
 } -output "7\n"
 
@@ -294,7 +327,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.5 {try string-ref} -body {
+::tcltest::test strings-6.0 {try string-ref} -body {
     pep {(string-ref "foo bar" 4)}
 } -output "#\\b\n"
 
@@ -344,17 +377,17 @@ CB
 
 TT(
 
-::tcltest::test strings-1.6 {try string-set!} -body {
+::tcltest::test strings-7.0 {try string-set!} -body {
     pep {(string-set! (string #\f #\o #\o) 0 #\x)}
 } -output "\"xoo\"\n"
 
-::tcltest::test strings-1.7 {try string-set!} -body {
+::tcltest::test strings-7.1 {try string-set!} -body {
     pep {(define f (lambda () (make-string 3 #\*)))}
     pep {(define g (lambda () "***"))}
     pep {(string-set! (f) 0 #\?)}
 } -output "\"?**\"\n"
 
-::tcltest::test strings-1.8 {try string-set!} -body {
+::tcltest::test strings-7.2 {try string-set!} -body {
     pep {(string-set! (g) 0 #\?)}
 } -returnCodes error -result "string is constant"
 
@@ -410,7 +443,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.9 {try string=?} -body {
+::tcltest::test strings-8.0 {try string=?} -body {
     pep {(string=? "foo bar" "faa bor")}
     pep {(string=? "foo bar" "foo bar")}
     pep {(string=? "foo bar" "Foo bar")}
@@ -441,7 +474,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.10 {try string-ci=?} -body {
+::tcltest::test strings-9.0 {try string-ci=?} -body {
     pep {(string-ci=? "foo bar" "faa bor")}
     pep {(string-ci=? "foo bar" "foo bar")}
     pep {(string-ci=? "foo bar" "Foo bar")}
@@ -471,7 +504,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.11 {try string<?} -body {
+::tcltest::test strings-10.0 {try string<?} -body {
     pep {(string<? "bar" "car")}
     pep {(string<? "bar" "bar")}
     pep {(string<? "bar" "aar")}
@@ -502,7 +535,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.12 {try string-ci<?} -body {
+::tcltest::test strings-11.0 {try string-ci<?} -body {
     pep {(string-ci<? "bar" "Car")}
     pep {(string-ci<? "bar" "Bar")}
     pep {(string-ci<? "bar" "Aar")}
@@ -532,7 +565,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.13 {try string>?} -body {
+::tcltest::test strings-12.0 {try string>?} -body {
     pep {(string>? "bar" "car")}
     pep {(string>? "bar" "bar")}
     pep {(string>? "bar" "aar")}
@@ -563,7 +596,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.14 {try string-ci>?} -body {
+::tcltest::test strings-13.0 {try string-ci>?} -body {
     pep {(string-ci>? "bar" "Car")}
     pep {(string-ci>? "bar" "Bar")}
     pep {(string-ci>? "bar" "Aar")}
@@ -593,7 +626,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.15 {try string<=?} -body {
+::tcltest::test strings-14.0 {try string<=?} -body {
     pep {(string<=? "bar" "car")}
     pep {(string<=? "bar" "bar")}
     pep {(string<=? "bar" "aar")}
@@ -624,7 +657,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.16 {try string-ci<=?} -body {
+::tcltest::test strings-15.0 {try string-ci<=?} -body {
     pep {(string-ci<=? "bar" "Car")}
     pep {(string-ci<=? "bar" "Bar")}
     pep {(string-ci<=? "bar" "Aar")}
@@ -654,7 +687,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.17 {try string>=?} -body {
+::tcltest::test strings-16.0 {try string>=?} -body {
     pep {(string>=? "bar" "car")}
     pep {(string>=? "bar" "bar")}
     pep {(string>=? "bar" "aar")}
@@ -685,7 +718,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.18 {try string-ci>=?} -body {
+::tcltest::test strings-17.0 {try string-ci>=?} -body {
     pep {(string-ci>=? "bar" "Car")}
     pep {(string-ci>=? "bar" "Bar")}
     pep {(string-ci>=? "bar" "Aar")}
@@ -733,7 +766,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.19 {try substring} -body {
+::tcltest::test strings-18.0 {try substring} -body {
     pep {(substring "foo bar" 0 2)}
 } -output "\"foo\"\n"
 
@@ -769,7 +802,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.20 {try string-append} -body {
+::tcltest::test strings-19.0 {try string-append} -body {
     pep {(string-append "foo" " bar")}
 } -output "\"foo bar\"\n"
 
@@ -803,7 +836,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.21 {try string->list} -body {
+::tcltest::test strings-20.0 {try string->list} -body {
     pep {(string->list "foo")}
 } -output "(#\\f #\\o #\\o)\n"
 
@@ -838,7 +871,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.22 {try list->string} -body {
+::tcltest::test strings-21.0 {try list->string} -body {
     pep {(list->string '(#\f #\o #\o))}
 } -output "\"foo\"\n"
 
@@ -878,7 +911,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.23 {try string-copy} -body {
+::tcltest::test strings-22.0 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
     pep {(define y "foobar")}
@@ -924,7 +957,7 @@ CB
 
 TT(
 
-::tcltest::test strings-1.24 {try string-fill!} -body {
+::tcltest::test strings-23.0 {try string-fill!} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-fill! x #\x)}
 } -output "\"xxx\"\n"

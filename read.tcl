@@ -197,6 +197,10 @@ the list.
 #### The parsing library
 
 __parse__
+
+`parse` is the entry point into the `parse-` set of commands. It can be called
+with either a Tcl or ConsTcl string, or an input buffer (instance of IB). Once
+the input buffer is established, `parse` leaves control to `parse-expr`.
 MD)
 
 PR(
@@ -208,13 +212,34 @@ reg parse
 
 proc ::constcl::parse {inp} {
   if {[info object isa object $inp]} {
-    set ib $inp
+    if {[typeof? $inp IB] ne "#f"} {
+      set ib $inp
+    } elseif {[typeof? $inp String] ne "#f"} {
+      set ib [IB new [$inp value]]
+    } else {
+      ::error "Unknown object [$inp show]"
+    }
   } else {
+    # It's a Tcl string, we hope
     set ib [IB new $inp]
   }
   return [parse-expr]
 }
 CB
+
+TT(
+::tcltest::test parse-1.0 {try parse in ConsTcl} -body {
+  pep {(parse "42")}
+} -output "42\n"
+
+::tcltest::test parse-1.1 {try parse with IB buffer} -body {
+  pp [::constcl::IB new "42"]
+} -output "42\n"
+
+::tcltest::test parse-1.1 {try parse with string} -body {
+  pp "42"
+} -output "42\n"
+TT)
 
 MD(
 __parse-expr__
@@ -258,7 +283,8 @@ __parse-string-expr__
 
 `parse-string-expr` parses input starting with a double quote and collects
 characters until it reaches another (unescaped) double quote. It then returns a
-string expression--a String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
+string expression--an immutable
+String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 MD)
 
 PR(
@@ -273,6 +299,7 @@ proc ::constcl::parse-string-expr {} {
   while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
     set c [$ib peek]
     if {$c eq "\\"} {
+      ::append str $c
       $ib advance
       ::append str [$ib peek]
     } else {
@@ -293,13 +320,13 @@ CB
 
 TT(
 
-::tcltest::test parse-4.0 {try reading a string} {
-    set expr [::constcl::parse {"foo bar"}]
+::tcltest::test parse-2.0 {try reading a string} {
+    set expr [p {"foo bar"}]
     $expr value
 } "foo bar"
 
-::tcltest::test parse-4.1 {try reading a string} {
-    set expr [::constcl::parse {"\"foo\" \\ bar"}]
+::tcltest::test parse-2.1 {try reading a string} {
+    set expr [p {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
 
@@ -308,8 +335,9 @@ TT)
 MD(
 __parse-sharp__
 
-`parse-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
-expressions whose external representation begins with a sharp sign.
+`parse-sharp` parses input starting with a sharp sign (#) and either produces
+the boolean literals, or delegates to the vector parser (if the next character is
+a left parenthesis) or the character parser (if it is a backslash). 
 MD)
 
 PR(
@@ -321,9 +349,9 @@ proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
   switch [$ib peek] {
-    (    { return [parse-vector-expr] }
-    t    { $ib advance ; $ib skip-ws ; return #t }
-    f    { $ib advance ; $ib skip-ws ; return #f }
+    "("  { return [parse-vector-expr] }
+    "t"  { $ib advance ; $ib skip-ws ; return #t }
+    "f"  { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
       ::error "Illegal #-literal: #[$ib peek]"
@@ -356,8 +384,9 @@ CB
 MD(
 __parse-quoted-expr__
 
-`parse-quoted-expr` parses input starting with a "'", and then parses an entire
-expression beyond that, returning it wrapped in a list with `quote`.
+`parse-quoted-expr` parses input starting with an apostrophe ("'"), and then
+parses an entire expression beyond that, returning it wrapped in a list with
+`quote`. The quoted expression is made constant.
 MD)
 
 PR(
@@ -377,7 +406,7 @@ CB
 
 TT(
 
-::tcltest::test parse-1.0 {try reading quoted symbol} -body {
+::tcltest::test parse-3.0 {try reading quoted symbol} -body {
     pp "'foo"
 } -output "(quote foo)\n"
 
@@ -386,8 +415,12 @@ TT)
 MD(
 __parse-pair-expr__
 
-The `parse-pair-expr` procedure parses input and produces a structure of
-Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+The `parse-pair-expr` procedure parses everything between two matching
+parentheses, or, as the case might be, brackets. It produces a possibly
+recursive structure of
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a
+proper list (one that ends in #NIL) or an improper one (one that has an atom as
+its last member), or in some cases an empty list.
 MD)
 
 PR(
@@ -395,7 +428,38 @@ parse-pair-expr (internal);char pterm -> pstr
 PR)
 
 CB
+proc ::constcl::parse-pair-expr {char} {
+  upvar ib ib
+  $ib advance
+  $ib skip-ws
+  set expr [parse-pair $char]
+  $ib skip-ws
+  if {[$ib peek] ne $char} {
+    if {$char eq ")"} {
+      ::error \
+        "Missing right paren. ([$ib peek])."
+    } else {
+      ::error \
+        "Missing right bracket ([$ib peek])."
+    }
+  }
+  $ib advance
+  $ib skip-ws
+  return $expr
+}
+CB
 
+MD(
+`parse-pair` is a helper procedure that does the heavy lifting in parsing a pair
+structure. First it checks if the list is empty, returning #NIL in that case.
+Then it parses the first element in the list and then repeatedly the rest of
+them. If it parses a Dot object, the following element to be read is the tail of
+an improper list. When `parse-pair` has reached the ending parenthesis or
+bracket, it conses up the elements starting from the last, and returns the head
+of the list.
+MD)
+
+CB
 proc ::constcl::parse-pair {char} {
   upvar ib ib
   if {[$ib find $char]} {
@@ -422,69 +486,47 @@ proc ::constcl::parse-pair {char} {
   }
   return $prev
 }
-
-proc ::constcl::parse-pair-expr {char} {
-  upvar ib ib
-  $ib advance
-  $ib skip-ws
-  set expr [parse-pair $char]
-  $ib skip-ws
-  if {[$ib peek] ne $char} {
-    if {$char eq ")"} {
-      ::error \
-        "Missing right paren. ([$ib peek])."
-    } else {
-      ::error \
-        "Missing right bracket ([$ib peek])."
-    }
-  }
-  $ib advance
-  $ib skip-ws
-  return $expr
-}
 CB
 
 TT(
-::tcltest::test parse-6.0 {try reading an improper list} -body {
+::tcltest::test parse-4.0 {try reading an improper list} -body {
     pp "(a . b)"
 } -output "(a . b)\n"
 
-::tcltest::test parse-6.1 {try reading an improper list} -body {
+::tcltest::test parse-4.1 {try reading an improper list} -body {
     pp "(a b . c)"
 } -output "(a b . c)\n"
 
-::tcltest::test parse-1.1 {try reading a list} -body {
-    namespace eval ::constcl {
-        set expr [::constcl::parse "(a (b))"]
-        [caadr $expr] name
-    }
+::tcltest::test parse-4.2 {try reading a list} -body {
+    set expr [p "(a (b))"]
+    [::constcl::caadr $expr] name
 } -result "b"
 
-::tcltest::test parse-1.2 {try reading a list} -body {
+::tcltest::test parse-4.3 {try reading a list} -body {
     pp "(a)"
 } -output "(a)\n"
 
-::tcltest::test parse-1.3 {try reading a list} -body {
+::tcltest::test parse-4.4 {try reading a list} -body {
     pp "(a b)"
 } -output "(a b)\n"
 
-::tcltest::test parse-1.4 {try reading a list} -body {
+::tcltest::test parse-4.5 {try reading a list} -body {
     pp "(a b c)"
 } -output "(a b c)\n"
 
-::tcltest::test parse-1.5 {try reading a list} -body {
+::tcltest::test parse-4.6 {try reading a list} -body {
     pp "(a b c d)"
 } -output "(a b c d)\n"
 
-::tcltest::test parse-1.6 {try reading a list} -body {
+::tcltest::test parse-4.7 {try reading a list} -body {
     pp "(a b c d e)"
 } -output "(a b c d e)\n"
 
-::tcltest::test parse-1.7 {try reading a list} -body {
+::tcltest::test parse-4.8 {try reading a list} -body {
     pp "(a (b) )"
 } -output "(a (b))\n"
 
-::tcltest::test parse-1.8 {try reading a list} -body {
+::tcltest::test parse-4.9 {try reading a list} -body {
     pp "(a (b))"
 } -output "(a (b))\n"
 
@@ -550,7 +592,7 @@ CB
 
 TT(
 
-::tcltest::test parse-1.9 {try reading unquoted symbol} -body {
+::tcltest::test parse-5.0 {try reading unquoted symbol} -body {
     pp ",foo"
 } -output "(unquote foo)\n"
 
@@ -579,7 +621,7 @@ CB
 
 TT(
 
-::tcltest::test parse-1.10 {try reading unquoted symbol} -body {
+::tcltest::test parse-6.0 {try reading unquoted symbol} -body {
     pp "`(list 1 2 ,@foo)"
 } -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
 
@@ -632,37 +674,37 @@ proc ::constcl::parse-number-expr {} {
 CB
 
 TT(
-::tcltest::test parse-2.0 {try reading a number} {
+::tcltest::test parse-7.0 {try reading a number} {
     set obj [::constcl::parse "99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test parse-2.1 {try reading a number} {
+::tcltest::test parse-7.1 {try reading a number} {
     set obj [::constcl::parse "     99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test parse-2.2 {try reading a number} {
+::tcltest::test parse-7.2 {try reading a number} {
     set obj [::constcl::parse "     9"]
     $obj value
 } "9"
 
-::tcltest::test parse-2.3 {try reading a number} {
+::tcltest::test parse-7.3 {try reading a number} {
     set obj [::constcl::parse "     +9"]
     $obj value
 } "+9"
 
-::tcltest::test parse-2.4 {try reading a number} {
+::tcltest::test parse-7.4 {try reading a number} {
     set obj [::constcl::parse "     -9"]
     $obj value
 } "-9"
 
-::tcltest::test parse-2.5 {try reading a number} {
+::tcltest::test parse-7.5 {try reading a number} {
     set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
-::tcltest::test parse-2.6 {try reading a number} {
+::tcltest::test parse-7.6 {try reading a number} {
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
@@ -695,18 +737,18 @@ CB
 
 TT(
 
-::tcltest::test parse-5.0 {try reading an identifier} {
+::tcltest::test parse-8.0 {try reading an identifier} {
     set expr [::constcl::parse [::constcl::IB new "foo"]]
     $expr name
 } "foo"
 
-::tcltest::test parse-5.1 {try reading an identifier} -body {
+::tcltest::test parse-8.1 {try reading an identifier} -body {
     set ib [::constcl::IB new "+foo"]
     set expr [::constcl::parse-identifier-expr]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
-::tcltest::test parse-5.2 {try reading an identifier} -body {
+::tcltest::test parse-8.2 {try reading an identifier} -body {
     ::constcl::IB create ib-read-5.2 "let"
     set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
@@ -766,22 +808,22 @@ CB
 
 TT(
 
-::tcltest::test parse-3.0 {try reading a character} {
+::tcltest::test parse-9.0 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new {#\A}]]
     $expr char
 } "A"
 
-::tcltest::test parse-3.1 {try reading a character} {
+::tcltest::test parse-9.1 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\space"]]
     $expr char
 } " "
 
-::tcltest::test parse-3.2 {try reading a character} {
+::tcltest::test parse-9.2 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
     $expr char
 } "\n"
 
-::tcltest::test parse-3.3 {try reading a character} -body {
+::tcltest::test parse-9.3 {try reading a character} -body {
     set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
@@ -821,7 +863,7 @@ CB
 
 TT(
 
-::tcltest::test parse-6.0 {try reading a vector} -body {
+::tcltest::test parse-10.0 {try reading a vector} -body {
     pp "#(1 2 3)"
 } -output "#(1 2 3)\n"
 
@@ -1216,6 +1258,7 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
+      ::append str $v
       set c [readc]
     }
     ::append str $c

@@ -1,129 +1,139 @@
 package require tcltest
 source constcl.tcl
 
+::tcltest::test parse-1.0 {try parse in ConsTcl} -body {
+  pep {(parse "42")}
+} -output "42\n"
 
-::tcltest::test parse-4.0 {try reading a string} {
-    set expr [::constcl::parse {"foo bar"}]
+::tcltest::test parse-1.1 {try parse with IB buffer} -body {
+  pp [::constcl::IB new "42"]
+} -output "42\n"
+
+::tcltest::test parse-1.1 {try parse with string} -body {
+  pp "42"
+} -output "42\n"
+
+
+::tcltest::test parse-2.0 {try reading a string} {
+    set expr [p {"foo bar"}]
     $expr value
 } "foo bar"
 
-::tcltest::test parse-4.1 {try reading a string} {
-    set expr [::constcl::parse {"\"foo\" \\ bar"}]
+::tcltest::test parse-2.1 {try reading a string} {
+    set expr [p {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
 
 
 
-::tcltest::test parse-1.0 {try reading quoted symbol} -body {
+::tcltest::test parse-3.0 {try reading quoted symbol} -body {
     pp "'foo"
 } -output "(quote foo)\n"
 
 
-::tcltest::test parse-6.0 {try reading an improper list} -body {
+::tcltest::test parse-4.0 {try reading an improper list} -body {
     pp "(a . b)"
 } -output "(a . b)\n"
 
-::tcltest::test parse-6.1 {try reading an improper list} -body {
+::tcltest::test parse-4.1 {try reading an improper list} -body {
     pp "(a b . c)"
 } -output "(a b . c)\n"
 
-::tcltest::test parse-1.1 {try reading a list} -body {
-    namespace eval ::constcl {
-        set expr [::constcl::parse "(a (b))"]
-        [caadr $expr] name
-    }
+::tcltest::test parse-4.2 {try reading a list} -body {
+    set expr [p "(a (b))"]
+    [::constcl::caadr $expr] name
 } -result "b"
 
-::tcltest::test parse-1.2 {try reading a list} -body {
+::tcltest::test parse-4.3 {try reading a list} -body {
     pp "(a)"
 } -output "(a)\n"
 
-::tcltest::test parse-1.3 {try reading a list} -body {
+::tcltest::test parse-4.4 {try reading a list} -body {
     pp "(a b)"
 } -output "(a b)\n"
 
-::tcltest::test parse-1.4 {try reading a list} -body {
+::tcltest::test parse-4.5 {try reading a list} -body {
     pp "(a b c)"
 } -output "(a b c)\n"
 
-::tcltest::test parse-1.5 {try reading a list} -body {
+::tcltest::test parse-4.6 {try reading a list} -body {
     pp "(a b c d)"
 } -output "(a b c d)\n"
 
-::tcltest::test parse-1.6 {try reading a list} -body {
+::tcltest::test parse-4.7 {try reading a list} -body {
     pp "(a b c d e)"
 } -output "(a b c d e)\n"
 
-::tcltest::test parse-1.7 {try reading a list} -body {
+::tcltest::test parse-4.8 {try reading a list} -body {
     pp "(a (b) )"
 } -output "(a (b))\n"
 
-::tcltest::test parse-1.8 {try reading a list} -body {
+::tcltest::test parse-4.9 {try reading a list} -body {
     pp "(a (b))"
 } -output "(a (b))\n"
 
 
 
-::tcltest::test parse-1.9 {try reading unquoted symbol} -body {
+::tcltest::test parse-5.0 {try reading unquoted symbol} -body {
     pp ",foo"
 } -output "(unquote foo)\n"
 
 
 
-::tcltest::test parse-1.10 {try reading unquoted symbol} -body {
+::tcltest::test parse-6.0 {try reading unquoted symbol} -body {
     pp "`(list 1 2 ,@foo)"
 } -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
 
 
-::tcltest::test parse-2.0 {try reading a number} {
+::tcltest::test parse-7.0 {try reading a number} {
     set obj [::constcl::parse "99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test parse-2.1 {try reading a number} {
+::tcltest::test parse-7.1 {try reading a number} {
     set obj [::constcl::parse "     99.99"]
     $obj value
 } "99.99"
 
-::tcltest::test parse-2.2 {try reading a number} {
+::tcltest::test parse-7.2 {try reading a number} {
     set obj [::constcl::parse "     9"]
     $obj value
 } "9"
 
-::tcltest::test parse-2.3 {try reading a number} {
+::tcltest::test parse-7.3 {try reading a number} {
     set obj [::constcl::parse "     +9"]
     $obj value
 } "+9"
 
-::tcltest::test parse-2.4 {try reading a number} {
+::tcltest::test parse-7.4 {try reading a number} {
     set obj [::constcl::parse "     -9"]
     $obj value
 } "-9"
 
-::tcltest::test parse-2.5 {try reading a number} {
+::tcltest::test parse-7.5 {try reading a number} {
     set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
-::tcltest::test parse-2.6 {try reading a number} {
+::tcltest::test parse-7.6 {try reading a number} {
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
 
 
 
-::tcltest::test parse-5.0 {try reading an identifier} {
+::tcltest::test parse-8.0 {try reading an identifier} {
     set expr [::constcl::parse [::constcl::IB new "foo"]]
     $expr name
 } "foo"
 
-::tcltest::test parse-5.1 {try reading an identifier} -body {
+::tcltest::test parse-8.1 {try reading an identifier} -body {
     set ib [::constcl::IB new "+foo"]
     set expr [::constcl::parse-identifier-expr]
     $expr name
 } -returnCodes error -result "Identifier expected (+foo)"
 
-::tcltest::test parse-5.2 {try reading an identifier} -body {
+::tcltest::test parse-8.2 {try reading an identifier} -body {
     ::constcl::IB create ib-read-5.2 "let"
     set expr [::constcl::parse ib-read-5.2]
     ::constcl::varcheck [$expr name]
@@ -131,29 +141,29 @@ source constcl.tcl
 
 
 
-::tcltest::test parse-3.0 {try reading a character} {
+::tcltest::test parse-9.0 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new {#\A}]]
     $expr char
 } "A"
 
-::tcltest::test parse-3.1 {try reading a character} {
+::tcltest::test parse-9.1 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\space"]]
     $expr char
 } " "
 
-::tcltest::test parse-3.2 {try reading a character} {
+::tcltest::test parse-9.2 {try reading a character} {
     set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
     $expr char
 } "\n"
 
-::tcltest::test parse-3.3 {try reading a character} -body {
+::tcltest::test parse-9.3 {try reading a character} -body {
     set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
 
 
-::tcltest::test parse-6.0 {try reading a vector} -body {
+::tcltest::test parse-10.0 {try reading a vector} -body {
     pp "#(1 2 3)"
 } -output "#(1 2 3)\n"
 
@@ -1330,59 +1340,77 @@ if no {
     pep {(assv 5 '((2 3) (5 7) (11 13)))}
 } -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
 
+::tcltest::test strings-1.0 {try reading a string} -body {
+    set o [p {"foo bar baz"}]
+    puts [$o value]
+} -output {foo bar baz
+}
 
-::tcltest::test strings-1.0 {try string?} -body {
+::tcltest::test strings-1.1 {try reading a string} -body {
+    set o [p {"foo \"bar\" baz\nqux\\bod"}]
+    puts [$o value]
+} -output {foo "bar" baz
+qux\bod
+}
+
+::tcltest::test strings-1.2 {try printing a read string} -body {
+    pp {"foo \"bar\" baz\nqux\\bod"}
+} -output {"foo \"bar\" baz\nqux\\bod"
+}
+
+
+::tcltest::test strings-2.0 {try string?} -body {
     pep {(string? "foo bar")}
     pep {(string? 'foo-bar)}
 } -output "#t\n#f\n"
 
 
 
-::tcltest::test strings-1.1 {try make-string} -body {
+::tcltest::test strings-3.0 {try make-string} -body {
     pep {(make-string 5 #\x)}
 } -output "\"xxxxx\"\n"
 
 
 
-::tcltest::test strings-1.2 {try string} -body {
+::tcltest::test strings-4.0 {try string} -body {
     pep {(string #\f #\o #\o)}
 } -output "\"foo\"\n"
 
-::tcltest::test strings-1.3 {try string} -body {
+::tcltest::test strings-4.1 {try string} -body {
     pep {(string #\f #\o 'a #\o)}
 } -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
 
 
 
-::tcltest::test strings-1.4 {try string-length} -body {
+::tcltest::test strings-5.0 {try string-length} -body {
     pep {(string-length "foo bar")}
 } -output "7\n"
 
 
 
-::tcltest::test strings-1.5 {try string-ref} -body {
+::tcltest::test strings-6.0 {try string-ref} -body {
     pep {(string-ref "foo bar" 4)}
 } -output "#\\b\n"
 
 
 
-::tcltest::test strings-1.6 {try string-set!} -body {
+::tcltest::test strings-7.0 {try string-set!} -body {
     pep {(string-set! (string #\f #\o #\o) 0 #\x)}
 } -output "\"xoo\"\n"
 
-::tcltest::test strings-1.7 {try string-set!} -body {
+::tcltest::test strings-7.1 {try string-set!} -body {
     pep {(define f (lambda () (make-string 3 #\*)))}
     pep {(define g (lambda () "***"))}
     pep {(string-set! (f) 0 #\?)}
 } -output "\"?**\"\n"
 
-::tcltest::test strings-1.8 {try string-set!} -body {
+::tcltest::test strings-7.2 {try string-set!} -body {
     pep {(string-set! (g) 0 #\?)}
 } -returnCodes error -result "string is constant"
 
 
 
-::tcltest::test strings-1.9 {try string=?} -body {
+::tcltest::test strings-8.0 {try string=?} -body {
     pep {(string=? "foo bar" "faa bor")}
     pep {(string=? "foo bar" "foo bar")}
     pep {(string=? "foo bar" "Foo bar")}
@@ -1390,7 +1418,7 @@ if no {
 
 
 
-::tcltest::test strings-1.10 {try string-ci=?} -body {
+::tcltest::test strings-9.0 {try string-ci=?} -body {
     pep {(string-ci=? "foo bar" "faa bor")}
     pep {(string-ci=? "foo bar" "foo bar")}
     pep {(string-ci=? "foo bar" "Foo bar")}
@@ -1398,7 +1426,7 @@ if no {
 
 
 
-::tcltest::test strings-1.11 {try string<?} -body {
+::tcltest::test strings-10.0 {try string<?} -body {
     pep {(string<? "bar" "car")}
     pep {(string<? "bar" "bar")}
     pep {(string<? "bar" "aar")}
@@ -1406,7 +1434,7 @@ if no {
 
 
 
-::tcltest::test strings-1.12 {try string-ci<?} -body {
+::tcltest::test strings-11.0 {try string-ci<?} -body {
     pep {(string-ci<? "bar" "Car")}
     pep {(string-ci<? "bar" "Bar")}
     pep {(string-ci<? "bar" "Aar")}
@@ -1414,7 +1442,7 @@ if no {
 
 
 
-::tcltest::test strings-1.13 {try string>?} -body {
+::tcltest::test strings-12.0 {try string>?} -body {
     pep {(string>? "bar" "car")}
     pep {(string>? "bar" "bar")}
     pep {(string>? "bar" "aar")}
@@ -1422,7 +1450,7 @@ if no {
 
 
 
-::tcltest::test strings-1.14 {try string-ci>?} -body {
+::tcltest::test strings-13.0 {try string-ci>?} -body {
     pep {(string-ci>? "bar" "Car")}
     pep {(string-ci>? "bar" "Bar")}
     pep {(string-ci>? "bar" "Aar")}
@@ -1430,7 +1458,7 @@ if no {
 
 
 
-::tcltest::test strings-1.15 {try string<=?} -body {
+::tcltest::test strings-14.0 {try string<=?} -body {
     pep {(string<=? "bar" "car")}
     pep {(string<=? "bar" "bar")}
     pep {(string<=? "bar" "aar")}
@@ -1438,7 +1466,7 @@ if no {
 
 
 
-::tcltest::test strings-1.16 {try string-ci<=?} -body {
+::tcltest::test strings-15.0 {try string-ci<=?} -body {
     pep {(string-ci<=? "bar" "Car")}
     pep {(string-ci<=? "bar" "Bar")}
     pep {(string-ci<=? "bar" "Aar")}
@@ -1446,7 +1474,7 @@ if no {
 
 
 
-::tcltest::test strings-1.17 {try string>=?} -body {
+::tcltest::test strings-16.0 {try string>=?} -body {
     pep {(string>=? "bar" "car")}
     pep {(string>=? "bar" "bar")}
     pep {(string>=? "bar" "aar")}
@@ -1454,7 +1482,7 @@ if no {
 
 
 
-::tcltest::test strings-1.18 {try string-ci>=?} -body {
+::tcltest::test strings-17.0 {try string-ci>=?} -body {
     pep {(string-ci>=? "bar" "Car")}
     pep {(string-ci>=? "bar" "Bar")}
     pep {(string-ci>=? "bar" "Aar")}
@@ -1462,31 +1490,31 @@ if no {
 
 
 
-::tcltest::test strings-1.19 {try substring} -body {
+::tcltest::test strings-18.0 {try substring} -body {
     pep {(substring "foo bar" 0 2)}
 } -output "\"foo\"\n"
 
 
 
-::tcltest::test strings-1.20 {try string-append} -body {
+::tcltest::test strings-19.0 {try string-append} -body {
     pep {(string-append "foo" " bar")}
 } -output "\"foo bar\"\n"
 
 
 
-::tcltest::test strings-1.21 {try string->list} -body {
+::tcltest::test strings-20.0 {try string->list} -body {
     pep {(string->list "foo")}
 } -output "(#\\f #\\o #\\o)\n"
 
 
 
-::tcltest::test strings-1.22 {try list->string} -body {
+::tcltest::test strings-21.0 {try list->string} -body {
     pep {(list->string '(#\f #\o #\o))}
 } -output "\"foo\"\n"
 
 
 
-::tcltest::test strings-1.23 {try string-copy} -body {
+::tcltest::test strings-22.0 {try string-copy} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-set! x 0 #\x)}
     pep {(define y "foobar")}
@@ -1497,7 +1525,7 @@ if no {
 
 
 
-::tcltest::test strings-1.24 {try string-fill!} -body {
+::tcltest::test strings-23.0 {try string-fill!} -body {
     pep {(define x (string-copy "foo"))}
     pep {(string-fill! x #\x)}
 } -output "\"xxx\"\n"

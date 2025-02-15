@@ -903,6 +903,9 @@ Anyway, here is how it really looks like. \texttt{::oo::Obj491} was just the hea
 
 \textbf{parse}
 
+
+\texttt{parse} is the entry point into the \texttt{parse-} set of commands. It can be called with either a Tcl or ConsTcl string, or an input buffer (instance of IB). Once the input buffer is established, \texttt{parse} leaves control to \texttt{parse-expr}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{parse (internal)} \\
@@ -918,8 +921,15 @@ reg parse
  
 proc ::constcl::parse {inp} {
   if {[info object isa object $inp]} {
-    set ib $inp
+    if {[typeof? $inp IB] ne "#f"} {
+      set ib $inp
+    } elseif {[typeof? $inp String] ne "#f"} {
+      set ib [IB new [$inp value]]
+    } else {
+      ::error "Unknown object [$inp show]"
+    }
   } else {
+    # It's a Tcl string, we hope
     set ib [IB new $inp]
   }
   return [parse-expr]
@@ -970,7 +980,7 @@ proc ::constcl::parse-expr {} {
 \textbf{parse-string-expr}
 
 
-\texttt{parse-string-expr} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--a String (see page \pageref{strings}) object.
+\texttt{parse-string-expr} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -989,6 +999,7 @@ proc ::constcl::parse-string-expr {} {
   while {[$ib peek] ne "\"" && [$ib peek] ne {}} {
     set c [$ib peek]
     if {$c eq "\\"} {
+      ::append str $c
       $ib advance
       ::append str [$ib peek]
     } else {
@@ -1011,7 +1022,7 @@ proc ::constcl::parse-string-expr {} {
 \textbf{parse-sharp}
 
 
-\texttt{parse-sharp} parses input starting with a sharp sign (\#) and produces the various kinds of expressions whose external representation begins with a sharp sign.
+\texttt{parse-sharp} parses input starting with a sharp sign (\#) and either produces the boolean literals, or delegates to the vector parser (if the next character is a left parenthesis) or the character parser (if it is a backslash).
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1027,9 +1038,9 @@ proc ::constcl::parse-sharp {} {
   upvar ib ib
   $ib advance
   switch [$ib peek] {
-    (    { return [parse-vector-expr] }
-    t    { $ib advance ; $ib skip-ws ; return #t }
-    f    { $ib advance ; $ib skip-ws ; return #f }
+    "("  { return [parse-vector-expr] }
+    "t"  { $ib advance ; $ib skip-ws ; return #t }
+    "f"  { $ib advance ; $ib skip-ws ; return #f }
     "\\" { return [parse-character-expr] }
     default {
       ::error "Illegal #-literal: #[$ib peek]"
@@ -1063,7 +1074,7 @@ proc ::constcl::make-constant {val} {
 \textbf{parse-quoted-expr}
 
 
-\texttt{parse-quoted-expr} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
+\texttt{parse-quoted-expr} parses input starting with an apostrophe ("'"), and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1089,7 +1100,7 @@ proc ::constcl::parse-quoted-expr {} {
 \textbf{parse-pair-expr}
 
 
-The \texttt{parse-pair-expr} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
+The \texttt{parse-pair-expr} procedure parses everything between two matching parentheses, or, as the case might be, brackets. It produces a possibly recursive structure of Pair (see page \pageref{pairs-and-lists) objects, either a proper list (one that ends in \#NIL) or an improper one (one that has an atom as its last member}), or in some cases an empty list.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1102,7 +1113,32 @@ char & the terminating paren or bracket \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
- 
+proc ::constcl::parse-pair-expr {char} {
+  upvar ib ib
+  $ib advance
+  $ib skip-ws
+  set expr [parse-pair $char]
+  $ib skip-ws
+  if {[$ib peek] ne $char} {
+    if {$char eq ")"} {
+      ::error \
+        "Missing right paren. ([$ib peek])."
+    } else {
+      ::error \
+        "Missing right bracket ([$ib peek])."
+    }
+  }
+  $ib advance
+  $ib skip-ws
+  return $expr
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{parse-pair} is a helper procedure that does the heavy lifting in parsing a pair structure. First it checks if the list is empty, returning \#NIL in that case. Then it parses the first element in the list and then repeatedly the rest of them. If it parses a Dot object, the following element to be read is the tail of an improper list. When \texttt{parse-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::constcl::parse-pair {char} {
   upvar ib ib
   if {[$ib find $char]} {
@@ -1128,26 +1164,6 @@ proc ::constcl::parse-pair {char} {
     set prev [cons $r $prev]
   }
   return $prev
-}
- 
-proc ::constcl::parse-pair-expr {char} {
-  upvar ib ib
-  $ib advance
-  $ib skip-ws
-  set expr [parse-pair $char]
-  $ib skip-ws
-  if {[$ib peek] ne $char} {
-    if {$char eq ")"} {
-      ::error \
-        "Missing right paren. ([$ib peek])."
-    } else {
-      ::error \
-        "Missing right bracket ([$ib peek])."
-    }
-  }
-  $ib advance
-  $ib skip-ws
-  return $expr
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -1669,6 +1685,7 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
+      ::append str $v
       set c [readc]
     }
     ::append str $c
@@ -5311,7 +5328,7 @@ proc ::constcl::not {val} {
 \section{Characters}
 \label{characters}
 
-Characters are any Unicode printing character, and also space and newline space characters.
+Characters are any Unicode printing character, and also space and newline space characters. External representation is '\#\textbackslash\ A' (change A to relevant character) or \#\textbackslash\ space or \#\textbackslash\ newline. Internal representation is simply a Tcl character.
 
 
 \textbf{Char} class
@@ -5322,31 +5339,21 @@ oo::class create ::constcl::Char {
   superclass ::constcl::NIL
   variable value
   constructor {v} {
-    if {[regexp \
-      {^#\\([[:graph:]]|space|newline)$} $v]} {
-      set value $v
-    } else {
-      if {$v eq "#\\ "} {
-        set value #\\space
-      } elseif {$v eq "#\\\n"} {
-        set value #\\newline
-      } else {
-        ::error "CHAR expected\n$v"
+    switch -regexp $v {
+      {(?i)#\\space} {
+        set v " "
+      }
+      {(?i)#\\newline} {
+        set v "\n"
+      }
+      {#\\[[:graph:]]} {
+        set v [::string index $v 2]
       }
     }
+    set value $v
   }
   method char {} {
-    switch $value {
-      "#\\space" {
-        return " "
-      }
-      "#\\newline" {
-        return "\n"
-      }
-      default {
-        return [::string index [my value] 2]
-      }
-    }
+    set value
   }
   method alphabetic? {} {
     if {[::string is alpha -strict [my char]]} {
@@ -5390,25 +5397,37 @@ oo::class create ::constcl::Char {
   method value {} {
     return $value
   }
+  method external {} {
+    switch $value {
+      " " {
+        return "#\\space"
+      }
+      "\n" {
+        return "#\\newline"
+      }
+      default {
+        return "#\\$value"
+      }
+    }
+  }
   method write {handle} {
-    puts -nonewline $handle $value
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my char]
   }
   method show {} {
-    set value
+    my external
   }
 }
  
 proc ::constcl::MkChar {v} {
-  if {[regexp -nocase \
-    {^#\\(space|newline)$} $v]} {
-    set v [::string tolower $v]
+  if {[regexp -nocase {space|newline} $v]} {
+      set v [::string tolower $v]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance value] eq $v} {
+    if {[$instance external] eq $v} {
       return $instance
     }
   }
@@ -7406,12 +7425,19 @@ Procedures for dealing with strings of characters.
 
 \textbf{String} class
 
+
+Strings have the internal representation of a vector of character objects, with the data elements of the vector address of the first element, and the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+
+
+As a ConsTcl extension, a backslash+n pair in the external representation is stored as a newline character. It is restored to backslash+n on write.
+
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
     set idx $vsa
@@ -7494,14 +7520,18 @@ oo::class create ::constcl::String {
   method constant {} {
     set constant
   }
+  method external {} {
+    return "\"[
+      string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
+  }
   method write {handle} {
-    puts -nonewline $handle "\"[my value]\""
+    puts -nonewline $handle [my external]
   }
   method display {handle} {
     puts -nonewline $handle [my value]
   }
   method show {} {
-    format "\"[my value]\""
+    my external
   }
 }
  
