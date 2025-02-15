@@ -1,0 +1,72 @@
+# ConsTcl
+
+## Introduction
+
+### To run the software
+
+First things first. To run, source the file __constcl.tcl__ (with
+__schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use
+the command __repl__ for a primitive command dialog.  Source
+__all.tcl__ to run the test suite (you need __constcl.test__ for that).
+
+### Background
+
+ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
+Thtcl[#](https://github.com/hoodiecrow/thtcl)--this time with a real Lisp-like 
+type system. 
+
+### About ConsTcl
+
+It's written with Vim, the one and only editor. 
+
+It steps over and back over the border between Tcl and Lisp a lot
+of times while working, and as a result is fairly slow.
+On my cheap computer, the following code (which calculates the factorial of
+100) takes 0.03 seconds to run.
+
+```
+time {pe "(fact 100)"} 10
+```
+
+Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO
+classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
+
+It is limited. Quite a few standard procedures are missing. It doesn't come
+near to having call/cc or tail recursion. It doesn't have exact/inexact
+numbers, or most of the numerical tower. Error reporting is spotty, and there
+is no error recovery.
+
+### About the book
+
+I like writing documentation, and occasionally I'm good at it. When I work on a
+software project, I like to annotate the source code with bits of
+documentation, which I then extract and put together using document stream
+editing tools like `sed` and `awk` (The pipeline is Vim to create annotated
+source > sed/awk > a markdown README document for GitHub's benefit > awk > a
+(La)TeX document > TeXworks > a PDF document: all the steps except the last are
+automated using make). On finishing up ConsTcl, it struck me that the
+documentation for this piece of software was fit for a book.
+
+### About the program listings
+
+I have tried to write clear, readable code, but the page format forces me to
+shorten lines. I have used two-space indents instead of four-space, a smaller
+font, and broken off long lines with a \ at the end of the first line (a
+so-called "tucked-in tail"). Neither of these measures improve readability, but
+the alternative is overwriting the margins.
+
+### About me
+
+I'm a 60 year old former system manager who has been active in programming
+since 1979--46 years. Currently, since around 25 years, my language of choice
+is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl
+suits me, and there are things that one can do in Tcl that one can't easily do
+in other languages. Lisp is a runner-up in my affections, a language that
+fascinates me but doesn't fit my brain very well (though I have written one
+large piece of software in AutoLisp).
+
+In addition to my terms as programmer and system manager, I have worked as a
+teacher (teaching C/C++ in upper secondary school) and for a short while I
+produced teaching materials for the department for information technology at
+the University of Skövde. I've also been active writing answers at
+question-and-answer sites on the web, mainly Stack Overflow.

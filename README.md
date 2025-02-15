@@ -36,40 +36,6 @@ near to having call/cc or tail recursion. It doesn't have exact/inexact
 numbers, or most of the numerical tower. Error reporting is spotty, and there
 is no error recovery.
 
-### About the book
-
-I like writing documentation, and occasionally I'm good at it. When I work on a
-software project, I like to annotate the source code with bits of
-documentation, which I then extract and put together using document stream
-editing tools like `sed` and `awk` (The pipeline is Vim to create annotated
-source > sed/awk > a markdown README document for GitHub's benefit > awk > a
-(La)TeX document > TeXworks > a PDF document: all the steps except the last are
-automated using make). On finishing up ConsTcl, it struck me that the
-documentation for this piece of software was fit for a book.
-
-### About the program listings
-
-I have tried to write clear, readable code, but the page format forces me to
-shorten lines. I have used two-space indents instead of four-space, a smaller
-font, and broken off long lines with a \ at the end of the first line (a
-so-called "tucked-in tail"). Neither of these measures improve readability, but
-the alternative is overwriting the margins.
-
-### About me
-
-I'm a 60 year old former system manager who has been active in programming
-since 1979--46 years. Currently, since around 25 years, my language of choice
-is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl
-suits me, and there are things that one can do in Tcl that one can't easily do
-in other languages. Lisp is a runner-up in my affections, a language that
-fascinates me but doesn't fit my brain very well (though I have written one
-large piece of software in AutoLisp).
-
-In addition to my terms as programmer and system manager, I have worked as a
-teacher (teaching C/C++ in upper secondary school) and for a short while I
-produced teaching materials for the department for information technology at
-the University of Skövde. I've also been active writing answers at
-question-and-answer sites on the web, mainly Stack Overflow.
 
 ## Initial declarations
 
@@ -241,7 +207,8 @@ that 'expand' doesn't start with an 'x'.
 ```
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
-  set expr [::constcl::expand-macro $expr ::constcl::global_env]
+  set expr [::constcl::expand-macro $expr \
+    ::constcl::global_env]
   ::constcl::write $expr
 }
 ```
@@ -7376,130 +7343,6 @@ After the call, we are back to the first state again.
 
 
 
-
-
-## Lookup tables
-
-Lisp languages have two simple variants of key/value lookup tables: property
-lists (plists) and association lists (alists).
-
-A property list is simply a list where every odd-numbered item (starting from 1)
-is a key and every even-numbered item is a value. Example:
-
-```
-'(a 1 b 2 c 3 d 4 e 5)
-```
-
-Values can be retrieved in a two-step process:
-
-```
-> (define plist (list 'a 1 'b 2 'c 3 'd 4 'e 5))
-> (define v '())
-> (set! v (memq 'c plist))
-(c 3 d 4 e 5)
-> (set! v (cadr v))
-3
-```
-
-If a key doesn't occur in the plist, `memq` returns `#f`.
-
-Alternatively, ConsTcl users can use `get` to access the value in one step. 
-
-```
-> (get plist 'c)
-3
-```
-
-`get` returns `#f` if the key isn't present in the plist.
-
-
-Values can be added with a single statement:
-
-```
-> (set! plist (append '(f 6) plist))
-(f 6 a 1 b 2 c 3 d 4 e 5)
-```
-
-or with the `put!` macro, which can both update existing values and add new ones:
-
-```
-> (put! plist 'c 9)
-(f 6 a 1 b 2 c 9 d 4 e 5)
-> (put! plist 'g 7)
-(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
-```
-
-
-To get rid of a key/value pair, the simplest way is to add a masking pair:
-
-```
-> (set! plist (append '(d #f) plist))
-(d #f g 7 f 6 a 1 b 2 c 3 d 4 e 5)
-```
-
-But instead, one can use the `del!` macro:
-
-```
-> plist
-(g 7 f 6 a 1 b 2 c 9 d 4 e 5)
-> (del! plist 'd)
-(g 7 f 6 a 1 b 2 c 9 e 5)
-```
-
-
-An alist is a list where the items are pairs, with the key as the `car` and the
-value as the `cdr`. Example:
-
-```
-> (define alist (list (cons 'a 1) (cons 'b 2) (cons 'c 3) (cons 'd 4)))
-> alist
-((a . 1) (b . 2) (c . 3) (d . 4))
-```
-
-An alist can also be created from scratch using the `pairlis` procedure:
-
-```
-> (define alist (pairlis '(a b c) '(1 2 3)))
-((a . 1) (b . 2) (c . 3))
-```
-
-The procedure `assq` retrieves one pair based on the key:
-
-```
-> (assq 'a alist)
-(a . 1)
-> (cdr (assq 'a alist))
-1
-> (assq 'x alist)
-#f
-```
-
-As an alternative, the `get-alist` procedure fetches the value directly, or #f
-for a missing item:
-
-```
-> (get-alist 'a)
-1
-> (get-alist 'x)
-#f
-```
-
-We can add another item to the alist with the `push!` macro:
-
-```
-> (push! (cons 'e 5) alist)
-((e . 5) (a . 1) (b . 2) (c . 3) (d . 4))
-```
-
-The `set-alist!` procedure can be used to update a value (it returns the alist
-unchanged if the key isn't present):
-
-```
-> alist
-((a . 1) (b . 2) (c . 3) (d . 4))
-> (set-alist! alist 'b 7)
-((a . 1) (b . 7) (c . 3) (d . 4))
-```
 
 ## A Scheme base
 

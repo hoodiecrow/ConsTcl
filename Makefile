@@ -15,17 +15,20 @@ LDOUT    = -o
 EXE      = 
 
 .PHONY: all
-all: README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
+all: book.md README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 
 source_files = type.tcl s9fes.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf
 
-constcl.tex: README.md
+constcl.tex: book.md
 	awk -f latex.awk $< >$@
 
-README.md: top.md constcl.md lutables.md schemebase.md
+book.md: booktop.md constcl.md lutables.md schemebase.md
+	awk -f prototype.awk dict.txt $^ >$@
+
+README.md: top.md constcl.md schemebase.md
 	awk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files)

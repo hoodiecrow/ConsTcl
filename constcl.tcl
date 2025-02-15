@@ -87,7 +87,8 @@ proc ::prp {str} {
 
 proc ::pxp {str} {
   set expr [::constcl::parse $str]
-  set expr [::constcl::expand-macro $expr ::constcl::global_env]
+  set expr [::constcl::expand-macro $expr \
+    ::constcl::global_env]
   ::constcl::write $expr
 }
 
