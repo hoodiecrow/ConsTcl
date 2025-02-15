@@ -101,7 +101,10 @@ Next, some procedures that make my life as developer somewhat easier, but don't 
 \textbf{reg}
 
 
-\texttt{reg} registers selected built-in procedures in the standard library.
+\texttt{reg} registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard library (see page \pageref{environment-startup}).
+
+
+You can call \texttt{reg} with two values: \emph{key} and \emph{val}. \emph{Key} is the string that will eventually become the lookup symbol in the standard library, and \emph{val} is the name of the Tcl command that will carry out the procedure. If you don't give a value for \emph{val}, \texttt{reg} creates a value by prepending the \texttt{::constcl::} namespace to they \emph{key} value, which is sufficient 99\% of the time.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -130,7 +133,7 @@ proc ::reg {key args} {
 \textbf{regmacro}
 
 
-\texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
+ConsTcl has macros, i.e. syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. \texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -153,7 +156,7 @@ proc ::regmacro {name} {
 \textbf{pep}
 
 
-\texttt{pep} was named after the sequence parse-eval-print, and I never changed the name. It reads and evals an expression, and prints the result.
+\texttt{pep} was named after the sequence parse-eval-print, and I never changed the name. It reads and evals an expression, and prints the result. It's the most common command in the test cases, since it allows me to write code in Scheme and to get nicely formatted output.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -177,7 +180,7 @@ proc ::pep {str} {
 \textbf{pp}
 
 
-\texttt{pp} is the same, only it doesn't eval the expression. It just prints what is parsed.
+\texttt{pp} is a similar command, only it doesn't eval the expression. It just prints what is parsed. It is useful for tests when the evaluator can't (yet) evaluate the form, but I can still check if it gets read and printed correctly.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -200,7 +203,7 @@ proc ::pp {str} {
 \textbf{pe}
 
 
-\texttt{pe} is still the same, but it doesn't print the expression. It just evals what is read.
+\texttt{pe} is also similar, but it doesn't print the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -223,7 +226,7 @@ proc ::pe {str} {
 \textbf{p}
 
 
-\texttt{p} is mostly the same, but it only parses the input, returning an expression.
+\texttt{p} only parses the input, returning an expression object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -245,7 +248,7 @@ proc ::p {str} {
 \textbf{e}
 
 
-\texttt{e} is another single-action procedure, eval-ing an expression and returning a value.
+\texttt{e} is another single-action procedure, evaluating an expression and returning a value.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -289,7 +292,7 @@ proc ::w {val} {
 \textbf{r}
 
 
-\texttt{r} is an extra single-action procedure, reading from default input or from a port and returning an expression.
+\texttt{r} is an extra single-action procedure, reading from default input or from a port and returning an expression object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -311,7 +314,7 @@ proc ::r {args} {
 \textbf{prp}
 
 
-\texttt{prp} is a busy thing. It reads an expression, expands macros in it, resolves defines, and prints the result.
+\texttt{prp} reads an expression, resolves defines, and prints the result. It was handy during the time I was porting the 'resolve local defines' section.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -326,13 +329,8 @@ str & a Tcl string \\
 \begin{lstlisting}
 proc ::prp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  set env ::constcl::global_env
-  while {[$op name] in $::constcl::macrolist} {
-    ::constcl::expand-macro $env
-  }
-  set expr [::constcl::resolve-local-defines $args]
+  set expr [::constcl::resolve-local-defines \
+    [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
 \end{lstlisting}
@@ -341,7 +339,7 @@ proc ::prp {str} {
 \textbf{pxp}
 
 
-\texttt{pxp} attempts to macro-expand whatever it reads, and prints the result. I know that 'expand' doesn't start with an 'x'.
+\texttt{pxp} attempts to macro-expand whatever it reads, and prints the result. I know that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I was developing the macro facility.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -366,7 +364,7 @@ proc ::pxp {str} {
 \textbf{pn}
 
 
-"Procedure name" When called, tells the caller the name of its command.
+\texttt{pn} stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -437,7 +435,6 @@ x & a number \\
 \begin{lstlisting}
 reg in-range
  
-#started out as DKF's code
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
@@ -478,8 +475,7 @@ The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It 
 \begin{lstlisting}
 catch { ::constcl::NIL destroy }
  
-oo::class create ::constcl::NIL {
-  constructor {} {}
+oo::singleton create ::constcl::NIL {
   method bvalue {} {
     return #NIL
   }
@@ -541,7 +537,7 @@ proc ::constcl::null? {val} {
 \section{The classes Dot, Unspecified, Undefined, and EndOfFile}
 \label{the-classes-dot,-unspecified,-undefined,-and-endoffile}
 
-D( The \texttt{Dot} class is a helper class for the parser.
+The \texttt{Dot} class is a helper class for the parser.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -581,7 +577,7 @@ proc ::constcl::dot? {val} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-The \texttt{Unspecified} class is for unspecified things.
+The \texttt{Unspecified} class is for unspecified things. It was created to facilitate porting of code from 'Scheme 9 from Empty Space'.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -599,7 +595,7 @@ oo::class create ::constcl::Unspecified {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-The \texttt{Undefined} class is for undefined things.
+The \texttt{Undefined} class is for undefined things. Also a S9fES support class.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -677,7 +673,7 @@ proc ::constcl::error {msg args} {
 \textbf{check}
 
 
-\texttt{check} does a check (usually a type check) on something and throws an error if it fails.
+\texttt{check} does a check (typically a type check) on something and throws an error if it fails.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -697,7 +693,7 @@ proc ::constcl::check {cond msg} {
 \textbf{atom?}
 
 
-\texttt{atom?} recognizes an atom by checking for membership in any one of the atomic types.
+There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -723,58 +719,15 @@ proc ::constcl::atom? {val} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\chapter{S9fES}
-\label{s9fes}
-
-I've begun porting parts of S9fES (\emph{Scheme 9 from Empty Space}, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
-
-
-I've already mixed this up with my own stuff.
-
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\begin{lstlisting}
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-\end{lstlisting}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\begin{lstlisting}
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-\end{lstlisting}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\begin{lstlisting}
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
- 
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
-}
-\end{lstlisting}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \chapter{Input}
 \label{input}
 
 The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. \texttt{read} represents the interpreter's main input facility. As a complement, a similar set of procedures that read input from an input buffer exists (the \texttt{parse-} procedures). The main set (the \texttt{read-} procedures) read from standard input, or--if a port is provided--from the port's channel.
 
+\section{The IB class}
+\label{the-ib-class}
 
-\textbf{IB} class
-
-
-A quick-and-dirty input simulator, using an input buffer object to hold characters to be read.
+A quick-and-dirty input simulator, using an input buffer object to hold characters to be parsed by the \texttt{parse-} procedures.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -860,7 +813,7 @@ oo::define ::constcl::IB method find {char} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{skip-ws} advances past whitespace and comments.
+\texttt{skip-ws} skips past whitespace and comments.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -883,10 +836,10 @@ oo::define ::constcl::IB method skip-ws {} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\section{The parse procedure}
-\label{the-parse-procedure}
-\subsection{Parsing}
+\section{Parsing}
 \label{parsing}
+\subsection{The parsing process}
+\label{the-parsing-process}
 
 Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of \emph{external representation}. The result of parsing is an \emph{expression} in internal form.
 
@@ -945,6 +898,8 @@ Anyway, here is how it really looks like. \texttt{::oo::Obj491} was just the hea
 
 \includegraphics{images/intreplist.png}
 
+\subsection{The parsing library}
+\label{the-parsing-library}
 
 \textbf{parse}
 
@@ -8911,6 +8866,48 @@ proc ::constcl::varcheck {sym} {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\chapter{S9fES}
+\label{s9fes}
+
+I've begun porting parts of S9fES (\emph{Scheme 9 from Empty Space}, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+
+I've already mixed this up with my own stuff.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::new-atom {pa pd} {
+  cons3 $pa $pd $::constcl::ATOM_TAG
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc cons3 {pcar pcdr ptag} {
+  # TODO counters
+  set n [MkPair $pcar $pcdr]
+  $n settag $ptag
+  return $n
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::xread {} {
+  if {[$::constcl::InputPort handle] eq "#NIL"} {
+    error "input port is not open"
+  }
+  set ::constcl::Level 0
+  return [read-form 0]
+}
+ 
+proc ::constcl::read_c_ci {} {
+  tolower [
+    ::read [
+      $::constcl::Input_port handle] 1]]
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \chapter{Initialization}
 \label{initialization}
 
@@ -9105,6 +9102,8 @@ oo::class create ::constcl::Environment {
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\section{Environment startup}
+\label{environment-startup}
 
 On startup, two \texttt{Environment} objects called \texttt{null\_env} (the null environment, not the same as \texttt{null-environment} in Scheme) and \texttt{global\_env} (the global environment) are created.
 
@@ -9135,8 +9134,8 @@ Meanwhile, \texttt{global\_env} is populated with all the definitions from the d
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {
-    S $k
+  set keys [list {*}[lmap key [dict keys $defreg] {
+    S $key
   }]]
   set vals [dict values $defreg]
   Environment create global_env $keys $vals \

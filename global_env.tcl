@@ -1,5 +1,7 @@
 
 MD(
+### Environment startup
+
 On startup, two `Environment` objects called `null_env` (the null environment,
 not the same as `null-environment` in Scheme) and `global_env` (the global
 environment) are created. 
@@ -32,8 +34,8 @@ MD)
 
 CB
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {
-    S $k
+  set keys [list {*}[lmap key [dict keys $defreg] {
+    S $key
   }]]
   set vals [dict values $defreg]
   Environment create global_env $keys $vals \

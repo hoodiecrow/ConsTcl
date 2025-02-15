@@ -53,7 +53,17 @@ will show up a lot in the test cases.
 
 __reg__
 
-`reg` registers selected built-in procedures in the standard library.
+`reg` registers selected built-in procedures in the definitions register. That
+way I don't need to manually keep track of and list procedures. The definitions
+register's contents will eventually get dumped into the standard
+library[#](ConsTcl#environment-startup).
+
+You can call `reg` with two values: **key** and **val**. **Key** is the string
+that will eventually become the lookup symbol in the standard library, and
+**val** is the name of the Tcl command that will carry out the procedure. If you
+don't give a value for **val**, `reg` creates a value by prepending the
+`::constcl::` namespace to they **key** value, which is sufficient 99% of the
+time.
 
 <table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>key</td><td>a Tcl string</td></tr><tr><td>?val?</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -71,8 +81,10 @@ proc ::reg {key args} {
 
 __regmacro__
 
-`regmacro` registers macro names in the macro list, so the evaluator knows what
-to expand.
+ConsTcl has macros, i.e. syntactic forms that are rewritten to concrete--but
+more verbose--forms. The evaluator passes macro forms to a command for expansion
+before they are fully processed. `regmacro` registers macro names in the macro
+list, so the evaluator knows what to expand.
 
 <table border=1><thead><tr><th colspan=2 align="left">regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -86,7 +98,9 @@ proc ::regmacro {name} {
 __pep__
 
 `pep` was named after the sequence parse-eval-print, and I never changed the
-name. It reads and evals an expression, and prints the result.
+name. It reads and evals an expression, and prints the result. It's the most
+common command in the test cases, since it allows me to write code in Scheme and
+to get nicely formatted output.
 
 <table border=1><thead><tr><th colspan=2 align="left">pep (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -100,8 +114,9 @@ proc ::pep {str} {
 
 __pp__
 
-`pp` is the same, only it doesn't eval the expression. It just prints what is
-parsed.
+`pp` is a similar command, only it doesn't eval the expression. It just prints what is
+parsed. It is useful for tests when the evaluator can't (yet) evaluate the form,
+but I can still check if it gets read and printed correctly.
 
 <table border=1><thead><tr><th colspan=2 align="left">pp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -114,8 +129,9 @@ proc ::pp {str} {
 
 __pe__
 
-`pe` is still the same, but it doesn't print the expression. It just evals what
-is read.
+`pe` is also similar, but it doesn't print the expression. It just evaluates what
+is read. That way I get a value object which I can pass to another command, or
+pick apart in different ways.
 
 <table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -128,7 +144,7 @@ proc ::pe {str} {
 
 __p__
 
-`p` is mostly the same, but it only parses the input, returning an expression.
+`p` only parses the input, returning an expression object.
 
 <table border=1><thead><tr><th colspan=2 align="left">p (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -140,7 +156,7 @@ proc ::p {str} {
 
 __e__
 
-`e` is another single-action procedure, eval-ing an expression and returning a
+`e` is another single-action procedure, evaluating an expression and returning a
 value.
 
 <table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
@@ -166,7 +182,7 @@ proc ::w {val} {
 __r__
 
 `r` is an extra single-action procedure, reading from default input or from a
-port and returning an expression.
+port and returning an expression object.
 
 <table border=1><thead><tr><th colspan=2 align="left">r (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -178,21 +194,16 @@ proc ::r {args} {
 
 __prp__
 
-`prp` is a busy thing. It reads an expression, expands macros in it, resolves
-defines, and prints the result.
+`prp`  reads an expression, resolves defines, and prints the result. It was
+handy during the time I was porting the 'resolve local defines' section.
 
 <table border=1><thead><tr><th colspan=2 align="left">prp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::prp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  set env ::constcl::global_env
-  while {[$op name] in $::constcl::macrolist} {
-    ::constcl::expand-macro $env
-  }
-  set expr [::constcl::resolve-local-defines $args]
+  set expr [::constcl::resolve-local-defines \
+    [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
 ```
@@ -200,7 +211,8 @@ proc ::prp {str} {
 __pxp__
 
 `pxp` attempts to macro-expand whatever it reads, and prints the result. I know
-that 'expand' doesn't start with an 'x'.
+that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
+was developing the macro facility.
 
 <table border=1><thead><tr><th colspan=2 align="left">pxp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -215,7 +227,9 @@ proc ::pxp {str} {
 
 __pn__
 
-"Procedure name" When called, tells the caller the name of its command.
+`pn` stands for 'procedure name'. When called, tells the caller the name of its
+command. I use it for error messages so the error message can automagically tell
+the user which command failed.
 
 <table border=1><thead><tr><th colspan=2 align="left">pn (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -267,7 +281,6 @@ find next number in the sequence.
 ```
 reg in-range
 
-#started out as DKF's code
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
@@ -301,14 +314,13 @@ proc ::constcl::in-range {x args} {
 
 ### The NIL class
 
-The `NIL` class has one object: the empty list called `#NIL`. It is also base class for many other
-type classes.
+The `NIL` class has one object: the empty list called `#NIL`. It is also base
+class for many other type classes.
 
 ```
 catch { ::constcl::NIL destroy }
 
-oo::class create ::constcl::NIL {
-  constructor {} {}
+oo::singleton create ::constcl::NIL {
   method bvalue {} {
     return #NIL
   }
@@ -361,7 +373,6 @@ proc ::constcl::null? {val} {
 
 ### The classes Dot, Unspecified, Undefined, and EndOfFile
 
-D(
 The `Dot` class is a helper class for the parser.
 
 ```
@@ -390,7 +401,8 @@ proc ::constcl::dot? {val} {
 }
 ```
 
-The `Unspecified` class is for unspecified things.
+The `Unspecified` class is for unspecified things. It was created to facilitate
+porting of code from 'Scheme 9 from Empty Space'.
 
 ```
 catch { ::constcl::Unspecified destroy }
@@ -406,7 +418,7 @@ oo::class create ::constcl::Unspecified {
 }
 ```
 
-The `Undefined` class is for undefined things.
+The `Undefined` class is for undefined things. Also a S9fES support class.
 
 ```
 catch { ::constcl::Undefined destroy }
@@ -469,7 +481,7 @@ proc ::constcl::error {msg args} {
 
 __check__
 
-`check` does a check (usually a type check) on something and throws an error if
+`check` does a check (typically a type check) on something and throws an error if
 it fails.
 
 ```
@@ -487,7 +499,10 @@ proc ::constcl::check {cond msg} {
 
 __atom?__
 
-`atom?` recognizes an atom by checking for membership in any one of the atomic types.
+There are two kinds of data in Lisp: lists and atoms. Lists are collections of
+lists and atoms. Atoms are instances of types such as booleans, characters,
+numbers, ports, strings, symbols, and vectors. `Atom?` recognizes an atom by
+checking for membership in any one of the atomic types.
 
 <table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -505,44 +520,6 @@ proc ::constcl::atom? {val} {
 }
 ```
 
-## S9fES
-
-I've begun porting parts of S9fES (**Scheme 9 from Empty Space**, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
-
-I've already mixed this up with my own stuff.
-
-```
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-```
-
-```
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-```
-
-```
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
-
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
-}
-```
-
-
 
 ## Input
 
@@ -553,10 +530,10 @@ of procedures that read input from an input buffer exists (the `parse-`
 procedures). The main set (the `read-` procedures) read from standard input,
 or--if a port is provided--from the port's channel.
 
-__IB__ class
+### The IB class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
-characters to be read.
+characters to be parsed by the `parse-` procedures.
 
 ```
 catch { ::constcl::IB destroy }
@@ -631,7 +608,7 @@ oo::define ::constcl::IB method find {char} {
 }
 ```
 
-`skip-ws` advances past whitespace and comments.  
+`skip-ws` skips past whitespace and comments.  
 
 ```
 oo::define ::constcl::IB method skip-ws {} {
@@ -653,9 +630,9 @@ oo::define ::constcl::IB method skip-ws {} {
 }
 ```
 
-### The parse procedure
+### Parsing
 
-#### Parsing
+#### The parsing process
 
 Parsing[#](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is
 analyzing a sequence of letters, digits, and other characters, conforming to the
@@ -721,6 +698,8 @@ Anyway, here is how it really looks like. `::oo::Obj491` was just the head of
 the list.
 
 ![intreplist](/images/intreplist.png)
+
+#### The parsing library
 
 __parse__
 
@@ -7067,6 +7046,44 @@ proc ::constcl::varcheck {sym} {
 }
 ```
 
+## S9fES
+
+I've begun porting parts of S9fES (**Scheme 9 from Empty Space**, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+I've already mixed this up with my own stuff.
+
+```
+proc ::constcl::new-atom {pa pd} {
+  cons3 $pa $pd $::constcl::ATOM_TAG
+}
+```
+
+```
+proc cons3 {pcar pcdr ptag} {
+  # TODO counters
+  set n [MkPair $pcar $pcdr]
+  $n settag $ptag
+  return $n
+}
+```
+
+```
+proc ::constcl::xread {} {
+  if {[$::constcl::InputPort handle] eq "#NIL"} {
+    error "input port is not open"
+  }
+  set ::constcl::Level 0
+  return [read-form 0]
+}
+
+proc ::constcl::read_c_ci {} {
+  tolower [
+    ::read [
+      $::constcl::Input_port handle] 1]]
+}
+```
+
+
 ## Initialization
 
 Initialize the memory space for vector contents.
@@ -7258,6 +7275,8 @@ oo::class create ::constcl::Environment {
 ```
 
 
+### Environment startup
+
 On startup, two `Environment` objects called `null_env` (the null environment,
 not the same as `null-environment` in Scheme) and `global_env` (the global
 environment) are created. 
@@ -7287,8 +7306,8 @@ definitions register, `defreg`. This is where top level evaluation happens.
 
 ```
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {
-    S $k
+  set keys [list {*}[lmap key [dict keys $defreg] {
+    S $key
   }]]
   set vals [dict values $defreg]
   Environment create global_env $keys $vals \

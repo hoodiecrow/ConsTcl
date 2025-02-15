@@ -73,13 +73,8 @@ proc ::r {args} {
 
 proc ::prp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  set env ::constcl::global_env
-  while {[$op name] in $::constcl::macrolist} {
-    ::constcl::expand-macro $env
-  }
-  set expr [::constcl::resolve-local-defines $args]
+  set expr [::constcl::resolve-local-defines \
+    [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
 
@@ -115,7 +110,6 @@ proc ::constcl::typeof? {val type} {
 
 reg in-range
 
-#started out as DKF's code
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
@@ -149,8 +143,7 @@ proc ::constcl::in-range {x args} {
 
 catch { ::constcl::NIL destroy }
 
-oo::class create ::constcl::NIL {
-  constructor {} {}
+oo::singleton create ::constcl::NIL {
   method bvalue {} {
     return #NIL
   }
@@ -293,34 +286,6 @@ proc ::constcl::atom? {val} {
   }
   return #f
 }
-
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
-
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
-
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
-}
-
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
@@ -4877,6 +4842,34 @@ proc ::constcl::varcheck {sym} {
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
 
+proc ::constcl::new-atom {pa pd} {
+  cons3 $pa $pd $::constcl::ATOM_TAG
+}
+
+proc cons3 {pcar pcdr ptag} {
+  # TODO counters
+  set n [MkPair $pcar $pcdr]
+  $n settag $ptag
+  return $n
+}
+
+proc ::constcl::xread {} {
+  if {[$::constcl::InputPort handle] eq "#NIL"} {
+    error "input port is not open"
+  }
+  set ::constcl::Level 0
+  return [read-form 0]
+}
+
+proc ::constcl::read_c_ci {} {
+  tolower [
+    ::read [
+      $::constcl::Input_port handle] 1]]
+}
+
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
 set ::constcl::vectorAssign 0
@@ -5037,8 +5030,8 @@ oo::objdefine ::constcl::null_env {
 
 
 namespace eval ::constcl {
-  set keys [list {*}[lmap k [dict keys $defreg] {
-    S $k
+  set keys [list {*}[lmap key [dict keys $defreg] {
+    S $key
   }]]
   set vals [dict values $defreg]
   Environment create global_env $keys $vals \

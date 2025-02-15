@@ -11,10 +11,10 @@ or--if a port is provided--from the port's channel.
 MD)
 
 MD(
-__IB__ class
+### The IB class
 
 A quick-and-dirty input simulator, using an input buffer object to hold
-characters to be read.
+characters to be parsed by the `parse-` procedures.
 MD)
 
 CB
@@ -101,7 +101,7 @@ oo::define ::constcl::IB method find {char} {
 CB
 
 MD(
-`skip-ws` advances past whitespace and comments.  
+`skip-ws` skips past whitespace and comments.  
 MD)
 
 CB
@@ -125,9 +125,9 @@ oo::define ::constcl::IB method skip-ws {} {
 CB
 
 MD(
-### The parse procedure
+### Parsing
 
-#### Parsing
+#### The parsing process
 
 Parsing[#](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is
 analyzing a sequence of letters, digits, and other characters, conforming to the
@@ -193,6 +193,8 @@ Anyway, here is how it really looks like. `::oo::Obj491` was just the head of
 the list.
 
 ![intreplist](/images/intreplist.png)
+
+#### The parsing library
 
 __parse__
 MD)

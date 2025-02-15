@@ -22,7 +22,17 @@ MD)
 MD(
 __reg__
 
-`reg` registers selected built-in procedures in the standard library.
+`reg` registers selected built-in procedures in the definitions register. That
+way I don't need to manually keep track of and list procedures. The definitions
+register's contents will eventually get dumped into the standard
+library[#](ConsTcl#environment-startup).
+
+You can call `reg` with two values: **key** and **val**. **Key** is the string
+that will eventually become the lookup symbol in the standard library, and
+**val** is the name of the Tcl command that will carry out the procedure. If you
+don't give a value for **val**, `reg` creates a value by prepending the
+`::constcl::` namespace to they **key** value, which is sufficient 99% of the
+time.
 MD)
 
 PR(
@@ -44,8 +54,10 @@ CB
 MD(
 __regmacro__
 
-`regmacro` registers macro names in the macro list, so the evaluator knows what
-to expand.
+ConsTcl has macros, i.e. syntactic forms that are rewritten to concrete--but
+more verbose--forms. The evaluator passes macro forms to a command for expansion
+before they are fully processed. `regmacro` registers macro names in the macro
+list, so the evaluator knows what to expand.
 MD)
 
 PR(
@@ -63,7 +75,9 @@ MD(
 __pep__
 
 `pep` was named after the sequence parse-eval-print, and I never changed the
-name. It reads and evals an expression, and prints the result.
+name. It reads and evals an expression, and prints the result. It's the most
+common command in the test cases, since it allows me to write code in Scheme and
+to get nicely formatted output.
 MD)
 
 PR(
@@ -81,8 +95,9 @@ CB
 MD(
 __pp__
 
-`pp` is the same, only it doesn't eval the expression. It just prints what is
-parsed.
+`pp` is a similar command, only it doesn't eval the expression. It just prints what is
+parsed. It is useful for tests when the evaluator can't (yet) evaluate the form,
+but I can still check if it gets read and printed correctly.
 MD)
 
 PR(
@@ -99,8 +114,9 @@ CB
 MD(
 __pe__
 
-`pe` is still the same, but it doesn't print the expression. It just evals what
-is read.
+`pe` is also similar, but it doesn't print the expression. It just evaluates what
+is read. That way I get a value object which I can pass to another command, or
+pick apart in different ways.
 MD)
 
 PR(
@@ -117,7 +133,7 @@ CB
 MD(
 __p__
 
-`p` is mostly the same, but it only parses the input, returning an expression.
+`p` only parses the input, returning an expression object.
 MD)
 
 PR(
@@ -133,7 +149,7 @@ CB
 MD(
 __e__
 
-`e` is another single-action procedure, eval-ing an expression and returning a
+`e` is another single-action procedure, evaluating an expression and returning a
 value.
 MD)
 
@@ -167,7 +183,7 @@ MD(
 __r__
 
 `r` is an extra single-action procedure, reading from default input or from a
-port and returning an expression.
+port and returning an expression object.
 MD)
 
 PR(
@@ -183,8 +199,8 @@ CB
 MD(
 __prp__
 
-`prp` is a busy thing. It reads an expression, expands macros in it, resolves
-defines, and prints the result.
+`prp`  reads an expression, resolves defines, and prints the result. It was
+handy during the time I was porting the 'resolve local defines' section.
 MD)
 
 PR(
@@ -194,13 +210,8 @@ PR)
 CB
 proc ::prp {str} {
   set expr [::constcl::parse $str]
-  set op [::constcl::car $expr]
-  set args [::constcl::cdr $expr]
-  set env ::constcl::global_env
-  while {[$op name] in $::constcl::macrolist} {
-    ::constcl::expand-macro $env
-  }
-  set expr [::constcl::resolve-local-defines $args]
+  set expr [::constcl::resolve-local-defines \
+    [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
 CB
@@ -209,7 +220,8 @@ MD(
 __pxp__
 
 `pxp` attempts to macro-expand whatever it reads, and prints the result. I know
-that 'expand' doesn't start with an 'x'.
+that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
+was developing the macro facility.
 MD)
 
 PR(
@@ -228,7 +240,9 @@ CB
 MD(
 __pn__
 
-"Procedure name" When called, tells the caller the name of its command.
+`pn` stands for 'procedure name'. When called, tells the caller the name of its
+command. I use it for error messages so the error message can automagically tell
+the user which command failed.
 MD)
 
 PR(
@@ -291,7 +305,6 @@ PR)
 CB
 reg in-range
 
-#started out as DKF's code
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
@@ -326,15 +339,14 @@ CB
 MD(
 ### The NIL class
 
-The `NIL` class has one object: the empty list called `#NIL`. It is also base class for many other
-type classes.
+The `NIL` class has one object: the empty list called `#NIL`. It is also base
+class for many other type classes.
 MD)
 
 CB
 catch { ::constcl::NIL destroy }
 
-oo::class create ::constcl::NIL {
-  constructor {} {}
+oo::singleton create ::constcl::NIL {
   method bvalue {} {
     return #NIL
   }
@@ -392,7 +404,6 @@ CB
 MD(
 ### The classes Dot, Unspecified, Undefined, and EndOfFile
 
-D(
 The `Dot` class is a helper class for the parser.
 MD)
 
@@ -427,7 +438,8 @@ proc ::constcl::dot? {val} {
 CB
 
 MD(
-The `Unspecified` class is for unspecified things.
+The `Unspecified` class is for unspecified things. It was created to facilitate
+porting of code from 'Scheme 9 from Empty Space'.
 MD)
 
 CB
@@ -445,7 +457,7 @@ oo::class create ::constcl::Unspecified {
 CB
 
 MD(
-The `Undefined` class is for undefined things.
+The `Undefined` class is for undefined things. Also a S9fES support class.
 MD)
 
 CB
@@ -516,7 +528,7 @@ CB
 MD(
 __check__
 
-`check` does a check (usually a type check) on something and throws an error if
+`check` does a check (typically a type check) on something and throws an error if
 it fails.
 MD)
 
@@ -536,7 +548,10 @@ MD(
 
 __atom?__
 
-`atom?` recognizes an atom by checking for membership in any one of the atomic types.
+There are two kinds of data in Lisp: lists and atoms. Lists are collections of
+lists and atoms. Atoms are instances of types such as booleans, characters,
+numbers, ports, strings, symbols, and vectors. `Atom?` recognizes an atom by
+checking for membership in any one of the atomic types.
 MD)
 
 PR(
