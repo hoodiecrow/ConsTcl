@@ -869,8 +869,8 @@ The `parse-pair-expr` procedure parses everything between two matching
 parentheses, or, as the case might be, brackets. It produces a possibly
 recursive structure of
 Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a
-proper list (one that ends in #NIL) or an improper one (one that has an atom as
-its last member), or in some cases an empty list.
+proper list, i.e. one that ends in #NIL, or an improper one. i.e. one that has an atom as
+its last member, or in some cases an empty list.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions</td></tr></table>
 
@@ -898,9 +898,9 @@ proc ::constcl::parse-pair-expr {char} {
 
 `parse-pair` is a helper procedure that does the heavy lifting in parsing a pair
 structure. First it checks if the list is empty, returning #NIL in that case.
-Then it parses the first element in the list and then repeatedly the rest of
-them. If it parses a Dot object, the following element to be read is the tail of
-an improper list. When `parse-pair` has reached the ending parenthesis or
+Otherwise it parses the first element in the list and then repeatedly the rest of
+them. If it parses a Dot object, the following element to be read is the tail
+end of an improper list. When `parse-pair` has reached the ending parenthesis or
 bracket, it conses up the elements starting from the last, and returns the head
 of the list.
 
@@ -936,8 +936,9 @@ proc ::constcl::parse-pair {char} {
 
 __parse-plus-minus__
 
-`parse-plus-minus` reacts to a plus or minus in the input buffer, and either
-returns a `+` or `-` symbol, or a number.
+`parse-plus-minus` is called when a plus or minus is found in the input buffer.
+If the next character is a digit, it delegates to the number parser. Otherwise,
+it returns a `+` or `-` symbol.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number</td></tr></table>
 
@@ -952,10 +953,10 @@ proc ::constcl::parse-plus-minus {} {
   } else {
     if {$c eq "+"} {
       $ib skip-ws
-      return [MkSymbol "+"]
+      return [S "+"]
     } else {
       $ib skip-ws
-      return [MkSymbol "-"]
+      return [S "-"]
     }
   }
 }
@@ -963,9 +964,11 @@ proc ::constcl::parse-plus-minus {} {
 
 __parse-unquoted-expr__
 
-`parse-unquoted-expr` parses input, producing an expression and returning
-it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
-the input stream.
+When a comma is found in the input buffer, `parse-unquoted-expr` is activated.
+If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
+it selects the symbol `unquote`. Then it reads an entire expression and returns
+it wrapped in the selected symbol. Both of these expressions are only suppposed
+to occur inside a quasiquoted expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-unquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the unquote/-splicing symbol</td></tr></table>
 
@@ -973,21 +976,24 @@ the input stream.
 proc ::constcl::parse-unquoted-expr {} {
   upvar ib ib
   $ib advance
-  set symbol "unquote"
   if {[$ib peek] eq "@"} {
     set symbol "unquote-splicing"
     $ib advance
+  } else {
+    set symbol "unquote"
   }
   set expr [parse-expr]
   $ib skip-ws
-  return [list [MkSymbol $symbol] $expr]
+  return [list [S $symbol] $expr]
 }
 ```
 
 
 __parse-quasiquoted-expr__
 
-`parse-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
+`parse-quasiquoted-expr` is activated when there is a backquote (&grave;) in the
+input buffer. It parses an entire expression and returns it wrapped in
+`quasiquote`.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-quasiquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quasiquote symbol</td></tr></table>
 
@@ -997,8 +1003,9 @@ proc ::constcl::parse-quasiquoted-expr {} {
   $ib advance
   set expr [parse-expr]
   $ib skip-ws
+  # TODO make semi-constant
   make-constant $expr
-  return [list [MkSymbol "quasiquote"] $expr]
+  return [list [S "quasiquote"] $expr]
 }
 ```
 
@@ -1023,7 +1030,11 @@ proc ::constcl::interspace {c} {
 
 __parse-number-expr__
 
-`parse-number-expr` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`parse-number-expr` parses numerical input, both integers and floating point
+numbers. It actually takes in anything that starts out like a number and stops
+at whitespace or an ending parenthesis or bracket, and then it accepts or
+rejects the input by comparing it to a Tcl double. It returns a
+Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-number-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -1039,7 +1050,7 @@ proc ::constcl::parse-number-expr {} {
     check {::string is double -strict $num} {
       Invalid numeric constant $num
     }
-    return [MkNumber $num]
+    return [N $num]
 }
 ```
 
@@ -1060,7 +1071,7 @@ proc ::constcl::parse-identifier-expr {} {
   }
   $ib skip-ws
   # idcheck throws error if invalid identifier
-  return [MkSymbol [idcheck $name]]
+  return [S [idcheck $name]]
 }
 ```
 
@@ -1531,9 +1542,9 @@ proc ::constcl::read-plus-minus {char} {
     return $n
   } else {
     if {$char eq "+"} {
-      return [MkSymbol "+"]
+      return [S "+"]
     } else {
-      return [MkSymbol "-"]
+      return [S "-"]
     }
   }
 }
@@ -1563,7 +1574,7 @@ proc ::constcl::read-number-expr {args} {
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
-  set expr [MkNumber $num]
+  set expr [N $num]
   read-eof $expr
   return $expr
 }
@@ -1590,7 +1601,7 @@ proc ::constcl::read-unquoted-expr {} {
     set expr [read-expr $c]
   }
   read-eof $expr
-  return [list [MkSymbol $symbol] $expr]
+  return [list [S $symbol] $expr]
 }
 ```
 
@@ -1637,7 +1648,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [MkSymbol "quasiquote"] $expr]
+  return [list [S "quasiquote"] $expr]
 }
 ```
 
@@ -1670,7 +1681,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $name
   # idcheck throws error if invalid identifier
   idcheck $name
-  return [MkSymbol $name]
+  return [S $name]
 }
 ```
 

@@ -187,6 +187,8 @@ function render(line) {
 
     if (match(line, /#/)) { gsub(/#/, "\\#", line) }
 
+    if (match(line, /&grave;/)) { gsub(/&grave;/, "`", line) }
+
     if (match(line, /&/)) { gsub(/&/, "\\&", line) }
 
     if (match(line, /_/)) { gsub(/_/, "\\_", line) }

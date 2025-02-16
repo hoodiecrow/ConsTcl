@@ -543,10 +543,10 @@ proc ::constcl::parse-plus-minus {} {
   } else {
     if {$c eq "+"} {
       $ib skip-ws
-      return [MkSymbol "+"]
+      return [S "+"]
     } else {
       $ib skip-ws
-      return [MkSymbol "-"]
+      return [S "-"]
     }
   }
 }
@@ -556,14 +556,15 @@ proc ::constcl::parse-plus-minus {} {
 proc ::constcl::parse-unquoted-expr {} {
   upvar ib ib
   $ib advance
-  set symbol "unquote"
   if {[$ib peek] eq "@"} {
     set symbol "unquote-splicing"
     $ib advance
+  } else {
+    set symbol "unquote"
   }
   set expr [parse-expr]
   $ib skip-ws
-  return [list [MkSymbol $symbol] $expr]
+  return [list [S $symbol] $expr]
 }
 
 
@@ -574,8 +575,9 @@ proc ::constcl::parse-quasiquoted-expr {} {
   $ib advance
   set expr [parse-expr]
   $ib skip-ws
+  # TODO make semi-constant
   make-constant $expr
-  return [list [MkSymbol "quasiquote"] $expr]
+  return [list [S "quasiquote"] $expr]
 }
 
 
@@ -604,7 +606,7 @@ proc ::constcl::parse-number-expr {} {
     check {::string is double -strict $num} {
       Invalid numeric constant $num
     }
-    return [MkNumber $num]
+    return [N $num]
 }
 
 
@@ -619,7 +621,7 @@ proc ::constcl::parse-identifier-expr {} {
   }
   $ib skip-ws
   # idcheck throws error if invalid identifier
-  return [MkSymbol [idcheck $name]]
+  return [S [idcheck $name]]
 }
 
 
@@ -972,9 +974,9 @@ proc ::constcl::read-plus-minus {char} {
     return $n
   } else {
     if {$char eq "+"} {
-      return [MkSymbol "+"]
+      return [S "+"]
     } else {
-      return [MkSymbol "-"]
+      return [S "-"]
     }
   }
 }
@@ -998,7 +1000,7 @@ proc ::constcl::read-number-expr {args} {
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
-  set expr [MkNumber $num]
+  set expr [N $num]
   read-eof $expr
   return $expr
 }
@@ -1017,7 +1019,7 @@ proc ::constcl::read-unquoted-expr {} {
     set expr [read-expr $c]
   }
   read-eof $expr
-  return [list [MkSymbol $symbol] $expr]
+  return [list [S $symbol] $expr]
 }
 
 
@@ -1051,7 +1053,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [MkSymbol "quasiquote"] $expr]
+  return [list [S "quasiquote"] $expr]
 }
 
 
@@ -1078,7 +1080,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $name
   # idcheck throws error if invalid identifier
   idcheck $name
-  return [MkSymbol $name]
+  return [S $name]
 }
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
