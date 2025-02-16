@@ -384,7 +384,7 @@ CB
 MD(
 __parse-quoted-expr__
 
-`parse-quoted-expr` parses input starting with an apostrophe ("'"), and then
+`parse-quoted-expr` parses input starting with a single quote ('), and then
 parses an entire expression beyond that, returning it wrapped in a list with
 `quote`. The quoted expression is made constant.
 MD)
@@ -453,7 +453,7 @@ MD(
 `parse-pair` is a helper procedure that does the heavy lifting in parsing a pair
 structure. First it checks if the list is empty, returning #NIL in that case.
 Otherwise it parses the first element in the list and then repeatedly the rest of
-them. If it parses a Dot object, the following element to be read is the tail
+them. If it parses a Dot object, the following element to be parsed is the tail
 end of an improper list. When `parse-pair` has reached the ending parenthesis or
 bracket, it conses up the elements starting from the last, and returns the head
 of the list.
@@ -569,7 +569,7 @@ __parse-unquoted-expr__
 
 When a comma is found in the input buffer, `parse-unquoted-expr` is activated.
 If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
-it selects the symbol `unquote`. Then it reads an entire expression and returns
+it selects the symbol `unquote`. Then it parses an entire expression and returns
 it wrapped in the selected symbol. Both of these expressions are only suppposed
 to occur inside a quasiquoted expression.
 MD)
@@ -1274,7 +1274,7 @@ proc ::constcl::skip-ws {} {
 CB
 
 MD(
-`read-eof` checks a number of characters for possible end-of-file objects. If it
+`read-eof` checks a number of objects for possible end-of-file objects. If it
 finds one, it returns **from its caller** with the EOF value.
 MD)
 
@@ -1323,6 +1323,7 @@ proc ::constcl::read-string-expr {} {
     error "bad string (no ending double quote)"
   }
   set expr [MkString $str]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1382,6 +1383,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set expr [MkVector $res]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1421,8 +1423,9 @@ CB
 MD(
 __read-quoted-expr__
 
-`read-quoted-expr` parses input starting with a "'", and then parses an entire
-expression beyond that, returning it wrapped in a list with `quote`.
+`read-quoted-expr` is activated by `read-expr` when reading a single quote (').
+It then reads an entire expression beyond that, returning it wrapped in a list
+with `quote`. The quoted expression is made constant.
 MD)
 
 PR(
@@ -1442,8 +1445,12 @@ CB
 MD(
 __read-pair-expr__
 
-The `read-pair-expr` procedure parses input and produces a structure of
-Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+The `read-pair-expr` procedure reads everything between two matching
+parentheses, or, as the case might be, brackets. It produces a possibly
+recursive structure of
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either
+an empty list, a proper list, i.e. one that ends in #NIL, or an improper one.
+i.e. one that has an atom as its last member.
 MD)
 
 PR(
@@ -1471,7 +1478,19 @@ proc ::constcl::read-pair-expr {char} {
   }
   return $expr
 }
+CB
 
+MD(
+`read-pair` is a helper procedure that does the heavy lifting in reading a pair
+structure. First it checks if the list is empty, returning #NIL in that case.
+Otherwise it reads the first element in the list and then repeatedly the rest of
+them. If it reads a Dot object, the following element to be read is the tail
+end of an improper list. When `read-pair` has reached the ending parenthesis or
+bracket, it conses up the elements starting from the last, and returns the head
+of the list.
+MD)
+
+CB
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   if {[read-find $char]} {
@@ -1509,8 +1528,9 @@ CB
 MD(
 __read-plus-minus__
 
-`read-plus-minus` reacts to a plus or minus in the input stream, and either
-returns a `+` or `-` symbol, or a number.
+`read-plus-minus` is called when a plus or minus is found in the input stream.
+If the next character is a digit, it delegates to the number reader. Otherwise,
+it returns a `+` or `-` symbol.
 MD)
 
 PR(
@@ -1524,6 +1544,7 @@ proc ::constcl::read-plus-minus {char} {
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
+    read-eof $n
     if {$char eq "-"} {
       set n [- $n]
     }
@@ -1541,7 +1562,11 @@ CB
 MD(
 __read-number-expr__
 
-`read-number-expr` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`read-number-expr` reads numerical input, both integers and floating point
+numbers. It actually takes in anything that starts out like a number and stops
+at whitespace or an ending parenthesis or bracket, and then it accepts or
+rejects the input by comparing it to a Tcl double. It returns a
+Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 MD)
 
 PR(
@@ -1575,9 +1600,11 @@ CB
 MD(
 __read-unquoted-expr__
 
-`read-unquoted-expr` parses input, producing an expression and returning
-it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
-the input stream.
+When a comma is found in the input stream, `parse-unquoted-expr` is activated.
+If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
+it selects the symbol `unquote`. Then it reads an entire expression and returns
+it wrapped in the selected symbol. Both of these expressions are only suppposed
+to occur inside a quasiquoted expression.
 MD)
 
 PR(
@@ -1604,7 +1631,7 @@ CB
 MD(
 __read-object-expr__
 
-A non-standard extension, `read-object-expr` reads one of the ConsTcl objects
+A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
 and passes its name along.
 MD)
 
@@ -1615,6 +1642,7 @@ PR)
 CB
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget
+  # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
     set c [readc]
     read-eof $c
@@ -1638,7 +1666,9 @@ CB
 MD(
 __read-quasiquoted-expr__
 
-`read-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
+`read-quasiquoted-expr` is activated when there is a backquote (&grave;) in the
+input stream. It reads an entire expression and returns it wrapped in
+`quasiquote`.
 MD)
 
 PR(
@@ -1659,7 +1689,11 @@ CB
 MD(
 __read-identifier-expr__
 
-`read-identifier-expr` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`read-identifier-expr` is activated for "anything else", and takes in
+characters until it finds whitespace or an ending parenthesis or bracket. It
+checks the input against the rules for identifiers, accepting or rejecting it
+with an error message. It returns a
+Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 MD)
 
 PR(

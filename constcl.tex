@@ -1076,7 +1076,7 @@ proc ::constcl::make-constant {val} {
 \textbf{parse-quoted-expr}
 
 
-\texttt{parse-quoted-expr} parses input starting with an apostrophe ("'"), and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
+\texttt{parse-quoted-expr} parses input starting with a single quote ('), and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1137,7 +1137,7 @@ proc ::constcl::parse-pair-expr {char} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{parse-pair} is a helper procedure that does the heavy lifting in parsing a pair structure. First it checks if the list is empty, returning \#NIL in that case. Otherwise it parses the first element in the list and then repeatedly the rest of them. If it parses a Dot object, the following element to be read is the tail end of an improper list. When \texttt{parse-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
+\texttt{parse-pair} is a helper procedure that does the heavy lifting in parsing a pair structure. First it checks if the list is empty, returning \#NIL in that case. Otherwise it parses the first element in the list and then repeatedly the rest of them. If it parses a Dot object, the following element to be parsed is the tail end of an improper list. When \texttt{parse-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
@@ -1208,7 +1208,7 @@ proc ::constcl::parse-plus-minus {} {
 \textbf{parse-unquoted-expr}
 
 
-When a comma is found in the input buffer, \texttt{parse-unquoted-expr} is activated. If it reads an at-sign (@) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
+When a comma is found in the input buffer, \texttt{parse-unquoted-expr} is activated. If it reads an at-sign (@) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it parses an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1675,7 +1675,7 @@ proc ::constcl::skip-ws {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{read-eof} checks a number of characters for possible end-of-file objects. If it finds one, it returns \emph{from its caller} with the EOF value.
+\texttt{read-eof} checks a number of objects for possible end-of-file objects. If it finds one, it returns \emph{from its caller} with the EOF value.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1729,6 +1729,7 @@ proc ::constcl::read-string-expr {} {
     error "bad string (no ending double quote)"
   }
   set expr [MkString $str]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1796,6 +1797,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set expr [MkVector $res]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1840,7 +1842,7 @@ proc ::constcl::read-character-expr {} {
 \textbf{read-quoted-expr}
 
 
-\texttt{read-quoted-expr} parses input starting with a "'", and then parses an entire expression beyond that, returning it wrapped in a list with \texttt{quote}.
+\texttt{read-quoted-expr} is activated by \texttt{read-expr} when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1865,7 +1867,7 @@ proc ::constcl::read-quoted-expr {} {
 \textbf{read-pair-expr}
 
 
-The \texttt{read-pair-expr} procedure parses input and produces a structure of Pair (see page \pageref{pairs-and-lists})s expression.
+The \texttt{read-pair-expr} procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces a possibly recursive structure of Pair (see page \pageref{pairs-and-lists}) objects, either an empty list, a proper list, i.e. one that ends in \#NIL, or an improper one. i.e. one that has an atom as its last member.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1898,7 +1900,13 @@ proc ::constcl::read-pair-expr {char} {
   }
   return $expr
 }
- 
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{read-pair} is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning \#NIL in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When \texttt{read-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   if {[read-find $char]} {
@@ -1937,7 +1945,7 @@ proc ::constcl::read-pair {char} {
 \textbf{read-plus-minus}
 
 
-\texttt{read-plus-minus} reacts to a plus or minus in the input stream, and either returns a \texttt{+} or \texttt{-} symbol, or a number.
+\texttt{read-plus-minus} is called when a plus or minus is found in the input stream. If the next character is a digit, it delegates to the number reader. Otherwise, it returns a \texttt{+} or \texttt{-} symbol.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1955,6 +1963,7 @@ proc ::constcl::read-plus-minus {char} {
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
+    read-eof $n
     if {$char eq "-"} {
       set n [- $n]
     }
@@ -1973,7 +1982,7 @@ proc ::constcl::read-plus-minus {char} {
 \textbf{read-number-expr}
 
 
-\texttt{read-number-expr} parses input, producing a number and returning a Number (see page \pageref{numbers}) object.
+\texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2013,7 +2022,7 @@ proc ::constcl::read-number-expr {args} {
 \textbf{read-unquoted-expr}
 
 
-\texttt{read-unquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{unquote}, or in \texttt{unquote-splicing} if an @-sign is present in the input stream.
+When a comma is found in the input stream, \texttt{parse-unquoted-expr} is activated. If it reads an at-sign (@) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2045,7 +2054,7 @@ proc ::constcl::read-unquoted-expr {} {
 \textbf{read-object-expr}
 
 
-A non-standard extension, \texttt{read-object-expr} reads one of the ConsTcl objects and passes its name along.
+A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of any kind and passes its name along.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2059,6 +2068,7 @@ A non-standard extension, \texttt{read-object-expr} reads one of the ConsTcl obj
 \begin{lstlisting}
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget
+  # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
     set c [readc]
     read-eof $c
@@ -2083,7 +2093,7 @@ proc ::constcl::read-object-expr {} {
 \textbf{read-quasiquoted-expr}
 
 
-\texttt{read-quasiquoted-expr} parses input, producing an expression and returning it wrapped in \texttt{quasiquote}.
+\texttt{read-quasiquoted-expr} is activated when there is a backquote (`) in the input stream. It reads an entire expression and returns it wrapped in \texttt{quasiquote}.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2109,7 +2119,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 \textbf{read-identifier-expr}
 
 
-\texttt{read-identifier-expr} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
+\texttt{read-identifier-expr} is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
 
 \begin{tabular}{ |l l| }
 \hline

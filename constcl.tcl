@@ -842,6 +842,7 @@ proc ::constcl::read-string-expr {} {
     error "bad string (no ending double quote)"
   }
   set expr [MkString $str]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -879,6 +880,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set expr [MkVector $res]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -936,6 +938,7 @@ proc ::constcl::read-pair-expr {char} {
   return $expr
 }
 
+
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   if {[read-find $char]} {
@@ -977,6 +980,7 @@ proc ::constcl::read-plus-minus {char} {
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
+    read-eof $n
     if {$char eq "-"} {
       set n [- $n]
     }
@@ -1035,6 +1039,7 @@ proc ::constcl::read-unquoted-expr {} {
 
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget
+  # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
     set c [readc]
     read-eof $c

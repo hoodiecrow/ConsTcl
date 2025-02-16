@@ -845,7 +845,7 @@ proc ::constcl::make-constant {val} {
 
 __parse-quoted-expr__
 
-`parse-quoted-expr` parses input starting with an apostrophe ("'"), and then
+`parse-quoted-expr` parses input starting with a single quote ('), and then
 parses an entire expression beyond that, returning it wrapped in a list with
 `quote`. The quoted expression is made constant.
 
@@ -899,7 +899,7 @@ proc ::constcl::parse-pair-expr {char} {
 `parse-pair` is a helper procedure that does the heavy lifting in parsing a pair
 structure. First it checks if the list is empty, returning #NIL in that case.
 Otherwise it parses the first element in the list and then repeatedly the rest of
-them. If it parses a Dot object, the following element to be read is the tail
+them. If it parses a Dot object, the following element to be parsed is the tail
 end of an improper list. When `parse-pair` has reached the ending parenthesis or
 bracket, it conses up the elements starting from the last, and returns the head
 of the list.
@@ -966,7 +966,7 @@ __parse-unquoted-expr__
 
 When a comma is found in the input buffer, `parse-unquoted-expr` is activated.
 If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
-it selects the symbol `unquote`. Then it reads an entire expression and returns
+it selects the symbol `unquote`. Then it parses an entire expression and returns
 it wrapped in the selected symbol. Both of these expressions are only suppposed
 to occur inside a quasiquoted expression.
 
@@ -1348,7 +1348,7 @@ proc ::constcl::skip-ws {} {
 }
 ```
 
-`read-eof` checks a number of characters for possible end-of-file objects. If it
+`read-eof` checks a number of objects for possible end-of-file objects. If it
 finds one, it returns **from its caller** with the EOF value.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>args</td><td>some characters</td></tr></table>
@@ -1390,6 +1390,7 @@ proc ::constcl::read-string-expr {} {
     error "bad string (no ending double quote)"
   }
   set expr [MkString $str]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1441,6 +1442,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set expr [MkVector $res]
+  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1475,8 +1477,9 @@ proc ::constcl::read-character-expr {} {
 
 __read-quoted-expr__
 
-`read-quoted-expr` parses input starting with a "'", and then parses an entire
-expression beyond that, returning it wrapped in a list with `quote`.
+`read-quoted-expr` is activated by `read-expr` when reading a single quote (').
+It then reads an entire expression beyond that, returning it wrapped in a list
+with `quote`. The quoted expression is made constant.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-quoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quote symbol or end of file</td></tr></table>
 
@@ -1492,8 +1495,12 @@ proc ::constcl::read-quoted-expr {} {
 
 __read-pair-expr__
 
-The `read-pair-expr` procedure parses input and produces a structure of
-Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists)s expression.
+The `read-pair-expr` procedure reads everything between two matching
+parentheses, or, as the case might be, brackets. It produces a possibly
+recursive structure of
+Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either
+an empty list, a proper list, i.e. one that ends in #NIL, or an improper one.
+i.e. one that has an atom as its last member.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
 
@@ -1518,7 +1525,17 @@ proc ::constcl::read-pair-expr {char} {
   }
   return $expr
 }
+```
 
+`read-pair` is a helper procedure that does the heavy lifting in reading a pair
+structure. First it checks if the list is empty, returning #NIL in that case.
+Otherwise it reads the first element in the list and then repeatedly the rest of
+them. If it reads a Dot object, the following element to be read is the tail
+end of an improper list. When `read-pair` has reached the ending parenthesis or
+bracket, it conses up the elements starting from the last, and returns the head
+of the list.
+
+```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   if {[read-find $char]} {
@@ -1555,8 +1572,9 @@ proc ::constcl::read-pair {char} {
 
 __read-plus-minus__
 
-`read-plus-minus` reacts to a plus or minus in the input stream, and either
-returns a `+` or `-` symbol, or a number.
+`read-plus-minus` is called when a plus or minus is found in the input stream.
+If the next character is a digit, it delegates to the number reader. Otherwise,
+it returns a `+` or `-` symbol.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number or end of file</td></tr></table>
 
@@ -1567,6 +1585,7 @@ proc ::constcl::read-plus-minus {char} {
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
+    read-eof $n
     if {$char eq "-"} {
       set n [- $n]
     }
@@ -1583,7 +1602,11 @@ proc ::constcl::read-plus-minus {char} {
 
 __read-number-expr__
 
-`read-number-expr` parses input, producing a number and returning a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`read-number-expr` reads numerical input, both integers and floating point
+numbers. It actually takes in anything that starts out like a number and stops
+at whitespace or an ending parenthesis or bracket, and then it accepts or
+rejects the input by comparing it to a Tcl double. It returns a
+Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
@@ -1613,9 +1636,11 @@ proc ::constcl::read-number-expr {args} {
 
 __read-unquoted-expr__
 
-`read-unquoted-expr` parses input, producing an expression and returning
-it wrapped in `unquote`, or in `unquote-splicing` if an @-sign is present in
-the input stream.
+When a comma is found in the input stream, `parse-unquoted-expr` is activated.
+If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
+it selects the symbol `unquote`. Then it reads an entire expression and returns
+it wrapped in the selected symbol. Both of these expressions are only suppposed
+to occur inside a quasiquoted expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-unquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the unquote/-splicing symbol or end of file</td></tr></table>
 
@@ -1638,7 +1663,7 @@ proc ::constcl::read-unquoted-expr {} {
 
 __read-object-expr__
 
-A non-standard extension, `read-object-expr` reads one of the ConsTcl objects
+A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
 and passes its name along.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
@@ -1646,6 +1671,7 @@ and passes its name along.
 ```
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget
+  # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
     set c [readc]
     read-eof $c
@@ -1668,7 +1694,9 @@ proc ::constcl::read-object-expr {} {
 
 __read-quasiquoted-expr__
 
-`read-quasiquoted-expr` parses input, producing an expression and returning it wrapped in `quasiquote`.
+`read-quasiquoted-expr` is activated when there is a backquote (&grave;) in the
+input stream. It reads an entire expression and returns it wrapped in
+`quasiquote`.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-quasiquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the quasiquote symbol or end of file</td></tr></table>
 
@@ -1685,7 +1713,11 @@ proc ::constcl::read-quasiquoted-expr {} {
 
 __read-identifier-expr__
 
-`read-identifier-expr` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`read-identifier-expr` is activated for "anything else", and takes in
+characters until it finds whitespace or an ending parenthesis or bracket. It
+checks the input against the rules for identifiers, accepting or rejecting it
+with an error message. It returns a
+Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
