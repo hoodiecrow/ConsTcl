@@ -167,6 +167,10 @@ source constcl.tcl
     pp "#(1 2 3)"
 } -output "#(1 2 3)\n"
 
+::tcltest::test parse-10.1 {try reading a vector, with non-normal expression} -body {
+    pp "#(1 2 (+ 1 2))"
+} -output "#(1 2 (+ 1 2))\n"
+
 
 ::tcltest::test read-1.0 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp

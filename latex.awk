@@ -4,6 +4,8 @@ BEGIN {
 	print "\\documentclass[twoside,9pt]{report}"
 	print "\\usepackage[a5paper]{geometry}"
 	print "\\usepackage{newpxmath}"
+	print "%\\usepackage{libertine} \\usepackage[libertine]{newtxmath}"
+	print "%\\usepackage{kpfonts}"
 	print "\\usepackage{graphicx}"
 	print "\\usepackage{listings}"
 	print "\\lstset{"

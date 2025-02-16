@@ -1057,7 +1057,11 @@ proc ::constcl::parse-number-expr {} {
 
 __parse-identifier-expr__
 
-`parse-identifier-expr` parses input, producing an identifier expression and returning a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`parse-identifier-expr` is activated for "anything else", and takes in
+characters until it finds whitespace or an ending parenthesis or bracket. It
+checks the input against the rules for identifiers, accepting or rejecting it
+with an error message. It returns a
+Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -1096,8 +1100,9 @@ proc ::constcl::character-check {name} {
 
 __parse-character-expr__
 
-`parse-character-expr` parses input, producing a character and returning
-a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`parse-character-expr` is activated from `parse-sharp` and parses a character or
+character name from input, producing and returning a
+Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -1121,7 +1126,10 @@ proc ::constcl::parse-character-expr {} {
 
 __parse-vector-expr__
 
-`parse-vector-expr` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`parse-vector-expr` is also activated from `parse-sharp`. It parses a number of
+expressions until it encounters an ending parenthesis. It produces a vector with
+the expressions parsed as elements and returns a
+Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -1149,8 +1157,8 @@ proc ::constcl::parse-vector-expr {} {
 
 __parse-object-expr__
 
-A non-standard extension, `parse-object-expr` reads one of the ConsTcl objects
-and passes its name along.
+A non-standard extension, `parse-object-expr` parses a ConsTcl object of any
+kind and passes its name along.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object</td></tr></table>
 
@@ -1176,8 +1184,14 @@ proc ::constcl::parse-object-expr {} {
 
 __read__
 
-The standard builtin `read` reads and parses input into a Lisp expression in a
-similar manner to how `parse` parses a string buffer.
+The standard builtin `read` reads an input port approximately the same way that
+`parse` takes in an input buffer. Like the `parse-` procedures, the `read-`
+procedures also parse their input (with small differences) and produce ConsTcl
+objects just like them.
+
+One can pass a port to `read`, in which case `read` sets the standard input port
+temporarily to the provided port. If not, `read` uses the standard input port
+(usually the keyboard).
 
 <table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1247,13 +1261,14 @@ proc ::constcl::read-expr {args} {
 ```
 
 
-`readc` reads one character either from the unget store or from the input
-stream. If the input stream is at end-of-file, an eof object is returned.
+`readc` reads one character from the unget store if it isn't empty or else from
+the input stream. If the input stream is at end-of-file, an eof object is
+returned.
 
 <table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
 
 ```
-proc readc {} {
+proc ::constcl::readc {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -1275,7 +1290,7 @@ Returns end of file if eof is encountered.
 <table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
 
 ```
-proc read-find {char} {
+proc ::constcl::read-find {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
     set c [readc]
@@ -1286,13 +1301,34 @@ proc read-find {char} {
 }
 ```
 
+`read-end` reads one character and returns 1 if it is an interspace character or
+an ending parenthesis or bracket. Otherwise it returns 0 or end-of-file if
+applicable. It ungets the character before returning.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td>-&gt;tbooleof</td><td></td></tr></table>
+
+```
+proc ::constcl::read-end {} {
+  upvar c c unget unget
+  set c [readc]
+  if {[interspace $c] ne "#f" || $c in {) ]}} {
+    set unget $c
+    return 1
+  } else {
+    read-eof $c
+    set unget $c
+    return 0
+  }
+}
+```
+
 `skip-ws` skips whitespace and comments (the ; to end of line kind). Uses the
-shared _c_ character. It leaves the first character not to be skipped in _c_.
+shared **c** character. It leaves the first character not to be skipped in **c**.
 
 <table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc skip-ws {} {
+proc ::constcl::skip-ws {} {
   upvar c c unget unget
   while true {
     switch -regexp $c {
@@ -1318,7 +1354,7 @@ finds one, it returns **from its caller** with the EOF value.
 <table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>args</td><td>some characters</td></tr></table>
 
 ```
-proc read-eof {args} {
+proc ::constcl::read-eof {args} {
   foreach val $args {
     if {$val eq "#EOF"} {
       return -level 1 -code return #EOF
@@ -1329,9 +1365,9 @@ proc read-eof {args} {
 
 __read-string-expr__
 
-`read-string-expr` parses input starting with a double quote and collects
-characters until it reaches another (unescaped) double quote. It then returns a
-string expression--an immutable
+`read-string-expr` is activated by `read-expr` when it reads a double quote. It
+collects characters until it reaches another (unescaped) double quote. It then
+returns a string expression--an immutable
 String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
@@ -1353,9 +1389,7 @@ proc ::constcl::read-string-expr {} {
   if {$c ne "\""} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
   set expr [MkString $str]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1363,8 +1397,9 @@ proc ::constcl::read-string-expr {} {
 
 __read-sharp__
 
-`read-sharp` parses input starting with a sharp sign (#) and produces the various kinds of
-expressions whose external representation begins with a sharp sign.
+`read-sharp` is activated by `read-expr` when it reads a sharp sign (#). It in
+turn either delegates to the vector reader or the character reader, or returns
+boolean literals.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value or end of file</td></tr></table>
 
@@ -1375,22 +1410,20 @@ proc ::constcl::read-sharp {} {
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
-    t    { set n #t }
-    f    { set n #f }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
     "\\" { set n [read-character-expr] }
     default {
-      read-eof $c
       ::error "Illegal #-literal: #$c"
     }
   }
-  set c [readc]
   return $n
 }
 ```
 
 __read-vector-expr__
 
-`read-vector-expr` parses input, producing a vector expression and returning a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`read-vector-expr` is activated by `read-sharp` and reads a number of expressions until it finds an ending parenthesis.  It produces a vector expression and returns a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -1404,13 +1437,11 @@ proc ::constcl::read-vector-expr {} {
     skip-ws
     read-eof $c
   }
-  set expr [MkVector $res]
-  read-eof $expr
-  $expr mkconstant
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
-  set c [readc]
+  set expr [MkVector $res]
+  $expr mkconstant
   return $expr
 }
 ```

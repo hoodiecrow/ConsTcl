@@ -751,7 +751,7 @@ proc ::constcl::read-expr {args} {
 
 
 
-proc readc {} {
+proc ::constcl::readc {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -767,7 +767,7 @@ proc readc {} {
 
 
 
-proc read-find {char} {
+proc ::constcl::read-find {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
     set c [readc]
@@ -779,7 +779,22 @@ proc read-find {char} {
 
 
 
-proc skip-ws {} {
+proc ::constcl::read-end {} {
+  upvar c c unget unget
+  set c [readc]
+  if {[interspace $c] ne "#f" || $c in {) ]}} {
+    set unget $c
+    return 1
+  } else {
+    read-eof $c
+    set unget $c
+    return 0
+  }
+}
+
+
+
+proc ::constcl::skip-ws {} {
   upvar c c unget unget
   while true {
     switch -regexp $c {
@@ -800,7 +815,7 @@ proc skip-ws {} {
 
 
 
-proc read-eof {args} {
+proc ::constcl::read-eof {args} {
   foreach val $args {
     if {$val eq "#EOF"} {
       return -level 1 -code return #EOF
@@ -826,9 +841,7 @@ proc ::constcl::read-string-expr {} {
   if {$c ne "\""} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
   set expr [MkString $str]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -841,15 +854,13 @@ proc ::constcl::read-sharp {} {
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
-    t    { set n #t }
-    f    { set n #f }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
     "\\" { set n [read-character-expr] }
     default {
-      read-eof $c
       ::error "Illegal #-literal: #$c"
     }
   }
-  set c [readc]
   return $n
 }
 
@@ -864,13 +875,11 @@ proc ::constcl::read-vector-expr {} {
     skip-ws
     read-eof $c
   }
-  set expr [MkVector $res]
-  read-eof $expr
-  $expr mkconstant
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
-  set c [readc]
+  set expr [MkVector $res]
+  $expr mkconstant
   return $expr
 }
 

@@ -1,6 +1,8 @@
 \documentclass[twoside,9pt]{report}
 \usepackage[a5paper]{geometry}
 \usepackage{newpxmath}
+%\usepackage{libertine} \usepackage[libertine]{newtxmath}
+%\usepackage{kpfonts}
 \usepackage{graphicx}
 \usepackage{listings}
 \lstset{
@@ -1315,7 +1317,7 @@ proc ::constcl::parse-number-expr {} {
 \textbf{parse-identifier-expr}
 
 
-\texttt{parse-identifier-expr} parses input, producing an identifier expression and returning a Symbol (see page \pageref{symbols}) object.
+\texttt{parse-identifier-expr} is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1371,7 +1373,7 @@ proc ::constcl::character-check {name} {
 \textbf{parse-character-expr}
 
 
-\texttt{parse-character-expr} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
+\texttt{parse-character-expr} is activated from \texttt{parse-sharp} and parses a character or character name from input, producing and returning a Char (see page \pageref{characters}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1403,7 +1405,7 @@ proc ::constcl::parse-character-expr {} {
 \textbf{parse-vector-expr}
 
 
-\texttt{parse-vector-expr} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
+\texttt{parse-vector-expr} is also activated from \texttt{parse-sharp}. It parses a number of expressions until it encounters an ending parenthesis. It produces a vector with the expressions parsed as elements and returns a Vector (see page \pageref{vectors}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1439,7 +1441,7 @@ proc ::constcl::parse-vector-expr {} {
 \textbf{parse-object-expr}
 
 
-A non-standard extension, \texttt{parse-object-expr} reads one of the ConsTcl objects and passes its name along.
+A non-standard extension, \texttt{parse-object-expr} parses a ConsTcl object of any kind and passes its name along.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1474,7 +1476,10 @@ proc ::constcl::parse-object-expr {} {
 \textbf{read}
 
 
-The standard builtin \texttt{read} reads and parses input into a Lisp expression in a similar manner to how \texttt{parse} parses a string buffer.
+The standard builtin \texttt{read} reads an input port approximately the same way that \texttt{parse} takes in an input buffer. Like the \texttt{parse-} procedures, the \texttt{read-} procedures also parse their input (with small differences) and produce ConsTcl objects just like them.
+
+
+One can pass a port to \texttt{read}, in which case \texttt{read} sets the standard input port temporarily to the provided port. If not, \texttt{read} uses the standard input port (usually the keyboard).
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1557,7 +1562,7 @@ proc ::constcl::read-expr {args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{readc} reads one character either from the unget store or from the input stream. If the input stream is at end-of-file, an eof object is returned.
+\texttt{readc} reads one character from the unget store if it isn't empty or else from the input stream. If the input stream is at end-of-file, an eof object is returned.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1569,7 +1574,7 @@ proc ::constcl::read-expr {args} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc readc {} {
+proc ::constcl::readc {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -1598,7 +1603,7 @@ char & a Tcl character \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc read-find {char} {
+proc ::constcl::read-find {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
     set c [readc]
@@ -1610,7 +1615,34 @@ proc read-find {char} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\texttt{skip-ws} skips whitespace and comments (the ; to end of line kind). Uses the shared \_c\_ character. It leaves the first character not to be skipped in \_c\_.
+\texttt{read-end} reads one character and returns 1 if it is an interspace character or an ending parenthesis or bracket. Otherwise it returns 0 or end-of-file if applicable. It ungets the character before returning.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{read-end (internal)} \\
+\hline
+->tbooleof &  \\
+\hline
+\end{tabular}
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::read-end {} {
+  upvar c c unget unget
+  set c [readc]
+  if {[interspace $c] ne "#f" || $c in {) ]}} {
+    set unget $c
+    return 1
+  } else {
+    read-eof $c
+    set unget $c
+    return 0
+  }
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\texttt{skip-ws} skips whitespace and comments (the ; to end of line kind). Uses the shared \emph{c} character. It leaves the first character not to be skipped in \emph{c}.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1622,7 +1654,7 @@ proc read-find {char} {
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc skip-ws {} {
+proc ::constcl::skip-ws {} {
   upvar c c unget unget
   while true {
     switch -regexp $c {
@@ -1655,7 +1687,7 @@ args & some characters \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc read-eof {args} {
+proc ::constcl::read-eof {args} {
   foreach val $args {
     if {$val eq "#EOF"} {
       return -level 1 -code return #EOF
@@ -1668,7 +1700,7 @@ proc read-eof {args} {
 \textbf{read-string-expr}
 
 
-\texttt{read-string-expr} parses input starting with a double quote and collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
+\texttt{read-string-expr} is activated by \texttt{read-expr} when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1696,9 +1728,7 @@ proc ::constcl::read-string-expr {} {
   if {$c ne "\""} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
   set expr [MkString $str]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1708,7 +1738,7 @@ proc ::constcl::read-string-expr {} {
 \textbf{read-sharp}
 
 
-\texttt{read-sharp} parses input starting with a sharp sign (\#) and produces the various kinds of expressions whose external representation begins with a sharp sign.
+\texttt{read-sharp} is activated by \texttt{read-expr} when it reads a sharp sign (\#). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1726,15 +1756,13 @@ proc ::constcl::read-sharp {} {
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
-    t    { set n #t }
-    f    { set n #f }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
     "\\" { set n [read-character-expr] }
     default {
-      read-eof $c
       ::error "Illegal #-literal: #$c"
     }
   }
-  set c [readc]
   return $n
 }
 \end{lstlisting}
@@ -1743,7 +1771,7 @@ proc ::constcl::read-sharp {} {
 \textbf{read-vector-expr}
 
 
-\texttt{read-vector-expr} parses input, producing a vector expression and returning a Vector (see page \pageref{vectors}) object.
+\texttt{read-vector-expr} is activated by \texttt{read-sharp} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1764,13 +1792,11 @@ proc ::constcl::read-vector-expr {} {
     skip-ws
     read-eof $c
   }
-  set expr [MkVector $res]
-  read-eof $expr
-  $expr mkconstant
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
-  set c [readc]
+  set expr [MkVector $res]
+  $expr mkconstant
   return $expr
 }
 \end{lstlisting}
