@@ -112,6 +112,24 @@ proc ::pw {str} {
 CB
 
 MD(
+__rw__
+
+`rw` is the reading variant of `pw`. It just writes what is
+read.
+MD)
+
+PR(
+rw (internal);?port? iport -> none
+PR)
+
+CB
+proc ::rw {args} {
+  ::constcl::write [
+    ::constcl::read {*}$args]
+}
+CB
+
+MD(
 __pe__
 
 `pe` is also similar, but it doesn't write the expression. It just evaluates what
@@ -508,6 +526,14 @@ oo::class create ::constcl::EndOfFile {
     my write $handle
   }
 }
+
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
 CB
 
 MD(
@@ -581,7 +607,7 @@ reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
-      char boolean vector port} {
+      char boolean vector port eof} {
     if {[$type? $val] eq "#t"} {
       return #t
     }

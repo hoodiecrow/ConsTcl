@@ -127,6 +127,20 @@ proc ::pw {str} {
 }
 ```
 
+__rw__
+
+`rw` is the reading variant of `pw`. It just writes what is
+read.
+
+<table border=1><thead><tr><th colspan=2 align="left">rw (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::rw {args} {
+  ::constcl::write [
+    ::constcl::read {*}$args]
+}
+```
+
 __pe__
 
 `pe` is also similar, but it doesn't write the expression. It just evaluates what
@@ -462,6 +476,14 @@ oo::class create ::constcl::EndOfFile {
     my write $handle
   }
 }
+
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
 ```
 
 ### The error and check procedures
@@ -525,7 +547,7 @@ reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
-      char boolean vector port} {
+      char boolean vector port eof} {
     if {[$type? $val] eq "#t"} {
       return #t
     }
@@ -717,9 +739,8 @@ the list.
 
 __parse__
 
-`parse` is the entry point into the `parse-` set of commands. It can be called
-with either a Tcl or ConsTcl string, or an input buffer (instance of IB). Once
-the input buffer is established, `parse` leaves control to `parse-expr`.
+`parse` can be called with either a Tcl or ConsTcl string, or a string input
+port. Once the input port is established, `parse` leaves control to `read-expr`.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>inp</td><td>a Tcl string or an input buffer</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -727,19 +748,27 @@ the input buffer is established, `parse` leaves control to `parse-expr`.
 reg parse
 
 proc ::constcl::parse {inp} {
+  set c {}
+  set unget {}
   if {[info object isa object $inp]} {
     if {[typeof? $inp IB] ne "#f"} {
-      set ib $inp
+      error "IB used"
+    } elseif {[typeof? $inp StringInputPort] ne "#f"} {
+      set port $inp
     } elseif {[typeof? $inp String] ne "#f"} {
-      set ib [IB new [$inp value]]
+      set port [::constcl::StringInputPort new [$inp value]]
     } else {
       ::error "Unknown object [$inp show]"
     }
   } else {
     # It's a Tcl string, we hope
-    set ib [IB new $inp]
+    set port [StringInputPort new $inp]
   }
-  return [parse-expr]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $port
+  set expr [read-expr]
+  set ::constcl::Input_port $oldport
+  return $expr
 }
 ```
 
@@ -1247,6 +1276,7 @@ proc ::constcl::read-expr {args} {
   } else {
     set c [readc]
   }
+  set unget {}
   read-eof $c
   if {[::string is space $c] || $c eq ";"} {
     skip-ws
@@ -1259,7 +1289,9 @@ proc ::constcl::read-expr {args} {
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
     {\,}          { read-unquoted-expr }
-    {\.}          { Dot new }
+    {\.} {
+        set x [Dot new]; set c [readc]; set x
+    }
     {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
@@ -1288,8 +1320,8 @@ proc ::constcl::readc {} {
     set c $unget
     set unget {}
   } else {
-    set c [::read [$::constcl::Input_port handle] 1]
-    if {[eof [$::constcl::Input_port handle]]} {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
       return #EOF
     }
   }
@@ -1355,6 +1387,7 @@ proc ::constcl::skip-ws {} {
         }
       }
       default {
+        set unget $c
         return
       }
     }
@@ -1394,15 +1427,16 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
-      ::append str $v
+      ::append str $c
       set c [readc]
     }
     ::append str $c
     set c [readc]
   }
-  if {$c ne "\""} {
+  if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
+  set c [readc]
   set expr [MkString $str]
   read-eof $expr
   $expr mkconstant
@@ -1421,6 +1455,7 @@ boolean literals.
 ```
 proc ::constcl::read-sharp {} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   switch $c {
@@ -1475,10 +1510,9 @@ proc ::constcl::read-character-expr {} {
   set name "#\\"
   set c [readc]
   read-eof $c
-  while {[::string is alpha $c]} {
+  while {$c ni {) ]} && [::string is graph $c] && $c ne "#EOF"} {
     ::append name $c
     set c [readc]
-    read-eof $c
   }
   check {character-check $name} {
       Invalid character constant $name
@@ -1500,6 +1534,7 @@ with `quote`. The quoted expression is made constant.
 ```
 proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
@@ -1569,12 +1604,12 @@ proc ::constcl::read-pair {char} {
     read-eof $c
     if {[dot? $x] ne "#f"} {
       set prev [read-expr $c]
-      skip-ws $c]
+      skip-ws
       read-eof $c
     } else {
       lappend res $x
     }
-    if {[llength $res] > 999} break
+    if {[llength $res] > 9} break
   }
   # read right paren/brack
   foreach r [lreverse $res] {
@@ -1595,6 +1630,7 @@ it returns a `+` or `-` symbol.
 ```
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   if {[::string is digit -strict $c]} {
@@ -1627,6 +1663,7 @@ Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 ```
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
+  set unget {}
   if {[llength $args]} {
     lassign $args c
   } else {
@@ -1634,7 +1671,7 @@ proc ::constcl::read-number-expr {args} {
   }
   read-eof $c
   while {[interspace $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) \]}} {
+      $c ni {) ]}} {
     ::append num $c
     set c [readc]
   }
@@ -1643,7 +1680,6 @@ proc ::constcl::read-number-expr {args} {
       Invalid numeric constant $num
   }
   set expr [N $num]
-  read-eof $expr
   return $expr
 }
 ```
@@ -1672,37 +1708,6 @@ proc ::constcl::read-unquoted-expr {} {
   }
   read-eof $expr
   return [list [S $symbol] $expr]
-}
-```
-
-__read-object-expr__
-
-A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
-and passes its name along.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
-
-```
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readc]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readc]
-    read-eof $c
-  }
-  set unget $c
-  return $res
 }
 ```
 
@@ -1759,6 +1764,37 @@ proc ::constcl::read-identifier-expr {args} {
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
+}
+```
+
+__read-object-expr__
+
+A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
+and passes its name along.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
+
+```
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  # first colon has already been read
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 ```
 
@@ -5081,6 +5117,53 @@ oo::class create ::constcl::InputPort {
     }
     return $handle
   }
+  method get {} {
+    read $handle 1
+  }
+  method eof {} {
+    eof $handle
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<input-port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+
+oo::class create ::constcl::StringInputPort {
+  superclass ::constcl::Port
+  variable buffer read_eof
+  constructor {str} {
+    set buffer $str
+    set read_eof 0
+  }
+  method open {name} {
+    try {
+      set handle [open [$name value] "r"]
+    } on error {} {
+      set handle #NIL
+      return -1
+    }
+    return $handle
+  }
+  method get {} {
+    if {[::string length $buffer] == 0} {
+      set read_eof 1
+      return #EOF
+    }
+    set c [::string index $buffer 0]
+    set buffer [::string range $buffer 1 end]
+    return $c
+  }
+  method eof {} {
+    if {$read_eof} {
+      return 1
+    } else {
+      return 0
+    }
+  }
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<input-port-$num>"
@@ -5101,6 +5184,9 @@ oo::class create ::constcl::OutputPort {
       return -1
     }
     return $handle
+  }
+  method put {c} {
+    puts -nonewline $handle $c
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
@@ -7365,7 +7451,7 @@ oo::class create ::constcl::Environment {
       if {$symsn != $valsn} {
         error [
           ::append --> "wrong # of arguments, " \
-            "$valsn instead of $symsn"
+            "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
         my set $sym $val
@@ -7454,7 +7540,7 @@ namespace eval ::constcl {
 Load the Scheme base to add more definitions to the global environment.
 
 ```
-pe {(load "schemebase.scm")}
+#pe {(load "schemebase.scm")}
 ```
 
 Thereafter, each time a user-defined procedure is called, a new `Environment`
