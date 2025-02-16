@@ -97,17 +97,17 @@ MD)
 
 TT(
 ::tcltest::test global_env-1.0 {check for a symbol} -body {
-    pep "pi"
+    pew "pi"
 } -output 3.1415926535897931\n
 TT)
 
 TT(
 ::tcltest::test global_env-2.0 {dereference an unbound symbol} -body {
-    pep "foo"
+    pew "foo"
 } -returnCodes error -result "Unbound variable: foo"
 
 ::tcltest::test global_env-2.1 {dereference an unbound symbol: procedure} -body {
-    pep "(foo)"
+    pew "(foo)"
 } -returnCodes error -result "Unbound variable: foo"
 TT)
 

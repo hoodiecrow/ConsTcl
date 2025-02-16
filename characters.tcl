@@ -131,7 +131,7 @@ CB
 TT(
 
 ::tcltest::test characters-1.0 {try char?} -body {
-    pep {(char? #\A)}
+    pew {(char? #\A)}
 } -output "#t\n"
 
 TT)
@@ -176,13 +176,13 @@ CB
 TT(
 
 ::tcltest::test characters-1.1 {try char=?} -body {
-    pep {(char=? #\A #\A)}
-    pep {(char=? #\A #\a)}
-    pep {(char=? #\Space #\space)}
+    pew {(char=? #\A #\A)}
+    pew {(char=? #\A #\a)}
+    pew {(char=? #\Space #\space)}
 } -output "#t\n#f\n#t\n"
 
 ::tcltest::test characters-check-1.0 {try triggering a check} -body {
-    pep {(char=? 99 #\A)}
+    pew {(char=? 99 #\A)}
 } -returnCodes error -result "CHAR expected\n(char=? 99 #\\A)"
 
 TT)
@@ -208,9 +208,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.2 {try char<?} -body {
-    pep {(char<? #\A #\A)}
-    pep {(char<? #\A #\B)}
-    pep {(char<? #\B #\A)}
+    pew {(char<? #\A #\A)}
+    pew {(char<? #\A #\B)}
+    pew {(char<? #\B #\A)}
 } -output "#f\n#t\n#f\n"
 
 TT)
@@ -236,9 +236,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.3 {try char>?} -body {
-    pep {(char>? #\A #\A)}
-    pep {(char>? #\A #\B)}
-    pep {(char>? #\B #\A)}
+    pew {(char>? #\A #\A)}
+    pew {(char>? #\A #\B)}
+    pew {(char>? #\B #\A)}
 } -output "#f\n#f\n#t\n"
 
 TT)
@@ -264,9 +264,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.4 {try char<=?} -body {
-    pep {(char<=? #\A #\A)}
-    pep {(char<=? #\A #\B)}
-    pep {(char<=? #\B #\A)}
+    pew {(char<=? #\A #\A)}
+    pew {(char<=? #\A #\B)}
+    pew {(char<=? #\B #\A)}
 } -output "#t\n#t\n#f\n"
 
 TT)
@@ -292,9 +292,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.5 {try char>=?} -body {
-    pep {(char>=? #\A #\A)}
-    pep {(char>=? #\A #\B)}
-    pep {(char>=? #\B #\A)}
+    pew {(char>=? #\A #\A)}
+    pew {(char>=? #\A #\B)}
+    pew {(char>=? #\B #\A)}
 } -output "#t\n#f\n#t\n"
 
 TT)
@@ -340,9 +340,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.6 {try char-ci=?} -body {
-    pep {(char-ci=? #\A #\a)}
-    pep {(char-ci=? #\A #\b)}
-    pep {(char-ci=? #\B #\a)}
+    pew {(char-ci=? #\A #\a)}
+    pew {(char-ci=? #\A #\b)}
+    pew {(char-ci=? #\B #\a)}
 } -output "#t\n#f\n#f\n"
 
 TT)
@@ -369,9 +369,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.7 {try char-ci<?} -body {
-    pep {(char-ci<? #\A #\a)}
-    pep {(char-ci<? #\A #\b)}
-    pep {(char-ci<? #\B #\a)}
+    pew {(char-ci<? #\A #\a)}
+    pew {(char-ci<? #\A #\b)}
+    pew {(char-ci<? #\B #\a)}
 } -output "#f\n#t\n#f\n"
 
 TT)
@@ -398,9 +398,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.8 {try char-ci>?} -body {
-    pep {(char-ci>? #\A #\a)}
-    pep {(char-ci>? #\A #\b)}
-    pep {(char-ci>? #\B #\a)}
+    pew {(char-ci>? #\A #\a)}
+    pew {(char-ci>? #\A #\b)}
+    pew {(char-ci>? #\B #\a)}
 } -output "#f\n#f\n#t\n"
 
 TT)
@@ -427,9 +427,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.9 {try char-ci<=?} -body {
-    pep {(char-ci<=? #\A #\a)}
-    pep {(char-ci<=? #\A #\b)}
-    pep {(char-ci<=? #\B #\a)}
+    pew {(char-ci<=? #\A #\a)}
+    pew {(char-ci<=? #\A #\b)}
+    pew {(char-ci<=? #\B #\a)}
 } -output "#t\n#t\n#f\n"
 
 TT)
@@ -456,10 +456,10 @@ CB
 TT(
 
 ::tcltest::test characters-1.10 {try char-ci>=?} -body {
-    pep {(char-ci>=? #\A #\a)}
-    pep {(char-ci>=? #\A #\b)}
-    pep {(char-ci>=? #\B #\a)}
-    pep {(char-ci>=? #\A #\Space)}
+    pew {(char-ci>=? #\A #\a)}
+    pew {(char-ci>=? #\A #\b)}
+    pew {(char-ci>=? #\B #\a)}
+    pew {(char-ci>=? #\A #\Space)}
 } -output "#t\n#f\n#t\n#t\n"
 
 TT)
@@ -502,12 +502,12 @@ CB
 TT(
 
 ::tcltest::test characters-1.11 {try char-alphabetic?} -body {
-    pep {(char-alphabetic? #\A)}
-    pep {(char-alphabetic? #\9)}
-    pep {(char-alphabetic? #\space)}
-    pep {(char-alphabetic? #\A)}
-    pep {(char-alphabetic? #\a)}
-    pep {(char-alphabetic? #\%)}
+    pew {(char-alphabetic? #\A)}
+    pew {(char-alphabetic? #\9)}
+    pew {(char-alphabetic? #\space)}
+    pew {(char-alphabetic? #\A)}
+    pew {(char-alphabetic? #\a)}
+    pew {(char-alphabetic? #\%)}
 } -output "#t\n#f\n#f\n#t\n#t\n#f\n"
 
 TT)
@@ -526,12 +526,12 @@ CB
 TT(
 
 ::tcltest::test characters-1.12 {try char-numeric?} -body {
-    pep {(char-numeric? #\A)}
-    pep {(char-numeric? #\9)}
-    pep {(char-numeric? #\space)}
-    pep {(char-numeric? #\A)}
-    pep {(char-numeric? #\a)}
-    pep {(char-numeric? #\%)}
+    pew {(char-numeric? #\A)}
+    pew {(char-numeric? #\9)}
+    pew {(char-numeric? #\space)}
+    pew {(char-numeric? #\A)}
+    pew {(char-numeric? #\a)}
+    pew {(char-numeric? #\%)}
 } -output "#f\n#t\n#f\n#f\n#f\n#f\n"
 
 TT)
@@ -550,12 +550,12 @@ CB
 TT(
 
 ::tcltest::test characters-1.13 {try char-whitespace?} -body {
-    pep {(char-whitespace? #\A)}
-    pep {(char-whitespace? #\9)}
-    pep {(char-whitespace? #\space)}
-    pep {(char-whitespace? #\A)}
-    pep {(char-whitespace? #\a)}
-    pep {(char-whitespace? #\%)}
+    pew {(char-whitespace? #\A)}
+    pew {(char-whitespace? #\9)}
+    pew {(char-whitespace? #\space)}
+    pew {(char-whitespace? #\A)}
+    pew {(char-whitespace? #\a)}
+    pew {(char-whitespace? #\%)}
 } -output "#f\n#f\n#t\n#f\n#f\n#f\n"
 
 TT)
@@ -574,12 +574,12 @@ CB
 TT(
 
 ::tcltest::test characters-1.14 {try char-upper-case?} -body {
-    pep {(char-upper-case? #\A)}
-    pep {(char-upper-case? #\9)}
-    pep {(char-upper-case? #\space)}
-    pep {(char-upper-case? #\A)}
-    pep {(char-upper-case? #\a)}
-    pep {(char-upper-case? #\%)}
+    pew {(char-upper-case? #\A)}
+    pew {(char-upper-case? #\9)}
+    pew {(char-upper-case? #\space)}
+    pew {(char-upper-case? #\A)}
+    pew {(char-upper-case? #\a)}
+    pew {(char-upper-case? #\%)}
 } -output "#t\n#f\n#f\n#t\n#f\n#f\n"
 
 TT)
@@ -598,12 +598,12 @@ CB
 TT(
 
 ::tcltest::test characters-1.15 {try char-lower-case?} -body {
-    pep {(char-lower-case? #\A)}
-    pep {(char-lower-case? #\9)}
-    pep {(char-lower-case? #\space)}
-    pep {(char-lower-case? #\A)}
-    pep {(char-lower-case? #\a)}
-    pep {(char-lower-case? #\%)}
+    pew {(char-lower-case? #\A)}
+    pew {(char-lower-case? #\9)}
+    pew {(char-lower-case? #\space)}
+    pew {(char-lower-case? #\A)}
+    pew {(char-lower-case? #\a)}
+    pew {(char-lower-case? #\%)}
 } -output "#f\n#f\n#f\n#f\n#t\n#f\n"
 
 TT)
@@ -666,8 +666,8 @@ CB
 TT(
 
 ::tcltest::test characters-1.16 {try char-upcase?} -body {
-    pep {(char->integer #\A)}
-    pep {(integer->char 97)}
+    pew {(char->integer #\A)}
+    pew {(integer->char 97)}
 } -output "65\n#\\a\n"
 
 TT)
@@ -699,9 +699,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.17 {try char-upcase} -body {
-    pep {(char-upcase #\A)}
-    pep {(char-upcase #\a)}
-    pep {(char-upcase #\space)}
+    pew {(char-upcase #\A)}
+    pew {(char-upcase #\a)}
+    pew {(char-upcase #\space)}
 } -output "#\\A\n#\\A\n#\\space\n"
 
 TT)
@@ -722,9 +722,9 @@ CB
 TT(
 
 ::tcltest::test characters-1.18 {try char-downcase?} -body {
-    pep {(char-downcase #\A)}
-    pep {(char-downcase #\a)}
-    pep {(char-downcase #\space)}
+    pew {(char-downcase #\A)}
+    pew {(char-downcase #\a)}
+    pew {(char-downcase #\space)}
 } -output "#\\a\n#\\a\n#\\space\n"
 
 TT)

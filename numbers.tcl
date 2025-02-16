@@ -83,7 +83,7 @@ CB
 TT(
 
 ::tcltest::test numbers-1.0 {try number?} -body {
-    pep "(number? 99.99)"
+    pew "(number? 99.99)"
 } -output "#t\n"
 
 ::tcltest::test numbers-1.1 {try number?} -body {
@@ -135,11 +135,11 @@ CB
 TT(
 
 ::tcltest::test numbers-2.0 {try =} -body {
-        pep "(= 9 9 9 9)"
+        pew "(= 9 9 9 9)"
 } -output "#t\n"
 
 ::tcltest::test numbers-2.1 {try =} -body {
-        pep "(= 9 9 9 9.0)"
+        pew "(= 9 9 9 9.0)"
 } -output "#t\n"
 
 TT)
@@ -164,7 +164,7 @@ CB
 TT(
 
 ::tcltest::test numbers-3.0 {try <} -body {
-        pep "(< 1 2 4 7)"
+        pew "(< 1 2 4 7)"
 } -output "#t\n"
 
 TT)
@@ -189,7 +189,7 @@ CB
 TT(
 
 ::tcltest::test numbers-4.0 {try >} -body {
-        pep "(> 7 4 2 1)"
+        pew "(> 7 4 2 1)"
 } -output "#t\n"
 
 TT)
@@ -214,7 +214,7 @@ CB
 TT(
 
 ::tcltest::test numbers-5.0 {try <=} -body {
-        pep "(<= 1 4 4 7)"
+        pew "(<= 1 4 4 7)"
 } -output "#t\n"
 
 TT)
@@ -239,7 +239,7 @@ CB
 TT(
 
 ::tcltest::test numbers-6.0 {try >=} -body {
-        pep "(>= 7 4 4 1)"
+        pew "(>= 7 4 4 1)"
 } -output "#t\n"
 
 TT)
@@ -268,11 +268,11 @@ CB
 TT(
 
 ::tcltest::test numbers-7.0 {try zero?} -body {
-        pep "(zero? 77)"
+        pew "(zero? 77)"
 } -output "#f\n"
 
 ::tcltest::test numbers-7.1 {check zero?} -body {
-        pep "(zero? \"foo\")"
+        pew "(zero? \"foo\")"
 } -returnCodes error -result "NUMBER expected\n(zero? \"foo\")"
 
 TT)
@@ -308,7 +308,7 @@ CB
 TT(
 
 ::tcltest::test numbers-8.0 {try positive?} -body {
-        pep "(positive? 77)"
+        pew "(positive? 77)"
 } -output "#t\n"
 
 TT)
@@ -327,7 +327,7 @@ CB
 TT(
 
 ::tcltest::test numbers-9.0 {try negative?} -body {
-        pep "(negative? 77)"
+        pew "(negative? 77)"
 } -output "#f\n"
 
 TT)
@@ -346,7 +346,7 @@ CB
 TT(
 
 ::tcltest::test numbers-10.0 {try even?} -body {
-        pep "(even? 77)"
+        pew "(even? 77)"
 } -output "#f\n"
 
 TT)
@@ -365,7 +365,7 @@ CB
 TT(
 
 ::tcltest::test numbers-11.0 {try odd?} -body {
-        pep "(odd? 77)"
+        pew "(odd? 77)"
 } -output "#t\n"
 
 TT)
@@ -409,7 +409,7 @@ CB
 TT(
 
 ::tcltest::test numbers-12.0 {try max} -body {
-    pep "(max 7 1 10 3)"
+    pew "(max 7 1 10 3)"
 } -output "10\n"
 
 TT)
@@ -431,7 +431,7 @@ CB
 TT(
 
 ::tcltest::test numbers-13.0 {try min} -body {
-        pep "(min 7 1 10 3)"
+        pew "(min 7 1 10 3)"
 } -output "1\n"
 
 TT)
@@ -489,9 +489,9 @@ CB
 TT(
 
 ::tcltest::test numbers-14.0 {try +} -body {
-    pep "(+)"
-    pep "(+ 5)"
-    pep "(+ 7 1 10 3)"
+    pew "(+)"
+    pew "(+ 5)"
+    pew "(+ 7 1 10 3)"
 } -output "0\n5\n21\n"
 
 TT)
@@ -512,9 +512,9 @@ CB
 TT(
 
 ::tcltest::test numbers-15.0 {try *} -body {
-    pep "(*)"
-    pep "(* 5)"
-    pep "(* 7 1 10 3)"
+    pew "(*)"
+    pew "(* 5)"
+    pew "(* 7 1 10 3)"
 } -output "1\n5\n210\n"
 
 TT)
@@ -535,12 +535,12 @@ CB
 TT(
 
 ::tcltest::test numbers-16.0 {try -} -body {
-    pep "(-)"
+    pew "(-)"
 } -returnCodes error -result {wrong # args: should be "::constcl::- num ?arg ...?"}
 
 ::tcltest::test numbers-16.1 {try -} -body {
-    pep "(- 5)"
-    pep "(- 7 1 10 3)"
+    pew "(- 5)"
+    pew "(- 7 1 10 3)"
 } -output "-5\n-7\n"
 
 TT)
@@ -561,12 +561,12 @@ CB
 TT(
 
 ::tcltest::test numbers-17.0 {try /} -body {
-    pep "(/)"
+    pew "(/)"
 } -returnCodes error -result {wrong # args: should be "::constcl::/ num ?arg ...?"}
 
 ::tcltest::test numbers-17.1 {try /} -body {
-    pep "(/ 5)"
-    pep "(/ 21 7 3)"
+    pew "(/ 5)"
+    pew "(/ 21 7 3)"
 } -output "0.2\n1\n"
 
 TT)
@@ -599,11 +599,11 @@ CB
 TT(
 
 ::tcltest::test numbers-18.0 {try abs} -body {
-    pep "(abs -99)"
+    pew "(abs -99)"
 } -output "99\n"
 
 ::tcltest::test numbers-18.1 {try check} -body {
-    pep "(abs \"foo\")"
+    pew "(abs \"foo\")"
 } -returnCodes error -result "NUMBER expected\n(abs \"foo\")"
 TT)
 
@@ -701,15 +701,15 @@ CB
 TT(
 
 ::tcltest::test numbers-19.0 {try quotient, remainder, modulo} -body {
-    pep "(quotient 13 4)"
-    pep "(modulo 13 4)"
-    pep "(remainder 13 4)"
-    pep "(modulo -13 4)"
-    pep "(remainder -13 4)"
-    pep "(modulo 13 -4)"
-    pep "(remainder 13 -4)"
-    pep "(modulo -13 -4)"
-    pep "(remainder -13 -4)"
+    pew "(quotient 13 4)"
+    pew "(modulo 13 4)"
+    pew "(remainder 13 4)"
+    pew "(modulo -13 4)"
+    pew "(remainder -13 4)"
+    pew "(modulo 13 -4)"
+    pew "(remainder 13 -4)"
+    pew "(modulo -13 -4)"
+    pew "(remainder -13 -4)"
 } -output "3.0\n1\n1\n3\n-1\n-3\n1\n-1\n-1\n"
 
 TT)
@@ -780,7 +780,7 @@ CB
 TT(
 
 ::tcltest::test numbers-20.0 {try floor} -body {
-    pep "(floor 99.9)"
+    pew "(floor 99.9)"
 } -output "99.0\n"
 
 TT)
@@ -799,7 +799,7 @@ CB
 TT(
 
 ::tcltest::test numbers-21.0 {try ceiling} -body {
-    pep "(ceiling 99.9)"
+    pew "(ceiling 99.9)"
 } -output "100.0\n"
 
 TT)
@@ -822,8 +822,8 @@ CB
 TT(
 
 ::tcltest::test numbers-22.0 {try truncate} -body {
-    pep "(truncate 99.9)"
-    pep "(truncate -99.9)"
+    pew "(truncate 99.9)"
+    pew "(truncate -99.9)"
 } -output "99.0\n-99.0\n"
 
 TT)
@@ -842,15 +842,15 @@ CB
 TT(
 
 ::tcltest::test numbers-23.0 {try round} -body {
-    pep "(round 99.9)"
-    pep "(round 99.3)"
+    pew "(round 99.9)"
+    pew "(round 99.3)"
 } -output "100\n99\n"
 
 ::tcltest::test numbers-23.1 {try various} -body {
-    pep "(floor 3.5)"
-    pep "(ceiling 3.5)"
-    pep "(truncate 3.5)"
-    pep "(round 3.5)"
+    pew "(floor 3.5)"
+    pew "(ceiling 3.5)"
+    pew "(truncate 3.5)"
+    pew "(round 3.5)"
 } -output "3.0\n4.0\n3.0\n4\n"
 
 TT)
@@ -917,7 +917,7 @@ CB
 TT(
 
 ::tcltest::test numbers-24.0 {try exp} -body {
-    pep "(exp 3)"
+    pew "(exp 3)"
 } -output "20.085536923187668\n"
 
 TT)
@@ -936,7 +936,7 @@ CB
 TT(
 
 ::tcltest::test numbers-25.0 {try log} -body {
-    pep "(log 3)"
+    pew "(log 3)"
 } -output "1.0986122886681098\n"
 
 TT)
@@ -977,13 +977,13 @@ CB
 TT(
 
 ::tcltest::test numbers-26.0 {try trig} -body {
-    pep "(sin (/ pi 3))"
-    pep "(cos (/ pi 3))"
-    pep "(tan (/ pi 3))"
+    pew "(sin (/ pi 3))"
+    pew "(cos (/ pi 3))"
+    pew "(tan (/ pi 3))"
 } -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
 
 ::tcltest::test numbers-26.1 {try triggering tan} -body {
-    pep "(tan #\\A)"
+    pew "(tan #\\A)"
 } -returnCodes error -result "NUMBER expected\n(tan #\\A)"
 TT)
 
@@ -1036,9 +1036,9 @@ CB
 TT(
 
 ::tcltest::test numbers-27.0 {try trig} -body {
-    pep "(asin 0.3)"
-    pep "(acos 0.3)"
-    pep "(atan 0.3)"
+    pew "(asin 0.3)"
+    pew "(acos 0.3)"
+    pew "(atan 0.3)"
 } -output "0.3046926540153975\n1.2661036727794992\n0.2914567944778671\n"
 
 TT)
@@ -1067,7 +1067,7 @@ CB
 TT(
 
 ::tcltest::test numbers-28.0 {try sqrt} -body {
-    pep "(sqrt 16)"
+    pew "(sqrt 16)"
 } -output "4.0\n"
 
 TT)
@@ -1102,7 +1102,7 @@ CB
 TT(
 
 ::tcltest::test numbers-29.0 {try expt} -body {
-    pep "(expt 4 2)"
+    pew "(expt 4 2)"
 } -output "16.0\n"
 
 TT)
@@ -1233,14 +1233,14 @@ CB
 TT(
 
 ::tcltest::test numbers-30.0 {try number->string} -body {
-    pep "(number->string 23)"
-    pep "(number->string 23 2)"
-    pep "(number->string 23 8)"
-    pep "(number->string 23 16)"
+    pew "(number->string 23)"
+    pew "(number->string 23 2)"
+    pew "(number->string 23 8)"
+    pew "(number->string 23 16)"
 } -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
 
 ::tcltest::test numbers-30.1 {try number->string} -body {
-    pep "(number->string 23 13)"
+    pew "(number->string 23 13)"
 } -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string  23 13)"
 
 TT)
@@ -1321,14 +1321,14 @@ CB
 TT(
 
 ::tcltest::test numbers-31.0 {try string->number} -body {
-    pep {(string->number "23")}
-    pep {(string->number "10111" 2)}
-    pep {(string->number "27" 8)}
-    pep {(string->number "17" 16)}
+    pew {(string->number "23")}
+    pew {(string->number "10111" 2)}
+    pew {(string->number "27" 8)}
+    pew {(string->number "17" 16)}
 } -output "23\n23\n23\n23\n"
 
 ::tcltest::test numbers-31.1 {try string->number} -body {
-    pep {(string->number "23" 13)}
+    pew {(string->number "23" 13)}
 } -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\"  13)"
 
 TT)

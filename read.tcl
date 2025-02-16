@@ -229,15 +229,15 @@ CB
 
 TT(
 ::tcltest::test parse-1.0 {try parse in ConsTcl} -body {
-  pep {(parse "42")}
+  pew {(parse "42")}
 } -output "42\n"
 
 ::tcltest::test parse-1.1 {try parse with IB buffer} -body {
-  pp [::constcl::IB new "42"]
+  pw [::constcl::IB new "42"]
 } -output "42\n"
 
 ::tcltest::test parse-1.1 {try parse with string} -body {
-  pp "42"
+  pw "42"
 } -output "42\n"
 TT)
 
@@ -407,7 +407,7 @@ CB
 TT(
 
 ::tcltest::test parse-3.0 {try reading quoted symbol} -body {
-    pp "'foo"
+    pw "'foo"
 } -output "(quote foo)\n"
 
 TT)
@@ -490,11 +490,11 @@ CB
 
 TT(
 ::tcltest::test parse-4.0 {try reading an improper list} -body {
-    pp "(a . b)"
+    pw "(a . b)"
 } -output "(a . b)\n"
 
 ::tcltest::test parse-4.1 {try reading an improper list} -body {
-    pp "(a b . c)"
+    pw "(a b . c)"
 } -output "(a b . c)\n"
 
 ::tcltest::test parse-4.2 {try reading a list} -body {
@@ -503,31 +503,31 @@ TT(
 } -result "b"
 
 ::tcltest::test parse-4.3 {try reading a list} -body {
-    pp "(a)"
+    pw "(a)"
 } -output "(a)\n"
 
 ::tcltest::test parse-4.4 {try reading a list} -body {
-    pp "(a b)"
+    pw "(a b)"
 } -output "(a b)\n"
 
 ::tcltest::test parse-4.5 {try reading a list} -body {
-    pp "(a b c)"
+    pw "(a b c)"
 } -output "(a b c)\n"
 
 ::tcltest::test parse-4.6 {try reading a list} -body {
-    pp "(a b c d)"
+    pw "(a b c d)"
 } -output "(a b c d)\n"
 
 ::tcltest::test parse-4.7 {try reading a list} -body {
-    pp "(a b c d e)"
+    pw "(a b c d e)"
 } -output "(a b c d e)\n"
 
 ::tcltest::test parse-4.8 {try reading a list} -body {
-    pp "(a (b) )"
+    pw "(a (b) )"
 } -output "(a (b))\n"
 
 ::tcltest::test parse-4.9 {try reading a list} -body {
-    pp "(a (b))"
+    pw "(a (b))"
 } -output "(a (b))\n"
 
 TT)
@@ -597,7 +597,7 @@ CB
 TT(
 
 ::tcltest::test parse-5.0 {try reading unquoted symbol} -body {
-    pp ",foo"
+    pw ",foo"
 } -output "(unquote foo)\n"
 
 TT)
@@ -629,7 +629,7 @@ CB
 TT(
 
 ::tcltest::test parse-6.0 {try reading unquoted symbol} -body {
-    pp "`(list 1 2 ,@foo)"
+    pw "`(list 1 2 ,@foo)"
 } -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
 
 TT)
@@ -719,55 +719,6 @@ TT(
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
-
-TT)
-
-MD(
-__parse-identifier-expr__
-
-`parse-identifier-expr` is activated for "anything else", and takes in
-characters until it finds whitespace or an ending parenthesis or bracket. It
-checks the input against the rules for identifiers, accepting or rejecting it
-with an error message. It returns a
-Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
-MD)
-
-PR(
-parse-identifier-expr (internal);-> sym
-PR)
-
-CB
-proc ::constcl::parse-identifier-expr {} {
-  upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" &&
-      [$ib peek] ni {) \]}} {
-    ::append name [$ib peek]
-    $ib advance
-  }
-  $ib skip-ws
-  # idcheck throws error if invalid identifier
-  return [S [idcheck $name]]
-}
-CB
-
-TT(
-
-::tcltest::test parse-8.0 {try reading an identifier} {
-    set expr [::constcl::parse [::constcl::IB new "foo"]]
-    $expr name
-} "foo"
-
-::tcltest::test parse-8.1 {try reading an identifier} -body {
-    set ib [::constcl::IB new "+foo"]
-    set expr [::constcl::parse-identifier-expr]
-    $expr name
-} -returnCodes error -result "Identifier expected (+foo)"
-
-::tcltest::test parse-8.2 {try reading an identifier} -body {
-    ::constcl::IB create ib-read-5.2 "let"
-    set expr [::constcl::parse ib-read-5.2]
-    ::constcl::varcheck [$expr name]
-} -returnCodes error -result "Variable name is reserved: let"
 
 TT)
 
@@ -883,12 +834,60 @@ CB
 TT(
 
 ::tcltest::test parse-10.0 {try reading a vector} -body {
-    pp "#(1 2 3)"
+    pew "#(1 2 3)"
 } -output "#(1 2 3)\n"
 
 ::tcltest::test parse-10.1 {try reading a vector, with non-normal expression} -body {
-    pp "#(1 2 (+ 1 2))"
+    pew "#(1 2 (+ 1 2))"
 } -output "#(1 2 (+ 1 2))\n"
+
+TT)
+
+MD(
+__parse-identifier-expr__
+
+`parse-identifier-expr` is activated for "anything else", and takes in
+characters until it finds whitespace or an ending parenthesis or bracket. It
+checks the input against the rules for identifiers, accepting or rejecting it
+with an error message. It returns a
+Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+MD)
+
+PR(
+parse-identifier-expr (internal);-> sym
+PR)
+
+CB
+proc ::constcl::parse-identifier-expr {} {
+  upvar ib ib
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
+    $ib advance
+  }
+  $ib skip-ws
+  # idcheck throws error if invalid identifier
+  return [S [idcheck $name]]
+}
+CB
+
+TT(
+
+::tcltest::test parse-8.0 {try reading an identifier} {
+    set expr [p "foo"]
+    $expr name
+} "foo"
+
+::tcltest::test parse-8.1 {try reading an identifier} -body {
+    set ib [::constcl::IB new "+foo"]
+    set expr [::constcl::parse-identifier-expr]
+    $expr name
+} -returnCodes error -result "Identifier expected (+foo)"
+
+::tcltest::test parse-8.2 {try reading an identifier} -body {
+    set expr [p "let"]
+    ::constcl::varcheck [$expr name]
+} -returnCodes error -result "Variable name is reserved: let"
 
 TT)
 
@@ -962,7 +961,7 @@ CB
 MD(
 __read-expr__
 
-The procedure `read-expr` parses input by reading the first available
+The procedure `read-expr` reads input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
 that, producing an expression of any kind. A Tcl character value can be passed
 to it, that character will be used first before reading from the input stream.
@@ -1392,7 +1391,7 @@ CB
 MD(
 __read-character-expr__
 
-`read-character-expr` parses input, producing a character and returning
+`read-character-expr` reads input, producing a character and returning
 a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 MD)
 
@@ -1600,7 +1599,7 @@ CB
 MD(
 __read-unquoted-expr__
 
-When a comma is found in the input stream, `parse-unquoted-expr` is activated.
+When a comma is found in the input stream, `read-unquoted-expr` is activated.
 If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
 it selects the symbol `unquote`. Then it reads an entire expression and returns
 it wrapped in the selected symbol. Both of these expressions are only suppposed

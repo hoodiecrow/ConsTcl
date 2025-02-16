@@ -80,12 +80,12 @@ CB
 TT(
 
 ::tcltest::test symbols-1.0 {try symbol?} -body {
-    pep {(symbol? 'foo)}
-    pep {(symbol? (car '(a b)))}
-    pep {(symbol? "bar")}
-    pep {(symbol? 'nil)}
-    pep {(symbol? '())}
-    pep {(symbol? #f)}
+    pew {(symbol? 'foo)}
+    pew {(symbol? (car '(a b)))}
+    pew {(symbol? "bar")}
+    pew {(symbol? 'nil)}
+    pew {(symbol? '())}
+    pew {(symbol? #f)}
     puts [::constcl::symbol? [S quote]]
 } -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
 
@@ -132,16 +132,16 @@ MD)
 TT(
 
 ::tcltest::test symbols-1.1 {try symbol->string (and string->symbol)} -body {
-    pep {(symbol->string 'flying-fish)}
-    pep {(symbol->string 'Martin)}
-    pep {(symbol->string (string->symbol "Malvina"))}
+    pew {(symbol->string 'flying-fish)}
+    pew {(symbol->string 'Martin)}
+    pew {(symbol->string (string->symbol "Malvina"))}
 } -output {"flying-fish"
 "martin"
 "Malvina"
 }
 
 ::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
-    pep {(string-set! (symbol->string 'flying-fish) 3 #\A}
+    pew {(string-set! (symbol->string 'flying-fish) 3 #\A}
 } -returnCodes error -result ""
 
 TT)

@@ -72,26 +72,26 @@ CB
 TT(
 
 ::tcltest::test pairslists-1.0 {playing with lists} -body {
-    pep {(define x (list 'a 'b 'c))}
-    pep {(define y x)}
-    pep {y}
-    pep {(list? y)}
+    pew {(define x (list 'a 'b 'c))}
+    pew {(define y x)}
+    pew {y}
+    pew {(list? y)}
 } -output "(a b c)\n#t\n"
 
 ::tcltest::test pairslists-1.2 {playing with lists} -body {
-    pep {(set-cdr! x 4)}
-    pep {x}
+    pew {(set-cdr! x 4)}
+    pew {x}
 } -output "(a . 4)\n(a . 4)\n"
 
 ::tcltest::test pairslists-1.3 {playing with lists} -body {
-    pep {(eqv? x y)}
-    pep {y}
+    pew {(eqv? x y)}
+    pew {y}
 } -output "#t\n(a . 4)\n"
 
 ::tcltest::test pairslists-1.4 {playing with lists} -body {
-    pep {(eqv? x y)}
-    pep {y}
-    pep {(list? y)}
+    pew {(eqv? x y)}
+    pew {y}
+    pew {(list? y)}
 } -output "#t\n(a . 4)\n#f\n"
 
 TT)
@@ -115,9 +115,9 @@ CB
 TT(
 
 ::tcltest::test pairslists-2.0 {try pair?} -body {
-    pep {(pair? '(a . b))}
-    pep {(pair? '(a b c))}
-    pep {(pair? '())}
+    pew {(pair? '(a . b))}
+    pew {(pair? '(a b c))}
+    pew {(pair? '())}
 } -output "#t\n#t\n#f\n"
 
 TT)
@@ -203,11 +203,11 @@ CB
 TT(
 
 ::tcltest::test pairslists-4.0 {try cons} -body {
-    pep {(cons 'a '())}
-    pep {(cons '(a) '(b c d))}
-    pep {(cons "a" '(b c))}
-    pep {(cons 'a 3)}
-    pep {(cons '(a b) 'c)}
+    pew {(cons 'a '())}
+    pew {(cons '(a) '(b c d))}
+    pew {(cons "a" '(b c))}
+    pew {(cons 'a 3)}
+    pew {(cons '(a b) 'c)}
 } -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
 
 TT)
@@ -241,13 +241,13 @@ CB
 TT(
 
 ::tcltest::test pairslists-5.0 {try car} -body {
-    pep {(car '(a b c))}
-    pep {(car '((a) b c d))}
-    pep {(car '(1 . 2))}
+    pew {(car '(a b c))}
+    pew {(car '((a) b c d))}
+    pew {(car '(1 . 2))}
 } -output "a\n(a)\n1\n"
 
 ::tcltest::test pairslists-5.1 {try car} -body {
-    pep {(car '())}
+    pew {(car '())}
 } -returnCodes error -result "PAIR expected"
 
 TT)
@@ -281,12 +281,12 @@ CB
 TT(
 
 ::tcltest::test pairslists-6.0 {try cdr} -body {
-    pep {(cdr '((a) b c d))}
-    pep {(cdr '(1 . 2))}
+    pew {(cdr '((a) b c d))}
+    pew {(cdr '(1 . 2))}
 } -output "(b c d)\n2\n"
 
 ::tcltest::test pairslists-6.1 {try cdr} -body {
-    pep {(cdr '())}
+    pew {(cdr '())}
 } -returnCodes error -result "PAIR expected"
 
 TT)
@@ -375,13 +375,13 @@ CB
 TT(
 
 ::tcltest::test pairslists-7.0 {try set-car!} -body {
-    pep {(define (f) (list 'not-a-constant-list)))}
-    pep {(define (g) '(constant-list)))}
-    pep {(set-car! (f) 3)}
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-car! (f) 3)}
 } -output "(3)\n"
 
 ::tcltest::test pairslists-7.1 {try set-car!} -body {
-    pep {(set-car! (g) 3)}
+    pew {(set-car! (g) 3)}
 } -returnCodes error -result "Can't modify a constant pair"
 
 TT)
@@ -416,13 +416,13 @@ CB
 TT(
 
 ::tcltest::test pairslists-8.0 {try set-cdr!} -body {
-    pep {(define (f) (list 'not-a-constant-list)))}
-    pep {(define (g) '(constant-list)))}
-    pep {(set-cdr! (f) 3)}
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-cdr! (f) 3)}
 } -output "(not-a-constant-list . 3)\n"
 
 ::tcltest::test pairslists-8.1 {try set-cdr!} -body {
-    pep {(set-cdr! (g) 3)}
+    pew {(set-cdr! (g) 3)}
 } -returnCodes error -result "Can't modify a constant pair"
 
 TT)
@@ -477,15 +477,15 @@ CB
 TT(
 
 ::tcltest::test pairslists-9.0 {try list?} -body {
-    pep {(list? '(a b c))}
-    pep {(list? '())}
-    pep {(list? '(a . b))}
-    pep {(list? #\A)}
+    pew {(list? '(a b c))}
+    pew {(list? '())}
+    pew {(list? '(a . b))}
+    pew {(list? #\A)}
 } -output "#t\n#t\n#f\n#f\n"
 
 ::tcltest::test pairslists-9.1 {try list?} -body {
     # "bug": list is infinite and list? must detect that
-    pep {(let ((x (list 'a)))
+    pew {(let ((x (list 'a)))
           (set-cdr! x x)
           (list? x))}
 } -output "#f\n"
@@ -529,8 +529,8 @@ CB
 TT(
 
 ::tcltest::test pairslists-10.0 {try list} -body {
-    pep {(list 'a (+ 3 4) 'c)}
-    pep {(list)}
+    pew {(list 'a (+ 3 4) 'c)}
+    pew {(list)}
 } -output "(a 7 c)\n()\n"
 
 TT)
@@ -582,9 +582,9 @@ CB
 TT(
 
 ::tcltest::test pairslists-11.0 {try length} -body {
-    pep {(length '(a b c))}
-    pep {(length '(a (b) (c d e)))}
-    pep {(length '())}
+    pew {(length '(a b c))}
+    pew {(length '(a (b) (c d e)))}
+    pew {(length '())}
 } -output "3\n3\n0\n"
 
 TT)
@@ -641,16 +641,16 @@ CB
 
 TT(
 ::tcltest::test pairslists-12.0 {try append} -body {
-    pep "(append '(a b) '(c) '(d e))"
-    pep {(append '(x) '(y))}
-    pep {(append '(a) '(b c d))}
-    pep {(append '(a (b)) '((c)))}
-    pep {(append '(a b) '(c . d))}
-    pep {(append '() 'a)}
+    pew "(append '(a b) '(c) '(d e))"
+    pew {(append '(x) '(y))}
+    pew {(append '(a) '(b c d))}
+    pew {(append '(a (b)) '((c)))}
+    pew {(append '(a b) '(c . d))}
+    pew {(append '() 'a)}
 } -output "(a b c d e)\n(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
 
 ::tcltest::test pairslists-12.1 {try append} -body {
-    pep "(append '(a b) 'c '(d e))"
+    pew "(append '(a b) 'c '(d e))"
 } -returnCodes error -result "LIST expected\n(append c)"
 
 TT)
@@ -684,8 +684,8 @@ CB
 TT(
 
 ::tcltest::test pairslists-13.0 {try reverse} -body {
-    pep {(reverse '(a b c))}
-    pep {(reverse '(a (b c) d (e (f))))}
+    pew {(reverse '(a b c))}
+    pew {(reverse '(a (b c) d (e (f))))}
 } -output "(c b a)\n((e (f)) d (b c) a)\n"
 
 TT)
@@ -724,7 +724,7 @@ CB
 TT(
 
 ::tcltest::test pairslists-14.0 {try list-tail} -body {
-    pep {(list-tail '(a b c d) 2)}
+    pew {(list-tail '(a b c d) 2)}
 } -output "(c d)\n"
 
 TT)
@@ -759,7 +759,7 @@ CB
 TT(
 
 ::tcltest::test pairslists-15.0 {try list-ref} -body {
-    pep {(list-ref '(a b c d) 2)}
+    pew {(list-ref '(a b c d) 2)}
 } -output "c\n"
 
 TT)
@@ -800,16 +800,16 @@ CB
 TT(
 
 ::tcltest::test pairslists-16.0 {try memq, memv} -body {
-    pep {(memq 'a '(a b c))}
-    pep {(memq 'b '(a b c))}
-    pep {(memq 'a '(b c d))}
-    pep {(memq (list 'a) '(b (a) c))}
-    pep {(memq 101 '(100 101 102))}
-    pep {(memv 101 '(100 101 102))}
+    pew {(memq 'a '(a b c))}
+    pew {(memq 'b '(a b c))}
+    pew {(memq 'a '(b c d))}
+    pew {(memq (list 'a) '(b (a) c))}
+    pew {(memq 101 '(100 101 102))}
+    pew {(memv 101 '(100 101 102))}
 } -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
 
 ::tcltest::test pairslists-16.1 {try member} -body {
-    pep {(member (list 'a) '(b (a) c))}
+    pew {(member (list 'a) '(b (a) c))}
 } -output "((a) c)\n"
 
 TT)
@@ -952,14 +952,14 @@ CB
 
 TT(
 ::tcltest::test pairslists-17.0 {try member} -body {
-    pep {(define e '((a 1) (b 2) (c 3)))}
-    pep {(assq 'a e)}
-    pep {(assq 'b e)}
-    pep {(assq 'd e)}
-    pep {(assq (list 'a) '(((a)) ((b)) ((c))))}
-    pep {(assoc (list 'a) '(((a)) ((b)) ((c))))}
-    pep {(assq 5 '((2 3) (5 7) (11 13)))}
-    pep {(assv 5 '((2 3) (5 7) (11 13)))}
+    pew {(define e '((a 1) (b 2) (c 3)))}
+    pew {(assq 'a e)}
+    pew {(assq 'b e)}
+    pew {(assq 'd e)}
+    pew {(assq (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assoc (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assq 5 '((2 3) (5 7) (11 13)))}
+    pew {(assv 5 '((2 3) (5 7) (11 13)))}
 } -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
 TT)
 

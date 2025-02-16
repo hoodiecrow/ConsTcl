@@ -752,40 +752,40 @@ CB
 TT(
 
 ::tcltest::test macros-1.0 {expand and macro} -body {
-    pxp "(and)"
-    pxp "(and #t)"
-    pxp "(and (> 3 2))"
-    pxp "(and (> 3 2) (= 7 8))"
+    pxw "(and)"
+    pxw "(and #t)"
+    pxw "(and (> 3 2))"
+    pxw "(and (> 3 2) (= 7 8))"
 } -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
 
 ::tcltest::test macros-1.1 {run and macro} -body {
-    pep "(and)"
-    pep "(and #t)"
-    pep "(and (> 3 2))"
-    pep "(and (> 3 2) (= 7 8))"
+    pew "(and)"
+    pew "(and #t)"
+    pew "(and (> 3 2))"
+    pew "(and (> 3 2) (= 7 8))"
 } -output "#t\n#t\n#t\n#f\n"
 
 ::tcltest::test macros-1.2 {expand or macro} -body {
-    pxp "(or)"
-    pxp "(or #f)"
-    pxp "(or (> 3 2))"
-    pxp "(or (> 3 2) (= 7 8))"
+    pxw "(or)"
+    pxw "(or #f)"
+    pxw "(or (> 3 2))"
+    pxw "(or (> 3 2) (= 7 8))"
 } -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
 
 ::tcltest::test macros-1.3 {expand let macro} -body {
-    pxp "(let ((x 10)) (* x x))"
-    pxp "(let ((x 10) (y 5)) (* x y))"
-    pxp "(let ((x 10) (y 5)) (define z 7) (* x y z))"
+    pxw "(let ((x 10)) (* x x))"
+    pxw "(let ((x 10) (y 5)) (* x y))"
+    pxw "(let ((x 10) (y 5)) (define z 7) (* x y z))"
 } -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
 
 ::tcltest::test macros-1.4 {run let macro} -body {
-    pep "(let ((x 10)) (* x x))"
-    pep "(let ((x 10) (y 5)) (* x y))"
-    pep "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
+    pew "(let ((x 10)) (* x x))"
+    pew "(let ((x 10) (y 5)) (* x y))"
+    pew "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
 ::tcltest::test macros-1.5 {expand named let macro} -body {
-    pxp {(let loop ((lst lst) (result '()))
+    pxw {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
         (let ((item (car lst)))
@@ -794,101 +794,101 @@ TT(
 } -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
 
 ::tcltest::test macros-2.0 {expand cond macro} -body {
-    pxp "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+    pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
 
 ::tcltest::test macros-2.1 {run cond macro} -body {
-    pep "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-    pep "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
 } -output "3\n3\n"
 
 ::tcltest::test macros-2.2 {expand cond macro} -body {
-    pxp "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+    pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test macros-2.3 {run cond macro} -body {
-    pep "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "()\n"
 
 ::tcltest::test macros-2.4 {expand cond macro} -body {
-    pxp "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
+    pxw "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test macros-2.5 {expand cond macro} -body {
-    pxp "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"
+    pxw "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test macros-3.0 {expand case macro} -body {
-    pxp "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
+    pxw "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
 } -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
 
 ::tcltest::test macros-3.1 {run case macro} -body {
-    pep "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
+    pew "(case (* 2 3) ((2 3 5 7) (quote prime)) ((1 4 6 8 9) (quote composite)))"
 } -output "composite\n"
 
 ::tcltest::test macros-3.2 {expand case macro} -body {
-    pxp "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
+    pxw "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
 } -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
 
 ::tcltest::test macros-3.3 {run case macro} -body {
-    pep "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
+    pew "(case (car (quote (c d))) ((a e i o u) (quote vowel)) ((w y) (quote semivowel)) (else (quote consonant)))"
 } -output "consonant\n"
 
 ::tcltest::test macros-4.0 {expand for macro} -body {
-    pxp "(for ((i (quote (1 2 3)))) (display i))"
+    pxw "(for ((i (quote (1 2 3)))) (display i))"
 } -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test macros-4.1 {run for macro} -body {
-    pep "(for ((i (quote (1 2 3)))) (display i))"
+    pew "(for ((i (quote (1 2 3)))) (display i))"
 } -result "" -output 123()\n
 
 ::tcltest::test macros-4.2 {expand for macro} -body {
-    pxp "(for ((i 4)) (display i))"
+    pxw "(for ((i 4)) (display i))"
 } -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test macros-4.3 {run for macro} -body {
-    pep "(for ((i 4)) (display i))"
+    pew "(for ((i 4)) (display i))"
 } -result "" -output "0123()\n"
 
 ::tcltest::test macros-5.0 {expand for/list macro} -body {
-    pxp {(for/list ([i (quote (1 2 3))]) (* i i))}
+    pxw {(for/list ([i (quote (1 2 3))]) (* i i))}
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
 ::tcltest::test macros-5.1 {run for/list macro} -body {
-    pep {(for/list ([i (quote (1 2 3))]) (* i i))}
+    pew {(for/list ([i (quote (1 2 3))]) (* i i))}
 } -output "(1 4 9)\n"
 
 ::tcltest::test macros-5.2 {expand for/list macro} -body {
-    pxp {(for/list ([c "abc"]) (char-upcase c))}
+    pxw {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
 
 ::tcltest::test macros-5.3 {run for/list macro} -body {
-    pep {(for/list ([c "abc"]) (char-upcase c))}
+    pew {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(#\\A #\\B #\\C)\n"
 
 ::tcltest::test macros-5.4 {expand for/list macro} -body {
-    pxp {(for/list ([i (in-range 1 4)]) (* i i))}
+    pxw {(for/list ([i (in-range 1 4)]) (* i i))}
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
 ::tcltest::test macros-5.5 {run for/list macro} -body {
-    pep {(for/list ([i (in-range 1 4)]) (* i i))}
+    pew {(for/list ([i (in-range 1 4)]) (* i i))}
 } -output "(1 4 9)\n"
 
 ::tcltest::test macros-5.6 {expand for/list macro} -body {
-    pxp {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+    pxw {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
 } -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
 
 ::tcltest::test macros-5.7 {run for/list macro} -body {
-    pep {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+    pew {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
 } -output "((1 #\\a) (2 #\\b) (3 #\\c))\n"
 
 ::tcltest::test macros-6.0 {quasiquotation} -body {
-    pp {`(list ,(+ 1 2) 4)}
+    pw {`(list ,(+ 1 2) 4)}
 } -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 ::tcltest::test macros-6.1 {quasiquotation} -body {
     w [::constcl::expand-quasiquote [p {`(list ,(+ 1 2) 4)}] ::constcl::global_env]
-    pep {(define name 'a)}
+    pew {(define name 'a)}
     w [::constcl::expand-quasiquote [p {`(list ,name ',name)}] ::constcl::global_env]
     w [::constcl::expand-quasiquote [p {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}] ::constcl::global_env]
     w [::constcl::expand-quasiquote [p {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}] ::constcl::global_env]
@@ -898,72 +898,72 @@ TT(
 ::tcltest::test macros-6.2 {quasiquotation} -body {
     w [::constcl::expand-quasiquote [p {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}] ::constcl::global_env]
 if no {
-    pep {(let ((name1 'x)
+    pew {(let ((name1 'x)
       (name2 'y))
   `(a `(b ,,name1 ,',name2 d) e))}
-    pep {'(quasiquote (list (unquote (+ 1 2)) 4))}
+    pew {'(quasiquote (list (unquote (+ 1 2)) 4))}
 }
 } -output "(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f)\n"
 
 #(a `(b (unquote x) (unquote (quote y)) d) e)\n(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 ::tcltest::test macros-7.0 {define} -body {
-    pxp {(define (foo a b) (+ a b) (* a b))}
+    pxw {(define (foo a b) (+ a b) (* a b))}
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
 
 ::tcltest::test macros-7.1 {define} -body {
-    pxp "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
+    pxw "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
 } -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
 
 ::tcltest::test macros-7.2 {define} -body {
-    pxp "(define (f) (define r 20) (* r r))"
+    pxw "(define (f) (define r 20) (* r r))"
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
 ::tcltest::test macros-7.3 {define} -body {
-    pxp "(define (list-find-key lst key)\n(lfk lst key 0))"
+    pxw "(define (list-find-key lst key)\n(lfk lst key 0))"
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
 
 ::tcltest::test macros-8.0 {conditional: expand unless macro} -body {
-    pxp "(unless (zero? 0) (* 4 4) (- 5 5))"
+    pxw "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
 
 ::tcltest::test macros-8.1 {conditional: run unless macro} -body {
-    pep "(unless (zero? 0) (* 4 4) (- 5 5))"
+    pew "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
 ::tcltest::test macros-8.2 {conditional: expand when macro} -body {
-    pxp "(when (zero? 0) (* 4 4) (- 5 5))"
+    pxw "(when (zero? 0) (* 4 4) (- 5 5))"
 } -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
 
 ::tcltest::test macros-8.3 {conditional: run when macro} -body {
-    pep "(when (zero? 0) (* 4 4) (- 5 5))"
+    pew "(when (zero? 0) (* 4 4) (- 5 5))"
 } -output "0\n"
 
 ::tcltest::test macros-9.0 {expand put!} -body {
-    pxp "(put! plist 'c 7)"
+    pxw "(put! plist 'c 7)"
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 ::tcltest::test macros-9.1 {run put!} -body {
-    pep "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
-    pep "(put! plst 'c 7)"
-    pep "(put! plst 'f 6)"
-    pep "plst"
+    pew "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pew "(put! plst 'c 7)"
+    pew "(put! plst 'f 6)"
+    pew "plst"
 } -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
 
 ::tcltest::test macros-9.2 {expand put!} -body {
-    pep "(define listname 'plist)"
-    pep "(define key ''c)"
-    pep "(define val 7)"
-    pxp "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
+    pew "(define listname 'plist)"
+    pew "(define key ''c)"
+    pew "(define val 7)"
+    pxw "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 ::tcltest::test macros-10.0 {expand let, experimental code} -body {
     #set env [::constcl::Environment new #NIL {} ::constcl::global_env]
     set ::constcl::env ::constcl::global_env
-    pep "(define varlist '(a b c))"
-    pep "(define body    '((+ a b) (* c 4)))"
-    pep "(define vallist '(1 2 3))"
-    pxp "`((lambda (,@varlist) ,@body) ,@vallist)"
+    pew "(define varlist '(a b c))"
+    pew "(define body    '((+ a b) (* c 4)))"
+    pew "(define vallist '(1 2 3))"
+    pxw "`((lambda (,@varlist) ,@body) ,@vallist)"
 } -output "((lambda (a b c) (+ a b) (* c 4)) 1 2 3)\n"
 
 TT)

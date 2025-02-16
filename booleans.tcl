@@ -55,15 +55,15 @@ CB
 TT(
 
 ::tcltest::test boolean-1.0 {evaluate boolean values} -body {
-        pep "#t"
+        pew "#t"
 } -output "#t\n"
 
 ::tcltest::test boolean-1.1 {evaluate boolean values} -body {
-        pep "#f"
+        pew "#f"
 } -output "#f\n"
 
 ::tcltest::test boolean-1.2 {evaluate boolean values} -body {
-        pep "'#f"
+        pew "'#f"
 } -output "#f\n"
 
 TT)
@@ -89,15 +89,15 @@ CB
 TT(
 
 ::tcltest::test boolean-2.0 {evaluate boolean values} -body {
-        pep "(boolean? #f)"
+        pew "(boolean? #f)"
 } -output "#t\n"
 
 ::tcltest::test boolean-2.1 {evaluate boolean values} -body {
-        pep "(boolean? 0)"
+        pew "(boolean? 0)"
 } -output "#f\n"
 
 ::tcltest::test boolean-2.2 {evaluate boolean values} -body {
-        pep "(boolean? '())"
+        pew "(boolean? '())"
 } -output "#f\n"
 
 TT)
@@ -136,31 +136,31 @@ CB
 TT(
 
 ::tcltest::test boolean-3.0 {not procedure} -body {
-        pep "(not #t)"
+        pew "(not #t)"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.1 {not procedure} -body {
-        pep "(not 3)"
+        pew "(not 3)"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.2 {not procedure} -body {
-        pep "(not (list 3))"
+        pew "(not (list 3))"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.3 {not procedure} -body {
-        pep "(not #f)"
+        pew "(not #f)"
 } -output "#t\n"
 
 ::tcltest::test boolean-3.4 {not procedure} -body {
-        pep "(not '())"
+        pew "(not '())"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.5 {not procedure} -body {
-        pep "(not (list))"
+        pew "(not (list))"
 } -output "#f\n"
 
 ::tcltest::test boolean-3.6 {not procedure} -body {
-        pep "(not 'nil)"
+        pew "(not 'nil)"
 } -output "#f\n"
 
 TT)

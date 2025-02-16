@@ -25,7 +25,7 @@ proc ::regmacro {name} {
 
 
 
-proc ::pep {str} {
+proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
@@ -33,7 +33,7 @@ proc ::pep {str} {
 
 
 
-proc ::pp {str} {
+proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
@@ -43,6 +43,13 @@ proc ::pp {str} {
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
+}
+
+
+
+proc ::re {args} {
+  ::constcl::eval [
+    ::constcl::read {*}$args]
 }
 
 
@@ -71,7 +78,7 @@ proc ::r {args} {
 
 
 
-proc ::prp {str} {
+proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
@@ -80,7 +87,7 @@ proc ::prp {str} {
 
 
 
-proc ::pxp {str} {
+proc ::pxw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]
@@ -612,21 +619,6 @@ proc ::constcl::parse-number-expr {} {
 
 
 
-proc ::constcl::parse-identifier-expr {} {
-  upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" &&
-      [$ib peek] ni {) \]}} {
-    ::append name [$ib peek]
-    $ib advance
-  }
-  $ib skip-ws
-  # idcheck throws error if invalid identifier
-  return [S [idcheck $name]]
-}
-
-
-
-
 proc ::constcl::character-check {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
@@ -673,6 +665,21 @@ proc ::constcl::parse-vector-expr {} {
   $ib advance
   $ib skip-ws
   return $vec
+}
+
+
+
+
+proc ::constcl::parse-identifier-expr {} {
+  upvar ib ib
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
+    $ib advance
+  }
+  $ib skip-ws
+  # idcheck throws error if invalid identifier
+  return [S [idcheck $name]]
 }
 
 

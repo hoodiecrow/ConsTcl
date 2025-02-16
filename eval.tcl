@@ -392,15 +392,15 @@ CB
 TT(
 
 ::tcltest::test eval-2.0 {lambda parameter lists} -body {
-    pep {((lambda (x y z) (list x y z)) 3 4 5)}
-    pep {((lambda x x) 3 4 5 6)}
-    pep {((lambda (x y . z) (list x y)) 3 4 5 6)}
-    pep {((lambda (x y . z) z) 3 4 5 6)}
+    pew {((lambda (x y z) (list x y z)) 3 4 5)}
+    pew {((lambda x x) 3 4 5 6)}
+    pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
+    pew {((lambda (x y . z) z) 3 4 5 6)}
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
 ::tcltest::test eval-3.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
-    pep "(if (zero? 0) (* 4 4) (- 5 5))"
+    pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 
 TT)

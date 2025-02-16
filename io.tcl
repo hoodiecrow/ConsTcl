@@ -165,7 +165,7 @@ TT(
 ::tcltest::test io-1.0 {try with-input-from-file} -setup {
   ::tcltest::makeFile {42} foo.txt
 } -body {
-  pep "(with-input-from-file \"foo.txt\" '(write (read)))"
+  pew "(with-input-from-file \"foo.txt\" '(write (read)))"
 } -cleanup {
   ::tcltest::removeFile foo.txt
 } -output "42\n()\n"

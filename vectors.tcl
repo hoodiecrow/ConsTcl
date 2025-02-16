@@ -116,9 +116,9 @@ CB
 TT(
 
 ::tcltest::test vectors-1.0 {try vector? (and make-vector, vector)} -body {
-    pep {(vector? #(0 (2 2 2 2) "Anna"))}
-    pep {(vector? (make-vector 3 #\X))}
-    pep {(vector? (vector 'a 'b 'c))}
+    pew {(vector? #(0 (2 2 2 2) "Anna"))}
+    pew {(vector? (make-vector 3 #\X))}
+    pew {(vector? (vector 'a 'b 'c))}
 } -output "#t\n#t\n#t\n"
 
 TT)
@@ -187,8 +187,8 @@ CB
 TT(
 
 ::tcltest::test vectors-1.1 {try vector} -body {
-    pep {(vector 'a 'b 'c)}
-    pep {(vector 0 '(2 2 2 2) "Anna")}
+    pew {(vector 'a 'b 'c)}
+    pew {(vector 0 '(2 2 2 2) "Anna")}
 } -output "#(a b c)\n#(0 (2 2 2 2) \"Anna\")\n"
 
 TT)
@@ -225,7 +225,7 @@ CB
 TT(
 
 ::tcltest::test vectors-1.2 {try vector-length} -body {
-    pep {(vector-length (vector 'a 'b 'c))}
+    pew {(vector-length (vector 'a 'b 'c))}
 } -output "3\n"
 
 TT)
@@ -266,7 +266,7 @@ CB
 TT(
 
 ::tcltest::test vectors-1.3 {try vector-ref} -body {
-    pep {(vector-ref (vector 'a 'b 'c) 1)}
+    pew {(vector-ref (vector 'a 'b 'c) 1)}
 } -output "b\n"
 
 TT)
@@ -313,8 +313,8 @@ CB
 TT(
 
 ::tcltest::test vectors-1.4 {try vector-set!} -body {
-    pep {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
-    pep {(vector-set! (x) 1 '(foo bar))}
+    pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pew {(vector-set! (x) 1 '(foo bar))}
 } -output "#(0 (foo bar) \"Anna\")\n"
 
 TT)
@@ -348,7 +348,7 @@ CB
 TT(
 
 ::tcltest::test vectors-1.5 {try vector->list} -body {
-    pep {(vector->list (vector 'a 'b 'c))}
+    pew {(vector->list (vector 'a 'b 'c))}
 } -output "(a b c)\n"
 
 TT)
@@ -382,7 +382,7 @@ CB
 TT(
 
 ::tcltest::test vectors-1.6 {try list->vector} -body {
-    pep {(list->vector '(a b c))}
+    pew {(list->vector '(a b c))}
 } -output "#(a b c)\n"
 
 TT)
@@ -422,7 +422,7 @@ CB
 TT(
 
 ::tcltest::test vectors-1.7 {try vector-fill!} -body {
-    pep {(vector-fill! (vector 'a 'b 'c) 'x)}
+    pew {(vector-fill! (vector 'a 'b 'c) 'x)}
 } -output "#(x x x)\n"
 
 TT)

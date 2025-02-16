@@ -116,15 +116,15 @@ CB
 TT(
 
 ::tcltest::test write-1.0 {read, eval, and write a number} -body {
-    pep "99.99"
+    pew "99.99"
 } -output "99.99\n"
 
 ::tcltest::test write-1.1 {read, eval, and write a boolean} -body {
-    pep "#t"
+    pew "#t"
 } -output "#t\n"
 
 ::tcltest::test write-1.2 {read, eval, and write a list} -body {
-    pep "'(a b c)"
+    pew "'(a b c)"
 } -output "(a b c)\n"
 
 TT)

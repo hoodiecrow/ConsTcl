@@ -72,20 +72,20 @@ proc ::regmacro {name} {
 CB
 
 MD(
-__pep__
+__pew__
 
-`pep` was named after the sequence parse-eval-print, and I never changed the
-name. It reads and evals an expression, and prints the result. It's the most
-common command in the test cases, since it allows me to write code in Scheme and
-to get nicely formatted output.
+`pew` was originally named `pep` after the sequence parse-eval-print. Now it's
+for parse-eval-write. It reads and evals an expression, and writes the result.
+It's the most common command in the test cases, since it allows me to write code
+in Scheme and to get nicely formatted output.
 MD)
 
 PR(
-pep (internal);str tstr -> none
+pew (internal);str tstr -> none
 PR)
 
 CB
-proc ::pep {str} {
+proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
@@ -93,19 +93,19 @@ proc ::pep {str} {
 CB
 
 MD(
-__pp__
+__pw__
 
-`pp` is a similar command, only it doesn't eval the expression. It just prints what is
+`pw` is a similar command, only it doesn't eval the expression. It just writes what is
 parsed. It is useful for tests when the evaluator can't (yet) evaluate the form,
-but I can still check if it gets read and printed correctly.
+but I can still check if it gets read and written correctly.
 MD)
 
 PR(
-pp (internal);str tstr -> none
+pw (internal);str tstr -> none
 PR)
 
 CB
-proc ::pp {str} {
+proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
@@ -114,7 +114,7 @@ CB
 MD(
 __pe__
 
-`pe` is also similar, but it doesn't print the expression. It just evaluates what
+`pe` is also similar, but it doesn't write the expression. It just evaluates what
 is read. That way I get a value object which I can pass to another command, or
 pick apart in different ways.
 MD)
@@ -127,6 +127,24 @@ CB
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
+}
+CB
+
+MD(
+__re__
+
+`re` is like `pe`, but it reads from a port instead of an input buffer. It
+evaluates what is read.
+MD)
+
+PR(
+re (internal);?port? -> val
+PR)
+
+CB
+proc ::re {args} {
+  ::constcl::eval [
+    ::constcl::read {*}$args]
 }
 CB
 
@@ -197,18 +215,18 @@ proc ::r {args} {
 CB
 
 MD(
-__prp__
+__prw__
 
-`prp`  reads an expression, resolves defines, and prints the result. It was
+`prw`  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the 'resolve local defines' section.
 MD)
 
 PR(
-prp (internal);str tstr -> none
+prw (internal);str tstr -> none
 PR)
 
 CB
-proc ::prp {str} {
+proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
@@ -217,19 +235,19 @@ proc ::prp {str} {
 CB
 
 MD(
-__pxp__
+__pxw__
 
-`pxp` attempts to macro-expand whatever it reads, and prints the result. I know
+`pxw` attempts to macro-expand whatever it reads, and writes the result. I know
 that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
 was developing the macro facility.
 MD)
 
 PR(
-pxp (internal);str tstr -> none
+pxw (internal);str tstr -> none
 PR)
 
 CB
-proc ::pxp {str} {
+proc ::pxw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]

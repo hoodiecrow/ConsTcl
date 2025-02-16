@@ -155,14 +155,14 @@ proc ::regmacro {name} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{pep}
+\textbf{pew}
 
 
-\texttt{pep} was named after the sequence parse-eval-print, and I never changed the name. It reads and evals an expression, and prints the result. It's the most common command in the test cases, since it allows me to write code in Scheme and to get nicely formatted output.
+\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code in Scheme and to get nicely formatted output.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{pep (internal)} \\
+\multicolumn{2}{|l|}{pew (internal)} \\
 \hline
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -171,7 +171,7 @@ str & a Tcl string \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::pep {str} {
+proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
@@ -179,14 +179,14 @@ proc ::pep {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{pp}
+\textbf{pw}
 
 
-\texttt{pp} is a similar command, only it doesn't eval the expression. It just prints what is parsed. It is useful for tests when the evaluator can't (yet) evaluate the form, but I can still check if it gets read and printed correctly.
+\texttt{pw} is a similar command, only it doesn't eval the expression. It just writes what is parsed. It is useful for tests when the evaluator can't (yet) evaluate the form, but I can still check if it gets read and written correctly.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{pp (internal)} \\
+\multicolumn{2}{|l|}{pw (internal)} \\
 \hline
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -195,7 +195,7 @@ str & a Tcl string \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::pp {str} {
+proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
@@ -205,7 +205,7 @@ proc ::pp {str} {
 \textbf{pe}
 
 
-\texttt{pe} is also similar, but it doesn't print the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
+\texttt{pe} is also similar, but it doesn't write the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -221,6 +221,28 @@ str & a Tcl string \\
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
+\textbf{re}
+
+
+\texttt{re} is like \texttt{pe}, but it reads from a port instead of an input buffer. It evaluates what is read.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{re (internal)} \\
+\hline
+?port? & val \\
+\hline
+\end{tabular}
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::re {args} {
+  ::constcl::eval [
+    ::constcl::read {*}$args]
 }
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
@@ -313,14 +335,14 @@ proc ::r {args} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{prp}
+\textbf{prw}
 
 
-\texttt{prp} reads an expression, resolves defines, and prints the result. It was handy during the time I was porting the 'resolve local defines' section.
+\texttt{prw} reads an expression, resolves defines, and writes the result. It was handy during the time I was porting the 'resolve local defines' section.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{prp (internal)} \\
+\multicolumn{2}{|l|}{prw (internal)} \\
 \hline
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -329,7 +351,7 @@ str & a Tcl string \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::prp {str} {
+proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
@@ -338,14 +360,14 @@ proc ::prp {str} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{pxp}
+\textbf{pxw}
 
 
-\texttt{pxp} attempts to macro-expand whatever it reads, and prints the result. I know that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I was developing the macro facility.
+\texttt{pxw} attempts to macro-expand whatever it reads, and writes the result. I know that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I was developing the macro facility.
 
 \begin{tabular}{ |l l| }
 \hline
-\multicolumn{2}{|l|}{pxp (internal)} \\
+\multicolumn{2}{|l|}{pxw (internal)} \\
 \hline
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -354,7 +376,7 @@ str & a Tcl string \\
 
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 \begin{lstlisting}
-proc ::pxp {str} {
+proc ::pxw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]
@@ -1314,35 +1336,6 @@ proc ::constcl::parse-number-expr {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
-\textbf{parse-identifier-expr}
-
-
-\texttt{parse-identifier-expr} is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
-
-\begin{tabular}{ |l l| }
-\hline
-\multicolumn{2}{|l|}{parse-identifier-expr (internal)} \\
-\hline
-\textit{Returns:} & a symbol \\
-\hline
-\end{tabular}
-
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-\begin{lstlisting}
-proc ::constcl::parse-identifier-expr {} {
-  upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" &&
-      [$ib peek] ni {) \]}} {
-    ::append name [$ib peek]
-    $ib advance
-  }
-  $ib skip-ws
-  # idcheck throws error if invalid identifier
-  return [S [idcheck $name]]
-}
-\end{lstlisting}
-\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
-
 \textbf{character-check}
 
 
@@ -1438,6 +1431,35 @@ proc ::constcl::parse-vector-expr {} {
 \end{lstlisting}
 \noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
 
+\textbf{parse-identifier-expr}
+
+
+\texttt{parse-identifier-expr} is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{parse-identifier-expr (internal)} \\
+\hline
+\textit{Returns:} & a symbol \\
+\hline
+\end{tabular}
+
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+\begin{lstlisting}
+proc ::constcl::parse-identifier-expr {} {
+  upvar ib ib
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
+    $ib advance
+  }
+  $ib skip-ws
+  # idcheck throws error if invalid identifier
+  return [S [idcheck $name]]
+}
+\end{lstlisting}
+\noindent\makebox[\linewidth]{\rule{\linewidth}{0.4pt}}
+
 \textbf{parse-object-expr}
 
 
@@ -1514,7 +1536,7 @@ proc ::constcl::read {args} {
 \textbf{read-expr}
 
 
-The procedure \texttt{read-expr} parses input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If the end of file is encountered before an expression can be read in full, the procedure returns end of file.
+The procedure \texttt{read-expr} reads input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If the end of file is encountered before an expression can be read in full, the procedure returns end of file.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -1807,7 +1829,7 @@ proc ::constcl::read-vector-expr {} {
 \textbf{read-character-expr}
 
 
-\texttt{read-character-expr} parses input, producing a character and returning a Char (see page \pageref{characters}) object.
+\texttt{read-character-expr} reads input, producing a character and returning a Char (see page \pageref{characters}) object.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2022,7 +2044,7 @@ proc ::constcl::read-number-expr {args} {
 \textbf{read-unquoted-expr}
 
 
-When a comma is found in the input stream, \texttt{parse-unquoted-expr} is activated. If it reads an at-sign (@) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
+When a comma is found in the input stream, \texttt{read-unquoted-expr} is activated. If it reads an at-sign (@) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
 
 \begin{tabular}{ |l l| }
 \hline

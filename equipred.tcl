@@ -68,11 +68,11 @@ CB
 
 TT(
 ::tcltest::test equipred-1.0 {try comparing a boolean and a symbol} -body {
-    pep "(eq? #t 'a)"
+    pew "(eq? #t 'a)"
 } -output "#f\n"
 
 ::tcltest::test equipred-1.1 {try comparing two booleans} -body {
-    pep "(eq? #t #t)"
+    pew "(eq? #t #t)"
 } -output "#t\n"
 TT)
 

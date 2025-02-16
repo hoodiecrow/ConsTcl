@@ -95,33 +95,33 @@ proc ::regmacro {name} {
 }
 ```
 
-__pep__
+__pew__
 
-`pep` was named after the sequence parse-eval-print, and I never changed the
-name. It reads and evals an expression, and prints the result. It's the most
-common command in the test cases, since it allows me to write code in Scheme and
-to get nicely formatted output.
+`pew` was originally named `pep` after the sequence parse-eval-print. Now it's
+for parse-eval-write. It reads and evals an expression, and writes the result.
+It's the most common command in the test cases, since it allows me to write code
+in Scheme and to get nicely formatted output.
 
-<table border=1><thead><tr><th colspan=2 align="left">pep (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::pep {str} {
+proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
 }
 ```
 
-__pp__
+__pw__
 
-`pp` is a similar command, only it doesn't eval the expression. It just prints what is
+`pw` is a similar command, only it doesn't eval the expression. It just writes what is
 parsed. It is useful for tests when the evaluator can't (yet) evaluate the form,
-but I can still check if it gets read and printed correctly.
+but I can still check if it gets read and written correctly.
 
-<table border=1><thead><tr><th colspan=2 align="left">pp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::pp {str} {
+proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
@@ -129,7 +129,7 @@ proc ::pp {str} {
 
 __pe__
 
-`pe` is also similar, but it doesn't print the expression. It just evaluates what
+`pe` is also similar, but it doesn't write the expression. It just evaluates what
 is read. That way I get a value object which I can pass to another command, or
 pick apart in different ways.
 
@@ -139,6 +139,20 @@ pick apart in different ways.
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
+}
+```
+
+__re__
+
+`re` is like `pe`, but it reads from a port instead of an input buffer. It
+evaluates what is read.
+
+<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>?port?</td><td></td></tr><tr><td>val</td><td></td></tr></table>
+
+```
+proc ::re {args} {
+  ::constcl::eval [
+    ::constcl::read {*}$args]
 }
 ```
 
@@ -192,15 +206,15 @@ proc ::r {args} {
 }
 ```
 
-__prp__
+__prw__
 
-`prp`  reads an expression, resolves defines, and prints the result. It was
+`prw`  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the 'resolve local defines' section.
 
-<table border=1><thead><tr><th colspan=2 align="left">prp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">prw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::prp {str} {
+proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
@@ -208,16 +222,16 @@ proc ::prp {str} {
 }
 ```
 
-__pxp__
+__pxw__
 
-`pxp` attempts to macro-expand whatever it reads, and prints the result. I know
+`pxw` attempts to macro-expand whatever it reads, and writes the result. I know
 that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
 was developing the macro facility.
 
-<table border=1><thead><tr><th colspan=2 align="left">pxp (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pxw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::pxp {str} {
+proc ::pxw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]
@@ -1055,31 +1069,6 @@ proc ::constcl::parse-number-expr {} {
 ```
 
 
-__parse-identifier-expr__
-
-`parse-identifier-expr` is activated for "anything else", and takes in
-characters until it finds whitespace or an ending parenthesis or bracket. It
-checks the input against the rules for identifiers, accepting or rejecting it
-with an error message. It returns a
-Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
-
-<table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
-
-```
-proc ::constcl::parse-identifier-expr {} {
-  upvar ib ib
-  while {[interspace [$ib peek]] ne "#t" &&
-      [$ib peek] ni {) \]}} {
-    ::append name [$ib peek]
-    $ib advance
-  }
-  $ib skip-ws
-  # idcheck throws error if invalid identifier
-  return [S [idcheck $name]]
-}
-```
-
-
 __character-check__
 
 The `character-check` helper procedure compares a potential
@@ -1155,6 +1144,31 @@ proc ::constcl::parse-vector-expr {} {
 ```
 
 
+__parse-identifier-expr__
+
+`parse-identifier-expr` is activated for "anything else", and takes in
+characters until it finds whitespace or an ending parenthesis or bracket. It
+checks the input against the rules for identifiers, accepting or rejecting it
+with an error message. It returns a
+Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+
+<table border=1><thead><tr><th colspan=2 align="left">parse-identifier-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
+```
+proc ::constcl::parse-identifier-expr {} {
+  upvar ib ib
+  while {[interspace [$ib peek]] ne "#t" &&
+      [$ib peek] ni {) \]}} {
+    ::append name [$ib peek]
+    $ib advance
+  }
+  $ib skip-ws
+  # idcheck throws error if invalid identifier
+  return [S [idcheck $name]]
+}
+```
+
+
 __parse-object-expr__
 
 A non-standard extension, `parse-object-expr` parses a ConsTcl object of any
@@ -1216,7 +1230,7 @@ proc ::constcl::read {args} {
 
 __read-expr__
 
-The procedure `read-expr` parses input by reading the first available
+The procedure `read-expr` reads input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
 that, producing an expression of any kind. A Tcl character value can be passed
 to it, that character will be used first before reading from the input stream.
@@ -1450,7 +1464,7 @@ proc ::constcl::read-vector-expr {} {
 
 __read-character-expr__
 
-`read-character-expr` parses input, producing a character and returning
+`read-character-expr` reads input, producing a character and returning
 a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character or end of file</td></tr></table>
@@ -1636,7 +1650,7 @@ proc ::constcl::read-number-expr {args} {
 
 __read-unquoted-expr__
 
-When a comma is found in the input stream, `parse-unquoted-expr` is activated.
+When a comma is found in the input stream, `read-unquoted-expr` is activated.
 If it reads an at-sign (@) it selects the symbol `unquote-splicing`, otherwise
 it selects the symbol `unquote`. Then it reads an entire expression and returns
 it wrapped in the selected symbol. Both of these expressions are only suppposed

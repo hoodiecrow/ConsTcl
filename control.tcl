@@ -74,9 +74,9 @@ CB
 TT(
 
 ::tcltest::test control-1.0 {try procedure?)} -body {
-    pep {(procedure? car)}
-    pep {(procedure? 'car)}
-    pep {(procedure? (lambda (x) (* x x)))}
+    pew {(procedure? car)}
+    pew {(procedure? 'car)}
+    pew {(procedure? (lambda (x) (* x x)))}
 } -output "#t\n#f\n#t\n"
 
 TT)
@@ -113,16 +113,16 @@ CB
 TT(
 
 ::tcltest::test control-2.0 {try apply)} -body {
-    pep {(apply + (list 3 4))}
-    pep {(define compose
+    pew {(apply + (list 3 4))}
+    pew {(define compose
   (lambda (f g)
     (lambda args
       (f (apply g args)))))}
-    pep {((compose sqrt *) 12 75)}
+    pew {((compose sqrt *) 12 75)}
 } -output "7\n30.0\n"
 
 ::tcltest::test control-2.1 {try triggering a check} -body {
-    pep {(apply #\+ (list 3 4))}
+    pew {(apply #\+ (list 3 4))}
 } -returnCodes error -result "PROCEDURE expected\n(apply #\\+ ...)"
 
 TT)
@@ -181,10 +181,10 @@ CB
 TT(
 
 ::tcltest::test control-3.0 {try map)} -body {
-    pep {(map cadr '((a b) (d e) (g h)))}
-    pep {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
-    pep {(map + '(1 2 3) '(4 5 6))}
-    pep {(let ((count 0))
+    pew {(map cadr '((a b) (d e) (g h)))}
+    pew {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
+    pew {(map + '(1 2 3) '(4 5 6))}
+    pew {(let ((count 0))
   (map (lambda (ignored)
          (set! count (+ count 1))
          count)
@@ -250,7 +250,7 @@ CB
 TT(
 
 ::tcltest::test control-4.0 {try for-each)} -body {
-    pep {(for-each display '(1 2 3))}
+    pew {(for-each display '(1 2 3))}
 } -output "123()\n"
 
 TT)

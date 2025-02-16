@@ -137,7 +137,7 @@ qux\bod
 }
 
 ::tcltest::test strings-1.2 {try printing a read string} -body {
-    pp {"foo \"bar\" baz\nqux\\bod"}
+    pw {"foo \"bar\" baz\nqux\\bod"}
 } -output {"foo \"bar\" baz\nqux\\bod"
 }
 TT)
@@ -157,8 +157,8 @@ CB
 TT(
 
 ::tcltest::test strings-2.0 {try string?} -body {
-    pep {(string? "foo bar")}
-    pep {(string? 'foo-bar)}
+    pew {(string? "foo bar")}
+    pew {(string? 'foo-bar)}
 } -output "#t\n#f\n"
 
 TT)
@@ -203,7 +203,7 @@ CB
 TT(
 
 ::tcltest::test strings-3.0 {try make-string} -body {
-    pep {(make-string 5 #\x)}
+    pew {(make-string 5 #\x)}
 } -output "\"xxxxx\"\n"
 
 TT)
@@ -245,11 +245,11 @@ CB
 TT(
 
 ::tcltest::test strings-4.0 {try string} -body {
-    pep {(string #\f #\o #\o)}
+    pew {(string #\f #\o #\o)}
 } -output "\"foo\"\n"
 
 ::tcltest::test strings-4.1 {try string} -body {
-    pep {(string #\f #\o 'a #\o)}
+    pew {(string #\f #\o 'a #\o)}
 } -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
 
 TT)
@@ -286,7 +286,7 @@ CB
 TT(
 
 ::tcltest::test strings-5.0 {try string-length} -body {
-    pep {(string-length "foo bar")}
+    pew {(string-length "foo bar")}
 } -output "7\n"
 
 TT)
@@ -328,7 +328,7 @@ CB
 TT(
 
 ::tcltest::test strings-6.0 {try string-ref} -body {
-    pep {(string-ref "foo bar" 4)}
+    pew {(string-ref "foo bar" 4)}
 } -output "#\\b\n"
 
 TT)
@@ -378,17 +378,17 @@ CB
 TT(
 
 ::tcltest::test strings-7.0 {try string-set!} -body {
-    pep {(string-set! (string #\f #\o #\o) 0 #\x)}
+    pew {(string-set! (string #\f #\o #\o) 0 #\x)}
 } -output "\"xoo\"\n"
 
 ::tcltest::test strings-7.1 {try string-set!} -body {
-    pep {(define f (lambda () (make-string 3 #\*)))}
-    pep {(define g (lambda () "***"))}
-    pep {(string-set! (f) 0 #\?)}
+    pew {(define f (lambda () (make-string 3 #\*)))}
+    pew {(define g (lambda () "***"))}
+    pew {(string-set! (f) 0 #\?)}
 } -output "\"?**\"\n"
 
 ::tcltest::test strings-7.2 {try string-set!} -body {
-    pep {(string-set! (g) 0 #\?)}
+    pew {(string-set! (g) 0 #\?)}
 } -returnCodes error -result "string is constant"
 
 TT)
@@ -444,9 +444,9 @@ CB
 TT(
 
 ::tcltest::test strings-8.0 {try string=?} -body {
-    pep {(string=? "foo bar" "faa bor")}
-    pep {(string=? "foo bar" "foo bar")}
-    pep {(string=? "foo bar" "Foo bar")}
+    pew {(string=? "foo bar" "faa bor")}
+    pew {(string=? "foo bar" "foo bar")}
+    pew {(string=? "foo bar" "Foo bar")}
 } -output "#f\n#t\n#f\n"
 
 TT)
@@ -475,9 +475,9 @@ CB
 TT(
 
 ::tcltest::test strings-9.0 {try string-ci=?} -body {
-    pep {(string-ci=? "foo bar" "faa bor")}
-    pep {(string-ci=? "foo bar" "foo bar")}
-    pep {(string-ci=? "foo bar" "Foo bar")}
+    pew {(string-ci=? "foo bar" "faa bor")}
+    pew {(string-ci=? "foo bar" "foo bar")}
+    pew {(string-ci=? "foo bar" "Foo bar")}
 } -output "#f\n#t\n#t\n"
 
 TT)
@@ -505,9 +505,9 @@ CB
 TT(
 
 ::tcltest::test strings-10.0 {try string<?} -body {
-    pep {(string<? "bar" "car")}
-    pep {(string<? "bar" "bar")}
-    pep {(string<? "bar" "aar")}
+    pew {(string<? "bar" "car")}
+    pew {(string<? "bar" "bar")}
+    pew {(string<? "bar" "aar")}
 } -output "#t\n#f\n#f\n"
 
 TT)
@@ -536,9 +536,9 @@ CB
 TT(
 
 ::tcltest::test strings-11.0 {try string-ci<?} -body {
-    pep {(string-ci<? "bar" "Car")}
-    pep {(string-ci<? "bar" "Bar")}
-    pep {(string-ci<? "bar" "Aar")}
+    pew {(string-ci<? "bar" "Car")}
+    pew {(string-ci<? "bar" "Bar")}
+    pew {(string-ci<? "bar" "Aar")}
 } -output "#t\n#f\n#f\n"
 
 TT)
@@ -566,9 +566,9 @@ CB
 TT(
 
 ::tcltest::test strings-12.0 {try string>?} -body {
-    pep {(string>? "bar" "car")}
-    pep {(string>? "bar" "bar")}
-    pep {(string>? "bar" "aar")}
+    pew {(string>? "bar" "car")}
+    pew {(string>? "bar" "bar")}
+    pew {(string>? "bar" "aar")}
 } -output "#f\n#f\n#t\n"
 
 TT)
@@ -597,9 +597,9 @@ CB
 TT(
 
 ::tcltest::test strings-13.0 {try string-ci>?} -body {
-    pep {(string-ci>? "bar" "Car")}
-    pep {(string-ci>? "bar" "Bar")}
-    pep {(string-ci>? "bar" "Aar")}
+    pew {(string-ci>? "bar" "Car")}
+    pew {(string-ci>? "bar" "Bar")}
+    pew {(string-ci>? "bar" "Aar")}
 } -output "#f\n#f\n#t\n"
 
 TT)
@@ -627,9 +627,9 @@ CB
 TT(
 
 ::tcltest::test strings-14.0 {try string<=?} -body {
-    pep {(string<=? "bar" "car")}
-    pep {(string<=? "bar" "bar")}
-    pep {(string<=? "bar" "aar")}
+    pew {(string<=? "bar" "car")}
+    pew {(string<=? "bar" "bar")}
+    pew {(string<=? "bar" "aar")}
 } -output "#t\n#t\n#f\n"
 
 TT)
@@ -658,9 +658,9 @@ CB
 TT(
 
 ::tcltest::test strings-15.0 {try string-ci<=?} -body {
-    pep {(string-ci<=? "bar" "Car")}
-    pep {(string-ci<=? "bar" "Bar")}
-    pep {(string-ci<=? "bar" "Aar")}
+    pew {(string-ci<=? "bar" "Car")}
+    pew {(string-ci<=? "bar" "Bar")}
+    pew {(string-ci<=? "bar" "Aar")}
 } -output "#t\n#t\n#f\n"
 
 TT)
@@ -688,9 +688,9 @@ CB
 TT(
 
 ::tcltest::test strings-16.0 {try string>=?} -body {
-    pep {(string>=? "bar" "car")}
-    pep {(string>=? "bar" "bar")}
-    pep {(string>=? "bar" "aar")}
+    pew {(string>=? "bar" "car")}
+    pew {(string>=? "bar" "bar")}
+    pew {(string>=? "bar" "aar")}
 } -output "#f\n#t\n#t\n"
 
 TT)
@@ -719,9 +719,9 @@ CB
 TT(
 
 ::tcltest::test strings-17.0 {try string-ci>=?} -body {
-    pep {(string-ci>=? "bar" "Car")}
-    pep {(string-ci>=? "bar" "Bar")}
-    pep {(string-ci>=? "bar" "Aar")}
+    pew {(string-ci>=? "bar" "Car")}
+    pew {(string-ci>=? "bar" "Bar")}
+    pew {(string-ci>=? "bar" "Aar")}
 } -output "#f\n#t\n#t\n"
 
 TT)
@@ -767,7 +767,7 @@ CB
 TT(
 
 ::tcltest::test strings-18.0 {try substring} -body {
-    pep {(substring "foo bar" 0 2)}
+    pew {(substring "foo bar" 0 2)}
 } -output "\"foo\"\n"
 
 TT)
@@ -803,7 +803,7 @@ CB
 TT(
 
 ::tcltest::test strings-19.0 {try string-append} -body {
-    pep {(string-append "foo" " bar")}
+    pew {(string-append "foo" " bar")}
 } -output "\"foo bar\"\n"
 
 TT)
@@ -837,7 +837,7 @@ CB
 TT(
 
 ::tcltest::test strings-20.0 {try string->list} -body {
-    pep {(string->list "foo")}
+    pew {(string->list "foo")}
 } -output "(#\\f #\\o #\\o)\n"
 
 TT)
@@ -872,7 +872,7 @@ CB
 TT(
 
 ::tcltest::test strings-21.0 {try list->string} -body {
-    pep {(list->string '(#\f #\o #\o))}
+    pew {(list->string '(#\f #\o #\o))}
 } -output "\"foo\"\n"
 
 TT)
@@ -912,12 +912,12 @@ CB
 TT(
 
 ::tcltest::test strings-22.0 {try string-copy} -body {
-    pep {(define x (string-copy "foo"))}
-    pep {(string-set! x 0 #\x)}
-    pep {(define y "foobar")}
-    pep {(define z (string-copy y))}
-    pep {(eq? y z)}
-    pep {(equal? y z)}
+    pew {(define x (string-copy "foo"))}
+    pew {(string-set! x 0 #\x)}
+    pew {(define y "foobar")}
+    pew {(define z (string-copy y))}
+    pew {(eq? y z)}
+    pew {(equal? y z)}
 } -output "\"xoo\"\n#f\n#t\n"
 
 TT)
@@ -958,8 +958,8 @@ CB
 TT(
 
 ::tcltest::test strings-23.0 {try string-fill!} -body {
-    pep {(define x (string-copy "foo"))}
-    pep {(string-fill! x #\x)}
+    pew {(define x (string-copy "foo"))}
+    pew {(string-fill! x #\x)}
 } -output "\"xxx\"\n"
 
 TT)
