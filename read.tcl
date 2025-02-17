@@ -198,9 +198,8 @@ the list.
 
 __parse__
 
-`parse` is the entry point into the `parse-` set of commands. It can be called
-with either a Tcl or ConsTcl string, or an input buffer (instance of IB). Once
-the input buffer is established, `parse` leaves control to `parse-expr`.
+`parse` can be called with either a Tcl or ConsTcl string, or a string input
+port. Once the input port is established, `parse` leaves control to `read-expr`.
 MD)
 
 PR(
@@ -211,19 +210,27 @@ CB
 reg parse
 
 proc ::constcl::parse {inp} {
+  set c {}
+  set unget {}
   if {[info object isa object $inp]} {
     if {[typeof? $inp IB] ne "#f"} {
-      set ib $inp
+      error "IB used"
+    } elseif {[typeof? $inp StringInputPort] ne "#f"} {
+      set port $inp
     } elseif {[typeof? $inp String] ne "#f"} {
-      set ib [IB new [$inp value]]
+      set port [::constcl::StringInputPort new [$inp value]]
     } else {
       ::error "Unknown object [$inp show]"
     }
   } else {
     # It's a Tcl string, we hope
-    set ib [IB new $inp]
+    set port [StringInputPort new $inp]
   }
-  return [parse-expr]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $port
+  set expr [read-expr]
+  set ::constcl::Input_port $oldport
+  return $expr
 }
 CB
 
@@ -232,8 +239,8 @@ TT(
   pew {(parse "42")}
 } -output "42\n"
 
-::tcltest::test parse-1.1 {try parse with IB buffer} -body {
-  pw [::constcl::IB new "42"]
+::tcltest::test parse-1.1 {try parse with StringInputPort buffer} -body {
+  pw [::constcl::StringInputPort new "42"]
 } -output "42\n"
 
 ::tcltest::test parse-1.1 {try parse with string} -body {
@@ -703,7 +710,7 @@ TT(
 ::tcltest::test parse-7.3 {try reading a number} {
     set obj [::constcl::parse "     +9"]
     $obj value
-} "+9"
+} "9"
 
 ::tcltest::test parse-7.4 {try reading a number} {
     set obj [::constcl::parse "     -9"]
@@ -776,22 +783,22 @@ CB
 TT(
 
 ::tcltest::test parse-9.0 {try reading a character} {
-    set expr [::constcl::parse [::constcl::IB new {#\A}]]
+    set expr [p {#\A}]
     $expr char
 } "A"
 
 ::tcltest::test parse-9.1 {try reading a character} {
-    set expr [::constcl::parse [::constcl::IB new "#\\space"]]
+    set expr [p "#\\space"]
     $expr char
 } " "
 
 ::tcltest::test parse-9.2 {try reading a character} {
-    set expr [::constcl::parse [::constcl::IB new "#\\newline"]]
+    set expr [p "#\\newline"]
     $expr char
 } "\n"
 
 ::tcltest::test parse-9.3 {try reading a character} -body {
-    set expr [::constcl::parse [::constcl::IB new "#\\foobar"]]
+    set expr [p "#\\foobar"]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
@@ -981,6 +988,7 @@ proc ::constcl::read-expr {args} {
   } else {
     set c [readc]
   }
+  set unget {}
   read-eof $c
   if {[::string is space $c] || $c eq ";"} {
     skip-ws
@@ -993,7 +1001,9 @@ proc ::constcl::read-expr {args} {
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
     {\,}          { read-unquoted-expr }
-    {\.}          { Dot new }
+    {\.} {
+        set x [Dot new]; set c [readc]; set x
+    }
     {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
@@ -1013,7 +1023,7 @@ TT(
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1023,7 +1033,7 @@ TT(
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1033,8 +1043,8 @@ TT(
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1044,8 +1054,8 @@ TT(
     ::tcltest::makeFile {  #t  #f} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1055,8 +1065,8 @@ TT(
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1066,7 +1076,7 @@ TT(
     ::tcltest::makeFile {  'foo } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1076,7 +1086,7 @@ TT(
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1086,7 +1096,7 @@ TT(
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1096,7 +1106,7 @@ TT(
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1106,9 +1116,9 @@ TT(
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1118,8 +1128,8 @@ TT(
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1129,9 +1139,9 @@ TT(
     ::tcltest::makeFile {  a . b } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1141,7 +1151,7 @@ TT(
     ::tcltest::makeFile {  `(a b) } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1151,7 +1161,7 @@ TT(
     ::tcltest::makeFile {  99 } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1161,8 +1171,8 @@ TT(
     ::tcltest::makeFile {  foo    bar } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    w [r $p]
-    w [r $p]
+    rw $p
+    rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
@@ -1186,8 +1196,8 @@ proc ::constcl::readc {} {
     set c $unget
     set unget {}
   } else {
-    set c [::read [$::constcl::Input_port handle] 1]
-    if {[eof [$::constcl::Input_port handle]]} {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
       return #EOF
     }
   }
@@ -1265,6 +1275,7 @@ proc ::constcl::skip-ws {} {
         }
       }
       default {
+        set unget $c
         return
       }
     }
@@ -1312,15 +1323,16 @@ proc ::constcl::read-string-expr {} {
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
-      ::append str $v
+      ::append str $c
       set c [readc]
     }
     ::append str $c
     set c [readc]
   }
-  if {$c ne "\""} {
+  if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
+  set c [readc]
   set expr [MkString $str]
   read-eof $expr
   $expr mkconstant
@@ -1343,6 +1355,7 @@ PR)
 CB
 proc ::constcl::read-sharp {} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   switch $c {
@@ -1405,10 +1418,9 @@ proc ::constcl::read-character-expr {} {
   set name "#\\"
   set c [readc]
   read-eof $c
-  while {[::string is alpha $c]} {
+  while {$c ni {) ]} && [::string is graph $c] && $c ne "#EOF"} {
     ::append name $c
     set c [readc]
-    read-eof $c
   }
   check {character-check $name} {
       Invalid character constant $name
@@ -1434,6 +1446,7 @@ PR)
 CB
 proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
@@ -1509,12 +1522,12 @@ proc ::constcl::read-pair {char} {
     read-eof $c
     if {[dot? $x] ne "#f"} {
       set prev [read-expr $c]
-      skip-ws $c]
+      skip-ws
       read-eof $c
     } else {
       lappend res $x
     }
-    if {[llength $res] > 999} break
+    if {[llength $res] > 9} break
   }
   # read right paren/brack
   foreach r [lreverse $res] {
@@ -1539,6 +1552,7 @@ PR)
 CB
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   if {[::string is digit -strict $c]} {
@@ -1575,6 +1589,7 @@ PR)
 CB
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
+  set unget {}
   if {[llength $args]} {
     lassign $args c
   } else {
@@ -1582,7 +1597,7 @@ proc ::constcl::read-number-expr {args} {
   }
   read-eof $c
   while {[interspace $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) \]}} {
+      $c ni {) ]}} {
     ::append num $c
     set c [readc]
   }
@@ -1591,7 +1606,6 @@ proc ::constcl::read-number-expr {args} {
       Invalid numeric constant $num
   }
   set expr [N $num]
-  read-eof $expr
   return $expr
 }
 CB
@@ -1624,41 +1638,6 @@ proc ::constcl::read-unquoted-expr {} {
   }
   read-eof $expr
   return [list [S $symbol] $expr]
-}
-CB
-
-MD(
-__read-object-expr__
-
-A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
-and passes its name along.
-MD)
-
-PR(
-read-object-expr (internal);-> objeof
-PR)
-
-CB
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readc]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readc]
-    read-eof $c
-  }
-  set unget $c
-  return $res
 }
 CB
 
@@ -1723,6 +1702,41 @@ proc ::constcl::read-identifier-expr {args} {
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
+}
+CB
+
+MD(
+__read-object-expr__
+
+A non-standard extension, `read-object-expr` reads a ConsTcl object of any kind
+and passes its name along.
+MD)
+
+PR(
+read-object-expr (internal);-> objeof
+PR)
+
+CB
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  # first colon has already been read
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 CB
 

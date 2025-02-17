@@ -31,7 +31,7 @@ oo::class create ::constcl::Environment {
       if {$symsn != $valsn} {
         error [
           ::append --> "wrong # of arguments, " \
-            "$valsn instead of $symsn"
+            "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
         my set $sym $val

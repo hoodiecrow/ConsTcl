@@ -124,7 +124,7 @@ TT(
 
 ::tcltest::test cons-5.0 {fib-range} -body {
     pew "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
-    pew "(define (range a b) (if (= a b) (quote ()) (cons a (range (+ a 1) b))))"
+    pew "(define (range a b) (if (= a b) '() (cons a (range (+ a 1) b))))"
     pew "(range 0 10)"
 } -output "(0 1 2 3 4 5 6 7 8 9)\n"
 

@@ -44,6 +44,53 @@ oo::class create ::constcl::InputPort {
     }
     return $handle
   }
+  method get {} {
+    read $handle 1
+  }
+  method eof {} {
+    eof $handle
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<input-port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+
+oo::class create ::constcl::StringInputPort {
+  superclass ::constcl::Port
+  variable buffer read_eof
+  constructor {str} {
+    set buffer $str
+    set read_eof 0
+  }
+  method open {name} {
+    try {
+      set handle [open [$name value] "r"]
+    } on error {} {
+      set handle #NIL
+      return -1
+    }
+    return $handle
+  }
+  method get {} {
+    if {[::string length $buffer] == 0} {
+      set read_eof 1
+      return #EOF
+    }
+    set c [::string index $buffer 0]
+    set buffer [::string range $buffer 1 end]
+    return $c
+  }
+  method eof {} {
+    if {$read_eof} {
+      return 1
+    } else {
+      return 0
+    }
+  }
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<input-port-$num>"
@@ -64,6 +111,9 @@ oo::class create ::constcl::OutputPort {
       return -1
     }
     return $handle
+  }
+  method put {c} {
+    puts -nonewline $handle $c
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
