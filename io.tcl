@@ -50,6 +50,9 @@ oo::class create ::constcl::InputPort {
   method eof {} {
     eof $handle
   }
+  method copy {} {
+    ::constcl::InputPort new $handle
+  }
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<input-port-$num>"
@@ -91,6 +94,9 @@ oo::class create ::constcl::StringInputPort {
       return 0
     }
   }
+  method copy {} {
+    ::constcl::StringInputPort new $buffer
+  }
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<input-port-$num>"
@@ -114,6 +120,9 @@ oo::class create ::constcl::OutputPort {
   }
   method put {c} {
     puts -nonewline $handle $c
+  }
+  method copy {} {
+    ::constcl::OutputPort new $handle
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
@@ -184,7 +193,7 @@ CB
 reg current-input-port
 
 proc ::constcl::current-input-port {} {
-  return $::constcl::Input_port
+  return [$::constcl::Input_port copy]
 }
 CB
 
@@ -192,7 +201,7 @@ CB
 reg current-output-port
 
 proc ::constcl::current-output-port {} {
-  return $::constcl::Output_port
+  return [$::constcl::Output_port copy]
 }
 CB
 
