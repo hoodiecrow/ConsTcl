@@ -1241,7 +1241,7 @@ CB
 proc ::constcl::read-end {} {
   upvar c c unget unget
   set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]}} {
+  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
     set unget $c
     return 1
   } else {
@@ -1472,10 +1472,9 @@ PR)
 CB
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
+  set unget {}
   set expr [read-pair $char]
   read-eof $expr
-  skip-ws
-  read-eof $c
   if {$c ne $char} {
     if {$char eq ")"} {
       ::error \
@@ -1505,13 +1504,13 @@ MD)
 CB
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
-  if {[read-find $char]} {
-    # read right paren/brack
-    set c [readc]
-    return #NIL
-  }
   set c [readc]
   read-eof $c
+  if {[read-find $char]} {
+    # read right paren/brack
+    #set c [readc]
+    return #NIL
+  }
   set a [read-expr $c]
   set res $a
   skip-ws
@@ -1527,7 +1526,7 @@ proc ::constcl::read-pair {char} {
     } else {
       lappend res $x
     }
-    if {[llength $res] > 9} break
+    if {[llength $res] > 99} break
   }
   # read right paren/brack
   foreach r [lreverse $res] {
@@ -1627,6 +1626,7 @@ PR)
 CB
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   if {$c eq "@"} {
@@ -1656,6 +1656,7 @@ PR)
 CB
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set expr [read-expr]
   skip-ws
   read-eof $expr
@@ -1681,6 +1682,7 @@ PR)
 CB
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
+  set unget {}
   if {[llength $args]} {
     lassign $args c
   } else {

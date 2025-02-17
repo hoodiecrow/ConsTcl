@@ -48,7 +48,7 @@ Load the Scheme base to add more definitions to the global environment.
 MD)
 
 CB
-#pe {(load "schemebase.scm")}
+pe {(load "schemebase.scm")}
 CB
 
 MD(

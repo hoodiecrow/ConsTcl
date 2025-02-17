@@ -1357,7 +1357,7 @@ applicable. It ungets the character before returning.
 proc ::constcl::read-end {} {
   upvar c c unget unget
   set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]}} {
+  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
     set unget $c
     return 1
   } else {
@@ -1556,10 +1556,9 @@ i.e. one that has an atom as its last member.
 ```
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
+  set unget {}
   set expr [read-pair $char]
   read-eof $expr
-  skip-ws
-  read-eof $c
   if {$c ne $char} {
     if {$char eq ")"} {
       ::error \
@@ -1587,13 +1586,13 @@ of the list.
 ```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
-  if {[read-find $char]} {
-    # read right paren/brack
-    set c [readc]
-    return #NIL
-  }
   set c [readc]
   read-eof $c
+  if {[read-find $char]} {
+    # read right paren/brack
+    #set c [readc]
+    return #NIL
+  }
   set a [read-expr $c]
   set res $a
   skip-ws
@@ -1609,7 +1608,7 @@ proc ::constcl::read-pair {char} {
     } else {
       lappend res $x
     }
-    if {[llength $res] > 9} break
+    if {[llength $res] > 99} break
   }
   # read right paren/brack
   foreach r [lreverse $res] {
@@ -1697,6 +1696,7 @@ to occur inside a quasiquoted expression.
 ```
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set c [readc]
   read-eof $c
   if {$c eq "@"} {
@@ -1722,6 +1722,7 @@ input stream. It reads an entire expression and returns it wrapped in
 ```
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
+  set unget {}
   set expr [read-expr]
   skip-ws
   read-eof $expr
@@ -1743,6 +1744,7 @@ Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 ```
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
+  set unget {}
   if {[llength $args]} {
     lassign $args c
   } else {
@@ -7540,7 +7542,7 @@ namespace eval ::constcl {
 Load the Scheme base to add more definitions to the global environment.
 
 ```
-#pe {(load "schemebase.scm")}
+pe {(load "schemebase.scm")}
 ```
 
 Thereafter, each time a user-defined procedure is called, a new `Environment`
