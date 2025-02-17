@@ -15,12 +15,20 @@ LDOUT    = -o
 EXE      = 
 
 .PHONY: all
-all: book.md README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
+all: book.md book.tex README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = type.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl s9fes.tcl cons.tcl repl.tcl environment.class global_env.tcl
+source_files = first.src intro.src read.src
+
+tcl_source_files = type.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl s9fes.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf
+
+book.tex: top.tex body.tex bottom.tex
+	cat $^ >$@
+
+body.tex: $(source_files)
+	awk -f srctotex.awk $^ >$@
 
 constcl.tex: book.md
 	awk -f latex.awk $< >$@
@@ -31,13 +39,13 @@ book.md: booktop.md constcl.md lutables.md schemebase.md
 README.md: top.md constcl.md schemebase.md
 	awk -f prototype.awk dict.txt $^ >$@
 
-constcl.md: $(source_files)
+constcl.md: $(tcl_source_files)
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
-constcl.tcl: $(source_files)
+constcl.tcl: $(tcl_source_files)
 	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
-constcl.test: $(source_files)
+constcl.test: $(tcl_source_files)
 	echo 'package require tcltest' >$@
 	echo 'source constcl.tcl\n' >>$@
 	cat $^ |sed -n '/TT/,// { //n ; p }' >>$@

@@ -1,0 +1,33 @@
+K	texttt	`...`
+E	emph	**...**
+B	textbf	__...__
+R	pageref	[]()
+L	footn.	[]()
+I	index	---
+
+H1	part	#
+H2	chapter	##
+H3	section	###
+H4	subs.	####
+H5	subsub.	#####
+H6	parag.	######
+
+MD(	---	---
+	collect	collect
+empty	render	render
+MD)
+
+PR(	---	---
+	table	htmltable
+PR)	---	---
+
+CB(	begin	```
+	print	print
+CB)	end	```
+
+TT(	---	---
+	---	---
+TT)	---	---
+
+IX ...	index
+IG ...	graphix	![]()

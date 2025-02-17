@@ -2,12 +2,12 @@
 MD(
 ## Evaluation
 
-### Syntactic forms
-
 The second thing an interpreter must be able to do is to reduce expressions to
-their normal form, or **evaluate** them. As an example, 2 + 6 and 8 are two
+their **normal form**, or **evaluate** them. As an example, 2 + 6 and 8 are two
 expressions that have the same value, but the latter is in normal form (can't be
 reduced further) and the former is not.
+
+### Syntactic forms
 
 There are nine diffent forms or classes of expressions in Lisp.
 
@@ -21,11 +21,10 @@ __eval__
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes
 it according to its syntactic form.
 
-`eval`:
+`eval` also does two kinds of rewriting of expressions:
 
-1. processes an **expression** to get a **value**. The exact method depends on the form of expression, see above and below.
-1. does a form of **macro expansion** on the car and cdr of a non-atomic expression before processing it further. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
-1. resolves **local defines**, acting on expressions of the form `(begin (define ...` when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+1. **macro expansion** on a non-atomic expression into a more concrete expression. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below, and
+2. resolving **local defines**, acting on expressions of the form `(begin (define ...` when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 MD)
 
 PR(
@@ -58,19 +57,33 @@ proc ::constcl::eval \
       set args [cdr $expr]
     }
     switch [$op name] {
-      quote { car $args }
-      if { if {[eval [car $args] $env] ne "#f"} \
-        {eval [cadr $args] $env} \
-        {eval [caddr $args] $env} }
-      begin { /begin $args $env }
-      define { /define [car $args] [
-        eval [cadr $args] $env] $env }
-      set! { /set! [car $args] [
-        eval [cadr $args] $env] $env }
-      lambda { /lambda [car $args] [
-        cdr $args] $env }
-      default { invoke [eval $op $env] [
-        eval-list $args $env] }
+      quote {
+        car $args
+      }
+      if {
+        if {[eval [car $args] $env] ne "#f"} \
+          {eval [cadr $args] $env} \
+          {eval [caddr $args] $env}
+      }
+      begin {
+        /begin $args $env
+      }
+      define {
+        /define [car $args] [
+          eval [cadr $args] $env] $env
+      }
+      set! {
+        /set! [car $args] [
+          eval [cadr $args] $env] $env 
+      }
+      lambda {
+        /lambda [car $args] [
+          cdr $args] $env
+      }
+      default {
+        invoke [eval $op $env] [
+          eval-list $args $env]
+      }
     }
   }
 }
@@ -80,7 +93,7 @@ MD(
 
 #### Variable reference
 
-Example: `r` => 10 (a symbol `r` is evaluated to 10)
+**Example: `r` => 10 (a symbol `r` is evaluated to 10)**
 
 A variable is an identifier (symbol) bound to a location in the environment. If
 an expression consists of the identifier it is evaluated to the value stored in
@@ -104,7 +117,7 @@ CB
 MD(
 #### Constant literal
 
-Example: `99` => 99 (a number evaluates to itself)
+**Example: `99` => 99 (a number evaluates to itself)**
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to
 themselves, to their innate value. Because of this, they are called autoquoting
@@ -114,10 +127,10 @@ MD)
 MD(
 #### Quotation
 
-Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
-constant)
+**Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
+constant)**
 
-According to the rules of Variable reference, a symbol evaluates to its stored
+According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
 what quotation is for. `(quote x)` evaluates to the symbol x itself and not to
 any value that might be stored under it. This is so common that there is a
@@ -128,12 +141,12 @@ MD)
 MD(
 #### Conditional
 
-Example: `(if (> 99 100) (* 2 2) (+ 2 4))` => 6
+**Example: `(if (> 99 100) (+ 2 2) (+ 2 4))` => 6**
 
 The conditional form `if` evaluates a Lisp list of three expressions. The first,
-the _condition_, is evaluated first. If it evaluates to anything other than `#f`
-(false), the second expression (the _consequent_) is evaluated and the value
-returned. Otherwise, the third expression (the _alternate_) is evaluated and the
+the **condition**, is evaluated first. If it evaluates to anything other than `#f`
+(false), the second expression (the **consequent**) is evaluated and the value
+returned. Otherwise, the third expression (the **alternate**) is evaluated and the
 value returned. One of the two latter expressions will be evaluated, and the
 other will remain unevaluated.
 
@@ -157,7 +170,7 @@ CB
 MD(
 #### Sequence
 
-Example: `(begin (define r 10) (* r r))` => 100
+**Example: `(begin (define r 10) (+ r r))` => 20**
 
 When expressions are evaluated in sequence, the order is important for two
 reasons. If the expressions have any side effects, they happen in the same order
@@ -191,7 +204,7 @@ CB
 MD(
 #### Definition
 
-Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)
+**Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)**
 
 We've already seen the relationship between symbols and values. A symbol is
 bound to a value (or rather to the location the value is in), creating a
@@ -217,8 +230,8 @@ CB
 MD(
 #### Assignment
 
-Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
-to it)
+**Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
+to it)**
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
@@ -226,7 +239,8 @@ process is called assignment. The `/set!` helper does assignment: it modifies
 an existing variable that is bound somewhere in the environment chain. It finds
 the variable's environment and updates the binding. It returns the value, so
 calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
-to 99.
+to 99. By Scheme convention, procedures that modify variables have "!" at the
+end of their name.
 
 __/set!__
 MD)
@@ -245,8 +259,8 @@ CB
 MD(
 #### Procedure definition
 
-Example: `(lambda (r) (* r r))` => ::oo::Obj3601 (it will be a different object
-each time)
+**Example: `(lambda (r) (+ r r))` => ::oo::Obj3601 (it will be a different object
+each time)**
 
 In Lisp, procedures are values just like numbers or characters. They can be
 defined as the value of a symbol, passed to other procedures, and returned from
@@ -307,7 +321,7 @@ CB
 MD(
 #### Procedure call
 
-Example: `(+ 1 6)` => 7
+**Example: `(+ 1 6)` => 7**
 
 Once we have procedures, we can call them to have their calculations performed
 and yield results. The procedure name is put in the operator position at the
@@ -316,7 +330,7 @@ procedure would be called for instance like this: `(square 11)`, and it will
 return 121.
 
 `invoke` arranges for a procedure to be called with each of the values in
-the _argument list_ (the list of operands). It checks if pr really is a
+the **argument list** (the list of operands). It checks if pr really is a
 procedure, and determines whether to call pr as an object or as a Tcl command.
 
 __invoke__

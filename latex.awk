@@ -11,6 +11,11 @@ BEGIN {
 	print "\\lstset{"
 	print "  showstringspaces=false,"
 	print "  language=tcl,"
+	print "  frame=lines,"
+	print "  numbers=left,"
+	print "  numberstyle=\\tiny,"
+	print "  firstnumber=last,"
+	print "  basicstyle=\\small\\ttfamily,"
 	print "}"
 	print "%\\renewcommand{\\thesection}{\\arabic{section}}"
 	print "\\title{ConsTcl}"
@@ -75,12 +80,12 @@ BEGIN {
 
 /^```/ {
        if (!in_listing) {
-	       print "\\noindent\\makebox[\\linewidth]{\\rule{\\linewidth}{0.4pt}}"
+	       #print "\\noindent\\makebox[\\linewidth]{\\rule{\\linewidth}{0.4pt}}"
 	       print "\\begin{lstlisting}";
 	       in_listing = 1;
        } else {
 	       print "\\end{lstlisting}";
-	       print "\\noindent\\makebox[\\linewidth]{\\rule{\\linewidth}{0.4pt}}"
+	       #print "\\noindent\\makebox[\\linewidth]{\\rule{\\linewidth}{0.4pt}}"
 	       in_listing = 0;
        };
        next

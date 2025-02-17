@@ -273,7 +273,8 @@ __typeof?__
 type. To be certain, it looks at the value in two ways: once assuming that the value
 is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
 interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
-the type, the procedure returns #t.
+the type, the procedure returns #t. By Scheme convention, predicates (procedures
+that return either `#t` or `#f`) have '?' at the end of their name.
 
 <table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -1313,12 +1314,12 @@ proc ::constcl::read-object-expr {} {
 
 ## Evaluation
 
-### Syntactic forms
-
 The second thing an interpreter must be able to do is to reduce expressions to
-their normal form, or **evaluate** them. As an example, 2 + 6 and 8 are two
+their **normal form**, or **evaluate** them. As an example, 2 + 6 and 8 are two
 expressions that have the same value, but the latter is in normal form (can't be
 reduced further) and the former is not.
+
+### Syntactic forms
 
 There are nine diffent forms or classes of expressions in Lisp.
 
@@ -1343,11 +1344,10 @@ __eval__
 The heart of the Lisp interpreter, `eval` takes a Lisp expression and processes
 it according to its syntactic form.
 
-`eval`:
+`eval` also does two kinds of rewriting of expressions:
 
-1. processes an **expression** to get a **value**. The exact method depends on the form of expression, see above and below.
-1. does a form of **macro expansion** on the car and cdr of a non-atomic expression before processing it further. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below.
-1. resolves **local defines**, acting on expressions of the form `(begin (define ...` when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+1. **macro expansion** on a non-atomic expression into a more concrete expression. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below, and
+2. resolving **local defines**, acting on expressions of the form `(begin (define ...` when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1377,19 +1377,33 @@ proc ::constcl::eval \
       set args [cdr $expr]
     }
     switch [$op name] {
-      quote { car $args }
-      if { if {[eval [car $args] $env] ne "#f"} \
-        {eval [cadr $args] $env} \
-        {eval [caddr $args] $env} }
-      begin { /begin $args $env }
-      define { /define [car $args] [
-        eval [cadr $args] $env] $env }
-      set! { /set! [car $args] [
-        eval [cadr $args] $env] $env }
-      lambda { /lambda [car $args] [
-        cdr $args] $env }
-      default { invoke [eval $op $env] [
-        eval-list $args $env] }
+      quote {
+        car $args
+      }
+      if {
+        if {[eval [car $args] $env] ne "#f"} \
+          {eval [cadr $args] $env} \
+          {eval [caddr $args] $env}
+      }
+      begin {
+        /begin $args $env
+      }
+      define {
+        /define [car $args] [
+          eval [cadr $args] $env] $env
+      }
+      set! {
+        /set! [car $args] [
+          eval [cadr $args] $env] $env 
+      }
+      lambda {
+        /lambda [car $args] [
+          cdr $args] $env
+      }
+      default {
+        invoke [eval $op $env] [
+          eval-list $args $env]
+      }
     }
   }
 }
@@ -1398,7 +1412,7 @@ proc ::constcl::eval \
 
 #### Variable reference
 
-Example: `r` => 10 (a symbol `r` is evaluated to 10)
+**Example: `r` => 10 (a symbol `r` is evaluated to 10)**
 
 A variable is an identifier (symbol) bound to a location in the environment. If
 an expression consists of the identifier it is evaluated to the value stored in
@@ -1418,7 +1432,7 @@ proc ::constcl::lookup {sym env} {
 
 #### Constant literal
 
-Example: `99` => 99 (a number evaluates to itself)
+**Example: `99` => 99 (a number evaluates to itself)**
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to
 themselves, to their innate value. Because of this, they are called autoquoting
@@ -1426,10 +1440,10 @@ types (see next paragraph).
 
 #### Quotation
 
-Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
-constant)
+**Example: `(quote r)` => `r` (quotation makes the symbol evaluate to itself, like a
+constant)**
 
-According to the rules of Variable reference, a symbol evaluates to its stored
+According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
 what quotation is for. `(quote x)` evaluates to the symbol x itself and not to
 any value that might be stored under it. This is so common that there is a
@@ -1438,12 +1452,12 @@ reader.
 
 #### Conditional
 
-Example: `(if (> 99 100) (* 2 2) (+ 2 4))` => 6
+**Example: `(if (> 99 100) (+ 2 2) (+ 2 4))` => 6**
 
 The conditional form `if` evaluates a Lisp list of three expressions. The first,
-the _condition_, is evaluated first. If it evaluates to anything other than `#f`
-(false), the second expression (the _consequent_) is evaluated and the value
-returned. Otherwise, the third expression (the _alternate_) is evaluated and the
+the **condition**, is evaluated first. If it evaluates to anything other than `#f`
+(false), the second expression (the **consequent**) is evaluated and the value
+returned. Otherwise, the third expression (the **alternate**) is evaluated and the
 value returned. One of the two latter expressions will be evaluated, and the
 other will remain unevaluated.
 
@@ -1463,7 +1477,7 @@ proc ::constcl::/if {cond conseq altern} {
 
 #### Sequence
 
-Example: `(begin (define r 10) (* r r))` => 100
+**Example: `(begin (define r 10) (+ r r))` => 20**
 
 When expressions are evaluated in sequence, the order is important for two
 reasons. If the expressions have any side effects, they happen in the same order
@@ -1493,7 +1507,7 @@ proc ::constcl::/begin {exps env} {
 
 #### Definition
 
-Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)
+**Example: `(define r 10)` => ... (a definition doesn't evaluate to anything)**
 
 We've already seen the relationship between symbols and values. A symbol is
 bound to a value (or rather to the location the value is in), creating a
@@ -1515,8 +1529,8 @@ proc ::constcl::/define {sym val env} {
 
 #### Assignment
 
-Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
-to it)
+**Example: `(set! r 20)` => 20 (`r` is a bound symbol, so it's allowed to assign
+to it)**
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
@@ -1524,7 +1538,8 @@ process is called assignment. The `/set!` helper does assignment: it modifies
 an existing variable that is bound somewhere in the environment chain. It finds
 the variable's environment and updates the binding. It returns the value, so
 calls to `set!` can be chained: `(set! foo (set! bar 99))` sets both variables
-to 99.
+to 99. By Scheme convention, procedures that modify variables have "!" at the
+end of their name.
 
 __/set!__
 
@@ -1539,8 +1554,8 @@ proc ::constcl::/set! {var val env} {
 
 #### Procedure definition
 
-Example: `(lambda (r) (* r r))` => ::oo::Obj3601 (it will be a different object
-each time)
+**Example: `(lambda (r) (+ r r))` => ::oo::Obj3601 (it will be a different object
+each time)**
 
 In Lisp, procedures are values just like numbers or characters. They can be
 defined as the value of a symbol, passed to other procedures, and returned from
@@ -1597,7 +1612,7 @@ proc ::constcl::/lambda {formals body env} {
 
 #### Procedure call
 
-Example: `(+ 1 6)` => 7
+**Example: `(+ 1 6)` => 7**
 
 Once we have procedures, we can call them to have their calculations performed
 and yield results. The procedure name is put in the operator position at the
@@ -1606,7 +1621,7 @@ procedure would be called for instance like this: `(square 11)`, and it will
 return 121.
 
 `invoke` arranges for a procedure to be called with each of the values in
-the _argument list_ (the list of operands). It checks if pr really is a
+the **argument list** (the list of operands). It checks if pr really is a
 procedure, and determines whether to call pr as an object or as a Tcl command.
 
 __invoke__
@@ -1693,9 +1708,11 @@ define new macros--the ones available are hardcoded in the code below.
 
 `expand-macro` takes an expression and an environment as a parameter. First, the
 operator (`op`) and operands (`args`) are extracted to check if expansion is
-necessary. If the operator is the symbol `define` and the first of the
-operands is something other than a Pair, then expansion is unnecessary and the procedure
-returns with a code to break the while loop in `eval`.
+necessary (the operator `car`, for historical reasons, stands for the first
+element of a list, while `cdr` stands for the rest of the elements after the
+first in a list). If the operator is the symbol `define` and the first of the
+operands is something other than a Pair, then expansion is unnecessary and the
+procedure returns with a code to break the while loop in `eval`.
 
 The operator's symbol name is then used to select the right expansion procedure,
 and the whole expression and the environment is passed to it. In the end, the
@@ -1738,6 +1755,19 @@ proc ::constcl::expand-and {expr env} {
 }
 ```
 
+##### Quasiquote: an aside
+
+In this and many other macro expanders I use a quasiquote construct to lay out
+how the is to be expanded. A quasiquote starts with a backquote (`&grave;`)
+instead of the single quote that precedes regular quoted material. A quasiquote
+allows for "unquoting" of selected parts: this is notated with a comma (`,`).
+`&grave;(foo ,bar baz)` is very nearly the same as `('foo bar 'baz)`, except that
+the list structure itself is constant in a quasiquote. Anyway, in both cases
+`foo` and `baz` are constants while `bar` is a variable which will be evaluated.
+Like in `do-and` here, a quasiquote serves well as a templating mechanism. The
+variables in the quasiquote need to be a part of the environment in which the
+quasiquote is expanded: I use `/define` to bind them in a temporary environment.
+
 <table border=1><thead><tr><th colspan=2 align="left">do-and (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>prev</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -1746,19 +1776,35 @@ proc ::constcl::do-and {tail prev env} {
   if {[[length $tail] numval] == 0} {
     return $prev
   } else {
-    $env set [S first] [car $tail]
-    $env set [S rest] [do-and [cdr $tail] \
-        [car $tail] $env]
+    /define [S first] [car $tail] $env
+    /define [S rest] [do-and [cdr $tail] \
+        [car $tail] $env] $env
     set qq "`(if ,first ,rest #f)"
     return [expand-quasiquote [parse $qq] $env]
   }
 }
 ```
 
+
 __expand-case__
 
-The `case` macro is expanded by `expand-case`. It returns `'()` if there are no clauses (left), 
-and nested `if` constructs if there are some.
+The body of the `case` form consists of a key-expression and a number of
+clauses. Each clause has a list of values and a body. If the key-expression
+evaluates to a value that occurs in one of the value-lists (considered in
+order), that clause's body is evaluated and all other clauses are ignored.
+
+The `case` macro is expanded by `expand-case`. It expands to `'()` if there are
+no clauses (left), and to nested `if` constructs if there are some.
+
+##### caar, cadr, cdar, and the rest, an aside
+
+The `do-case` procedure uses extensions of the `car`/`cdr` operators like `caar`
+and `cdar`. `car`/`cdr` notation gets really powerful when combined to form
+operators from `caar` to `cddddr`. One can read `caar L` as "the first element of
+the first element of L", implying that the first element of `L` is a list. `cdar
+L` is "the rest of the elements of the first element of L", and `cadr L` is
+"the first element of the rest of the elements of L" or in layman's terms, the
+second element of L.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1767,33 +1813,46 @@ regmacro case
 
 proc ::constcl::expand-case {expr env} {
   set tail [cdr $expr]
-  do-case [car $tail] [cdr $tail]
+  do-case [car $tail] [cdr $tail] $env
 }
 
-proc ::constcl::do-case {keyexpr clauses} {
+proc ::constcl::do-case {keyexpr clauses env} {
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list [S quote] #NIL]
+    return [parse "'()"]
   } else {
     set keyl [caar $clauses]
     set body [cdar $clauses]
     set keyl [list [S memv] $keyexpr \
         [list [S quote] $keyl]]
+    # if this is the last clause...
     if {[eq? [length $clauses] #1] ne "#f"} {
+      # ...allow 'else' in the condition
       if {[eq? [caar $clauses] [S else]] ne "#f"} {
         set keyl #t
       }
     }
-    return [list [S if] $keyl \
-        [cons [S begin] $body] \
-        [do-case $keyexpr [cdr $clauses]]]
+    set env [Environment new #NIL {} $env]
+    /define [S keyl] $keyl $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-case $keyexpr [cdr $clauses] $env] $env
+    set qq "`(if ,keyl
+               (begin ,@body)
+               ,rest)"
+    return [expand-quasiquote [parse $qq] $env]
   }
 }
 ```
 
+
 __expand-cond__
 
-The `cond` macro is expanded by `expand-cond`. It returns `'()` if there are no
-clauses (left), and nested `if` constructs if there are some.
+The `cond` form has a list of clauses, each with a predicate and a body. The
+clauses is considered in order, and if a predicate evaluates to something other
+than `#f` the body is evaluated and the remaining clauses are ignored.
+
+The `cond` macro is expanded by `expand-cond`. It expands to `'()` if there are no
+clauses (left), and to nested `if` constructs if there are some.
 
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
@@ -1808,7 +1867,7 @@ proc ::constcl::expand-cond {expr env} {
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[eq? [length $clauses] #0] ne "#f"} {
-    return [list [S quote] #NIL]
+    return [parse "'()"]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
@@ -1816,7 +1875,9 @@ proc ::constcl::do-cond {tail env} {
         [[car $body] name] eq "=>"} {
       set body [cddar $clauses]
     }
+    # if this is the last clause...
     if {[eq? [length $clauses] #1] ne "#f"} {
+      # ...allow 'else' in the predicate
       if {[eq? $pred [S else]] ne "#f"} {
         set pred #t
       }
@@ -1824,12 +1885,19 @@ proc ::constcl::do-cond {tail env} {
     if {[null? $body] ne "#f"} {
         set body $pred
     }
-    return [list [S if] $pred \
-        [cons [S begin] $body] \
-        [do-cond [cdr $clauses] $env]]
+    set env [Environment new #NIL {} $env]
+    /define [S pred] $pred $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-cond [cdr $clauses] $env] $env
+    set qq "`(if ,pred
+               (begin ,@body)
+               ,rest)"
+    return [expand-quasiquote [parse $qq] $env]
   }
 }
 ```
+
 
 __expand-define__
 
@@ -1852,7 +1920,7 @@ regmacro define
 proc ::constcl::expand-define {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  $env set [S tail] $tail
+  /define [S tail] $tail $env
   set qq "`(define ,(caar tail)
              (lambda ,(cdar tail) ,@(cdr tail)))"
   return [expand-quasiquote [parse $qq] $env]
@@ -1875,11 +1943,11 @@ proc ::constcl::expand-del! {expr env} {
   if {[null? $tail] ne "#f"} {
     ::error "too few arguments, 0 of 2"
   }
-  $env set [S listname] [car $tail]
+  /define [S listname] [car $tail] $env
   if {[null? [cdr $tail]] ne "#f"} {
     ::error "too few arguments, 1 of 2"
   }
-  $env set [S key] [cadr $tail]
+  /define [S key] [cadr $tail] $env
   set qq "`(set! ,listname
              (delete! ,listname ,key))"
   return [expand-quasiquote [parse $qq] $env]
@@ -1908,8 +1976,9 @@ proc ::constcl::for-seq {seq env} {
   if {[list? $seq] ne "#f"} {
     set seq [splitlist $seq]
   } elseif {[string? $seq] ne "#f"} { 
-    set seq [lmap c [split [$seq value] {}] \
-        {MkChar #\\$c}]
+    set seq [lmap c [split [$seq value] {}] {
+      MkChar #\\$c
+    }]
   } elseif {[vector? $seq] ne "#f"} {
     set seq [$seq value]
   }
@@ -1923,38 +1992,30 @@ proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
   set clauses [splitlist [car $tail]]
   set body [cdr $tail]
-  set ids {}
-  set seqs {}
-  for {set i 0} \
-      {$i < [llength $clauses]} \
-      {incr i} {
-    set clause [lindex $clauses $i]
-    # insert the first part of the
-    # clause in the ids structure
-    lset ids $i [car $clause]
-    # run the second part of the clause
-    # through for-seq and insert in seqs
-    lset seqs $i [for-seq [cadr $clause] $env]
+  set data [dict create]
+  set length 0
+  foreach clause $clauses {
+    set id [car $clause]
+    set iter [for-seq [cadr $clause] $env]
+    set length [llength $iter]
+    # save every id and step of the iteration
+    for {set i 0} {$i < $length} {incr i} {
+        dict set data $id $i [lindex $iter $i]
+    }
   }
   set res {}
-  for {set item 0} \
-      {$item < [llength [lindex $seqs 0]]} \
-      {incr item} {
-    # for each iteration of the sequences
-    set x {}
-    for {set clause 0} \
-        {$clause < [llength $clauses]} \
-        {incr clause} {
-      # for each clause
-      # list append to x the Lisp list
-      # of the id and the iteration
-      lappend x [list [lindex $ids $clause] \
-          [lindex $seqs $clause $item]]
+  # for every step of the iteration...
+  for {set i 0} {$i < $length} {incr i} {
+    set decl {}
+    # retrieve the ids
+    foreach id [dict keys $data] {
+      # list the id and the step
+      lappend decl [
+        list $id [dict get $data $id $i]]
     }
-    # list append to res a let expression
-    # with the ids and iterations and the body
+    # add to the structure of let constructs
     lappend res [list [S let] [
-        list {*}$x] {*}[splitlist $body]]
+        list {*}$decl] {*}[splitlist $body]]
   }
   return $res
 }
@@ -1966,10 +2027,11 @@ proc ::constcl::do-for {tail env} {
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  lappend res [list [S quote] #NIL]
+  lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
 ```
+
 
 __expand-for/and__
 
@@ -1984,7 +2046,7 @@ regmacro for/and
 proc ::constcl::expand-for/and {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  return [list [MkSymbol "and"] {*}$res]
+  return [list [S and] {*}$res]
 }
 ```
 
@@ -2001,9 +2063,10 @@ regmacro for/list
 proc ::constcl::expand-for/list {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  return [list [MkSymbol "list"] {*}$res]
+  return [list [S list] {*}$res]
 }
 ```
+
 
 __expand-for/or__
 
@@ -2018,7 +2081,7 @@ regmacro for/or
 proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
-  return [list [MkSymbol "or"] {*}$res]
+  return [list [S or] {*}$res]
 }
 ```
 
@@ -2042,14 +2105,14 @@ proc ::constcl::expand-let {expr env} {
     set body [cddr $tail]
     set vars [dict create $variable #f]
     parse-bindings vars $bindings
-    $env set [S decl] [list {*}[dict values [
-      dict map {k v} $vars {list $k $v}]]]
-    $env set [S variable] $variable
-    $env set [S varlist] [list {*}[lrange [
-      dict keys $vars] 1 end]]
-    $env set [S body] $body
-    $env set [S call] [list {*}[
-      dict keys $vars]]
+    /define [S decl] [list {*}[dict values [
+      dict map {k v} $vars {list $k $v}]]] $env
+    /define [S variable] $variable $env
+    /define [S varlist] [list {*}[lrange [
+      dict keys $vars] 1 end]] $env
+    /define [S body] $body $env
+    /define [S call] [list {*}[
+      dict keys $vars]] $env
     set qq "`(let ,decl
                (set!
                  ,variable
@@ -2061,11 +2124,11 @@ proc ::constcl::expand-let {expr env} {
     set body [cdr $tail]
     set vars [dict create]
     parse-bindings vars $bindings
-    $env set [S varlist] [list {*}[
-      dict keys $vars]]
-    $env set [S body] $body
-    $env set [S vallist] [list {*}[
-      dict values $vars]]
+    /define [S varlist] [list {*}[
+      dict keys $vars]] $env
+    /define [S body] $body $env
+    /define [S vallist] [list {*}[
+      dict values $vars]] $env
     set qq "`((lambda ,varlist ,@body)
                ,@vallist)"
     return [expand-quasiquote [parse $qq] $env]
@@ -2115,8 +2178,8 @@ proc ::constcl::do-or {tail env} {
   /if {eq? [length $tail] #0} {
     return #f
   } {
-    $env set [S first] [car $tail]
-    $env set [S rest] [do-or [cdr $tail] $env]
+    /define [S first] [car $tail] $env
+    /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
     return [expand-quasiquote [parse $qq] $env]
   }
@@ -2138,15 +2201,15 @@ proc ::constcl::expand-pop! {expr env} {
   if {[null? $tail] ne "#f"} {
       ::error "too few arguments:\n(pop! listname)"
   }
-  $env set [MkSymbol "obj"] [car $tail]
   if {[symbol? [car $tail]] eq "#f"} {
       ::error "SYMBOL expected:\n(pop! listname)"
   }
-  $env set [S listname] [car $tail]
+  /define [S listname] [car $tail] $env
   set qq "`(set! ,listname (cdr ,listname))"
   return [expand-quasiquote [parse $qq] $env]
 }
 ```
+
 
 __expand-push!__
 
@@ -2164,7 +2227,7 @@ proc ::constcl::expand-push! {expr env} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
-  $env set [S obj] [car $tail]
+  /define [S obj] [car $tail] $env
   if {[null? [cdr $tail]] ne "#f"} {
     ::error \
       "too few arguments:\n(push! obj listname)"
@@ -2173,13 +2236,14 @@ proc ::constcl::expand-push! {expr env} {
     ::error \
       "SYMBOL expected:\n(push! obj listname)"
   }
-  $env set [S listname] [cadr $tail]
+  /define [S listname] [cadr $tail] $env
   set qq "`(set!
              ,listname
              (cons ,obj ,listname))"
   return [expand-quasiquote [parse $qq] $env]
 }
 ```
+
 
 __expand-put!__
 
@@ -2197,15 +2261,15 @@ proc ::constcl::expand-put! {expr env} {
   if {[null? $tail] ne "#f"} {
       ::error "too few arguments, 0 of 3"
   }
-  $env set [MkSymbol "name"] [car $tail]
+  /define [S name] [car $tail] $env
   if {[null? [cdr $tail]] ne "#f"} {
       ::error "too few arguments, 1 of 3"
   }
-  $env set [MkSymbol "key"] [cadr $tail]
+  /define [S key] [cadr $tail] $env
   if {[null? [cddr $tail]] ne "#f"} {
       ::error "too few arguments, 2 of 3"
   }
-  $env set [MkSymbol "val"] [caddr $tail]
+  /define [S val] [caddr $tail] $env
   set qq "`(let ((idx (list-find-key ,name ,key)))
              (if (< idx 0)
                (set! 
@@ -2217,6 +2281,7 @@ proc ::constcl::expand-put! {expr env} {
   return [expand-quasiquote [parse $qq] $env]
 }
 ```
+
 
 __expand-quasiquote__
 
@@ -2304,7 +2369,7 @@ proc ::constcl::expand-quasiquote {expr env} {
       } else {
       }
     }
-    return [list [MkSymbol "vector"] {*}$res]
+    return [list [S "vector"] {*}$res]
   }
 }
 ```
@@ -2322,7 +2387,7 @@ regmacro unless
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  $env set [S tail] $tail
+  /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              '()
              (begin ,@(cdr tail)))"
@@ -2343,7 +2408,7 @@ regmacro when
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  $env set [S tail] $tail
+  /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))
              '())"

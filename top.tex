@@ -1,0 +1,47 @@
+\documentclass[twoside,9pt]{report}
+\usepackage[a5paper]{geometry}
+\usepackage{newpxmath}
+%\usepackage{libertine} \usepackage[libertine]{newtxmath}
+%\usepackage{kpfonts}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage{imakeidx}
+\lstset{
+  showstringspaces=false,
+  language=tcl,
+  frame=lines,
+  numbers=left,
+  numberstyle=\tiny,
+  firstnumber=last,
+  basicstyle=\small\ttfamily,
+}
+%\renewcommand{\thesection}{\arabic{section}}
+\title{ConsTcl}
+\author{Peter Lewerin}
+\date{\today}
+\makeatletter
+\def\@makechapterhead#1{%
+  \vspace*{50\p@}%
+    {\parindent \z@ \raggedright \normalfont
+      \ifnum \c@secnumdepth >\m@ne
+        %\if@mainmatter
+          %\huge\bfseries \@chapapp\space \thechapter
+          \Huge\bfseries \thechapter.\space%
+          %\par\nobreak
+          %\vskip 20\p@
+        %\fi
+      \fi
+      \interlinepenalty\@M
+      \Huge \bfseries #1\par\nobreak
+      \vskip 40\p@
+   }}
+\makeatother
+\makeindex
+
+\begin{document}
+\pagestyle{headings}
+\maketitle
+\tableofcontents
+
+

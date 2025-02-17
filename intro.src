@@ -1,37 +1,35 @@
 
-MD(
-## Initial declarations
-MD)
+H2 Initial declarations
 
 MD(
 First, I need to create the namespace that will be used for most identifiers:
 MD)
 
-CB
+CB(
 namespace eval ::constcl {}
-CB
+CB)
+
+H3 Utility commands
 
 MD(
-### Utility commands
-
 Next, some procedures that make my life as developer somewhat easier, but
 don't really matter to the interpreter (except the two first ones). The other ones
 will show up a lot in the test cases.
 MD)
 
 MD(
-__reg__
+B{reg}
 
-`reg` registers selected built-in procedures in the definitions register. That
+K{reg} registers selected built-in procedures in the definitions register. That
 way I don't need to manually keep track of and list procedures. The definitions
 register's contents will eventually get dumped into the standard
-library[#](https://github.com/hoodiecrow/ConsTcl#environment-startup).
+libraryR{environment-startup}.
 
-You can call `reg` with two values: **key** and **val**. **Key** is the string
+You can call K{reg} with two values: E{key} and E{val}. E{Key} is the string
 that will eventually become the lookup symbol in the standard library, and
-**val** is the name of the Tcl command that will carry out the procedure. If you
-don't give a value for **val**, `reg` creates a value by prepending the
-`::constcl::` namespace to they **key** value, which is sufficient 99% of the
+E{val} is the name of the Tcl command that will carry out the procedure. If you
+don't give a value for E{val}, K{reg} creates a value by prepending the
+K{::constcl::} namespace to the E{key} value, which is sufficient 99% of the
 time.
 MD)
 
@@ -39,7 +37,8 @@ PR(
 reg (internal);key tstr ?val? tstr -> none
 PR)
 
-CB
+IX reg
+CB(
 proc ::reg {key args} {
   if {[llength $args]} {
     lassign $args val
@@ -49,14 +48,14 @@ proc ::reg {key args} {
   dict set ::constcl::defreg $key $val
   return
 }
-CB
+CB)
 
 MD(
-__regmacro__
+B{regmacro}
 
 ConsTcl has macros, i.e. syntactic forms that are rewritten to concrete--but
 more verbose--forms. The evaluator passes macro forms to a command for expansion
-before they are fully processed. `regmacro` registers macro names in the macro
+before they are fully processed. K{regmacro} registers macro names in the macro
 list, so the evaluator knows what to expand.
 MD)
 
@@ -64,57 +63,60 @@ PR(
 regmacro (internal);name tstr -> none
 PR)
 
-CB
+IX regmacro
+CB(
 proc ::regmacro {name} {
   lappend ::constcl::macrolist $name
   return
 }
-CB
+CB)
 
 MD(
-__pew__
+B{pew}
 
-`pew` was originally named `pep` after the sequence parse-eval-print. Now it's
-for parse-eval-write. It reads and evals an expression, and writes the result.
-It's the most common command in the test cases, since it allows me to write code
-in Scheme and to get nicely formatted output.
+K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
+named for parse-eval-write. It reads and evals an expression, and writes the
+result.  It's the most common command in the test cases, since it allows me to
+write code directly in Scheme and to get nicely formatted output.
 MD)
 
 PR(
 pew (internal);str tstr -> none
 PR)
 
-CB
+IX pew
+CB(
 proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str]]
 }
-CB
+CB)
 
 MD(
-__pw__
+B{pw}
 
-`pw` is a similar command, only it doesn't eval the expression. It just writes what is
+K{pw} is a similar command, only it doesn't eval the expression. It just writes what is
 parsed. It is useful for tests when the evaluator can't (yet) evaluate the form,
 but I can still check if it gets read and written correctly.
 MD)
 
+IX pw
 PR(
 pw (internal);str tstr -> none
 PR)
 
-CB
+CB(
 proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
-CB
+CB)
 
 MD(
-__rw__
+B{rw}
 
-`rw` is the reading variant of `pw`. It just writes what is
+K{rw} is the reading variant of K{pw}. It just writes what is
 read.
 MD)
 
@@ -122,17 +124,18 @@ PR(
 rw (internal);?port? iport -> none
 PR)
 
-CB
+IX rw
+CB(
 proc ::rw {args} {
   ::constcl::write [
     ::constcl::read {*}$args]
 }
-CB
+CB)
 
 MD(
-__pe__
+B{pe}
 
-`pe` is also similar, but it doesn't write the expression. It just evaluates what
+K{pe} is also similar, but it doesn't write the expression. It just evaluates what
 is read. That way I get a value object which I can pass to another command, or
 pick apart in different ways.
 MD)
@@ -141,17 +144,18 @@ PR(
 pe (internal);str tstr -> val
 PR)
 
-CB
+IX pe
+CB(
 proc ::pe {str} {
   ::constcl::eval [
     ::constcl::parse $str]
 }
-CB
+CB)
 
 MD(
-__re__
+B{re}
 
-`re` is like `pe`, but it reads from a port instead of an input buffer. It
+K{re} is like K{pe}, but it reads from a port instead of an input buffer. It
 evaluates what is read.
 MD)
 
@@ -159,66 +163,70 @@ PR(
 re (internal);?port? -> val
 PR)
 
-CB
+IX re
+CB(
 proc ::re {args} {
   ::constcl::eval [
     ::constcl::read {*}$args]
 }
-CB
+CB)
 
 MD(
-__p__
+B{p}
 
-`p` only parses the input, returning an expression object.
+K{p} only parses the input, returning an expression object.
 MD)
 
 PR(
 p (internal);str tstr -> expr
 PR)
 
-CB
+IX p
+CB(
 proc ::p {str} {
   ::constcl::parse $str
 }
-CB
+CB)
 
 MD(
-__e__
+B{e}
 
-`e` is another single-action procedure, evaluating an expression and returning a
+K{e} is another single-action procedure, evaluating an expression and returning a
 value.
 MD)
 
+IX e
 PR(
 e (internal);expr expr -> val
 PR)
 
-CB
+CB(
 proc ::e {expr} {
   ::constcl::eval $expr
 }
-CB
+CB)
 
 MD(
-__w__
+B{w}
 
-`w` is the third single-action procedure, printing a value and that's all.
+K{w} is the third single-action procedure, printing a value and that's all.
 MD)
 
 PR(
 w (internal);val val -> none
 PR)
 
-CB
+IX w
+CB(
 proc ::w {val} {
   ::constcl::write $val
 }
-CB
+CB)
 
 MD(
-__r__
+B{r}
 
-`r` is an extra single-action procedure, reading from default input or from a
+K{r} is an extra single-action procedure, reading from default input or from a
 port and returning an expression object.
 MD)
 
@@ -226,16 +234,17 @@ PR(
 r (internal);?port? iport -> expr
 PR)
 
-CB
+IX r
+CB(
 proc ::r {args} {
   ::constcl::read {*}$args
 }
-CB
+CB)
 
 MD(
-__prw__
+B{prw}
 
-`prw`  reads an expression, resolves defines, and writes the result. It was
+K{prw}  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the 'resolve local defines' section.
 MD)
 
@@ -243,19 +252,20 @@ PR(
 prw (internal);str tstr -> none
 PR)
 
-CB
+IX prw
+CB(
 proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
-CB
+CB)
 
 MD(
-__pxw__
+B{pxw}
 
-`pxw` attempts to macro-expand whatever it reads, and writes the result. I know
+K{pxw} attempts to macro-expand whatever it reads, and writes the result. I know
 that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
 was developing the macro facility.
 MD)
@@ -264,49 +274,52 @@ PR(
 pxw (internal);str tstr -> none
 PR)
 
-CB
+IX pxw
+CB(
 proc ::pxw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]
   ::constcl::write $expr
 }
-CB
+CB)
 
 MD(
-__pn__
+B{pn}
 
-`pn` stands for 'procedure name'. When called, tells the caller the name of its
+K{pn} stands for 'procedure name'. When called, tells the caller the name of its
 command. I use it for error messages so the error message can automagically tell
 the user which command failed.
 MD)
 
+IX pn
 PR(
 pn (internal);-> tstr
 PR)
 
-CB
+CB(
 proc ::pn {} {
   lindex [split [lindex [info level -1] 0] :] end
 }
-CB
+CB)
 
 MD(
-__typeof?__
+B{typeof?}
 
-`typeof?` looks at a value's type and reports if it is the same as the given
+K{typeof?} looks at a value's type and reports if it is the same as the given
 type. To be certain, it looks at the value in two ways: once assuming that the value
 is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
 interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
 the type, the procedure returns #t. By Scheme convention, predicates (procedures
-that return either `#t` or `#f`) have '?' at the end of their name.
+that return either K{#t} or K{#f}) have '?' at the end of their name.
 MD)
 
 PR(
 typeof? (internal);val val type tstr -> bool
 PR)
 
-CB
+IX typeof?
+CB(
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
     return #t
@@ -317,10 +330,10 @@ proc ::constcl::typeof? {val type} {
     return #f
   }
 }
-CB
+CB)
 
 MD(
-__in-range__
+B{in-range}
 
 This one is a little bit of both, a utility function that is also among the
 builtins in the library. It started out as a one-liner by Donal K. Fellows, but
@@ -339,7 +352,8 @@ PR(
 in-range (public);x num ?e? num ?t? num -> lnums
 PR)
 
-CB
+IX in-range
+CB(
 reg in-range
 
 proc ::constcl::in-range {x args} {
@@ -371,16 +385,17 @@ proc ::constcl::in-range {x args} {
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
 }
-CB
+CB)
 
 MD(
-### The NIL class
+H3 The NIL class
 
-The `NIL` class has one object: the empty list called `#NIL`. It is also base
+The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
 class for many other type classes.
 MD)
 
-CB
+IX NIL
+CB(
 catch { ::constcl::NIL destroy }
 
 oo::singleton create ::constcl::NIL {
@@ -412,21 +427,22 @@ oo::singleton create ::constcl::NIL {
     format "()"
   }
 }
-CB
+CB)
 
 MD(
-__null?__
+B{null?}
 
-The `null?` standard predicate recognizes the empty list. Predicates in ConsTcl
+The K{null?} standard predicate recognizes the empty list. Predicates in ConsTcl
 return #t or #f for true or false, so some care is necessary when calling them
-from Tcl code (the Tcl `if` command expects 1 or 0 as truth values).
+from Tcl code (the Tcl K{if} command expects 1 or 0 as truth values).
 MD)
 
 PR(
 null? (public);val val -> bool
 PR)
 
-CB
+IX null?
+CB(
 reg null?
 
 proc ::constcl::null? {val} {
@@ -436,15 +452,16 @@ proc ::constcl::null? {val} {
     return #f
   }
 }
-CB
+CB)
 
 MD(
-### The classes Dot, Unspecified, Undefined, and EndOfFile
+H3 The classes Dot, Unspecified, Undefined, and EndOfFile
 
-The `Dot` class is a helper class for the parser.
+The K{Dot} class is a helper class for the parser.
 MD)
 
-CB
+IX Dot
+CB(
 catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
@@ -456,30 +473,32 @@ oo::class create ::constcl::Dot {
     my write $handle
   }
 }
-CB
+CB)
 
 MD(
-__dot?__
+B{dot?}
 
-`dot?` is a type predicate that checks for membership in the type `Dot`.
+K{dot?} is a type predicate that checks for membership in the type K{Dot}.
 MD)
 
 PR(
 dot? (internal);val val -> bool
 PR)
 
-CB
+IX dot?
+CB(
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-CB
+CB)
 
 MD(
-The `Unspecified` class is for unspecified things. It was created to facilitate
+The K{Unspecified} class is for unspecified things. It was created to facilitate
 porting of code from 'Scheme 9 from Empty Space'.
 MD)
 
-CB
+IX Unspecified
+CB(
 catch { ::constcl::Unspecified destroy }
 
 oo::class create ::constcl::Unspecified {
@@ -491,13 +510,14 @@ oo::class create ::constcl::Unspecified {
     my write $handle
   }
 }
-CB
+CB)
 
 MD(
-The `Undefined` class is for undefined things. Also a S9fES support class.
+The K{Undefined} class is for undefined things. Also a S9fES support class.
 MD)
 
-CB
+IX Undefined
+CB(
 catch { ::constcl::Undefined destroy }
 
 oo::class create ::constcl::Undefined {
@@ -509,13 +529,14 @@ oo::class create ::constcl::Undefined {
     my write $handle
   }
 }
-CB
+CB)
 
 MD(
-The `EndOfFile` class is for end-of-file conditions.
+The K{EndOfFile} class is for end-of-file conditions.
 MD)
 
-CB
+IX EndOfFile
+CB(
 catch { ::constcl::EndOfFile destroy }
 
 oo::class create ::constcl::EndOfFile {
@@ -528,6 +549,7 @@ oo::class create ::constcl::EndOfFile {
   }
 }
 
+IX eof?
 proc eof? {val} {
   if {$val eq "#EOF"} {
     return #t
@@ -535,14 +557,14 @@ proc eof? {val} {
     return #f
   }
 }
-CB
+CB)
 
 MD(
-### The error and check procedures
+H3 The error and check procedures
 
-__error__
+B{error}
 
-`error` is used to signal an error, with **msg** being a message string and the
+K{error} is used to signal an error, with E{msg} being a message string and the
 optional arguments being values to show after the message.
 MD)
 
@@ -550,7 +572,8 @@ PR(
 error (public);msg msg ?exprs? exprs -> dc
 PR)
 
-CB
+IX error
+CB(
 reg error
 
 proc ::constcl::error {msg args} {
@@ -568,16 +591,17 @@ proc ::constcl::error {msg args} {
   }
   ::error $msg
 }
-CB
+CB)
 
 MD(
-__check__
+B{check}
 
-`check` does a check (typically a type check) on something and throws an error if
+K{check} does a check (typically a type check) on something and throws an error if
 it fails.
 MD)
 
-CB
+IX check
+CB(
 proc ::constcl::check {cond msg} {
   if {[uplevel $cond] eq "#f"} {
     ::error [
@@ -586,24 +610,25 @@ proc ::constcl::check {cond msg} {
           ::string trim $msg]]]
   }
 }
-CB
+CB)
+
+H3 The atom? predicate
 
 MD(
-### The atom? predicate
+B{atom?}
 
-__atom?__
-
-There are two kinds of data in Lisp: lists and atoms. Lists are collections of
-lists and atoms. Atoms are instances of types such as booleans, characters,
-numbers, ports, strings, symbols, and vectors. `Atom?` recognizes an atom by
-checking for membership in any one of the atomic types.
+There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
+collections of lists and atoms. Atoms are instances of types such as booleans,
+characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
+an atom by checking for membership in any one of the atomic types.
 MD)
 
 PR(
 atom? (public);val val -> bool
 PR)
 
-CB
+IX atom?
+CB(
 reg atom? ::constcl::atom?
 
 proc ::constcl::atom? {val} {
@@ -615,6 +640,7 @@ proc ::constcl::atom? {val} {
   }
   return #f
 }
-CB
+CB)
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+
