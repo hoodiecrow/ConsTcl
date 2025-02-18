@@ -17,7 +17,7 @@ EXE      =
 .PHONY: all
 all: book.md book.tex README.md constcl.tcl constcl.test wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = first.src intro.src read.src
+source_files = intro.src initial.src input.src eval.src macros.src rld.src output.src equipred.src numbers.src
 
 tcl_source_files = type.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl s9fes.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
@@ -28,7 +28,7 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files)
-	awk -f srctotex.awk $^ >$@
+	awk -f srctotex.awk dict.txt $^ >$@
 
 constcl.tex: book.md
 	awk -f latex.awk $< >$@

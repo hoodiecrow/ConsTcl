@@ -1,0 +1,647 @@
+
+H2 Initial declarations
+
+MD(
+First, I need to create the namespace that will be used for most identifiers:
+MD)
+
+CB(
+namespace eval ::constcl {}
+CB)
+
+H3 Utility commands
+
+MD(
+Next, some procedures that make my life as developer somewhat easier, but
+don't really matter to the interpreter (except the two first ones). The other ones
+will show up a lot in the test cases.
+MD)
+
+MD(
+B{reg}
+
+K{reg} registers selected built-in procedures in the definitions
+registerI{definitions register}. That way I don't need to manually keep track of
+and list procedures. The definitions register's contents will eventually get
+dumped into the standard libraryR{environment-startup}.
+
+You can call K{reg} with two values: E{key} and E{val}. E{Key} is the string
+that will eventually become the lookup symbol in the standard library, and
+E{val} is the name of the Tcl command that will carry out the procedure. If you
+don't give a value for E{val}, K{reg} creates a value by prepending the
+K{::constcl::} namespace to the E{key} value, which is sufficient 99% of the
+time.
+MD)
+
+PR(
+reg (internal);key tstr ?val? tstr -> none
+PR)
+
+IX reg
+CB(
+proc ::reg {key args} {
+  if {[llength $args]} {
+    lassign $args val
+  } else {
+    set val ::constcl::$key
+  }
+  dict set ::constcl::defreg $key $val
+  return
+}
+CB)
+
+MD(
+B{regmacro}
+
+ConsTcl has macrosI{macro}, i.e. syntactic forms that are rewritten to concrete--but
+more verbose--forms. The evaluator passes macro forms to a command for expansion
+before they are fully processed. K{regmacro} registers macro names in the macro
+list, so the evaluator knows what to expand.
+MD)
+
+PR(
+regmacro (internal);name tstr -> none
+PR)
+
+IX regmacro
+CB(
+proc ::regmacro {name} {
+  lappend ::constcl::macrolist $name
+  return
+}
+CB)
+
+MD(
+B{pew}
+
+K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
+named for parse-eval-write. It reads and evals an expression, and writes the
+result.  It's the most common command in the test cases, since it allows me to
+write code directly in Scheme and to get nicely formatted output.
+MD)
+
+PR(
+pew (internal);str tstr -> none
+PR)
+
+IX pew
+CB(
+proc ::pew {str} {
+  ::constcl::write [
+    ::constcl::eval [
+      ::constcl::parse $str]]
+}
+CB)
+
+MD(
+B{pw}
+
+K{pw} is a similar command, except it doesn't eval the expression. It just
+writes what is parsed. It is useful for tests when the evaluator can't (yet)
+evaluate the form, but I can still check if it gets read and written correctly.
+MD)
+
+IX pw
+PR(
+pw (internal);str tstr -> none
+PR)
+
+CB(
+proc ::pw {str} {
+  ::constcl::write [
+    ::constcl::parse $str]
+}
+CB)
+
+MD(
+B{rw}
+
+K{rw} is the reading variant of K{pw}. It just writes what is
+read.
+MD)
+
+PR(
+rw (internal);?port? iport -> none
+PR)
+
+IX rw
+CB(
+proc ::rw {args} {
+  ::constcl::write [
+    ::constcl::read {*}$args]
+}
+CB)
+
+MD(
+B{pe}
+
+K{pe} is also similar, but it doesn't write the expression. It just evaluates what
+is read. That way I get a value object which I can pass to another command, or
+pick apart in different ways.
+MD)
+
+PR(
+pe (internal);str tstr -> val
+PR)
+
+IX pe
+CB(
+proc ::pe {str} {
+  ::constcl::eval [
+    ::constcl::parse $str]
+}
+CB)
+
+MD(
+B{re}
+
+K{re} is like K{pe}, but it reads from a port instead of an input buffer. It
+evaluates what is read.
+MD)
+
+PR(
+re (internal);?port? -> val
+PR)
+
+IX re
+CB(
+proc ::re {args} {
+  ::constcl::eval [
+    ::constcl::read {*}$args]
+}
+CB)
+
+MD(
+B{p}
+
+K{p} only parses the input, returning an expression object.
+MD)
+
+PR(
+p (internal);str tstr -> expr
+PR)
+
+IX p
+CB(
+proc ::p {str} {
+  ::constcl::parse $str
+}
+CB)
+
+MD(
+B{e}
+
+K{e} is another single-action procedure, evaluating an expression and returning a
+value.
+MD)
+
+IX e
+PR(
+e (internal);expr expr -> val
+PR)
+
+CB(
+proc ::e {expr} {
+  ::constcl::eval $expr
+}
+CB)
+
+MD(
+B{w}
+
+K{w} is the third single-action procedure, printing a value and that's all.
+MD)
+
+PR(
+w (internal);val val -> none
+PR)
+
+IX w
+CB(
+proc ::w {val} {
+  ::constcl::write $val
+}
+CB)
+
+MD(
+B{r}
+
+K{r} is an extra single-action procedure, reading from default input or from a
+port and returning an expression object.
+MD)
+
+PR(
+r (internal);?port? iport -> expr
+PR)
+
+IX r
+CB(
+proc ::r {args} {
+  ::constcl::read {*}$args
+}
+CB)
+
+MD(
+B{prw}
+
+K{prw}  reads an expression, resolves defines, and writes the result. It was
+handy during the time I was porting the 'resolve local defines' section.
+MD)
+
+PR(
+prw (internal);str tstr -> none
+PR)
+
+IX prw
+CB(
+proc ::prw {str} {
+  set expr [::constcl::parse $str]
+  set expr [::constcl::resolve-local-defines \
+    [::constcl::cdr $expr]]
+  ::constcl::write $expr
+}
+CB)
+
+MD(
+B{pxw}
+
+K{pxw} attempts to macro-expand whatever it reads, and writes the result. I know
+that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
+was developing the macro facility.
+MD)
+
+PR(
+pxw (internal);str tstr -> none
+PR)
+
+IX pxw
+CB(
+proc ::pxw {str} {
+  set expr [::constcl::parse $str]
+  set expr [::constcl::expand-macro $expr \
+    ::constcl::global_env]
+  ::constcl::write $expr
+}
+CB)
+
+MD(
+B{pn}
+
+K{pn} stands for 'procedure name'. When called, tells the caller the name of its
+command. I use it for error messages so the error message can automagically tell
+the user which command failed.
+MD)
+
+IX pn
+PR(
+pn (internal);-> tstr
+PR)
+
+CB(
+proc ::pn {} {
+  lindex [split [lindex [info level -1] 0] :] end
+}
+CB)
+
+MD(
+B{typeof?}
+
+K{typeof?} looks at a value's type and reports if it is the same as the given
+type. To be certain, it looks at the value in two ways: once assuming that the value
+is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
+interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
+the type, the procedure returns #t. By Scheme convention, predicatesI{predicate}
+(procedures that return either K{#t} or K{#f}) have '?' at the end of their
+name.
+MD)
+
+PR(
+typeof? (internal);val val type tstr -> bool
+PR)
+
+IX typeof?
+CB(
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+MD(
+B{in-range}
+
+This one is a little bit of both, a utility function that is also among the
+builtins in the library. It started out as a one-liner by Donal K.
+FellowsI{Fellows, Donal}, but has grown a bit since then to suit my needs.
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
+Number objects. If one is passed to the procedure, it is used as the end of the
+sequence: the sequence will end just before it. If two numbers are passed, the
+first one becomes the start of the sequence: the first number in it. The second
+number will become the end of the sequence. If three numbers are passed, they
+become start, end, and step, i.e. how much is added to the current number to
+find next number in the sequence.
+MD)
+
+PR(
+in-range (public);x num ?e? num ?t? num -> lnums
+PR)
+
+IX in-range
+CB(
+reg in-range
+
+proc ::constcl::in-range {x args} {
+  set start 0
+  set step 1
+  switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
+    1 {
+      set s $x
+      lassign $args e
+      set start [$s numval]
+      set end [$e numval]
+    }
+    2 {
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
+}
+CB)
+
+MD(
+H3 The NIL class
+
+The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
+class for many other type classes.
+MD)
+
+IX NIL
+CB(
+catch { ::constcl::NIL destroy }
+
+oo::singleton create ::constcl::NIL {
+  method bvalue {} {
+    return #NIL
+  }
+  method car {} {
+    ::error "PAIR expected"
+  }
+  method cdr {} {
+    ::error "PAIR expected"
+  }
+  method set-car! {v} {
+    ::error "PAIR expected"
+  }
+  method set-cdr! {v} {
+    ::error "PAIR expected"
+  }
+  method numval {} {
+    ::error "NUMBER expected"
+  }
+  method write {handle} {
+    puts -nonewline $handle "()"
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "()"
+  }
+}
+CB)
+
+MD(
+B{null?}
+
+The K{null?} standard predicate recognizes the empty list. Predicates in ConsTcl
+return #t or #f for true or false, so some care is necessary when calling them
+from Tcl code (the Tcl K{if} command expects 1 or 0 as truth values).
+MD)
+
+PR(
+null? (public);val val -> bool
+PR)
+
+IX null?
+CB(
+reg null?
+
+proc ::constcl::null? {val} {
+  if {$val eq "#NIL"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+MD(
+H3 The classes Dot, Unspecified, Undefined, and EndOfFile
+
+The K{Dot} class is a helper class for the parser.
+MD)
+
+IX Dot
+CB(
+catch { ::constcl::Dot destroy }
+
+oo::class create ::constcl::Dot {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "."
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+CB)
+
+MD(
+B{dot?}
+
+K{dot?} is a type predicate that checks for membership in the type K{Dot}.
+MD)
+
+PR(
+dot? (internal);val val -> bool
+PR)
+
+IX dot?
+CB(
+proc ::constcl::dot? {val} {
+  typeof? $val "Dot"
+}
+CB)
+
+MD(
+The K{Unspecified} class is for unspecified things. It was created to facilitate
+porting of code from 'Scheme 9 from Empty Space'I{S9fES}.
+MD)
+
+IX Unspecified
+CB(
+catch { ::constcl::Unspecified destroy }
+
+oo::class create ::constcl::Unspecified {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<unspecified>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+CB)
+
+MD(
+The K{Undefined} class is for undefined things. Also a S9fES support class.
+MD)
+
+IX Undefined
+CB(
+catch { ::constcl::Undefined destroy }
+
+oo::class create ::constcl::Undefined {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<undefined>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+CB)
+
+MD(
+The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
+MD)
+
+IX EndOfFile
+CB(
+catch { ::constcl::EndOfFile destroy }
+
+oo::class create ::constcl::EndOfFile {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<end-of-file>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+
+IX eof?
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+MD(
+H3 The error and check procedures
+
+B{error}
+
+K{error} is used to signal an error, with E{msg} being a message string and the
+optional arguments being values to show after the message.
+MD)
+
+PR(
+error (public);msg msg ?exprs? exprs -> dc
+PR)
+
+IX error
+CB(
+reg error
+
+proc ::constcl::error {msg args} {
+  if {[llength $args]} {
+    lappend msg "("
+    set times 0
+    foreach arg $args {
+      if {$times} {
+        ::append msg " "
+      }
+      ::append msg [$arg show]
+      incr times
+    }
+    lappend msg ")"
+  }
+  ::error $msg
+}
+CB)
+
+MD(
+B{check}
+
+K{check} does a check (typically a type check) on something and throws an error if
+it fails.
+MD)
+
+IX check
+CB(
+proc ::constcl::check {cond msg} {
+  if {[uplevel $cond] eq "#f"} {
+    ::error [
+      uplevel [
+        ::list subst [
+          ::string trim $msg]]]
+  }
+}
+CB)
+
+H3 The atom? predicate
+
+MD(
+B{atom?}
+
+There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
+collections of lists and atoms. Atoms are instances of types such as booleans,
+characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
+an atom by checking for membership in any one of the atomic types.
+MD)
+
+PR(
+atom? (public);val val -> bool
+PR)
+
+IX atom?
+CB(
+reg atom? ::constcl::atom?
+
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string
+      char boolean vector port eof} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
+}
+CB)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+

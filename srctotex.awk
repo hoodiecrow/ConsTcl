@@ -2,8 +2,36 @@
 
 { gsub(/\r/, ""); }
 
-BEGIN {
+BEGIN { modeline = "[#;] v" "im:" }
+
+# load the key/values pairs from dict.txt
+# NOTE: NR is equal to FNR only while processing the first file
+NR == FNR {
+	if (match($0, /[[:space:]]*->[[:space:]]*/))
+		dict[substr($0, 1, RSTART-1)] = substr($0, RSTART+RLENGTH);
+	next;
 }
+
+# expand the PR blocks as HTML tables in the remainder file(s)
+$1 == "PR(" { inside_pr_block = 1; next; }
+$1 == "PR)" { inside_pr_block = 0; next; }
+inside_pr_block {
+	if (match($0, /;/)) {
+		print "\\begin{tabular}{ |l l| }\n\\hline";
+		printf "\\multicolumn{2}{|l|}{%s} \\\\\n", substr($0, 1, RSTART-1);
+		$0 = substr($0, RSTART+RLENGTH);
+		for (i = 1; i <= NF; i += 2) {
+			td1 = ($i == "->" ? "\\textit{Returns:}" : $i);
+			td2 = dict[$(i+1)];
+			printf "%s & %s \\\\\n", td1, td2;
+		}
+		print "\\hline\n\\end{tabular}";
+	}
+	next;
+}
+
+# skip any modeline
+$0 ~ modeline { next; }
 
 /^H1 / {
     sub(/\n$/, "", $0)
@@ -22,6 +50,7 @@ BEGIN {
     sub(/\n$/, "", $0)
     printf "\\section{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
     next
 }
 
@@ -29,6 +58,7 @@ BEGIN {
     sub(/\n$/, "", $0)
     printf "\\subsection{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
     next
 }
 
@@ -49,45 +79,25 @@ BEGIN {
 $1 == "CB(" { in_code_block = 1 ; print "\\begin{lstlisting}" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "\\end{lstlisting}" ; next }
 in_code_block && /./  { print ; next }
-in_code_block && /^$/ { print " " ; next }
+in_code_block && /^$/ { print " " ; next }
 
-
-$1 == "TblSynForms" {
-    print "\\begin{tabular}{|l l|}"
-    print "\\hline"
-    print "Syntactic form & Syntax \\\\"
-    print "\\hline"
-    print "Variable reference & variable \\\\"
-    print "Constant literal & number or boolean, etc \\\\"
-    print "Quotation & quote datum \\\\"
-    print "Sequence & begin expression... \\\\"
-    print "Conditional & if test conseq alt \\\\"
-    print "Definition & define identifier expression \\\\"
-    print "Assignment & set! variable expression \\\\"
-    print "Procedure definition & lambda formals body \\\\"
-    print "Procedure call & operator operand... \\\\"
-    print "\\hline"
-    print "\\end{tabular}"
-}
 
 /^IX/ { printf("\\index{%s}\n", $2) ; next }
 /^IG/ { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
 
-$1 == "MD(" { next }
-$1 == "MD)" { next }
+$1 == "MD(" { in_md_block = 1 ; print "" ; next }
+$1 == "MD)" { in_md_block = 0 ; flushp() ; next }
 
-$1 == "PR(" { in_pr_block = 1 ; next }
-$1 == "PR)" { in_pr_block = 0 ; next }
-in_pr_block {
-    # render prototype table
-}
+in_md_block && /./  { for (i=1; i<=NF; i++) collect($i) }
+in_md_block && /^$/ { flushp() }
+
+$1 == "VB(" { in_vb_block = 1 ; print "\\begin{verbatim}" ; next }
+$1 == "VB)" { in_vb_block = 0 ; print "\\end{verbatim}"   ; next }
+in_vb_block { print }
 
 $1 == "TT(" { in_tt_block = 1 ; next }
 $1 == "TT)" { in_tt_block = 0 ; next }
 in_tt_block { next }
-
-/./  { for (i=1; i<=NF; i++) collect($i) }
-/^$/ { flushp() }
 
 END {  }
 
@@ -108,27 +118,36 @@ function flushp() {
 function render(line) {
     if (match(line, /\\/)) { gsub(/\\/, "\\textbackslash\\ ", line) }
 
-    while (match(line, /B{([^}]+)}/)) {
-        sub(/B{([^}]+)}/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
+    while (match(line, /B{([^{}]+)}/)) {
+        sub(/B{([^{}]+)}/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
     
-    while (match(line, /E{([^}]+)}/)) {
-        sub(/E{([^}]+)}/, sprintf("\\emph{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
+    while (match(line, /E{([^{}]+)}/)) {
+        sub(/E{([^{}]+)}/, sprintf("\\emph{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
-    while (match(line, /K{([^}]+)}/)) {
-        sub(/K{([^}]+)}/, sprintf("\\texttt{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
+    while (match(line, /K{([^{}]+)}/)) {
+        sub(/K{([^{}]+)}/, sprintf("\\texttt{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
-    while (match(line, /I{([^}]+)}/)) {
-        sub(/I{([^}]+)}/, sprintf("\\index{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
+    while (match(line, /I{([^{}]+)}/)) {
+        sub(/I{([^{}]+)}/, sprintf("\\index{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
-    while (match(line, /R{([^}]+)}/)) {
-        sub(/R{([^}]+)}/, sprintf("\\footnote{See page \\pageref{%s}}", substr(line, RSTART+2, RLENGTH-3)), line)
+    while (match(line, /R{([^{}]+)}/)) {
+        sub(/R{([^{}]+)}/, sprintf("\\footnote{See page \\pageref{%s}}", substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
+    while (match(line, /L{([^{}]+)}/)) {
+        sub(/L{([^{}]+)}/, sprintf("\\footnote{See \\texttt{%s}}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
     if (match(line, /\$/)) { gsub(/\$/, "\\$", line) }
+
+    while (match(line, /P{([^{}]+)}{([^{}]+)}/)) {
+	patsplit(substr(line, RSTART+2, RLENGTH-3), pow, /[^{}]+/)
+        sub(/P{([^{}]+)}{([^{}]+)}/, sprintf("${%s}^{%s}$", pow[1], pow[2]), line)
+    }
 
     if (match(line, /#/)) { gsub(/#/, "\\#", line) }
 
