@@ -28,9 +28,9 @@ On my cheap computer, the following code (which calculates the factorial of
 100) takes 0.03 seconds to run.
 MD)
 
-CB(
+VB(
 time {pe "(fact 100)"} 10
-CB)
+VB)
 
 MD(
 Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO

@@ -23,11 +23,20 @@ inside_pr_block {
 		for (i = 1; i <= NF; i += 2) {
 			td1 = ($i == "->" ? "\\textit{Returns:}" : $i);
 			td2 = dict[$(i+1)];
-			printf "%s & %s \\\\\n", td1, td2;
+			printf "%s & %s \\\\\n", latexify(td1), latexify(td2);
 		}
 		print "\\hline\n\\end{tabular}";
 	}
 	next;
+}
+
+function latexify (s) {
+    if (match(s, /\$/)) { gsub(/\$/, "\\$", s) }
+    if (match(s, /#/)) { gsub(/#/, "\\#", s) }
+    if (match(s, /&/)) { gsub(/&/, "\\&", s) }
+    if (match(s, /_/)) { gsub(/_/, "\\_", s) }
+    if (match(s, /%/)) { gsub(/%/, "\\%", s) }
+    return s
 }
 
 # skip any modeline
@@ -140,6 +149,10 @@ function render(line) {
 
     while (match(line, /L{([^{}]+)}/)) {
         sub(/L{([^{}]+)}/, sprintf("\\footnote{See \\texttt{%s}}", substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
+    while (match(line, /W{([^{}]+)}/)) {
+        sub(/W{([^{}]+)}/, sprintf("\\footnote{See \\texttt{https://en.wikipedia.org/wiki/%s}}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
     if (match(line, /\$/)) { gsub(/\$/, "\\$", line) }

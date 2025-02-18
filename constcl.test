@@ -1,6 +1,7 @@
 package require tcltest
 source constcl.tcl
 
+
 ::tcltest::test read-1.0 {try parse in ConsTcl} -body {
   pew {(parse "42")}
 } -output "42\n"
@@ -1629,6 +1630,18 @@ qux\bod
 } -output "#(x x x)\n"
 
 
+::tcltest::test cons-15.0 {check for a symbol} -body {
+    pew "pi"
+} -output 3.1415926535897931\n
+
+::tcltest::test cons-15.1 {dereference an unbound symbol} -body {
+    pew "foo"
+} -returnCodes error -result "Unbound variable: foo"
+
+::tcltest::test cons-15.2 {dereference an unbound symbol: procedure} -body {
+    pew "(foo)"
+} -returnCodes error -result "Unbound variable: foo"
+
 ::tcltest::test cons-1.0 {calculate circle area} -body {
     pew "(define (circle-area r) (* pi (* r r)))"
     pew "(circle-area 3)"
@@ -1829,19 +1842,6 @@ qux\bod
                           (cons (reverse group) groups)))))))))}
     pew "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
 } -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
-
-
-::tcltest::test global_env-1.0 {check for a symbol} -body {
-    pew "pi"
-} -output 3.1415926535897931\n
-
-::tcltest::test global_env-2.0 {dereference an unbound symbol} -body {
-    pew "foo"
-} -returnCodes error -result "Unbound variable: foo"
-
-::tcltest::test global_env-2.1 {dereference an unbound symbol: procedure} -body {
-    pew "(foo)"
-} -returnCodes error -result "Unbound variable: foo"
 
 
 ::tcltest::cleanupTests

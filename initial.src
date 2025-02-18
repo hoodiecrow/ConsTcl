@@ -549,8 +549,10 @@ oo::class create ::constcl::EndOfFile {
     my write $handle
   }
 }
+CB)
 
 IX eof?
+CB(
 proc eof? {val} {
   if {$val eq "#EOF"} {
     return #t

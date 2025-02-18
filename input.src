@@ -30,7 +30,7 @@ for the elements of the vector follow, and then a closing parenthesis K{)}
 signals that the vector is done. The elements are saved in vector memory and the
 vector gets the address to the first element and the number of elements.
 
-IG /images/vector-representation
+IG /images/vector-representation.png
 
 The K{parse} procedure takes in the input buffer character by character, matching
 each character against a fitting external representation. When done, it creates
@@ -41,35 +41,41 @@ Given a string, K{parse} fills the input buffer. It then parses the input and
 produces the internal representation of an expression.
 
 Example:
+MD)
 
-CB(
+VB(
 % ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
-CB)
+VB)
 
+MD(
 Here, K{parse} parsed the external representation of a list with three elements,
 +, 2, and 3. It produced the expression that has an internal representation
 labeled K{::oo::Obj491}. We will later meet procedures like K{eval}, which
 transforms an expression into a value, and K{write}, which prints a printed
 representation of expressions and values. Putting them together: we can see
+MD)
 
-CB(
+VB(
 % ::constcl::write ::oo::Obj491
 (+ 2 3)
 % ::constcl::eval ::oo::Obj491
 ::oo::Obj494
 % ::constcl::write ::oo::Obj494
 5
-CB)
+VB)
 
+MD(
 Fortunately, we don't have to work at such a low level. We can use the
 K{repl}I{repl} instead:
+MD)
 
-CB(
+VB(
 ConsTcl> (+ 2 3)
 5
-CB)
+VB)
 
+MD(
 Then, parsing and evaluation and writing goes on in the background and the
 internal representations of expressions and values are hidden.
 
@@ -77,8 +83,6 @@ Anyway, here is how it really looks like. K{::oo::Obj491} was just the head of
 the list.
 
 IG /images/intreplist.png
-
-H4 The parsing library
 
 B{parse}
 
@@ -99,9 +103,7 @@ proc ::constcl::parse {inp} {
   set c {}
   set unget {}
   if {[info object isa object $inp]} {
-    if {[typeof? $inp IB] ne "#f"} {
-      error "IB used"
-    } elseif {[typeof? $inp StringInputPort] ne "#f"} {
+    if {[typeof? $inp StringInputPort] ne "#f"} {
       set port $inp
     } elseif {[typeof? $inp String] ne "#f"} {
       set port [::constcl::StringInputPort new [$inp value]]
