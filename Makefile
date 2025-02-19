@@ -15,9 +15,9 @@ LDOUT    = -o
 EXE      = 
 
 .PHONY: all
-all: book.md book.tex README.md constcl.tcl constcl.test #wiki/type.md wiki/read.md $(PROGRAM)
+all: book.tex README.md constcl.tcl constcl.test #wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = intro.src initial.src input.src eval.src macros.src rld.src output.src equipred.src numbers.src booleans.src characters.src control.src io.src pairslists.src strings.src symbols.src vectors.src idcheck.src s9fes.src environment.src setup.src repl.src
+source_files = initial.ans input.ans eval.ans macros.ans rld.ans output.ans equipred.ans numbers.ans booleans.ans characters.ans control.ans io.ans pairslists.ans strings.ans symbols.ans vectors.ans idcheck.ans s9fes.ans environment.ans setup.ans repl.ans
 
 tcl_source_files = type.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl s9fes.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
@@ -28,13 +28,13 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files)
-	gawk -f srctotex.awk dict.txt $^ >$@
+	gawk -f anstotex.awk dict.txt $^ >$@
 
-constcl.tex: book.md
-	gawk -f latex.awk $< >$@
+#constcl.tex: book.md
+#	gawk -f latex.awk $< >$@
 
-book.md: booktop.md constcl.md lutables.md schemebase.md
-	gawk -f prototype.awk dict.txt $^ >$@
+#book.md: booktop.md constcl.md lutables.md schemebase.md
+#	gawk -f prototype.awk dict.txt $^ >$@
 
 README.md: top.md constcl.md schemebase.md
 	cat $^ >$@
@@ -43,13 +43,13 @@ README.md: top.md constcl.md schemebase.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files)
-	gawk -f srctomd.awk dict.txt $^ >$@
+	gawk -f anstomd.awk dict.txt $^ >$@
 
 #constcl.md: $(tcl_source_files)
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	gawk -f srctocode.awk $^ >$@
+	gawk -f anstocode.awk $^ >$@
 
 #constcl.tcl: $(tcl_source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
@@ -57,7 +57,7 @@ constcl.tcl: $(source_files)
 constcl.test: $(source_files)
 	echo 'package require tcltest' >$@
 	echo 'source constcl.tcl\n' >>$@
-	gawk -f srctotest.awk $^ >>$@
+	gawk -f anstotest.awk $^ >>$@
 	echo '\n::tcltest::cleanupTests' >>$@
 
 #constcl.test: $(tcl_source_files)

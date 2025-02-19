@@ -55,8 +55,9 @@ char       -> a character
 chareof    -> a character or end of file
 chars      -> some characters
 lchars     -> a Lisp list of characters
-tchar      -> a Tcl character
-tchareof   -> a Tcl character or end of file
+tchr       -> a Tcl character
+tchrs      -> some Tcl characters
+tchreof    -> a Tcl character or end of file
 tchars     -> a Tcl list of characters
 proc       -> a procedure
 procs      -> some procedures

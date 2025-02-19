@@ -1,9 +1,9 @@
 K	texttt	`...`
 E	emph	**...**
 B	textbf	__...__
-R	pageref	[]()
-L	footn.	[]()
-W	wikip.	[]()
+R{}{}	pageref	[]()	internal link to a ConsTcl heading
+L{}{}	footn.	[]()	arbitrary link
+W{}{}	wikip.	[]()	link to wikipedia
 I	index	---
 P{}{}	$x^y$	x<sup>y</sup>
 

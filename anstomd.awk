@@ -122,7 +122,6 @@ function render(line) {
 
     while (match(line, /L{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), link, /[^{}]+/)
-	print "aaa" link[1] "bbb" link[2]
         sub(/L{([^{}]+)}{([^{}]+)}/, sprintf("[%s](%s)", link[1], link[2]), line)
     }
 

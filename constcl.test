@@ -10,138 +10,81 @@ source constcl.tcl
   pw [::constcl::StringInputPort new "42"]
 } -output "42\n"
 
-::tcltest::test read-1.1 {try parse with string} -body {
+::tcltest::test read-1.2 {try parse with string} -body {
   pw "42"
 } -output "42\n"
 
+::tcltest::test read-2.0 {try read-expr on dot expr} -setup {
+    ::tcltest::makeFile {  a . b } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "a\n.\nb\n"
 
-::tcltest::test read-2.0 {try reading a string} {
+
+# 3
+
+# 4
+
+# 5
+
+# 6
+
+# 7
+
+
+::tcltest::test read-8.0 {try reading a string} {
     set expr [p {"foo bar"}]
     $expr value
 } "foo bar"
 
-::tcltest::test read-2.1 {try reading a string} {
+::tcltest::test read-8.1 {try reading a string} {
     set expr [p {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
 
+::tcltest::test read-8.2 {try reading a string} {
+    set expr [p {"\"foo\" \\ bar"}]
+    $expr external
+} {"\"foo\" \\ bar"}
 
+::tcltest::test read-8.3 {try read-expr on a string} -setup {
+    ::tcltest::makeFile {"foo bar"  } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo bar\"\n"
 
-::tcltest::test read-3.0 {try reading quoted symbol} -body {
-    pw "'foo"
-} -output "(quote foo)\n"
-
-
-::tcltest::test read-4.0 {try reading an improper list} -body {
-    pw "(a . b)"
-} -output "(a . b)\n"
-
-::tcltest::test read-4.1 {try reading an improper list} -body {
-    pw "(a b . c)"
-} -output "(a b . c)\n"
-
-::tcltest::test read-4.2 {try reading a list} -body {
-    set expr [p "(a (b))"]
-    [::constcl::caadr $expr] name
-} -result "b"
-
-::tcltest::test read-4.3 {try reading a list} -body {
-    pw "(a)"
-} -output "(a)\n"
-
-::tcltest::test read-4.4 {try reading a list} -body {
-    pw "(a b)"
-} -output "(a b)\n"
-
-::tcltest::test read-4.5 {try reading a list} -body {
-    pw "(a b c)"
-} -output "(a b c)\n"
-
-::tcltest::test read-4.6 {try reading a list} -body {
-    pw "(a b c d)"
-} -output "(a b c d)\n"
-
-::tcltest::test read-4.7 {try reading a list} -body {
-    pw "(a b c d e)"
-} -output "(a b c d e)\n"
-
-::tcltest::test read-4.8 {try reading a list} -body {
-    pw "(a (b) )"
-} -output "(a (b))\n"
-
-::tcltest::test read-4.9 {try reading a list} -body {
-    pw "(a (b))"
-} -output "(a (b))\n"
+::tcltest::test read-8.4 {try read-expr on a string/eof} -setup {
+    ::tcltest::makeFile {"foo } testrr.lsp ; #"
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -returnCodes error -result {bad string (no ending double quote)}
 
 
 
-::tcltest::test read-5.0 {try reading unquoted symbol} -body {
-    pw ",foo"
-} -output "(unquote foo)\n"
-
-
-
-::tcltest::test read-6.0 {try reading quasiquoted expression} -body {
-    pw "`(list 1 2 ,@foo)"
-} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
-
-
-::tcltest::test read-7.0 {try reading a number} {
-    set obj [::constcl::parse "99.99"]
-    $obj value
-} "99.99"
-
-::tcltest::test read-7.1 {try reading a number} {
-    set obj [::constcl::parse "     99.99"]
-    $obj value
-} "99.99"
-
-::tcltest::test read-7.2 {try reading a number} {
-    set obj [::constcl::parse "     9"]
-    $obj value
-} "9"
-
-::tcltest::test read-7.3 {try reading a number} {
-    set obj [::constcl::parse "     +9"]
-    $obj value
-} "9"
-
-::tcltest::test read-7.4 {try reading a number} {
-    set obj [::constcl::parse "     -9"]
-    $obj value
-} "-9"
-
-::tcltest::test read-7.5 {try reading a number} {
-    set obj [::constcl::parse "     - "]
-    $obj name
-} "-"
-
-::tcltest::test read-7.6 {try reading a number} {
-    set obj [::constcl::parse "     + "]
-    $obj name
-} "+"
-
-
-
-::tcltest::test read-9.0 {try reading a character} {
-    set expr [p {#\A}]
-    $expr char
-} "A"
-
-::tcltest::test read-9.1 {try reading a character} {
-    set expr [p "#\\space"]
-    $expr char
-} " "
-
-::tcltest::test read-9.2 {try reading a character} {
-    set expr [p "#\\newline"]
-    $expr char
-} "\n"
-
-::tcltest::test read-9.3 {try reading a character} -body {
-    set expr [p "#\\foobar"]
-    $expr char
-} -returnCodes error -result "Invalid character constant #\\foobar"
+::tcltest::test read-9.0 {try read-expr on booleans} -setup {
+    ::tcltest::makeFile {  #t  #f} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#t\n#f\n"
 
 
 
@@ -153,40 +96,7 @@ source constcl.tcl
     pew "#(1 2 (+ 1 2))"
 } -output "#(1 2 (+ 1 2))\n"
 
-
-
-::tcltest::test read-8.0 {try reading an identifier} {
-    set expr [p "foo"]
-    $expr name
-} "foo"
-
-::tcltest::test read-8.1 {try reading an identifier} -body {
-    set expr [p "let"]
-    ::constcl::varcheck [$expr name]
-} -returnCodes error -result "Variable name is reserved: let"
-
-
-::tcltest::test read-11.0 {try read-expr on a string} -setup {
-    ::tcltest::makeFile {"foo bar"  } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -output "\"foo bar\"\n"
-
-::tcltest::test read-11.1 {try read-expr on a string/eof} -setup {
-    ::tcltest::makeFile {"foo } testrr.lsp ; #"
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -returnCodes error -result {bad string (no ending double quote)}
-
-::tcltest::test read-11.2 {try read-expr on a couple of vectors} -setup {
+::tcltest::test read-10.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -197,16 +107,27 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
-::tcltest::test read-11.3 {try read-expr on booleans} -setup {
-    ::tcltest::makeFile {  #t  #f} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -output "#t\n#f\n"
+
+
+::tcltest::test read-11.0 {try reading a character} {
+    set expr [p {#\A}]
+    $expr char
+} "A"
+
+::tcltest::test read-11.1 {try reading a character} {
+    set expr [p "#\\space"]
+    $expr char
+} " "
+
+::tcltest::test read-11.2 {try reading a character} {
+    set expr [p "#\\newline"]
+    $expr char
+} "\n"
+
+::tcltest::test read-11.3 {try reading a character} -body {
+    set expr [p "#\\foobar"]
+    $expr char
+} -returnCodes error -result "Invalid character constant #\\foobar"
 
 ::tcltest::test read-11.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
@@ -219,7 +140,18 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "#\\A\n#\\space\n"
 
-::tcltest::test read-11.5 {try read-expr on quoted expr} -setup {
+
+
+::tcltest::test read-12.0 {try reading quoted symbol} -body {
+    pw "'foo"
+} -output "(quote foo)\n"
+
+::tcltest::test read-12.1 {try modifying quoted list} -body {
+    pew "(define a '(a b c))"
+    pew "(list-set! a 1 'x)"
+} -returnCodes error -result "Can't modify a constant pair"
+
+::tcltest::test read-12.2 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -229,7 +161,37 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
 
-::tcltest::test read-11.6 {try read-expr on pair expr} -setup {
+
+::tcltest::test read-13.0 {try reading an improper list} -body {
+    pw "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-13.1 {try reading an improper list} -body {
+    pw "(a b . c)"
+} -output "(a b . c)\n"
+
+::tcltest::test read-13.2 {try reading a list} -body {
+    set expr [p "(a (b))"]
+    [::constcl::caadr $expr] name
+} -result "b"
+
+::tcltest::test read-13.3 {try reading a list} -body {
+    pw "(a)"
+} -output "(a)\n"
+
+::tcltest::test read-13.4 {try reading a list} -body {
+    pw "(a b)"
+} -output "(a b)\n"
+
+::tcltest::test read-13.5 {try reading a list} -body {
+    pw "(a (b) )"
+} -output "(a (b))\n"
+
+::tcltest::test read-13.6 {try reading a list} -body {
+    pw "(a (b))"
+} -output "(a (b))\n"
+
+::tcltest::test read-13.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -239,7 +201,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
-::tcltest::test read-11.7 {try read-expr on pair expr} -setup {
+::tcltest::test read-13.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -249,7 +211,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
-::tcltest::test read-11.8 {try read-expr on pair expr} -setup {
+::tcltest::test read-13.9 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -259,19 +221,59 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(def ghi (jkl mno))\n"
 
-::tcltest::test read-11.9 {try read-expr on plus/minus} -setup {
-    ::tcltest::makeFile {  +  -  -99} testrr.lsp
+
+::tcltest::test read-14.0 {try reading a number} {
+    set obj [::constcl::parse "     - "]
+    $obj name
+} "-"
+
+::tcltest::test read-14.1 {try reading a number} {
+    set obj [::constcl::parse "     + "]
+    $obj name
+} "+"
+
+::tcltest::test read-15.0 {try reading a number} {
+    set obj [::constcl::parse "99.99"]
+    $obj value
+} "99.99"
+
+::tcltest::test read-15.1 {try reading a number} {
+    set obj [::constcl::parse "     99.99"]
+    $obj value
+} "99.99"
+
+::tcltest::test read-15.2 {try reading a number} {
+    set obj [::constcl::parse "     9"]
+    $obj value
+} "9"
+
+::tcltest::test read-15.3 {try reading a number} {
+    set obj [::constcl::parse "     +9"]
+    $obj value
+} "9"
+
+::tcltest::test read-15.4 {try reading a number} {
+    set obj [::constcl::parse "     -9"]
+    $obj value
+} "-9"
+
+::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
+    ::tcltest::makeFile {  99 } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
-    rw $p
-    rw $p
     rw $p
 } -cleanup {
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
-} -output "+\n-\n-99\n"
+} -output "99\n"
 
-::tcltest::test read-11.10 {try read-expr on unquoted expr} -setup {
+
+
+::tcltest::test read-16.0 {try reading unquoted symbol} -body {
+    pw ",foo"
+} -output "(unquote foo)\n"
+
+::tcltest::test read-16.2 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -282,19 +284,13 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(unquote foo)\n(unquote-splicing bar)\n"
 
-::tcltest::test read-11.11 {try read-expr on dot expr} -setup {
-    ::tcltest::makeFile {  a . b } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-    rw $p
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -output "a\n.\nb\n"
 
-::tcltest::test read-11.12 {try read-expr on quasiquoted expr} -setup {
+
+::tcltest::test read-17.0 {try reading quasiquoted expression} -body {
+    pw "`(list 1 2 ,@foo)"
+} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
+
+::tcltest::test read-17.1 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -304,17 +300,19 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(quasiquote (a b))\n"
 
-::tcltest::test read-11.13 {try read-expr on numeric expr} -setup {
-    ::tcltest::makeFile {  99 } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -output "99\n"
 
-::tcltest::test read-11.14 {try read-expr on identifiers} -setup {
+
+::tcltest::test read-18.0 {try reading an identifier} {
+    set expr [p "foo"]
+    $expr name
+} "foo"
+
+::tcltest::test read-18.1 {try reading an identifier} -body {
+    set expr [p "let"]
+    ::constcl::varcheck [$expr name]
+} -returnCodes error -result "Variable name is reserved: let"
+
+::tcltest::test read-18.2 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -325,12 +323,65 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "foo\nbar\n"
 
-::tcltest::test eval-1.0 {try triggering a check} -body {
+
+::tcltest::test eval-1.0 {try eval-ing a symbol} -body {
+  pew "(let ((r 10)) r)"
+} -output "10\n"
+
+::tcltest::test eval-1.2 {try eval-ing an unbound symbol} -body {
+  pew "k"
+} -returnCodes error -result "Unbound variable: k"
+
+::tcltest::test eval-2.0 {try eval-ing a constant} -body {
+  pew "99"
+} -output "99\n"
+
+::tcltest::test eval-3.0 {try eval-ing a quotation} -body {
+  pew "'m"
+} -output "m\n"
+
+::tcltest::test eval-4.0 {try eval-ing a conditional} -body {
+  pew "(if (= 2 2) (display 'a) (display 'b))"
+} -output "a"
+
+::tcltest::test eval-5.0 {try eval-ing a sequence} -body {
+  pew "(begin (display 'a) (display 'b))"
+} -output "ab"
+
+::tcltest::test eval-6.0 {try eval-ing a define} -body {
+  pew "(define r 10)"
+  pew "r"
+} -output "10\n"
+
+::tcltest::test eval-6.1 {try eval-ing a define, with an inappropriate symbol} -body {
+  pew "(define let 10)"
+} -returnCodes error -result "Variable name is reserved: let"
+
+::tcltest::test eval-6.2 {try eval-ing a define, with an inappropriate symbol} -body {
+  pew "(define +foo 10)"
+} -returnCodes error -result "Identifier expected (+foo)"
+
+::tcltest::test eval-7.0 {try eval-ing an assignment} -body {
+  pew "(define r 10)"
+  pew "(set! r 20)"
+  pew "r"
+} -output "20\n20\n"
+
+::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body {
+  pew "(define (square x) (* x x))"
+  pew "(square 20)"
+} -output "400\n"
+
+::tcltest::test eval-9.0 {try eval-ing a procedure call} -body {
+  pew "(* 5 20)"
+} -output "100\n"
+
+::tcltest::test eval-9.1 {try triggering a check} -body {
     ::constcl::invoke #NIL [list #NIL #NIL]
 } -returnCodes error -result "PROCEDURE expected\n(() val ...)"
 
 
-::tcltest::test eval-2.0 {lambda parameter lists} -body {
+::tcltest::test eval-10.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -338,19 +389,24 @@ source constcl.tcl
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-3.0 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-10.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 
 
-::tcltest::test macros-1.0 {expand and macro} -body {
+::tcltest::test macros-1.0 {try expand-macro with non-existent macro} -body {
+  pxw {(foo 1 'a)}
+} -returnCodes error -result {invalid command name "expand-foo"}
+
+
+::tcltest::test macros-2.0 {expand and macro} -body {
     pxw "(and)"
     pxw "(and #t)"
     pxw "(and (> 3 2))"
     pxw "(and (> 3 2) (= 7 8))"
 } -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
 
-::tcltest::test macros-1.1 {run and macro} -body {
+::tcltest::test macros-2.1 {run and macro} -body {
     pew "(and)"
     pew "(and #t)"
     pew "(and (> 3 2))"
@@ -374,112 +430,148 @@ source constcl.tcl
     pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
 } -output "consonant\n"
 
-::tcltest::test macros-2.0 {expand cond macro} -body {
+::tcltest::test macros-4.0 {expand cond macro} -body {
     pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
 
-::tcltest::test macros-2.1 {run cond macro} -body {
+::tcltest::test macros-4.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
     pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
 } -output "3\n3\n"
 
-::tcltest::test macros-2.2 {expand cond macro} -body {
+::tcltest::test macros-4.2 {expand cond macro} -body {
     pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test macros-2.3 {run cond macro} -body {
+::tcltest::test macros-4.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "()\n"
 
-::tcltest::test macros-2.4 {expand cond macro} -body {
+::tcltest::test macros-4.4 {expand cond macro} -body {
     pxw "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test macros-2.5 {expand cond macro} -body {
+::tcltest::test macros-4.5 {expand cond macro} -body {
     pxw "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 
-::tcltest::test macros-7.0 {define} -body {
+::tcltest::test macros-5.0 {define} -body {
     pxw {(define (foo a b) (+ a b) (* a b))}
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
 
-::tcltest::test macros-7.1 {define} -body {
+::tcltest::test macros-5.1 {define} -body {
     pxw "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
 } -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
 
-::tcltest::test macros-7.2 {define} -body {
+::tcltest::test macros-5.2 {define} -body {
     pxw "(define (f) (define r 20) (* r r))"
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
-::tcltest::test macros-7.3 {define} -body {
+::tcltest::test macros-5.3 {define} -body {
     pxw "(define (list-find-key lst key)\n(lfk lst key 0))"
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
 
 
-::tcltest::test macros-4.0 {expand for macro} -body {
+::tcltest::test macros-6.0 {try expand del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pxw {(del! plist 'a)}
+} -output "(set! plist (delete! plist (quote a)))\n"
+
+::tcltest::test macros-6.1 {try run del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'a)}
+} -output "(b 2 c 3)\n"
+
+::tcltest::test macros-6.2 {try run del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'b)}
+} -output "(a 1 c 3)\n"
+
+::tcltest::test macros-6.3 {try run del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'c)}
+} -output "(a 1 b 2)\n"
+
+::tcltest::test macros-6.4 {try run del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'd)}
+} -output "(a 1 b 2 c 3)\n"
+
+
+::tcltest::test macros-7.0 {expand for macro} -body {
     pxw "(for ((i '(1 2 3))) (display i))"
 } -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
-::tcltest::test macros-4.1 {run for macro} -body {
+::tcltest::test macros-7.1 {run for macro} -body {
     pew "(for ((i (quote (1 2 3)))) (display i))"
 } -result "" -output 123()\n
 
-::tcltest::test macros-4.2 {expand for macro} -body {
+::tcltest::test macros-7.2 {expand for macro} -body {
     pxw "(for ((i 4)) (display i))"
 } -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
-::tcltest::test macros-4.3 {run for macro} -body {
+::tcltest::test macros-7.3 {run for macro} -body {
     pew "(for ((i 4)) (display i))"
 } -result "" -output "0123()\n"
 
 
-::tcltest::test macros-5.0 {expand for/list macro} -body {
+::tcltest::test macros-8.0 {expand for macro} -body {
+    pxw "(for/and ((i '(1 2 3))) (< 3 i))"
+} -output "(and (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
+
+
+::tcltest::test macros-9.0 {expand for/list macro} -body {
     pxw {(for/list ([i (quote (1 2 3))]) (* i i))}
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
-::tcltest::test macros-5.1 {run for/list macro} -body {
+::tcltest::test macros-9.1 {run for/list macro} -body {
     pew {(for/list ([i (quote (1 2 3))]) (* i i))}
 } -output "(1 4 9)\n"
 
-::tcltest::test macros-5.2 {expand for/list macro} -body {
+::tcltest::test macros-9.2 {expand for/list macro} -body {
     pxw {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
 
-::tcltest::test macros-5.3 {run for/list macro} -body {
+::tcltest::test macros-9.3 {run for/list macro} -body {
     pew {(for/list ([c "abc"]) (char-upcase c))}
 } -output "(#\\A #\\B #\\C)\n"
 
-::tcltest::test macros-5.4 {expand for/list macro} -body {
+::tcltest::test macros-9.4 {expand for/list macro} -body {
     pxw {(for/list ([i (in-range 1 4)]) (* i i))}
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
-::tcltest::test macros-5.5 {run for/list macro} -body {
+::tcltest::test macros-9.5 {run for/list macro} -body {
     pew {(for/list ([i (in-range 1 4)]) (* i i))}
 } -output "(1 4 9)\n"
 
-::tcltest::test macros-5.6 {expand for/list macro} -body {
+::tcltest::test macros-9.6 {expand for/list macro} -body {
     pxw {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
 } -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
 
-::tcltest::test macros-5.7 {run for/list macro} -body {
+::tcltest::test macros-9.7 {run for/list macro} -body {
     pew {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
 } -output "((1 #\\a) (2 #\\b) (3 #\\c))\n"
 
 
-::tcltest::test macros-1.3 {expand let macro} -body {
+::tcltest::test macros-10.0 {expand for macro} -body {
+    pxw "(for/or ((i '(1 2 3))) (< 3 i))"
+} -output "(or (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
+
+
+::tcltest::test macros-11.3 {expand let macro} -body {
     pxw "(let ((x 10)) (* x x))"
     pxw "(let ((x 10) (y 5)) (* x y))"
     pxw "(let ((x 10) (y 5)) (define z 7) (* x y z))"
 } -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
 
-::tcltest::test macros-1.4 {run let macro} -body {
+::tcltest::test macros-11.4 {run let macro} -body {
     pew "(let ((x 10)) (* x x))"
     pew "(let ((x 10) (y 5)) (* x y))"
     pew "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
-::tcltest::test macros-1.5 {expand named let macro} -body {
+::tcltest::test macros-11.5 {expand named let macro} -body {
     pxw {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
@@ -488,7 +580,7 @@ source constcl.tcl
                 (if (fn item) result (cons item result))))))}
 } -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
 
-::tcltest::test macros-10.0 {expand let, experimental code} -body {
+::tcltest::test macros-11.0 {expand let, experimental code} -body {
     #set env [::constcl::Environment new #NIL {} ::constcl::global_env]
     set ::constcl::env ::constcl::global_env
     pew "(define varlist '(a b c))"
@@ -498,7 +590,7 @@ source constcl.tcl
 } -output "((lambda (a b c) (+ a b) (* c 4)) 1 2 3)\n"
 
 
-::tcltest::test macros-1.2 {expand or macro} -body {
+::tcltest::test macros-12.2 {expand or macro} -body {
     pxw "(or)"
     pxw "(or #f)"
     pxw "(or (> 3 2))"
@@ -506,35 +598,35 @@ source constcl.tcl
 } -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
 
 
-::tcltest::test macros-11.0 {try pop!} -body {
+::tcltest::test macros-13.0 {try pop!} -body {
   pew "(let ((x '(a b c))) (pop! x))"
 } -output "(b c)\n"
 
-::tcltest::test macros-11.1 {try pop!, badly} -body {
+::tcltest::test macros-13.1 {try pop!, badly} -body {
   pew "(let ((x '(a b c))) (pop!))"
 } -returnCodes error -result "too few arguments:\n(pop! listname)"
 
-::tcltest::test macros-11.2 {try pop!, badly} -body {
+::tcltest::test macros-13.2 {try pop!, badly} -body {
   pew "(let ((x '(a b c))) (pop! '(a b c)))"
 } -returnCodes error -result "SYMBOL expected:\n(pop! listname)"
 
 
-::tcltest::test macros-12.0 {try push!} -body {
+::tcltest::test macros-14.0 {try push!} -body {
   pew "(let ((x '(a b c))) (push! 'd x))"
 } -output "(d a b c)\n"
 
-::tcltest::test macros-9.0 {expand put!} -body {
+::tcltest::test macros-15.0 {expand put!} -body {
     pxw "(put! plist 'c 7)"
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
-::tcltest::test macros-9.1 {run put!} -body {
+::tcltest::test macros-15.1 {run put!} -body {
     pew "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
     pew "(put! plst 'c 7)"
     pew "(put! plst 'f 6)"
     pew "plst"
 } -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
 
-::tcltest::test macros-9.2 {expand put!} -body {
+::tcltest::test macros-15.2 {expand put!} -body {
     pew "(define listname 'plist)"
     pew "(define key ''c)"
     pew "(define val 7)"
@@ -542,11 +634,11 @@ source constcl.tcl
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 
-::tcltest::test macros-6.0 {quasiquotation} -body {
+::tcltest::test macros-16.0 {quasiquotation} -body {
     pw {`(list ,(+ 1 2) 4)}
 } -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
-::tcltest::test macros-6.1 {quasiquotation} -body {
+::tcltest::test macros-16.1 {quasiquotation} -body {
     w [::constcl::expand-quasiquote [p {`(list ,(+ 1 2) 4)}] ::constcl::global_env]
     pew {(define name 'a)}
     w [::constcl::expand-quasiquote [p {`(list ,name ',name)}] ::constcl::global_env]
@@ -555,7 +647,7 @@ source constcl.tcl
     w [::constcl::expand-quasiquote [p {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}] ::constcl::global_env]
 } -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
 
-::tcltest::test macros-6.2 {quasiquotation} -body {
+::tcltest::test macros-16.2 {quasiquotation} -body {
     w [::constcl::expand-quasiquote [p {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}] ::constcl::global_env]
 if no {
     pew {(let ((name1 'x)
@@ -568,21 +660,21 @@ if no {
 #(a `(b (unquote x) (unquote (quote y)) d) e)\n(quasiquote (list (unquote (+ 1 2)) 4))\n"
 
 
-::tcltest::test macros-8.0 {conditional: expand unless macro} -body {
+::tcltest::test macros-17.0 {conditional: expand unless macro} -body {
     pxw "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
 
-::tcltest::test macros-8.1 {conditional: run unless macro} -body {
+::tcltest::test macros-17.1 {conditional: run unless macro} -body {
     pew "(unless (zero? 0) (* 4 4) (- 5 5))"
 } -output "()\n"
 
 
 
-::tcltest::test macros-8.2 {conditional: expand when macro} -body {
+::tcltest::test macros-18.2 {conditional: expand when macro} -body {
     pxw "(when (zero? 0) (* 4 4) (- 5 5))"
 } -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
 
-::tcltest::test macros-8.3 {conditional: run when macro} -body {
+::tcltest::test macros-18.3 {conditional: run when macro} -body {
     pew "(when (zero? 0) (* 4 4) (- 5 5))"
 } -output "0\n"
 
@@ -927,27 +1019,11 @@ if no {
 } -output "#f\n"
 
 ::tcltest::test boolean-3.1 {not procedure} -body {
-        pew "(not 3)"
-} -output "#f\n"
-
-::tcltest::test boolean-3.2 {not procedure} -body {
-        pew "(not (list 3))"
-} -output "#f\n"
-
-::tcltest::test boolean-3.3 {not procedure} -body {
         pew "(not #f)"
 } -output "#t\n"
 
-::tcltest::test boolean-3.4 {not procedure} -body {
-        pew "(not '())"
-} -output "#f\n"
-
-::tcltest::test boolean-3.5 {not procedure} -body {
-        pew "(not (list))"
-} -output "#f\n"
-
-::tcltest::test boolean-3.6 {not procedure} -body {
-        pew "(not 'nil)"
+::tcltest::test boolean-3.2 {not procedure} -body {
+        pew "(not (list 3))"
 } -output "#f\n"
 
 

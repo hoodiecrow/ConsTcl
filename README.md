@@ -36,53 +36,6 @@ near to having call/cc or tail recursion. It doesn't have exact/inexact
 numbers, or most of the numerical tower. Error reporting is spotty, and there
 is no error recovery.
 
-## Introduction
-### To run the software
-
-
-First things first. To run, source the file __constcl.tcl__ (with __schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use the command __repl__ for a primitive command dialog. Source __all.tcl__ to run the test suite (you need __constcl.test__ for that).
-
-### Background
-
-
-ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was [#](https://github.com/hoodiecrow/ConsTcl#Thtcl){https://github.com/hoodiecrow/thtcl}--this time with a real Lisp-like type system.
-
-##### About ConsTcl
-
-
-It's written with Vim, the one and only editor.
-
-
-It steps over and back over the border between Tcl and Lisp a lot of times while working, and as a result is fairly slow. On my cheap computer, the following code (which calculates the factorial of 100) takes 0.03 seconds to run.
-
-```
-time {pe "(fact 100)"} 10
-```
-
-
-Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
-
-
-It is limited. Quite a few standard procedures are missing. It doesn't come near to having call/cc or tail recursion. It doesn't have exact/inexact numbers, or most of the numerical tower. Error reporting is spotty, and there is no error recovery.
-
-##### About the book
-
-
-I like writing documentation, and occasionally I'm good at it. When I work on a software project, I like to annotate the source code with bits of documentation, which I then extract and put together using document stream editing tools like \texttt{sed} and \texttt{awk} (The pipeline is Vim to create annotated source > sed/awk > a markdown README document for GitHub's benefit > awk > a (La)TeX document > TeXworks > a PDF document: all the steps except the last are automated using make). On finishing up ConsTcl, it struck me that the documentation for this piece of software was fit for a book.
-
-##### About the program listings
-
-
-I have tried to write clear, readable code, but the page format forces me to shorten lines. I have used two-space indents instead of four-space, a smaller font, and broken off long lines with a \ at the end of the first line (a so-called "tucked-in tail"). Neither of these measures improve readability, but the alternative is overwriting the margins.
-
-##### About me
-
-
-I'm a 60 year old former system manager who has been active in programming since 1979--46 years. Currently, since around 25 years, my language of choice is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits me, and there are things that one can do in Tcl that one can't easily do in other languages. Lisp is a runner-up in my affections, a language that fascinates me but doesn't fit my brain very well (though I have written one large piece of software in AutoLisp).
-
-
-In addition to my terms as programmer and system manager, I have worked as a teacher (teaching C/C++ in upper secondary school) and for a short while I produced teaching materials for the department for information technology at the University of Skövde. I've also been active writing answers at question-and-answer sites on the web, mainly Stack Overflow.
-
 ## Initial declarations
 
 
@@ -101,7 +54,7 @@ Next, some procedures that make my life as developer somewhat easier, but don't 
 __reg__
 
 
-`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard library[#](https://github.com/hoodiecrow/ConsTcl#environment-startup).
+`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard libraryR{environment-startup}.
 
 
 You can call `` reg `` with two values: _key_ and _val_. _Key_ is the string that will eventually become the lookup symbol in the standard library, and _val_ is the name of the Tcl command that will carry out the procedure. If you don't give a value for _val_, `` reg `` creates a value by prepending the `` ::constcl:: `` namespace to the _key_ value, which is sufficient 99% of the time.
@@ -389,8 +342,8 @@ The `` NIL `` class has one object: the empty list called `` #NIL ``. It is also
 catch { ::constcl::NIL destroy }
 
 oo::singleton create ::constcl::NIL {
-  method bvalue {} {
-    return #NIL
+  method boolval {} {
+    return #t
   }
   method car {} {
     ::error "PAIR expected"
@@ -608,7 +561,7 @@ The first thing an interpreter must be able to do is to take in the user's code 
 #### The parsing process
 
 
-Parsing[wiki](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_ in internal form.
+ParsingW{Parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_ in internal form.
 
 
 The parsing process translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
@@ -786,7 +739,7 @@ __read-expr__
 
 The procedure `` read-expr `` reads input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If the end of file is encountered before an expression can be read in full, the procedure returns end of file.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td></td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-expr {args} {
@@ -829,7 +782,7 @@ proc ::constcl::read-expr {args} {
 
 `` readc `` reads one character from the unget store if it isn't empty or else from the input stream. If the input stream is at end-of-file, an eof object is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td></td></tr></table>
 
 ```
 proc ::constcl::readc {} {
@@ -850,7 +803,7 @@ proc ::constcl::readc {} {
 
 `` read-find `` reads ahead through whitespace to find a given character. Returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td></td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-find {char} {
@@ -930,7 +883,7 @@ proc ::constcl::read-eof {args} {
 __read-string-expr__
 
 
-`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String[#](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable StringR{strings} object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
 
@@ -990,7 +943,7 @@ proc ::constcl::read-sharp {} {
 __read-vector-expr__
 
 
-`` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector[#](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a VectorR{vectors} object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -1018,7 +971,7 @@ proc ::constcl::read-vector-expr {} {
 __read-character-expr__
 
 
-`` read-character-expr `` reads input, producing a character and returning a Char[#](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`` read-character-expr `` reads input, producing a character and returning a CharR{characters} object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character or end of file</td></tr></table>
 
@@ -1064,7 +1017,7 @@ proc ::constcl::read-quoted-expr {} {
 __read-pair-expr__
 
 
-The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of Pair[#](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in #NIL), or an improper one (one that has an atom as its last member).
+The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of PairR{pairs-and-lists} objects, either a proper list (one that ends in #NIL), or an improper one (one that has an atom as its last member).
 
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
 
@@ -1149,12 +1102,17 @@ proc ::constcl::read-plus-minus {char} {
       set n [- $n]
     }
     return $n
-  } else {
+  } elseif {[::string is space -strict $c] ||
+      $c in {) ]}} {
     if {$char eq "+"} {
       return [S "+"]
     } else {
       return [S "-"]
     }
+  } else {
+    set n [read-identifier-expr $char $c]
+    read-eof $n
+    return $n
   }
 }
 ```
@@ -1163,9 +1121,9 @@ proc ::constcl::read-plus-minus {char} {
 __read-number-expr__
 
 
-`` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number[#](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a NumberR{numbers} object.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td></td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-number-expr {args} {
@@ -1241,16 +1199,16 @@ proc ::constcl::read-quasiquoted-expr {} {
 __read-identifier-expr__
 
 
-`` read-identifier-expr `` is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol[#](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`` read-identifier-expr `` is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a SymbolR{symbols} object.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
   if {[llength $args]} {
-    lassign $args c
+    set c [join $args {}]
   } else {
     set c [readc]
   }
@@ -1262,6 +1220,7 @@ proc ::constcl::read-identifier-expr {args} {
     }
     ::append name $c
     set c [readc]
+    # do not check for EOF here
   }
   if {$c ne "#EOF"} {
     set unget $c
@@ -1322,7 +1281,7 @@ __eval__
 The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its syntactic form.
 
 
-`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about macros[#](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about resolving local defines[#](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about macrosR{macros} below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about resolving local definesR{resolving-local-defines}.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1523,7 +1482,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
 
-Under the hood, the helper `` /lambda `` makes a Procedure[#](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression, and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+Under the hood, the helper `` /lambda `` makes a ProcedureR{control} object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression, and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
 
 A Scheme formals list is either:
@@ -3627,7 +3586,7 @@ proc ::constcl::number->string {num args} {
 ```
 
 
-Due to Richard Suchenwirth[#](https://github.com/hoodiecrow/ConsTcl#https://wiki.tcl-lang.org/page/Based+numbers).
+Due to Richard SuchenwirthL{https://wiki.tcl-lang.org/page/Based+numbers}.
 
 ```
 proc base {base number} {
@@ -3692,7 +3651,7 @@ proc ::constcl::string->number {str args} {
 ```
 
 
-Due to Richard Suchenwirth[#](https://github.com/hoodiecrow/ConsTcl#https://wiki.tcl-lang.org/page/Based+numbers).
+Due to Richard SuchenwirthL{https://wiki.tcl-lang.org/page/Based+numbers}.
 
 ```
 proc frombase {base number} {
@@ -3722,38 +3681,38 @@ __Boolean__ class
 ```
 oo::class create ::constcl::Boolean {
   superclass ::constcl::NIL
-  variable bvalue
+  variable boolval
   constructor {v} {
     if {$v ni {#t #f}} {
       ::error "bad boolean value $v"
     }
-    set bvalue $v
+    set boolval $v
   }
   method mkconstant {} {}
   method constant {} {
     return 1
   }
-  method bvalue {} {
-    set bvalue
+  method boolval {} {
+    set boolval
   }
   method value {} {
-    set bvalue
+    set boolval
   }
   method write {handle} {
-    puts -nonewline $handle [my bvalue]
+    puts -nonewline $handle [my boolval]
   }
   method display {handle} {
     my write $handle
   }
   method show {} {
-    set bvalue
+    set boolval
   }
 }
 
 proc ::constcl::MkBoolean {v} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
-    if {[$instance bvalue] eq $v} {
+    if {[$instance boolval] eq $v} {
       return $instance
     }
   }
@@ -3797,7 +3756,7 @@ Example:
 reg not ::constcl::not
 
 proc ::constcl::not {val} {
-  if {[$val bvalue] eq "#f"} {
+  if {[$val boolval] eq "#f"} {
     return #t
   } else {
     return #f
@@ -4306,7 +4265,7 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 
-A `` Procedure `` object is a closure[wiki](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
+A `` Procedure `` object is a closureW{Closure_(computer_programming)}, storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
 
 
 When a `` Procedure `` object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
@@ -4779,7 +4738,7 @@ proc ::constcl::char-ready? {args} {
 ```
 
 
-`` write `` is implemented in the write[#](https://github.com/hoodiecrow/ConsTcl#output) section.
+`` write `` is implemented in the writeR{output} section.
 
 
 
@@ -6823,7 +6782,7 @@ ConsTcl> (circle-area 10)
 ```
 
 
-During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a _local variable_[wiki](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of _lexical scoping_[wiki](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope).
+During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a _local variable_W{Local_variable} in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of _lexical scoping_W{Scope_(computer_science)#Lexical_scope}.
 
 
 In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to):
