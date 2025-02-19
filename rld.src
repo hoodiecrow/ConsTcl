@@ -1,7 +1,7 @@
 
-MD(
 H3 Resolving local defines
 
+MD(
 This section is ported from 'Scheme 9 from Empty Space'I{S9fES}. K{resolve-local-defines}
 is the topmost procedure in rewriting local defines as essentially a K{letrec}
 form. It takes a list of expressions and extracts variables and values from the

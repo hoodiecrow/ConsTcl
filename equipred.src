@@ -1,8 +1,8 @@
-MD(
 H2 Built-in procedures
 
 H3 Equivalence predicates
 
+MD(
 B{eq}
 
 B{eqv}

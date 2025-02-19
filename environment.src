@@ -77,10 +77,9 @@ oo::class create ::constcl::Environment {
 }
 CB)
 
-MD(
 H3 Lexical scoping
 
-
+MD(
 Example:
 MD)
 

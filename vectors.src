@@ -1,7 +1,7 @@
 
-MD(
 H3 Vectors
 
+MD(
 Vectors are heterogenous structures of fixed length whose elements are indexed
 by integers.
 

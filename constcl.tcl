@@ -842,10 +842,10 @@ proc ::constcl::expand-and {expr env} {
 }
 
 proc ::constcl::do-and {tail prev env} {
-  set env [Environment new #NIL {} $env]
-  if {[[length $tail] numval] == 0} {
+  if {[null? $tail] ne "#f"} {
     return $prev
   } else {
+    set env [Environment new #NIL {} $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
@@ -862,7 +862,7 @@ proc ::constcl::expand-case {expr env} {
 }
 
 proc ::constcl::do-case {keyexpr clauses env} {
-  if {[eq? [length $clauses] #0] ne "#f"} {
+  if {[null? $clauses] ne "#f"} {
     return [parse "'()"]
   } else {
     set keyl [caar $clauses]
@@ -896,7 +896,7 @@ proc ::constcl::expand-cond {expr env} {
 
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
-  if {[eq? [length $clauses] #0] ne "#f"} {
+  if {[null? $clauses] ne "#f"} {
     return [parse "'()"]
   } else {
     set pred [caar $clauses]
@@ -1107,10 +1107,10 @@ proc ::constcl::expand-or {expr env} {
 }
 
 proc ::constcl::do-or {tail env} {
-  set env [Environment new #NIL {} $env]
-  /if {eq? [length $tail] #0} {
+  /if {null? $tail} {
     return #f
   } {
+    set env [Environment new #NIL {} $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"

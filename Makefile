@@ -28,28 +28,28 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files)
-	awk -f srctotex.awk dict.txt $^ >$@
+	gawk -f srctotex.awk dict.txt $^ >$@
 
 constcl.tex: book.md
-	awk -f latex.awk $< >$@
+	gawk -f latex.awk $< >$@
 
 book.md: booktop.md constcl.md lutables.md schemebase.md
-	awk -f prototype.awk dict.txt $^ >$@
+	gawk -f prototype.awk dict.txt $^ >$@
 
 README.md: top.md constcl.md schemebase.md
 	cat $^ >$@
 
 #README.md: top.md constcl.md schemebase.md
-#	awk -f prototype.awk dict.txt $^ >$@
+#	gawk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files)
-	awk -f srctomd.awk dict.txt $^ >$@
+	gawk -f srctomd.awk dict.txt $^ >$@
 
 #constcl.md: $(tcl_source_files)
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	awk -f srctocode.awk $^ >$@
+	gawk -f srctocode.awk $^ >$@
 
 #constcl.tcl: $(tcl_source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
@@ -57,7 +57,7 @@ constcl.tcl: $(source_files)
 constcl.test: $(source_files)
 	echo 'package require tcltest' >$@
 	echo 'source constcl.tcl\n' >>$@
-	awk -f srctotest.awk $^ >>$@
+	gawk -f srctotest.awk $^ >>$@
 	echo '\n::tcltest::cleanupTests' >>$@
 
 #constcl.test: $(tcl_source_files)
@@ -70,7 +70,7 @@ lutables.md: lutables.tcl
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 schemebase.md: schemebase.scm
-	awk -f minimal.awk $< >$@
+	gawk -f scmtomd.awk $< >$@
 
 .PHONY: clean
 clean:
@@ -88,7 +88,7 @@ clean:
 	$(CC) $(CFLAGS) $(FEATURES) -c $*.c
 
 .scm.md:
-	awk -f minimal.awk $*.scm >$*.md
+	gawk -f scmtomd.awk $*.scm >$*.md
 
 $(PROGRAM): $(HDRS) $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(LDOUT)$@$(EXE)

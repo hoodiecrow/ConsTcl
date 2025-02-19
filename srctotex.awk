@@ -91,8 +91,15 @@ in_code_block && /./  { print ; next }
 in_code_block && /^$/ { print " " ; next }
 
 
-/^IX/ { printf("\\index{%s}\n", $2) ; next }
-/^IG/ { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
+$1 == "IX" { printf("\\index{%s}\n", $2) ; next }
+$1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
+$1 == "EM" { for (i=2; i<=NF; i++) collect($i) ; line = sprintf("\\emph{%s}", line) ; flushp() ; next }
+
+$1 == "IT" { if (!init) print "\\begin{itemize}";init = 1; print "\\item " render(substr($0, 3));next }
+init && $1 != "IT" { print "\\end{itemize}"; init = 0; next }
+
+$1 == "EN" { if (!inen) print "\\begin{enumerate}";inen = 1; print "\\item " render(substr($0, 3));next }
+inen && $1 != "EN" { print "\\end{enumerate}"; inen = 0; next }
 
 $1 == "MD(" { in_md_block = 1 ; print "" ; next }
 $1 == "MD)" { in_md_block = 0 ; flushp() ; next }

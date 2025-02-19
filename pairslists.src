@@ -1,7 +1,7 @@
 
-MD(
 H3 Pairs and lists
 
+MD(
 List processing is another of Lisp's great strengths.
 
 B{Pair} class

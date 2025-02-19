@@ -68,9 +68,9 @@ reg nil #NIL
 CB)
 
 
-MD(
 H3 Environment startup
 
+MD(
 On startup, two K{Environment} objects called K{null_env} (the null environment,
 not the same as K{null-environment} in Scheme) and K{global_env} (the global
 environment) are created. 

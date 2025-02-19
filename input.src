@@ -371,9 +371,9 @@ TT(
 
 TT)
 
-MD(
 H3 read
 
+MD(
 B{read}
 
 The standard builtin K{read} reads an input port approximately the same way that

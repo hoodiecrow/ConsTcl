@@ -3,7 +3,9 @@ E	emph	**...**
 B	textbf	__...__
 R	pageref	[]()
 L	footn.	[]()
+W	wikip.	[]()
 I	index	---
+P{}{}	$x^y$	x<sup>y</sup>
 
 H1	part	#
 H2	chapter	##
@@ -29,5 +31,13 @@ TT(	---	---
 	---	---
 TT)	---	---
 
+VB(	verb.	---
+	print
+VB)	verb.off.---
+
 IX ...	index
 IG ...	graphix	![]()
+EM ...	\emph . ** . **
+EN ...	\enumer.1. ...
+IT ...	\itemiz.* ...
+

@@ -388,9 +388,9 @@ proc ::constcl::in-range {x args} {
 }
 CB)
 
-MD(
 H3 The NIL class
 
+MD(
 The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
 class for many other type classes.
 MD)
@@ -455,9 +455,9 @@ proc ::constcl::null? {val} {
 }
 CB)
 
-MD(
 H3 The classes Dot, Unspecified, Undefined, and EndOfFile
 
+MD(
 The K{Dot} class is a helper class for the parser.
 MD)
 
@@ -562,9 +562,9 @@ proc eof? {val} {
 }
 CB)
 
-MD(
 H3 The error and check procedures
 
+MD(
 B{error}
 
 K{error} is used to signal an error, with E{msg} being a message string and the

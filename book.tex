@@ -71,9 +71,9 @@ It's written with Vim, the one and only editor.
 
 It steps over and back over the border between Tcl and Lisp a lot of times while working, and as a result is fairly slow. On my cheap computer, the following code (which calculates the factorial of 100) takes 0.03 seconds to run.
 
-\begin{lstlisting}
+\begin{verbatim}
 time {pe "(fact 100)"} 10
-\end{lstlisting}
+\end{verbatim}
 
 
 Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
@@ -501,10 +501,10 @@ proc ::constcl::in-range {x args} {
   return [list {*}[lmap r $res {MkNumber $r}]]
 }
 \end{lstlisting}
-
 \section{The NIL class}
 \label{the-nil-class}
 \index{the nil class}
+
 
 The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It is also base class for many other type classes.
 
@@ -568,10 +568,10 @@ proc ::constcl::null? {val} {
   }
 }
 \end{lstlisting}
-
 \section{The classes Dot, Unspecified, Undefined, and EndOfFile}
 \label{the-classes-dot,-unspecified,-undefined,-and-endoffile}
 \index{the classes dot, unspecified, undefined, and endoffile}
+
 
 The \texttt{Dot} class is a helper class for the parser.
 
@@ -662,8 +662,9 @@ oo::class create ::constcl::EndOfFile {
     my write $handle
   }
 }
- 
-IX eof?
+\end{lstlisting}
+\index{eof?}
+\begin{lstlisting}
 proc eof? {val} {
   if {$val eq "#EOF"} {
     return #t
@@ -672,10 +673,10 @@ proc eof? {val} {
   }
 }
 \end{lstlisting}
-
 \section{The error and check procedures}
 \label{the-error-and-check-procedures}
 \index{the error and check procedures}
+
 
 \textbf{error}
 
@@ -773,7 +774,7 @@ The first thing an interpreter must be able to do is to take in the user's code 
 \index{the parsing process}
 
 
-ParsingW{Parsing}\index{parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of \emph{external representation}. The result of parsing is an \emph{expression}\index{expression} in internal form.
+Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of \emph{external representation}. The result of parsing is an \emph{expression}\index{expression} in internal form.
 
 
 The parsing process translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
@@ -781,7 +782,7 @@ The parsing process translates an expression from external representation to int
 
 For example, the external representation for a vector is a sharp sign (\#), a left parenthesis ((), the external representation for some values, and a right parenthesis ()). When the reader or parser is working through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
 
-\includegraphics{images/vector-representation}
+\includegraphics{images/vector-representation.png}
 
 The \texttt{parse} procedure takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
 
@@ -791,28 +792,31 @@ Given a string, \texttt{parse} fills the input buffer. It then parses the input 
 
 Example:
 
-\begin{lstlisting}
+\begin{verbatim}
 % ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
-\end{lstlisting}
+\end{verbatim}
+
 
 Here, \texttt{parse} parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled \texttt{::oo::Obj491}. We will later meet procedures like \texttt{eval}, which transforms an expression into a value, and \texttt{write}, which prints a printed representation of expressions and values. Putting them together: we can see
 
-\begin{lstlisting}
+\begin{verbatim}
 % ::constcl::write ::oo::Obj491
 (+ 2 3)
 % ::constcl::eval ::oo::Obj491
 ::oo::Obj494
 % ::constcl::write ::oo::Obj494
 5
-\end{lstlisting}
+\end{verbatim}
+
 
 Fortunately, we don't have to work at such a low level. We can use the \texttt{repl}\index{repl} instead:
 
-\begin{lstlisting}
+\begin{verbatim}
 ConsTcl> (+ 2 3)
 5
-\end{lstlisting}
+\end{verbatim}
+
 
 Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
 
@@ -820,9 +824,6 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 Anyway, here is how it really looks like. \texttt{::oo::Obj491} was just the head of the list.
 
 \includegraphics{images/intreplist.png}
-\subsection{The parsing library}
-\label{the-parsing-library}
-\index{the parsing library}
 
 \textbf{parse}
 
@@ -844,9 +845,7 @@ proc ::constcl::parse {inp} {
   set c {}
   set unget {}
   if {[info object isa object $inp]} {
-    if {[typeof? $inp IB] ne "#f"} {
-      error "IB used"
-    } elseif {[typeof? $inp StringInputPort] ne "#f"} {
+    if {[typeof? $inp StringInputPort] ne "#f"} {
       set port $inp
     } elseif {[typeof? $inp String] ne "#f"} {
       set port [::constcl::StringInputPort new [$inp value]]
@@ -929,10 +928,10 @@ proc ::constcl::character-check {name} {
   }
 }
 \end{lstlisting}
-
 \section{read}
 \label{read}
 \index{read}
+
 
 \textbf{read}
 
@@ -1589,15 +1588,16 @@ proc ::constcl::read-object-expr {} {
   return $res
 }
 \end{lstlisting}
-
 \chapter{Evaluation}
 \label{evaluation}
+
 
 The second thing an interpreter must be able to do is to reduce expressions to their \emph{normal form}, or \emph{evaluate}\index{eval}\index{evaluator} them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
 
 \section{Syntactic forms}
 \label{syntactic-forms}
 \index{syntactic forms}
+
 
 There are nine diffent forms or classes of expressions in Lisp. The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
 
@@ -1677,12 +1677,12 @@ proc ::constcl::eval \
   }
 }
 \end{lstlisting}
-
 \subsection{Variable reference}
 \label{variable-reference}
 \index{variable reference}
 
-E{Example: \texttt{r} => 10 (a symbol \texttt{r} is evaluated to 10)}
+
+\textbackslash\ emph{Example: \texttt{r} => 10 (a symbol \texttt{r} is evaluated to 10)}
 
 
 A variable\index{variable} is an identifier (symbol) bound to a location in the environment. If an expression consists of the identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
@@ -1704,32 +1704,32 @@ proc ::constcl::lookup {sym env} {
   [$env find $sym] get $sym
 }
 \end{lstlisting}
-
 \subsection{Constant literal}
 \label{constant-literal}
 \index{constant literal}
 
-E{Example: \texttt{99} => 99 (a number evaluates to itself)}
+
+\textbackslash\ emph{Example: \texttt{99} => 99 (a number evaluates to itself)}
 
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
-
 
 \subsection{Quotation}
 \label{quotation}
 \index{quotation}
 
-E{Example: \texttt{(quote r)} => \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
+
+\textbackslash\ emph{Example: \texttt{(quote r)} => \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
 
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. \texttt{(quote x)} evaluates to the symbol x itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader.
-
 
 \subsection{Conditional}
 \label{conditional}
 \index{conditional}
 
-E{Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} => 6}
+
+\textbackslash\ emph{Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} => 6}
 
 
 The conditional form \texttt{if} evaluates a Lisp list of three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
@@ -1756,12 +1756,12 @@ proc ::constcl::/if {cond conseq altern} {
   }
 }
 \end{lstlisting}
-
 \subsection{Sequence}
 \label{sequence}
 \index{sequence}
 
-E{Example: \texttt{(begin (define r 10) (* r r))} => 100}
+
+\textbackslash\ emph{Example: \texttt{(begin (define r 10) (* r r))} => 100}
 
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The \texttt{/begin} helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
@@ -1792,12 +1792,12 @@ proc ::constcl::/begin {exps env} {
   }
 }
 \end{lstlisting}
-
 \subsection{Definition}
 \label{definition}
 \index{definition}
 
-E{Example: \texttt{(define r 10)} => ... (a definition doesn't evaluate to anything)}
+
+\textbackslash\ emph{Example: \texttt{(define r 10)} => ... (a definition doesn't evaluate to anything)}
 
 
 We've already seen the relationship between symbols and values. A symbol is bound to a value (or rather to the location the value is in), creating a variable, through definition. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
@@ -1822,12 +1822,12 @@ proc ::constcl::/define {sym val env} {
   return
 }
 \end{lstlisting}
-
 \subsection{Assignment}
 \label{assignment}
 \index{assignment}
 
-**Example: \texttt{(set! r 20)} => 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)**
+
+\textbackslash\ emph{Example: \texttt{(set! r 20)} => 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)}
 
 
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name "variable", something that can be modified). The process is called assignment. The \texttt{/set!} helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have "!" at the end of their name.
@@ -1851,12 +1851,12 @@ proc ::constcl::/set! {var val env} {
   set val
 }
 \end{lstlisting}
-
 \subsection{Procedure definition}
 \label{procedure-definition}
 \index{procedure definition}
 
-**Example: \texttt{(lambda (r) (* r r))} => ::oo::Obj3601 (it will be a different object each time)**
+
+\textbackslash\ emph{Example: \texttt{(lambda (r) (* r r))} => \texttt{::oo::Obj3601} (it will be a different object each time)}
 
 
 In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
@@ -1876,9 +1876,12 @@ Under the hood, the helper \texttt{/lambda} makes a Procedure\footnote{See page 
 
 A Scheme formals list\index{formals list} is either:
 
-
-* An \emph{empty list}, \texttt{()}, meaning that no arguments are accepted, * A \emph{proper list}, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol, * A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or * A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
-
+\begin{itemize}
+\item  An \emph{empty list}, \texttt{()}, meaning that no arguments are accepted,
+\item  A \emph{proper list}, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol,
+\item  A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or
+\item  A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
+\end{itemize}
 
 \textbf{/lambda}
 
@@ -1902,12 +1905,12 @@ proc ::constcl::/lambda {formals body env} {
   return [MkProcedure $formals $body $env]
 }
 \end{lstlisting}
-
 \subsection{Procedure call}
 \label{procedure-call}
 \index{procedure call}
 
-E{Example: \texttt{(+ 1 6)} => 7}
+
+\textbackslash\ emph{Example: \texttt{(+ 1 6)} => 7}
 
 
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it will return 121.
@@ -1999,7 +2002,7 @@ proc ::constcl::eval-list {exps env} {
 \textbf{expand-macro}
 
 
-Macros that rewrite expressions into other, more concrete expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
+Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
 
 
 \texttt{expand-macro} takes an expression and an environment as a parameter. First, the operator (\texttt{op}) and operands (\texttt{args}) are extracted to check if expansion is necessary (the operator \texttt{car}, for historical reasons, stands for the first element of a list, while \texttt{cdr} stands for the rest of the elements after the first in a list). If the operator is the symbol \texttt{define} and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in \texttt{eval}.
@@ -2057,11 +2060,11 @@ proc ::constcl::expand-and {expr env} {
   }
 }
 \end{lstlisting}
-
 \subsubsection{Quasiquote: an aside}
 \label{quasiquote:-an-aside}
 
-In this and many other macro expanders I use a quasiquote construct to lay out how the is to be expanded. A quasiquote starts with a backquote (\texttt{`}) instead of the single quote that precedes regular quoted material. A quasiquote allows for "unquoting" of selected parts: this is notated with a comma (\texttt{,}). \texttt{`(foo ,bar baz)} is very nearly the same as \texttt{('foo bar 'baz)}, except that the list structure itself is constant in a quasiquote. Anyway, in both cases \texttt{foo} and \texttt{baz} are constants while \texttt{bar} is a variable which will be evaluated. Like in \texttt{do-and} here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use \texttt{/define} to bind them in a temporary environment.
+
+In this and many other macro expanders I use a quasiquote construct to lay out how the macro is to be expanded. A quasiquote starts with a backquote (\texttt{`}) instead of the single quote that precedes regular quoted material. A quasiquote allows for "unquoting" of selected parts: this is notated with a comma (\texttt{,}). \texttt{`(foo ,bar baz)} is very nearly the same as \texttt{('foo bar 'baz)}. In both cases \texttt{foo} and \texttt{baz} are constants while \texttt{bar} is a variable which will be evaluated. Like in \texttt{do-and} here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use \texttt{/define} to bind them in a temporary environment.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2075,10 +2078,10 @@ env & an environment \\
 \index{do-and}
 \begin{lstlisting}
 proc ::constcl::do-and {tail prev env} {
-  set env [Environment new #NIL {} $env]
-  if {[[length $tail] numval] == 0} {
+  if {[null? $tail] ne "#f"} {
     return $prev
   } else {
+    set env [Environment new #NIL {} $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
@@ -2121,7 +2124,7 @@ proc ::constcl::expand-case {expr env} {
 }
  
 proc ::constcl::do-case {keyexpr clauses env} {
-  if {[eq? [length $clauses] #0] ne "#f"} {
+  if {[null? $clauses] ne "#f"} {
     return [parse "'()"]
   } else {
     set keyl [caar $clauses]
@@ -2175,7 +2178,7 @@ proc ::constcl::expand-cond {expr env} {
  
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
-  if {[eq? [length $clauses] #0] ne "#f"} {
+  if {[null? $clauses] ne "#f"} {
     return [parse "'()"]
   } else {
     set pred [caar $clauses]
@@ -2564,10 +2567,10 @@ env & an environment \\
 \index{do-or}
 \begin{lstlisting}
 proc ::constcl::do-or {tail env} {
-  set env [Environment new #NIL {} $env]
-  /if {eq? [length $tail] #0} {
+  /if {null? $tail} {
     return #f
   } {
+    set env [Environment new #NIL {} $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
@@ -2857,10 +2860,10 @@ proc ::constcl::expand-when {expr env} {
   return [expand-quasiquote [parse $qq] $env]
 }
 \end{lstlisting}
-
 \section{Resolving local defines}
 \label{resolving-local-defines}
 \index{resolving local defines}
+
 
 This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. \texttt{resolve-local-defines} is the topmost procedure in rewriting local defines as essentially a \texttt{letrec} form. It takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
 
@@ -3286,12 +3289,12 @@ proc ::constcl::write-pair {handle pair} {
   return
 }
 \end{lstlisting}
-
 \chapter{Built-in procedures}
 \label{built-in-procedures}
 \section{Equivalence predicates}
 \label{equivalence-predicates}
 \index{equivalence predicates}
+
 
 \textbf{eq}
 
@@ -3419,10 +3422,10 @@ proc ::constcl::equal? {val1 val2} {
   # TODO
 }
 \end{lstlisting}
-
 \section{Numbers}
 \label{numbers}
 \index{numbers}
+
 
 I have only implemented a bare-bones version of Scheme's numerical library. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
 
@@ -4492,6 +4495,3784 @@ proc frombase {base number} {
   }
   if $negative {set res -$res}
   set res
+}
+\end{lstlisting}
+\section{Booleans}
+\label{booleans}
+\index{booleans}
+
+
+Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. The conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
+
+
+\textbf{Boolean} class
+
+\index{Boolean}
+\begin{lstlisting}
+oo::class create ::constcl::Boolean {
+  superclass ::constcl::NIL
+  variable bvalue
+  constructor {v} {
+    if {$v ni {#t #f}} {
+      ::error "bad boolean value $v"
+    }
+    set bvalue $v
+  }
+  method mkconstant {} {}
+  method constant {} {
+    return 1
+  }
+  method bvalue {} {
+    set bvalue
+  }
+  method value {} {
+    set bvalue
+  }
+  method write {handle} {
+    puts -nonewline $handle [my bvalue]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set bvalue
+  }
+}
+ 
+proc ::constcl::MkBoolean {v} {
+  foreach instance [info class instances \
+    ::constcl::Boolean] {
+    if {[$instance bvalue] eq $v} {
+      return $instance
+    }
+  }
+  return [::constcl::Boolean new $v]
+}
+\end{lstlisting}
+
+
+\textbf{boolean?}
+
+
+The \texttt{boolean?} predicate recognizes a Boolean by type.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{boolean? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{boolean?}
+\begin{lstlisting}
+reg boolean? ::constcl::boolean?
+ 
+proc ::constcl::boolean? {val} {
+  return [typeof? $val Boolean]
+}
+\end{lstlisting}
+
+
+\textbf{not}
+
+
+The only operation on booleans: \texttt{not}, or logical negation.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{not (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(not #f)    ⇒  #t   ; #f yields #t, all others #f
+(not nil)   ⇒  #f   ; see?
+\end{verbatim}
+\index{not}
+\begin{lstlisting}
+reg not ::constcl::not
+ 
+proc ::constcl::not {val} {
+  if {[$val bvalue] eq "#f"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\section{Characters}
+\label{characters}
+\index{characters}
+
+
+Characters are any Unicode printing character, and also space and newline space characters. External representation is '\#\textbackslash\ A' (change A to relevant character) or \#\textbackslash\ space or \#\textbackslash\ newline. Internal representation is simply a Tcl character.
+
+
+\textbf{Char} class
+
+\index{Char}
+\begin{lstlisting}
+oo::class create ::constcl::Char {
+  superclass ::constcl::NIL
+  variable value
+  constructor {v} {
+    switch -regexp $v {
+      {(?i)#\\space} {
+        set v " "
+      }
+      {(?i)#\\newline} {
+        set v "\n"
+      }
+      {#\\[[:graph:]]} {
+        set v [::string index $v 2]
+      }
+    }
+    set value $v
+  }
+  method char {} {
+    set value
+  }
+  method alphabetic? {} {
+    if {[::string is alpha -strict [my char]]} {
+      return #t
+    } else {
+      return #f
+    }
+  }
+  method numeric? {} {
+    if {[::string is digit -strict [my char]]} {
+      return #t
+    } else {
+      return #f
+    }
+  }
+  method whitespace? {} {
+    if {[::string is space -strict [my char]]} {
+      return #t
+    } else {
+      return #f
+    }
+  }
+  method upper-case? {} {
+    if {[::string is upper -strict [my char]]} {
+      return #t
+    } else {
+      return #f
+    }
+  }
+  method lower-case? {} {
+    if {[::string is lower -strict [my char]]} {
+      return #t
+    } else {
+      return #f
+    }
+  }
+  method mkconstant {} {}
+  method constant {} {
+    return 1
+  }
+  method value {} {
+    return $value
+  }
+  method external {} {
+    switch $value {
+      " " {
+        return "#\\space"
+      }
+      "\n" {
+        return "#\\newline"
+      }
+      default {
+        return "#\\$value"
+      }
+    }
+  }
+  method write {handle} {
+    puts -nonewline $handle [my external]
+  }
+  method display {handle} {
+    puts -nonewline $handle [my char]
+  }
+  method show {} {
+    my external
+  }
+}
+ 
+proc ::constcl::MkChar {v} {
+  if {[regexp -nocase {space|newline} $v]} {
+      set v [::string tolower $v]
+  }
+  foreach instance [
+    info class instances Char] {
+    if {[$instance external] eq $v} {
+      return $instance
+    }
+  }
+  return [::constcl::Char new $v]
+}
+\end{lstlisting}
+
+
+\textbf{char?}
+
+
+\texttt{char?} recognizes Char values by type.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{char?}
+\begin{lstlisting}
+reg char?
+ 
+proc ::constcl::char? {val} {
+  return [typeof? $val Char]
+}
+\end{lstlisting}
+
+
+\textbf{char=?}
+
+
+\textbf{char<?}
+
+
+\textbf{char>?}
+
+
+\textbf{char<=?}
+
+
+\textbf{char>=?}
+
+
+\texttt{char=?}, \texttt{char<?}, \texttt{char>?}, \texttt{char<=?}, and \texttt{char>=?} compare character values. They only compare two characters at a time.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char=?, char<?, char>?, char<=?, char>=? (public)} \\
+char1 & a character \\
+char2 & a character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{char=?}
+\begin{lstlisting}
+reg char=?
+ 
+proc ::constcl::char=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {$char1 eq $char2} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char<?}
+\begin{lstlisting}
+reg char<?
+ 
+proc ::constcl::char<? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[$char1 char] < [$char2 char]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char>?}
+\begin{lstlisting}
+reg char>?
+ 
+proc ::constcl::char>? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[$char1 char] > [$char2 char]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char<=?}
+\begin{lstlisting}
+reg char<=?
+ 
+proc ::constcl::char<=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[$char1 char] <= [$char2 char]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char>=?}
+\begin{lstlisting}
+reg char>=?
+ 
+proc ::constcl::char>=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[$char1 char] >= [$char2 char]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{char-ci=?}
+
+
+\textbf{char-ci<?}
+
+
+\textbf{char-ci>?}
+
+
+\textbf{char-ci<=?}
+
+
+\textbf{char-ci>=?}
+
+
+\texttt{char-ci=?}, \texttt{char-ci<?}, \texttt{char-ci>?}, \texttt{char-ci<=?}, and \texttt{char-ci>=?} compare character values in a case insensitive manner. They only compare two characters at a time.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public)} \\
+char1 & a character \\
+char2 & a character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{char-ci=?}
+\begin{lstlisting}
+reg char-ci=?
+ 
+proc ::constcl::char-ci=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[::string tolower [$char1 char]] eq
+      [::string tolower [$char2 char]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char-ci<?}
+\begin{lstlisting}
+reg char-ci<?
+ 
+proc ::constcl::char-ci<? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[::string tolower [$char1 char]] <
+      [::string tolower [$char2 char]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char-ci>?}
+\begin{lstlisting}
+reg char-ci>?
+ 
+proc ::constcl::char-ci>? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[::string tolower [$char1 char]] >
+      [::string tolower [$char2 char]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char-ci<=?}
+\begin{lstlisting}
+reg char-ci<=?
+ 
+proc ::constcl::char-ci<=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[::string tolower [$char1 char]] <=
+      [::string tolower [$char2 char]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{char-ci>=?}
+\begin{lstlisting}
+reg char-ci>=?
+ 
+proc ::constcl::char-ci>=? {char1 char2} {
+  check {char? $char1} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  check {char? $char2} {
+    CHAR expected\n([pn] [$char1 show] [$char2 show])
+  }
+  if {[::string tolower [$char1 char]] >=
+      [::string tolower [$char2 char]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{char-alphabetic}
+
+
+\textbf{char-numeric}
+
+
+\textbf{char-whitespace}
+
+
+\textbf{char-upper-case}
+
+
+\textbf{char-lower-case}
+
+
+The predicates \texttt{char-alphabetic}, \texttt{char-numeric}, \texttt{char-whitespace}, \texttt{char-upper-case}, and \texttt{char-lower-case} test a character for these conditions.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char-alphabetic?, char-numeric?, char-whitespace? (public)} \\
+char & a character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char-upper-case?, char-lower-case? (public)} \\
+char & a character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{char-alphabetic?}
+\begin{lstlisting}
+reg char-alphabetic?
+ 
+proc ::constcl::char-alphabetic? {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [$char alphabetic?]
+}
+\end{lstlisting}
+\index{char-numeric?}
+\begin{lstlisting}
+reg char-numeric?
+ 
+proc ::constcl::char-numeric? {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [$char numeric?]
+}
+\end{lstlisting}
+\index{char-whitespace?}
+\begin{lstlisting}
+reg char-whitespace?
+ 
+proc ::constcl::char-whitespace? {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [$char whitespace?]
+}
+\end{lstlisting}
+\index{char-upper-case?}
+\begin{lstlisting}
+reg char-upper-case?
+ 
+proc ::constcl::char-upper-case? {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [$char upper-case?]
+}
+\end{lstlisting}
+\index{char-lower-case?}
+\begin{lstlisting}
+reg char-lower-case?
+ 
+proc ::constcl::char-lower-case? {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [$char lower-case?]
+}
+\end{lstlisting}
+
+
+\textbf{char->integer}
+
+
+\textbf{integer->char}
+
+
+\texttt{char->integer} and \texttt{integer->char} convert between characters and their 16-bit numeric codes.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char->integer (public)} \\
+char & a character \\
+\textit{Returns:} & an integer \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(char->integer #\A)   =>  65
+\end{verbatim}
+\index{char->integer}
+\begin{lstlisting}
+reg char->integer
+ 
+proc ::constcl::char->integer {char} {
+  return [MkNumber [scan [$char char] %c]]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{integer->char (public)} \\
+int & an integer \\
+\textit{Returns:} & a character \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(integer->char 97)   =>  #\a
+\end{verbatim}
+\index{integer->char}
+\begin{lstlisting}
+reg integer->char
+ 
+proc ::constcl::integer->char {int} {
+  if {$int == 10} {
+    return [MkChar #\\newline]
+  } elseif {$int == 32} {
+    return [MkChar #\\space]
+  } else {
+    return [MkChar #\\[format %c [$int numval]]]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{char-upcase}
+
+
+\textbf{char-downcase}
+
+
+\texttt{char-upcase} and \texttt{char-downcase} alter the case of a character.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{char-upcase, char-downcase (public)} \\
+char & a character \\
+\textit{Returns:} & a character \\
+\hline
+\end{tabular}
+\index{char-upcase}
+\begin{lstlisting}
+reg char-upcase
+ 
+proc ::constcl::char-upcase {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [MkChar [
+    ::string toupper [$char value]]]
+}
+\end{lstlisting}
+\index{char-downcase}
+\begin{lstlisting}
+reg char-downcase
+ 
+proc ::constcl::char-downcase {char} {
+  check {char? $char} {
+    CHAR expected\n([pn] [$char show])
+  }
+  return [MkChar [
+    ::string tolower [$char value]]]
+}
+\end{lstlisting}
+\section{Control}
+\label{control}
+\index{control}
+
+
+This section concerns itself with procedures and the application of the same.
+
+
+A \texttt{Procedure} object is a closure\index{closure}\footnote{See \texttt{https://en.wikipedia.org/wiki/Closure\_(computer\_programming)}}, storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
+
+
+When a \texttt{Procedure} object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
+
+
+\textbf{Procedure} class
+
+\begin{lstlisting}
+catch { ::constcl::Procedure destroy }
+ 
+oo::class create ::constcl::Procedure {
+  superclass ::constcl::NIL
+  variable parms body env
+  constructor {p b e} {
+    set parms $p
+    set body $b
+    set env $e
+  }
+  method value {} {}
+  method write {handle} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $handle "#<proc-$num>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    return [self]
+  }
+  method call {args} {
+    ::constcl::eval $body [
+      ::constcl::Environment new $parms $args $env]
+  }
+ 
+}
+ 
+interp alias {} ::constcl::MkProcedure \
+  {} ::constcl::Procedure new
+\end{lstlisting}
+
+
+\textbf{procedure?}
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{procedure? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+reg procedure?
+ 
+proc ::constcl::procedure? {val} {
+  if {[typeof? $val Procedure] eq "#t"} {
+    return #t
+  } elseif {[::string match "::constcl::*" $val]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{apply}
+
+
+\texttt{apply} applies a procedure to a Lisp list of Lisp arguments.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{apply (public)} \\
+pr & a procedure \\
+vals & a Lisp list of Lisp values \\
+\textit{Returns:} & what pr returns \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(apply + (list 2 3))   =>  5
+\end{verbatim}
+\begin{lstlisting}
+reg apply
+ 
+proc ::constcl::apply {pr vals} {
+  check {procedure? $pr} {
+    PROCEDURE expected\n([pn] [$pr show] ...)
+  }
+  invoke $pr $vals
+}
+\end{lstlisting}
+
+
+\textbf{map}
+
+
+\texttt{map} iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The Lisp list of the results of the invocations is returned.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{map (public)} \\
+pr & a procedure \\
+args & some lists \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(map + '(1 2 3) '(5 6 7))   => (6 8 10)
+\end{verbatim}
+\begin{lstlisting}
+reg map
+ 
+proc ::constcl::map {pr args} {
+  check {procedure? $pr} {
+    PROCEDURE expected\n([pn] [$pr show] ...)
+  }
+  set arglists $args
+  for {set i 0} \
+    {$i < [llength $arglists]} \
+    {incr i} {
+    lset arglists $i [
+      splitlist [lindex $arglists $i]]
+  }
+  set res {}
+  for {set item 0} \
+    {$item < [llength [lindex $arglists 0]]} \
+    {incr item} {
+    set arguments {}
+    for {set arg 0} \
+      {$arg < [llength $arglists]} \
+      {incr arg} {
+      lappend arguments [
+        lindex $arglists $arg $item]
+    }
+    lappend res [invoke $pr [list {*}$arguments]]
+  }
+  return [list {*}$res]
+}
+\end{lstlisting}
+
+
+\textbf{for-each}
+
+
+\texttt{for-each} iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{for-each (public)} \\
+pr & a procedure \\
+args & some lists \\
+\textit{Returns:} & the empty list \\
+\hline
+\end{tabular}
+
+
+Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach it.)
+
+\begin{verbatim}
+(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)                        =>  #(0 1 4 9 16)
+\end{verbatim}
+\begin{lstlisting}
+reg for-each
+ 
+proc ::constcl::for-each {proc args} {
+  check {procedure? $proc} {
+    PROCEDURE expected\n([pn] [$proc show] ...)
+  }
+  set arglists $args
+  for {set i 0} \
+    {$i < [llength $arglists]} \
+    {incr i} {
+    lset arglists $i [
+      splitlist [lindex $arglists $i]]
+  }
+  for {set item 0} \
+    {$item < [llength [lindex $arglists 0]]} \
+    {incr item} {
+    set arguments {}
+    for {set arg 0} \
+      {$arg < [llength $arglists]} \
+      {incr arg} {
+      lappend arguments [
+        lindex $arglists $arg $item]
+    }
+    invoke $proc [list {*}$arguments]
+  }
+  return #NIL
+}
+\end{lstlisting}
+\section{Input and output}
+\label{input-and-output}
+\index{input and output}
+
+\begin{lstlisting}
+catch { ::constcl::Port destroy }
+ 
+oo::class create ::constcl::Port {
+  variable handle
+  constructor {args} {
+    if {[llength $args]} {
+      lassign $args handle
+    } else {
+      set handle #NIL
+    }
+  }
+  method handle {} {
+    set handle
+  }
+  method close {} {
+    close $handle
+    set handle #NIL
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+ 
+oo::class create ::constcl::InputPort {
+  superclass ::constcl::Port
+  variable handle
+  method open {name} {
+    try {
+      set handle [open [$name value] "r"]
+    } on error {} {
+      set handle #NIL
+      return -1
+    }
+    return $handle
+  }
+  method get {} {
+    read $handle 1
+  }
+  method eof {} {
+    eof $handle
+  }
+  method copy {} {
+    ::constcl::InputPort new $handle
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<input-port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+ 
+oo::class create ::constcl::StringInputPort {
+  superclass ::constcl::Port
+  variable buffer read_eof
+  constructor {str} {
+    set buffer $str
+    set read_eof 0
+  }
+  method open {name} {
+    try {
+      set handle [open [$name value] "r"]
+    } on error {} {
+      set handle #NIL
+      return -1
+    }
+    return $handle
+  }
+  method get {} {
+    if {[::string length $buffer] == 0} {
+      set read_eof 1
+      return #EOF
+    }
+    set c [::string index $buffer 0]
+    set buffer [::string range $buffer 1 end]
+    return $c
+  }
+  method eof {} {
+    if {$read_eof} {
+      return 1
+    } else {
+      return 0
+    }
+  }
+  method copy {} {
+    ::constcl::StringInputPort new $buffer
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<input-port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+ 
+oo::class create ::constcl::OutputPort {
+  superclass ::constcl::Port
+  variable handle
+  method open {name} {
+    try {
+      set handle [open [$name value] "w"]
+    } on error {} {
+      set handle #NIL
+      return -1
+    }
+    return $handle
+  }
+  method put {c} {
+    puts -nonewline $handle $c
+  }
+  method copy {} {
+    ::constcl::OutputPort new $handle
+  }
+  method write {h} {
+    regexp {(\d+)} [self] -> num
+    puts -nonewline $h "#<output-port-$num>"
+  }
+  method display {h} {
+    my write $h
+  }
+}
+ 
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+interp alias {} ::constcl::MkOutputPort \
+  {} ::constcl::OutputPort new
+ 
+set ::constcl::Input_port [
+  ::constcl::MkInputPort stdin]
+set ::constcl::Output_port [
+  ::constcl::MkOutputPort stdout]
+ 
+reg port?
+ 
+proc ::constcl::port? {val} {
+  typeof? $val Port
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg call-with-input-file
+ 
+proc ::constcl::call-with-input-file {string proc} {
+  set port [open-input-file $string]
+  set res [invoke $proc [list $port]]
+  close-input-port $port
+  return $res
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg call-with-output-file
+ 
+proc ::constcl::call-with-output-file {string proc} {
+  ::error "remove this line to use"
+  set port [open-output-file $string]
+  set res [invoke $proc [list $port]]
+  close-output-port $port
+  return $res
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg input-port?
+ 
+proc ::constcl::input-port? {val} {
+  typeof? $val InputPort
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg output-port?
+ 
+proc ::constcl::output-port? {val} {
+  typeof? $val OutputPort
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg current-input-port
+ 
+proc ::constcl::current-input-port {} {
+  return [$::constcl::Input_port copy]
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg current-output-port
+ 
+proc ::constcl::current-output-port {} {
+  return [$::constcl::Output_port copy]
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg with-input-from-file
+ 
+proc ::constcl::with-input-from-file {string thunk} {
+  set newport [open-input-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Input_port
+    set ::constcl::Input_port $newport
+    eval $thunk
+    set ::constcl::Input_port $oldport
+    close-input-port $newport
+  }
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg with-output-to-file
+ 
+proc ::constcl::with-output-to-file {string thunk} {
+  ::error "remove this line to use"
+  set newport [open-output-file $string]
+  if {[$newport handle] ne "#NIL"} {
+    set oldport $::constcl::Output_port
+    set ::constcl::Output_port $newport
+    eval $thunk
+    set ::constcl::Output_port $oldport
+    close-input-port $newport
+  }
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg open-input-file
+ 
+proc cnof {} {return "could not open file"}
+proc fae {} {return "file already exists"}
+ 
+proc ::constcl::open-input-file {filename} {
+  set p [MkInputPort]
+  $p open $filename
+  if {[$p handle] eq "#NIL"} {
+    error "open-input-file: [cnof] $filename"
+  }
+  return $p
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg open-output-file
+ 
+proc ::constcl::open-output-file {filename} {
+  ::error "remove this line to use"
+  if {[file exists $filename]} {
+    error "open-output-file: [fae] $filename"
+  }
+  set p [MkOutputPort]
+  $p open $filename
+  if {[$p handle] eq "#NIL"} {
+    error "open-output-file: [cnof] $filename"
+  }
+  return $p
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg close-input-port
+ 
+proc ::constcl::close-input-port {port} {
+  if {[$port handle] eq "stdin"} {
+    error "don't close the standard input port"
+  }
+  $port close
+}
+\end{lstlisting}
+\begin{lstlisting}
+reg close-output-port
+ 
+proc ::constcl::close-output-port {port} {
+  if {[$port handle] eq "stdout"} {
+    error "don't close the standard output port"
+  }
+  $port close
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::read-char {args} {
+    # TODO
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::peek-char {args} {
+    # TODO
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::char-ready? {args} {
+    # TODO
+}
+\end{lstlisting}
+
+
+\texttt{write} is implemented in the write\footnote{See page \pageref{output}} section.
+
+
+
+\texttt{display} is implemented in the write section.
+
+
+
+\texttt{newline} outputs a newline character. Especially helpful when using \texttt{display} for output, since it doesn't end lines with newline.
+
+\begin{lstlisting}
+reg newline
+ 
+proc ::constcl::newline {args} {
+  if {[llength $args]} {
+    lassign $args port
+  } else {
+    set port [current-output-port]
+  }
+  pe "(display #\\newline $port)"
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::write-char {args} {
+    # TODO
+}
+\end{lstlisting}
+
+
+\texttt{load} reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{load (public)} \\
+filename & a string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+reg load
+ 
+proc ::constcl::load {filename} {
+  set p [open-input-file $filename]
+  set n [read $p]
+  while {$n ne "#EOF"} {
+    eval $n
+    set n [read $p]
+  }
+  close-input-port $p
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::transcript-on {filename} {
+    # TODO
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::transcript-off {} {
+    # TODO
+}
+\end{lstlisting}
+\section{Pairs and lists}
+\label{pairs-and-lists}
+\index{pairs and lists}
+
+
+List processing is another of Lisp's great strengths.
+
+
+\textbf{Pair} class
+
+\index{Pair}
+\begin{lstlisting}
+catch { ::constcl::Pair destroy }
+ 
+oo::class create ::constcl::Pair {
+  superclass ::constcl::NIL
+  variable car cdr constant
+  constructor {a d} {
+    set car $a
+    set cdr $d
+    set constant 0
+  }
+  method name {} {}
+  method value {} {
+    my show
+  }
+  method car {} {
+    set car
+  }
+  method cdr {} {
+    set cdr
+  }
+  method set-car! {val} {
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
+    set car $val
+    self
+  }
+  method set-cdr! {val} {
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
+    set cdr $val
+    self
+  }
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    return $constant
+  }
+  method mutable? {} {
+    expr {$constant ? "#f" : "#t"}
+  }
+  method write {handle} {
+    puts -nonewline $handle "("
+    ::constcl::write-pair $handle [self]
+    puts -nonewline $handle ")"
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "(%s)" [::constcl::show-pair [self]]
+  }
+}
+ 
+ 
+interp alias {} ::constcl::MkPair \
+  {} ::constcl::Pair new
+\end{lstlisting}
+
+
+\textbf{pair?}
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{pair? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{pair?}
+\begin{lstlisting}
+reg pair?
+ 
+proc ::constcl::pair? {val} {
+  typeof? $val Pair
+}
+\end{lstlisting}
+
+
+\textbf{show-pair}
+
+
+Helper procedure to make a string representation of a list.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{show-pair (internal)} \\
+pair & a pair \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+\index{show-pair}
+\begin{lstlisting}
+proc ::constcl::show-pair {pair} {
+  # take an object and print the car
+  # and the cdr of the stored value
+  set str {}
+  set a [car $pair]
+  set d [cdr $pair]
+  # print car
+  ::append str [$a show]
+  if {[pair? $d] ne "#f"} {
+    # cdr is a cons pair
+    ::append str " "
+    ::append str [show-pair $d]
+  } elseif {[null? $d] ne "#f"} {
+    # cdr is nil
+    return $str
+  } else {
+    # it is an atom
+    ::append str " . "
+    ::append str [$d show]
+  }
+  return $str
+}
+\end{lstlisting}
+
+
+\textbf{cons}
+
+
+\texttt{cons} joins two values in a pair; useful in many operations such as pushing a new value onto a list.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{cons (public)} \\
+car & a Lisp value \\
+cdr & a Lisp value \\
+\textit{Returns:} & a pair \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(cons 'a 'b)              =>  (a . b)
+(cons 'a nil)             =>  (a)
+(cons 'a (cons 'b nil))   =>  (a b)
+\end{verbatim}
+\includegraphics{images/consing.png}
+\index{cons}
+\begin{lstlisting}
+reg cons
+ 
+proc ::constcl::cons {car cdr} {
+  MkPair $car $cdr
+}
+\end{lstlisting}
+
+
+\textbf{car}
+
+
+\texttt{car} gets the contents of the first cell in a pair.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{car (public)} \\
+pair & a pair \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(car '(a b))   =>  a
+\end{verbatim}
+\index{car}
+\begin{lstlisting}
+reg car
+ 
+proc ::constcl::car {pair} {
+  $pair car
+}
+\end{lstlisting}
+
+
+\textbf{cdr}
+
+
+\texttt{cdr} gets the contents of the second cell in a pair.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{cdr (public)} \\
+pair & a pair \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(cdr '(a b))   =>  (b)
+\end{verbatim}
+\index{cdr}
+\begin{lstlisting}
+reg cdr
+ 
+proc ::constcl::cdr {pair} {
+  $pair cdr
+}
+\end{lstlisting}
+
+
+\textbf{caar} to \textbf{cddddr}
+
+
+\texttt{car} and \texttt{cdr} can be combined to form 28 composite access operations.
+
+\index{caar}
+\begin{lstlisting}
+foreach ads {
+  aa
+  ad
+  da
+  dd
+  aaa
+  ada
+  daa
+  dda
+  aad
+  add
+  dad
+  ddd
+  aaaa
+  adaa
+  daaa
+  ddaa
+  aada
+  adda
+  dada
+  ddda
+  aaad
+  adad
+  daad
+  ddad
+  aadd
+  addd
+  dadd
+  dddd
+} {
+    reg c${ads}r
+ 
+    proc ::constcl::c${ads}r {pair} "
+        foreach c \[lreverse \[split $ads {}\]\] {
+            if {\$c eq \"a\"} {
+                set pair \[car \$pair\]
+            } else {
+                set pair \[cdr \$pair\]
+            }
+        }
+        return \$pair
+    "
+ 
+}
+\end{lstlisting}
+
+
+\textbf{set-car!}
+
+
+\texttt{set-car!} sets the contents of the first cell in a pair.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{set-car! (public)} \\
+pair & a pair \\
+val & a Lisp value \\
+\textit{Returns:} & a pair \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-car! pair val))                =>  (x . b)
+\end{verbatim}
+\index{set-car!}
+\begin{lstlisting}
+reg set-car!
+ 
+proc ::constcl::set-car! {pair val} {
+  $pair set-car! $val
+}
+\end{lstlisting}
+
+
+\textbf{set-cdr!}
+
+
+\texttt{set-cdr!} sets the contents of the second cell in a pair.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{set-cdr! (public)} \\
+pair & a pair \\
+val & a Lisp value \\
+\textit{Returns:} & a pair \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-cdr! pair val))                =>  (a . x)
+\end{verbatim}
+\index{set-cdr!}
+\begin{lstlisting}
+reg set-cdr!
+ 
+proc ::constcl::set-cdr! {pair val} {
+  $pair set-cdr! $val
+}
+\end{lstlisting}
+
+
+\textbf{list?}
+
+
+The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{list?}
+\begin{lstlisting}
+reg list?
+ 
+proc ::constcl::list? {val} {
+  set visited {}
+  if {[null? $val] ne "#f"} {
+      return #t
+  } elseif {[pair? $val] ne "#f"} {
+      return [listp $val]
+  } else {
+      return #f
+  }
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{listp (internal)} \\
+pair & a pair \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{listp}
+\begin{lstlisting}
+proc ::constcl::listp {pair} {
+  upvar visited visited
+  if {$pair in $visited} {
+    return #f
+  }
+  lappend visited $pair
+  if {[null? $pair] ne "#f"} {
+    return #t
+  } elseif {[pair? $pair] ne "#f"} {
+    return [listp [cdr $pair]]
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{list}
+
+
+\texttt{list} constructs a Lisp list from a number of values.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list (public)} \\
+args & some Lisp values \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(list 1 2 3)   =>  (1 2 3)
+\end{verbatim}
+\index{list}
+\begin{lstlisting}
+reg list
+ 
+proc ::constcl::list {args} {
+  if {[llength $args] == 0} {
+    return #NIL
+  } else {
+    set prev #NIL
+    foreach obj [lreverse $args] {
+      set prev [cons $obj $prev]
+    }
+    return $prev
+  }
+}
+\end{lstlisting}
+
+
+\textbf{length}
+
+
+\texttt{length} reports the length of a Lisp list.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{length (public)} \\
+pair & a pair \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(length '(a b c d))   =>  4
+\end{verbatim}
+\index{length}
+\begin{lstlisting}
+reg length
+ 
+proc ::constcl::length {pair} {
+  check {list? $pair} {
+    LIST expected\n([pn] lst)
+  }
+  MkNumber [length-helper $pair]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{length-helper (internal)} \\
+pair & a pair \\
+\textit{Returns:} & a Tcl number \\
+\hline
+\end{tabular}
+\index{length-helper}
+\begin{lstlisting}
+proc ::constcl::length-helper {pair} {
+  if {[null? $pair] ne "#f"} {
+    return 0
+  } else {
+    return [expr {1 +
+      [length-helper [cdr $pair]]}]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{append}
+
+
+\texttt{append} joins lists together.
+
+
+
+Example:
+
+\begin{verbatim}
+(append '(a b) '(c d))   =>  (a b c d)
+\end{verbatim}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{append (public)} \\
+args & some lists \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+\index{append}
+\begin{lstlisting}
+reg append
+ 
+proc ::constcl::append {args} {
+  set prev [lindex $args end]
+  foreach r [lreverse [lrange $args 0 end-1]] {
+    check {list? $r} {
+      LIST expected\n([pn] [$r show])
+    }
+    set prev [copy-list $r $prev]
+  }
+  set prev
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{copy-list (internal)} \\
+pair & a pair \\
+next & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+\index{copy-list}
+\begin{lstlisting}
+proc ::constcl::copy-list {pair next} {
+  # TODO only fresh conses in the direct chain to NIL
+  if {[null? $pair] ne "#f"} {
+    set next
+  } elseif {[null? [cdr $pair]] ne "#f"} {
+    cons [car $pair] $next
+  } else {
+    cons [car $pair] [copy-list [cdr $pair] $next]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{reverse}
+
+
+\texttt{reverse} produces a reversed copy of a Lisp list.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{reverse (public)} \\
+vals & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(reverse '(a b c))   =>  (c b a)
+\end{verbatim}
+\index{reverse}
+\begin{lstlisting}
+reg reverse
+ 
+proc ::constcl::reverse {vals} {
+  list {*}[lreverse [splitlist $vals]]
+}
+\end{lstlisting}
+
+
+\textbf{list-tail}
+
+
+Given a list index, \texttt{list-tail} yields the sublist starting from that index.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list-tail (public)} \\
+vals & a Lisp list of Lisp values \\
+k & a number \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (k 3))
+  (list-tail lst k))                =>  (d e f)
+\end{verbatim}
+\index{list-tail}
+\begin{lstlisting}
+reg list-tail
+ 
+proc ::constcl::list-tail {vals k} {
+  if {[zero? $k] ne "#f"} {
+    return $vals
+  } else {
+    list-tail [cdr $vals] [- $k #1]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{list-ref}
+
+
+\texttt{list-ref} yields the list item at a given index.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list-ref (public)} \\
+vals & a Lisp list of Lisp values \\
+k & a number \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (k 3))
+  (list-ref lst k))                 =>  d
+\end{verbatim}
+\index{list-ref}
+\begin{lstlisting}
+reg list-ref
+ 
+proc ::constcl::list-ref {vals k} {
+  car [list-tail $vals $k]
+}
+\end{lstlisting}
+
+
+\textbf{memq}
+
+
+\textbf{memv}
+
+
+\textbf{member}
+
+
+\texttt{memq}, \texttt{memv}, and \texttt{member} return the sublist starting with a given item, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{memq (public)} \\
+val1 & a Lisp value \\
+val2 & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (val 'd))
+  (memq val lst))                      =>  (d e f)
+\end{verbatim}
+\index{memq}
+\begin{lstlisting}
+reg memq
+ 
+proc ::constcl::memq {val1 val2} {
+  return [member-proc eq? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{memv (public)} \\
+val1 & a Lisp value \\
+val2 & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{memv}
+\begin{lstlisting}
+reg memv
+ 
+proc ::constcl::memv {val1 val2} {
+  return [member-proc eqv? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{member (public)} \\
+val1 & a Lisp value \\
+val2 & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{member}
+\begin{lstlisting}
+reg member
+ 
+proc ::constcl::member {val1 val2} {
+  return [member-proc equal? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{member-proc (internal)} \\
+epred & an equivalence predicate \\
+val1 & a Lisp value \\
+val2 & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{member-proc}
+\begin{lstlisting}
+proc ::constcl::member-proc {epred val1 val2} {
+  switch $epred {
+    eq? { set name "memq" }
+    eqv? { set name "memv" }
+    equal? { set name "member" }
+  }
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
+  if {[null? $val2] ne "#f"} {
+    return #f
+  } elseif {[pair? $val2] ne "#f"} {
+    if {[$epred $val1 [car $val2]] ne "#f"} {
+      return $val2
+    } else {
+      return [member-proc $epred $val1 [cdr $val2]]
+    }
+  }
+}
+\end{lstlisting}
+
+
+\textbf{assq}
+
+
+\textbf{assv}
+
+
+\textbf{assoc}
+
+
+\texttt{assq}, \texttt{assv}, and \texttt{assoc} return the associative item marked with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the form of lookup table known as an association list, or \emph{alist}.
+
+
+Example:
+
+\begin{verbatim}
+(define e '((a 1) (b 2) (c 3)))
+(assq 'a e)                       => (a 1)
+\end{verbatim}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{assq (public)} \\
+val1 & a Lisp value \\
+val2 & an association list \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{assq}
+\begin{lstlisting}
+reg assq
+ 
+proc ::constcl::assq {val1 val2} {
+  return [assoc-proc eq? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{assv (public)} \\
+val1 & a Lisp value \\
+val2 & an association list \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{assv}
+\begin{lstlisting}
+reg assv
+ 
+proc ::constcl::assv {val1 val2} {
+  return [assoc-proc eqv? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{assoc (public)} \\
+val1 & a Lisp value \\
+val2 & an association list \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{assoc}
+\begin{lstlisting}
+reg assoc
+ 
+proc ::constcl::assoc {val1 val2} {
+  return [assoc-proc equal? $val1 $val2]
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{assoc-proc (internal)} \\
+epred & an equivalence predicate \\
+val1 & a Lisp value \\
+val2 & an association list \\
+\textit{Returns:} & a Lisp list of values OR \#f \\
+\hline
+\end{tabular}
+\index{assoc-proc}
+\begin{lstlisting}
+proc ::constcl::assoc-proc {epred val1 val2} {
+  switch $epred {
+    eq? { set name "assq" }
+    eqv? { set name "assv" }
+    equal? { set name "assoc" }
+  }
+  check {list? $val2} {
+    LIST expected\n($name [$val1 show] [$val2 show])
+  }
+  if {[null? $val2] ne "#f"} {
+    return #f
+  } elseif {[pair? $val2] ne "#f"} {
+    if {[pair? [car $val2]] ne "#f" && 
+      [$epred $val1 [caar $val2]] ne "#f"} {
+      return [car $val2]
+    } else {
+      return [assoc-proc $epred $val1 [cdr $val2]]
+    }
+  }
+}
+\end{lstlisting}
+\section{Strings}
+\label{strings}
+\index{strings}
+
+
+Procedures for dealing with strings of characters.
+
+
+\textbf{String} class
+
+
+Strings have the internal representation of a vector of character objects, with the data elements of the vector address of the first element, and the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+
+
+As a ConsTcl extension, a \texttt{\textbackslash\ n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash\ n} on write.
+
+\index{String}
+\begin{lstlisting}
+oo::class create ::constcl::String {
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
+    set len [::string length $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt [split $v {}] {
+      if {$elt eq " "} {
+        set c #\\space
+      } elseif {$elt eq "\n"} {
+        set c #\\newline
+      } else {
+        set c #\\$elt
+      }
+      lset ::constcl::vectorSpace $idx \
+        [::constcl::MkChar $c]
+      incr idx
+    }
+    set data [
+      ::constcl::cons [N $vsa] [N $len]]
+    set constant 0
+  }
+  method = {str} {
+    ::string equal [my value] [$str value]
+  }
+  method cmp {str} {
+    ::string compare [my value] [$str value]
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
+    }
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[::constcl::car $data] numval]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    join [lmap c [my store] {$c char}] {}
+  }
+  method set! {k c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 ||
+        $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[::constcl::car $data] numval]
+      lset ::constcl::vectorSpace $k+$base $c
+    }
+    return [self]
+  }
+  method fill! {c} {
+    if {[my constant]} {
+      ::error "string is constant"
+    } else {
+      set base [[::constcl::car $data] numval]
+      set len [[my length] numval]
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
+        lset ::constcl::vectorSpace $idx $c
+      }
+    }
+    return [self]
+  }
+  method substring {from to} {
+    join [lmap c [lrange [my store] \
+      [$from numval] [$to numval]] {$c char}] {}
+  }
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method external {} {
+    return "\"[
+      string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
+  }
+  method write {handle} {
+    puts -nonewline $handle [my external]
+  }
+  method display {handle} {
+    puts -nonewline $handle [my value]
+  }
+  method show {} {
+    my external
+  }
+}
+ 
+interp alias {} ::constcl::MkString \
+  {} ::constcl::String new
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{string?}
+\begin{lstlisting}
+reg string?
+ 
+proc ::constcl::string? {val} {
+  typeof? $val String
+}
+\end{lstlisting}
+
+
+\textbf{make-string}
+
+
+\texttt{make-string} creates a string of \emph{k} characters, optionally filled with \emph{char} characters. If \emph{char} is omitted, the string will be filled with space characters.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{make-string (public)} \\
+k & a number \\
+?char? & a character \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((k 5))
+  (make-string k))        =>  "     "
+(let ((k 5) (char #\A))
+  (make-string k char))   =>  "AAAAA"
+\end{verbatim}
+\index{make-string}
+\begin{lstlisting}
+reg make-string
+ 
+proc ::constcl::make-string {k args} {
+  if {[llength $args] == 0} {
+    return [MkString [::string repeat " " \
+      [$k numval]]]
+  } else {
+    lassign $args char
+    return [MkString [::string repeat \
+      [$char char] [$k numval]]]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{string}
+
+
+\texttt{string} constructs a string from a number of Lisp characters.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string (public)} \\
+args & some characters \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(string #\f #\o #\o)   =>  "foo"
+\end{verbatim}
+\index{string}
+\begin{lstlisting}
+reg string
+ 
+proc ::constcl::string {args} {
+  set str {}
+  foreach char $args {
+    check {::constcl::char? $char} {
+      CHAR expected\n([pn] [lmap c $args \
+        {$c show}])
+    }
+    ::append str [$char char]
+  }
+  return [MkString $str]
+}
+\end{lstlisting}
+
+
+\textbf{string-length}
+
+
+\texttt{string-length} reports a string's length.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-length (public)} \\
+str & a string \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(string-length "foobar")   => 6
+\end{verbatim}
+\index{string-length}
+\begin{lstlisting}
+reg string-length
+ 
+proc ::constcl::string-length {str} {
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [$str length]
+}
+\end{lstlisting}
+
+
+\textbf{string-ref}
+
+
+\texttt{string-ref} yields the \emph{k}-th character (0-based) in \emph{str}.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-ref (public)} \\
+str & a string \\
+k & a number \\
+\textit{Returns:} & a character \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(string-ref "foobar" 3)   => #\b
+\end{verbatim}
+\index{string-ref}
+\begin{lstlisting}
+reg string-ref
+ 
+proc ::constcl::string-ref {str k} {
+  check {::constcl::string? $str} {
+    STRING expected\n([pn] [$str show] \
+      [$k show])
+  }
+  check {::constcl::number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show])
+  }
+  return [$str ref $k]
+}
+\end{lstlisting}
+
+
+\textbf{string-set!}
+
+
+\texttt{string-set!} replaces the character at \emph{k} with \emph{char} in a non-constant string.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-set! (public)} \\
+str & a string \\
+k & a number \\
+char & a character \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string #\f #\o #\o))
+      (k 2)
+      (char #\x))
+  (string-set! str k char))         =>  "fox"
+\end{verbatim}
+\index{string-set!}
+\begin{lstlisting}
+reg string-set!
+ 
+proc ::constcl::string-set! {str k char} {
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] [$k show] \
+      [$char show])
+  }
+  check {number? $k} {
+    Exact INTEGER expected\n([pn] [$str show] \
+      [$k show] [$char show])
+  }
+  check {char? $char} {
+    CHAR expected\n([pn] [$str show] [$k show] \
+      [$char show])
+  }
+  $str set! $k $char
+  return $str
+}
+\end{lstlisting}
+
+
+\textbf{string=?}, \textbf{string-ci=?}
+
+
+\textbf{string<?}, \textbf{string-ci<?}
+
+
+\textbf{string>?}, \textbf{string-ci>?}
+
+
+\textbf{string<=?}, \textbf{string-ci<=?}
+
+
+\textbf{string>=?}, \textbf{string-ci>=?}
+
+
+\texttt{string=?}, \texttt{string<?}, \texttt{string>?}, \texttt{string<=?}, \texttt{string>=?} and their case insensitive variants \texttt{string-ci=?}, \texttt{string-ci<?}, \texttt{string-ci>?}, \texttt{string-ci<=?}, \texttt{string-ci>=?} compare strings.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string=?, string<?, string>?, string<=?, string>=? (public)} \\
+str1 & a string \\
+str2 & a string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-ci=?, string-ci<?, string-ci>? (public)} \\
+str1 & a string \\
+str2 & a string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-ci<=?, string-ci>=? (public)} \\
+str1 & a string \\
+str2 & a string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{string=!}
+\begin{lstlisting}
+reg string=?
+ 
+proc ::constcl::string=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[$str1 value] eq [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string-ci=!}
+\begin{lstlisting}
+reg string-ci=?
+ 
+proc ::constcl::string-ci=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] eq
+      [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string<!}
+\begin{lstlisting}
+reg string<?
+ 
+proc ::constcl::string<? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[$str1 value] < [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string-ci<!}
+\begin{lstlisting}
+reg string-ci<?
+ 
+proc ::constcl::string-ci<? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] <
+      [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string>!}
+\begin{lstlisting}
+reg string>?
+ 
+proc ::constcl::string>? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[$str1 value] > [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string-ci>!}
+\begin{lstlisting}
+reg string-ci>?
+ 
+proc ::constcl::string-ci>? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] >
+      [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string<=!}
+\begin{lstlisting}
+reg string<=?
+ 
+proc ::constcl::string<=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[$str1 value] <= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string-ci<=!}
+\begin{lstlisting}
+reg string-ci<=?
+ 
+proc ::constcl::string-ci<=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] <=
+      [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string>=!}
+\begin{lstlisting}
+reg string>=?
+ 
+proc ::constcl::string>=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[$str1 value] >= [$str2 value]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\index{string-ci>=!}
+\begin{lstlisting}
+reg string-ci>=?
+ 
+proc ::constcl::string-ci>=? {str1 str2} {
+  check {string? $str1} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  check {string? $str2} {
+    STRING expected\n([pn] [$str1 show] \
+      [$str2 show])
+  }
+  if {[::string tolower [$str1 value]] >=
+      [::string tolower [$str2 value]]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{substring}
+
+
+\texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends at \emph{end}.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{substring (public)} \\
+str & a string \\
+start & a number \\
+end & a number \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(substring "foobar" 2 4)   => "oba"
+\end{verbatim}
+\index{substring}
+\begin{lstlisting}
+reg substring
+ 
+proc ::constcl::substring {str start end} {
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] \
+      [$start show] [$end show])
+  }
+  check {number? $start} {
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
+  }
+  check {number? $end} {
+    NUMBER expected\n([pn] [$str show] \
+      [$start show] [$end show])
+  }
+  return [MkString [$str substring $start $end]]
+}
+\end{lstlisting}
+
+
+\textbf{string-append}
+
+
+\texttt{string-append} joins strings together.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-append (public)} \\
+args & some strings \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(string-append "foo" "bar")   =>  "foobar"
+\end{verbatim}
+\index{string-append}
+\begin{lstlisting}
+reg string-append
+ 
+proc ::constcl::string-append {args} {
+    MkString [::append --> {*}[lmap arg $args {
+      $arg value
+    }]]
+}
+\end{lstlisting}
+
+
+\textbf{string->list}
+
+
+\texttt{string->list} converts a string to a Lisp list of characters.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string->list (public)} \\
+str & a string \\
+\textit{Returns:} & a Lisp list of characters \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(string->list "foo")   =>  (#\f #\o #\o)
+\end{verbatim}
+\index{string->list}
+\begin{lstlisting}
+reg string->list
+ 
+proc ::constcl::string->list {str} {
+  list {*}[$str store]
+}
+\end{lstlisting}
+
+
+\textbf{list->string}
+
+
+\texttt{list->string} converts a Lisp list of characters to a string.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list->string (public)} \\
+list & a Lisp list of characters \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(list->string '(#\1 #\2 #\3))   => "123"
+\end{verbatim}
+\index{list->string}
+\begin{lstlisting}
+reg list->string
+ 
+proc ::constcl::list->string {list} {
+  MkString [::append --> {*}[
+    lmap c [splitlist $list] {$c char}]]
+}
+\end{lstlisting}
+
+
+\textbf{string-copy}
+
+
+\texttt{string-copy} makes a copy of a string.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-copy (public)} \\
+str & a string \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string-copy "abc"))
+      (k 0)
+      (char #\x))
+  (string-set! str k char))       =>  "xbc"
+\end{verbatim}
+\index{string-copy}
+\begin{lstlisting}
+reg string-copy
+ 
+proc ::constcl::string-copy {str} {
+  check {string? $str} {
+    STRING expected\n([pn] [$str show])
+  }
+  return [MkString [$str value]]
+}
+\end{lstlisting}
+
+
+\textbf{string-fill!}
+
+
+\texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string-fill! (public)} \\
+str & a string \\
+char & a character \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string-copy "foobar"))
+      (char #\X))
+  (string-fill! str char))           =>  "XXXXXX"
+\end{verbatim}
+\index{string-fill!}
+\begin{lstlisting}
+reg string-fill!
+ 
+proc ::constcl::string-fill! {str char} {
+  check {string? $str} {
+    STRING expected\n([pn] [$str show] \
+      [$char show])
+  }
+  $str fill! $char
+  return $str
+}
+\end{lstlisting}
+\section{Symbols}
+\label{symbols}
+\index{symbols}
+
+
+Symbols are like little strings that are used to refer to things (variables, including procedure names, etc) or for comparing against each other.
+
+
+\textbf{Symbol} class
+
+\index{Symbol}
+\begin{lstlisting}
+oo::class create ::constcl::Symbol {
+  superclass ::constcl::NIL
+  variable name caseconstant
+  constructor {n} {
+    if {   no &&   $n eq {}} {
+      ::error "a symbol must have a name"
+    }
+    ::constcl::idcheck $n
+    set name $n
+    set caseconstant 0
+  }
+  method name {} {
+    set name
+  }
+  method value {} {
+    set name
+  }
+  method = {symname} {
+    expr {$name eq $symname}
+  }
+  method mkconstant {} {}
+  method constant {} {
+    return 1
+  }
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+  method case-constant {} {
+    set caseconstant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my name]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    set name
+  }
+}
+ 
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
+ 
+proc ::constcl::MkSymbol {n} {
+  if {[dict exists $::constcl::symbolTable $n]} {
+    return [dict get $::constcl::symbolTable $n]
+  } else {
+    set sym [::constcl::Symbol new $n]
+    dict set ::constcl::symbolTable $n $sym
+    return $sym
+  }
+}
+interp alias {} S {} ::constcl::MkSymbol
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{symbol? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{symbol?}
+\begin{lstlisting}
+reg symbol? ::constcl::symbol?
+ 
+proc ::constcl::symbol? {val} {
+  typeof? $val Symbol
+}
+\end{lstlisting}
+
+
+\textbf{symbol->string}
+
+
+\texttt{symbol->string} yields a string consisting of the symbol name, usually lower-cased.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{symbol->string (public)} \\
+sym & a symbol \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+\index{symbol->string}
+\begin{lstlisting}
+reg symbol->string ::constcl::symbol->string
+ 
+proc ::constcl::symbol->string {sym} {
+  check {symbol? $sym} {
+    SYMBOL expected\n([pn] [$sym show])
+  }
+  if {![$sym case-constant]} {
+    set str [MkString [
+      ::string tolower [$sym name]]]
+  } else {
+    set str [MkString [$sym name]]
+  }
+  $str mkconstant
+  return $str
+}
+\end{lstlisting}
+
+
+Example:
+
+\begin{verbatim}
+(let ((sym 'Foobar))
+  (symbol->string sym))   =>  "foobar"
+\end{verbatim}
+
+
+\textbf{string->symbol}
+
+
+\texttt{string->symbol} creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{string->symbol (public)} \\
+str & a string \\
+\textit{Returns:} & a symbol \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(define sym (let ((str "Foobar"))
+              (string->symbol str)))
+sym                                    =>  Foobar
+(symbol->string sym)                   =>  "Foobar"
+\end{verbatim}
+\index{string->symbol}
+\begin{lstlisting}
+reg string->symbol ::constcl::string->symbol
+ 
+proc ::constcl::string->symbol {str} {
+  check {string? $str} {
+    STRING expected\n([pn] [$obj show])
+  }
+  set sym [MkSymbol [$str value]]
+  $sym make-case-constant
+  return $sym
+}
+\end{lstlisting}
+\section{Vectors}
+\label{vectors}
+\index{vectors}
+
+
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers.
+
+
+The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length minus one.
+
+
+\textbf{Vector} class
+
+\index{Vector}
+\begin{lstlisting}
+oo::class create ::constcl::Vector {
+  superclass ::constcl::NIL
+  variable data constant
+  constructor {v} {
+    set len [llength $v]
+    set vsa [::constcl::vsAlloc $len]
+    set idx $vsa
+    foreach elt $v {
+      lset ::constcl::vectorSpace $idx $elt
+      incr idx
+    }
+    set data [::constcl::cons [N $vsa] [N $len]]
+    set constant 0
+  }
+  method baseadr {} {
+    ::constcl::car $data
+  }
+  method length {} {
+    ::constcl::cdr $data
+  }
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
+    }
+    lindex [my store] $k
+  }
+  method store {} {
+    set base [[my baseadr] numval]
+    set end [expr {[[my length] numval] +
+      $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+  method value {} {
+    my store
+  }
+  method set! {k obj} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[my baseadr] numval]
+      lset ::constcl::vectorSpace $k+$base $obj
+    }
+    return [self]
+  }
+  method fill! {val} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set base [[my baseadr] numval]
+      set len [[my length] numval]
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
+        lset ::constcl::vectorSpace $idx $val
+      }
+    }
+    return [self]
+  }
+  method mkconstant {} {
+    set constant 1
+  }
+  method constant {} {
+    set constant
+  }
+  method write {handle} {
+    puts -nonewline $handle [my show]
+  }
+  method display {handle} {
+    my write $handle
+  }
+  method show {} {
+    format "#(%s)" [
+      join [lmap val [my value] {$val show}]]
+  }
+}
+ 
+interp alias {} ::constcl::MkVector \
+  {} ::constcl::Vector new
+\end{lstlisting}
+
+
+\textbf{vector?}
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{vector?}
+\begin{lstlisting}
+reg vector? ::constcl::vector?
+ 
+proc ::constcl::vector? {val} {
+  typeof? $val Vector
+}
+\end{lstlisting}
+
+
+\textbf{make-vector}
+
+
+\texttt{make-vector} creates a vector with a given length and optionally a fill value. If a fill value isn't given, the empty list will be used.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{make-vector? (public)} \\
+k & a number \\
+?fill? & a Lisp value \\
+\textit{Returns:} & a vector \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((k 3))
+  (make-vector k))        =>  #(() () ())
+(let ((k 3) (fill #\A))
+  (make-vector k fill))   =>  #(#\A #\A #\A)
+\end{verbatim}
+\index{make-vector}
+\begin{lstlisting}
+reg make-vector ::constcl::make-vector
+ 
+proc ::constcl::make-vector {k args} {
+  if {[llength $args] == 0} {
+    set fill #NIL
+  } else {
+    lassign $args fill
+  }
+  MkVector [lrepeat [$k numval] $fill]
+}
+\end{lstlisting}
+
+
+\textbf{vector}
+
+
+Given a number of Lisp values, \texttt{vector} creates a vector containing them.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector (public)} \\
+args & some Lisp values \\
+\textit{Returns:} & a vector \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(vector 'a 'b 'c)   =>  #(a b c)
+\end{verbatim}
+\index{vector}
+\begin{lstlisting}
+reg vector ::constcl::vector
+ 
+proc ::constcl::vector {args} {
+  MkVector $args
+}
+\end{lstlisting}
+
+
+\textbf{vector-length}
+
+
+\texttt{vector-length} returns the length of a vector.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector-length (public)} \\
+vec & a vector \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(vector-length #(a b c))   =>  3
+\end{verbatim}
+\index{vector-length}
+\begin{lstlisting}
+reg vector-length
+ 
+proc ::constcl::vector-length {vec} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show])
+  }
+  return [$vec length]
+}
+\end{lstlisting}
+
+
+\textbf{vector-ref}
+
+
+\texttt{vector-ref} returns the element of \emph{vec} at index \emph{k} (0-based).
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector-ref (public)} \\
+vec & a vector \\
+k & a number \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((vec #(a b c)) (k 1))
+  (vector-ref vec k))          =>  b
+\end{verbatim}
+\index{vector-ref}
+\begin{lstlisting}
+reg vector-ref ::constcl::vector-ref
+ 
+proc ::constcl::vector-ref {vec k} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec ref $k]
+}
+\end{lstlisting}
+
+
+\textbf{vector-set!}
+
+
+\texttt{vector-set!}, for a non-constant vector, sets the element at index \_k\_ to \_val\_.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector-set! (public)} \\
+vec & a vector \\
+k & a number \\
+val & a Lisp value \\
+\textit{Returns:} & a vector \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(let ((vec #(a b c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  *error*
+(let ((vec (vector 'a 'b 'c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  #(a x c)
+\end{verbatim}
+\index{vector-set!}
+\begin{lstlisting}
+reg vector-set! ::constcl::vector-set!
+ 
+proc ::constcl::vector-set! {vec k val} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] [$k show])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec show] [$k show])
+  }
+  return [$vec set! $k $val]
+}
+\end{lstlisting}
+
+
+\textbf{vector->list}
+
+
+\texttt{vector->list} converts a vector value to a Lisp list.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector->list (public)} \\
+vec & a vector \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(vector->list #(a b c))   =>  (a b c)
+\end{verbatim}
+\index{vector->list}
+\begin{lstlisting}
+reg vector->list ::constcl::vector->list
+ 
+proc ::constcl::vector->list {vec} {
+  list {*}[$vec value]
+}
+\end{lstlisting}
+
+
+\textbf{list->vector}
+
+
+\texttt{list->vector} converts a Lisp list value to a vector.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{list->vector (public)} \\
+list & a Lisp list of Lisp values \\
+\textit{Returns:} & a vector \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(list->vector '(1 2 3))   =>  #(1 2 3)
+\end{verbatim}
+
+VB( (list->vector '(1 2 3)) => \#(1 2 3) VB)
+
+\index{list->vector}
+\begin{lstlisting}
+reg list->vector ::constcl::list->vector
+ 
+proc ::constcl::list->vector {list} {
+  vector {*}[splitlist $list]
+}
+\end{lstlisting}
+
+
+\textbf{vector-fill!}
+
+
+\texttt{vector-fill!} fills a non-constant vector with a given value.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{vector-fill! (public)} \\
+vec & a vector \\
+fill & a Lisp value \\
+\textit{Returns:} & a vector \\
+\hline
+\end{tabular}
+
+
+Example:
+
+\begin{verbatim}
+(define vec (vector 'a 'b 'c))
+(vector-fill! vec 'x)             =>  #(x x x)
+vec                               =>  #(x x x)
+\end{verbatim}
+\index{vector-fill!}
+\begin{lstlisting}
+reg vector-fill! ::constcl::vector-fill!
+ 
+proc ::constcl::vector-fill! {vec fill} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec show] \
+      [$fill show])
+  }
+  $vec fill! $fill
+}
+\end{lstlisting}
+\chapter{Identifier validation}
+\label{identifier-validation}
+
+
+\textbf{idcheckinit}
+
+
+\textbf{idchecksubs}
+
+
+\textbf{idcheck}
+
+
+\textbf{varcheck}
+
+
+Some routines for checking if a string is a valid identifier. \texttt{idcheckinit} checks the first character, \texttt{idchecksubs} checks the rest. \texttt{idcheck} calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which \texttt{varcheck} checks, for a set of keywords given in the standard.
+
+\index{idcheckinit}
+\begin{lstlisting}
+proc ::constcl::idcheckinit {init} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    return true
+  } else {
+    return false
+  }
+}
+\end{lstlisting}
+\index{idchecksubs}
+\begin{lstlisting}
+proc ::constcl::idchecksubs {subs} {
+  foreach c [split $subs {}] {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+      return false
+    }
+  }
+  return true
+}
+\end{lstlisting}
+\index{idcheck}
+\begin{lstlisting}
+proc ::constcl::idcheck {sym} {
+  if {$sym eq {}} {return $sym}
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
+    ::error "Identifier expected ($sym)"
+  }
+  set sym
+}
+\end{lstlisting}
+\index{varcheck}
+\begin{lstlisting}
+proc ::constcl::varcheck {sym} {
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
+  }
+  return $sym
+}
+\end{lstlisting}
+\chapter{S9fES}
+\label{s9fes}
+
+
+I've begun porting parts of S9fES (\emph{Scheme 9 from Empty Space}, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+
+I've already mixed this up with my own stuff.
+
+\begin{lstlisting}
+proc ::constcl::new-atom {pa pd} {
+  cons3 $pa $pd $::constcl::ATOM_TAG
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc cons3 {pcar pcdr ptag} {
+  # TODO counters
+  set n [MkPair $pcar $pcdr]
+  $n settag $ptag
+  return $n
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::xread {} {
+  if {[$::constcl::InputPort handle] eq "#NIL"} {
+    error "input port is not open"
+  }
+  set ::constcl::Level 0
+  return [read-form 0]
+}
+\end{lstlisting}
+\begin{lstlisting}
+proc ::constcl::read_c_ci {} {
+  tolower [
+    ::read [
+      $::constcl::Input_port handle] 1]]
+}
+\end{lstlisting}
+\chapter{Environment class and objects}
+\label{environment-class-and-objects}
+
+
+The class for environments is called \texttt{Environment}. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+
+
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+
+
+\textbf{Environment} class
+
+\index{Environment}
+\begin{lstlisting}
+catch { ::constcl::Environment destroy }
+ 
+oo::class create ::constcl::Environment {
+  variable bindings outer_env
+  constructor {syms vals {outer {}}} {
+    set bindings [dict create]
+    if {[::constcl::null? $syms] eq "#t"} {
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
+    } elseif {[::constcl::list? $syms] eq "#t"} {
+      set syms [::constcl::splitlist $syms]
+      set symsn [llength $syms]
+      set valsn [llength $vals]
+      if {$symsn != $valsn} {
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"]
+      }
+      foreach sym $syms val $vals {
+        my set $sym $val
+      }
+    } elseif {[::constcl::symbol? $syms] eq "#t"} {
+      my set $syms [::constcl::list {*}$vals]
+    } else {
+      while true {
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my set [::constcl::car $syms] \
+          [lindex $vals 0]
+        set vals [lrange $vals 1 end]
+        if {[
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]] eq "#t"} {
+          my set [::constcl::cdr $syms] \
+            [::constcl::list {*}$vals]
+          set vals {}
+          break
+        } else {
+          set syms [::constcl::cdr $syms]
+        }
+      }
+    }
+    set outer_env $outer
+  }
+  method find {sym} {
+    if {$sym in [dict keys $bindings]} {
+      self
+    } else {
+      $outer_env find $sym
+    }
+  }
+  method get {sym} {
+    dict get $bindings $sym
+  }
+  method set {sym val} {
+    dict set bindings $sym $val
+  }
+}
+\end{lstlisting}
+\section{Lexical scoping}
+\label{lexical-scoping}
+\index{lexical scoping}
+
+
+Example:
+
+\begin{verbatim}
+ConsTcl> (define (circle-area r) (* pi (* r r)))
+ConsTcl> (circle-area 10)
+314.1592653589793
+\end{verbatim}
+
+
+During a call to the procedure \texttt{circle-area}, the symbol \texttt{r} is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of \texttt{r}. The solution is to use separate (but linked) environments, making \texttt{r}'s binding a \emph{local variable}\footnote{See \texttt{https://en.wikipedia.org/wiki/Local\_variable}} in its own environment, which the procedure will be evaluated in. The symbols \texttt{*} and \texttt{pi} will still be available through the local environment's link to the outer global environment. This is all part of \emph{lexical scoping}\footnote{See \texttt{https://en.wikipedia.org/wiki/Scope\_(computer\_science)\#Lexical\_scope}}.
+
+
+In the first image, we see the global environment before we call \texttt{circle-area} (and also the empty null environment which the global environment links to):
+
+\includegraphics{images/env1.png}
+
+During the call. Note how the global \texttt{r} is shadowed by the local one, and how the local environment links to the global one to find \texttt{*} and \texttt{pi}.
+
+\includegraphics{images/env2.png}
+
+After the call, we are back to the first state again.
+
+\includegraphics{images/env1.png}
+\chapter{Initialization}
+\label{initialization}
+
+
+Initialize the memory space for vector contents.
+
+\begin{lstlisting}
+set ::constcl::vectorSpace [lrepeat 1024 #NIL]
+ 
+set ::constcl::vectorAssign 0
+ 
+proc ::constcl::vsAlloc {num} {
+  # TODO calculate free space
+  set va $::constcl::vectorAssign
+  incr ::constcl::vectorAssign $num
+  return $va
+}
+\end{lstlisting}
+\begin{lstlisting}
+set ::constcl::gensymnum 0
+\end{lstlisting}
+
+
+Pre-make a set of constants (e.g. \#NIL, \#t, and \#f) and give them aliases for use in source text.
+
+\begin{lstlisting}
+interp alias {} #NIL {} [::constcl::NIL new]
+ 
+interp alias {} #t {} [::constcl::MkBoolean #t]
+ 
+interp alias {} #f {} [::constcl::MkBoolean #f]
+ 
+interp alias {} #-1 {} [N -1]
+ 
+interp alias {} #0 {} [N 0]
+ 
+interp alias {} #1 {} [N 1]
+ 
+interp alias {} #+ {} [::constcl::MkSymbol +]
+ 
+interp alias {} #- {} [::constcl::MkSymbol -]
+ 
+interp alias {} #UNS {} [::constcl::Unspecified new]
+ 
+interp alias {} #UND {} [::constcl::Undefined new]
+ 
+interp alias {} #EOF {} [::constcl::EndOfFile new]
+\end{lstlisting}
+
+
+Initialize the definition register with the queen of numbers (or at least a double-precision floating point approximation).
+
+\begin{lstlisting}
+dict set ::constcl::defreg pi [N 3.1415926535897931]
+\end{lstlisting}
+
+
+In this interpreter, \texttt{nil} does refer to the empty list.
+
+\begin{lstlisting}
+reg nil #NIL
+\end{lstlisting}
+\section{Environment startup}
+\label{environment-startup}
+\index{environment startup}
+
+
+On startup, two \texttt{Environment} objects called \texttt{null\_env} (the null environment, not the same as \texttt{null-environment} in Scheme) and \texttt{global\_env} (the global environment) are created.
+
+
+Make \texttt{null\_env} empty and judgemental: this is where searches for unbound symbols end up.
+
+\index{null\_env}
+\begin{lstlisting}
+::constcl::Environment create \
+  ::constcl::null_env #NIL {}
+ 
+oo::objdefine ::constcl::null_env {
+  method find {sym} {
+    self
+  }
+  method get {sym} {
+    ::error "Unbound variable: [$sym name]"
+  }
+  method set {sym val} {
+    ::error "Unbound variable: [$sym name]"
+  }
+}
+\end{lstlisting}
+
+
+Meanwhile, \texttt{global\_env} is populated with all the definitions from the definitions register, \texttt{defreg}. This is where top level evaluation happens.
+
+\index{global\_env}
+\begin{lstlisting}
+namespace eval ::constcl {
+  set keys [list {*}[lmap key [dict keys $defreg] {
+    S $key
+  }]]
+  set vals [dict values $defreg]
+  Environment create global_env $keys $vals \
+    ::constcl::null_env
+}
+\end{lstlisting}
+
+
+Load the Scheme base to add more definitions to the global environment.
+
+\index{schemebase}
+\begin{lstlisting}
+pe {(load "schemebase.scm")}
+\end{lstlisting}
+
+
+Thereafter, each time a user-defined procedure is called, a new \texttt{Environment} object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
+
+\chapter{The REPL}
+\label{the-repl}
+
+
+The REPL (read-eval-print loop) is a loop that repeatedly \emph{reads} a Scheme source string from the user through the command \texttt{::constcl::input} (breaking the loop if given an empty line) and \texttt{::constcl::parse}, \emph{evaluates} it using \texttt{::constcl::eval}, and \emph{prints} using \texttt{::constcl::write}.
+
+
+
+\textbf{input}
+
+
+\texttt{input} is modelled after the Python 3 function. It displays a prompt and reads a string.
+
+\index{input}
+\begin{lstlisting}
+proc ::constcl::input {prompt} {
+  puts -nonewline $prompt
+  flush stdout
+  set buf [gets stdin]
+  set openpars [regexp -all -inline {\(} $buf]
+  set clsepars [regexp -all -inline {\)} $buf]
+  set openbrak [regexp -all -inline {\[} $buf]
+  set clsebrak [regexp -all -inline {\]} $buf]
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
+    ::append buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    set openbrak [regexp -all -inline {\[} $buf]
+    set clsebrak [regexp -all -inline {\]} $buf]
+  }
+  return $buf
+}
+\end{lstlisting}
+
+
+\textbf{repl}
+
+
+\texttt{repl} puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+
+\index{repl}
+\begin{lstlisting}
+proc ::repl {{prompt "ConsTcl> "}} {
+  set str [::constcl::input $prompt]
+  while {$str ne ""} {
+    pew $str
+    set str [::constcl::input $prompt]
+  }
 }
 \end{lstlisting}
 

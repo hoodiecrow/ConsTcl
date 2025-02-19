@@ -47,21 +47,24 @@ function html_textify(str) {
 # skip any modeline
 $0 ~ modeline { next; }
 
-/^H1 / { printf "# %s", substr($0, 4) ; next }
-/^H2 / { printf "## %s", substr($0, 4) ; next }
-/^H3 / { printf "### %s", substr($0, 4) ; next }
-/^H4 / { printf "#### %s", substr($0, 4) ; next }
-/^H5 / { printf "##### %s", substr($0, 4) ; next }
-/^H6 / { printf "###### %s", substr($0, 4) ; next }
+/^H1 / { printf "# %s\n", substr($0, 4) ; next }
+/^H2 / { printf "## %s\n", substr($0, 4) ; next }
+/^H3 / { printf "### %s\n", substr($0, 4) ; next }
+/^H4 / { printf "#### %s\n", substr($0, 4) ; next }
+/^H5 / { printf "##### %s\n", substr($0, 4) ; next }
+/^H6 / { printf "###### %s\n", substr($0, 4) ; next }
 
 $1 == "CB(" { in_code_block = 1 ; print "```" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "```" ; next }
-in_code_block && /./  { print ; next }
-in_code_block && /^$/ { print ; next }
+in_code_block { print ; next }
 
 $1 == "IX" { next }
 $1 == "IG" { printf("![#](%s)\n", substr($2, 2)) ; next }
 $1 == "EM" { for (i=2; i<=NF; i++) collect($i) ; line = sprintf("_%s_", line) ; flushp() ; next }
+$1 == "IT" { init = 1; print "* " render(substr($0, 3));next }
+init && $1 != "IT" { init = 0; next }
+$1 == "EN" { inen = 1; print "1. " render(substr($0, 3));next }
+inen && $1 != "EN" { inen = 0; next }
 
 $1 == "MD(" { in_md_block = 1 ; print "" ; next }
 $1 == "MD)" { in_md_block = 0 ; flushp() ; next }
@@ -94,7 +97,7 @@ function flushp() {
 }
 
 function render(line) {
-    if (match(line, /`/)) { gsub(/`/, "&grave;", line) }
+    #if (match(line, /`/)) { gsub(/`/, "`` ` ``", line) }
 
     while (match(line, /B{([^{}]+)}/)) {
         sub(/B{([^{}]+)}/, sprintf("__%s__", substr(line, RSTART+2, RLENGTH-3)), line)
@@ -105,7 +108,7 @@ function render(line) {
     }
 
     while (match(line, /K{([^{}]+)}/)) {
-        sub(/K{([^{}]+)}/, sprintf("`%s`", substr(line, RSTART+2, RLENGTH-3)), line)
+        sub(/K{([^{}]+)}/, sprintf("`` %s ``", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
     while (match(line, /I{([^{}]+)}/)) {

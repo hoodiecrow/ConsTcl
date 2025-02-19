@@ -1,7 +1,7 @@
 
-MD(
 H3 Characters
 
+MD(
 Characters are any Unicode printing character, and also space and newline space
 characters. External representation is '#\A' (change A to relevant character)
 or #\space or #\newline. Internal representation is simply a Tcl character.

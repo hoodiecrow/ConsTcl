@@ -1,7 +1,7 @@
 
-MD(
 H3 Booleans
 
+MD(
 Booleans are logic values, either true (K{#t}) or false (K{#f}).
 All predicates (procedures whose name end with -?) return
 boolean values. The conditional K{if} operator considers all

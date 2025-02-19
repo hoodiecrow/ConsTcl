@@ -1,14 +1,16 @@
 
-MD(
 H2 Evaluation
 
+MD(
 The second thing an interpreter must be able to do is to reduce expressions to
 their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
 6 and 8 are two expressions that have the same value, but the latter is in
 normal form (can't be reduced further) and the former is not.
+MD)
 
 H3 Syntactic forms
 
+MD(
 There are nine diffent forms or classes of expressions in Lisp. The evaluator
 recognizes each one by its internal representation and chooses the appropriate
 process to evaluate them. The nine forms will be described in the following
@@ -92,11 +94,11 @@ proc ::constcl::eval \
 }
 CB)
 
-MD(
 
 H4 Variable reference
 
-E{Example: K{r} => 10 (a symbol K{r} is evaluated to 10)}
+MD(
+EM Example: K{r} => 10 (a symbol K{r} is evaluated to 10)
 
 A variableI{variable} is an identifier (symbol) bound to a location in the
 environment. If an expression consists of the identifier it is evaluated to the
@@ -119,20 +121,20 @@ proc ::constcl::lookup {sym env} {
 }
 CB)
 
-MD(
 H4 Constant literal
 
-E{Example: K{99} => 99 (a number evaluates to itself)}
+MD(
+EM Example: K{99} => 99 (a number evaluates to itself)
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to
 themselves, to their innate value. Because of this, they are called autoquoting
 types (see next paragraph).
 MD)
 
-MD(
 H4 Quotation
 
-E{Example: K{(quote r)} => K{r} (quotation makes the symbol evaluate to itself, like a constant)}
+MD(
+EM Example: K{(quote r)} => K{r} (quotation makes the symbol evaluate to itself, like a constant)
 
 According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
@@ -142,10 +144,10 @@ shorthand notation for it: K{'x} is interpreted as K{(quote x)} by the Lisp
 reader.
 MD)
 
-MD(
 H4 Conditional
 
-E{Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} => 6}
+MD(
+EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} => 6
 
 The conditional form K{if} evaluates a Lisp list of three expressions. The first,
 the E{condition}, is evaluated first. If it evaluates to anything other than K{#f}
@@ -172,10 +174,10 @@ proc ::constcl::/if {cond conseq altern} {
 }
 CB)
 
-MD(
 H4 Sequence
 
-E{Example: K{(begin (define r 10) (* r r))} => 100}
+MD(
+EM Example: K{(begin (define r 10) (* r r))} => 100
 
 When expressions are evaluated in sequence, the order is important for two
 reasons. If the expressions have any side effects, they happen in the same order
@@ -207,10 +209,10 @@ proc ::constcl::/begin {exps env} {
 }
 CB)
 
-MD(
 H4 Definition
 
-E{Example: K{(define r 10)} => ... (a definition doesn't evaluate to anything)}
+MD(
+EM Example: K{(define r 10)} => ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. A symbol is
 bound to a value (or rather to the location the value is in), creating a
@@ -234,11 +236,10 @@ proc ::constcl::/define {sym val env} {
 }
 CB)
 
-MD(
 H4 Assignment
 
-**Example: K{(set! r 20)} => 20 (K{r} is a bound symbol, so it's allowed to assign
-to it)**
+MD(
+EM Example: K{(set! r 20)} => 20 (K{r} is a bound symbol, so it's allowed to assign to it)
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
@@ -264,11 +265,10 @@ proc ::constcl::/set! {var val env} {
 }
 CB)
 
-MD(
 H4 Procedure definition
 
-**Example: K{(lambda (r) (* r r))} => ::oo::Obj3601 (it will be a different object
-each time)**
+MD(
+EM Example: K{(lambda (r) (* r r))} => K{::oo::Obj3601} (it will be a different object each time)
 
 In Lisp, procedures are values just like numbers or characters. They can be
 defined as the value of a symbol, passed to other procedures, and returned from
@@ -302,10 +302,10 @@ K{formals} is passed on as it is.
 
 A Scheme formals listI{formals list} is either:
 
-* An E{empty list}, K{()}, meaning that no arguments are accepted,
-* A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each symbol,
-* A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
-* A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
+IT An E{empty list}, K{()}, meaning that no arguments are accepted,
+IT A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each symbol,
+IT A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
+IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
 
 B{/lambda}
 MD)
@@ -326,10 +326,10 @@ proc ::constcl::/lambda {formals body env} {
 }
 CB)
 
-MD(
 H4 Procedure call
 
-E{Example: K{(+ 1 6)} => 7}
+MD(
+EM Example: K{(+ 1 6)} => 7
 
 Once we have procedures, we can call them to have their calculations performed
 and yield results. The procedure name is put in the operator position at the

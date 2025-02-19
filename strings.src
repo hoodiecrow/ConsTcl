@@ -1,7 +1,7 @@
 
-MD(
 H3 Strings
 
+MD(
 Procedures for dealing with strings of characters.
 
 B{String} class
