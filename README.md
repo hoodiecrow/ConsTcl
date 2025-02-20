@@ -7,34 +7,42 @@
 First things first. To run, source the file __constcl.tcl__ (with
 __schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use
 the command __repl__ for a primitive command dialog.  Source
-__all.tcl__ to run the test suite (you need __constcl.test__ for that).
+__all.tcl__ to run the test suite (you need __constcl.test__ for that). The
+files can be found on [GitHub/ConsTcl](https://github.com/hoodiecrow/ConsTcl).
 
 ### Background
 
-ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was 
-Thtcl[#](https://github.com/hoodiecrow/thtcl)--this time with a real Lisp-like 
-type system. 
+It all started with Peter Norvig's Lisp emulator
+[Lispy](https://norvig.com/lispy.html). In January 2025 I was inspired to port
+it to Tcl. The result was [Thtcl](https://github.com/hoodiecrow/thtcl). It had
+the same features and limitations as Lispy, plus a couple that were due to
+shortcomings of Tcl, and I came out of the experience feeling a bit
+dissatisfied. In the latter part of January I embarked on a new project,
+ConsTcl, a true Lisp interpreter. In Tcl.
 
-### About ConsTcl
+#### About ConsTcl
 
-It's written with Vim, the one and only editor. 
-
-It steps over and back over the border between Tcl and Lisp a lot
-of times while working, and as a result is fairly slow.
-On my cheap computer, the following code (which calculates the factorial of
-100) takes 0.03 seconds to run.
+It's written with Vim, my editor of choice. I'm using annotated source which
+mixes code with documentation and test cases. Compared to Lispy/Thtcl, ConsTcl
+has, quote from Lispy, comments, quote and quasiquote notation, # literals,
+the derived expression types (such as cond, derived from if, or let, derived
+from lambda), and dotted list notation. And also real consed lists. Again
+compared to Lispy/Thtcl, ConsTcl has the data types, quote, strings,
+characters, booleans, ports, vectors. And pairs and procedures too. The number
+of missing primitive procedures is in the tens, not the 100s. The completeness
+comes with a price: due to the sheer number of calls for each action, ConsTcl
+is is fairly slow. On my cheap computer, the following code (which calculates
+the factorial of 100) takes 0.03 seconds to run. That is ten times slower than
+Lispy assuming that Norvig's computer is as slow as mine, which is unlikely.
 
 ```
 time {pe "(fact 100)"} 10
 ```
 
-Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO
-classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
-
-It is limited. Quite a few standard procedures are missing. It doesn't come
-near to having call/cc or tail recursion. It doesn't have exact/inexact
-numbers, or most of the numerical tower. Error reporting is spotty, and there
-is no error recovery.
+ConsTcl is of course still limited. It doesn't come close to having call/cc or
+tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
+tower. There is no memory management. Error reporting is spotty, and there is no
+error recovery.
 
 ## Initial declarations
 
@@ -54,7 +62,7 @@ Next, some procedures that make my life as developer somewhat easier, but don't 
 __reg__ procedure
 
 
-`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard libraryR{environment-startup}.
+`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 
 You can call `` reg `` with two values: _key_ and _val_. _Key_ is the string that will eventually become the lookup symbol in the standard library, and _val_ is the name of the Tcl command that will carry out the procedure. If you don't give a value for _val_, `` reg `` creates a value by prepending the `` ::constcl:: `` namespace to the _key_ value, which is sufficient 99% of the time.
@@ -895,7 +903,7 @@ proc ::constcl::read-eof {args} {
 __read-string-expr__ procedure
 
 
-`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable [](https://github.com/hoodiecrow/ConsTcl#) object.
+`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
 
@@ -955,7 +963,7 @@ proc ::constcl::read-sharp {} {
 __read-vector-expr__ procedure
 
 
-`` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [](https://github.com/hoodiecrow/ConsTcl#) object.
+`` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -983,7 +991,7 @@ proc ::constcl::read-vector-expr {} {
 __read-character-expr__ procedure
 
 
-`` read-character-expr `` reads input, producing a character and returning a [](https://github.com/hoodiecrow/ConsTcl#) object.
+`` read-character-expr `` reads input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character or end of file</td></tr></table>
 
@@ -1029,7 +1037,7 @@ proc ::constcl::read-quoted-expr {} {
 __read-pair-expr__ procedure
 
 
-The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [](https://github.com/hoodiecrow/ConsTcl#) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member).
+The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member).
 
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
 
@@ -1133,7 +1141,7 @@ proc ::constcl::read-plus-minus {char} {
 __read-number-expr__ procedure
 
 
-`` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [](https://github.com/hoodiecrow/ConsTcl#) object.
+`` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td></td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
@@ -1211,7 +1219,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 __read-identifier-expr__ procedure
 
 
-`` read-identifier-expr `` is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [](https://github.com/hoodiecrow/ConsTcl#) object.
+`` read-identifier-expr `` is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
@@ -1293,7 +1301,7 @@ __eval__ procedure
 The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its syntactic form.
 
 
-`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [](https://github.com/hoodiecrow/ConsTcl#) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [](https://github.com/hoodiecrow/ConsTcl#).
+`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form K{(begin (define ...} when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1494,7 +1502,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
 
-Under the hood, the helper `` /lambda `` makes a [](https://github.com/hoodiecrow/ConsTcl#) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for "the symbol begin".), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for "the symbol begin".), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
 
 A Scheme formals list is either:
@@ -2316,7 +2324,7 @@ proc ::constcl::expand-when {expr env} {
 This section is ported from 'Scheme 9 from Empty Space'. `` resolve-local-defines `` is the topmost procedure in rewriting local defines as essentially a `` letrec `` form. It takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
 
 
-__resolve-local-defines__
+__resolve-local-defines__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">resolve-local-defines</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2340,7 +2348,7 @@ proc ::constcl::resolve-local-defines {exps} {
 ```
 
 
-__extract-from-defines__
+__extract-from-defines__ procedure
 
 
 `` extract-from-defines `` visits every define in the given list of expressions and extracts either a variable name or a value, depending on the state of the _part_ flag, from each one of them. A Tcl list of 1) the resulting list of names or values, 2) error state, and 3) the rest of the expressions in the original list is returned.
@@ -2389,7 +2397,7 @@ proc ::constcl::extract-from-defines {exps part} {
 ```
 
 
-__argument-list?__
+__argument-list?__ procedure
 
 
 `` argument-list? `` accepts a Scheme formals list and rejects other values.
@@ -2420,7 +2428,7 @@ proc ::constcl::argument-list? {val} {
 ```
 
 
-__make-lambdas__
+__make-lambdas__ procedure
 
 
 `` make-lambdas `` builds the `` letrec `` structure.
@@ -2445,7 +2453,7 @@ proc ::constcl::make-lambdas {vars args body} {
 ```
 
 
-__make-temporaries__
+__make-temporaries__ procedure
 
 
 `` make-temporaries `` creates the symbols that will act as middlemen in transferring the values to the variables.
@@ -2464,10 +2472,10 @@ proc ::constcl::make-temporaries {vals} {
 ```
 
 
-__gensym__
+__gensym__ procedure
 
 
-`` gensym `` generates an unique symbol.
+`` gensym `` generates a unique symbol. The candidate symbol is compared to all the symbols in the symbol table to avoid collisions.
 
 <table border=1><thead><tr><th colspan=2 align="left">gensym (internal)</th></tr></thead><tr><td>prefix</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -2479,12 +2487,12 @@ proc ::constcl::gensym {prefix} {
   while {$s in $symbolnames} {
     set s $prefix[incr ::constcl::gensymnum]
   }
-  return [MkSymbol $s]
+  return [S $s]
 }
 ```
 
 
-__append-b__
+__append-b__ procedure
 
 
 `` append-b `` joins two lists together.
@@ -2510,7 +2518,7 @@ proc ::constcl::append-b {a b} {
 ```
 
 
-__make-assignments__
+__make-assignments__ procedure
 
 
 `` make-assignments `` creates the structure that holds the assignment statements. Later on, it will be joined to the body of the finished expression.
@@ -2533,7 +2541,7 @@ proc ::constcl::make-assignments {vars tmps} {
 ```
 
 
-__make-undefineds__
+__make-undefineds__ procedure
 
 
 Due to a mysterious bug, `` make-undefineds `` actually creates a list of NIL values instead of undefined values.
@@ -2554,10 +2562,13 @@ proc ::constcl::make-undefineds {vals} {
 ## Output
 
 
-__write__
+__write__ procedure
 
 
-The third member in the great triad is `` write ``. As long as the object given to it isn't the empty string, it passes it to `` write-value `` and prints a newline.
+The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome was.
+
+
+As long as the object given to `` write `` isn't the empty string, it passes it to `` write-value `` and writes a newline.
 
 <table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -2568,20 +2579,23 @@ proc ::constcl::write {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
+      set dealloc 0
     } else {
       set port [MkOutputPort stdout]
+      set dealloc 1
     }
     set ::constcl::Output_port $port
     write-value [$::constcl::Output_port handle] $val
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
+    if {$dealloc} {$port destroy}
   }
   return
 }
 ```
 
 
-__write-value__
+__write-value__ procedure
 
 
 `` write-value `` simply calls an object's `` write `` method, letting the object write itself.
@@ -2596,7 +2610,7 @@ proc ::constcl::write-value {handle val} {
 ```
 
 
-__display__
+__display__ procedure
 
 
 The `` display `` procedure is like `` write `` but doesn't print a newline.
@@ -2610,20 +2624,23 @@ proc ::constcl::display {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
+      set dealloc 0
     } else {
       set port [MkOutputPort stdout]
+      set dealloc 1
     }
     set ::constcl::Output_port $port
     $val display [$::constcl::Output_port handle]
     flush [$::constcl::Output_port handle]
     set ::constcl::Output_port [MkOutputPort stdout]
+    if {$dealloc} {$port destroy}
   }
   return
 }
 ```
 
 
-__write-pair__
+__write-pair__ procedure
 
 
 The `` write-pair `` procedure prints a Pair object.
@@ -2657,19 +2674,10 @@ proc ::constcl::write-pair {handle pair} {
 ### Equivalence predicates
 
 
-__eq__
-
-
-__eqv__
-
-
-__equal__
-
-
 Of the three equivalence predicates, `` eq `` generally tests for identity (with exception for numbers), `` eqv `` tests for value equality (except for booleans and procedures, where it tests for identity), and `` equal `` tests for whether the output strings are equal.
 
 
-__eq?__
+__eq?__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -2707,19 +2715,29 @@ proc ::constcl::eq? {val1 val2} {
     return #f
   }
 }
+```
 
+
+`` teq `` tests for type equality, i.e. that the values have the same type.
+
+```
 proc ::constcl::teq {typep val1 val2} {
     return [expr {[$typep $val1] ne "#f" &&
       [$typep $val2] ne "#f"}]
 }
+```
 
+
+`` veq `` tests for value equality, i.e. that the values have the same value.
+
+```
 proc ::constcl::veq {val1 val2} {
     return [expr {[$val1 value] eq [$val2 value]}]
 }
 ```
 
 
-__eqv?__
+__eqv?__ procedure
 
 ```
 reg eqv?
@@ -2760,7 +2778,7 @@ proc ::constcl::eqv? {val1 val2} {
 ```
 
 
-__equal?__
+__equal?__ procedure
 
 ```
 reg equal?
@@ -2780,7 +2798,7 @@ proc ::constcl::equal? {val1 val2} {
 I have only implemented a bare-bones version of Scheme's numerical library. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
 
 
-__Number__ class
+__Number__ class procedure
 
 ```
 oo::class create ::constcl::Number {
@@ -2835,7 +2853,7 @@ interp alias {} N {} ::constcl::Number new
 ```
 
 
-__number?__
+__number?__ procedure
 
 
 `` number? `` recognizes a number by object type, not by content.
@@ -2851,19 +2869,19 @@ proc ::constcl::number? {val} {
 ```
 
 
-__=__
+__=__ procedure
 
 
-__<__
+__<__ procedure
 
 
-__>__
+__>__ procedure
 
 
-__<=__
+__<=__ procedure
 
 
-__>=__
+__>=__ procedure
 
 
 The predicates `` = ``, `` < ``, `` > ``, `` <= ``, and `` >= `` are implemented.
@@ -2952,7 +2970,7 @@ proc ::constcl::>= {args} {
 ```
 
 
-__zero?__
+__zero?__ procedure
 
 
 The `` zero? `` predicate tests if a given number is equal to zero.
@@ -2971,16 +2989,16 @@ proc ::constcl::zero? {num} {
 ```
 
 
-__positive?__
+__positive?__ procedure
 
 
-__negative?__
+__negative?__ procedure
 
 
-__even?__
+__even?__ procedure
 
 
-__odd?__
+__odd?__ procedure
 
 
 The `` positive? ``/`` negative? ``/`` even? ``/`` odd? `` predicates test a number for those traits.
@@ -3029,10 +3047,10 @@ proc ::constcl::odd? {num} {
 ```
 
 
-__max__
+__max__ procedure
 
 
-__min__
+__min__ procedure
 
 
 The `` max `` function selects the largest number, and the `` min `` function selects the smallest number.
@@ -3074,21 +3092,25 @@ proc ::constcl::min {num args} {
 ```
 
 
-__+__
+__+__ procedure
 
 
-__*__
+__*__ procedure
 
 
-__-__
+__-__ procedure
 
 
-__/__
+__/__ procedure
 
 
-The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations. They take a number of operands, but at least one for `` - `` and `` / ``.
+The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations.
 
 <table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+
+
+They take a number of operands, but at least one for `` - `` and `` / ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">-, / (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -3155,7 +3177,7 @@ proc ::constcl::/ {num args} {
 ```
 
 
-__abs__
+__abs__ procedure
 
 
 The `` abs `` function yields the absolute value of a number.
@@ -3178,7 +3200,7 @@ proc ::constcl::abs {num} {
 ```
 
 
-__quotient__
+__quotient__ procedure
 
 
 `` quotient `` calculates the quotient between two numbers.
@@ -3209,7 +3231,7 @@ proc ::constcl::quotient {num1 num2} {
 ```
 
 
-__remainder__
+__remainder__ procedure
 
 
 `` remainder `` is a variant of the modulus function. (I'm a programmer, not a mathematician!)
@@ -3237,7 +3259,7 @@ proc ::constcl::remainder {num1 num2} {
 ```
 
 
-__modulo__
+__modulo__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -3278,16 +3300,16 @@ proc ::constcl::denominator {q} {
 ```
 
 
-__floor__
+__floor__ procedure
 
 
-__ceiling__
+__ceiling__ procedure
 
 
-__truncate__
+__truncate__ procedure
 
 
-__round__
+__round__ procedure
 
 
 `` floor ``, `` ceiling ``, `` truncate ``, and `` round `` are different methods for converting a real number to an integer.
@@ -3355,33 +3377,37 @@ proc ::constcl::rationalize {x y} {
 ```
 
 
-__exp__
+__exp__ procedure
 
 
-__log__
+__log__ procedure
 
 
-__sin__
+__sin__ procedure
 
 
-__cos__
+__cos__ procedure
 
 
-__tan__
+__tan__ procedure
 
 
-__asin__
+__asin__ procedure
 
 
-__acos__
+__acos__ procedure
 
 
-__atan__
+__atan__ procedure
 
 
 The mathematical functions e<sup>x</sup>, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by `` exp ``, `` log ``, `` sin ``, `` cos ``, `` tan ``, `` asin ``, `` acos ``, and `` atan ``, respectively.
 
 <table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+
+
+`` atan `` can be called both as a unary (one argument) function and a binary (two arguments) one.
 
 <table border=1><thead><tr><th colspan=2 align="left">(binary) atan (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -3489,7 +3515,7 @@ proc ::constcl::atan {args} {
 ```
 
 
-__sqrt__
+__sqrt__ procedure
 
 
 `` sqrt `` calculates the square root.
@@ -3508,7 +3534,7 @@ proc ::constcl::sqrt {num} {
 ```
 
 
-__expt__
+__expt__ procedure
 
 
 `` expt `` calculates the x to the power of y, or x<sup>y</sup>.
@@ -3573,7 +3599,7 @@ proc ::constcl::inexact->exact {z} {
 ```
 
 
-__number->string__
+__number->string__ procedure
 
 
 The procedures `` number->string `` and `` string->number `` convert between number and string with optional radix conversion.
@@ -3624,7 +3650,7 @@ proc ::constcl::number->string {num args} {
 ```
 
 
-Due to Richard SuchenwirthL{https://wiki.tcl-lang.org/page/Based+numbers}.
+Due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
 
 ```
 proc base {base number} {
@@ -3642,7 +3668,7 @@ proc base {base number} {
 ```
 
 
-__string->number__
+__string->number__ procedure
 
 
 As with `` number->string ``, above.
@@ -3689,7 +3715,7 @@ proc ::constcl::string->number {str args} {
 ```
 
 
-Due to Richard SuchenwirthL{https://wiki.tcl-lang.org/page/Based+numbers}.
+Due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
 
 ```
 proc frombase {base number} {
@@ -3759,7 +3785,7 @@ proc ::constcl::MkBoolean {v} {
 ```
 
 
-__boolean?__
+__boolean?__ procedure
 
 
 The `` boolean? `` predicate recognizes a Boolean by type.
@@ -3775,7 +3801,7 @@ proc ::constcl::boolean? {val} {
 ```
 
 
-__not__
+__not__ procedure
 
 
 The only operation on booleans: `` not ``, or logical negation.
@@ -3804,7 +3830,7 @@ proc ::constcl::not {val} {
 ### Characters
 
 
-Characters are any Unicode printing character, and also space and newline space characters. External representation is '#\A' (change A to relevant character) or #\space or #\newline. Internal representation is simply a Tcl character.
+Characters are any Unicode printing character, and also space and newline space characters. External representation is `` #\A `` (change A to relevant character) or `` #\space `` or `` #\newline ``. Internal representation is simply a Tcl character.
 
 
 __Char__ class
@@ -3911,7 +3937,7 @@ proc ::constcl::MkChar {v} {
 ```
 
 
-__char?__
+__char?__ procedure
 
 
 `` char? `` recognizes Char values by type.
@@ -3927,19 +3953,19 @@ proc ::constcl::char? {val} {
 ```
 
 
-__char=?__
+__char=?__ procedure
 
 
-__char<?__
+__char<?__ procedure
 
 
-__char>?__
+__char>?__ procedure
 
 
-__char<=?__
+__char<=?__ procedure
 
 
-__char>=?__
+__char>=?__ procedure
 
 
 `` char=? ``, `` char<? ``, `` char>? ``, `` char<=? ``, and `` char>=? `` compare character values. They only compare two characters at a time.
@@ -4033,19 +4059,19 @@ proc ::constcl::char>=? {char1 char2} {
 ```
 
 
-__char-ci=?__
+__char-ci=?__ procedure
 
 
-__char-ci<?__
+__char-ci<?__ procedure
 
 
-__char-ci>?__
+__char-ci>?__ procedure
 
 
-__char-ci<=?__
+__char-ci<=?__ procedure
 
 
-__char-ci>=?__
+__char-ci>=?__ procedure
 
 
 `` char-ci=? ``, `` char-ci<? ``, `` char-ci>? ``, `` char-ci<=? ``, and `` char-ci>=? `` compare character values in a case insensitive manner. They only compare two characters at a time.
@@ -4144,24 +4170,28 @@ proc ::constcl::char-ci>=? {char1 char2} {
 ```
 
 
-__char-alphabetic__
+__char-alphabetic?__ procedure
 
 
-__char-numeric__
+__char-numeric?__ procedure
 
 
-__char-whitespace__
+__char-whitespace?__ procedure
 
 
-__char-upper-case__
+__char-upper-case?__ procedure
 
 
-__char-lower-case__
+__char-lower-case?__ procedure
 
 
-The predicates `` char-alphabetic ``, `` char-numeric ``, `` char-whitespace ``, `` char-upper-case ``, and `` char-lower-case `` test a character for these conditions.
+The predicates `` char-alphabetic? ``, `` char-numeric? ``, and `` char-whitespace? `` test a character for these conditions.
 
 <table border=1><thead><tr><th colspan=2 align="left">char-alphabetic?, char-numeric?, char-whitespace? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+
+
+`` char-upper-case? `` and `` char-lower-case? `` too.
 
 <table border=1><thead><tr><th colspan=2 align="left">char-upper-case?, char-lower-case? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4217,10 +4247,10 @@ proc ::constcl::char-lower-case? {char} {
 ```
 
 
-__char->integer__
+__char->integer__ procedure
 
 
-__integer->char__
+__integer->char__ procedure
 
 
 `` char->integer `` and `` integer->char `` convert between characters and their 16-bit numeric codes.
@@ -4265,10 +4295,10 @@ proc ::constcl::integer->char {int} {
 ```
 
 
-__char-upcase__
+__char-upcase__ procedure
 
 
-__char-downcase__
+__char-downcase__ procedure
 
 
 `` char-upcase `` and `` char-downcase `` alter the case of a character.
@@ -4303,7 +4333,7 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 
-A `` Procedure `` object is a closureW{Closure_(computer_programming)}, storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
+A `` Procedure `` object is a [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
 
 
 When a `` Procedure `` object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
@@ -4345,7 +4375,7 @@ interp alias {} ::constcl::MkProcedure \
 ```
 
 
-__procedure?__
+__procedure?__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4364,7 +4394,7 @@ proc ::constcl::procedure? {val} {
 ```
 
 
-__apply__
+__apply__ procedure
 
 
 `` apply `` applies a procedure to a Lisp list of Lisp arguments.
@@ -4390,7 +4420,7 @@ proc ::constcl::apply {pr vals} {
 ```
 
 
-__map__
+__map__ procedure
 
 
 `` map `` iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The Lisp list of the results of the invocations is returned.
@@ -4436,7 +4466,7 @@ proc ::constcl::map {pr args} {
 ```
 
 
-__for-each__
+__for-each__ procedure
 
 
 `` for-each `` iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
@@ -4485,10 +4515,14 @@ proc ::constcl::for-each {proc args} {
 ```
 ### Input and output
 
+
+__Port__ class
+
 ```
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
+  superclass ::constcl::NIL
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -4503,6 +4537,7 @@ oo::class create ::constcl::Port {
   method close {} {
     close $handle
     set handle #NIL
+    return
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
@@ -4512,7 +4547,12 @@ oo::class create ::constcl::Port {
     my write $h
   }
 }
+```
 
+
+__InputPort__ class
+
+```
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
@@ -4542,7 +4582,12 @@ oo::class create ::constcl::InputPort {
     my write $h
   }
 }
+```
 
+
+__StringInputPort__ class
+
+```
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
   variable buffer read_eof
@@ -4550,15 +4595,8 @@ oo::class create ::constcl::StringInputPort {
     set buffer $str
     set read_eof 0
   }
-  method open {name} {
-    try {
-      set handle [open [$name value] "r"]
-    } on error {} {
-      set handle #NIL
-      return -1
-    }
-    return $handle
-  }
+  method open {name} {}
+  method close {} {}
   method get {} {
     if {[::string length $buffer] == 0} {
       set read_eof 1
@@ -4580,13 +4618,18 @@ oo::class create ::constcl::StringInputPort {
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<input-port-$num>"
+    puts -nonewline $h "#<string-input-port-$num>"
   }
   method display {h} {
     my write $h
   }
 }
+```
 
+
+__OutputPort__ class
+
+```
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
@@ -4618,39 +4661,90 @@ interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
+```
 
+
+__Input_Port__ variable
+
+
+__Output_port__ variable
+
+
+These two variables store globally the current configuration of the shared input and output ports. They are initially set to standard input and output respectively.
+
+```
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
 set ::constcl::Output_port [
   ::constcl::MkOutputPort stdout]
+```
 
+
+__port?__ procedure
+
+
+`` port? `` recognizes Port objects.
+
+```
 reg port?
 
 proc ::constcl::port? {val} {
   typeof? $val Port
 }
 ```
+
+
+__call-with-input-file__ procedure
+
+
+`` call-with-input-file `` opens a file for input and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg call-with-input-file
 
-proc ::constcl::call-with-input-file {string proc} {
-  set port [open-input-file $string]
+proc ::constcl::call-with-input-file {str proc} {
+  set port [open-input-file $str]
   set res [invoke $proc [list $port]]
   close-input-port $port
+  $port destroy
   return $res
 }
 ```
+
+
+__call-with-output-file__ procedure
+
+
+`` call-with-output-file `` opens a file for output and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
+
+
+You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
+
+<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg call-with-output-file
 
-proc ::constcl::call-with-output-file {string proc} {
+proc ::constcl::call-with-output-file {str proc} {
   ::error "remove this line to use"
-  set port [open-output-file $string]
+  set port [open-output-file $str]
   set res [invoke $proc [list $port]]
   close-output-port $port
+  $port destroy
   return $res
 }
 ```
+
+
+__input-port?__ procedure
+
+
+`` input-port? `` recognizes an InputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">input-port? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg input-port?
 
@@ -4658,6 +4752,15 @@ proc ::constcl::input-port? {val} {
   typeof? $val InputPort
 }
 ```
+
+
+__output-port?__ procedure
+
+
+`` output-port? `` recognizes an OutputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">output-port? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg output-port?
 
@@ -4665,6 +4768,15 @@ proc ::constcl::output-port? {val} {
   typeof? $val OutputPort
 }
 ```
+
+
+__current-input-port__ procedure
+
+
+`` current-input-port `` makes a copy of the current shared input port.
+
+<table border=1><thead><tr><th colspan=2 align="left">current-input-port (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>a port</td></tr></table>
+
 ```
 reg current-input-port
 
@@ -4672,6 +4784,15 @@ proc ::constcl::current-input-port {} {
   return [$::constcl::Input_port copy]
 }
 ```
+
+
+__current-output-port__ procedure
+
+
+`` current-output-port `` makes a copy of the current shared output port.
+
+<table border=1><thead><tr><th colspan=2 align="left">current-output-port (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>a port</td></tr></table>
+
 ```
 reg current-output-port
 
@@ -4679,35 +4800,62 @@ proc ::constcl::current-output-port {} {
   return [$::constcl::Output_port copy]
 }
 ```
+
+
+__with-input-from-file__ procedure
+
+
+`` with-input-from-file `` opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+
+<table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg with-input-from-file
 
-proc ::constcl::with-input-from-file {string thunk} {
-  set newport [open-input-file $string]
+proc ::constcl::with-input-from-file {str thunk} {
+  set newport [open-input-file $str]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
-    eval $thunk
+    $thunk call
     set ::constcl::Input_port $oldport
     close-input-port $newport
   }
 }
 ```
+
+
+__with-output-to-file__ procedure
+
+
+`` with-output-to-file `` opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+
+<table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg with-output-to-file
 
-proc ::constcl::with-output-to-file {string thunk} {
+proc ::constcl::with-output-to-file {str thunk} {
   ::error "remove this line to use"
-  set newport [open-output-file $string]
+  set newport [open-output-file $str]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
-    eval $thunk
+    $thunk call
     set ::constcl::Output_port $oldport
     close-input-port $newport
   }
 }
 ```
+
+
+__open-input-file__ procedure
+
+
+`` open-input-file `` opens a file for input and returns the port.
+
+<table border=1><thead><tr><th colspan=2 align="left">open-input-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+
 ```
 reg open-input-file
 
@@ -4723,6 +4871,15 @@ proc ::constcl::open-input-file {filename} {
   return $p
 }
 ```
+
+
+__open-output-file__ procedure
+
+
+`` open-output-file `` opens a file for output and returns the port.
+
+<table border=1><thead><tr><th colspan=2 align="left">open-output-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+
 ```
 reg open-output-file
 
@@ -4739,6 +4896,15 @@ proc ::constcl::open-output-file {filename} {
   return $p
 }
 ```
+
+
+__close-input-port__ procedure
+
+
+`` close-input-port `` closes an input port.
+
+<table border=1><thead><tr><th colspan=2 align="left">close-input-port (public)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg close-input-port
 
@@ -4749,6 +4915,15 @@ proc ::constcl::close-input-port {port} {
   $port close
 }
 ```
+
+
+__close-output-port__ procedure
+
+
+`` close-output-port `` closes an output port.
+
+<table border=1><thead><tr><th colspan=2 align="left">close-output-port (public)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
 reg close-output-port
 
@@ -4776,15 +4951,20 @@ proc ::constcl::char-ready? {args} {
 ```
 
 
-`` write `` is implemented in the writeR{output} section.
+`` write `` is implemented in the [output](https://github.com/hoodiecrow/ConsTcl#output) chapter.
 
 
 
-`` display `` is implemented in the write section.
+`` display `` is implemented in the output chapter.
 
+
+
+__newline__ procedure
 
 
 `` newline `` outputs a newline character. Especially helpful when using `` display `` for output, since it doesn't end lines with newline.
+
+<table border=1><thead><tr><th colspan=2 align="left">newline (public)</th></tr></thead><tr><td>?port?</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg newline
@@ -4805,6 +4985,9 @@ proc ::constcl::write-char {args} {
 ```
 
 
+__load__
+
+
 `` load `` reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
 <table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
@@ -4814,12 +4997,15 @@ reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
-  set n [read $p]
-  while {$n ne "#EOF"} {
-    eval $n
+  if {[$p handle] ne "#NIL"} {
     set n [read $p]
+    while {$n ne "#EOF"} {
+      eval $n
+      set n [read $p]
+    }
+    close-input-port $p
   }
-  close-input-port $p
+  $p destroy
 }
 ```
 ```

@@ -8,6 +8,7 @@ L{}{}	footn.	[]()	arbitrary link
 W{}{}	wikip.	[]()	link to wikipedia
 I	index	---
 P{}{}	$x^y$	x<sup>y</sup>
+D{}     ldots	...
 
 H1	part	#
 H2	chapter	##

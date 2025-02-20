@@ -3,18 +3,12 @@ H2 Built-in procedures
 H3 Equivalence predicates
 
 MD(
-B{eq}
-
-B{eqv}
-
-B{equal}
-
 Of the three equivalence predicates, K{eq} generally tests for identity (with
 exception for numbers), K{eqv} tests for value equality (except for booleans and
 procedures, where it tests for identity), and K{equal} tests for whether the
 output strings are equal.
 
-B{eq?}
+B{eq?} procedure
 MD)
 
 PR(
@@ -56,12 +50,24 @@ proc ::constcl::eq? {val1 val2} {
     return #f
   }
 }
+CB)
 
+MD(
+K{teq} tests for type equality, i.e. that the values have the same type.
+MD)
+
+CB(
 proc ::constcl::teq {typep val1 val2} {
     return [expr {[$typep $val1] ne "#f" &&
       [$typep $val2] ne "#f"}]
 }
+CB)
 
+MD(
+K{veq} tests for value equality, i.e. that the values have the same value.
+MD)
+
+CB(
 proc ::constcl::veq {val1 val2} {
     return [expr {[$val1 value] eq [$val2 value]}]
 }
@@ -78,7 +84,7 @@ TT(
 TT)
 
 MD(
-B{eqv?}
+B{eqv?} procedure
 MD)
 
 IX eqv?
@@ -121,7 +127,7 @@ proc ::constcl::eqv? {val1 val2} {
 CB)
 
 MD(
-B{equal?}
+B{equal?} procedure
 MD)
 
 IX equal?

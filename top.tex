@@ -57,24 +57,25 @@ First things first. To run, source the file \textbf{constcl.tcl} (with
 \textbf{schemebase.lsp} in the directory) in a Tcl console (I use
 \textbf{tkcon}) and use the command \textbf{repl} for a primitive command
 dialog. Source \textbf{all.tcl} to run the test suite (you need
-\textbf{constcl.test} for that).
+\textbf{constcl.test} for that). The files can be found on GitHub/ConsTcl\footnote{See
+\texttt{https://github.com/hoodiecrow/ConsTcl}}.
 
 \section{Background}
 \label{background}
 \index{background}
 
 It all started with Peter Norvig's Lisp emulator
-L{Lispy}{https://norvig.com/lispy.html}. In January 2025 I was inspired to port
-it to Tcl. The result was Thtcl\footnote{See
+Lispy\footnote{See \texttt{https://norvig.com/lispy.html}}. In January 2025 I
+was inspired to port it to Tcl. The result was Thtcl\footnote{See
 \texttt{https://github.com/hoodiecrow/thtcl}}. It had the same features and
-limitations as Lispy, and I came out of the experience feeling a bit
-dissatisfied. In the latter part of January I embarked on a new project,
-ConsTcl, a true Lisp interpreter.
+limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
+came out of the experience feeling a bit dissatisfied. In the latter part of
+January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
 
 \subsubsection{About ConsTcl}
 \label{about-constcl}
 
-It's written with Vim, my favorite editor. I'm using annotated source which
+It's written with Vim, my editor of choice. I'm using annotated source which
 mixes code with documentation and test cases. Compared to Lispy/Thtcl, ConsTcl
 has, quote from Lispy, comments, quote and quasiquote notation, \# literals,
 the derived expression types (such as cond, derived from if, or let, derived
@@ -93,7 +94,8 @@ time {pe "(fact 100)"} 10
 
 ConsTcl is of course still limited. It doesn't come close to having call/cc or
 tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
-tower. Error reporting is spotty, and there is no error recovery.
+tower. There is no memory management. Error reporting is spotty, and there is no
+error recovery.
 
 \subsubsection{About the book}
 \label{about-the-book}

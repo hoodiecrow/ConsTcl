@@ -1424,7 +1424,7 @@ proc ::constcl::gensym {prefix} {
   while {$s in $symbolnames} {
     set s $prefix[incr ::constcl::gensymnum]
   }
-  return [MkSymbol $s]
+  return [S $s]
 }
 
 proc ::constcl::append-b {a b} {
@@ -1472,13 +1472,16 @@ proc ::constcl::write {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
+      set dealloc 0
     } else {
       set port [MkOutputPort stdout]
+      set dealloc 1
     }
     set ::constcl::Output_port $port
     write-value [$::constcl::Output_port handle] $val
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
+    if {$dealloc} {$port destroy}
   }
   return
 }
@@ -1494,13 +1497,16 @@ proc ::constcl::display {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
       lassign $args port
+      set dealloc 0
     } else {
       set port [MkOutputPort stdout]
+      set dealloc 1
     }
     set ::constcl::Output_port $port
     $val display [$::constcl::Output_port handle]
     flush [$::constcl::Output_port handle]
     set ::constcl::Output_port [MkOutputPort stdout]
+    if {$dealloc} {$port destroy}
   }
   return
 }
@@ -2715,6 +2721,7 @@ proc ::constcl::for-each {proc args} {
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
+  superclass ::constcl::NIL
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -2729,6 +2736,7 @@ oo::class create ::constcl::Port {
   method close {} {
     close $handle
     set handle #NIL
+    return
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
@@ -2776,15 +2784,8 @@ oo::class create ::constcl::StringInputPort {
     set buffer $str
     set read_eof 0
   }
-  method open {name} {
-    try {
-      set handle [open [$name value] "r"]
-    } on error {} {
-      set handle #NIL
-      return -1
-    }
-    return $handle
-  }
+  method open {name} {}
+  method close {} {}
   method get {} {
     if {[::string length $buffer] == 0} {
       set read_eof 1
@@ -2806,7 +2807,7 @@ oo::class create ::constcl::StringInputPort {
   }
   method write {h} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<input-port-$num>"
+    puts -nonewline $h "#<string-input-port-$num>"
   }
   method display {h} {
     my write $h
@@ -2858,20 +2859,22 @@ proc ::constcl::port? {val} {
 
 reg call-with-input-file
 
-proc ::constcl::call-with-input-file {string proc} {
-  set port [open-input-file $string]
+proc ::constcl::call-with-input-file {str proc} {
+  set port [open-input-file $str]
   set res [invoke $proc [list $port]]
   close-input-port $port
+  $port destroy
   return $res
 }
 
 reg call-with-output-file
 
-proc ::constcl::call-with-output-file {string proc} {
+proc ::constcl::call-with-output-file {str proc} {
   ::error "remove this line to use"
-  set port [open-output-file $string]
+  set port [open-output-file $str]
   set res [invoke $proc [list $port]]
   close-output-port $port
+  $port destroy
   return $res
 }
 
@@ -2901,12 +2904,12 @@ proc ::constcl::current-output-port {} {
 
 reg with-input-from-file
 
-proc ::constcl::with-input-from-file {string thunk} {
-  set newport [open-input-file $string]
+proc ::constcl::with-input-from-file {str thunk} {
+  set newport [open-input-file $str]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
-    eval $thunk
+    $thunk call
     set ::constcl::Input_port $oldport
     close-input-port $newport
   }
@@ -2914,13 +2917,13 @@ proc ::constcl::with-input-from-file {string thunk} {
 
 reg with-output-to-file
 
-proc ::constcl::with-output-to-file {string thunk} {
+proc ::constcl::with-output-to-file {str thunk} {
   ::error "remove this line to use"
-  set newport [open-output-file $string]
+  set newport [open-output-file $str]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
-    eval $thunk
+    $thunk call
     set ::constcl::Output_port $oldport
     close-input-port $newport
   }
@@ -3004,12 +3007,15 @@ reg load
 
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
-  set n [read $p]
-  while {$n ne "#EOF"} {
-    eval $n
+  if {[$p handle] ne "#NIL"} {
     set n [read $p]
+    while {$n ne "#EOF"} {
+      eval $n
+      set n [read $p]
+    }
+    close-input-port $p
   }
-  close-input-port $p
+  $p destroy
 }
 
 proc ::constcl::transcript-on {filename} {

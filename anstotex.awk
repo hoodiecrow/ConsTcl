@@ -167,6 +167,10 @@ function render(line) {
         sub(/M{([^{}]+)}/, sprintf("\\marginpar[%s]{%s\\raggedright}", substr(line, RSTART+2, RLENGTH-3), substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
+    while (match(line, /D{([^{}]*)}/)) {
+        sub(/D{([^{}]*)}/, sprintf("\\ldots "), line)
+    }
+
     while (match(line, /R{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), ref, /[^{}]+/)
         sub(/R{([^{}]+)}{([^{}]+)}/, sprintf("%s (see page \\pageref{%s})", ref[1], ref[2]), line)

@@ -3,8 +3,8 @@ H3 Characters
 
 MD(
 Characters are any Unicode printing character, and also space and newline space
-characters. External representation is '#\A' (change A to relevant character)
-or #\space or #\newline. Internal representation is simply a Tcl character.
+characters. External representation is K{#\A} (change A to relevant character)
+or K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
 
 B{Char} class
 MD)
@@ -112,7 +112,7 @@ proc ::constcl::MkChar {v} {
 CB)
 
 MD(
-B{char?}
+B{char?} procedure
 
 K{char?} recognizes Char values by type.
 MD)
@@ -139,15 +139,15 @@ TT(
 TT)
 
 MD(
-B{char=?}
+B{char=?} procedure
 
-B{char<?}
+B{char<?} procedure
 
-B{char>?}
+B{char>?} procedure
 
-B{char<=?}
+B{char<=?} procedure
 
-B{char>=?}
+B{char>=?} procedure
 
 K{char=?}, K{char<?}, K{char>?}, K{char<=?}, and K{char>=?} compare character
 values. They only compare two characters at a time.
@@ -307,15 +307,15 @@ TT(
 TT)
 
 MD(
-B{char-ci=?}
+B{char-ci=?} procedure
 
-B{char-ci<?}
+B{char-ci<?} procedure
 
-B{char-ci>?}
+B{char-ci>?} procedure
 
-B{char-ci<=?}
+B{char-ci<=?} procedure
 
-B{char-ci>=?}
+B{char-ci>=?} procedure
 
 K{char-ci=?}, K{char-ci<?}, K{char-ci>?}, K{char-ci<=?}, and K{char-ci>=?} compare character
 values in a case insensitive manner. They only compare two characters at a time.
@@ -477,24 +477,28 @@ TT(
 TT)
 
 MD(
-B{char-alphabetic}
+B{char-alphabetic?} procedure
 
-B{char-numeric}
+B{char-numeric?} procedure
 
-B{char-whitespace}
+B{char-whitespace?} procedure
 
-B{char-upper-case}
+B{char-upper-case?} procedure
 
-B{char-lower-case}
+B{char-lower-case?} procedure
 
-The predicates K{char-alphabetic}, K{char-numeric}, K{char-whitespace},
-K{char-upper-case}, and K{char-lower-case} test a character for these
+The predicates K{char-alphabetic?}, K{char-numeric?}, and K{char-whitespace?}
+ test a character for these
 conditions.
 MD)
 
 PR(
 char-alphabetic?, char-numeric?, char-whitespace? (public);char char -> bool
 PR)
+
+MD(
+K{char-upper-case?} and K{char-lower-case?} too.
+MD)
 
 PR(
 char-upper-case?, char-lower-case? (public);char char -> bool
@@ -626,9 +630,9 @@ TT(
 TT)
 
 MD(
-B{char->integer}
+B{char->integer} procedure
 
-B{integer->char}
+B{integer->char} procedure
 
 K{char->integer} and K{integer->char} convert between characters and their
 16-bit numeric codes.
@@ -692,9 +696,9 @@ TT(
 TT)
 
 MD(
-B{char-upcase}
+B{char-upcase} procedure
 
-B{char-downcase}
+B{char-downcase} procedure
 
 K{char-upcase} and K{char-downcase} alter the case of a character.
 MD)

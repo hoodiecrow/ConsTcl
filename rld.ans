@@ -9,7 +9,7 @@ defines in the beginning of the list. It builds a double lambda expression with
 the variables and values, and the rest of the expressions from the original list
 as body.
 
-B{resolve-local-defines}
+B{resolve-local-defines} procedure
 MD)
 
 PR(
@@ -37,13 +37,13 @@ proc ::constcl::resolve-local-defines {exps} {
 CB)
 
 MD(
-B{extract-from-defines}
+B{extract-from-defines} procedure
 
 K{extract-from-defines} visits every define in the given list of expressions and
-extracts either a variable name or a value, depending on the state of the _part_
-flag, from each one of them. A Tcl list of 1) the resulting list of names or
-values, 2) error state, and 3) the rest of the expressions in the original list
-is returned.
+extracts either a variable name or a value, depending on the state of the
+E{part} flag, from each one of them. A Tcl list of 1) the resulting list of
+names or values, 2) error state, and 3) the rest of the expressions in the
+original list is returned.
 MD)
 
 PR(
@@ -93,7 +93,7 @@ proc ::constcl::extract-from-defines {exps part} {
 CB)
 
 MD(
-B{argument-list?}
+B{argument-list?} procedure
 
 K{argument-list?} accepts a Scheme formals list and rejects other values.
 MD)
@@ -127,7 +127,7 @@ proc ::constcl::argument-list? {val} {
 CB)
 
 MD(
-B{make-lambdas}
+B{make-lambdas} procedure
 
 K{make-lambdas} builds the K{letrec} structure.
 MD)
@@ -155,7 +155,7 @@ proc ::constcl::make-lambdas {vars args body} {
 CB)
 
 MD(
-B{make-temporaries}
+B{make-temporaries} procedure
 
 K{make-temporaries} creates the symbols that will act as middlemen in
 transferring the values to the variables.
@@ -178,9 +178,10 @@ proc ::constcl::make-temporaries {vals} {
 CB)
 
 MD(
-B{gensym}
+B{gensym} procedure
 
-K{gensym} generates an unique symbol.
+K{gensym} generates a unique symbol. The candidate symbol is compared to all the
+symbols in the symbol table to avoid collisions.
 MD)
 
 PR(
@@ -196,12 +197,12 @@ proc ::constcl::gensym {prefix} {
   while {$s in $symbolnames} {
     set s $prefix[incr ::constcl::gensymnum]
   }
-  return [MkSymbol $s]
+  return [S $s]
 }
 CB)
 
 MD(
-B{append-b}
+B{append-b} procedure
 
 K{append-b} joins two lists together.
 MD)
@@ -230,7 +231,7 @@ proc ::constcl::append-b {a b} {
 CB)
 
 MD(
-B{make-assignments}
+B{make-assignments} procedure
 
 K{make-assignments} creates the structure that holds the assignment statements.
 Later on, it will be joined to the body of the finished expression.
@@ -257,7 +258,7 @@ proc ::constcl::make-assignments {vars tmps} {
 CB)
 
 MD(
-B{make-undefineds}
+B{make-undefineds} procedure
 
 Due to a mysterious bug, K{make-undefineds} actually creates a list of NIL
 values instead of undefined values.

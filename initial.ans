@@ -23,7 +23,7 @@ B{reg} procedure
 K{reg} registers selected built-in procedures in the definitions
 registerI{definitions register}. That way I don't need to manually keep track of
 and list procedures. The definitions register's contents will eventually get
-dumped into the standard libraryR{environment-startup}.
+dumped into the R{standard library}{environment-startup}.
 
 You can call K{reg} with two values: E{key} and E{val}. E{Key} is the string
 that will eventually become the lookup symbol in the standard library, and

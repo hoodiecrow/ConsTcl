@@ -4,7 +4,7 @@ H3 Control
 MD(
 This section concerns itself with procedures and the application of the same.
 
-A K{Procedure} object is a closureI{closure}W{Closure_(computer_programming)},
+A K{Procedure} object is a W{closure}{Closure_(computer_programming)}I{closure},
 storing the procedure's parameter list, the body, and the environment that is
 current when the object is created, i.e. when the procedure is defined.
 
@@ -49,7 +49,7 @@ interp alias {} ::constcl::MkProcedure \
 CB)
 
 MD(
-B{procedure?}
+B{procedure?} procedure
 MD)
 
 PR(
@@ -81,7 +81,7 @@ TT(
 TT)
 
 MD(
-B{apply}
+B{apply} procedure
 
 K{apply} applies a procedure to a Lisp list of Lisp arguments.
 MD)
@@ -127,7 +127,7 @@ TT(
 TT)
 
 MD(
-B{map}
+B{map} procedure
 
 K{map} iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The Lisp list of the results of the invocations is 
@@ -193,7 +193,7 @@ TT(
 TT)
 
 MD(
-B{for-each}
+B{for-each} procedure
 
 K{for-each} iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.

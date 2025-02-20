@@ -7,7 +7,7 @@ library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
 
-B{Number} class
+B{Number} class procedure
 MD)
 
 IX Number
@@ -64,7 +64,7 @@ interp alias {} N {} ::constcl::Number new
 CB)
 
 MD(
-B{number?}
+B{number?} procedure
 
 K{number?} recognizes a number by object type, not by content.
 MD)
@@ -99,15 +99,15 @@ TT(
 TT)
 
 MD(
-B{=}
+B{=} procedure
 
-B{<}
+B{<} procedure
 
-B{>}
+B{>} procedure
 
-B{<=}
+B{<=} procedure
 
-B{>=}
+B{>=} procedure
 
 The predicates K{=}, K{<}, K{>}, K{<=}, and K{>=} are implemented.
 
@@ -252,7 +252,7 @@ TT(
 TT)
 
 MD(
-B{zero?}
+B{zero?} procedure
 
 The K{zero?} predicate tests if a given number is equal to zero.
 MD)
@@ -286,13 +286,13 @@ TT(
 TT)
 
 MD(
-B{positive?}
+B{positive?} procedure
 
-B{negative?}
+B{negative?} procedure
 
-B{even?}
+B{even?} procedure
 
-B{odd?}
+B{odd?} procedure
 
 The K{positive?}/K{negative?}/K{even?}/K{odd?} predicates test a number
 for those traits.
@@ -383,9 +383,9 @@ TT(
 TT)
 
 MD(
-B{max}
+B{max} procedure
 
-B{min}
+B{min} procedure
 
 The K{max} function selects the largest number, and the K{min} function
 selects the smallest number.
@@ -449,22 +449,26 @@ TT(
 TT)
 
 MD(
-B{+}
+B{+} procedure
 
-B{*}
+B{*} procedure
 
-B{-}
+B{-} procedure
 
-B{/}
+B{/} procedure
 
 The operators K{+}, K{*}, K{-}, and K{/} stand for the respective
-mathematical operations. They take a number of operands, but
-at least one for K{-} and K{/}.
+mathematical operations. 
 MD)
 
 PR(
 +, * (public);args nums -> num
 PR)
+
+MD(
+They take a number of operands, but
+at least one for K{-} and K{/}.
+MD)
 
 PR(
 -, / (public);num num args nums -> num
@@ -587,7 +591,7 @@ TT(
 TT)
 
 MD(
-B{abs}
+B{abs} procedure
 
 The K{abs} function yields the absolute value of a number.
 MD)
@@ -624,7 +628,7 @@ TT(
 TT)
 
 MD(
-B{quotient}
+B{quotient} procedure
 
 K{quotient} calculates the quotient between two numbers.
 MD)
@@ -659,7 +663,7 @@ proc ::constcl::quotient {num1 num2} {
 CB)
 
 MD(
-B{remainder}
+B{remainder} procedure
 
 K{remainder} is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
@@ -692,7 +696,7 @@ proc ::constcl::remainder {num1 num2} {
 CB)
 
 MD(
-B{modulo}
+B{modulo} procedure
 MD)
 
 PR(
@@ -758,13 +762,13 @@ proc ::constcl::denominator {q} {
 CB)
 
 MD(
-B{floor}
+B{floor} procedure
 
-B{ceiling}
+B{ceiling} procedure
 
-B{truncate}
+B{truncate} procedure
 
-B{round}
+B{round} procedure
 
 K{floor}, K{ceiling}, K{truncate}, and K{round} are different methods for
 converting a real number to an integer.
@@ -885,21 +889,21 @@ proc ::constcl::rationalize {x y} {
 CB)
 
 MD(
-B{exp}
+B{exp} procedure
 
-B{log}
+B{log} procedure
 
-B{sin}
+B{sin} procedure
 
-B{cos}
+B{cos} procedure
 
-B{tan}
+B{tan} procedure
 
-B{asin}
+B{asin} procedure
 
-B{acos}
+B{acos} procedure
 
-B{atan}
+B{atan} procedure
 
 The mathematical functions P{e}{x}, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
@@ -910,6 +914,11 @@ MD)
 PR(
 exp, log, sin, cos, tan, asin, acos, atan (public);num num -> num
 PR)
+
+MD(
+K{atan} can be called both as a unary (one argument) function and a binary (two
+arguments) one.
+MD)
 
 PR(
 (binary) atan (public);num1 num num2 num -> num
@@ -1074,7 +1083,7 @@ TT(
 TT)
 
 MD(
-B{sqrt}
+B{sqrt} procedure
 
 K{sqrt} calculates the square root.
 MD)
@@ -1104,7 +1113,7 @@ TT(
 TT)
 
 MD(
-B{expt}
+B{expt} procedure
 
 K{expt} calculates the x to the power of y, or P{x}{y}.
 MD)
@@ -1188,7 +1197,7 @@ proc ::constcl::inexact->exact {z} {
 CB)
 
 MD(
-B{number->string}
+B{number->string} procedure
 
 The procedures K{number->string} and K{string->number} convert between
 number and string with optional radix conversion.
@@ -1244,7 +1253,7 @@ proc ::constcl::number->string {num args} {
 CB)
 
 MD(
-Due to Richard SuchenwirthI{Suchenwirth, Richard}L{https://wiki.tcl-lang.org/page/Based+numbers}.
+Due to L{Richard Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth, Richard}.
 MD)
 
 IX base
@@ -1279,7 +1288,7 @@ TT(
 TT)
 
 MD(
-B{string->number}
+B{string->number} procedure
 
 As with K{number->string}, above.
 MD)
@@ -1330,7 +1339,9 @@ proc ::constcl::string->number {str args} {
 CB)
 
 MD(
-Due to Richard SuchenwirthI{Suchenwirth, Richard}L{https://wiki.tcl-lang.org/page/Based+numbers}.
+Due to L{Richard
+  Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth,
+    Richard}.
 MD)
 
 IX frombase

@@ -70,7 +70,7 @@ TT(
 TT)
 
 MD(
-B{boolean?}
+B{boolean?} procedure
 
 The K{boolean?} predicate recognizes a Boolean by type.
 MD)
@@ -105,7 +105,7 @@ TT(
 TT)
 
 MD(
-B{not}
+B{not} procedure
 
 The only operation on booleans: K{not}, or logical negation.
 MD)
