@@ -1,6 +1,8 @@
 K	texttt	`...`
 E	emph	**...**
 B	textbf	__...__
+M{}	margin.	__...__
+F{}	footn.	(...)	footnote
 R{}{}	pageref	[]()	internal link to a ConsTcl heading
 L{}{}	footn.	[]()	arbitrary link
 W{}{}	wikip.	[]()	link to wikipedia

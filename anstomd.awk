@@ -115,6 +115,14 @@ function render(line) {
         sub(/I{([^{}]+)}/, "", line)
     }
 
+    while (match(line, /F{([^{}]+)}/)) {
+        sub(/F{([^{}]+)}/, sprintf(" (%s)", substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
+    while (match(line, /M{([^{}]+)}/)) {
+        sub(/M{([^{}]+)}/, sprintf("__%s__", substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
     while (match(line, /R{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), ref, /[^{}]+/)
         sub(/R{([^{}]+)}{([^{}]+)}/, sprintf("[%s](https://github.com/hoodiecrow/ConsTcl#%s)", link[1], link[2]), line)

@@ -1,5 +1,7 @@
 # see https://www.mgmarlow.com/words/2024-03-23-markdown-awk/
 
+BEGIN { hyperref = 0}
+
 { gsub(/\r/, ""); }
 
 BEGIN { modeline = "[#;] v" "im:" }
@@ -93,7 +95,14 @@ in_code_block && /^$/ { print " " ; next }
 
 $1 == "IX" { printf("\\index{%s}\n", $2) ; next }
 $1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
-$1 == "EM" { for (i=2; i<=NF; i++) collect($i) ; line = sprintf("\\emph{%s}", line) ; flushp() ; next }
+$1 == "EM" {
+    for (i=2; i<=NF; i++) collect($i)
+    line = render(line)
+    line = sprintf("\\emph{%s}", line)
+    print "\n" line "\n"
+    line = sep = ""
+    next
+}
 
 $1 == "IT" { if (!init) print "\\begin{itemize}";init = 1; print "\\item " render(substr($0, 3));next }
 init && $1 != "IT" { print "\\end{itemize}"; init = 0; next }
@@ -150,6 +159,14 @@ function render(line) {
         sub(/I{([^{}]+)}/, sprintf("\\index{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
+    while (match(line, /F{([^{}]+)}/)) {
+        sub(/F{([^{}]+)}/, sprintf("\\footnote{%s}", substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
+    while (match(line, /M{([^{}]+)}/)) {
+        sub(/M{([^{}]+)}/, sprintf("\\marginpar[%s]{%s\\raggedright}", substr(line, RSTART+2, RLENGTH-3), substr(line, RSTART+2, RLENGTH-3)), line)
+    }
+
     while (match(line, /R{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), ref, /[^{}]+/)
         sub(/R{([^{}]+)}{([^{}]+)}/, sprintf("%s (see page \\pageref{%s})", ref[1], ref[2]), line)
@@ -157,12 +174,12 @@ function render(line) {
 
     while (match(line, /L{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), link, /[^{}]+/)
-        sub(/L{([^{}]+)}{([^{}]+)}/, sprintf("%s\\footnote{See \\texttt{%s}}", link[1], link[2]), line)
+        sub(/L{([^{}]+)}{([^{}]+)}/, sprintf("%s\\footnote{See \\%s{%s}}", link[1], hyperref?"url":"texttt", link[2]), line)
     }
 
     while (match(line, /W{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), wiki, /[^{}]+/)
-        sub(/W{([^{}]+)}{([^{}]+)}/, sprintf("%s\\footnote{See \\texttt{https://en.wikipedia.org/wiki/%s}}", wiki[1], wiki[2]), line)
+        sub(/W{([^{}]+)}{([^{}]+)}/, sprintf("%s\\footnote{See \\%s{https://en.wikipedia.org/wiki/%s}}", wiki[1], hyperref?"url":"texttt", wiki[2]), line)
     }
 
     if (match(line, /\$/)) { gsub(/\$/, "\\$", line) }

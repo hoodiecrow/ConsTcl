@@ -13,18 +13,18 @@ H3 Parsing
 H4 The parsing process
 
 MD(
-ParsingW{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
+W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
 letters, digits, and other characters, conforming to the rules of E{external
-  representation}. The result of parsing is an E{expression}I{expression} in
-  internal form.
+  representation}I{external representation}. The result of parsing is an
+  E{expression}I{expression} in internal form.
 
 The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
 expression that expresses it in a unique way. 
 
-For example, the external representation for a vector is a sharp sign (#), a
-left parenthesis ((), the external representation for some values, and a right
-parenthesis ()). When the reader or parser is working through input, a K{#(}
+For example, the external representation for a vector is a sharp sign (K{#}), a
+left parenthesis (K{(}), the external representation for some values, and a right
+parenthesis (K{)}). When the reader or parser is working through input, a K{#(}
 symbol signals that a vector structure is being read. A number of subexpressions
 for the elements of the vector follow, and then a closing parenthesis K{)}
 signals that the vector is done. The elements are saved in vector memory and the
@@ -84,7 +84,7 @@ the list.
 
 IG /images/intreplist.png
 
-B{parse}
+B{parse} procedure
 
 K{parse} can be called with either a string input port or a Tcl or ConsTcl
 string (which K{parse} uses to open a string input port). Once the input port is
@@ -92,7 +92,7 @@ established, K{parse} leaves control to K{read-expr}.
 MD)
 
 PR(
-parse (internal);inp tstrinpbuf -> expr
+parse (internal);inp tstrstrinpbuf -> expr
 PR)
 
 IX parse
@@ -137,10 +137,10 @@ TT(
 TT)
 
 MD(
-B{make-constant}
+B{make-constant} procedure
 
-The K{make-constant} helper procedure is called to set components of expressions to
-constants when read as a quoted literal.
+The K{make-constant} helper procedure is called to set expressions to constants
+when read as a literal.
 MD)
 
 IX make-constant
@@ -159,7 +159,7 @@ proc ::constcl::make-constant {val} {
 CB)
 
 MD(
-B{interspace}
+B{interspace} procedure
 
 The K{interspace} helper procedure recognizes whitespace between value
 representations.
@@ -168,9 +168,7 @@ MD)
 IX interspace
 CB(
 proc ::constcl::interspace {c} {
-  if {$c eq {} ||
-    [::string is space $c] ||
-    $c eq ";"} {
+  if {[::string is space $c] || $c eq ";"} {
       return #t
     } else {
       return #f
@@ -179,14 +177,14 @@ proc ::constcl::interspace {c} {
 CB)
 
 MD(
-B{character-check}
+B{character-check} procedure
 
 The K{character-check} helper procedure compares a potential
 character constant to the valid kinds.
 MD)
 
 PR(
-character-check (internal);name tstr -> tbool
+character-check (internal);name tstr -> bool
 PR)
 
 IX character-check
@@ -204,15 +202,15 @@ CB)
 H3 read
 
 MD(
-B{read}
+B{read} procedure
 
-The standard builtin K{read} reads an input port approximately the same way that
-K{parse} takes in an input buffer. The K{read-} procedures parse their input and
-produce ConsTcl objects.
+The standard builtin K{read} reads an input port the same way that K{parse}
+takes in an input buffer. The K{read-} procedures parse their input and produce
+ConsTcl objects.
 
-One can pass a port to K{read}, in which case K{read} sets the standard input port
-temporarily to the provided port. If not, K{read} uses the standard input port
-(usually the keyboard).
+One can pass a port to K{read}, in which case K{read} sets the standard input
+port temporarily to the provided port. If not, K{read} uses the default standard
+input port (usually the keyboard).
 MD)
 
 PR(
@@ -240,14 +238,14 @@ proc ::constcl::read {args} {
 CB)
 
 MD(
-B{read-expr}
+B{read-expr} procedure
 
 The procedure K{read-expr} reads input by reading the first available
 character and delegating to one of the more detailed reading procedures based on
 that, producing an expression of any kind. A Tcl character value can be passed
 to it, that character will be used first before reading from the input stream.
-If the end of file is encountered before an expression can be read in full, the
-procedure returns end of fileI{end of file}.
+If end of file is encountered before an expression can be read in full, the
+procedure returns end of file (K{#EOF})I{end of file}.
 MD)
 
 PR(
@@ -309,6 +307,8 @@ TT(
 TT)
 
 MD(
+B{readc} procedure
+
 K{readc} reads one character from the unget store if it isn't empty or else from
 the input stream. If the input stream is at end-of-file, an eof object is
 returned.
@@ -340,6 +340,8 @@ TT(
 TT)
 
 MD(
+B{read-find} procedure
+
 K{read-find} reads ahead through whitespace to find a given character. Returns 1
 if it has found the character, and 0 if it has stopped at some other character.
 Returns end of file if eof is encountered.
@@ -367,9 +369,11 @@ TT(
 TT)
 
 MD(
+B{read-end} procedure
+
 K{read-end} reads one character and returns 1 if it is an interspace character or
-an ending parenthesis or bracket. Otherwise it returns 0 or end-of-file if
-applicable. It ungets the character before returning.
+an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It
+ungets the character before returning.
 MD)
 
 PR(
@@ -385,7 +389,6 @@ proc ::constcl::read-end {} {
     set unget $c
     return 1
   } else {
-    read-eof $c
     set unget $c
     return 0
   }
@@ -397,8 +400,10 @@ TT(
 TT)
 
 MD(
-K{skip-ws} skips whitespace and comments (the ; to end of line kind). Uses the
-shared E{c} character. It leaves the first character not to be skipped in E{c}.
+B{skip-ws} procedure
+
+K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). Uses the
+shared E{c} variable. It leaves the first character not to be skipped in E{c}.
 MD)
 
 PR(
@@ -433,8 +438,10 @@ TT(
 TT)
 
 MD(
-K{read-eof} checks a number of objects for possible end-of-file objects. If it
-finds one, it returns E{from its caller} with the EOF value.
+B{read-eof} procedure
+
+K{read-eof} checks a number of presumed characters for possible end-of-file
+objects. If it finds one, it returns E{from its caller} with the EOF value.
 MD)
 
 PR(
@@ -457,11 +464,11 @@ TT(
 TT)
 
 MD(
-B{read-string-expr}
+B{read-string-expr} procedure
 
 K{read-string-expr} is activated by K{read-expr} when it reads a double quote. It
 collects characters until it reaches another (unescaped) double quote. It then
-returns a string expression--an immutable StringR{strings} object.
+returns a string expression--an immutable R{String}{strings} object.
 MD)
 
 PR(
@@ -534,11 +541,11 @@ TT(
 TT)
 
 MD(
-B{read-sharp}
+B{read-sharp} procedure
 
-K{read-sharp} is activated by K{read-expr} when it reads a sharp sign (K{#}). It in
-turn either delegates to the vector reader or the character reader, or returns
-boolean literals.
+K{read-sharp} is activated by K{read-expr} when it reads a sharp sign (K{#}). It
+in turn either delegates to the vector reader or the character reader, or
+returns boolean literals.
 MD)
 
 PR(
@@ -581,11 +588,11 @@ TT(
 TT)
 
 MD(
-B{read-vector-expr}
+B{read-vector-expr} procedure
 
 K{read-vector-expr} is activated by K{read-sharp} and reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
-expression and returns a VectorR{vectors} object.
+expression and returns a R{Vector}{vectors} object.
 MD)
 
 PR(
@@ -637,10 +644,10 @@ TT(
 TT)
 
 MD(
-B{read-character-expr}
+B{read-character-expr} procedure
 
 K{read-character-expr} reads input, producing a character and returning
-a CharR{characters} object.
+a R{Char}{characters} object.
 MD)
 
 PR(
@@ -703,7 +710,7 @@ TT(
 TT)
 
 MD(
-B{read-quoted-expr}
+B{read-quoted-expr} procedure
 
 K{read-quoted-expr} is activated by K{read-expr} when reading a single quote (').
 It then reads an entire expression beyond that, returning it wrapped in a list
@@ -750,13 +757,13 @@ TT(
 TT)
 
 MD(
-B{read-pair-expr}
+B{read-pair-expr} procedure
 
 The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
-list, or a possibly recursive structure of PairR{pairs-and-lists} objects,
-either a proper list (one that ends in #NIL), or an improper one (one that has
-an atom as its last member).
+list, or a possibly recursive structure of R{Pair}{pairs-and-lists} objects,
+either a proper list (one that ends in K{#NIL}), or an improper one (one that
+has an atom as its last member).
 MD)
 
 PR(
@@ -788,7 +795,7 @@ CB)
 
 MD(
 K{read-pair} is a helper procedure that does the heavy lifting in reading a pair
-structure. First it checks if the list is empty, returning #NIL in that case.
+structure. First it checks if the list is empty, returning K{#NIL} in that case.
 Otherwise it reads the first element in the list and then repeatedly the rest of
 them. If it reads a Dot object, the following element to be read is the tail
 end of an improper list. When K{read-pair} has reached the ending parenthesis or
@@ -895,7 +902,7 @@ TT(
 TT)
 
 MD(
-B{read-plus-minus}
+B{read-plus-minus} procedure
 
 K{read-plus-minus} is called when a plus or minus is found in the input stream.
 If the next character is a digit, it delegates to the number reader. Otherwise,
@@ -960,13 +967,13 @@ TT)
 } -output "+\n-\n-99\n"
 
 MD(
-B{read-number-expr}
+B{read-number-expr} procedure
 
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It actually takes in anything that starts out like a number and stops
 at whitespace or an ending parenthesis or bracket, and then it accepts or
 rejects the input by comparing it to a Tcl double. It returns a
-NumberR{numbers} object.
+R{Number}{numbers} object.
 MD)
 
 PR(
@@ -1037,7 +1044,7 @@ TT(
 TT)
 
 MD(
-B{read-unquoted-expr}
+B{read-unquoted-expr} procedure
 
 When a comma is found in the input stream, K{read-unquoted-expr} is activated.
 If it reads an at-sign (K{@}) it selects the symbol K{unquote-splicing}, otherwise
@@ -1089,7 +1096,7 @@ TT(
 TT)
 
 MD(
-B{read-quasiquoted-expr}
+B{read-quasiquoted-expr} procedure
 
 K{read-quasiquoted-expr} is activated when there is a backquote (K{`}) in the
 input stream. It reads an entire expression and returns it wrapped in
@@ -1132,12 +1139,12 @@ TT(
 TT)
 
 MD(
-B{read-identifier-expr}
+B{read-identifier-expr} procedure
 
 K{read-identifier-expr} is activated for "anything else", and takes in
 characters until it finds whitespace or an ending parenthesis or bracket. It
 checks the input against the rules for identifiers, accepting or rejecting it
-with an error message. It returns a SymbolR{symbols} object.
+with an error message. It returns a R{Symbol}{symbols} object.
 MD)
 
 PR(
@@ -1200,7 +1207,7 @@ TT(
 TT)
 
 MD(
-B{read-object-expr}
+B{read-object-expr} procedure
 
 A non-standard extension, K{read-object-expr} reads a ConsTcl object of any kind
 and passes its name along.

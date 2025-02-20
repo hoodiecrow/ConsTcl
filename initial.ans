@@ -18,7 +18,7 @@ will show up a lot in the test cases.
 MD)
 
 MD(
-B{reg}
+B{reg} procedure
 
 K{reg} registers selected built-in procedures in the definitions
 registerI{definitions register}. That way I don't need to manually keep track of
@@ -51,7 +51,7 @@ proc ::reg {key args} {
 CB)
 
 MD(
-B{regmacro}
+B{regmacro} procedure
 
 ConsTcl has macrosI{macro}, i.e. syntactic forms that are rewritten to concrete--but
 more verbose--forms. The evaluator passes macro forms to a command for expansion
@@ -72,12 +72,12 @@ proc ::regmacro {name} {
 CB)
 
 MD(
-B{pew}
+B{pew} procedure
 
 K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
 named for parse-eval-write. It reads and evals an expression, and writes the
 result.  It's the most common command in the test cases, since it allows me to
-write code directly in Scheme and to get nicely formatted output.
+write code directly in Scheme and to get proper Lisp output.
 MD)
 
 PR(
@@ -94,7 +94,7 @@ proc ::pew {str} {
 CB)
 
 MD(
-B{pw}
+B{pw} procedure
 
 K{pw} is a similar command, except it doesn't eval the expression. It just
 writes what is parsed. It is useful for tests when the evaluator can't (yet)
@@ -114,7 +114,7 @@ proc ::pw {str} {
 CB)
 
 MD(
-B{rw}
+B{rw} procedure
 
 K{rw} is the reading variant of K{pw}. It just writes what is
 read.
@@ -133,7 +133,7 @@ proc ::rw {args} {
 CB)
 
 MD(
-B{pe}
+B{pe} procedure
 
 K{pe} is also similar, but it doesn't write the expression. It just evaluates what
 is read. That way I get a value object which I can pass to another command, or
@@ -153,7 +153,7 @@ proc ::pe {str} {
 CB)
 
 MD(
-B{re}
+B{re} procedure
 
 K{re} is like K{pe}, but it reads from a port instead of an input buffer. It
 evaluates what is read.
@@ -172,7 +172,7 @@ proc ::re {args} {
 CB)
 
 MD(
-B{p}
+B{p} procedure
 
 K{p} only parses the input, returning an expression object.
 MD)
@@ -189,7 +189,7 @@ proc ::p {str} {
 CB)
 
 MD(
-B{e}
+B{e} procedure
 
 K{e} is another single-action procedure, evaluating an expression and returning a
 value.
@@ -207,7 +207,7 @@ proc ::e {expr} {
 CB)
 
 MD(
-B{w}
+B{w} procedure
 
 K{w} is the third single-action procedure, printing a value and that's all.
 MD)
@@ -224,7 +224,7 @@ proc ::w {val} {
 CB)
 
 MD(
-B{r}
+B{r} procedure
 
 K{r} is an extra single-action procedure, reading from default input or from a
 port and returning an expression object.
@@ -242,7 +242,7 @@ proc ::r {args} {
 CB)
 
 MD(
-B{prw}
+B{prw} procedure
 
 K{prw}  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the 'resolve local defines' section.
@@ -263,7 +263,7 @@ proc ::prw {str} {
 CB)
 
 MD(
-B{pxw}
+B{pxw} procedure
 
 K{pxw} attempts to macro-expand whatever it reads, and writes the result. I know
 that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
@@ -285,7 +285,7 @@ proc ::pxw {str} {
 CB)
 
 MD(
-B{pn}
+B{pn} procedure
 
 K{pn} stands for 'procedure name'. When called, tells the caller the name of its
 command. I use it for error messages so the error message can automagically tell
@@ -304,12 +304,12 @@ proc ::pn {} {
 CB)
 
 MD(
-B{typeof?}
+B{typeof?} procedure
 
 K{typeof?} looks at a value's type and reports if it is the same as the given
 type. To be certain, it looks at the value in two ways: once assuming that the value
-is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl
-interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms
+is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
+interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
 the type, the procedure returns #t. By Scheme convention, predicatesI{predicate}
 (procedures that return either K{#t} or K{#f}) have '?' at the end of their
 name.
@@ -334,7 +334,7 @@ proc ::constcl::typeof? {val type} {
 CB)
 
 MD(
-B{in-range}
+B{in-range} procedure
 
 This one is a little bit of both, a utility function that is also among the
 builtins in the library. It started out as a one-liner by Donal K.
@@ -431,7 +431,7 @@ oo::singleton create ::constcl::NIL {
 CB)
 
 MD(
-B{null?}
+B{null?} procedure
 
 The K{null?} standard predicate recognizes the empty list. Predicates in ConsTcl
 return #t or #f for true or false, so some care is necessary when calling them
@@ -477,7 +477,7 @@ oo::class create ::constcl::Dot {
 CB)
 
 MD(
-B{dot?}
+B{dot?} procedure
 
 K{dot?} is a type predicate that checks for membership in the type K{Dot}.
 MD)
@@ -565,7 +565,7 @@ CB)
 H3 The error and check procedures
 
 MD(
-B{error}
+B{error} procedure
 
 K{error} is used to signal an error, with E{msg} being a message string and the
 optional arguments being values to show after the message.
@@ -597,7 +597,7 @@ proc ::constcl::error {msg args} {
 CB)
 
 MD(
-B{check}
+B{check} procedure
 
 K{check} does a check (typically a type check) on something and throws an error if
 it fails.
@@ -618,7 +618,7 @@ CB)
 H3 The atom? predicate
 
 MD(
-B{atom?}
+B{atom?} procedure
 
 There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
 collections of lists and atoms. Atoms are instances of types such as booleans,

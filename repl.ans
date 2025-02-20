@@ -48,9 +48,12 @@ MD)
 IX repl
 CB(
 proc ::repl {{prompt "ConsTcl> "}} {
+  set cur_env [Environment new #NIL {} ::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    pew $str
+    set expr [::constcl::parse $str]
+    set val [::constcl::eval $expr $cur_env]
+    ::constcl::write $val
     set str [::constcl::input $prompt]
   }
 }

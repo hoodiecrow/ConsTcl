@@ -297,9 +297,7 @@ proc ::constcl::make-constant {val} {
 }
 
 proc ::constcl::interspace {c} {
-  if {$c eq {} ||
-    [::string is space $c] ||
-    $c eq ";"} {
+  if {[::string is space $c] || $c eq ";"} {
       return #t
     } else {
       return #f
@@ -399,7 +397,6 @@ proc ::constcl::read-end {} {
     set unget $c
     return 1
   } else {
-    read-eof $c
     set unget $c
     return 0
   }
@@ -856,7 +853,9 @@ proc ::constcl::do-and {tail prev env} {
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
     set qq "`(if ,first ,rest #f)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -890,7 +889,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set qq "`(if ,keyl
                (begin ,@body)
                ,rest)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -929,7 +930,9 @@ proc ::constcl::do-cond {tail env} {
     set qq "`(if ,pred
                (begin ,@body)
                ,rest)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -941,7 +944,9 @@ proc ::constcl::expand-define {expr env} {
   /define [S tail] $tail $env
   set qq "`(define ,(caar tail)
              (lambda ,(cdar tail) ,@(cdr tail)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro del!
@@ -959,7 +964,9 @@ proc ::constcl::expand-del! {expr env} {
   /define [S key] [cadr $tail] $env
   set qq "`(set! ,listname
              (delete! ,listname ,key))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro for
@@ -1069,7 +1076,9 @@ proc ::constcl::expand-let {expr env} {
                (set!
                  ,variable
                  (lambda ,varlist ,@body)) ,call)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   } else {
     # regular let
     set bindings [car $tail]
@@ -1083,7 +1092,9 @@ proc ::constcl::expand-let {expr env} {
       dict values $vars]] $env
     set qq "`((lambda ,varlist ,@body)
                ,@vallist)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -1120,7 +1131,9 @@ proc ::constcl::do-or {tail env} {
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -1137,7 +1150,9 @@ proc ::constcl::expand-pop! {expr env} {
   }
   /define [S listname] [car $tail] $env
   set qq "`(set! ,listname (cdr ,listname))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro push!
@@ -1162,7 +1177,9 @@ proc ::constcl::expand-push! {expr env} {
   set qq "`(set!
              ,listname
              (cons ,obj ,listname))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro put!
@@ -1190,7 +1207,9 @@ proc ::constcl::expand-put! {expr env} {
                (begin
                  (list-set! ,name (+ idx 1) ,val)
                  ,name)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro quasiquote
@@ -1278,7 +1297,9 @@ proc ::constcl::expand-unless {expr env} {
   set qq "`(if ,(car tail)
              '()
              (begin ,@(cdr tail)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 regmacro when
@@ -1290,7 +1311,9 @@ proc ::constcl::expand-when {expr env} {
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))
              '())"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 proc ::constcl::resolve-local-defines {exps} {
@@ -4229,9 +4252,12 @@ proc ::constcl::input {prompt} {
 }
 
 proc ::repl {{prompt "ConsTcl> "}} {
+  set cur_env [Environment new #NIL {} ::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    pew $str
+    set expr [::constcl::parse $str]
+    set val [::constcl::eval $expr $cur_env]
+    ::constcl::write $val
     set str [::constcl::input $prompt]
   }
 }

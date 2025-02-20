@@ -7,6 +7,7 @@
 \usepackage{listings}
 \usepackage[T1]{fontenc}
 \usepackage{imakeidx}
+\usepackage{marginnote}
 \lstset{
   showstringspaces=false,
   language=tcl,
@@ -52,52 +53,93 @@
 \index{to run the software}
 
 
-First things first. To run, source the file \textbf{constcl.tcl} (with \textbf{schemebase.lsp} in the directory) in a Tcl console (I use \textbf{tkcon}) and use the command \textbf{repl} for a primitive command dialog. Source \textbf{all.tcl} to run the test suite (you need \textbf{constcl.test} for that).
+First things first. To run, source the file \textbf{constcl.tcl} (with
+\textbf{schemebase.lsp} in the directory) in a Tcl console (I use
+\textbf{tkcon}) and use the command \textbf{repl} for a primitive command
+dialog. Source \textbf{all.tcl} to run the test suite (you need
+\textbf{constcl.test} for that).
 
 \section{Background}
 \label{background}
 \index{background}
 
-
-ConsTcl is a second try at a Lisp interpreter written in Tcl--the first one was Thtcl\footnote{See \texttt{https://github.com/hoodiecrow/thtcl}}--this time with a real Lisp-like type system.
+It all started with Peter Norvig's Lisp emulator
+L{Lispy}{https://norvig.com/lispy.html}. In January 2025 I was inspired to port
+it to Tcl. The result was Thtcl\footnote{See
+\texttt{https://github.com/hoodiecrow/thtcl}}. It had the same features and
+limitations as Lispy, and I came out of the experience feeling a bit
+dissatisfied. In the latter part of January I embarked on a new project,
+ConsTcl, a true Lisp interpreter.
 
 \subsubsection{About ConsTcl}
 \label{about-constcl}
 
-
-It's written with Vim, the one and only editor.
-
-
-It steps over and back over the border between Tcl and Lisp a lot of times while working, and as a result is fairly slow. On my cheap computer, the following code (which calculates the factorial of 100) takes 0.03 seconds to run.
+It's written with Vim, my favorite editor. I'm using annotated source which
+mixes code with documentation and test cases. Compared to Lispy/Thtcl, ConsTcl
+has, quote from Lispy, comments, quote and quasiquote notation, \# literals,
+the derived expression types (such as cond, derived from if, or let, derived
+from lambda), and dotted list notation. And also real consed lists. Again
+compared to Lispy/Thtcl, ConsTcl has the data types, quote, strings,
+characters, booleans, ports, vectors. And pairs and procedures too. The number
+of missing primitive procedures is in the tens, not the 100s. The completeness
+comes with a price: due to the sheer number of calls for each action, ConsTcl
+is is fairly slow. On my cheap computer, the following code (which calculates
+the factorial of 100) takes 0.03 seconds to run. That is ten times slower than
+Lispy assuming that Norvig's computer is as slow as mine, which is unlikely.
 
 \begin{verbatim}
 time {pe "(fact 100)"} 10
 \end{verbatim}
 
-
-Speed aside, it is an amusing piece of machinery. The types are implemented as TclOO classes, and evaluation is to a large extent applying Lisp methods to Tcl data.
-
-
-It is limited. Quite a few standard procedures are missing. It doesn't come near to having call/cc or tail recursion. It doesn't have exact/inexact numbers, or most of the numerical tower. Error reporting is spotty, and there is no error recovery.
+ConsTcl is of course still limited. It doesn't come close to having call/cc or
+tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
+tower. Error reporting is spotty, and there is no error recovery.
 
 \subsubsection{About the book}
 \label{about-the-book}
 
 
-I like writing documentation, and occasionally I'm good at it. When I work on a software project, I like to annotate the source code with bits of documentation, which I then extract and put together using document stream editing tools like \textbackslash\ texttt{sed} and \textbackslash\ texttt{awk} (The pipeline is Vim to create annotated source > sed/awk > a markdown README document for GitHub's benefit > awk > a (La)TeX document > TeXworks > a PDF document: all the steps except the last are automated using make). On finishing up ConsTcl, it struck me that the documentation for this piece of software was fit for a book.
+I like writing documentation, and occasionally I'm good at it. I like to
+annotate the source code with bits of documentation, which I then extract and
+put together using tools like \texttt{awk}. It looks like this:
+
+\includegraphics{images/document.png}
+
+In the middle are a bunch of \texttt{.ans} files (ANnotated Source). From the
+TT tags of those, I extract a \texttt{.test} file. From the CB tags I extract
+\texttt{.tcl} source. From all the tags except TT I extract formatted
+documentation in Markdown and (La)TeX format. All these extractions are
+automated using \texttt{make}. I create a PDF document from the (La)TeX source
+using TeXworks. On finishing up ConsTcl, it struck me that the documentation
+for this piece of software was fit for a book.
 
 \subsubsection{About the program listings}
 \label{about-the-program-listings}
 
 
-I have tried to write clear, readable code, but the page format forces me to shorten lines. I have used two-space indents instead of four-space, a smaller font, and broken off long lines with a \textbackslash\  at the end of the first line (a so-called "tucked-in tail"). Neither of these measures improve readability, but the alternative is overwriting the margins.
+I have tried to write clear, readable code, but the page format forces me to
+shorten lines. I have used two-space indents instead of four-space, a smaller
+font, and broken off long lines with a \textbackslash\  at the end of the first
+line (a so-called "tucked-in tail"). Neither of these measures improve
+readability, but the alternative is overwriting the margins. Not all broken
+lines have the \textbackslash: some are broken inside a
+\texttt{\{}\ldots\texttt{\}} block, and some right after a \texttt{[}.
 
 \subsubsection{About me}
 \label{about-me}
 
+I'm a 60 year old former system manager who has been active in programming
+since 1979. Currently, since around 25 years, my language of choice is the
+rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits
+me, and there are things that one can do in Tcl that one can't easily do in
+other languages. Lisp is a runner-up in my affections, a language that
+fascinates me but doesn't fit my brain very well (though I have written one
+large piece of software in AutoLisp, a CAD subsystem for designing drilling
+equipment).
 
-I'm a 60 year old former system manager who has been active in programming since 1979--46 years. Currently, since around 25 years, my language of choice is the rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits me, and there are things that one can do in Tcl that one can't easily do in other languages. Lisp is a runner-up in my affections, a language that fascinates me but doesn't fit my brain very well (though I have written one large piece of software in AutoLisp).
-
-
-In addition to my terms as programmer and system manager, I have worked as a teacher (teaching C/C++ in upper secondary school) and for a short while I produced teaching materials for the department for information technology at the University of Skövde. I've also been active writing answers at question-and-answer sites on the web, mainly Stack Overflow.
+In addition to my terms as programmer and system manager, I have worked as a
+teacher (teaching C/C++ in upper secondary school) and for a short while I
+produced textbooks for the department for information technology at
+the University of Skövde. I've also been active writing answers at
+question-and-answer sites on the web, mainly Stack Overflow.
 

@@ -19,16 +19,16 @@ sections.
 MD)
 
 MD(
-B{eval}
+B{eval} procedure
 
 The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
 it according to its syntactic form.
 
 K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
 on a non-atomic expression into a more concrete expression. See the part about
-macrosR{macros} below, and 2) resolving E{local defines}, acting on expressions
+R{macros}{macros} below, and 2) resolving E{local defines}, acting on expressions
 of the form K{(begin (define ...} when in a local environment. See the part
-about resolving local definesR{resolving-local-defines}.
+about R{resolving local defines}{resolving-local-defines}.
 MD)
 
 PR(
@@ -99,14 +99,14 @@ H4 Variable reference
 MD(
 EM Example: K{r} => 10 (a symbol K{r} is evaluated to 10)
 
-A variableI{variable} is an identifier (symbol) bound to a location in the
-environment. If an expression consists of the identifier it is evaluated to the
-value stored in that location. This is handled by the helper procedure
-K{lookup}. It searches the environment chain for the identifier, and returns the
-value stored in the location it is bound to.  It is an error to do lookup on an
-unbound symbol.
+A variableI{variable}I{variable reference} is an identifier (symbol) bound to a
+location in the environment. If an expression consists of an identifier it is
+evaluated to the value stored in that location. This is handled by the helper
+procedure K{lookup}. It searches the environment chain for the identifier, and
+returns the value stored in the location it is bound to.  It is an error to do
+lookup on an unbound symbol.
 
-B{lookup}
+B{lookup} procedure
 MD)
 
 PR(
@@ -135,9 +135,9 @@ H4 Constant literal
 MD(
 EM Example: K{99} => 99 (a number evaluates to itself)
 
-Not just numbers but booleans, characters, strings, and vectors evaluate to
-themselves, to their innate value. Because of this, they are called autoquoting
-types (see next paragraph).
+Not just numbersI{constant literal} but booleans, characters, strings, and
+vectors evaluate to themselves, to their innate value. Because of this, they are
+called autoquoting types (see next paragraph).
 MD)
 
 TT(
@@ -153,10 +153,10 @@ EM Example: K{(quote r)} => K{r} (quotation makes the symbol evaluate to itself,
 
 According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
-what quotation is for. K{(quote x)} evaluates to the symbol x itself and not to
-any value that might be stored under it. This is so common that there is a
-shorthand notation for it: K{'x} is interpreted as K{(quote x)} by the Lisp
-reader.
+what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol K{x}
+itself and not to any value that might be stored under it. This is so common
+that there is a shorthand notation for it: K{'x} is interpreted as K{(quote x)}
+by the Lisp reader.
 MD)
 
 TT(
@@ -170,14 +170,14 @@ H4 Conditional
 MD(
 EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} => 6
 
-The conditional form K{if} evaluates a Lisp list of three expressions. The first,
-the E{condition}, is evaluated first. If it evaluates to anything other than K{#f}
-(false), the second expression (the E{consequent}) is evaluated and the value
-returned. Otherwise, the third expression (the E{alternate}) is evaluated and the
-value returned. One of the two latter expressions will be evaluated, and the
-other will remain unevaluated.
+The conditionalI{conditional} form K{if} evaluates a Lisp list of three
+expressions. The first, the E{condition}, is evaluated first. If it evaluates to
+anything other than K{#f} (false), the second expression (the E{consequent}) is
+evaluated and the value returned. Otherwise, the third expression (the
+E{alternate}) is evaluated and the value returned. One of the two latter
+expressions will be evaluated, and the other will remain unevaluated.
 
-B{/if}
+B{/if} procedure
 MD)
 
 PR(
@@ -206,14 +206,14 @@ H4 Sequence
 MD(
 EM Example: K{(begin (define r 10) (* r r))} => 100
 
-When expressions are evaluated in sequence, the order is important for two
-reasons. If the expressions have any side effects, they happen in the same order
-of sequence. Also, if expressions are part of a pipeline of calculations, then
-they need to be processed in the order of that pipeline. The K{/begin} helper
-procedure takes a Lisp list of expressions and evaluates them in sequence,
-returning the value of the last one.
+When expressions are evaluated in sequenceI{sequence}, the order is important
+for two reasons. If the expressions have any side effects, they happen in the
+same order of sequence. Also, if expressions are part of a pipeline of
+calculations, then they need to be processed in the order of that pipeline. The
+K{/begin} helper procedure takes a Lisp list of expressions and evaluates them
+in sequence, returning the value of the last one.
 
-B{/begin}
+B{/begin} procedure
 MD)
 
 PR(
@@ -247,13 +247,14 @@ H4 Definition
 MD(
 EM Example: K{(define r 10)} => ... (a definition doesn't evaluate to anything)
 
-We've already seen the relationship between symbols and values. A symbol is
-bound to a value (or rather to the location the value is in), creating a
-variable, through definition. The K{/define} helper procedure adds a variable to
-the current environment. It first checks that the symbol name is a valid
-identifier, then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. Through
+(variable) definitionI{variable definition}I{definition}, a symbol is bound to a
+value (or rather to the location the value is in), creating a variable. The
+K{/define} helper procedure adds a variable to the current environment. It first
+checks that the symbol name is a valid identifier, then it updates the
+environment with the new binding.
 
-B{/define}
+B{/define} procedure
 MD)
 
 PR(
@@ -291,14 +292,14 @@ EM Example: K{(set! r 20)} => 20 (K{r} is a bound symbol, so it's allowed to ass
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name "variable", something that can be modified). The
-process is called assignment. The K{/set!} helper does assignment: it modifies
-an existing variable that is bound somewhere in the environment chain. It finds
-the variable's environment and updates the binding. It returns the value, so
-calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets both variables
-to 99. By Scheme convention, procedures that modify variables have "!" at the
-end of their name.
+process is called assignmentI{assignment}. The K{/set!} helper does assignment:
+it modifies an existing variable that is bound somewhere in the environment
+chain. It finds the variable's environment and updates the binding. It returns
+the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
+both variables to 99. By Scheme convention, procedures that modify variables
+have "!" at the end of their name.
 
-B{/set!}
+B{/set!} procedure
 MD)
 
 PR(
@@ -327,15 +328,15 @@ MD(
 EM Example: K{(lambda (r) (* r r))} => K{::oo::Obj3601} (it will be a different object each time)
 
 In Lisp, procedures are values just like numbers or characters. They can be
-defined as the value of a symbol, passed to other procedures, and returned from
-procedures. One diffence from most values is that procedures need to be defined.
-Two questions must answered: what is the procedure meant to do? The code that
-does that will form the body of the procedure. Also, what, if any, items of data
-will have to be provided to the procedure to make it possible to calculate its
-result?
+definedI{procedure definition} as the value of a symbol, passed to other
+procedures, and returned from procedures. One diffence from most values is that
+procedures need to be defined.  Two questions must answered: what is the
+procedure meant to do? The code that does that will form the body of the
+procedure. Also, what, if any, items of data will have to be provided to the
+procedure to make it possible to calculate its result?
 
 As an example, imagine that we want to have a procedure that calculates the
-square (K{x · x}) of a given number. In Lisp, expressions are written with
+square (K{x * x}) of a given number. In Lisp, expressions are written with
 the operator first and then the operands: K{(* x x)}. That is the body of the
 procedure. Now, what data will we have to provide to the procedure to make it
 work? A value stored in the variable K{x} will do. It's only a single variable,
@@ -351,10 +352,10 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
   (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square
   root of the sum of two squares.
 
-Under the hood, the helper K{/lambda} makes a ProcedureR{control} object. First
+Under the hood, the helper K{/lambda} makes a R{Procedure}{control} object. First
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
-has more than one expression, and taken out of its list if not. The Lisp list
-K{formals} is passed on as it is.
+has more than one expression (K{S begin} stands for "the symbol begin".), and
+taken out of its list if not. The Lisp list K{formals} is passed on as it is.
 
 A Scheme formals listI{formals list} is either:
 
@@ -363,7 +364,7 @@ IT A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each
 IT A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
 IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
 
-B{/lambda}
+B{/lambda} procedure
 MD)
 
 PR(
@@ -394,17 +395,17 @@ H4 Procedure call
 MD(
 EM Example: K{(+ 1 6)} => 7
 
-Once we have procedures, we can call them to have their calculations performed
-and yield results. The procedure name is put in the operator position at the
-front of a list, and the operands follow in the rest of the list. Our K{square}
-procedure would be called for instance like this: K{(square 11)}, and it will
-return 121.
+Once we have procedures, we can callI{procedure call} them to have their
+calculations performed and yield results. The procedure name is put in the
+operator position at the front of a list, and the operands follow in the rest of
+the list. Our K{square} procedure would be called for instance like this:
+K{(square 11)}, and it will return 121.
 
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if pr really is a
 procedure, and determines whether to call pr as an object or as a Tcl command.
 
-B{invoke}
+B{invoke} procedure
 MD)
 
 PR(
@@ -436,7 +437,7 @@ TT(
 TT)
 
 MD(
-B{splitlist}
+B{splitlist} procedure
 
 K{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
 MD)
@@ -458,7 +459,7 @@ proc ::constcl::splitlist {vals} {
 CB)
 
 MD(
-B{eval-list}
+B{eval-list} procedure
 
 K{eval-list} successively evaluates the elements of a Lisp list and returns the
 collected results as a Lisp list.

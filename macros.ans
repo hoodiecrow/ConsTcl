@@ -2,7 +2,7 @@
 H3 Macros
 
 MD(
-B{expand-macro}
+B{expand-macro} procedure
 
 Macros that allow concise, abstract expressions that are automatically rewritten
 into other, more concrete but also more verbose expressions is one of Lisp's
@@ -47,11 +47,10 @@ TT(
 TT)
 
 MD(
-B{expand-and}
+B{expand-and} procedure
 
 K{expand-and} expands the K{and} macro. It returns a K{begin}-expression if the
-macro has 0 or 1 elements, and a nested K{if} construct otherwise. K{S begin}
-stands for "the symbol begin".
+macro has 0 or 1 elements, and a nested K{if} construct otherwise.
 MD)
 
 PR(
@@ -77,15 +76,16 @@ CB)
 H5 Quasiquote: an aside
 
 MD(
-In this and many other macro expanders I use a quasiquote construct to lay out
-how the macro is to be expanded. A quasiquote starts with a backquote (K{`})
-instead of the single quote that precedes regular quoted material. A quasiquote
-allows for "unquoting" of selected parts: this is notated with a comma (K{,}).
-K{`(foo ,bar baz)} is very nearly the same as K{('foo bar 'baz)}. In both cases
-K{foo} and K{baz} are constants while K{bar} is a variable which will be evaluated.
-Like in K{do-and} here, a quasiquote serves well as a templating mechanism. The
-variables in the quasiquote need to be a part of the environment in which the
-quasiquote is expanded: I use K{/define} to bind them in a temporary environment.
+In this and many other macro expanders I use a quasiquoteI{quasiquote} construct
+to lay out how the macro is to be expanded. A quasiquote starts with a backquote
+(K{`}) instead of the single quote that precedes regular quoted material. A
+quasiquote allows for "unquoting" of selected parts: this is notated with a
+comma (K{,}).  K{`(foo ,bar baz)} is very nearly the same as K{('foo bar 'baz)}.
+In both cases K{foo} and K{baz} are constants while K{bar} is a variable which
+will be evaluated.  Like in K{do-and} here, a quasiquote serves well as a
+templating mechanism. The variables in the quasiquote need to be a part of the
+environment in which the quasiquote is expanded: I use K{/define} to bind them
+in a temporary environment.
 MD)
 
 PR(
@@ -103,7 +103,9 @@ proc ::constcl::do-and {tail prev env} {
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
     set qq "`(if ,first ,rest #f)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 CB)
@@ -126,7 +128,7 @@ TT(
 TT)
 
 MD(
-B{expand-case}
+B{expand-case} procedure
 
 The body of the K{case} form consists of a key-expression and a number of
 clauses. Each clause has a list of values and a body. If the key-expression
@@ -137,7 +139,7 @@ The K{case} macro is expanded by K{expand-case}. It expands to K{'()} if there a
 no clauses (left), and to nested K{if} constructs if there are some.
 MD)
 
-H5 caar, cadr, cdar, and the rest, an aside
+H5 caar, cadr, cdar, and the rest: an aside
 
 MD(
 The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
@@ -185,7 +187,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set qq "`(if ,keyl
                (begin ,@body)
                ,rest)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 CB)
@@ -209,7 +213,7 @@ TT(
 TT)
 
 MD(
-B{expand-cond}
+B{expand-cond} procedure
 
 The K{cond} form has a list of clauses, each with a predicate and a body. The
 clauses is considered in order, and if a predicate evaluates to something other
@@ -261,7 +265,9 @@ proc ::constcl::do-cond {tail env} {
     set qq "`(if ,pred
                (begin ,@body)
                ,rest)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 CB)
@@ -295,7 +301,7 @@ TT(
 TT)
 
 MD(
-B{expand-define}
+B{expand-define} procedure
 
 K{define} has two variants, one of which requires some rewriting. It's the one
 with an implied K{lambda} call, the one that defines a procedure. 
@@ -323,7 +329,9 @@ proc ::constcl::expand-define {expr env} {
   /define [S tail] $tail $env
   set qq "`(define ,(caar tail)
              (lambda ,(cdar tail) ,@(cdr tail)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -347,7 +355,7 @@ TT(
 TT)
 
 MD(
-B{expand-del!}
+B{expand-del!} procedure
 
 The macro K{del!} updates a property list. It removes a key-value pair if the key
 is present, or leaves the list untouched if it isn't.
@@ -374,7 +382,9 @@ proc ::constcl::expand-del! {expr env} {
   /define [S key] [cadr $tail] $env
   set qq "`(set! ,listname
              (delete! ,listname ,key))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -407,7 +417,7 @@ TT(
 TT)
 
 MD(
-B{expand-for}
+B{expand-for} procedure
 
 The K{expand-for} procedure expands the K{for} macro. It returns a K{begin}
 construct containing the iterations of each clause (multiple clauses
@@ -515,7 +525,7 @@ TT(
 TT)
 
 MD(
-B{expand-for/and}
+B{expand-for/and} procedure
 
 The K{expand-for/and} procedure expands the K{for/and} macro. It returns an K{and}
 construct containing the iterations of the clauses.
@@ -544,7 +554,7 @@ TT(
 TT)
 
 MD(
-B{expand-for/list}
+B{expand-for/list} procedure
 
 The K{expand-for/list} procedure expands the K{for/list} macro. It returns a K{list}
 construct containing the iterations of each clause.
@@ -601,7 +611,7 @@ TT(
 TT)
 
 MD(
-B{expand-for/or}
+B{expand-for/or} procedure
 
 The K{expand-for/or} procedure expands the K{for/or} macro. It returns an K{or}
 construct containing the iterations of each clause.
@@ -630,7 +640,7 @@ TT(
 TT)
 
 MD(
-B{expand-let}
+B{expand-let} procedure
 
 K{expand-let} expands the named K{let} and 'regular' K{let} macros. They ultimately
 expand to K{lambda} constructs.
@@ -666,7 +676,9 @@ proc ::constcl::expand-let {expr env} {
                (set!
                  ,variable
                  (lambda ,varlist ,@body)) ,call)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   } else {
     # regular let
     set bindings [car $tail]
@@ -680,7 +692,9 @@ proc ::constcl::expand-let {expr env} {
       dict values $vars]] $env
     set qq "`((lambda ,varlist ,@body)
                ,@vallist)"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 
@@ -731,7 +745,7 @@ TT(
 TT)
 
 MD(
-B{expand-or}
+B{expand-or} procedure
 
 K{expand-or} expands the K{or} macro. It returns a K{begin}-expression if the macro
 has 0 or 1 elements, and a nested K{if} construct otherwise.
@@ -781,13 +795,15 @@ proc ::constcl::do-or {tail env} {
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
-    return [expand-quasiquote [parse $qq] $env]
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
   }
 }
 CB)
 
 MD(
-B{expand-pop!}
+B{expand-pop!} procedure
 
 The macro K{pop!} updates a list. It removes the first element.
 MD)
@@ -811,7 +827,9 @@ proc ::constcl::expand-pop! {expr env} {
   }
   /define [S listname] [car $tail] $env
   set qq "`(set! ,listname (cdr ,listname))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -831,7 +849,7 @@ TT(
 TT)
 
 MD(
-B{expand-push!}
+B{expand-push!} procedure
 
 The macro K{push!} updates a list. It adds a new element as the new first element.
 MD)
@@ -864,7 +882,9 @@ proc ::constcl::expand-push! {expr env} {
   set qq "`(set!
              ,listname
              (cons ,obj ,listname))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -875,7 +895,7 @@ TT(
 TT)
 
 MD(
-B{expand-put!}
+B{expand-put!} procedure
 
 The macro K{put!} updates a property list. It adds a key-value pair if the key
 isn't present, or changes the value in place if it is.
@@ -912,7 +932,9 @@ proc ::constcl::expand-put! {expr env} {
                (begin
                  (list-set! ,name (+ idx 1) ,val)
                  ,name)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -938,7 +960,7 @@ TT(
 TT)
 
 MD(
-B{expand-quasiquote}
+B{expand-quasiquote} procedure
 
 A quasi-quote isn't a macro, but we will deal with it in this section anyway.
 K{expand-quasiquote} traverses the quasi-quoted structure searching for K{unquote}
@@ -1065,7 +1087,7 @@ if no {
 TT)
 
 MD(
-B{expand-unless}
+B{expand-unless} procedure
 
 K{unless} is a conditional like K{if}, with the differences that it takes a number
 of expressions and only executes them for a false outcome of K{car $tail}.
@@ -1086,7 +1108,9 @@ proc ::constcl::expand-unless {expr env} {
   set qq "`(if ,(car tail)
              '()
              (begin ,@(cdr tail)))"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 
@@ -1102,7 +1126,7 @@ TT(
 TT)
 
 MD(
-B{expand-when}
+B{expand-when} procedure
 
 K{when} is a conditional like K{if}, with the differences that it takes a number
 of expressions and only executes them for a true outcome of K{car $tail}.
@@ -1123,7 +1147,9 @@ proc ::constcl::expand-when {expr env} {
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))
              '())"
-  return [expand-quasiquote [parse $qq] $env]
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 CB)
 

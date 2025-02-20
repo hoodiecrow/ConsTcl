@@ -1,120 +1,121 @@
-env        -> an environment
-dc         -> -don't care-
-msg        -> a message string
-invoke     -> what pr returns
-formals    -> a Scheme formals list
-lisp       -> Lisp source text
-inpbuf     -> an input buffer
-tstrinpbuf -> a Tcl string or an input buffer
-none       -> nothing
-noneeof    -> nothing, or end of file
-varsvals   -> a flag, VARS or VALS
-pterm      -> the terminating paren or bracket
-pstr       -> a structure of pair expressions
-pstreof    -> a structure of pair expressions or end of file
-sharp      -> a vector, boolean, or character value
-sharpeof   -> a vector, boolean, or character value or end of file
-quote      -> an expression wrapped in the quote symbol
-quoteeof   -> an expression wrapped in the quote symbol or end of file
-unquote    -> an expression wrapped in the unquote/-splicing symbol
-unquoteeof -> an expr. wr. in the unquote/-splicing symbol or end of file
-qquote     -> an expression wrapped in the quasiquote symbol
-qquoteeof  -> an expr. wr. in the quasiquote symbol or end of file
-pm         -> either the symbols + or - or a number
-pmeof      -> either the symbols + or - or a number or end of file
-obj        -> a ConsTcl object
-objeof     -> a ConsTcl object or end of file
-lvfalse    -> a Lisp list of values OR #f
-alist      -> an association list
-plist      -> a property list
-handle     -> a channel handle
-pred       -> a predicate
-epred      -> an equivalence predicate
-val        -> a Lisp value
-vals       -> some Lisp values
-lvals      -> a Lisp list of Lisp values
-tvals      -> a Tcl list of Lisp values
-tlvals     -> a Tcl list of Lisp lists of Lisp values
-nil        -> the empty list
-nils       -> some nil values
-lnils      -> a Lisp list of nil values
-tnils      -> a Tcl list of nil values
-num        -> a number
-numeof     -> a number or end of file
-nums       -> some numbers
-lnums      -> a Lisp list of numbers
-tnum       -> a Tcl number
-tnums      -> a Tcl list of numbers
-bool       -> a boolean
-bools      -> some booleans
-lbools     -> a Lisp list of booleans
-tbool      -> a Tcl truth value (1 or 0)
-tbooleof   -> a Tcl truth value (1 or 0) or end of file
-tbools     -> a Tcl list of booleans
-char       -> a character
-chareof    -> a character or end of file
-chars      -> some characters
-lchars     -> a Lisp list of characters
-tchr       -> a Tcl character
-tchrs      -> some Tcl characters
-tchreof    -> a Tcl character or end of file
-tchars     -> a Tcl list of characters
-proc       -> a procedure
-procs      -> some procedures
-lprocs     -> a Lisp list of procedures
-tprocs     -> a Tcl list of procedures
-pair       -> a pair
-pairs      -> some pairs
-lpairs     -> a Lisp list of pairs
-tpairs     -> a Tcl list of pairs
-list       -> a list
-lists      -> some lists
-llists     -> a Lisp list of lists
-tlists     -> a Tcl list of lists
-str        -> a string
-streof     -> a string or end of file
-strs       -> some strings
-lstrs      -> a Lisp list of strings
-tstrs      -> a Tcl list of strings
-tstr       -> a Tcl string
-sym        -> a symbol
-symeof     -> a symbol or end of file
-syms       -> some symbols
-lsyms      -> a Lisp list of symbols
-tsyms      -> a Tcl list of symbols
-vec        -> a vector
-veceof     -> a vector or end of file
-vecs       -> some vectors
-lvecs      -> a Lisp list of vectors
-tvecs      -> a Tcl list of vectors
-expr       -> an expression
-expreof    -> an expression or end of file
-exprtail   -> an expression tail
-exprs      -> some expressions
-lexprs     -> a Lisp list of expressions
-texprs     -> a Tcl list of expressions
-arg        -> an argument
-args       -> some arguments
-largs      -> a Lisp list of arguments
-targs      -> a Tcl list of arguments
-int        -> an integer
-ints       -> some integers
-lints      -> a Lisp list of integers
-tints      -> a Tcl list of integers
-bsym       -> a bound symbol
-bsyms      -> some bound symbols
-lbsyms     -> a Lisp list of bound symbols
-tbsyms     -> a Tcl list of bound symbols
-port       -> a port
-ports      -> some ports
-lports     -> a Lisp list of ports
-tports     -> a Tcl list of ports
-iport      -> an input port
-iports     -> some input ports
-liports    -> a Lisp list of input ports
-tiports    -> a Tcl list of input ports
-oport      -> an output port
-oports     -> some output ports
-loports    -> a Lisp list of output ports
-toports    -> a Tcl list of output ports
+env           -> an environment
+dc            -> -don't care-
+msg           -> a message string
+invoke        -> what pr returns
+formals       -> a Scheme formals list
+lisp          -> Lisp source text
+inpbuf        -> an input buffer
+tstrinpbuf    -> a Tcl string or an input buffer
+tstrstrinpbuf -> a Tcl string, Lisp string, or an input buffer
+none          -> nothing
+noneeof       -> nothing, or end of file
+varsvals      -> a flag, VARS or VALS
+pterm         -> the terminating paren or bracket
+pstr          -> a structure of pair expressions
+pstreof       -> a structure of pair expressions or end of file
+sharp         -> a vector, boolean, or character value
+sharpeof      -> a vector, boolean, or character value or end of file
+quote         -> an expression wrapped in the quote symbol
+quoteeof      -> an expression wrapped in the quote symbol or end of file
+unquote       -> an expression wrapped in the unquote/-splicing symbol
+unquoteeof    -> an expr. wr. in the unquote/-splicing symbol or end of file
+qquote        -> an expression wrapped in the quasiquote symbol
+qquoteeof     -> an expr. wr. in the quasiquote symbol or end of file
+pm            -> either the symbols + or - or a number
+pmeof         -> either the symbols + or - or a number or end of file
+obj           -> a ConsTcl object
+objeof        -> a ConsTcl object or end of file
+lvfalse       -> a Lisp list of values OR #f
+alist         -> an association list
+plist         -> a property list
+handle        -> a channel handle
+pred          -> a predicate
+epred         -> an equivalence predicate
+val           -> a Lisp value
+vals          -> some Lisp values
+lvals         -> a Lisp list of Lisp values
+tvals         -> a Tcl list of Lisp values
+tlvals        -> a Tcl list of Lisp lists of Lisp values
+nil           -> the empty list
+nils          -> some nil values
+lnils         -> a Lisp list of nil values
+tnils         -> a Tcl list of nil values
+num           -> a number
+numeof        -> a number or end of file
+nums          -> some numbers
+lnums         -> a Lisp list of numbers
+tnum          -> a Tcl number
+tnums         -> a Tcl list of numbers
+bool          -> a boolean
+bools         -> some booleans
+lbools        -> a Lisp list of booleans
+tbool         -> a Tcl truth value (1 or 0)
+tbooleof      -> a Tcl truth value (1 or 0) or end of file
+tbools        -> a Tcl list of booleans
+char          -> a character
+chareof       -> a character or end of file
+chars         -> some characters
+lchars        -> a Lisp list of characters
+tchr          -> a Tcl character
+tchrs         -> some Tcl characters
+tchreof       -> a Tcl character or end of file
+tchars        -> a Tcl list of characters
+proc          -> a procedure
+procs         -> some procedures
+lprocs        -> a Lisp list of procedures
+tprocs        -> a Tcl list of procedures
+pair          -> a pair
+pairs         -> some pairs
+lpairs        -> a Lisp list of pairs
+tpairs        -> a Tcl list of pairs
+list          -> a list
+lists         -> some lists
+llists        -> a Lisp list of lists
+tlists        -> a Tcl list of lists
+str           -> a string
+streof        -> a string or end of file
+strs          -> some strings
+lstrs         -> a Lisp list of strings
+tstrs         -> a Tcl list of strings
+tstr          -> a Tcl string
+sym           -> a symbol
+symeof        -> a symbol or end of file
+syms          -> some symbols
+lsyms         -> a Lisp list of symbols
+tsyms         -> a Tcl list of symbols
+vec           -> a vector
+veceof        -> a vector or end of file
+vecs          -> some vectors
+lvecs         -> a Lisp list of vectors
+tvecs         -> a Tcl list of vectors
+expr          -> an expression
+expreof       -> an expression or end of file
+exprtail      -> an expression tail
+exprs         -> some expressions
+lexprs        -> a Lisp list of expressions
+texprs        -> a Tcl list of expressions
+arg           -> an argument
+args          -> some arguments
+largs         -> a Lisp list of arguments
+targs         -> a Tcl list of arguments
+int           -> an integer
+ints          -> some integers
+lints         -> a Lisp list of integers
+tints         -> a Tcl list of integers
+bsym          -> a bound symbol
+bsyms         -> some bound symbols
+lbsyms        -> a Lisp list of bound symbols
+tbsyms        -> a Tcl list of bound symbols
+port          -> a port
+ports         -> some ports
+lports        -> a Lisp list of ports
+tports        -> a Tcl list of ports
+iport         -> an input port
+iports        -> some input ports
+liports       -> a Lisp list of input ports
+tiports       -> a Tcl list of input ports
+oport         -> an output port
+oports        -> some output ports
+loports       -> a Lisp list of output ports
+toports       -> a Tcl list of output ports
 
