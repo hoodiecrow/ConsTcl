@@ -7,8 +7,8 @@ B{write} procedure
 The third thing an interpreter must be able to do is to present the resulting
 code and data so that the user can know what the outcome was.
 
-As long as the object given to K{write} isn't the empty string, it passes it to
-K{write-value} and writes a newline.
+As long as the object given to K{write} isn't the empty string, it calls the
+object's K{write} method and writes a newline.
 MD)
 
 PR(
@@ -28,7 +28,7 @@ proc ::constcl::write {val args} {
       set dealloc 1
     }
     set ::constcl::Output_port $port
-    write-value [$::constcl::Output_port handle] $val
+    $val write [$::constcl::Output_port handle]
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
     if {$dealloc} {$port destroy}
@@ -38,27 +38,10 @@ proc ::constcl::write {val args} {
 CB)
 
 MD(
-B{write-value} procedure
-
-K{write-value} simply calls an object's K{write} method, letting the object
-write itself.
-MD)
-
-PR(
-write-value (internal);handle handle val val -> none
-PR)
-
-CB(
-proc ::constcl::write-value {handle val} {
-  $val write $handle
-  return
-}
-CB)
-
-MD(
 B{display} procedure
 
-The K{display} procedure is like K{write} but doesn't print a newline.
+The K{display} procedure is like K{write} but it calls the method's K{display}
+method and doesn't print a newline.
 MD)
 
 PR(
@@ -104,7 +87,7 @@ proc ::constcl::write-pair {handle pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  write-value $handle $a
+  $a write $handle
   if {[pair? $d] ne "#f"} {
     # cdr is a cons pair
     puts -nonewline $handle " "
@@ -115,7 +98,7 @@ proc ::constcl::write-pair {handle pair} {
   } else {
     # it is an atom
     puts -nonewline $handle " . "
-    write-value $handle $d
+    $d write $handle
   }
   return
 }

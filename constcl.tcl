@@ -971,6 +971,13 @@ proc ::constcl::expand-del! {expr env} {
 
 regmacro for
 
+proc ::constcl::expand-for {expr env} {
+  set tail [cdr $expr]
+  set res [do-for $tail $env]
+  lappend res [parse "'()"]
+  return [list [S begin] {*}$res]
+}
+
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
     set seq [in-range $seq]
@@ -997,11 +1004,11 @@ proc ::constcl::do-for {tail env} {
   set length 0
   foreach clause $clauses {
     set id [car $clause]
-    set iter [for-seq [cadr $clause] $env]
-    set length [llength $iter]
+    set sequence [for-seq [cadr $clause] $env]
+    set length [llength $sequence]
     # save every id and step of the iteration
     for {set i 0} {$i < $length} {incr i} {
-        dict set data $id $i [lindex $iter $i]
+        dict set data $id $i [lindex $sequence $i]
     }
   }
   set res {}
@@ -1019,13 +1026,6 @@ proc ::constcl::do-for {tail env} {
         list {*}$decl] {*}[splitlist $body]]
   }
   return $res
-}
-
-proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
-  lappend res [parse "'()"]
-  return [list [S begin] {*}$res]
 }
 
 regmacro for/and
@@ -1108,6 +1108,7 @@ proc ::constcl::parse-bindings {name bindings} {
     }
     dict set vars $var $val
   }
+  return
 }
 
 regmacro or
@@ -1214,6 +1215,41 @@ proc ::constcl::expand-put! {expr env} {
 
 regmacro quasiquote
 
+proc ::constcl::expand-quasiquote {expr env} {
+  set tail [cdr $expr]
+  set qqlevel 0
+  if {[list? [car $tail]] ne "#f"} {
+    set node [car $tail]
+    return [qq-visit-child $node 0 $env]
+  } elseif {[vector? [car $tail]] ne "#f"} {
+    set vect [car $tail]
+    set res {}
+    for {set i 0} {$i < [
+        [vector-length $vect] numval]} {incr i} {
+      set idx [MkNumber $i]
+      set vecref [vector-ref $vect $idx]
+      if {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res [eval [cadr $vecref] $env]
+        }
+      } elseif {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote-splicing]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res {*}[splitlist [
+            eval [cadr $vecref] $env]]
+        }
+      } elseif {[atom? $vecref] ne "#f"} {
+        lappend res $vecref
+      } else {
+      }
+    }
+    return [list [S "vector"] {*}$res]
+  }
+}
+
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
@@ -1251,41 +1287,6 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
   }
   return [list {*}$res]
-}
-
-proc ::constcl::expand-quasiquote {expr env} {
-  set tail [cdr $expr]
-  set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
-    set node [car $tail]
-    return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
-    set vect [car $tail]
-    set res {}
-    for {set i 0} {$i < [
-        [vector-length $vect] numval]} {incr i} {
-      set idx [MkNumber $i]
-      set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res [eval [cadr $vecref] $env]
-        }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res {*}[splitlist [
-            eval [cadr $vecref] $env]]
-        }
-      } elseif {[atom? $vecref] ne "#f"} {
-        lappend res $vecref
-      } else {
-      }
-    }
-    return [list [S "vector"] {*}$res]
-  }
 }
 
 regmacro unless
@@ -1478,16 +1479,11 @@ proc ::constcl::write {val args} {
       set dealloc 1
     }
     set ::constcl::Output_port $port
-    write-value [$::constcl::Output_port handle] $val
+    $val write [$::constcl::Output_port handle]
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
     if {$dealloc} {$port destroy}
   }
-  return
-}
-
-proc ::constcl::write-value {handle val} {
-  $val write $handle
   return
 }
 
@@ -1517,7 +1513,7 @@ proc ::constcl::write-pair {handle pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  write-value $handle $a
+  $a write $handle
   if {[pair? $d] ne "#f"} {
     # cdr is a cons pair
     puts -nonewline $handle " "
@@ -1528,7 +1524,7 @@ proc ::constcl::write-pair {handle pair} {
   } else {
     # it is an atom
     puts -nonewline $handle " . "
-    write-value $handle $d
+    $d write $handle
   }
   return
 }

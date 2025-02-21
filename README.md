@@ -1504,6 +1504,7 @@ Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (
 
 Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for "the symbol begin".), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
+##### Scheme formals lists: an aside
 
 A Scheme formals list is either:
 
@@ -1643,6 +1644,13 @@ proc ::constcl::expand-and {expr env} {
   }
 }
 ```
+
+
+__do-and__ procedure
+
+
+`` do-and `` is called recursively for every argument of `` expand-or `` if there are more than one.
+
 ##### Quasiquote: an aside
 
 
@@ -1738,7 +1746,17 @@ regmacro cond
 proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
+```
 
+
+__do-cond__ procedure
+
+
+`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``. If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
+
+<table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[null? $clauses] ne "#f"} {
@@ -1844,13 +1862,30 @@ proc ::constcl::expand-del! {expr env} {
 __expand-for__ procedure
 
 
-The `` expand-for `` procedure expands the `` for `` macro. It returns a `` begin `` construct containing the iterations of each clause (multiple clauses weren't implemented, but I brought up my strongest brain cells and they did it).
+The `` expand-for `` procedure expands the `` for `` macro. It returns a `` begin `` construct containing the iterations of each clause (multiple clauses weren't implemented for the longest time, but I brought up my strongest brain cells and they did it).
 
-<table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-for (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro for
 
+proc ::constcl::expand-for {expr env} {
+  set tail [cdr $expr]
+  set res [do-for $tail $env]
+  lappend res [parse "'()"]
+  return [list [S begin] {*}$res]
+}
+```
+
+
+__for-seq__ procedure
+
+
+`` for-seq `` is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
+
+<table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+
+```
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
     set seq [in-range $seq]
@@ -1869,6 +1904,19 @@ proc ::constcl::for-seq {seq env} {
   }
 }
 ```
+
+
+__do-for__ procedure
+
+
+`` do-for `` is another helper procedure which does most of the work in the `` for/* `` forms. It iterates over the clauses, extracting and preparing the sequence for each, and stores each of the sequence steps in a dictionary under a double key: the identifier and the ordinal of the step.
+
+
+Then it creates a `` let `` construct for each step, in which each of the clauses' identifiers is bound to the step's value. The Tcl list of `` let `` constructs is returned.
+
+
+Each clause's sequence is supposed to be the same length as the others. One weakness of this implementation is that it doesn't ensure this, just hopes that the user does the right thing.
+
 <table border=1><thead><tr><th colspan=2 align="left">do-for (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
 
 ```
@@ -1880,11 +1928,11 @@ proc ::constcl::do-for {tail env} {
   set length 0
   foreach clause $clauses {
     set id [car $clause]
-    set iter [for-seq [cadr $clause] $env]
-    set length [llength $iter]
+    set sequence [for-seq [cadr $clause] $env]
+    set length [llength $sequence]
     # save every id and step of the iteration
     for {set i 0} {$i < $length} {incr i} {
-        dict set data $id $i [lindex $iter $i]
+        dict set data $id $i [lindex $sequence $i]
     }
   }
   set res {}
@@ -1904,22 +1952,15 @@ proc ::constcl::do-for {tail env} {
   return $res
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">expand-for (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
-  lappend res [parse "'()"]
-  return [list [S begin] {*}$res]
-}
-```
 
 
 __expand-for/and__ procedure
 
 
 The `` expand-for/and `` procedure expands the `` for/and `` macro. It returns an `` and `` construct containing the iterations of the clauses.
+
+
+The only differences from `` expand-for `` is that it doesn't add `` (quote ()) `` and that it wraps the list of iterations in `` and `` instead of `` begin ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/and (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1939,6 +1980,9 @@ __expand-for/list__ procedure
 
 The `` expand-for/list `` procedure expands the `` for/list `` macro. It returns a `` list `` construct containing the iterations of each clause.
 
+
+The only difference from `` expand for/and `` is that it wraps the list of iterations in `` list `` instead of `` and ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">expand for/list (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -1957,6 +2001,9 @@ __expand-for/or__ procedure
 
 The `` expand-for/or `` procedure expands the `` for/or `` macro. It returns an `` or `` construct containing the iterations of each clause.
 
+
+The only difference from `` expand for/list `` is that it wraps the list of iterations in `` or `` instead of `` list ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/or (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -1974,6 +2021,12 @@ __expand-let__ procedure
 
 
 `` expand-let `` expands the named `` let `` and 'regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
+
+
+Named `` let `` chops up the expression into variable, bindings, and body. It creates a dictionary with the variable as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the bindings. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` for with the varlist and the original body. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+
+
+Regular `` let `` chops up the original expression into bindings and body. It creates an empty dictionary and fills it up with variable/value pairs from the bindings. Then it builds a `` lambda `` operator form with the variable list, the body, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2023,7 +2076,17 @@ proc ::constcl::expand-let {expr env} {
     return $expr
   }
 }
+```
 
+
+__parse-bindings__ procedure
+
+
+`` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
+
+<table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
   foreach binding [splitlist $bindings] {
@@ -2034,6 +2097,7 @@ proc ::constcl::parse-bindings {name bindings} {
     }
     dict set vars $var $val
   }
+  return
 }
 ```
 
@@ -2059,6 +2123,13 @@ proc ::constcl::expand-or {expr env} {
   }
 }
 ```
+
+
+__do-or__ procedure
+
+
+`` do-or `` is called recursively for each argument to `` expand-or `` if there are more than one argument.
+
 <table border=1><thead><tr><th colspan=2 align="left">do-or (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -2188,11 +2259,49 @@ __expand-quasiquote__ procedure
 
 A quasi-quote isn't a macro, but we will deal with it in this section anyway. `` expand-quasiquote `` traverses the quasi-quoted structure searching for `` unquote `` and `` unquote-splicing ``. This code is brittle and sprawling and I barely understand it myself.
 
-<table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expand-quasiquote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro quasiquote
 
+proc ::constcl::expand-quasiquote {expr env} {
+  set tail [cdr $expr]
+  set qqlevel 0
+  if {[list? [car $tail]] ne "#f"} {
+    set node [car $tail]
+    return [qq-visit-child $node 0 $env]
+  } elseif {[vector? [car $tail]] ne "#f"} {
+    set vect [car $tail]
+    set res {}
+    for {set i 0} {$i < [
+        [vector-length $vect] numval]} {incr i} {
+      set idx [MkNumber $i]
+      set vecref [vector-ref $vect $idx]
+      if {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res [eval [cadr $vecref] $env]
+        }
+      } elseif {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote-splicing]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res {*}[splitlist [
+            eval [cadr $vecref] $env]]
+        }
+      } elseif {[atom? $vecref] ne "#f"} {
+        lappend res $vecref
+      } else {
+      }
+    }
+    return [list [S "vector"] {*}$res]
+  }
+}
+```
+<table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
+
+```
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
@@ -2230,44 +2339,6 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
   }
   return [list {*}$res]
-}
-```
-<table border=1><thead><tr><th colspan=2 align="left">expand-quasiquote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-proc ::constcl::expand-quasiquote {expr env} {
-  set tail [cdr $expr]
-  set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
-    set node [car $tail]
-    return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
-    set vect [car $tail]
-    set res {}
-    for {set i 0} {$i < [
-        [vector-length $vect] numval]} {incr i} {
-      set idx [MkNumber $i]
-      set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res [eval [cadr $vecref] $env]
-        }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res {*}[splitlist [
-            eval [cadr $vecref] $env]]
-        }
-      } elseif {[atom? $vecref] ne "#f"} {
-        lappend res $vecref
-      } else {
-      }
-    }
-    return [list [S "vector"] {*}$res]
-  }
 }
 ```
 
@@ -2568,7 +2639,7 @@ __write__ procedure
 The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome was.
 
 
-As long as the object given to `` write `` isn't the empty string, it passes it to `` write-value `` and writes a newline.
+As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
 
 <table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -2585,7 +2656,7 @@ proc ::constcl::write {val args} {
       set dealloc 1
     }
     set ::constcl::Output_port $port
-    write-value [$::constcl::Output_port handle] $val
+    $val write [$::constcl::Output_port handle]
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
     if {$dealloc} {$port destroy}
@@ -2595,25 +2666,10 @@ proc ::constcl::write {val args} {
 ```
 
 
-__write-value__ procedure
-
-
-`` write-value `` simply calls an object's `` write `` method, letting the object write itself.
-
-<table border=1><thead><tr><th colspan=2 align="left">write-value (internal)</th></tr></thead><tr><td>handle</td><td>a channel handle</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::write-value {handle val} {
-  $val write $handle
-  return
-}
-```
-
-
 __display__ procedure
 
 
-The `` display `` procedure is like `` write `` but doesn't print a newline.
+The `` display `` procedure is like `` write `` but it calls the method's `` display `` method and doesn't print a newline.
 
 <table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -2654,7 +2710,7 @@ proc ::constcl::write-pair {handle pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  write-value $handle $a
+  $a write $handle
   if {[pair? $d] ne "#f"} {
     # cdr is a cons pair
     puts -nonewline $handle " "
@@ -2665,7 +2721,7 @@ proc ::constcl::write-pair {handle pair} {
   } else {
     # it is an atom
     puts -nonewline $handle " . "
-    write-value $handle $d
+    $d write $handle
   }
   return
 }

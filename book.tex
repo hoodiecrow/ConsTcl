@@ -1934,6 +1934,8 @@ Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure
 
 Under the hood, the helper \texttt{/lambda} makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for "the symbol begin".), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
+\subsubsection{Scheme formals lists: an aside}
+\label{scheme-formals-lists:-an-aside}
 
 A Scheme formals list\index{formals list} is either:
 
@@ -2121,6 +2123,13 @@ proc ::constcl::expand-and {expr env} {
   }
 }
 \end{lstlisting}
+
+
+\textbf{do-and} procedure
+
+
+\texttt{do-and} is called recursively for every argument of \texttt{expand-or} if there are more than one.
+
 \subsubsection{Quasiquote: an aside}
 \label{quasiquote:-an-aside}
 
@@ -2240,7 +2249,23 @@ regmacro cond
 proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
- 
+\end{lstlisting}
+
+
+\textbf{do-cond} procedure
+
+
+\texttt{do-cond} is called recursively for every clause of the \texttt{cond} form. It chops up the clause into predicate and body, stepping over any \texttt{=>} symbols in between. In the last clause, the predicate is allowed to be \texttt{else} (which gets translated to \texttt{\#t}. If there is no body, the body is set to the predicate. The macro is expanded to a recursive \texttt{if} form.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{do-cond (internal)} \\
+tail & a Lisp list of expressions \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\begin{lstlisting}
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[null? $clauses] ne "#f"} {
@@ -2360,20 +2385,44 @@ proc ::constcl::expand-del! {expr env} {
 \textbf{expand-for} procedure
 
 
-The \texttt{expand-for} procedure expands the \texttt{for} macro. It returns a \texttt{begin} construct containing the iterations of each clause (multiple clauses weren't implemented, but I brought up my strongest brain cells and they did it).
+The \texttt{expand-for} procedure expands the \texttt{for} macro. It returns a \texttt{begin} construct containing the iterations of each clause (multiple clauses weren't implemented for the longest time, but I brought up my strongest brain cells and they did it).
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{expand-for (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{expand-for}
+\begin{lstlisting}
+regmacro for
+ 
+proc ::constcl::expand-for {expr env} {
+  set tail [cdr $expr]
+  set res [do-for $tail $env]
+  lappend res [parse "'()"]
+  return [list [S begin] {*}$res]
+}
+\end{lstlisting}
+
+
+\textbf{for-seq} procedure
+
+
+\texttt{for-seq} is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
 
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{for-seq (internal)} \\
-seq & a Lisp value \\
+seq & an expression \\
 env & an environment \\
 \textit{Returns:} & a Tcl list of Lisp values \\
 \hline
 \end{tabular}
 \index{for-seq}
 \begin{lstlisting}
-regmacro for
- 
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
     set seq [in-range $seq]
@@ -2392,6 +2441,19 @@ proc ::constcl::for-seq {seq env} {
   }
 }
 \end{lstlisting}
+
+
+\textbf{do-for} procedure
+
+
+\texttt{do-for} is another helper procedure which does most of the work in the \texttt{for/*} forms. It iterates over the clauses, extracting and preparing the sequence for each, and stores each of the sequence steps in a dictionary under a double key: the identifier and the ordinal of the step.
+
+
+Then it creates a \texttt{let} construct for each step, in which each of the clauses' identifiers is bound to the step's value. The Tcl list of \texttt{let} constructs is returned.
+
+
+Each clause's sequence is supposed to be the same length as the others. One weakness of this implementation is that it doesn't ensure this, just hopes that the user does the right thing.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{do-for (internal)} \\
@@ -2410,11 +2472,11 @@ proc ::constcl::do-for {tail env} {
   set length 0
   foreach clause $clauses {
     set id [car $clause]
-    set iter [for-seq [cadr $clause] $env]
-    set length [llength $iter]
+    set sequence [for-seq [cadr $clause] $env]
+    set length [llength $sequence]
     # save every id and step of the iteration
     for {set i 0} {$i < $length} {incr i} {
-        dict set data $id $i [lindex $iter $i]
+        dict set data $id $i [lindex $sequence $i]
     }
   }
   set res {}
@@ -2434,29 +2496,15 @@ proc ::constcl::do-for {tail env} {
   return $res
 }
 \end{lstlisting}
-\begin{tabular}{ |l l| }
-\hline
-\multicolumn{2}{|l|}{expand-for (internal)} \\
-expr & an expression \\
-env & an environment \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-\index{expand-for}
-\begin{lstlisting}
-proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
-  lappend res [parse "'()"]
-  return [list [S begin] {*}$res]
-}
-\end{lstlisting}
 
 
 \textbf{expand-for/and} procedure
 
 
 The \texttt{expand-for/and} procedure expands the \texttt{for/and} macro. It returns an \texttt{and} construct containing the iterations of the clauses.
+
+
+The only differences from \texttt{expand-for} is that it doesn't add \texttt{(quote ())} and that it wraps the list of iterations in \texttt{and} instead of \texttt{begin}.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2483,6 +2531,9 @@ proc ::constcl::expand-for/and {expr env} {
 
 The \texttt{expand-for/list} procedure expands the \texttt{for/list} macro. It returns a \texttt{list} construct containing the iterations of each clause.
 
+
+The only difference from \texttt{expand for/and} is that it wraps the list of iterations in \texttt{list} instead of \texttt{and}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{expand for/list (internal)} \\
@@ -2508,6 +2559,9 @@ proc ::constcl::expand-for/list {expr env} {
 
 The \texttt{expand-for/or} procedure expands the \texttt{for/or} macro. It returns an \texttt{or} construct containing the iterations of each clause.
 
+
+The only difference from \texttt{expand for/list} is that it wraps the list of iterations in \texttt{or} instead of \texttt{list}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{expand-for/or (internal)} \\
@@ -2532,6 +2586,12 @@ proc ::constcl::expand-for/or {expr env} {
 
 
 \texttt{expand-let} expands the named \texttt{let} and 'regular' \texttt{let} macros. They ultimately expand to \texttt{lambda} constructs.
+
+
+Named \texttt{let} chops up the expression into variable, bindings, and body. It creates a dictionary with the variable as key and \texttt{\#f} as value. Then it fills up the dictionary with variable/value pairs from the bindings. It uses the dictionary to build a declaration list for a \texttt{let} form, a variable list for a \texttt{lambda} form, and a procedure call. Then it assembles a \texttt{let} form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a \texttt{lambda} for with the varlist and the original body. The \texttt{let} form is returned, meaning that the primary expansion of the named \texttt{let} is a regular \texttt{let} form.
+
+
+Regular \texttt{let} chops up the original expression into bindings and body. It creates an empty dictionary and fills it up with variable/value pairs from the bindings. Then it builds a \texttt{lambda} operator form with the variable list, the body, and the value list. The \texttt{lambda} call is returned as the expansion of the regular \texttt{let} form.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -2588,7 +2648,23 @@ proc ::constcl::expand-let {expr env} {
     return $expr
   }
 }
- 
+\end{lstlisting}
+
+
+\textbf{parse-bindings} procedure
+
+
+\texttt{parse-bindings} is a helper procedure that traverses a \texttt{let} bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{parse-bindings (internal)} \\
+name & a call-by-name name \\
+bindings & a Lisp list of Lisp values \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\begin{lstlisting}
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
   foreach binding [splitlist $bindings] {
@@ -2599,6 +2675,7 @@ proc ::constcl::parse-bindings {name bindings} {
     }
     dict set vars $var $val
   }
+  return
 }
 \end{lstlisting}
 
@@ -2631,6 +2708,13 @@ proc ::constcl::expand-or {expr env} {
   }
 }
 \end{lstlisting}
+
+
+\textbf{do-or} procedure
+
+
+\texttt{do-or} is called recursively for each argument to \texttt{expand-or} if there are more than one argument.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{do-or (internal)} \\
@@ -2790,6 +2874,53 @@ A quasi-quote isn't a macro, but we will deal with it in this section anyway. \t
 
 \begin{tabular}{ |l l| }
 \hline
+\multicolumn{2}{|l|}{expand-quasiquote (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{expand-quasiquote}
+\begin{lstlisting}
+regmacro quasiquote
+ 
+proc ::constcl::expand-quasiquote {expr env} {
+  set tail [cdr $expr]
+  set qqlevel 0
+  if {[list? [car $tail]] ne "#f"} {
+    set node [car $tail]
+    return [qq-visit-child $node 0 $env]
+  } elseif {[vector? [car $tail]] ne "#f"} {
+    set vect [car $tail]
+    set res {}
+    for {set i 0} {$i < [
+        [vector-length $vect] numval]} {incr i} {
+      set idx [MkNumber $i]
+      set vecref [vector-ref $vect $idx]
+      if {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res [eval [cadr $vecref] $env]
+        }
+      } elseif {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote-splicing]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res {*}[splitlist [
+            eval [cadr $vecref] $env]]
+        }
+      } elseif {[atom? $vecref] ne "#f"} {
+        lappend res $vecref
+      } else {
+      }
+    }
+    return [list [S "vector"] {*}$res]
+  }
+}
+\end{lstlisting}
+\begin{tabular}{ |l l| }
+\hline
 \multicolumn{2}{|l|}{qq-visit-child (internal)} \\
 node & a Lisp list of expressions \\
 qqlevel & a Tcl number \\
@@ -2799,8 +2930,6 @@ env & an environment \\
 \end{tabular}
 \index{qq-visit-child}
 \begin{lstlisting}
-regmacro quasiquote
- 
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
@@ -2838,51 +2967,6 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
   }
   return [list {*}$res]
-}
-\end{lstlisting}
-\begin{tabular}{ |l l| }
-\hline
-\multicolumn{2}{|l|}{expand-quasiquote (internal)} \\
-expr & an expression \\
-env & an environment \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-\index{expand-quasiquote}
-\begin{lstlisting}
-proc ::constcl::expand-quasiquote {expr env} {
-  set tail [cdr $expr]
-  set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
-    set node [car $tail]
-    return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
-    set vect [car $tail]
-    set res {}
-    for {set i 0} {$i < [
-        [vector-length $vect] numval]} {incr i} {
-      set idx [MkNumber $i]
-      set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res [eval [cadr $vecref] $env]
-        }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res {*}[splitlist [
-            eval [cadr $vecref] $env]]
-        }
-      } elseif {[atom? $vecref] ne "#f"} {
-        lappend res $vecref
-      } else {
-      }
-    }
-    return [list [S "vector"] {*}$res]
-  }
 }
 \end{lstlisting}
 
@@ -3259,7 +3343,7 @@ proc ::constcl::make-undefineds {vals} {
 The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome was.
 
 
-As long as the object given to \texttt{write} isn't the empty string, it passes it to \texttt{write-value} and writes a newline.
+As long as the object given to \texttt{write} isn't the empty string, it calls the object's \texttt{write} method and writes a newline.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -3282,7 +3366,7 @@ proc ::constcl::write {val args} {
       set dealloc 1
     }
     set ::constcl::Output_port $port
-    write-value [$::constcl::Output_port handle] $val
+    $val write [$::constcl::Output_port handle]
     puts [$::constcl::Output_port handle] {}
     set ::constcl::Output_port [MkOutputPort stdout]
     if {$dealloc} {$port destroy}
@@ -3292,31 +3376,10 @@ proc ::constcl::write {val args} {
 \end{lstlisting}
 
 
-\textbf{write-value} procedure
-
-
-\texttt{write-value} simply calls an object's \texttt{write} method, letting the object write itself.
-
-\begin{tabular}{ |l l| }
-\hline
-\multicolumn{2}{|l|}{write-value (internal)} \\
-handle & a channel handle \\
-val & a Lisp value \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::write-value {handle val} {
-  $val write $handle
-  return
-}
-\end{lstlisting}
-
-
 \textbf{display} procedure
 
 
-The \texttt{display} procedure is like \texttt{write} but doesn't print a newline.
+The \texttt{display} procedure is like \texttt{write} but it calls the method's \texttt{display} method and doesn't print a newline.
 
 \begin{tabular}{ |l l| }
 \hline
@@ -3369,7 +3432,7 @@ proc ::constcl::write-pair {handle pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  write-value $handle $a
+  $a write $handle
   if {[pair? $d] ne "#f"} {
     # cdr is a cons pair
     puts -nonewline $handle " "
@@ -3380,7 +3443,7 @@ proc ::constcl::write-pair {handle pair} {
   } else {
     # it is an atom
     puts -nonewline $handle " . "
-    write-value $handle $d
+    $d write $handle
   }
   return
 }

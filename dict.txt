@@ -29,6 +29,7 @@ lvfalse       -> a Lisp list of values OR #f
 alist         -> an association list
 plist         -> a property list
 handle        -> a channel handle
+name          -> a call-by-name name
 pred          -> a predicate
 epred         -> an equivalence predicate
 val           -> a Lisp value

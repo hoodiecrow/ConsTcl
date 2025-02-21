@@ -73,6 +73,13 @@ proc ::constcl::expand-and {expr env} {
 }
 CB)
 
+MD(
+B{do-and} procedure
+
+K{do-and} is called recursively for every argument of K{expand-or} if there are
+more than one.
+MD)
+
 H5 Quasiquote: an aside
 
 MD(
@@ -235,7 +242,23 @@ regmacro cond
 proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
+CB)
 
+MD(
+B{do-cond} procedure
+
+K{do-cond} is called recursively for every clause of the K{cond} form. It chops
+up the clause into predicate and body, stepping over any K{=>} symbols in
+between. In the last clause, the predicate is allowed to be K{else} (which gets
+translated to K{#t}. If there is no body, the body is set to the predicate. The
+macro is expanded to a recursive K{if} form.
+MD)
+
+PR(
+do-cond (internal);tail lexprs env env -> expr
+PR)
+
+CB(
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[null? $clauses] ne "#f"} {
@@ -421,18 +444,40 @@ B{expand-for} procedure
 
 The K{expand-for} procedure expands the K{for} macro. It returns a K{begin}
 construct containing the iterations of each clause (multiple clauses
-weren't implemented, but I brought up my strongest brain cells and they
-did it).
+weren't implemented for the longest time, but I brought up my strongest brain
+cells and they did it).
 MD)
 
 PR(
-for-seq (internal);seq val env env -> tvals
+expand-for (internal);expr expr env env -> expr
+PR)
+
+IX expand-for
+CB(
+regmacro for
+
+proc ::constcl::expand-for {expr env} {
+  set tail [cdr $expr]
+  set res [do-for $tail $env]
+  lappend res [parse "'()"]
+  return [list [S begin] {*}$res]
+}
+CB)
+
+MD(
+B{for-seq} procedure
+
+K{for-seq} is a helper procedure that sets up the sequence of values that the
+iteration is based on. First it evaluates the code that generates the sequence,
+and then it converts it to a Tcl list.
+MD)
+
+PR(
+for-seq (internal);seq expr env env -> tvals
 PR)
 
 IX for-seq
 CB(
-regmacro for
-
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
     set seq [in-range $seq]
@@ -452,6 +497,23 @@ proc ::constcl::for-seq {seq env} {
 }
 CB)
 
+MD(
+B{do-for} procedure
+
+K{do-for} is another helper procedure which does most of the work in the
+K{for/*} forms. It iterates over the clauses, extracting and preparing the
+sequence for each, and stores each of the sequence steps in a dictionary under a
+double key: the identifier and the ordinal of the step.
+
+Then it creates a K{let} construct for each step, in which each of the clauses'
+identifiers is bound to the step's value. The Tcl list of K{let} constructs is
+returned.
+
+Each clause's sequence is supposed to be the same length as the others. One
+weakness of this implementation is that it doesn't ensure this, just hopes that
+the user does the right thing.
+MD)
+
 PR(
 do-for (internal);tail exprtail env env -> texprs
 PR)
@@ -466,11 +528,11 @@ proc ::constcl::do-for {tail env} {
   set length 0
   foreach clause $clauses {
     set id [car $clause]
-    set iter [for-seq [cadr $clause] $env]
-    set length [llength $iter]
+    set sequence [for-seq [cadr $clause] $env]
+    set length [llength $sequence]
     # save every id and step of the iteration
     for {set i 0} {$i < $length} {incr i} {
-        dict set data $id $i [lindex $iter $i]
+        dict set data $id $i [lindex $sequence $i]
     }
   }
   set res {}
@@ -488,20 +550,6 @@ proc ::constcl::do-for {tail env} {
         list {*}$decl] {*}[splitlist $body]]
   }
   return $res
-}
-CB)
-
-PR(
-expand-for (internal);expr expr env env -> expr
-PR)
-
-IX expand-for
-CB(
-proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
-  lappend res [parse "'()"]
-  return [list [S begin] {*}$res]
 }
 CB)
 
@@ -529,6 +577,9 @@ B{expand-for/and} procedure
 
 The K{expand-for/and} procedure expands the K{for/and} macro. It returns an K{and}
 construct containing the iterations of the clauses.
+
+The only differences from K{expand-for} is that it doesn't add K{(quote ())} and
+that it wraps the list of iterations in K{and} instead of K{begin}.
 MD)
 
 PR(
@@ -558,6 +609,9 @@ B{expand-for/list} procedure
 
 The K{expand-for/list} procedure expands the K{for/list} macro. It returns a K{list}
 construct containing the iterations of each clause.
+
+The only difference from K{expand for/and} is that it wraps the list of iterations
+in K{list} instead of K{and}.
 MD)
 
 PR(
@@ -615,6 +669,9 @@ B{expand-for/or} procedure
 
 The K{expand-for/or} procedure expands the K{for/or} macro. It returns an K{or}
 construct containing the iterations of each clause.
+
+The only difference from K{expand for/list} is that it wraps the list of iterations
+in K{or} instead of K{list}.
 MD)
 
 PR(
@@ -644,6 +701,22 @@ B{expand-let} procedure
 
 K{expand-let} expands the named K{let} and 'regular' K{let} macros. They ultimately
 expand to K{lambda} constructs.
+
+Named K{let} chops up the expression into variable, bindings, and body. It
+creates a dictionary with the variable as key and K{#f} as value. Then it fills
+up the dictionary with variable/value pairs from the bindings. It uses the
+dictionary to build a declaration list for a K{let} form, a variable list for
+a K{lambda} form, and a procedure call. Then it assembles a K{let} form with the
+declaration list and a body consisting of an assignment and the procedure call.
+The assignment binds the variable to a K{lambda} for with the varlist and the
+original body. The K{let} form is returned, meaning that the primary expansion
+of the named K{let} is a regular K{let} form.
+
+Regular K{let} chops up the original expression into bindings and body. It
+creates an empty dictionary and fills it up with variable/value pairs from the
+bindings. Then it builds a K{lambda} operator form with the variable list, the
+body, and the value list. The K{lambda} call is returned as the expansion of the
+regular K{let} form.
 MD)
 
 PR(
@@ -697,7 +770,21 @@ proc ::constcl::expand-let {expr env} {
     return $expr
   }
 }
+CB)
 
+MD(
+B{parse-bindings} procedure
+
+K{parse-bindings} is a helper procedure that traverses a K{let} bindings list
+and extracts variables and values, which it puts in a dictionary. It throws an
+error if a variable occurs more than once.
+MD)
+
+PR(
+parse-bindings (internal);name name bindings lvals -> none
+PR)
+
+CB(
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
   foreach binding [splitlist $bindings] {
@@ -708,6 +795,7 @@ proc ::constcl::parse-bindings {name bindings} {
     }
     dict set vars $var $val
   }
+  return
 }
 CB)
 
@@ -780,6 +868,13 @@ TT(
 } -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
 
 TT)
+
+MD(
+B{do-or} procedure
+
+K{do-or} is called recursively for each argument to K{expand-or} if there are more than
+one argument. 
+MD)
 
 PR(
 do-or (internal);tail exprtail env env -> expr
@@ -969,13 +1064,55 @@ understand it myself.
 MD)
 
 PR(
+expand-quasiquote (internal);expr expr env env -> expr
+PR)
+
+IX expand-quasiquote
+CB(
+regmacro quasiquote
+
+proc ::constcl::expand-quasiquote {expr env} {
+  set tail [cdr $expr]
+  set qqlevel 0
+  if {[list? [car $tail]] ne "#f"} {
+    set node [car $tail]
+    return [qq-visit-child $node 0 $env]
+  } elseif {[vector? [car $tail]] ne "#f"} {
+    set vect [car $tail]
+    set res {}
+    for {set i 0} {$i < [
+        [vector-length $vect] numval]} {incr i} {
+      set idx [MkNumber $i]
+      set vecref [vector-ref $vect $idx]
+      if {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res [eval [cadr $vecref] $env]
+        }
+      } elseif {[pair? $vecref] ne "#f" &&
+          [eq? [car $vecref] [
+            S unquote-splicing]] ne "#f"} {
+        if {$qqlevel == 0} {
+          lappend res {*}[splitlist [
+            eval [cadr $vecref] $env]]
+        }
+      } elseif {[atom? $vecref] ne "#f"} {
+        lappend res $vecref
+      } else {
+      }
+    }
+    return [list [S "vector"] {*}$res]
+  }
+}
+CB)
+
+PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
 PR)
 
 IX qq-visit-child
 CB(
-regmacro quasiquote
-
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
@@ -1013,48 +1150,6 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
     }
   }
   return [list {*}$res]
-}
-CB)
-
-PR(
-expand-quasiquote (internal);expr expr env env -> expr
-PR)
-
-IX expand-quasiquote
-CB(
-proc ::constcl::expand-quasiquote {expr env} {
-  set tail [cdr $expr]
-  set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
-    set node [car $tail]
-    return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
-    set vect [car $tail]
-    set res {}
-    for {set i 0} {$i < [
-        [vector-length $vect] numval]} {incr i} {
-      set idx [MkNumber $i]
-      set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res [eval [cadr $vecref] $env]
-        }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
-        if {$qqlevel == 0} {
-          lappend res {*}[splitlist [
-            eval [cadr $vecref] $env]]
-        }
-      } elseif {[atom? $vecref] ne "#f"} {
-        lappend res $vecref
-      } else {
-      }
-    }
-    return [list [S "vector"] {*}$res]
-  }
 }
 CB)
 
