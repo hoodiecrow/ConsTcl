@@ -1679,11 +1679,11 @@ reg =
 
 proc ::constcl::= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(= num ...)"
   }
-  if {[::tcl::mathop::== {*}$vals]} {
+  if {[::tcl::mathop::== {*}$nums]} {
     return #t
   } else {
     return #f
@@ -1694,11 +1694,11 @@ reg <
 
 proc ::constcl::< {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(< num ...)"
   }
-  if {[::tcl::mathop::< {*}$vals]} {
+  if {[::tcl::mathop::< {*}$nums]} {
     return #t
   } else {
     return #f
@@ -1709,11 +1709,11 @@ reg >
 
 proc ::constcl::> {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(> num ...)"
   }
-  if {[::tcl::mathop::> {*}$vals]} {
+  if {[::tcl::mathop::> {*}$nums]} {
     return #t
   } else {
     return #f
@@ -1724,11 +1724,11 @@ reg <=
 
 proc ::constcl::<= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(<= num ...)"
   }
-  if {[::tcl::mathop::<= {*}$vals]} {
+  if {[::tcl::mathop::<= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -1739,11 +1739,11 @@ reg >=
 
 proc ::constcl::>= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(>= num ...)"
   }
-  if {[::tcl::mathop::>= {*}$vals]} {
+  if {[::tcl::mathop::>= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -1800,11 +1800,11 @@ reg max
 proc ::constcl::max {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(max num...)"
   }
-  N [::tcl::mathfunc::max {*}$vals]
+  N [::tcl::mathfunc::max {*}$nums]
 }
 
 reg min
@@ -1812,55 +1812,55 @@ reg min
 proc ::constcl::min {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(min num...)"
   }
-  N [::tcl::mathfunc::min {*}$vals]
+  N [::tcl::mathfunc::min {*}$nums]
 }
 
 reg +
 
 proc ::constcl::+ {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(+ num ...)"
   }
-  N [::tcl::mathop::+ {*}$vals]
+  N [::tcl::mathop::+ {*}$nums]
 }
 
 reg *
 
 proc ::constcl::* {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(* num ...)"
   }
-  N [::tcl::mathop::* {*}$vals]
+  N [::tcl::mathop::* {*}$nums]
 }
 
 reg -
 
 proc ::constcl::- {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(- num ...)"
   }
-  N [::tcl::mathop::- [$num numval] {*}$vals]
+  N [::tcl::mathop::- [$num numval] {*}$nums]
 }
 
 reg /
 
 proc ::constcl::/ {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(/ num ...)"
   }
-  N [::tcl::mathop::/ [$num numval] {*}$vals]
+  N [::tcl::mathop::/ [$num numval] {*}$nums]
 }
 
 reg abs
@@ -2226,14 +2226,14 @@ oo::class create ::constcl::Boolean {
   }
 }
 
-proc ::constcl::MkBoolean {v} {
+proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
-    if {[$instance boolval] eq $v} {
+    if {[$instance boolval] eq $bool} {
       return $instance
     }
   }
-  return [::constcl::Boolean new $v]
+  return [::constcl::Boolean new $bool]
 }
 
 reg boolean? ::constcl::boolean?
@@ -2338,17 +2338,17 @@ oo::class create ::constcl::Char {
   }
 }
 
-proc ::constcl::MkChar {v} {
-  if {[regexp -nocase {space|newline} $v]} {
-      set v [::string tolower $v]
+proc ::constcl::MkChar {char} {
+  if {[regexp -nocase {space|newline} $char]} {
+      set char [::string tolower $char]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance external] eq $v} {
+    if {[$instance external] eq $char} {
       return $instance
     }
   }
-  return [::constcl::Char new $v]
+  return [::constcl::Char new $char]
 }
 
 reg char?
@@ -2839,6 +2839,7 @@ oo::class create ::constcl::OutputPort {
 
 interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
+
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
 
@@ -3079,7 +3080,6 @@ oo::class create ::constcl::Pair {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
-
 
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
@@ -3375,6 +3375,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [::string trim $v "\""]
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
@@ -3799,9 +3800,6 @@ oo::class create ::constcl::Symbol {
   superclass ::constcl::NIL
   variable name caseconstant
   constructor {n} {
-    if {   no &&   $n eq {}} {
-      ::error "a symbol must have a name"
-    }
     ::constcl::idcheck $n
     set name $n
     set caseconstant 0
@@ -3813,7 +3811,11 @@ oo::class create ::constcl::Symbol {
     set name
   }
   method = {symname} {
-    expr {$name eq $symname}
+    if {$name eq $symname} {
+      return #t
+    } else {
+      return #f
+    }
   }
   method mkconstant {} {}
   method constant {} {
@@ -3839,12 +3841,12 @@ oo::class create ::constcl::Symbol {
 unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
 
-proc ::constcl::MkSymbol {n} {
-  if {[dict exists $::constcl::symbolTable $n]} {
-    return [dict get $::constcl::symbolTable $n]
+proc ::constcl::MkSymbol {str} {
+  if {[dict exists $::constcl::symbolTable $str]} {
+    return [dict get $::constcl::symbolTable $str]
   } else {
-    set sym [::constcl::Symbol new $n]
-    dict set ::constcl::symbolTable $n $sym
+    set sym [::constcl::Symbol new $str]
+    dict set ::constcl::symbolTable $str $sym
     return $sym
   }
 }
@@ -3977,11 +3979,11 @@ reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
-    set fill #NIL
+    set val #NIL
   } else {
-    lassign $args fill
+    lassign $args val
   }
-  MkVector [lrepeat [$k numval] $fill]
+  MkVector [lrepeat [$k numval] $val]
 }
 
 reg vector ::constcl::vector
@@ -4264,4 +4266,5 @@ proc ::repl {{prompt "ConsTcl> "}} {
     ::constcl::write $val
     set str [::constcl::input $prompt]
   }
+  $cur_env destroy
 }

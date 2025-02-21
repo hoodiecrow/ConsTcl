@@ -2912,7 +2912,17 @@ oo::class create ::constcl::Number {
     set value
   }
 }
+```
 
+
+__MkNumber__ generator
+
+
+`` MkNumber `` generates a Number object. Short form: `` N ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkNumber (internal)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
 interp alias {} N {} ::constcl::Number new
@@ -2952,18 +2962,18 @@ __>=__ procedure
 
 The predicates `` = ``, `` < ``, `` > ``, `` <= ``, and `` >= `` are implemented.
 
-<table border=1><thead><tr><th colspan=2 align="left">=, &lt;, &gt;, &lt;=, &gt;= (public)</th></tr></thead><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">=, &lt;, &gt;, &lt;=, &gt;= (public)</th></tr></thead><tr><td>nums</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg =
 
 proc ::constcl::= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(= num ...)"
   }
-  if {[::tcl::mathop::== {*}$vals]} {
+  if {[::tcl::mathop::== {*}$nums]} {
     return #t
   } else {
     return #f
@@ -2975,11 +2985,11 @@ reg <
 
 proc ::constcl::< {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(< num ...)"
   }
-  if {[::tcl::mathop::< {*}$vals]} {
+  if {[::tcl::mathop::< {*}$nums]} {
     return #t
   } else {
     return #f
@@ -2991,11 +3001,11 @@ reg >
 
 proc ::constcl::> {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(> num ...)"
   }
-  if {[::tcl::mathop::> {*}$vals]} {
+  if {[::tcl::mathop::> {*}$nums]} {
     return #t
   } else {
     return #f
@@ -3007,11 +3017,11 @@ reg <=
 
 proc ::constcl::<= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(<= num ...)"
   }
-  if {[::tcl::mathop::<= {*}$vals]} {
+  if {[::tcl::mathop::<= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -3023,11 +3033,11 @@ reg >=
 
 proc ::constcl::>= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(>= num ...)"
   }
-  if {[::tcl::mathop::>= {*}$vals]} {
+  if {[::tcl::mathop::>= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -3128,7 +3138,7 @@ Example:
 (max 7 1 10 3)   =>  10
 (min 7 1 10 3)   =>  1
 ```
-<table border=1><thead><tr><th colspan=2 align="left">max, min (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">max, min (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>nums</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg max
@@ -3136,11 +3146,11 @@ reg max
 proc ::constcl::max {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(max num...)"
   }
-  N [::tcl::mathfunc::max {*}$vals]
+  N [::tcl::mathfunc::max {*}$nums]
 }
 ```
 ```
@@ -3149,11 +3159,11 @@ reg min
 proc ::constcl::min {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(min num...)"
   }
-  N [::tcl::mathfunc::min {*}$vals]
+  N [::tcl::mathfunc::min {*}$nums]
 }
 ```
 
@@ -3170,16 +3180,7 @@ __-__ procedure
 __/__ procedure
 
 
-The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations.
-
-<table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
-
-
-They take a number of operands, but at least one for `` - `` and `` / ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">-, / (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>args</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
+The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations. They take a number of operands, but at least one for `` - `` and `` / ``.
 
 
 Example:
@@ -3193,16 +3194,20 @@ Example:
 (- 5)                                      =>  -5
 (/ 5)                                      =>  0.2
 ```
+<table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>?nums?</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">-, / (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>?nums?</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg +
 
 proc ::constcl::+ {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(+ num ...)"
   }
-  N [::tcl::mathop::+ {*}$vals]
+  N [::tcl::mathop::+ {*}$nums]
 }
 ```
 ```
@@ -3210,11 +3215,11 @@ reg *
 
 proc ::constcl::* {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(* num ...)"
   }
-  N [::tcl::mathop::* {*}$vals]
+  N [::tcl::mathop::* {*}$nums]
 }
 ```
 ```
@@ -3222,11 +3227,11 @@ reg -
 
 proc ::constcl::- {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(- num ...)"
   }
-  N [::tcl::mathop::- [$num numval] {*}$vals]
+  N [::tcl::mathop::- [$num numval] {*}$nums]
 }
 ```
 ```
@@ -3234,11 +3239,11 @@ reg /
 
 proc ::constcl::/ {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(/ num ...)"
   }
-  N [::tcl::mathop::/ [$num numval] {*}$vals]
+  N [::tcl::mathop::/ [$num numval] {*}$nums]
 }
 ```
 
@@ -3271,8 +3276,6 @@ __quotient__ procedure
 
 `` quotient `` calculates the quotient between two numbers.
 
-<table border=1><thead><tr><th colspan=2 align="left">quotient (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -3280,6 +3283,8 @@ Example:
 ```
 (quotient 7 3)   =>  2.0
 ```
+<table border=1><thead><tr><th colspan=2 align="left">quotient (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg quotient
 
@@ -3302,8 +3307,6 @@ __remainder__ procedure
 
 `` remainder `` is a variant of the modulus function. (I'm a programmer, not a mathematician!)
 
-<table border=1><thead><tr><th colspan=2 align="left">remainder (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -3311,6 +3314,8 @@ Example:
 ```
 (remainder 7 3)   =>  1
 ```
+<table border=1><thead><tr><th colspan=2 align="left">remainder (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg remainder
 
@@ -3327,8 +3332,6 @@ proc ::constcl::remainder {num1 num2} {
 
 __modulo__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -3336,6 +3339,8 @@ Example:
 ```
 (modulo 7 3)   =>  1
 ```
+<table border=1><thead><tr><th colspan=2 align="left">modulo (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg modulo
 
@@ -3380,8 +3385,6 @@ __round__ procedure
 
 `` floor ``, `` ceiling ``, `` truncate ``, and `` round `` are different methods for converting a real number to an integer.
 
-<table border=1><thead><tr><th colspan=2 align="left">floor, ceiling, truncate, round (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -3392,6 +3395,8 @@ Example:
 (truncate 7.5)   =>  7.0
 (round 7.5)      =>  8
 ```
+<table border=1><thead><tr><th colspan=2 align="left">floor, ceiling, truncate, round (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg floor
 
@@ -3467,15 +3472,7 @@ __acos__ procedure
 __atan__ procedure
 
 
-The mathematical functions e<sup>x</sup>, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by `` exp ``, `` log ``, `` sin ``, `` cos ``, `` tan ``, `` asin ``, `` acos ``, and `` atan ``, respectively.
-
-<table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
-
-
-`` atan `` can be called both as a unary (one argument) function and a binary (two arguments) one.
-
-<table border=1><thead><tr><th colspan=2 align="left">(binary) atan (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+The mathematical functions e<sup>x</sup>, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by `` exp ``, `` log ``, `` sin ``, `` cos ``, `` tan ``, `` asin ``, `` acos ``, and `` atan ``, respectively. `` atan `` can be called both as a unary (one argument) function and a binary (two arguments) one.
 
 
 
@@ -3486,6 +3483,10 @@ Example:
 (letrec ((a (/ pi 3)) (s (sin a)))
   (= a (asin s)))                        =>  #t
 ```
+<table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">(binary) atan (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg exp
 
@@ -3670,8 +3671,6 @@ __number->string__ procedure
 
 The procedures `` number->string `` and `` string->number `` convert between number and string with optional radix conversion.
 
-<table border=1><thead><tr><th colspan=2 align="left">number-&gt;string (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -3682,6 +3681,8 @@ Example:
 (number->string 23 8)    =>  "27"
 (number->string 23 16)   =>  "17"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">number-&gt;string (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg number->string
 
@@ -3739,8 +3740,6 @@ __string->number__ procedure
 
 As with `` number->string ``, above.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-&gt;number (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -3751,6 +3750,8 @@ Example:
 (string->number "27" 8)      =>  23
 (string->number "17" 16)     =>  23
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;number (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>?radix?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg string->number
 
@@ -3838,15 +3839,25 @@ oo::class create ::constcl::Boolean {
     set boolval
   }
 }
+```
 
-proc ::constcl::MkBoolean {v} {
+
+__MkBoolean__ generator
+
+
+`` MkBoolean `` generates a boolean. If a boolean with the same name already exists (which is the case at run time, because there are only two valid boolean values, and they're both pre-generated) that boolean will be returned, otherwise a fresh boolean will be created.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkBoolean (internal)</th></tr></thead><tr><td>bool</td><td>an external rep of a bool</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
-    if {[$instance boolval] eq $v} {
+    if {[$instance boolval] eq $bool} {
       return $instance
     }
   }
-  return [::constcl::Boolean new $v]
+  return [::constcl::Boolean new $bool]
 }
 ```
 
@@ -3872,8 +3883,6 @@ __not__ procedure
 
 The only operation on booleans: `` not ``, or logical negation.
 
-<table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
 
 
 Example:
@@ -3882,6 +3891,8 @@ Example:
 (not #f)    ⇒  #t   ; #f yields #t, all others #f
 (not nil)   ⇒  #f   ; see?
 ```
+<table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
 reg not ::constcl::not
 
@@ -3987,18 +3998,28 @@ oo::class create ::constcl::Char {
     my external
   }
 }
+```
 
-proc ::constcl::MkChar {v} {
-  if {[regexp -nocase {space|newline} $v]} {
-      set v [::string tolower $v]
+
+__MkChar__ generator
+
+
+`` MkChar `` generates a character object. If a character object with the same name already exists, that character will be returned, otherwise a fresh character will be created.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkChar (internal)</th></tr></thead><tr><td>char</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
+```
+proc ::constcl::MkChar {char} {
+  if {[regexp -nocase {space|newline} $char]} {
+      set char [::string tolower $char]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance external] eq $v} {
+    if {[$instance external] eq $char} {
       return $instance
     }
   }
-  return [::constcl::Char new $v]
+  return [::constcl::Char new $char]
 }
 ```
 
@@ -4321,8 +4342,6 @@ __integer->char__ procedure
 
 `` char->integer `` and `` integer->char `` convert between characters and their 16-bit numeric codes.
 
-<table border=1><thead><tr><th colspan=2 align="left">char-&gt;integer (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an integer</td></tr></table>
-
 
 
 Example:
@@ -4330,6 +4349,8 @@ Example:
 ```
 (char->integer #\A)   =>  65
 ```
+<table border=1><thead><tr><th colspan=2 align="left">char-&gt;integer (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>an integer</td></tr></table>
+
 ```
 reg char->integer
 
@@ -4337,8 +4358,6 @@ proc ::constcl::char->integer {char} {
   return [MkNumber [scan [$char char] %c]]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">integer-&gt;char (public)</th></tr></thead><tr><td>int</td><td>an integer</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
-
 
 
 Example:
@@ -4346,6 +4365,8 @@ Example:
 ```
 (integer->char 97)   =>  #\a
 ```
+<table border=1><thead><tr><th colspan=2 align="left">integer-&gt;char (public)</th></tr></thead><tr><td>int</td><td>an integer</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
 ```
 reg integer->char
 
@@ -4435,7 +4456,17 @@ oo::class create ::constcl::Procedure {
   }
 
 }
+```
 
+
+__MkProcedure__ generator
+
+
+`` MkProcedure `` generates a Procedure object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkProcedure (internal)</th></tr></thead><tr><td>parms</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
+
+```
 interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
 ```
@@ -4465,8 +4496,6 @@ __apply__ procedure
 
 `` apply `` applies a procedure to a Lisp list of Lisp arguments.
 
-<table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
-
 
 
 Example:
@@ -4474,6 +4503,8 @@ Example:
 ```
 (apply + (list 2 3))   =>  5
 ```
+<table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
+
 ```
 reg apply
 
@@ -4491,8 +4522,6 @@ __map__ procedure
 
 `` map `` iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The Lisp list of the results of the invocations is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
-
 
 
 Example:
@@ -4500,6 +4529,8 @@ Example:
 ```
 (map + '(1 2 3) '(5 6 7))   => (6 8 10)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg map
 
@@ -4537,8 +4568,6 @@ __for-each__ procedure
 
 `` for-each `` iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">for-each (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
-
 
 
 Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach it.)
@@ -4550,6 +4579,8 @@ Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomac
             '(0 1 2 3 4))
   v)                        =>  #(0 1 4 9 16)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">for-each (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>the empty list</td></tr></table>
+
 ```
 reg for-each
 
@@ -4722,9 +4753,30 @@ oo::class create ::constcl::OutputPort {
     my write $h
   }
 }
+```
 
+
+__MkInputPort__ generator
+
+
+`` MkInputPort `` generates an InputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+
+```
 interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
+```
+
+
+__MkOutputPort__ generator
+
+
+`` MkOutputPort `` generates an OutputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+
+```
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
 ```
@@ -4765,7 +4817,7 @@ __call-with-input-file__ procedure
 
 `` call-with-input-file `` opens a file for input and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg call-with-input-file
@@ -4788,7 +4840,7 @@ __call-with-output-file__ procedure
 
 You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg call-with-output-file
@@ -4873,7 +4925,7 @@ __with-input-from-file__ procedure
 
 `` with-input-from-file `` opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
 
-<table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg with-input-from-file
@@ -4897,7 +4949,7 @@ __with-output-to-file__ procedure
 
 `` with-output-to-file `` opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
 
-<table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg with-output-to-file
@@ -4922,7 +4974,7 @@ __open-input-file__ procedure
 
 `` open-input-file `` opens a file for input and returns the port.
 
-<table border=1><thead><tr><th colspan=2 align="left">open-input-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">open-input-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
 
 ```
 reg open-input-file
@@ -4946,7 +4998,7 @@ __open-output-file__ procedure
 
 `` open-output-file `` opens a file for output and returns the port.
 
-<table border=1><thead><tr><th colspan=2 align="left">open-output-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">open-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
 
 ```
 reg open-output-file
@@ -5058,7 +5110,7 @@ __load__
 
 `` load `` reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
-<table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg load
@@ -5150,8 +5202,17 @@ oo::class create ::constcl::Pair {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
+```
 
 
+__MkPair__ generator
+
+
+`` MkPair `` generates a Pair object. Shorter form: `` cons ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkPair (internal)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
+```
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
 ```
@@ -5208,8 +5269,6 @@ __cons__ procedure
 
 `` cons `` joins two values in a pair; useful in many operations such as pushing a new value onto a list.
 
-<table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
-
 
 
 Example:
@@ -5220,6 +5279,8 @@ Example:
 (cons 'a (cons 'b nil))   =>  (a b)
 ```
 ![#](images/consing.png)
+<table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
 ```
 reg cons
 
@@ -5234,8 +5295,6 @@ __car__ procedure
 
 `` car `` gets the contents of the first cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
 
 
 Example:
@@ -5243,6 +5302,8 @@ Example:
 ```
 (car '(a b))   =>  a
 ```
+<table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg car
 
@@ -5257,8 +5318,6 @@ __cdr__ procedure
 
 `` cdr `` gets the contents of the second cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
 
 
 Example:
@@ -5266,6 +5325,8 @@ Example:
 ```
 (cdr '(a b))   =>  (b)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg cdr
 
@@ -5333,8 +5394,6 @@ __set-car!__ procedure
 
 `` set-car! `` sets the contents of the first cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
-
 
 
 Example:
@@ -5343,6 +5402,8 @@ Example:
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-car! pair val))                =>  (x . b)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
 ```
 reg set-car!
 
@@ -5357,8 +5418,6 @@ __set-cdr!__ procedure
 
 `` set-cdr! `` sets the contents of the second cell in a pair.
 
-<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
-
 
 
 Example:
@@ -5367,6 +5426,8 @@ Example:
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-cdr! pair val))                =>  (a . x)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
 ```
 reg set-cdr!
 
@@ -5429,8 +5490,6 @@ __list__ procedure
 
 `` list `` constructs a Lisp list from a number of values.
 
-<table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
-
 
 
 Example:
@@ -5438,6 +5497,8 @@ Example:
 ```
 (list 1 2 3)   =>  (1 2 3)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg list
 
@@ -5460,8 +5521,6 @@ __length__ procedure
 
 `` length `` reports the length of a Lisp list.
 
-<table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -5469,6 +5528,8 @@ Example:
 ```
 (length '(a b c d))   =>  4
 ```
+<table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg length
 
@@ -5556,8 +5617,6 @@ __reverse__ procedure
 
 `` reverse `` produces a reversed copy of a Lisp list.
 
-<table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
-
 
 
 Example:
@@ -5565,6 +5624,8 @@ Example:
 ```
 (reverse '(a b c))   =>  (c b a)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg reverse
 
@@ -5579,8 +5640,6 @@ __list-tail__ procedure
 
 Given a list index, `` list-tail `` yields the sublist starting from that index.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
-
 
 
 Example:
@@ -5589,6 +5648,8 @@ Example:
 (let ((lst '(a b c d e f)) (k 3))
   (list-tail lst k))                =>  (d e f)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg list-tail
 
@@ -5607,8 +5668,6 @@ __list-ref__ procedure
 
 `` list-ref `` yields the list item at a given index.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
 
 
 Example:
@@ -5617,6 +5676,8 @@ Example:
 (let ((lst '(a b c d e f)) (k 3))
   (list-ref lst k))                 =>  d
 ```
+<table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg list-ref
 
@@ -5637,8 +5698,6 @@ __member__ procedure
 
 `` memq ``, `` memv ``, and `` member `` return the sublist starting with a given item, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison.
 
-<table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
-
 
 
 Example:
@@ -5647,6 +5706,8 @@ Example:
 (let ((lst '(a b c d e f)) (val 'd))
   (memq val lst))                      =>  (d e f)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+
 ```
 reg memq
 
@@ -5799,6 +5860,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [::string trim $v "\""]
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
@@ -5896,7 +5958,17 @@ oo::class create ::constcl::String {
     my external
   }
 }
+```
 
+
+__MkString__ generator
+
+
+`` MkString `` generates a String object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkString (internal)</th></tr></thead><tr><td>str</td><td>an external rep of a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 ```
@@ -5923,8 +5995,6 @@ __make-string__ procedure
 
 `` make-string `` creates a string of _k_ characters, optionally filled with _char_ characters. If _char_ is omitted, the string will be filled with space characters.
 
-<table border=1><thead><tr><th colspan=2 align="left">make-string (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -5935,6 +6005,8 @@ Example:
 (let ((k 5) (char #\A))
   (make-string k char))   =>  "AAAAA"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">make-string (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg make-string
 
@@ -5956,8 +6028,6 @@ __string__ procedure
 
 `` string `` constructs a string from a number of Lisp characters.
 
-<table border=1><thead><tr><th colspan=2 align="left">string (public)</th></tr></thead><tr><td>args</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -5965,6 +6035,8 @@ Example:
 ```
 (string #\f #\o #\o)   =>  "foo"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string (public)</th></tr></thead><tr><td>args</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string
 
@@ -5987,8 +6059,6 @@ __string-length__ procedure
 
 `` string-length `` reports a string's length.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-length (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -5996,6 +6066,8 @@ Example:
 ```
 (string-length "foobar")   => 6
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-length (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg string-length
 
@@ -6013,8 +6085,6 @@ __string-ref__ procedure
 
 `` string-ref `` yields the _k_-th character (0-based) in _str_.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
-
 
 
 Example:
@@ -6022,6 +6092,8 @@ Example:
 ```
 (string-ref "foobar" 3)   => #\b
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
 ```
 reg string-ref
 
@@ -6044,8 +6116,6 @@ __string-set!__ procedure
 
 `` string-set! `` replaces the character at _k_ with _char_ in a non-constant string.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-set! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6056,6 +6126,8 @@ Example:
       (char #\x))
   (string-set! str k char))         =>  "fox"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-set! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string-set!
 
@@ -6095,7 +6167,9 @@ __string>=?__, __string-ci>=?__
 
 `` string=? ``, `` string<? ``, `` string>? ``, `` string<=? ``, `` string>=? `` and their case insensitive variants `` string-ci=? ``, `` string-ci<? ``, `` string-ci>? ``, `` string-ci<=? ``, `` string-ci>=? `` compare strings.
 
-<table border=1><thead><tr><th colspan=2 align="left">string=?, string&lt;?, string&gt;?, string&lt;=?, string&gt;=? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">string=?, string&lt;?, string&gt;? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">string&lt;=?, string&gt;=? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">string-ci=?, string-ci&lt;?, string-ci&gt;? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6303,8 +6377,6 @@ __substring__ procedure
 
 `` substring `` yields the substring of _str_ that starts at _start_ and ends at _end_.
 
-<table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6312,6 +6384,8 @@ Example:
 ```
 (substring "foobar" 2 4)   => "oba"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg substring
 
@@ -6338,8 +6412,6 @@ __string-append__ procedure
 
 `` string-append `` joins strings together.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-append (public)</th></tr></thead><tr><td>args</td><td>some strings</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6347,6 +6419,8 @@ Example:
 ```
 (string-append "foo" "bar")   =>  "foobar"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-append (public)</th></tr></thead><tr><td>args</td><td>some strings</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string-append
 
@@ -6363,8 +6437,6 @@ __string->list__ procedure
 
 `` string->list `` converts a string to a Lisp list of characters.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-&gt;list (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of characters</td></tr></table>
-
 
 
 Example:
@@ -6372,6 +6444,8 @@ Example:
 ```
 (string->list "foo")   =>  (#\f #\o #\o)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;list (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of characters</td></tr></table>
+
 ```
 reg string->list
 
@@ -6386,8 +6460,6 @@ __list->string__ procedure
 
 `` list->string `` converts a Lisp list of characters to a string.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-&gt;string (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6395,6 +6467,8 @@ Example:
 ```
 (list->string '(#\1 #\2 #\3))   => "123"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">list-&gt;string (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg list->string
 
@@ -6410,8 +6484,6 @@ __string-copy__ procedure
 
 `` string-copy `` makes a copy of a string.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-copy (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6422,6 +6494,8 @@ Example:
       (char #\x))
   (string-set! str k char))       =>  "xbc"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-copy (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string-copy
 
@@ -6439,8 +6513,6 @@ __string-fill!__ procedure
 
 `` string-fill! `` _str_ _char_ fills a non-constant string with _char_.
 
-<table border=1><thead><tr><th colspan=2 align="left">string-fill! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
-
 
 
 Example:
@@ -6450,6 +6522,8 @@ Example:
       (char #\X))
   (string-fill! str char))           =>  "XXXXXX"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-fill! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
 ```
 reg string-fill!
 
@@ -6475,9 +6549,6 @@ oo::class create ::constcl::Symbol {
   superclass ::constcl::NIL
   variable name caseconstant
   constructor {n} {
-    if {   no &&   $n eq {}} {
-      ::error "a symbol must have a name"
-    }
     ::constcl::idcheck $n
     set name $n
     set caseconstant 0
@@ -6489,7 +6560,11 @@ oo::class create ::constcl::Symbol {
     set name
   }
   method = {symname} {
-    expr {$name eq $symname}
+    if {$name eq $symname} {
+      return #t
+    } else {
+      return #f
+    }
   }
   method mkconstant {} {}
   method constant {} {
@@ -6514,18 +6589,35 @@ oo::class create ::constcl::Symbol {
 
 unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
+```
 
-proc ::constcl::MkSymbol {n} {
-  if {[dict exists $::constcl::symbolTable $n]} {
-    return [dict get $::constcl::symbolTable $n]
+
+__MkSymbol__ generator
+
+
+`` MkSymbol `` generates a symbol with a given name. If a symbol with that name already exists, it is returned. Otherwise, a fresh symbol is created. Short form: `` S ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkSymbol (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
+```
+proc ::constcl::MkSymbol {str} {
+  if {[dict exists $::constcl::symbolTable $str]} {
+    return [dict get $::constcl::symbolTable $str]
   } else {
-    set sym [::constcl::Symbol new $n]
-    dict set ::constcl::symbolTable $n $sym
+    set sym [::constcl::Symbol new $str]
+    dict set ::constcl::symbolTable $str $sym
     return $sym
   }
 }
 interp alias {} S {} ::constcl::MkSymbol
 ```
+
+
+__symbol?__ procedure
+
+
+`` symbol? `` recognizes a symbol by type.
+
 <table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
@@ -6537,11 +6629,18 @@ proc ::constcl::symbol? {val} {
 ```
 
 
-__symbol->string__
+__symbol->string__ procedure
 
 
 `` symbol->string `` yields a string consisting of the symbol name, usually lower-cased.
 
+
+Example:
+
+```
+(let ((sym 'Foobar))
+  (symbol->string sym))   =>  "foobar"
+```
 <table border=1><thead><tr><th colspan=2 align="left">symbol-&gt;string (public)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
@@ -6563,21 +6662,10 @@ proc ::constcl::symbol->string {sym} {
 ```
 
 
-Example:
-
-```
-(let ((sym 'Foobar))
-  (symbol->string sym))   =>  "foobar"
-```
-
-
-__string->symbol__
+__string->symbol__ procedure
 
 
 `` string->symbol `` creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased.
-
-<table border=1><thead><tr><th colspan=2 align="left">string-&gt;symbol (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
-
 
 
 Example:
@@ -6588,6 +6676,8 @@ Example:
 sym                                    =>  Foobar
 (symbol->string sym)                   =>  "Foobar"
 ```
+<table border=1><thead><tr><th colspan=2 align="left">string-&gt;symbol (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
+
 ```
 reg string->symbol ::constcl::string->symbol
 
@@ -6692,7 +6782,17 @@ oo::class create ::constcl::Vector {
       join [lmap val [my value] {$val show}]]
   }
 }
+```
 
+
+__MkVector__ generator
+
+
+`` MkVector `` generates a Vector object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkVector (internal)</th></tr></thead><tr><td>vals</td><td>a Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
+```
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 ```
@@ -6716,8 +6816,6 @@ __make-vector__
 
 `` make-vector `` creates a vector with a given length and optionally a fill value. If a fill value isn't given, the empty list will be used.
 
-<table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?fill?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
-
 
 
 Example:
@@ -6725,19 +6823,21 @@ Example:
 ```
 (let ((k 3))
   (make-vector k))        =>  #(() () ())
-(let ((k 3) (fill #\A))
-  (make-vector k fill))   =>  #(#\A #\A #\A)
+(let ((k 3) (val #\A))
+  (make-vector k val))    =>  #(#\A #\A #\A)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?val?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
-    set fill #NIL
+    set val #NIL
   } else {
-    lassign $args fill
+    lassign $args val
   }
-  MkVector [lrepeat [$k numval] $fill]
+  MkVector [lrepeat [$k numval] $val]
 }
 ```
 
@@ -6747,8 +6847,6 @@ __vector__
 
 Given a number of Lisp values, `` vector `` creates a vector containing them.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
-
 
 
 Example:
@@ -6756,6 +6854,8 @@ Example:
 ```
 (vector 'a 'b 'c)   =>  #(a b c)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg vector ::constcl::vector
 
@@ -6770,8 +6870,6 @@ __vector-length__
 
 `` vector-length `` returns the length of a vector.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
-
 
 
 Example:
@@ -6779,6 +6877,8 @@ Example:
 ```
 (vector-length #(a b c))   =>  3
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
 ```
 reg vector-length
 
@@ -6796,8 +6896,6 @@ __vector-ref__
 
 `` vector-ref `` returns the element of _vec_ at index _k_ (0-based).
 
-<table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
 
 
 Example:
@@ -6806,6 +6904,8 @@ Example:
 (let ((vec #(a b c)) (k 1))
   (vector-ref vec k))          =>  b
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
 ```
 reg vector-ref ::constcl::vector-ref
 
@@ -6826,8 +6926,6 @@ __vector-set!__
 
 `` vector-set! ``, for a non-constant vector, sets the element at index _k_ to _val_.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
-
 
 
 Example:
@@ -6842,6 +6940,8 @@ Example:
       (val 'x))
   (vector-set! vec k val))      =>  #(a x c)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg vector-set! ::constcl::vector-set!
 
@@ -6862,8 +6962,6 @@ __vector->list__
 
 `` vector->list `` converts a vector value to a Lisp list.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
-
 
 
 Example:
@@ -6871,6 +6969,8 @@ Example:
 ```
 (vector->list #(a b c))   =>  (a b c)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
 ```
 reg vector->list ::constcl::vector->list
 
@@ -6885,8 +6985,6 @@ __list->vector__
 
 `` list->vector `` converts a Lisp list value to a vector.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
-
 
 
 Example:
@@ -6894,8 +6992,7 @@ Example:
 ```
 (list->vector '(1 2 3))   =>  #(1 2 3)
 ```
-
-VB( (list->vector '(1 2 3)) => #(1 2 3) VB)
+<table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg list->vector ::constcl::list->vector
@@ -6911,8 +7008,6 @@ __vector-fill!__
 
 `` vector-fill! `` fills a non-constant vector with a given value.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
-
 
 
 Example:
@@ -6922,6 +7017,8 @@ Example:
 (vector-fill! vec 'x)             =>  #(x x x)
 vec                               =>  #(x x x)
 ```
+<table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
 ```
 reg vector-fill! ::constcl::vector-fill!
 
@@ -7116,7 +7213,7 @@ ConsTcl> (circle-area 10)
 ```
 
 
-During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a _local variable_W{Local_variable} in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of _lexical scoping_W{Scope_(computer_science)#Lexical_scope}.
+During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a [local variable](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of [lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope).
 
 
 In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to):
@@ -7289,6 +7386,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
     ::constcl::write $val
     set str [::constcl::input $prompt]
   }
+  $cur_env destroy
 }
 ```
 

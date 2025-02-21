@@ -96,18 +96,33 @@ oo::class create ::constcl::Char {
     my external
   }
 }
+CB)
 
-proc ::constcl::MkChar {v} {
-  if {[regexp -nocase {space|newline} $v]} {
-      set v [::string tolower $v]
+MD(
+B{MkChar} generator
+
+K{MkChar} generates a character object. If a character object with the same name
+already exists, that character will be returned, otherwise a fresh character
+will be created.
+MD)
+
+PR(
+MkChar (internal);char echar -> char
+PR)
+
+IX MkChar
+CB(
+proc ::constcl::MkChar {char} {
+  if {[regexp -nocase {space|newline} $char]} {
+      set char [::string tolower $char]
   }
   foreach instance [
     info class instances Char] {
-    if {[$instance external] eq $v} {
+    if {[$instance external] eq $char} {
       return $instance
     }
   }
-  return [::constcl::Char new $v]
+  return [::constcl::Char new $char]
 }
 CB)
 
@@ -638,10 +653,6 @@ K{char->integer} and K{integer->char} convert between characters and their
 16-bit numeric codes.
 MD)
 
-PR(
-char->integer (public);char char -> int
-PR)
-
 MD(
 Example:
 MD)
@@ -649,6 +660,10 @@ MD)
 VB(
 (char->integer #\A)   =>  65
 VB)
+
+PR(
+char->integer (public);char char -> int
+PR)
 
 IX char->integer
 CB(
@@ -659,10 +674,6 @@ proc ::constcl::char->integer {char} {
 }
 CB)
 
-PR(
-integer->char (public);int int -> char
-PR)
-
 MD(
 Example:
 MD)
@@ -670,6 +681,10 @@ MD)
 VB(
 (integer->char 97)   =>  #\a
 VB)
+
+PR(
+integer->char (public);int int -> char
+PR)
 
 IX integer->char
 CB(

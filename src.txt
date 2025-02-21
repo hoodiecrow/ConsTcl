@@ -9,6 +9,7 @@ W{}{}	wikip.	[]()	link to wikipedia
 I	index	---
 P{}{}	$x^y$	x<sup>y</sup>
 D{}     ldots	...
+BS	bigskip	---
 
 H1	part	#
 H2	chapter	##

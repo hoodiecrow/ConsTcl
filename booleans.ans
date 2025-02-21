@@ -41,15 +41,31 @@ oo::class create ::constcl::Boolean {
     set boolval
   }
 }
+CB)
 
-proc ::constcl::MkBoolean {v} {
+MD(
+B{MkBoolean} generator
+
+K{MkBoolean} generates a boolean. If a boolean with the same name already exists
+(which is the case at run time, because there are only two valid boolean values,
+and they're both pre-generated) that boolean will be returned, otherwise a fresh
+boolean will be created.
+MD)
+
+PR(
+MkBoolean (internal);bool ebool -> bool
+PR)
+
+IX MkBoolean
+CB(
+proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
-    if {[$instance boolval] eq $v} {
+    if {[$instance boolval] eq $bool} {
       return $instance
     }
   }
-  return [::constcl::Boolean new $v]
+  return [::constcl::Boolean new $bool]
 }
 CB)
 
@@ -110,10 +126,6 @@ B{not} procedure
 The only operation on booleans: K{not}, or logical negation.
 MD)
 
-PR(
-not (public);val val -> bool
-PR)
-
 MD(
 Example:
 MD)
@@ -122,6 +134,10 @@ VB(
 (not #f)    ⇒  #t   ; #f yields #t, all others #f
 (not nil)   ⇒  #f   ; see?
 VB)
+
+PR(
+not (public);val val -> bool
+PR)
 
 IX not
 CB(

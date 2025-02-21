@@ -21,6 +21,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
+    set v [::string trim $v "\""]
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
     set vsa [::constcl::vsAlloc $len]
@@ -118,7 +119,20 @@ oo::class create ::constcl::String {
     my external
   }
 }
+CB)
 
+MD(
+B{MkString} generator
+
+K{MkString} generates a String object.
+MD)
+
+PR(
+MkString (internal);str estr -> str
+PR)
+
+IX MkString
+CB(
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 CB)
@@ -178,10 +192,6 @@ K{make-string} creates a string of E{k} characters, optionally filled with E{cha
 characters. If E{char} is omitted, the string will be filled with space characters.
 MD)
 
-PR(
-make-string (public);k num ?char? char -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -192,6 +202,10 @@ VB(
 (let ((k 5) (char #\A))
   (make-string k char))   =>  "AAAAA"
 VB)
+
+PR(
+make-string (public);k num ?char? char -> str
+PR)
 
 IX make-string
 CB(
@@ -223,10 +237,6 @@ B{string} procedure
 K{string} constructs a string from a number of Lisp characters.
 MD)
 
-PR(
-string (public);args chars -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -234,6 +244,10 @@ MD)
 VB(
 (string #\f #\o #\o)   =>  "foo"
 VB)
+
+PR(
+string (public);args chars -> str
+PR)
 
 IX string
 CB(
@@ -270,10 +284,6 @@ B{string-length} procedure
 K{string-length} reports a string's length.
 MD)
 
-PR(
-string-length (public);str str -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -281,6 +291,10 @@ MD)
 VB(
 (string-length "foobar")   => 6
 VB)
+
+PR(
+string-length (public);str str -> num
+PR)
 
 IX string-length
 CB(
@@ -308,10 +322,6 @@ B{string-ref} procedure
 K{string-ref} yields the E{k}-th character (0-based) in E{str}.
 MD)
 
-PR(
-string-ref (public);str str k num -> char
-PR)
-
 MD(
 Example:
 MD)
@@ -319,6 +329,10 @@ MD)
 VB(
 (string-ref "foobar" 3)   => #\b
 VB)
+
+PR(
+string-ref (public);str str k num -> char
+PR)
 
 IX string-ref
 CB(
@@ -351,10 +365,6 @@ B{string-set!} procedure
 K{string-set!} replaces the character at E{k} with E{char} in a non-constant string.
 MD)
 
-PR(
-string-set! (public);str str k num char char -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -365,6 +375,10 @@ VB(
       (char #\x))
   (string-set! str k char))         =>  "fox"
 VB)
+
+PR(
+string-set! (public);str str k num char char -> str
+PR)
 
 IX string-set!
 CB(
@@ -417,13 +431,17 @@ B{string<=?}, B{string-ci<=?}
 
 B{string>=?}, B{string-ci>=?}
 
-K{string=?}, K{string<?}, K{string>?}, K{string<=?}, K{string>=?} and their
-case insensitive variants K{string-ci=?}, K{string-ci<?}, K{string-ci>?},
-K{string-ci<=?}, K{string-ci>=?} compare strings.
+K{string=?}, K{string<?}, K{string>?}, K{string<=?}, K{string>=?} and
+their case insensitive variants K{string-ci=?}, K{string-ci<?},
+K{string-ci>?}, K{string-ci<=?}, K{string-ci>=?} compare strings.
 MD)
 
 PR(
-string=?, string<?, string>?, string<=?, string>=? (public);str1 str str2 str -> bool
+string=?, string<?, string>? (public);str1 str str2 str -> bool
+PR)
+
+PR(
+string<=?, string>=? (public);str1 str str2 str -> bool
 PR)
 
 PR(
@@ -755,10 +773,6 @@ B{substring} procedure
 K{substring} yields the substring of E{str} that starts at E{start} and ends at E{end}.
 MD)
 
-PR(
-substring (public);str str start num end num -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -766,6 +780,10 @@ MD)
 VB(
 (substring "foobar" 2 4)   => "oba"
 VB)
+
+PR(
+substring (public);str str start num end num -> str
+PR)
 
 IX substring
 CB(
@@ -802,10 +820,6 @@ B{string-append} procedure
 K{string-append} joins strings together.
 MD)
 
-PR(
-string-append (public);args strs -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -813,6 +827,10 @@ MD)
 VB(
 (string-append "foo" "bar")   =>  "foobar"
 VB)
+
+PR(
+string-append (public);args strs -> str
+PR)
 
 IX string-append
 CB(
@@ -839,10 +857,6 @@ B{string->list} procedure
 K{string->list} converts a string to a Lisp list of characters.
 MD)
 
-PR(
-string->list (public);str str -> lchars
-PR)
-
 MD(
 Example:
 MD)
@@ -850,6 +864,10 @@ MD)
 VB(
 (string->list "foo")   =>  (#\f #\o #\o)
 VB)
+
+PR(
+string->list (public);str str -> lchars
+PR)
 
 IX string->list
 CB(
@@ -874,10 +892,6 @@ B{list->string} procedure
 K{list->string} converts a Lisp list of characters to a string.
 MD)
 
-PR(
-list->string (public);list lchars -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -885,6 +899,10 @@ MD)
 VB(
 (list->string '(#\1 #\2 #\3))   => "123"
 VB)
+
+PR(
+list->string (public);list lchars -> str
+PR)
 
 IX list->string
 CB(
@@ -910,10 +928,6 @@ B{string-copy} procedure
 K{string-copy} makes a copy of a string.
 MD)
 
-PR(
-string-copy (public);str str -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -924,6 +938,10 @@ VB(
       (char #\x))
   (string-set! str k char))       =>  "xbc"
 VB)
+
+PR(
+string-copy (public);str str -> str
+PR)
 
 IX string-copy
 CB(
@@ -956,10 +974,6 @@ B{string-fill!} procedure
 K{string-fill!} E{str} E{char} fills a non-constant string with E{char}.
 MD)
 
-PR(
-string-fill! (public);str str char char -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -969,6 +983,10 @@ VB(
       (char #\X))
   (string-fill! str char))           =>  "XXXXXX"
 VB)
+
+PR(
+string-fill! (public);str str char char -> str
+PR)
 
 IX string-fill!
 CB(

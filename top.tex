@@ -8,10 +8,13 @@
 \usepackage[T1]{fontenc}
 \usepackage{imakeidx}
 \usepackage{marginnote}
+\usepackage[table]{xcolor}
 \lstset{
   showstringspaces=false,
   language=tcl,
   frame=lines,
+  aboveskip=\bigskipamount,
+  belowskip=\bigskipamount,
   numbers=left,
   numberstyle=\tiny,
   firstnumber=last,
@@ -110,8 +113,8 @@ put together using tools like \texttt{awk}. It looks like this:
 In the middle are a bunch of \texttt{.ans} files (ANnotated Source). From the
 TT tags of those, I extract a \texttt{.test} file. From the CB tags I extract
 \texttt{.tcl} source. From all the tags except TT I extract formatted
-documentation in Markdown and (La)TeX format. All these extractions are
-automated using \texttt{make}. I create a PDF document from the (La)TeX source
+documentation in Markdown and \LaTeX{} format. All these extractions are
+automated using \texttt{make}. I create a PDF document from the \LaTeX{} source
 using TeXworks. On finishing up ConsTcl, it struck me that the documentation
 for this piece of software was fit for a book.
 
@@ -122,7 +125,7 @@ for this piece of software was fit for a book.
 I have tried to write clear, readable code, but the page format forces me to
 shorten lines. I have used two-space indents instead of four-space, a smaller
 font, and broken off long lines with a \textbackslash\  at the end of the first
-line (a so-called "tucked-in tail"). Neither of these measures improve
+line (a so-called 'tucked-in tail'). Neither of these measures improve
 readability, but the alternative is overwriting the margins. Not all broken
 lines have the \textbackslash: some are broken inside a
 \texttt{\{}\ldots\texttt{\}} block, and some right after a \texttt{[}.
@@ -137,7 +140,7 @@ me, and there are things that one can do in Tcl that one can't easily do in
 other languages. Lisp is a runner-up in my affections, a language that
 fascinates me but doesn't fit my brain very well (though I have written one
 large piece of software in AutoLisp, a CAD subsystem for designing drilling
-equipment).
+boxes).
 
 In addition to my terms as programmer and system manager, I have worked as a
 teacher (teaching C/C++ in upper secondary school) and for a short while I

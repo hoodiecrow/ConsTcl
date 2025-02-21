@@ -55,6 +55,7 @@ Initialize the definition register with the queen of numbers (or at least
 a double-precision floating point approximation).
 MD)
 
+IX pi
 CB(
 dict set ::constcl::defreg pi [N 3.1415926535897931]
 CB)
@@ -63,6 +64,7 @@ MD(
 In this interpreter, K{nil} does refer to the empty list.
 MD)
 
+IX nil
 CB(
 reg nil #NIL
 CB)

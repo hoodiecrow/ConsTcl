@@ -94,7 +94,20 @@ oo::class create ::constcl::Vector {
       join [lmap val [my value] {$val show}]]
   }
 }
+CB)
 
+MD(
+B{MkVector} generator
+
+K{MkVector} generates a Vector object.
+MD)
+
+PR(
+MkVector (internal);vals tvals -> vec
+PR)
+
+IX MkVector
+CB(
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 CB)
@@ -133,10 +146,6 @@ K{make-vector} creates a vector with a given length and optionally a fill value.
 If a fill value isn't given, the empty list will be used.
 MD)
 
-PR(
-make-vector? (public);k num ?fill? val -> vec
-PR)
-
 MD(
 Example:
 MD)
@@ -144,9 +153,13 @@ MD)
 VB(
 (let ((k 3))
   (make-vector k))        =>  #(() () ())
-(let ((k 3) (fill #\A))
-  (make-vector k fill))   =>  #(#\A #\A #\A)
+(let ((k 3) (val #\A))
+  (make-vector k val))    =>  #(#\A #\A #\A)
 VB)
+
+PR(
+make-vector? (public);k num ?val? val -> vec
+PR)
 
 IX make-vector
 CB(
@@ -154,11 +167,11 @@ reg make-vector ::constcl::make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
-    set fill #NIL
+    set val #NIL
   } else {
-    lassign $args fill
+    lassign $args val
   }
-  MkVector [lrepeat [$k numval] $fill]
+  MkVector [lrepeat [$k numval] $val]
 }
 CB)
 
@@ -168,10 +181,6 @@ B{vector}
 Given a number of Lisp values, K{vector} creates a vector containing them.
 MD)
 
-PR(
-vector (public);args vals -> vec
-PR)
-
 MD(
 Example:
 MD)
@@ -179,6 +188,10 @@ MD)
 VB(
 (vector 'a 'b 'c)   =>  #(a b c)
 VB)
+
+PR(
+vector (public);args vals -> vec
+PR)
 
 IX vector
 CB(
@@ -204,10 +217,6 @@ B{vector-length}
 K{vector-length} returns the length of a vector.
 MD)
 
-PR(
-vector-length (public);vec vec -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -215,6 +224,10 @@ MD)
 VB(
 (vector-length #(a b c))   =>  3
 VB)
+
+PR(
+vector-length (public);vec vec -> num
+PR)
 
 IX vector-length
 CB(
@@ -242,10 +255,6 @@ B{vector-ref}
 K{vector-ref} returns the element of E{vec} at index E{k} (0-based).
 MD)
 
-PR(
-vector-ref (public);vec vec k num -> val
-PR)
-
 MD(
 Example:
 MD)
@@ -254,6 +263,10 @@ VB(
 (let ((vec #(a b c)) (k 1))
   (vector-ref vec k))          =>  b
 VB)
+
+PR(
+vector-ref (public);vec vec k num -> val
+PR)
 
 IX vector-ref
 CB(
@@ -281,12 +294,8 @@ TT)
 MD(
 B{vector-set!}
 
-K{vector-set!}, for a non-constant vector, sets the element at index _k_ to _val_.
+K{vector-set!}, for a non-constant vector, sets the element at index E{k} to E{val}.
 MD)
-
-PR(
-vector-set! (public);vec vec k num val val -> vec
-PR)
 
 MD(
 Example:
@@ -302,6 +311,10 @@ VB(
       (val 'x))
   (vector-set! vec k val))      =>  #(a x c)
 VB)
+
+PR(
+vector-set! (public);vec vec k num val val -> vec
+PR)
 
 IX vector-set!
 CB(
@@ -333,10 +346,6 @@ B{vector->list}
 K{vector->list} converts a vector value to a Lisp list.
 MD)
 
-PR(
-vector->list (public);vec vec -> lvals
-PR)
-
 MD(
 Example:
 MD)
@@ -344,6 +353,10 @@ MD)
 VB(
 (vector->list #(a b c))   =>  (a b c)
 VB)
+
+PR(
+vector->list (public);vec vec -> lvals
+PR)
 
 IX vector->list
 CB(
@@ -368,17 +381,17 @@ B{list->vector}
 K{list->vector} converts a Lisp list value to a vector.
 MD)
 
-PR(
-list->vector (public);list lvals -> vec
-PR)
-
 MD(
 Example:
+MD)
 
 VB(
 (list->vector '(1 2 3))   =>  #(1 2 3)
 VB)
-MD)
+
+PR(
+list->vector (public);list lvals -> vec
+PR)
 
 IX list->vector
 CB(
@@ -403,10 +416,6 @@ B{vector-fill!}
 K{vector-fill!} fills a non-constant vector with a given value.
 MD)
 
-PR(
-vector-fill! (public);vec vec fill val -> vec
-PR)
-
 MD(
 Example:
 MD)
@@ -416,6 +425,10 @@ VB(
 (vector-fill! vec 'x)             =>  #(x x x)
 vec                               =>  #(x x x)
 VB)
+
+PR(
+vector-fill! (public);vec vec fill val -> vec
+PR)
 
 IX vector-fill!
 CB(

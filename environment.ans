@@ -94,11 +94,11 @@ During a call to the procedure K{circle-area}, the symbol K{r} is bound to the
 value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of K{r}. The solution is to use
 separate (but linked) environments, making K{r}'s binding a
-E{local variable}W{Local_variable}
+W{local variable}{Local_variable}I{local variable}
 in its own environment, which the procedure will be evaluated in. The symbols
 K{*} and K{pi} will still be available through the local environment's link
 to the outer global environment. This is all part of
-E{lexical scoping}W{Scope_(computer_science)#Lexical_scope}.
+W{lexical scoping}{Scope_(computer_science)#Lexical_scope}I{lexical scope}.
 
 In the first image, we see the global environment before we call K{circle-area}
 (and also the empty null environment which the global environment links to):

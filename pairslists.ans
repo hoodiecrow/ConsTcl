@@ -64,8 +64,20 @@ oo::class create ::constcl::Pair {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
+CB)
 
+MD(
+B{MkPair} generator
 
+K{MkPair} generates a Pair object. Shorter form: K{cons}.
+MD)
+
+PR(
+MkPair (internal);car val cdr val -> pair
+PR)
+
+IX MkPair
+CB(
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
 CB)
@@ -178,10 +190,6 @@ K{cons} joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
 MD)
 
-PR(
-cons (public);car val cdr val -> pair
-PR)
-
 MD(
 Example:
 MD)
@@ -193,6 +201,10 @@ VB(
 VB)
 
 IG /images/consing.png
+
+PR(
+cons (public);car val cdr val -> pair
+PR)
 
 IX cons
 CB(
@@ -221,10 +233,6 @@ B{car} procedure
 K{car} gets the contents of the first cell in a pair.
 MD)
 
-PR(
-car (public);pair pair -> val
-PR)
-
 MD(
 Example:
 MD)
@@ -232,6 +240,10 @@ MD)
 VB(
 (car '(a b))   =>  a
 VB)
+
+PR(
+car (public);pair pair -> val
+PR)
 
 IX car
 CB(
@@ -262,10 +274,6 @@ B{cdr} procedure
 K{cdr} gets the contents of the second cell in a pair.
 MD)
 
-PR(
-cdr (public);pair pair -> val
-PR)
-
 MD(
 Example:
 MD)
@@ -273,6 +281,10 @@ MD)
 VB(
 (cdr '(a b))   =>  (b)
 VB)
+
+PR(
+cdr (public);pair pair -> val
+PR)
 
 IX cdr
 CB(
@@ -357,10 +369,6 @@ B{set-car!} procedure
 K{set-car!} sets the contents of the first cell in a pair.
 MD)
 
-PR(
-set-car! (public);pair pair val val -> pair
-PR)
-
 MD(
 Example:
 MD)
@@ -369,6 +377,10 @@ VB(
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-car! pair val))                =>  (x . b)
 VB)
+
+PR(
+set-car! (public);pair pair val val -> pair
+PR)
 
 IX set-car!
 CB(
@@ -399,10 +411,6 @@ B{set-cdr!} procedure
 K{set-cdr!} sets the contents of the second cell in a pair.
 MD)
 
-PR(
-set-cdr! (public);pair pair val val -> pair
-PR)
-
 MD(
 Example:
 MD)
@@ -411,6 +419,10 @@ VB(
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-cdr! pair val))                =>  (a . x)
 VB)
+
+PR(
+set-cdr! (public);pair pair val val -> pair
+PR)
 
 IX set-cdr!
 CB(
@@ -516,10 +528,6 @@ B{list} procedure
 K{list} constructs a Lisp list from a number of values.
 MD)
 
-PR(
-list (public);args vals -> lvals
-PR)
-
 MD(
 Example:
 MD)
@@ -527,6 +535,10 @@ MD)
 VB(
 (list 1 2 3)   =>  (1 2 3)
 VB)
+
+PR(
+list (public);args vals -> lvals
+PR)
 
 IX list
 CB(
@@ -560,10 +572,6 @@ B{length} procedure
 K{length} reports the length of a Lisp list.
 MD)
 
-PR(
-length (public);pair pair -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -571,6 +579,10 @@ MD)
 VB(
 (length '(a b c d))   =>  4
 VB)
+
+PR(
+length (public);pair pair -> num
+PR)
 
 IX length
 CB(
@@ -697,10 +709,6 @@ B{reverse} procedure
 K{reverse} produces a reversed copy of a Lisp list.
 MD)
 
-PR(
-reverse (public);vals lvals -> lvals
-PR)
-
 MD(
 Example:
 MD)
@@ -708,6 +716,10 @@ MD)
 VB(
 (reverse '(a b c))   =>  (c b a)
 VB)
+
+PR(
+reverse (public);vals lvals -> lvals
+PR)
 
 IX reverse
 CB(
@@ -733,10 +745,6 @@ B{list-tail} procedure
 Given a list index, K{list-tail} yields the sublist starting from that index.
 MD)
 
-PR(
-list-tail (public);vals lvals k num -> lvals
-PR)
-
 MD(
 Example:
 MD)
@@ -745,6 +753,10 @@ VB(
 (let ((lst '(a b c d e f)) (k 3))
   (list-tail lst k))                =>  (d e f)
 VB)
+
+PR(
+list-tail (public);vals lvals k num -> lvals
+PR)
 
 IX list-tail
 CB(
@@ -773,10 +785,6 @@ B{list-ref} procedure
 K{list-ref} yields the list item at a given index.
 MD)
 
-PR(
-list-ref (public);vals lvals k num -> val
-PR)
-
 MD(
 Example:
 MD)
@@ -785,6 +793,10 @@ VB(
 (let ((lst '(a b c d e f)) (k 3))
   (list-ref lst k))                 =>  d
 VB)
+
+PR(
+list-ref (public);vals lvals k num -> val
+PR)
 
 IX list-ref
 CB(
@@ -815,10 +827,6 @@ item, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?},
 respectively, for the comparison.
 MD)
 
-PR(
-memq (public);val1 val val2 lvals -> lvfalse
-PR)
-
 MD(
 Example:
 MD)
@@ -827,6 +835,10 @@ VB(
 (let ((lst '(a b c d e f)) (val 'd))
   (memq val lst))                      =>  (d e f)
 VB)
+
+PR(
+memq (public);val1 val val2 lvals -> lvfalse
+PR)
 
 IX memq
 CB(

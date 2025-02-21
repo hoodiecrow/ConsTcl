@@ -9,6 +9,7 @@ tstrinpbuf    -> a Tcl string or an input buffer
 tstrstrinpbuf -> a Tcl string, Lisp string, or an input buffer
 none          -> nothing
 noneeof       -> nothing, or end of file
+filename      -> a filename string
 varsvals      -> a flag, VARS or VALS
 pterm         -> the terminating paren or bracket
 pstr          -> a structure of pair expressions
@@ -53,10 +54,12 @@ lbools        -> a Lisp list of booleans
 tbool         -> a Tcl truth value (1 or 0)
 tbooleof      -> a Tcl truth value (1 or 0) or end of file
 tbools        -> a Tcl list of booleans
+ebool         -> an external rep of a bool
 char          -> a character
 chareof       -> a character or end of file
 chars         -> some characters
 lchars        -> a Lisp list of characters
+echar         -> an external rep of a char
 tchr          -> a Tcl character
 tchrs         -> some Tcl characters
 tchreof       -> a Tcl character or end of file
@@ -76,6 +79,7 @@ tlists        -> a Tcl list of lists
 str           -> a string
 streof        -> a string or end of file
 strs          -> some strings
+estr          -> an external rep of a string
 lstrs         -> a Lisp list of strings
 tstrs         -> a Tcl list of strings
 tstr          -> a Tcl string

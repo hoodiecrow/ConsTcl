@@ -57,7 +57,20 @@ oo::class create ::constcl::Number {
     set value
   }
 }
+CB)
 
+MD(
+B{MkNumber} generator
+
+K{MkNumber} generates a Number object. Short form: K{N}.
+MD)
+
+PR(
+MkNumber (internal);str str -> num
+PR)
+
+IX MkNumber
+CB(
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
 interp alias {} N {} ::constcl::Number new
@@ -114,7 +127,7 @@ The predicates K{=}, K{<}, K{>}, K{<=}, and K{>=} are implemented.
 MD)
 
 PR(
-=, <, >, <=, >= (public);args nums -> bool
+=, <, >, <=, >= (public);nums nums -> bool
 PR)
 
 IX =
@@ -123,11 +136,11 @@ reg =
 
 proc ::constcl::= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(= num ...)"
   }
-  if {[::tcl::mathop::== {*}$vals]} {
+  if {[::tcl::mathop::== {*}$nums]} {
     return #t
   } else {
     return #f
@@ -153,11 +166,11 @@ reg <
 
 proc ::constcl::< {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(< num ...)"
   }
-  if {[::tcl::mathop::< {*}$vals]} {
+  if {[::tcl::mathop::< {*}$nums]} {
     return #t
   } else {
     return #f
@@ -179,11 +192,11 @@ reg >
 
 proc ::constcl::> {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(> num ...)"
   }
-  if {[::tcl::mathop::> {*}$vals]} {
+  if {[::tcl::mathop::> {*}$nums]} {
     return #t
   } else {
     return #f
@@ -205,11 +218,11 @@ reg <=
 
 proc ::constcl::<= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(<= num ...)"
   }
-  if {[::tcl::mathop::<= {*}$vals]} {
+  if {[::tcl::mathop::<= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -231,11 +244,11 @@ reg >=
 
 proc ::constcl::>= {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(>= num ...)"
   }
-  if {[::tcl::mathop::>= {*}$vals]} {
+  if {[::tcl::mathop::>= {*}$nums]} {
     return #t
   } else {
     return #f
@@ -399,7 +412,7 @@ VB(
 VB)
 
 PR(
-max, min (public);num num args nums -> num
+max, min (public);num num nums nums -> num
 PR)
 
 IX max
@@ -409,11 +422,11 @@ reg max
 proc ::constcl::max {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(max num...)"
   }
-  N [::tcl::mathfunc::max {*}$vals]
+  N [::tcl::mathfunc::max {*}$nums]
 }
 CB)
 
@@ -432,11 +445,11 @@ reg min
 proc ::constcl::min {num args} {
   lappend args $num
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(min num...)"
   }
-  N [::tcl::mathfunc::min {*}$vals]
+  N [::tcl::mathfunc::min {*}$nums]
 }
 CB)
 
@@ -457,24 +470,9 @@ B{-} procedure
 
 B{/} procedure
 
-The operators K{+}, K{*}, K{-}, and K{/} stand for the respective
-mathematical operations. 
-MD)
+The operators K{+}, K{*}, K{-}, and K{/} stand for the respective mathematical
+operations.  They take a number of operands, but at least one for K{-} and K{/}.
 
-PR(
-+, * (public);args nums -> num
-PR)
-
-MD(
-They take a number of operands, but
-at least one for K{-} and K{/}.
-MD)
-
-PR(
--, / (public);num num args nums -> num
-PR)
-
-MD(
 Example:
 MD)
 
@@ -488,17 +486,25 @@ VB(
 (/ 5)                                      =>  0.2
 VB)
 
+PR(
++, * (public);?nums? nums -> num
+PR)
+
+PR(
+-, / (public);num num ?nums? nums -> num
+PR)
+
 IX +
 CB(
 reg +
 
 proc ::constcl::+ {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(+ num ...)"
   }
-  N [::tcl::mathop::+ {*}$vals]
+  N [::tcl::mathop::+ {*}$nums]
 }
 CB)
 
@@ -518,11 +524,11 @@ reg *
 
 proc ::constcl::* {args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(* num ...)"
   }
-  N [::tcl::mathop::* {*}$vals]
+  N [::tcl::mathop::* {*}$nums]
 }
 CB)
 
@@ -542,11 +548,11 @@ reg -
 
 proc ::constcl::- {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(- num ...)"
   }
-  N [::tcl::mathop::- [$num numval] {*}$vals]
+  N [::tcl::mathop::- [$num numval] {*}$nums]
 }
 CB)
 
@@ -569,11 +575,11 @@ reg /
 
 proc ::constcl::/ {num args} {
   try {
-    set vals [lmap arg $args {$arg numval}]
+    set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(/ num ...)"
   }
-  N [::tcl::mathop::/ [$num numval] {*}$vals]
+  N [::tcl::mathop::/ [$num numval] {*}$nums]
 }
 CB)
 
@@ -633,10 +639,6 @@ B{quotient} procedure
 K{quotient} calculates the quotient between two numbers.
 MD)
 
-PR(
-quotient (public);num1 num num2 num -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -644,6 +646,10 @@ MD)
 VB(
 (quotient 7 3)   =>  2.0
 VB)
+
+PR(
+quotient (public);num1 num num2 num -> num
+PR)
 
 IX quotient
 CB(
@@ -669,10 +675,6 @@ K{remainder} is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
 MD)
 
-PR(
-remainder (public);num1 num num2 num -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -680,6 +682,10 @@ MD)
 VB(
 (remainder 7 3)   =>  1
 VB)
+
+PR(
+remainder (public);num1 num num2 num -> num
+PR)
 
 IX remainder
 CB(
@@ -699,10 +705,6 @@ MD(
 B{modulo} procedure
 MD)
 
-PR(
-modulo (public);num1 num num2 num -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -710,6 +712,10 @@ MD)
 VB(
 (modulo 7 3)   =>  1
 VB)
+
+PR(
+modulo (public);num1 num num2 num -> num
+PR)
 
 IX modulo
 CB(
@@ -774,10 +780,6 @@ K{floor}, K{ceiling}, K{truncate}, and K{round} are different methods for
 converting a real number to an integer.
 MD)
 
-PR(
-floor, ceiling, truncate, round (public);num num -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -788,6 +790,10 @@ VB(
 (truncate 7.5)   =>  7.0
 (round 7.5)      =>  8
 VB)
+
+PR(
+floor, ceiling, truncate, round (public);num num -> num
+PR)
 
 IX floor
 CB(
@@ -909,20 +915,9 @@ The mathematical functions P{e}{x}, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
 calculated by K{exp}, K{log}, K{sin}, K{cos}, K{tan}, K{asin}, K{acos},
 and K{atan}, respectively.
-MD)
-
-PR(
-exp, log, sin, cos, tan, asin, acos, atan (public);num num -> num
-PR)
-
-MD(
 K{atan} can be called both as a unary (one argument) function and a binary (two
 arguments) one.
 MD)
-
-PR(
-(binary) atan (public);num1 num num2 num -> num
-PR)
 
 MD(
 Example:
@@ -933,6 +928,14 @@ VB(
 (letrec ((a (/ pi 3)) (s (sin a)))
   (= a (asin s)))                        =>  #t
 VB)
+
+PR(
+exp, log, sin, cos, tan, asin, acos, atan (public);num num -> num
+PR)
+
+PR(
+(binary) atan (public);num1 num num2 num -> num
+PR)
 
 IX exp
 CB(
@@ -1203,10 +1206,6 @@ The procedures K{number->string} and K{string->number} convert between
 number and string with optional radix conversion.
 MD)
 
-PR(
-number->string (public);num num ?radix? num -> str
-PR)
-
 MD(
 Example:
 MD)
@@ -1217,6 +1216,10 @@ VB(
 (number->string 23 8)    =>  "27"
 (number->string 23 16)   =>  "17"
 VB)
+
+PR(
+number->string (public);num num ?radix? num -> str
+PR)
 
 IX number->string
 CB(
@@ -1293,10 +1296,6 @@ B{string->number} procedure
 As with K{number->string}, above.
 MD)
 
-PR(
-string->number (public);str str ?radix? num -> num
-PR)
-
 MD(
 Example:
 MD)
@@ -1307,6 +1306,10 @@ VB(
 (string->number "27" 8)      =>  23
 (string->number "17" 16)     =>  23
 VB)
+
+PR(
+string->number (public);str str ?radix? num -> num
+PR)
 
 IX string->number
 CB(

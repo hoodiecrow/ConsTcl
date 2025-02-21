@@ -19,8 +19,8 @@ $1 == "PR(" { inside_pr_block = 1; next; }
 $1 == "PR)" { inside_pr_block = 0; next; }
 inside_pr_block {
 	if (match($0, /;/)) {
-		print "\\begin{tabular}{ |l l| }\n\\hline";
-		printf "\\multicolumn{2}{|l|}{%s} \\\\\n", substr($0, 1, RSTART-1);
+		print "\\noindent\\begin{tabular}{ |p{1.5cm} p{8cm}| }\n\\hline";
+		printf "\\rowcolor[HTML]{CCCCCC} \\multicolumn{2}{|l|}{\\bf %s} \\\\\n", substr($0, 1, RSTART-1);
 		$0 = substr($0, RSTART+RLENGTH);
 		for (i = 1; i <= NF; i += 2) {
 			td1 = ($i == "->" ? "\\textit{Returns:}" : $i);
@@ -103,6 +103,7 @@ $1 == "EM" {
     line = sep = ""
     next
 }
+$1 == "BS" { print "\\bigskip" }
 
 $1 == "IT" { if (!init) print "\\begin{itemize}";init = 1; print "\\item " render(substr($0, 3));next }
 init && $1 != "IT" { print "\\end{itemize}"; init = 0; next }
@@ -169,6 +170,10 @@ function render(line) {
 
     while (match(line, /D{([^{}]*)}/)) {
         sub(/D{([^{}]*)}/, sprintf("\\ldots "), line)
+    }
+
+    while (match(line, /\(La\)TeX/)) {
+        sub(/\(La\)TeX/, sprintf("\\LaTeX{}"), line)
     }
 
     while (match(line, /R{([^{}]+)}{([^{}]+)}/)) {

@@ -56,6 +56,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
     ::constcl::write $val
     set str [::constcl::input $prompt]
   }
+  $cur_env destroy
 }
 CB)
 
