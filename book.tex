@@ -3463,8 +3463,8 @@ Of the three equivalence predicates, \texttt{eq} generally tests for identity (w
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{eq?, eqv?, equal? (public)} \\
-val1 & a Lisp value \\
-val2 & a Lisp value \\
+expr1 & an expression \\
+expr2 & an expression \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -3472,32 +3472,32 @@ val2 & a Lisp value \\
 \begin{lstlisting}
 reg eq?
  
-proc ::constcl::eq? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eq? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[teq pair? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq pair? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -3506,21 +3506,44 @@ proc ::constcl::eq? {val1 val2} {
 \end{lstlisting}
 
 
-\texttt{teq} tests for type equality, i.e. that the values have the same type.
+\textbf{teq} procedure
 
+
+\texttt{teq} tests for type equality, i.e. that the expressions have the same type.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{teq (internal)} \\
+typep & a procedure \\
+expr1 & an expression \\
+expr2 & an expression \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
 \begin{lstlisting}
-proc ::constcl::teq {typep val1 val2} {
-    return [expr {[$typep $val1] ne "#f" &&
-      [$typep $val2] ne "#f"}]
+proc ::constcl::teq {typep expr1 expr2} {
+    return [expr {[$typep $expr1] ne "#f" &&
+      [$typep $expr2] ne "#f"}]
 }
 \end{lstlisting}
 
 
-\texttt{veq} tests for value equality, i.e. that the values have the same value.
+\textbf{veq} procedure
 
+
+\texttt{veq} tests for value equality, i.e. that the expressions have the same value.
+
+\begin{tabular}{ |l l| }
+\hline
+\multicolumn{2}{|l|}{veq (internal)} \\
+expr1 & an expression \\
+expr2 & an expression \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
 \begin{lstlisting}
-proc ::constcl::veq {val1 val2} {
-    return [expr {[$val1 value] eq [$val2 value]}]
+proc ::constcl::veq {expr1 expr2} {
+    return [expr {[$expr1 value] eq [$expr2 value]}]
 }
 \end{lstlisting}
 
@@ -3531,34 +3554,34 @@ proc ::constcl::veq {val1 val2} {
 \begin{lstlisting}
 reg eqv?
  
-proc ::constcl::eqv? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eqv? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      [veq $val1 eq $val2]} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      [veq $expr1 eq $expr2]} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $val1] ne "#f" &&
-      [pair? $val2] ne "#f" &&
-      [$val1 car] eq [$val2 car] &&
-      [$val1 cdr] eq [$val2 cdr]} {
+  } elseif {[pair? $expr1] ne "#f" &&
+      [pair? $expr2] ne "#f" &&
+      [$expr1 car] eq [$expr2 car] &&
+      [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -3573,8 +3596,8 @@ proc ::constcl::eqv? {val1 val2} {
 \begin{lstlisting}
 reg equal?
  
-proc ::constcl::equal? {val1 val2} {
-  if {[$val1 show] eq [$val2 show]} {
+proc ::constcl::equal? {expr1 expr2} {
+  if {[$expr1 show] eq [$expr2 show]} {
     return #t
   } else {
     return #f
@@ -5740,7 +5763,7 @@ proc ::constcl::port? {val} {
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{call-with-input-file (public)} \\
-str & a string \\
+filename & a string \\
 proc & a procedure \\
 \textit{Returns:} & a Lisp value \\
 \hline
@@ -5748,8 +5771,8 @@ proc & a procedure \\
 \begin{lstlisting}
 reg call-with-input-file
  
-proc ::constcl::call-with-input-file {str proc} {
-  set port [open-input-file $str]
+proc ::constcl::call-with-input-file {filename proc} {
+  set port [open-input-file $filename]
   set res [invoke $proc [list $port]]
   close-input-port $port
   $port destroy
@@ -5769,7 +5792,7 @@ You can't use this procedure without deleting the first line. I take no responsi
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{call-with-output-file (public)} \\
-str & a string \\
+filename & a string \\
 proc & a procedure \\
 \textit{Returns:} & a Lisp value \\
 \hline
@@ -5777,9 +5800,9 @@ proc & a procedure \\
 \begin{lstlisting}
 reg call-with-output-file
  
-proc ::constcl::call-with-output-file {str proc} {
+proc ::constcl::call-with-output-file {filename proc} {
   ::error "remove this line to use"
-  set port [open-output-file $str]
+  set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
   $port destroy
@@ -5878,7 +5901,7 @@ proc ::constcl::current-output-port {} {
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{with-input-from-file (public)} \\
-str & a string \\
+filename & a string \\
 thunk & a procedure \\
 \textit{Returns:} & nothing \\
 \hline
@@ -5886,8 +5909,8 @@ thunk & a procedure \\
 \begin{lstlisting}
 reg with-input-from-file
  
-proc ::constcl::with-input-from-file {str thunk} {
-  set newport [open-input-file $str]
+proc ::constcl::with-input-from-file {filename thunk} {
+  set newport [open-input-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
@@ -5895,6 +5918,7 @@ proc ::constcl::with-input-from-file {str thunk} {
     set ::constcl::Input_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 \end{lstlisting}
 
@@ -5907,7 +5931,7 @@ proc ::constcl::with-input-from-file {str thunk} {
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{with-output-to-file (public)} \\
-str & a string \\
+filename & a string \\
 thunk & a procedure \\
 \textit{Returns:} & nothing \\
 \hline
@@ -5915,9 +5939,9 @@ thunk & a procedure \\
 \begin{lstlisting}
 reg with-output-to-file
  
-proc ::constcl::with-output-to-file {str thunk} {
+proc ::constcl::with-output-to-file {filename thunk} {
   ::error "remove this line to use"
-  set newport [open-output-file $str]
+  set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
@@ -5925,6 +5949,7 @@ proc ::constcl::with-output-to-file {str thunk} {
     set ::constcl::Output_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 \end{lstlisting}
 
@@ -6202,7 +6227,7 @@ interp alias {} ::constcl::MkPair \
 \end{lstlisting}
 
 
-\textbf{pair?}
+\textbf{pair?} procedure
 
 \begin{tabular}{ |l l| }
 \hline
@@ -6221,7 +6246,7 @@ proc ::constcl::pair? {val} {
 \end{lstlisting}
 
 
-\textbf{show-pair}
+\textbf{show-pair} procedure
 
 
 Helper procedure to make a string representation of a list.
@@ -6260,7 +6285,7 @@ proc ::constcl::show-pair {pair} {
 \end{lstlisting}
 
 
-\textbf{cons}
+\textbf{cons} procedure
 
 
 \texttt{cons} joins two values in a pair; useful in many operations such as pushing a new value onto a list.
@@ -6293,7 +6318,7 @@ proc ::constcl::cons {car cdr} {
 \end{lstlisting}
 
 
-\textbf{car}
+\textbf{car} procedure
 
 
 \texttt{car} gets the contents of the first cell in a pair.
@@ -6322,7 +6347,7 @@ proc ::constcl::car {pair} {
 \end{lstlisting}
 
 
-\textbf{cdr}
+\textbf{cdr} procedure
 
 
 \texttt{cdr} gets the contents of the second cell in a pair.
@@ -6405,7 +6430,7 @@ foreach ads {
 \end{lstlisting}
 
 
-\textbf{set-car!}
+\textbf{set-car!} procedure
 
 
 \texttt{set-car!} sets the contents of the first cell in a pair.
@@ -6436,7 +6461,7 @@ proc ::constcl::set-car! {pair val} {
 \end{lstlisting}
 
 
-\textbf{set-cdr!}
+\textbf{set-cdr!} procedure
 
 
 \texttt{set-cdr!} sets the contents of the second cell in a pair.
@@ -6467,7 +6492,7 @@ proc ::constcl::set-cdr! {pair val} {
 \end{lstlisting}
 
 
-\textbf{list?}
+\textbf{list?} procedure
 
 
 The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL.
@@ -6494,6 +6519,13 @@ proc ::constcl::list? {val} {
   }
 }
 \end{lstlisting}
+
+
+\textbf{listp} procedure
+
+
+\texttt{listp} is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in \texttt{\#NIL}, which means that it returns true.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{listp (internal)} \\
@@ -6520,7 +6552,7 @@ proc ::constcl::listp {pair} {
 \end{lstlisting}
 
 
-\textbf{list}
+\textbf{list} procedure
 
 
 \texttt{list} constructs a Lisp list from a number of values.
@@ -6557,7 +6589,7 @@ proc ::constcl::list {args} {
 \end{lstlisting}
 
 
-\textbf{length}
+\textbf{length} procedure
 
 
 \texttt{length} reports the length of a Lisp list.
@@ -6587,6 +6619,13 @@ proc ::constcl::length {pair} {
   MkNumber [length-helper $pair]
 }
 \end{lstlisting}
+
+
+\textbf{length-helper} procedure
+
+
+\texttt{length-helper} is a helper procedure which measures a list recursively.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{length-helper (internal)} \\
@@ -6607,7 +6646,7 @@ proc ::constcl::length-helper {pair} {
 \end{lstlisting}
 
 
-\textbf{append}
+\textbf{append} procedure
 
 
 \texttt{append} joins lists together.
@@ -6641,6 +6680,13 @@ proc ::constcl::append {args} {
   set prev
 }
 \end{lstlisting}
+
+
+\textbf{copy-list} procedure
+
+
+\texttt{copy-list} joins together two lists by recursively consing items from the first list towards the second.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{copy-list (internal)} \\
@@ -6664,7 +6710,7 @@ proc ::constcl::copy-list {pair next} {
 \end{lstlisting}
 
 
-\textbf{reverse}
+\textbf{reverse} procedure
 
 
 \texttt{reverse} produces a reversed copy of a Lisp list.
@@ -6693,7 +6739,7 @@ proc ::constcl::reverse {vals} {
 \end{lstlisting}
 
 
-\textbf{list-tail}
+\textbf{list-tail} procedure
 
 
 Given a list index, \texttt{list-tail} yields the sublist starting from that index.
@@ -6728,7 +6774,7 @@ proc ::constcl::list-tail {vals k} {
 \end{lstlisting}
 
 
-\textbf{list-ref}
+\textbf{list-ref} procedure
 
 
 \texttt{list-ref} yields the list item at a given index.
@@ -6759,13 +6805,13 @@ proc ::constcl::list-ref {vals k} {
 \end{lstlisting}
 
 
-\textbf{memq}
+\textbf{memq} procedure
 
 
-\textbf{memv}
+\textbf{memv} procedure
 
 
-\textbf{member}
+\textbf{member} procedure
 
 
 \texttt{memq}, \texttt{memv}, and \texttt{member} return the sublist starting with a given item, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison.
@@ -6826,6 +6872,13 @@ proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
 \end{lstlisting}
+
+
+\textbf{member-proc} procedure
+
+
+\texttt{member-proc} helper procedure which does the work for the \texttt{memq}, \texttt{memv}, and \texttt{member} procedures. Works by recursively taking the \texttt{cdr} of the list, comparing against the \texttt{car} of the list.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{member-proc (internal)} \\
@@ -6859,13 +6912,13 @@ proc ::constcl::member-proc {epred val1 val2} {
 \end{lstlisting}
 
 
-\textbf{assq}
+\textbf{assq} procedure
 
 
-\textbf{assv}
+\textbf{assv} procedure
 
 
-\textbf{assoc}
+\textbf{assoc} procedure
 
 
 \texttt{assq}, \texttt{assv}, and \texttt{assoc} return the associative item marked with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the form of lookup table known as an association list, or \emph{alist}.
@@ -6925,6 +6978,13 @@ proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
 \end{lstlisting}
+
+
+\textbf{assoc-proc} procedure
+
+
+\texttt{assoc-proc} is a helper procedure which does the work for \texttt{assq}, \texttt{assv}, and \texttt{assoc}.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{assoc-proc (internal)} \\
@@ -7080,6 +7140,13 @@ oo::class create ::constcl::String {
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 \end{lstlisting}
+
+
+\textbf{string?} procedure
+
+
+\texttt{string?} recognizes a string by type.
+
 \begin{tabular}{ |l l| }
 \hline
 \multicolumn{2}{|l|}{string? (public)} \\
@@ -7097,7 +7164,7 @@ proc ::constcl::string? {val} {
 \end{lstlisting}
 
 
-\textbf{make-string}
+\textbf{make-string} procedure
 
 
 \texttt{make-string} creates a string of \emph{k} characters, optionally filled with \emph{char} characters. If \emph{char} is omitted, the string will be filled with space characters.
@@ -7125,19 +7192,19 @@ Example:
 reg make-string
  
 proc ::constcl::make-string {k args} {
+  set i [$k numval]
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " \
-      [$k numval]]]
+    set char " "
   } else {
-    lassign $args char
-    return [MkString [::string repeat \
-      [$char char] [$k numval]]]
+    lassign $args c
+    set char [$c char]
   }
+  return [MkString [::string repeat $char $i]]
 }
 \end{lstlisting}
 
 
-\textbf{string}
+\textbf{string} procedure
 
 
 \texttt{string} constructs a string from a number of Lisp characters.
@@ -7174,7 +7241,7 @@ proc ::constcl::string {args} {
 \end{lstlisting}
 
 
-\textbf{string-length}
+\textbf{string-length} procedure
 
 
 \texttt{string-length} reports a string's length.
@@ -7206,7 +7273,7 @@ proc ::constcl::string-length {str} {
 \end{lstlisting}
 
 
-\textbf{string-ref}
+\textbf{string-ref} procedure
 
 
 \texttt{string-ref} yields the \emph{k}-th character (0-based) in \emph{str}.
@@ -7236,7 +7303,7 @@ proc ::constcl::string-ref {str k} {
       [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show])
   }
   return [$str ref $k]
@@ -7244,7 +7311,7 @@ proc ::constcl::string-ref {str k} {
 \end{lstlisting}
 
 
-\textbf{string-set!}
+\textbf{string-set!} procedure
 
 
 \texttt{string-set!} replaces the character at \emph{k} with \emph{char} in a non-constant string.
@@ -7278,7 +7345,7 @@ proc ::constcl::string-set! {str k char} {
       [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show] [$char show])
   }
   check {char? $char} {
@@ -7539,7 +7606,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 \end{lstlisting}
 
 
-\textbf{substring}
+\textbf{substring} procedure
 
 
 \texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends at \emph{end}.
@@ -7582,7 +7649,7 @@ proc ::constcl::substring {str start end} {
 \end{lstlisting}
 
 
-\textbf{string-append}
+\textbf{string-append} procedure
 
 
 \texttt{string-append} joins strings together.
@@ -7613,7 +7680,7 @@ proc ::constcl::string-append {args} {
 \end{lstlisting}
 
 
-\textbf{string->list}
+\textbf{string->list} procedure
 
 
 \texttt{string->list} converts a string to a Lisp list of characters.
@@ -7642,7 +7709,7 @@ proc ::constcl::string->list {str} {
 \end{lstlisting}
 
 
-\textbf{list->string}
+\textbf{list->string} procedure
 
 
 \texttt{list->string} converts a Lisp list of characters to a string.
@@ -7672,7 +7739,7 @@ proc ::constcl::list->string {list} {
 \end{lstlisting}
 
 
-\textbf{string-copy}
+\textbf{string-copy} procedure
 
 
 \texttt{string-copy} makes a copy of a string.
@@ -7707,7 +7774,7 @@ proc ::constcl::string-copy {str} {
 \end{lstlisting}
 
 
-\textbf{string-fill!}
+\textbf{string-fill!} procedure
 
 
 \texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.

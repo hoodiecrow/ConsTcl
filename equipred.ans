@@ -12,39 +12,39 @@ B{eq?} procedure
 MD)
 
 PR(
-eq?, eqv?, equal? (public);val1 val val2 val -> bool
+eq?, eqv?, equal? (public);expr1 expr expr2 expr -> bool
 PR)
 
 IX eq?
 CB(
 reg eq?
 
-proc ::constcl::eq? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eq? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[teq pair? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq pair? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -53,23 +53,35 @@ proc ::constcl::eq? {val1 val2} {
 CB)
 
 MD(
-K{teq} tests for type equality, i.e. that the values have the same type.
+B{teq} procedure
+
+K{teq} tests for type equality, i.e. that the expressions have the same type.
 MD)
 
+PR(
+teq (internal);typep proc expr1 expr expr2 expr -> tbool
+PR)
+
 CB(
-proc ::constcl::teq {typep val1 val2} {
-    return [expr {[$typep $val1] ne "#f" &&
-      [$typep $val2] ne "#f"}]
+proc ::constcl::teq {typep expr1 expr2} {
+    return [expr {[$typep $expr1] ne "#f" &&
+      [$typep $expr2] ne "#f"}]
 }
 CB)
 
 MD(
-K{veq} tests for value equality, i.e. that the values have the same value.
+B{veq} procedure
+
+K{veq} tests for value equality, i.e. that the expressions have the same value.
 MD)
 
+PR(
+veq (internal);expr1 expr expr2 expr -> tbool
+PR)
+
 CB(
-proc ::constcl::veq {val1 val2} {
-    return [expr {[$val1 value] eq [$val2 value]}]
+proc ::constcl::veq {expr1 expr2} {
+    return [expr {[$expr1 value] eq [$expr2 value]}]
 }
 CB)
 
@@ -91,34 +103,34 @@ IX eqv?
 CB(
 reg eqv?
 
-proc ::constcl::eqv? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eqv? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      [veq $val1 eq $val2]} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      [veq $expr1 eq $expr2]} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $val1] ne "#f" &&
-      [pair? $val2] ne "#f" &&
-      [$val1 car] eq [$val2 car] &&
-      [$val1 cdr] eq [$val2 cdr]} {
+  } elseif {[pair? $expr1] ne "#f" &&
+      [pair? $expr2] ne "#f" &&
+      [$expr1 car] eq [$expr2 car] &&
+      [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -134,8 +146,8 @@ IX equal?
 CB(
 reg equal?
 
-proc ::constcl::equal? {val1 val2} {
-  if {[$val1 show] eq [$val2 show]} {
+proc ::constcl::equal? {expr1 expr2} {
+  if {[$expr1 show] eq [$expr2 show]} {
     return #t
   } else {
     return #f

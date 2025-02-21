@@ -2735,37 +2735,37 @@ Of the three equivalence predicates, `` eq `` generally tests for identity (with
 
 __eq?__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg eq?
 
-proc ::constcl::eq? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eq? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[teq pair? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq pair? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -2774,21 +2774,31 @@ proc ::constcl::eq? {val1 val2} {
 ```
 
 
-`` teq `` tests for type equality, i.e. that the values have the same type.
+__teq__ procedure
+
+
+`` teq `` tests for type equality, i.e. that the expressions have the same type.
+
+<table border=1><thead><tr><th colspan=2 align="left">teq (internal)</th></tr></thead><tr><td>typep</td><td>a procedure</td></tr><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
 ```
-proc ::constcl::teq {typep val1 val2} {
-    return [expr {[$typep $val1] ne "#f" &&
-      [$typep $val2] ne "#f"}]
+proc ::constcl::teq {typep expr1 expr2} {
+    return [expr {[$typep $expr1] ne "#f" &&
+      [$typep $expr2] ne "#f"}]
 }
 ```
 
 
-`` veq `` tests for value equality, i.e. that the values have the same value.
+__veq__ procedure
+
+
+`` veq `` tests for value equality, i.e. that the expressions have the same value.
+
+<table border=1><thead><tr><th colspan=2 align="left">veq (internal)</th></tr></thead><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
 ```
-proc ::constcl::veq {val1 val2} {
-    return [expr {[$val1 value] eq [$val2 value]}]
+proc ::constcl::veq {expr1 expr2} {
+    return [expr {[$expr1 value] eq [$expr2 value]}]
 }
 ```
 
@@ -2798,34 +2808,34 @@ __eqv?__ procedure
 ```
 reg eqv?
 
-proc ::constcl::eqv? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eqv? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      [veq $val1 eq $val2]} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      [veq $expr1 eq $expr2]} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $val1] ne "#f" &&
-      [pair? $val2] ne "#f" &&
-      [$val1 car] eq [$val2 car] &&
-      [$val1 cdr] eq [$val2 cdr]} {
+  } elseif {[pair? $expr1] ne "#f" &&
+      [pair? $expr2] ne "#f" &&
+      [$expr1 car] eq [$expr2 car] &&
+      [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -2839,8 +2849,8 @@ __equal?__ procedure
 ```
 reg equal?
 
-proc ::constcl::equal? {val1 val2} {
-  if {[$val1 show] eq [$val2 show]} {
+proc ::constcl::equal? {expr1 expr2} {
+  if {[$expr1 show] eq [$expr2 show]} {
     return #t
   } else {
     return #f
@@ -4755,13 +4765,13 @@ __call-with-input-file__ procedure
 
 `` call-with-input-file `` opens a file for input and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg call-with-input-file
 
-proc ::constcl::call-with-input-file {str proc} {
-  set port [open-input-file $str]
+proc ::constcl::call-with-input-file {filename proc} {
+  set port [open-input-file $filename]
   set res [invoke $proc [list $port]]
   close-input-port $port
   $port destroy
@@ -4778,14 +4788,14 @@ __call-with-output-file__ procedure
 
 You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg call-with-output-file
 
-proc ::constcl::call-with-output-file {str proc} {
+proc ::constcl::call-with-output-file {filename proc} {
   ::error "remove this line to use"
-  set port [open-output-file $str]
+  set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
   $port destroy
@@ -4863,13 +4873,13 @@ __with-input-from-file__ procedure
 
 `` with-input-from-file `` opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
 
-<table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg with-input-from-file
 
-proc ::constcl::with-input-from-file {str thunk} {
-  set newport [open-input-file $str]
+proc ::constcl::with-input-from-file {filename thunk} {
+  set newport [open-input-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
@@ -4877,6 +4887,7 @@ proc ::constcl::with-input-from-file {str thunk} {
     set ::constcl::Input_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 ```
 
@@ -4886,14 +4897,14 @@ __with-output-to-file__ procedure
 
 `` with-output-to-file `` opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
 
-<table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>filename</td><td>a string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg with-output-to-file
 
-proc ::constcl::with-output-to-file {str thunk} {
+proc ::constcl::with-output-to-file {filename thunk} {
   ::error "remove this line to use"
-  set newport [open-output-file $str]
+  set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
@@ -4901,6 +4912,7 @@ proc ::constcl::with-output-to-file {str thunk} {
     set ::constcl::Output_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 ```
 
@@ -5145,7 +5157,7 @@ interp alias {} ::constcl::MkPair \
 ```
 
 
-__pair?__
+__pair?__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5158,7 +5170,7 @@ proc ::constcl::pair? {val} {
 ```
 
 
-__show-pair__
+__show-pair__ procedure
 
 
 Helper procedure to make a string representation of a list.
@@ -5191,7 +5203,7 @@ proc ::constcl::show-pair {pair} {
 ```
 
 
-__cons__
+__cons__ procedure
 
 
 `` cons `` joins two values in a pair; useful in many operations such as pushing a new value onto a list.
@@ -5217,7 +5229,7 @@ proc ::constcl::cons {car cdr} {
 ```
 
 
-__car__
+__car__ procedure
 
 
 `` car `` gets the contents of the first cell in a pair.
@@ -5240,7 +5252,7 @@ proc ::constcl::car {pair} {
 ```
 
 
-__cdr__
+__cdr__ procedure
 
 
 `` cdr `` gets the contents of the second cell in a pair.
@@ -5316,7 +5328,7 @@ foreach ads {
 ```
 
 
-__set-car!__
+__set-car!__ procedure
 
 
 `` set-car! `` sets the contents of the first cell in a pair.
@@ -5340,7 +5352,7 @@ proc ::constcl::set-car! {pair val} {
 ```
 
 
-__set-cdr!__
+__set-cdr!__ procedure
 
 
 `` set-cdr! `` sets the contents of the second cell in a pair.
@@ -5364,7 +5376,7 @@ proc ::constcl::set-cdr! {pair val} {
 ```
 
 
-__list?__
+__list?__ procedure
 
 
 The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL.
@@ -5385,6 +5397,13 @@ proc ::constcl::list? {val} {
   }
 }
 ```
+
+
+__listp__ procedure
+
+
+`` listp `` is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in `` #NIL ``, which means that it returns true.
+
 <table border=1><thead><tr><th colspan=2 align="left">listp (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
@@ -5405,7 +5424,7 @@ proc ::constcl::listp {pair} {
 ```
 
 
-__list__
+__list__ procedure
 
 
 `` list `` constructs a Lisp list from a number of values.
@@ -5436,7 +5455,7 @@ proc ::constcl::list {args} {
 ```
 
 
-__length__
+__length__ procedure
 
 
 `` length `` reports the length of a Lisp list.
@@ -5460,6 +5479,13 @@ proc ::constcl::length {pair} {
   MkNumber [length-helper $pair]
 }
 ```
+
+
+__length-helper__ procedure
+
+
+`` length-helper `` is a helper procedure which measures a list recursively.
+
 <table border=1><thead><tr><th colspan=2 align="left">length-helper (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
 
 ```
@@ -5474,7 +5500,7 @@ proc ::constcl::length-helper {pair} {
 ```
 
 
-__append__
+__append__ procedure
 
 
 `` append `` joins lists together.
@@ -5502,6 +5528,13 @@ proc ::constcl::append {args} {
   set prev
 }
 ```
+
+
+__copy-list__ procedure
+
+
+`` copy-list `` joins together two lists by recursively consing items from the first list towards the second.
+
 <table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
 ```
@@ -5518,7 +5551,7 @@ proc ::constcl::copy-list {pair next} {
 ```
 
 
-__reverse__
+__reverse__ procedure
 
 
 `` reverse `` produces a reversed copy of a Lisp list.
@@ -5541,7 +5574,7 @@ proc ::constcl::reverse {vals} {
 ```
 
 
-__list-tail__
+__list-tail__ procedure
 
 
 Given a list index, `` list-tail `` yields the sublist starting from that index.
@@ -5569,7 +5602,7 @@ proc ::constcl::list-tail {vals k} {
 ```
 
 
-__list-ref__
+__list-ref__ procedure
 
 
 `` list-ref `` yields the list item at a given index.
@@ -5593,13 +5626,13 @@ proc ::constcl::list-ref {vals k} {
 ```
 
 
-__memq__
+__memq__ procedure
 
 
-__memv__
+__memv__ procedure
 
 
-__member__
+__member__ procedure
 
 
 `` memq ``, `` memv ``, and `` member `` return the sublist starting with a given item, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison.
@@ -5639,6 +5672,13 @@ proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
 ```
+
+
+__member-proc__ procedure
+
+
+`` member-proc `` helper procedure which does the work for the `` memq ``, `` memv ``, and `` member `` procedures. Works by recursively taking the `` cdr `` of the list, comparing against the `` car `` of the list.
+
 <table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
@@ -5664,13 +5704,13 @@ proc ::constcl::member-proc {epred val1 val2} {
 ```
 
 
-__assq__
+__assq__ procedure
 
 
-__assv__
+__assv__ procedure
 
 
-__assoc__
+__assoc__ procedure
 
 
 `` assq ``, `` assv ``, and `` assoc `` return the associative item marked with a given key, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison. They implement lookup in the form of lookup table known as an association list, or _alist_.
@@ -5709,6 +5749,13 @@ proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
 ```
+
+
+__assoc-proc__ procedure
+
+
+`` assoc-proc `` is a helper procedure which does the work for `` assq ``, `` assv ``, and `` assoc ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
@@ -5853,6 +5900,13 @@ oo::class create ::constcl::String {
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 ```
+
+
+__string?__ procedure
+
+
+`` string? `` recognizes a string by type.
+
 <table border=1><thead><tr><th colspan=2 align="left">string? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
@@ -5864,7 +5918,7 @@ proc ::constcl::string? {val} {
 ```
 
 
-__make-string__
+__make-string__ procedure
 
 
 `` make-string `` creates a string of _k_ characters, optionally filled with _char_ characters. If _char_ is omitted, the string will be filled with space characters.
@@ -5885,19 +5939,19 @@ Example:
 reg make-string
 
 proc ::constcl::make-string {k args} {
+  set i [$k numval]
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " \
-      [$k numval]]]
+    set char " "
   } else {
-    lassign $args char
-    return [MkString [::string repeat \
-      [$char char] [$k numval]]]
+    lassign $args c
+    set char [$c char]
   }
+  return [MkString [::string repeat $char $i]]
 }
 ```
 
 
-__string__
+__string__ procedure
 
 
 `` string `` constructs a string from a number of Lisp characters.
@@ -5928,7 +5982,7 @@ proc ::constcl::string {args} {
 ```
 
 
-__string-length__
+__string-length__ procedure
 
 
 `` string-length `` reports a string's length.
@@ -5954,7 +6008,7 @@ proc ::constcl::string-length {str} {
 ```
 
 
-__string-ref__
+__string-ref__ procedure
 
 
 `` string-ref `` yields the _k_-th character (0-based) in _str_.
@@ -5977,7 +6031,7 @@ proc ::constcl::string-ref {str k} {
       [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show])
   }
   return [$str ref $k]
@@ -5985,7 +6039,7 @@ proc ::constcl::string-ref {str k} {
 ```
 
 
-__string-set!__
+__string-set!__ procedure
 
 
 `` string-set! `` replaces the character at _k_ with _char_ in a non-constant string.
@@ -6011,7 +6065,7 @@ proc ::constcl::string-set! {str k char} {
       [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show] [$char show])
   }
   check {char? $char} {
@@ -6244,7 +6298,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 ```
 
 
-__substring__
+__substring__ procedure
 
 
 `` substring `` yields the substring of _str_ that starts at _start_ and ends at _end_.
@@ -6279,7 +6333,7 @@ proc ::constcl::substring {str start end} {
 ```
 
 
-__string-append__
+__string-append__ procedure
 
 
 `` string-append `` joins strings together.
@@ -6304,7 +6358,7 @@ proc ::constcl::string-append {args} {
 ```
 
 
-__string->list__
+__string->list__ procedure
 
 
 `` string->list `` converts a string to a Lisp list of characters.
@@ -6327,7 +6381,7 @@ proc ::constcl::string->list {str} {
 ```
 
 
-__list->string__
+__list->string__ procedure
 
 
 `` list->string `` converts a Lisp list of characters to a string.
@@ -6351,7 +6405,7 @@ proc ::constcl::list->string {list} {
 ```
 
 
-__string-copy__
+__string-copy__ procedure
 
 
 `` string-copy `` makes a copy of a string.
@@ -6380,7 +6434,7 @@ proc ::constcl::string-copy {str} {
 ```
 
 
-__string-fill!__
+__string-fill!__ procedure
 
 
 `` string-fill! `` _str_ _char_ fills a non-constant string with _char_.

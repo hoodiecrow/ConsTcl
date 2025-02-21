@@ -1531,77 +1531,77 @@ proc ::constcl::write-pair {handle pair} {
 
 reg eq?
 
-proc ::constcl::eq? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eq? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[teq pair? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq pair? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
   }
 }
 
-proc ::constcl::teq {typep val1 val2} {
-    return [expr {[$typep $val1] ne "#f" &&
-      [$typep $val2] ne "#f"}]
+proc ::constcl::teq {typep expr1 expr2} {
+    return [expr {[$typep $expr1] ne "#f" &&
+      [$typep $expr2] ne "#f"}]
 }
 
-proc ::constcl::veq {val1 val2} {
-    return [expr {[$val1 value] eq [$val2 value]}]
+proc ::constcl::veq {expr1 expr2} {
+    return [expr {[$expr1 value] eq [$expr2 value]}]
 }
 
 reg eqv?
 
-proc ::constcl::eqv? {val1 val2} {
-  if {[teq boolean? $val1 $val2] &&
-      $val1 eq $val2} {
+proc ::constcl::eqv? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
-  } elseif {[teq symbol? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq number? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq char? $val1 $val2] &&
-      [veq $val1 eq $val2]} {
+  } elseif {[teq char? $expr1 $expr2] &&
+      [veq $expr1 eq $expr2]} {
     return #t
-  } elseif {[teq null? $val1 $val2]} {
+  } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $val1] ne "#f" &&
-      [pair? $val2] ne "#f" &&
-      [$val1 car] eq [$val2 car] &&
-      [$val1 cdr] eq [$val2 cdr]} {
+  } elseif {[pair? $expr1] ne "#f" &&
+      [pair? $expr2] ne "#f" &&
+      [$expr1 car] eq [$expr2 car] &&
+      [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
-  } elseif {[teq string? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq string? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq vector? $val1 $val2] &&
-      [veq $val1 $val2]} {
+  } elseif {[teq vector? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
     return #t
-  } elseif {[teq procedure? $val1 $val2] &&
-      $val1 eq $val2} {
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
     return #t
   } else {
     return #f
@@ -1610,8 +1610,8 @@ proc ::constcl::eqv? {val1 val2} {
 
 reg equal?
 
-proc ::constcl::equal? {val1 val2} {
-  if {[$val1 show] eq [$val2 show]} {
+proc ::constcl::equal? {expr1 expr2} {
+  if {[$expr1 show] eq [$expr2 show]} {
     return #t
   } else {
     return #f
@@ -2855,8 +2855,8 @@ proc ::constcl::port? {val} {
 
 reg call-with-input-file
 
-proc ::constcl::call-with-input-file {str proc} {
-  set port [open-input-file $str]
+proc ::constcl::call-with-input-file {filename proc} {
+  set port [open-input-file $filename]
   set res [invoke $proc [list $port]]
   close-input-port $port
   $port destroy
@@ -2865,9 +2865,9 @@ proc ::constcl::call-with-input-file {str proc} {
 
 reg call-with-output-file
 
-proc ::constcl::call-with-output-file {str proc} {
+proc ::constcl::call-with-output-file {filename proc} {
   ::error "remove this line to use"
-  set port [open-output-file $str]
+  set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
   $port destroy
@@ -2900,8 +2900,8 @@ proc ::constcl::current-output-port {} {
 
 reg with-input-from-file
 
-proc ::constcl::with-input-from-file {str thunk} {
-  set newport [open-input-file $str]
+proc ::constcl::with-input-from-file {filename thunk} {
+  set newport [open-input-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
@@ -2909,13 +2909,14 @@ proc ::constcl::with-input-from-file {str thunk} {
     set ::constcl::Input_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 
 reg with-output-to-file
 
-proc ::constcl::with-output-to-file {str thunk} {
+proc ::constcl::with-output-to-file {filename thunk} {
   ::error "remove this line to use"
-  set newport [open-output-file $str]
+  set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
@@ -2923,6 +2924,7 @@ proc ::constcl::with-output-to-file {str thunk} {
     set ::constcl::Output_port $oldport
     close-input-port $newport
   }
+  $newport destroy
 }
 
 reg open-input-file
@@ -3483,14 +3485,14 @@ proc ::constcl::string? {val} {
 reg make-string
 
 proc ::constcl::make-string {k args} {
+  set i [$k numval]
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " \
-      [$k numval]]]
+    set char " "
   } else {
-    lassign $args char
-    return [MkString [::string repeat \
-      [$char char] [$k numval]]]
+    lassign $args c
+    set char [$c char]
   }
+  return [MkString [::string repeat $char $i]]
 }
 
 reg string
@@ -3524,7 +3526,7 @@ proc ::constcl::string-ref {str k} {
       [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show])
   }
   return [$str ref $k]
@@ -3538,7 +3540,7 @@ proc ::constcl::string-set! {str k char} {
       [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show] [$char show])
   }
   check {char? $char} {

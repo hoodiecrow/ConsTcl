@@ -98,7 +98,7 @@ TT(
 TT)
 
 MD(
-B{pair?}
+B{pair?} procedure
 MD)
 
 PR(
@@ -125,7 +125,7 @@ TT(
 TT)
 
 MD(
-B{show-pair}
+B{show-pair} procedure
 
 Helper procedure to make a string representation of a list.
 MD)
@@ -172,7 +172,7 @@ TT(
 TT)
 
 MD(
-B{cons}
+B{cons} procedure
 
 K{cons} joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
@@ -216,7 +216,7 @@ TT(
 TT)
 
 MD(
-B{car}
+B{car} procedure
 
 K{car} gets the contents of the first cell in a pair.
 MD)
@@ -257,7 +257,7 @@ TT(
 TT)
 
 MD(
-B{cdr}
+B{cdr} procedure
 
 K{cdr} gets the contents of the second cell in a pair.
 MD)
@@ -352,7 +352,7 @@ foreach ads {
 CB)
 
 MD(
-B{set-car!}
+B{set-car!} procedure
 
 K{set-car!} sets the contents of the first cell in a pair.
 MD)
@@ -394,7 +394,7 @@ TT(
 TT)
 
 MD(
-B{set-cdr!}
+B{set-cdr!} procedure
 
 K{set-cdr!} sets the contents of the second cell in a pair.
 MD)
@@ -436,7 +436,7 @@ TT(
 TT)
 
 MD(
-B{list?}
+B{list?} procedure
 
 The K{list?} predicate tests if a pair is part of a proper list, one that
 ends with NIL.
@@ -461,6 +461,14 @@ proc ::constcl::list? {val} {
   }
 }
 CB)
+
+MD(
+B{listp} procedure
+
+K{listp} is a helper procedure that recursively traverses a cons trail to find
+out if it is cyclic or ends in an atom, which means that the procedure returns
+false, or if it ends in K{#NIL}, which means that it returns true.
+MD)
 
 PR(
 listp (internal);pair pair -> bool
@@ -503,7 +511,7 @@ TT(
 TT)
 
 MD(
-B{list}
+B{list} procedure
 
 K{list} constructs a Lisp list from a number of values.
 MD)
@@ -547,7 +555,7 @@ TT(
 TT)
 
 MD(
-B{length}
+B{length} procedure
 
 K{length} reports the length of a Lisp list.
 MD)
@@ -576,6 +584,12 @@ proc ::constcl::length {pair} {
 }
 CB)
 
+MD(
+B{length-helper} procedure
+
+K{length-helper} is a helper procedure which measures a list recursively.
+MD)
+
 PR(
 length-helper (internal);pair pair -> tnum
 PR)
@@ -603,7 +617,7 @@ TT(
 TT)
 
 MD(
-B{append}
+B{append} procedure
 
 K{append} joins lists together.
 MD)
@@ -635,6 +649,13 @@ proc ::constcl::append {args} {
   set prev
 }
 CB)
+
+MD(
+B{copy-list} procedure
+
+K{copy-list} joins together two lists by recursively consing items from the
+first list towards the second.
+MD)
 
 PR(
 copy-list (internal);pair pair next lvals -> lvals
@@ -671,7 +692,7 @@ TT(
 TT)
 
 MD(
-B{reverse}
+B{reverse} procedure
 
 K{reverse} produces a reversed copy of a Lisp list.
 MD)
@@ -707,7 +728,7 @@ TT(
 TT)
 
 MD(
-B{list-tail}
+B{list-tail} procedure
 
 Given a list index, K{list-tail} yields the sublist starting from that index.
 MD)
@@ -747,7 +768,7 @@ TT(
 TT)
 
 MD(
-B{list-ref}
+B{list-ref} procedure
 
 K{list-ref} yields the list item at a given index.
 MD)
@@ -783,11 +804,11 @@ TT(
 TT)
 
 MD(
-B{memq}
+B{memq} procedure
 
-B{memv}
+B{memv} procedure
 
-B{member}
+B{member} procedure
 
 K{memq}, K{memv}, and K{member} return the sublist starting with a given
 item, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?}, 
@@ -859,6 +880,14 @@ proc ::constcl::member {val1 val2} {
 }
 CB)
 
+MD(
+B{member-proc} procedure
+
+K{member-proc} helper procedure which does the work for the K{memq}, K{memv}, and
+K{member} procedures. Works by recursively taking the K{cdr} of the
+list, comparing against the K{car} of the list.
+MD)
+
 PR(
 member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
 PR)
@@ -887,11 +916,11 @@ proc ::constcl::member-proc {epred val1 val2} {
 CB)
 
 MD(
-B{assq}
+B{assq} procedure
 
-B{assv}
+B{assv} procedure
 
-B{assoc}
+B{assoc} procedure
 
 K{assq}, K{assv}, and K{assoc} return the associative item marked with a given
 key, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?}, 
@@ -946,6 +975,13 @@ proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
 CB)
+
+MD(
+B{assoc-proc} procedure
+
+K{assoc-proc} is a helper procedure which does the work for K{assq}, K{assv},
+  and K{assoc}.
+MD)
 
 PR(
 assoc-proc (internal);epred epred val1 val val2 alist -> lvfalse

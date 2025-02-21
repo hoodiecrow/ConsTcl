@@ -143,6 +143,12 @@ qux\bod
 }
 TT)
 
+MD(
+B{string?} procedure
+
+K{string?} recognizes a string by type.
+MD)
+
 PR(
 string? (public);val val -> bool
 PR)
@@ -166,7 +172,7 @@ TT(
 TT)
 
 MD(
-B{make-string}
+B{make-string} procedure
 
 K{make-string} creates a string of E{k} characters, optionally filled with E{char}
 characters. If E{char} is omitted, the string will be filled with space characters.
@@ -192,14 +198,14 @@ CB(
 reg make-string
 
 proc ::constcl::make-string {k args} {
+  set i [$k numval]
   if {[llength $args] == 0} {
-    return [MkString [::string repeat " " \
-      [$k numval]]]
+    set char " "
   } else {
-    lassign $args char
-    return [MkString [::string repeat \
-      [$char char] [$k numval]]]
+    lassign $args c
+    set char [$c char]
   }
+  return [MkString [::string repeat $char $i]]
 }
 CB)
 
@@ -212,7 +218,7 @@ TT(
 TT)
 
 MD(
-B{string}
+B{string} procedure
 
 K{string} constructs a string from a number of Lisp characters.
 MD)
@@ -259,7 +265,7 @@ TT(
 TT)
 
 MD(
-B{string-length}
+B{string-length} procedure
 
 K{string-length} reports a string's length.
 MD)
@@ -297,7 +303,7 @@ TT(
 TT)
 
 MD(
-B{string-ref}
+B{string-ref} procedure
 
 K{string-ref} yields the E{k}-th character (0-based) in E{str}.
 MD)
@@ -324,7 +330,7 @@ proc ::constcl::string-ref {str k} {
       [$k show])
   }
   check {::constcl::number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show])
   }
   return [$str ref $k]
@@ -340,7 +346,7 @@ TT(
 TT)
 
 MD(
-B{string-set!}
+B{string-set!} procedure
 
 K{string-set!} replaces the character at E{k} with E{char} in a non-constant string.
 MD)
@@ -370,7 +376,7 @@ proc ::constcl::string-set! {str k char} {
       [$char show])
   }
   check {number? $k} {
-    Exact INTEGER expected\n([pn] [$str show] \
+    INTEGER expected\n([pn] [$str show] \
       [$k show] [$char show])
   }
   check {char? $char} {
@@ -744,7 +750,7 @@ TT(
 TT)
 
 MD(
-B{substring}
+B{substring} procedure
 
 K{substring} yields the substring of E{str} that starts at E{start} and ends at E{end}.
 MD)
@@ -791,7 +797,7 @@ TT(
 TT)
 
 MD(
-B{string-append}
+B{string-append} procedure
 
 K{string-append} joins strings together.
 MD)
@@ -828,7 +834,7 @@ TT(
 TT)
 
 MD(
-B{string->list}
+B{string->list} procedure
 
 K{string->list} converts a string to a Lisp list of characters.
 MD)
@@ -863,7 +869,7 @@ TT(
 TT)
 
 MD(
-B{list->string}
+B{list->string} procedure
 
 K{list->string} converts a Lisp list of characters to a string.
 MD)
@@ -899,7 +905,7 @@ TT(
 TT)
 
 MD(
-B{string-copy}
+B{string-copy} procedure
 
 K{string-copy} makes a copy of a string.
 MD)
@@ -945,7 +951,7 @@ TT(
 TT)
 
 MD(
-B{string-fill!}
+B{string-fill!} procedure
 
 K{string-fill!} E{str} E{char} fills a non-constant string with E{char}.
 MD)
