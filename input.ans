@@ -249,7 +249,7 @@ procedure returns end of file (K{#EOF})I{end of file}.
 MD)
 
 PR(
-read-expr (internal);?char? tchar -> expreof
+read-expr (internal);?char? tchr -> expreof
 PR)
 
 IX read-expr
@@ -315,7 +315,7 @@ returned.
 MD)
 
 PR(
-readc (internal);-> tchareof
+readc (internal);-> tchreof
 PR)
 
 IX readc
@@ -348,7 +348,7 @@ Returns end of file if eof is encountered.
 MD)
 
 PR(
-read-find (internal);char tchar -> tbooleof
+read-find (internal);char tchr -> tbooleof
 PR)
 
 IX read-find
@@ -377,7 +377,7 @@ ungets the character before returning.
 MD)
 
 PR(
-read-end (internal);->tbooleof
+read-end (internal);-> tbooleof
 PR)
 
 IX read-end
@@ -445,14 +445,15 @@ objects. If it finds one, it returns E{from its caller} with the EOF value.
 MD)
 
 PR(
-read-eof (internal);args chars
+read-eof (internal);chars chars
 PR)
 
 IX read-eof
 CB(
 proc ::constcl::read-eof {args} {
-  foreach val $args {
-    if {$val eq "#EOF"} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
       return -level 1 -code return #EOF
     }
   }
@@ -604,9 +605,17 @@ CB(
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
+  set last {}
   set c [readc]
   while {$c ne "#EOF" && $c ne ")"} {
-    lappend res [read-expr $c]
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
     skip-ws
     read-eof $c
   }
@@ -977,7 +986,7 @@ R{Number}{numbers} object.
 MD)
 
 PR(
-read-number-expr (internal);?char? tchar -> numeof
+read-number-expr (internal);?char? tchr -> numeof
 PR)
 
 IX read-number-expr
@@ -1116,7 +1125,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [S "quasiquote"] $expr]
+  return [list [S quasiquote] $expr]
 }
 CB)
 
@@ -1141,7 +1150,7 @@ TT)
 MD(
 B{read-identifier-expr} procedure
 
-K{read-identifier-expr} is activated for "anything else", and takes in
+K{read-identifier-expr} is activated for 'anything else', and takes in
 characters until it finds whitespace or an ending parenthesis or bracket. It
 checks the input against the rules for identifiers, accepting or rejecting it
 with an error message. It returns a R{Symbol}{symbols} object.

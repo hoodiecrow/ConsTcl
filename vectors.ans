@@ -18,12 +18,24 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set len [llength $v]
-    set vsa [::constcl::vsAlloc $len]
-    set idx $vsa
-    foreach elt $v {
-      lset ::constcl::vectorSpace $idx $elt
-      incr idx
+    if {[::constcl::list? $v] ne "#f"} {
+      set len [[::constcl::length $v] numval]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      while {[::constcl::null? $v] ne "#t"} {
+        set elt [::constcl::car $v]
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+        set v [::constcl::cdr $v]
+      }
+    } else {
+      set len [llength $v]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      foreach elt $v {
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+      }
     }
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0

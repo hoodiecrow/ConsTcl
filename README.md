@@ -55,7 +55,7 @@ namespace eval ::constcl {}
 ### Utility commands
 
 
-Next, some procedures that make my life as developer somewhat easier, but don't really matter to the interpreter (except the two first ones). The other ones will show up a lot in the test cases.
+Next, some procedures that make my life as developer somewhat easier.
 
 
 
@@ -80,12 +80,20 @@ proc ::reg {key args} {
   return
 }
 ```
+##### Procedures, functions, and commands: an aside
+
+
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+
+
+And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
+
 
 
 __regmacro__ procedure
 
 
-ConsTcl has macros, i.e. syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. `` regmacro `` registers macro names in the macro list, so the evaluator knows what to expand.
+ConsTcl has macros, i.e. succinct syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. `` regmacro `` registers macro names in the macro list, so the evaluator knows what to expand.
 
 <table border=1><thead><tr><th colspan=2 align="left">regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -97,10 +105,106 @@ proc ::regmacro {name} {
 ```
 
 
+__pn__ procedure
+
+
+`` pn `` stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
+
+<table border=1><thead><tr><th colspan=2 align="left">pn (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+proc ::pn {} {
+  lindex [split [lindex [info level -1] 0] :] end
+}
+```
+
+
+__typeof?__ procedure
+
+
+`` typeof? `` looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms the type, the procedure returns `` #t ``.
+
+
+By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
+
+
+``if {[typeof? $v Dot]} ...``
+
+
+will not do, but
+
+
+``if {[typeof? $v Dot] ne "#f"} ...``
+
+
+works.
+
+<table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+```
+
+
+__in-range__ procedure
+
+
+This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs.
+
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
+
+<table border=1><thead><tr><th colspan=2 align="left">in-range (public)</th></tr></thead><tr><td>x</td><td>a number</td></tr><tr><td>?e?</td><td>a number</td></tr><tr><td>?t?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of numbers</td></tr></table>
+
+```
+reg in-range
+
+proc ::constcl::in-range {x args} {
+  set start 0
+  set step 1
+  switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
+    1 {
+      set s $x
+      lassign $args e
+      set start [$s numval]
+      set end [$e numval]
+    }
+    2 {
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
+}
+```
+### Testing commands
+
+
 __pew__ procedure
 
 
-`` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme and to get proper Lisp output.
+`` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled and get to see proper Lisp output from it.
 
 <table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or an input buffer</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -131,7 +235,7 @@ proc ::pw {str} {
 __rw__ procedure
 
 
-`` rw `` is the reading variant of `` pw ``. It just writes what is read.
+`` rw `` is the reading variant of `` pw ``, that is it takes in its input via a port instead of an input buffer. The distinction mattered more when the input library was being written. The procedure just writes what is read.
 
 <table border=1><thead><tr><th colspan=2 align="left">rw (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -261,86 +365,6 @@ proc ::pxw {str} {
   ::constcl::write $expr
 }
 ```
-
-
-__pn__ procedure
-
-
-`` pn `` stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
-
-<table border=1><thead><tr><th colspan=2 align="left">pn (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
-
-```
-proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
-}
-```
-
-
-__typeof?__ procedure
-
-
-`` typeof? `` looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms the type, the procedure returns `` #t ``. By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name.
-
-<table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::typeof? {val type} {
-  if {[info object isa typeof $val $type]} {
-    return #t
-  } elseif {[info object isa typeof \
-      [interp alias {} $val] $type]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-```
-
-
-__in-range__ procedure
-
-
-This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs.
-
-
-The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
-
-<table border=1><thead><tr><th colspan=2 align="left">in-range (public)</th></tr></thead><tr><td>x</td><td>a number</td></tr><tr><td>?e?</td><td>a number</td></tr><tr><td>?t?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of numbers</td></tr></table>
-
-```
-reg in-range
-
-proc ::constcl::in-range {x args} {
-  set start 0
-  set step 1
-  switch [llength $args] {
-    0 {
-      set e $x
-      set end [$e numval]
-    }
-    1 {
-      set s $x
-      lassign $args e
-      set start [$s numval]
-      set end [$e numval]
-    }
-    2 {
-      set s $x
-      lassign $args e t
-      set start [$s numval]
-      set end [$e numval]
-      set step [$t numval]
-    }
-  }
-  set res $start
-  while {$step > 0 && $end > [incr start $step] ||
-      $step < 0 && $end < [incr start $step]} {
-    lappend res $start
-  }
-  return [list {*}[lmap r $res {MkNumber $r}]]
-}
-```
 ### The NIL class
 
 
@@ -384,7 +408,7 @@ oo::singleton create ::constcl::NIL {
 __null?__ procedure
 
 
-The `` null? `` standard predicate recognizes the empty list. Predicates in ConsTcl return #t or #f for true or false, so some care is necessary when calling them from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values).
+The `` null? `` standard predicate recognizes the empty list.
 
 <table border=1><thead><tr><th colspan=2 align="left">null? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -400,6 +424,9 @@ proc ::constcl::null? {val} {
 }
 ```
 ### The classes Dot, Unspecified, Undefined, and EndOfFile
+
+
+__Dot__ class
 
 
 The `` Dot `` class is a helper class for the parser.
@@ -433,7 +460,10 @@ proc ::constcl::dot? {val} {
 ```
 
 
-The `` Unspecified `` class is for unspecified things. It was created to facilitate porting of code from 'Scheme 9 from Empty Space'.
+__Unspecified__ class
+
+
+The `` Unspecified `` class is for unspecified things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'.
 
 ```
 catch { ::constcl::Unspecified destroy }
@@ -448,6 +478,9 @@ oo::class create ::constcl::Unspecified {
   }
 }
 ```
+
+
+__Undefined__ class
 
 
 The `` Undefined `` class is for undefined things. Also a S9fES support class.
@@ -465,6 +498,9 @@ oo::class create ::constcl::Undefined {
   }
 }
 ```
+
+
+__EndOfFile__ class
 
 
 The `` EndOfFile `` class is for end-of-file conditions.
@@ -745,7 +781,7 @@ __read-expr__ procedure
 
 The procedure `` read-expr `` reads input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If end of file is encountered before an expression can be read in full, the procedure returns end of file (`` #EOF ``).
 
-<table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td></td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-expr {args} {
@@ -791,7 +827,7 @@ __readc__ procedure
 
 `` readc `` reads one character from the unget store if it isn't empty or else from the input stream. If the input stream is at end-of-file, an eof object is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td></td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
 
 ```
 proc ::constcl::readc {} {
@@ -815,7 +851,7 @@ __read-find__ procedure
 
 `` read-find `` reads ahead through whitespace to find a given character. Returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td></td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-find {char} {
@@ -835,7 +871,7 @@ __read-end__ procedure
 
 `` read-end `` reads one character and returns 1 if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It ungets the character before returning.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td>-&gt;tbooleof</td><td></td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-end {} {
@@ -887,12 +923,13 @@ __read-eof__ procedure
 
 `` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>args</td><td>some characters</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr></table>
 
 ```
 proc ::constcl::read-eof {args} {
-  foreach val $args {
-    if {$val eq "#EOF"} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
       return -level 1 -code return #EOF
     }
   }
@@ -971,9 +1008,17 @@ __read-vector-expr__ procedure
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
+  set last {}
   set c [readc]
   while {$c ne "#EOF" && $c ne ")"} {
-    lappend res [read-expr $c]
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
     skip-ws
     read-eof $c
   }
@@ -1143,7 +1188,7 @@ __read-number-expr__ procedure
 
 `` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td></td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-number-expr {args} {
@@ -1211,7 +1256,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [S "quasiquote"] $expr]
+  return [list [S quasiquote] $expr]
 }
 ```
 
@@ -1219,7 +1264,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 __read-identifier-expr__ procedure
 
 
-`` read-identifier-expr `` is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
@@ -6706,12 +6751,24 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set len [llength $v]
-    set vsa [::constcl::vsAlloc $len]
-    set idx $vsa
-    foreach elt $v {
-      lset ::constcl::vectorSpace $idx $elt
-      incr idx
+    if {[::constcl::list? $v] ne "#f"} {
+      set len [[::constcl::length $v] numval]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      while {[::constcl::null? $v] ne "#t"} {
+        set elt [::constcl::car $v]
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+        set v [::constcl::cdr $v]
+      }
+    } else {
+      set len [llength $v]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      foreach elt $v {
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+      }
     }
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0

@@ -21,7 +21,7 @@
   basicstyle=\small\ttfamily,
 }
 %\renewcommand{\thesection}{\arabic{section}}
-\title{ConsTcl}
+\title{Into the Interpreter\\--with ConsTcl}
 \author{Peter Lewerin}
 \date{\today}
 \makeatletter
@@ -75,20 +75,21 @@ limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
 came out of the experience feeling a bit dissatisfied. In the latter part of
 January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
 
-\subsubsection{About ConsTcl}
+\subsection{About ConsTcl}
 \label{about-constcl}
 
-Compared to Lispy/Thtcl, ConsTcl has, quote from Lispy, comments, quote and
+Compared to Lispy/Thtcl, ConsTcl has, (quote from Lispy), ``comments, quote and
 quasiquote notation, \# literals, the derived expression types (such as cond,
-derived from if, or let, derived from lambda), and dotted list notation. And
-also real consed lists. Again compared to Lispy/Thtcl, ConsTcl has the data
-types, quote, strings, characters, booleans, ports, vectors. And pairs and
-procedures too. The number of missing primitive procedures is in the tens, not
-the 100s. The completeness comes with a price: due to the sheer number of calls
-for each action, ConsTcl is is fairly slow. On my cheap computer, the following
-code (which calculates the factorial of 100) takes 0.03 seconds to run. That is
-ten times slower than Lispy assuming that Norvig's computer is as slow as mine,
-which is unlikely.
+derived from if, or let, derived from lambda), and dotted list notation.''
+Again compared to Lispy/Thtcl, ConsTcl has the data types, quote, ``strings,
+characters, booleans, ports, vectors.'' And pairs and procedures too. The
+number of missing primitive procedures is in the tens, not the 100s. 
+
+The completeness comes with a price: due to the sheer number of calls for each
+action, ConsTcl is is fairly slow. On my cheap computer, the following code
+(which calculates the factorial of 100) takes 0.03 seconds to run. That is ten
+times slower than Lispy assuming that Norvig's computer is as slow as mine,
+which is unlikely. So it's probably a factor of less than ten.
 
 \begin{verbatim}
 time {pe "(fact 100)"} 10
@@ -99,7 +100,7 @@ tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
 tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
 
-\subsubsection{About the book}
+\subsection{About the book}
 \label{about-the-book}
 
 
@@ -111,16 +112,15 @@ put together using tools like \texttt{awk}. It looks like this:
 
 In the middle are a bunch of \texttt{.ans} files (ANnotated Source). These are
 written with Vim. From the TT tags of those, I extract a \texttt{.test} file.
-From the CB tags I extract \texttt{.tcl} source. From all the tags except TT I
-extract formatted documentation in Markdown and \LaTeX{} format. All these
-extractions are automated using \texttt{make}. Figures are made with Inkscape.
-I create a PDF document from the \LaTeX{} source using TeXworks. On finishing
-up ConsTcl, it struck me that the documentation for this piece of software was
-fit for a book.
+From the CB tags I extract \texttt{.tcl} source (or C source, as the case might
+be). From all the tags except TT I extract formatted documentation in Markdown
+and \LaTeX{} format. All these extractions are automated using \texttt{make}.
+Figures are made with Inkscape.  I create a PDF document from the \LaTeX{}
+source using TeXworks. On finishing up ConsTcl, it struck me that the
+documentation for this piece of software was fit for a book.
 
-\subsubsection{About the program listings}
+\subsection{About the program listings}
 \label{about-the-program-listings}
-
 
 I have tried to write clear, readable code, but the page format forces me to
 shorten lines. I have used two-space indents instead of four-space, a smaller
@@ -130,7 +130,7 @@ readability, but the alternative is overwriting the margins. Not all broken
 lines have the \textbackslash: some are broken inside a
 \texttt{\{}\ldots\texttt{\}} block, and some right after a \texttt{^^5b}.
 
-\subsubsection{About me}
+\subsection{About me}
 \label{about-me}
 
 I'm a 60 year old former system manager who has been active in programming
@@ -148,7 +148,7 @@ produced textbooks for the department for information technology at
 the University of Skövde. I've also been active writing answers at
 question-and-answer sites on the web, mainly Stack Overflow.
 
-\subsubsection{About time}
+\subsection{About time}
 \label{about-time}
 
 I'd like to thank
@@ -161,3 +161,4 @@ I'd like to thank
 \item all the wonderful people in my life for being there.
 \end{itemize}
 
+And now let's journey into the Interpreter.

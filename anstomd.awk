@@ -61,6 +61,7 @@ in_code_block { print ; next }
 $1 == "IX" { next }
 $1 == "IG" { printf("![#](%s)\n", substr($2, 2)) ; next }
 $1 == "EM" { for (i=2; i<=NF; i++) collect($i) ; line = sprintf("_%s_", line) ; flushp() ; next }
+$1 == "KB" { for (i=2; i<=NF; i++) collect($i) ; line = sprintf("``%s``", line) ; flushp() ; next }
 $1 == "IT" { init = 1; print "* " render(substr($0, 3));next }
 init && $1 != "IT" { init = 0; next }
 $1 == "EN" { inen = 1; print "1. " render(substr($0, 3));next }
@@ -98,6 +99,9 @@ function flushp() {
 
 function render(line) {
     #if (match(line, /`/)) { gsub(/`/, "`` ` ``", line) }
+
+    if (match(line, /\\{/)) { gsub(/\\{/, "{", line) }
+    if (match(line, /\\}/)) { gsub(/\\}/, "}", line) }
 
     while (match(line, /B{([^{}]+)}/)) {
         sub(/B{([^{}]+)}/, sprintf("__%s__", substr(line, RSTART+2, RLENGTH-3)), line)

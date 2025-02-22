@@ -103,6 +103,14 @@ $1 == "EM" {
     line = sep = ""
     next
 }
+$1 == "KB" {
+    for (i=2; i<=NF; i++) collect($i)
+    line = render(line)
+    line = sprintf("\\texttt{%s}", line)
+    print "\n" line "\n"
+    line = sep = ""
+    next
+}
 $1 == "BS" { print "\\bigskip" }
 
 $1 == "IT" { if (!init) print "\\begin{itemize}";init = 1; print "\\item " render(substr($0, 3));next }
@@ -142,7 +150,11 @@ function flushp() {
 }
 
 function render(line) {
+    if (match(line, /\\{/)) { gsub(/\\{/, "LBRACE", line) }
+    if (match(line, /\\}/)) { gsub(/\\}/, "RBRACE", line) }
     if (match(line, /\\/)) { gsub(/\\/, "\\textbackslash\\ ", line) }
+    if (match(line, /LBRACE/)) { gsub(/LBRACE/, "\\{", line) }
+    if (match(line, /RBRACE/)) { gsub(/RBRACE/, "\\}", line) }
 
     while (match(line, /B{([^{}]+)}/)) {
         sub(/B{([^{}]+)}/, sprintf("\\textbf{%s}", substr(line, RSTART+2, RLENGTH-3)), line)

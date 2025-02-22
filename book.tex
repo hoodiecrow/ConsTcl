@@ -21,7 +21,7 @@
   basicstyle=\small\ttfamily,
 }
 %\renewcommand{\thesection}{\arabic{section}}
-\title{ConsTcl}
+\title{Into the Interpreter\\--with ConsTcl}
 \author{Peter Lewerin}
 \date{\today}
 \makeatletter
@@ -75,20 +75,21 @@ limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
 came out of the experience feeling a bit dissatisfied. In the latter part of
 January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
 
-\subsubsection{About ConsTcl}
+\subsection{About ConsTcl}
 \label{about-constcl}
 
-Compared to Lispy/Thtcl, ConsTcl has, quote from Lispy, comments, quote and
+Compared to Lispy/Thtcl, ConsTcl has, (quote from Lispy), ``comments, quote and
 quasiquote notation, \# literals, the derived expression types (such as cond,
-derived from if, or let, derived from lambda), and dotted list notation. And
-also real consed lists. Again compared to Lispy/Thtcl, ConsTcl has the data
-types, quote, strings, characters, booleans, ports, vectors. And pairs and
-procedures too. The number of missing primitive procedures is in the tens, not
-the 100s. The completeness comes with a price: due to the sheer number of calls
-for each action, ConsTcl is is fairly slow. On my cheap computer, the following
-code (which calculates the factorial of 100) takes 0.03 seconds to run. That is
-ten times slower than Lispy assuming that Norvig's computer is as slow as mine,
-which is unlikely.
+derived from if, or let, derived from lambda), and dotted list notation.''
+Again compared to Lispy/Thtcl, ConsTcl has the data types, quote, ``strings,
+characters, booleans, ports, vectors.'' And pairs and procedures too. The
+number of missing primitive procedures is in the tens, not the 100s. 
+
+The completeness comes with a price: due to the sheer number of calls for each
+action, ConsTcl is is fairly slow. On my cheap computer, the following code
+(which calculates the factorial of 100) takes 0.03 seconds to run. That is ten
+times slower than Lispy assuming that Norvig's computer is as slow as mine,
+which is unlikely. So it's probably a factor of less than ten.
 
 \begin{verbatim}
 time {pe "(fact 100)"} 10
@@ -99,7 +100,7 @@ tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
 tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
 
-\subsubsection{About the book}
+\subsection{About the book}
 \label{about-the-book}
 
 
@@ -111,16 +112,15 @@ put together using tools like \texttt{awk}. It looks like this:
 
 In the middle are a bunch of \texttt{.ans} files (ANnotated Source). These are
 written with Vim. From the TT tags of those, I extract a \texttt{.test} file.
-From the CB tags I extract \texttt{.tcl} source. From all the tags except TT I
-extract formatted documentation in Markdown and \LaTeX{} format. All these
-extractions are automated using \texttt{make}. Figures are made with Inkscape.
-I create a PDF document from the \LaTeX{} source using TeXworks. On finishing
-up ConsTcl, it struck me that the documentation for this piece of software was
-fit for a book.
+From the CB tags I extract \texttt{.tcl} source (or C source, as the case might
+be). From all the tags except TT I extract formatted documentation in Markdown
+and \LaTeX{} format. All these extractions are automated using \texttt{make}.
+Figures are made with Inkscape.  I create a PDF document from the \LaTeX{}
+source using TeXworks. On finishing up ConsTcl, it struck me that the
+documentation for this piece of software was fit for a book.
 
-\subsubsection{About the program listings}
+\subsection{About the program listings}
 \label{about-the-program-listings}
-
 
 I have tried to write clear, readable code, but the page format forces me to
 shorten lines. I have used two-space indents instead of four-space, a smaller
@@ -130,7 +130,7 @@ readability, but the alternative is overwriting the margins. Not all broken
 lines have the \textbackslash: some are broken inside a
 \texttt{\{}\ldots\texttt{\}} block, and some right after a \texttt{^^5b}.
 
-\subsubsection{About me}
+\subsection{About me}
 \label{about-me}
 
 I'm a 60 year old former system manager who has been active in programming
@@ -148,7 +148,7 @@ produced textbooks for the department for information technology at
 the University of Skövde. I've also been active writing answers at
 question-and-answer sites on the web, mainly Stack Overflow.
 
-\subsubsection{About time}
+\subsection{About time}
 \label{about-time}
 
 I'd like to thank
@@ -161,6 +161,7 @@ I'd like to thank
 \item all the wonderful people in my life for being there.
 \end{itemize}
 
+And now let's journey into the Interpreter.
 \chapter{Initial declarations}
 \label{initial-declarations}
 
@@ -175,7 +176,7 @@ namespace eval ::constcl {}
 \index{utility commands}
 
 
-Next, some procedures that make my life as developer somewhat easier, but don't really matter to the interpreter (except the two first ones). The other ones will show up a lot in the test cases.
+Next, some procedures that make my life as developer somewhat easier.
 
 
 
@@ -207,12 +208,21 @@ proc ::reg {key args} {
   return
 }
 \end{lstlisting}
+\subsubsection{Procedures, functions, and commands: an aside}
+\label{procedures,-functions,-and-commands:-an-aside}
+
+
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+
+
+And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg} are `public' and those who aren't are `internal'.
+
 
 
 \textbf{regmacro} procedure
 
 
-ConsTcl has macros\index{macro}, i.e. syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. \texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
+ConsTcl has macros\index{macro}, i.e. succinct syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. \texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -230,10 +240,128 @@ proc ::regmacro {name} {
 \end{lstlisting}
 
 
+\textbf{pn} procedure
+
+
+\texttt{pn} stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
+
+\index{pn}
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pn (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::pn {} {
+  lindex [split [lindex [info level -1] 0] :] end
+}
+\end{lstlisting}
+
+
+\textbf{typeof?} procedure
+
+
+\texttt{typeof?} looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter\footnote{the Tcl interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms the type, the procedure returns \texttt{\#t}.
+
+
+By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
+
+
+\texttt{if \{[typeof? \$v Dot]\} \ldots }
+
+
+will not do, but
+
+
+\texttt{if \{[typeof? \$v Dot] ne "\#f"\} \ldots }
+
+
+works.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf typeof? (internal)} \\
+val & a Lisp value \\
+type & a Tcl string \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{typeof?}
+\begin{lstlisting}
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+
+
+\textbf{in-range} procedure
+
+
+This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows\index{Fellows, Donal}, but has grown a bit since then to suit my needs.
+
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf in-range (public)} \\
+x & a number \\
+?e? & a number \\
+?t? & a number \\
+\textit{Returns:} & a Lisp list of numbers \\
+\hline
+\end{tabular}
+\index{in-range}
+\begin{lstlisting}
+reg in-range
+ 
+proc ::constcl::in-range {x args} {
+  set start 0
+  set step 1
+  switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
+    1 {
+      set s $x
+      lassign $args e
+      set start [$s numval]
+      set end [$e numval]
+    }
+    2 {
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
+}
+\end{lstlisting}
+\section{Testing commands}
+\label{testing-commands}
+\index{testing commands}
+
+
 \textbf{pew} procedure
 
 
-\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme and to get proper Lisp output.
+\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled and get to see proper Lisp output from it.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -276,7 +404,7 @@ proc ::pw {str} {
 \textbf{rw} procedure
 
 
-\texttt{rw} is the reading variant of \texttt{pw}. It just writes what is read.
+\texttt{rw} is the reading variant of \texttt{pw}, that is it takes in its input via a port instead of an input buffer. The distinction mattered more when the input library was being written. The procedure just writes what is read.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -460,106 +588,6 @@ proc ::pxw {str} {
   ::constcl::write $expr
 }
 \end{lstlisting}
-
-
-\textbf{pn} procedure
-
-
-\texttt{pn} stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
-
-\index{pn}
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pn (internal)} \\
-\textit{Returns:} & a Tcl string \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
-}
-\end{lstlisting}
-
-
-\textbf{typeof?} procedure
-
-
-\texttt{typeof?} looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter\footnote{the Tcl interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms the type, the procedure returns \texttt{\#t}. By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf typeof? (internal)} \\
-val & a Lisp value \\
-type & a Tcl string \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\index{typeof?}
-\begin{lstlisting}
-proc ::constcl::typeof? {val type} {
-  if {[info object isa typeof $val $type]} {
-    return #t
-  } elseif {[info object isa typeof \
-      [interp alias {} $val] $type]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-\end{lstlisting}
-
-
-\textbf{in-range} procedure
-
-
-This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows\index{Fellows, Donal}, but has grown a bit since then to suit my needs.
-
-
-The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf in-range (public)} \\
-x & a number \\
-?e? & a number \\
-?t? & a number \\
-\textit{Returns:} & a Lisp list of numbers \\
-\hline
-\end{tabular}
-\index{in-range}
-\begin{lstlisting}
-reg in-range
- 
-proc ::constcl::in-range {x args} {
-  set start 0
-  set step 1
-  switch [llength $args] {
-    0 {
-      set e $x
-      set end [$e numval]
-    }
-    1 {
-      set s $x
-      lassign $args e
-      set start [$s numval]
-      set end [$e numval]
-    }
-    2 {
-      set s $x
-      lassign $args e t
-      set start [$s numval]
-      set end [$e numval]
-      set step [$t numval]
-    }
-  }
-  set res $start
-  while {$step > 0 && $end > [incr start $step] ||
-      $step < 0 && $end < [incr start $step]} {
-    lappend res $start
-  }
-  return [list {*}[lmap r $res {MkNumber $r}]]
-}
-\end{lstlisting}
 \section{The NIL class}
 \label{the-nil-class}
 \index{the nil class}
@@ -606,7 +634,7 @@ oo::singleton create ::constcl::NIL {
 \textbf{null?} procedure
 
 
-The \texttt{null?} standard predicate recognizes the empty list. Predicates in ConsTcl return \#t or \#f for true or false, so some care is necessary when calling them from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values).
+The \texttt{null?} standard predicate recognizes the empty list.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -630,6 +658,9 @@ proc ::constcl::null? {val} {
 \section{The classes Dot, Unspecified, Undefined, and EndOfFile}
 \label{the-classes-dot,-unspecified,-undefined,-and-endoffile}
 \index{the classes dot, unspecified, undefined, and endoffile}
+
+
+\textbf{Dot} class
 
 
 The \texttt{Dot} class is a helper class for the parser.
@@ -670,7 +701,10 @@ proc ::constcl::dot? {val} {
 \end{lstlisting}
 
 
-The \texttt{Unspecified} class is for unspecified things. It was created to facilitate porting of code from 'Scheme 9 from Empty Space'\index{S9fES}.
+\textbf{Unspecified} class
+
+
+The \texttt{Unspecified} class is for unspecified things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'\index{S9fES}.
 
 \index{Unspecified}
 \begin{lstlisting}
@@ -686,6 +720,9 @@ oo::class create ::constcl::Unspecified {
   }
 }
 \end{lstlisting}
+
+
+\textbf{Undefined} class
 
 
 The \texttt{Undefined} class is for undefined things. Also a S9fES support class.
@@ -704,6 +741,9 @@ oo::class create ::constcl::Undefined {
   }
 }
 \end{lstlisting}
+
+
+\textbf{EndOfFile} class
 
 
 The \texttt{EndOfFile} class is for end-of-file\index{end of file} conditions.
@@ -1034,7 +1074,7 @@ The procedure \texttt{read-expr} reads input by reading the first available char
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-expr (internal)} \\
-?char? &  \\
+?char? & a Tcl character \\
 \textit{Returns:} & an expression or end of file \\
 \hline
 \end{tabular}
@@ -1086,7 +1126,7 @@ proc ::constcl::read-expr {args} {
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf readc (internal)} \\
-\textit{Returns:} &  \\
+\textit{Returns:} & a Tcl character or end of file \\
 \hline
 \end{tabular}
 \index{readc}
@@ -1115,7 +1155,7 @@ proc ::constcl::readc {} {
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-find (internal)} \\
-char &  \\
+char & a Tcl character \\
 \textit{Returns:} & a Tcl truth value (1 or 0) or end of file \\
 \hline
 \end{tabular}
@@ -1141,7 +1181,7 @@ proc ::constcl::read-find {char} {
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-end (internal)} \\
-->tbooleof &  \\
+\textit{Returns:} & a Tcl truth value (1 or 0) or end of file \\
 \hline
 \end{tabular}
 \index{read-end}
@@ -1203,14 +1243,15 @@ proc ::constcl::skip-ws {} {
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-eof (internal)} \\
-args & some characters \\
+chars & some characters \\
 \hline
 \end{tabular}
 \index{read-eof}
 \begin{lstlisting}
 proc ::constcl::read-eof {args} {
-  foreach val $args {
-    if {$val eq "#EOF"} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
       return -level 1 -code return #EOF
     }
   }
@@ -1304,9 +1345,17 @@ proc ::constcl::read-sharp {} {
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
+  set last {}
   set c [readc]
   while {$c ne "#EOF" && $c ne ")"} {
-    lappend res [read-expr $c]
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
     skip-ws
     read-eof $c
   }
@@ -1501,7 +1550,7 @@ proc ::constcl::read-plus-minus {char} {
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-number-expr (internal)} \\
-?char? &  \\
+?char? & a Tcl character \\
 \textit{Returns:} & a number or end of file \\
 \hline
 \end{tabular}
@@ -1582,7 +1631,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [S "quasiquote"] $expr]
+  return [list [S quasiquote] $expr]
 }
 \end{lstlisting}
 
@@ -1590,7 +1639,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 \textbf{read-identifier-expr} procedure
 
 
-\texttt{read-identifier-expr} is activated for "anything else", and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
+\texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -8160,12 +8209,24 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set len [llength $v]
-    set vsa [::constcl::vsAlloc $len]
-    set idx $vsa
-    foreach elt $v {
-      lset ::constcl::vectorSpace $idx $elt
-      incr idx
+    if {[::constcl::list? $v] ne "#f"} {
+      set len [[::constcl::length $v] numval]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      while {[::constcl::null? $v] ne "#t"} {
+        set elt [::constcl::car $v]
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+        set v [::constcl::cdr $v]
+      }
+    } else {
+      set len [llength $v]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      foreach elt $v {
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+      }
     }
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0

@@ -16,6 +16,53 @@ proc ::regmacro {name} {
   return
 }
 
+proc ::pn {} {
+  lindex [split [lindex [info level -1] 0] :] end
+}
+
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+
+reg in-range
+
+proc ::constcl::in-range {x args} {
+  set start 0
+  set step 1
+  switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
+    1 {
+      set s $x
+      lassign $args e
+      set start [$s numval]
+      set end [$e numval]
+    }
+    2 {
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
+}
+
 proc ::pew {str} {
   ::constcl::write [
     ::constcl::eval [
@@ -70,53 +117,6 @@ proc ::pxw {str} {
   set expr [::constcl::expand-macro $expr \
     ::constcl::global_env]
   ::constcl::write $expr
-}
-
-proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
-}
-
-proc ::constcl::typeof? {val type} {
-  if {[info object isa typeof $val $type]} {
-    return #t
-  } elseif {[info object isa typeof \
-      [interp alias {} $val] $type]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-
-reg in-range
-
-proc ::constcl::in-range {x args} {
-  set start 0
-  set step 1
-  switch [llength $args] {
-    0 {
-      set e $x
-      set end [$e numval]
-    }
-    1 {
-      set s $x
-      lassign $args e
-      set start [$s numval]
-      set end [$e numval]
-    }
-    2 {
-      set s $x
-      lassign $args e t
-      set start [$s numval]
-      set end [$e numval]
-      set step [$t numval]
-    }
-  }
-  set res $start
-  while {$step > 0 && $end > [incr start $step] ||
-      $step < 0 && $end < [incr start $step]} {
-    lappend res $start
-  }
-  return [list {*}[lmap r $res {MkNumber $r}]]
 }
 
 catch { ::constcl::NIL destroy }
@@ -423,8 +423,9 @@ proc ::constcl::skip-ws {} {
 }
 
 proc ::constcl::read-eof {args} {
-  foreach val $args {
-    if {$val eq "#EOF"} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
       return -level 1 -code return #EOF
     }
   }
@@ -473,9 +474,17 @@ proc ::constcl::read-sharp {} {
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
+  set last {}
   set c [readc]
   while {$c ne "#EOF" && $c ne ")"} {
-    lappend res [read-expr $c]
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
     skip-ws
     read-eof $c
   }
@@ -638,7 +647,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   skip-ws
   read-eof $expr
   make-constant $expr
-  return [list [S "quasiquote"] $expr]
+  return [list [S quasiquote] $expr]
 }
 
 proc ::constcl::read-identifier-expr {args} {
@@ -3889,12 +3898,24 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set len [llength $v]
-    set vsa [::constcl::vsAlloc $len]
-    set idx $vsa
-    foreach elt $v {
-      lset ::constcl::vectorSpace $idx $elt
-      incr idx
+    if {[::constcl::list? $v] ne "#f"} {
+      set len [[::constcl::length $v] numval]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      while {[::constcl::null? $v] ne "#t"} {
+        set elt [::constcl::car $v]
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+        set v [::constcl::cdr $v]
+      }
+    } else {
+      set len [llength $v]
+      set vsa [::constcl::vsAlloc $len]
+      set idx $vsa
+      foreach elt $v {
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+      }
     }
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0

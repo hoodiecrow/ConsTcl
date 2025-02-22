@@ -12,9 +12,7 @@ CB)
 H3 Utility commands
 
 MD(
-Next, some procedures that make my life as developer somewhat easier, but
-don't really matter to the interpreter (except the two first ones). The other ones
-will show up a lot in the test cases.
+Next, some procedures that make my life as developer somewhat easier.
 MD)
 
 MD(
@@ -50,13 +48,31 @@ proc ::reg {key args} {
 }
 CB)
 
+H5 Procedures, functions, and commands: an aside
+
+MD(
+I use all of these terms for the subroutines in ConsTcl. I try to stick to
+procedure, because that's the standard term in R5RSF{Revised5 Report on the
+  Algorithmic Language Scheme, Scheme's standardization document}. Still, they
+  usually pass useful values back to the caller, so technically they're
+  functions. Lastly, I'm programming in Tcl here, and the usual term for these
+  things is `commands' in Tcl.
+
+  And the `internal/public' distinction is probably a misnomer (an aside within
+  an aside, here). What it means is that `public' procedures can be called from
+  Lisp code being interpreted, and the others cannot. They are for use in the
+  infrastructure around the interpreter, including in implementing the `public'
+  procedures. Another way to put it is that procedures registered by K{reg} are
+  `public' and those who aren't are `internal'.
+MD)
+
 MD(
 B{regmacro} procedure
 
-ConsTcl has macrosI{macro}, i.e. syntactic forms that are rewritten to concrete--but
-more verbose--forms. The evaluator passes macro forms to a command for expansion
-before they are fully processed. K{regmacro} registers macro names in the macro
-list, so the evaluator knows what to expand.
+ConsTcl has macrosI{macro}, i.e. succinct syntactic forms that are rewritten to
+concrete--but more verbose--forms. The evaluator passes macro forms to a command
+for expansion before they are fully processed. K{regmacro} registers macro names
+in the macro list, so the evaluator knows what to expand.
 MD)
 
 PR(
@@ -72,12 +88,134 @@ proc ::regmacro {name} {
 CB)
 
 MD(
+B{pn} procedure
+
+K{pn} stands for 'procedure name'. When called, tells the caller the name of its
+command. I use it for error messages so the error message can automagically tell
+the user which command failed.
+MD)
+
+IX pn
+PR(
+pn (internal);-> tstr
+PR)
+
+CB(
+proc ::pn {} {
+  lindex [split [lindex [info level -1] 0] :] end
+}
+CB)
+
+MD(
+B{typeof?} procedure
+
+K{typeof?} looks at a value's type and reports if it is the same as the given
+type. To be certain, it looks at the value in two ways: once assuming that the value
+is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
+interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
+the type, the procedure returns K{#t}.
+
+By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
+(procedures that return either K{#t} or K{#f}) have '?' at the end of their
+name. Some care is necessary when calling Scheme predicates from Tcl code (the
+Tcl K{if} command expects 1 or 0 as truth values). Example:
+
+KB if \{[typeof? $v Dot]\} D{}
+
+will not do, but 
+
+KB if \{[typeof? $v Dot] ne "#f"\} D{}
+
+works.
+MD)
+
+PR(
+typeof? (internal);val val type tstr -> bool
+PR)
+
+IX typeof?
+CB(
+proc ::constcl::typeof? {val type} {
+  if {[info object isa typeof $val $type]} {
+    return #t
+  } elseif {[info object isa typeof \
+      [interp alias {} $val] $type]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+MD(
+B{in-range} procedure
+
+This one is a little bit of both, a utility function that is also among the
+builtins in the library. It started out as a one-liner by Donal K.
+FellowsI{Fellows, Donal}, but has grown a bit since then to suit my needs.
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
+Number objects. If one is passed to the procedure, it is used as the end of the
+sequence: the sequence will end just before it. If two numbers are passed, the
+first one becomes the start of the sequence: the first number in it. The second
+number will become the end of the sequence. If three numbers are passed, they
+become start, end, and step, i.e. how much is added to the current number to
+find next number in the sequence.
+MD)
+
+PR(
+in-range (public);x num ?e? num ?t? num -> lnums
+PR)
+
+IX in-range
+CB(
+reg in-range
+
+proc ::constcl::in-range {x args} {
+  set start 0
+  set step 1
+  switch [llength $args] {
+    0 {
+      set e $x
+      set end [$e numval]
+    }
+    1 {
+      set s $x
+      lassign $args e
+      set start [$s numval]
+      set end [$e numval]
+    }
+    2 {
+      set s $x
+      lassign $args e t
+      set start [$s numval]
+      set end [$e numval]
+      set step [$t numval]
+    }
+  }
+  set res $start
+  while {$step > 0 && $end > [incr start $step] ||
+      $step < 0 && $end < [incr start $step]} {
+    lappend res $start
+  }
+  return [list {*}[lmap r $res {MkNumber $r}]]
+}
+CB)
+
+H3 Testing commands
+
+Testing gets easier if you have the software tools to manipulate and pick apart
+the testing data and actions. Short names reduce clutter in the test cases, at
+the cost of some readability.
+
+MD(
 B{pew} procedure
 
 K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
 named for parse-eval-write. It reads and evals an expression, and writes the
 result.  It's the most common command in the test cases, since it allows me to
-write code directly in Scheme and to get proper Lisp output.
+write code directly in Scheme, get it evaled and get to see proper Lisp output
+from it.
 MD)
 
 PR(
@@ -116,8 +254,9 @@ CB)
 MD(
 B{rw} procedure
 
-K{rw} is the reading variant of K{pw}. It just writes what is
-read.
+K{rw} is the reading variant of K{pw}, that is it takes in its input via a port
+instead of an input buffer. The distinction mattered more when the input library
+was being written. The procedure just writes what is read.
 MD)
 
 PR(
@@ -284,110 +423,6 @@ proc ::pxw {str} {
 }
 CB)
 
-MD(
-B{pn} procedure
-
-K{pn} stands for 'procedure name'. When called, tells the caller the name of its
-command. I use it for error messages so the error message can automagically tell
-the user which command failed.
-MD)
-
-IX pn
-PR(
-pn (internal);-> tstr
-PR)
-
-CB(
-proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
-}
-CB)
-
-MD(
-B{typeof?} procedure
-
-K{typeof?} looks at a value's type and reports if it is the same as the given
-type. To be certain, it looks at the value in two ways: once assuming that the value
-is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
-interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
-the type, the procedure returns K{#t}. By Scheme convention,
-W{predicates}{Boolean-valued_function}I{predicate} (procedures that return
-either K{#t} or K{#f}) have '?' at the end of their name.
-MD)
-
-PR(
-typeof? (internal);val val type tstr -> bool
-PR)
-
-IX typeof?
-CB(
-proc ::constcl::typeof? {val type} {
-  if {[info object isa typeof $val $type]} {
-    return #t
-  } elseif {[info object isa typeof \
-      [interp alias {} $val] $type]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-CB)
-
-MD(
-B{in-range} procedure
-
-This one is a little bit of both, a utility function that is also among the
-builtins in the library. It started out as a one-liner by Donal K.
-FellowsI{Fellows, Donal}, but has grown a bit since then to suit my needs.
-
-The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
-Number objects. If one is passed to the procedure, it is used as the end of the
-sequence: the sequence will end just before it. If two numbers are passed, the
-first one becomes the start of the sequence: the first number in it. The second
-number will become the end of the sequence. If three numbers are passed, they
-become start, end, and step, i.e. how much is added to the current number to
-find next number in the sequence.
-MD)
-
-PR(
-in-range (public);x num ?e? num ?t? num -> lnums
-PR)
-
-IX in-range
-CB(
-reg in-range
-
-proc ::constcl::in-range {x args} {
-  set start 0
-  set step 1
-  switch [llength $args] {
-    0 {
-      set e $x
-      set end [$e numval]
-    }
-    1 {
-      set s $x
-      lassign $args e
-      set start [$s numval]
-      set end [$e numval]
-    }
-    2 {
-      set s $x
-      lassign $args e t
-      set start [$s numval]
-      set end [$e numval]
-      set step [$t numval]
-    }
-  }
-  set res $start
-  while {$step > 0 && $end > [incr start $step] ||
-      $step < 0 && $end < [incr start $step]} {
-    lappend res $start
-  }
-  return [list {*}[lmap r $res {MkNumber $r}]]
-}
-CB)
-
 H3 The NIL class
 
 MD(
@@ -433,9 +468,7 @@ CB)
 MD(
 B{null?} procedure
 
-The K{null?} standard predicate recognizes the empty list. Predicates in ConsTcl
-return #t or #f for true or false, so some care is necessary when calling them
-from Tcl code (the Tcl K{if} command expects 1 or 0 as truth values).
+The K{null?} standard predicate recognizes the empty list.
 MD)
 
 PR(
@@ -458,6 +491,8 @@ CB)
 H3 The classes Dot, Unspecified, Undefined, and EndOfFile
 
 MD(
+B{Dot} class
+
 The K{Dot} class is a helper class for the parser.
 MD)
 
@@ -494,8 +529,10 @@ proc ::constcl::dot? {val} {
 CB)
 
 MD(
+B{Unspecified} class
+
 The K{Unspecified} class is for unspecified things. It was created to facilitate
-porting of code from 'Scheme 9 from Empty Space'I{S9fES}.
+porting of code from `Scheme 9 from Empty Space'I{S9fES}.
 MD)
 
 IX Unspecified
@@ -514,6 +551,8 @@ oo::class create ::constcl::Unspecified {
 CB)
 
 MD(
+B{Undefined} class
+
 The K{Undefined} class is for undefined things. Also a S9fES support class.
 MD)
 
@@ -533,6 +572,8 @@ oo::class create ::constcl::Undefined {
 CB)
 
 MD(
+B{EndOfFile} class
+
 The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
 MD)
 
