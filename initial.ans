@@ -81,7 +81,7 @@ write code directly in Scheme and to get proper Lisp output.
 MD)
 
 PR(
-pew (internal);str tstr -> none
+pew (internal);str tstrstrinpbuf -> none
 PR)
 
 IX pew
@@ -103,7 +103,7 @@ MD)
 
 IX pw
 PR(
-pw (internal);str tstr -> none
+pw (internal);str tstrstrinpbuf -> none
 PR)
 
 CB(
@@ -141,7 +141,7 @@ pick apart in different ways.
 MD)
 
 PR(
-pe (internal);str tstr -> val
+pe (internal);str tstrstrinpbuf -> val
 PR)
 
 IX pe
@@ -178,7 +178,7 @@ K{p} only parses the input, returning an expression object.
 MD)
 
 PR(
-p (internal);str tstr -> expr
+p (internal);str tstrstrinpbuf -> expr
 PR)
 
 IX p
@@ -249,7 +249,7 @@ handy during the time I was porting the 'resolve local defines' section.
 MD)
 
 PR(
-prw (internal);str tstr -> none
+prw (internal);str tstrstrinpbuf -> none
 PR)
 
 IX prw
@@ -271,7 +271,7 @@ was developing the macro facility.
 MD)
 
 PR(
-pxw (internal);str tstr -> none
+pxw (internal);str tstrstrinpbuf -> none
 PR)
 
 IX pxw
@@ -310,9 +310,9 @@ K{typeof?} looks at a value's type and reports if it is the same as the given
 type. To be certain, it looks at the value in two ways: once assuming that the value
 is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
 interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
-the type, the procedure returns #t. By Scheme convention, predicatesI{predicate}
-(procedures that return either K{#t} or K{#f}) have '?' at the end of their
-name.
+the type, the procedure returns K{#t}. By Scheme convention,
+W{predicates}{Boolean-valued_function}I{predicate} (procedures that return
+either K{#t} or K{#f}) have '?' at the end of their name.
 MD)
 
 PR(

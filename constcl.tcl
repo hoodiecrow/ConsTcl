@@ -269,7 +269,7 @@ proc ::constcl::parse {inp} {
     if {[typeof? $inp StringInputPort] ne "#f"} {
       set port $inp
     } elseif {[typeof? $inp String] ne "#f"} {
-      set port [::constcl::StringInputPort new [$inp value]]
+      set port [StringInputPort new [$inp value]]
     } else {
       ::error "Unknown object [$inp show]"
     }
