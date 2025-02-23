@@ -14,6 +14,16 @@ source constcl.tcl
   pw "42"
 } -output "42\n"
 
+# 3
+
+# 4
+
+# 5
+
+# 6
+
+# 7
+
 ::tcltest::test read-2.0 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
@@ -26,16 +36,6 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "a\n.\nb\n"
 
-
-# 3
-
-# 4
-
-# 5
-
-# 6
-
-# 7
 
 
 ::tcltest::test read-8.0 {try reading a string} {

@@ -284,6 +284,23 @@ proc ::constcl::parse {inp} {
   return $expr
 }
 
+reg read
+
+proc ::constcl::read {args} {
+  set c {}
+  set unget {}
+  if {[llength $args]} {
+    lassign $args port
+  } else {
+    set port $::constcl::Input_port
+  }
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $port
+  set expr [read-expr]
+  set ::constcl::Input_port $oldport
+  return $expr
+}
+
 proc ::constcl::make-constant {val} {
   if {[pair? $val] ne "#f"} {
     $val mkconstant
@@ -310,59 +327,6 @@ proc ::constcl::character-check {name} {
     return #t
   } else {
     return #f
-  }
-}
-
-reg read
-
-proc ::constcl::read {args} {
-  set c {}
-  set unget {}
-  if {[llength $args]} {
-    lassign $args port
-  } else {
-    set port $::constcl::Input_port
-  }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
-  set expr [read-expr]
-  set ::constcl::Input_port $oldport
-  return $expr
-}
-
-proc ::constcl::read-expr {args} {
-  upvar c c unget unget
-  if {[llength $args]} {
-    lassign $args c
-  } else {
-    set c [readc]
-  }
-  set unget {}
-  read-eof $c
-  if {[::string is space $c] || $c eq ";"} {
-    skip-ws
-    read-eof $c
-  }
-  switch -regexp $c {
-    {\"}          { read-string-expr }
-    {\#}          { read-sharp }
-    {\'}          { read-quoted-expr }
-    {\(}          { read-pair-expr ")" }
-    {\+} - {\-}   { read-plus-minus $c }
-    {\,}          { read-unquoted-expr }
-    {\.} {
-        set x [Dot new]; set c [readc]; set x
-    }
-    {\:}          { read-object-expr }
-    {\[}          { read-pair-expr "\]" }
-    {\`}          { read-quasiquoted-expr }
-    {\d}          { read-number-expr $c }
-    {^$}          { return}
-    {[[:graph:]]} { read-identifier-expr $c }
-    default {
-      read-eof $c
-      ::error "unexpected character ($c)"
-    }
   }
 }
 
@@ -427,6 +391,42 @@ proc ::constcl::read-eof {args} {
   foreach char $chars {
     if {$char eq "#EOF"} {
       return -level 1 -code return #EOF
+    }
+  }
+}
+
+proc ::constcl::read-expr {args} {
+  upvar c c unget unget
+  if {[llength $args]} {
+    lassign $args c
+  } else {
+    set c [readc]
+  }
+  set unget {}
+  read-eof $c
+  if {[::string is space $c] || $c eq ";"} {
+    skip-ws
+    read-eof $c
+  }
+  switch -regexp $c {
+    {\"}          { read-string-expr }
+    {\#}          { read-sharp }
+    {\'}          { read-quoted-expr }
+    {\(}          { read-pair-expr ")" }
+    {\+} - {\-}   { read-plus-minus $c }
+    {\,}          { read-unquoted-expr }
+    {\.} {
+        set x [Dot new]; set c [readc]; set x
+    }
+    {\:}          { read-object-expr }
+    {\[}          { read-pair-expr "\]" }
+    {\`}          { read-quasiquoted-expr }
+    {\d}          { read-number-expr $c }
+    {^$}          { return}
+    {[[:graph:]]} { read-identifier-expr $c }
+    default {
+      read-eof $c
+      ::error "unexpected character ($c)"
     }
   }
 }

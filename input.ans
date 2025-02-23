@@ -8,9 +8,7 @@ represents the interpreter's main input facility. The K{read-} procedures read
 from standard input, or--if a port is provided--from the port's channel.
 MD)
 
-H3 Parsing
-
-H4 The parsing process
+H3 The parsing process
 
 MD(
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
@@ -83,19 +81,34 @@ Anyway, here is how it really looks like. K{::oo::Obj491} was just the head of
 the list.
 
 IG /images/intreplist.png
+MD)
 
-B{parse} procedure
+H3 Input procedures
 
+H5 Ports: an aside
+
+MD(
+Ports are an abstraction of the input or output mechanism. An input port can be
+connected to standard input (the keyboard) or a file opened for input or (a
+ConsTcl extension) a string input buffer where the complete available input is
+laid out before reading starts. Regardless of what kind of input port it is, one
+can read characters from it until it runs out and signals end-of-file. Likewise,
+an output port, regardless of whether it's the standard output--the screen--or a
+file opened for output, will receive characters sent to it.
+MD)
+
+H4 parse procedure
+
+MD(
 K{parse} can be called with either a string input port or a Tcl or ConsTcl
-string (which K{parse} uses to open a string input port). Once the input port is
-established, K{parse} leaves control to K{read-expr}.
+string (which it uses to open a string input port). Once the input port is
+established, K{parse} leaves control to S{read-expr}{read-expr-procedure}.
 MD)
 
 PR(
 parse (internal);inp tstrstrinpbuf -> expr
 PR)
 
-IX parse
 CB(
 reg parse
 
@@ -136,77 +149,12 @@ TT(
 } -output "42\n"
 TT)
 
-MD(
-B{make-constant} procedure
-
-The K{make-constant} helper procedure is called to set expressions to constants
-when read as a literal.
-MD)
-
-IX make-constant
-CB(
-proc ::constcl::make-constant {val} {
-  if {[pair? $val] ne "#f"} {
-    $val mkconstant
-    make-constant [car $val]
-    make-constant [cdr $val]
-  } elseif {[null? $val] ne "#f"} {
-    return #NIL
-  } else {
-    $val mkconstant
-  }
-}
-CB)
+H4 read procedure
 
 MD(
-B{interspace} procedure
-
-The K{interspace} helper procedure recognizes whitespace between value
-representations.
-MD)
-
-IX interspace
-CB(
-proc ::constcl::interspace {c} {
-  if {[::string is space $c] || $c eq ";"} {
-      return #t
-    } else {
-      return #f
-    }
-}
-CB)
-
-MD(
-B{character-check} procedure
-
-The K{character-check} helper procedure compares a potential
-character constant to the valid kinds.
-MD)
-
-PR(
-character-check (internal);name tstr -> bool
-PR)
-
-IX character-check
-CB(
-proc ::constcl::character-check {name} {
-  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-CB)
-
-H3 read
-
-MD(
-B{read} procedure
-
 The standard builtin K{read} reads an input port the same way that K{parse}
-takes in an input buffer. The K{read-} procedures parse their input and produce
-ConsTcl objects.
+does, but one can't pass a string to it. The K{read-} procedures parse their
+input and produce ConsTcl objects.
 
 One can pass a port to K{read}, in which case K{read} sets the standard input
 port temporarily to the provided port. If not, K{read} uses the default standard
@@ -217,7 +165,6 @@ PR(
 read (public);?port? port -> expr
 PR)
 
-IX read
 CB(
 reg read
 
@@ -237,22 +184,240 @@ proc ::constcl::read {args} {
 }
 CB)
 
-MD(
-B{read-expr} procedure
+H3 Input helper procedures
 
-The procedure K{read-expr} reads input by reading the first available
-character and delegating to one of the more detailed reading procedures based on
-that, producing an expression of any kind. A Tcl character value can be passed
-to it, that character will be used first before reading from the input stream.
-If end of file is encountered before an expression can be read in full, the
-procedure returns end of file (K{#EOF})I{end of file}.
+H4 make-constant procedure
+
+MD(
+The K{make-constant} helper procedure is called to set expressions to constants
+when read as a literal.
+MD)
+
+CB(
+proc ::constcl::make-constant {val} {
+  if {[pair? $val] ne "#f"} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[null? $val] ne "#f"} {
+    return #NIL
+  } else {
+    $val mkconstant
+  }
+}
+CB)
+
+H4 interspace procedure
+
+MD(
+The K{interspace} helper procedure recognizes whitespace between value
+representations.
+MD)
+
+CB(
+proc ::constcl::interspace {c} {
+  if {[::string is space $c] || $c eq ";"} {
+      return #t
+    } else {
+      return #f
+    }
+}
+CB)
+
+H4 character-check procedure
+
+MD(
+The K{character-check} helper procedure compares a potential
+character constant to the valid kinds.
+MD)
+
+PR(
+character-check (internal);name tstr -> bool
+PR)
+
+CB(
+proc ::constcl::character-check {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+H4 readc procedure
+
+MD(
+K{readc} reads one character from the unget store if it isn't empty or else from
+the input port. If the input is at end-of-file, an eof object is returned.
+MD)
+
+PR(
+readc (internal);-> tchreof
+PR)
+
+CB(
+proc ::constcl::readc {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+CB)
+
+TT(
+# 3
+TT)
+
+H4 read-find procedure
+
+MD(
+K{read-find} reads ahead through whitespace to find a given character. It returns 1
+if it has found the character, and 0 if it has stopped at some other character.
+Returns end of file if eof is encountered.
+MD)
+
+PR(
+read-find (internal);char tchr -> tbooleof
+PR)
+
+CB(
+proc ::constcl::read-find {char} {
+  upvar c c unget unget
+  while {[::string is space -strict $c]} {
+    set c [readc]
+    read-eof $c
+    set unget $c
+  }
+  return [expr {$c eq $char}]
+}
+CB)
+
+TT(
+# 4
+TT)
+
+H4 read-end procedure
+
+MD(
+K{read-end} reads one character and returns 1 if it is an interspace character or
+an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It
+ungets the character before returning.
+MD)
+
+PR(
+read-end (internal);-> tbooleof
+PR)
+
+CB(
+proc ::constcl::read-end {} {
+  upvar c c unget unget
+  set c [readc]
+  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
+    set unget $c
+    return 1
+  } else {
+    set unget $c
+    return 0
+  }
+}
+CB)
+
+TT(
+# 5
+TT)
+
+H4 skip-ws procedure
+
+MD(
+K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). Uses the
+shared E{c} variable. It leaves the first character not to be skipped in E{c}.
+MD)
+
+PR(
+skip-ws (internal);-> none
+PR)
+
+CB(
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readc]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readc]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+CB)
+
+TT(
+# 6
+TT)
+
+H4 read-eof procedure
+
+MD(
+K{read-eof} checks a number of presumed characters for possible end-of-file
+objects. If it finds one, it returns E{from its caller} with the EOF value.
+MD)
+
+PR(
+read-eof (internal);chars chars
+PR)
+
+CB(
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
+}
+CB)
+
+TT(
+# 7
+TT)
+
+H3 Reader procedures
+
+Reader procedures specialize in reading a certain kind of input, except for
+K{read-expr} which reads them all.
+
+H4 read-expr procedure
+
+MD(
+The K{read-expr} procedure reads the first available character from the input
+port. Based on that it delegates to one of the more detailed
+reading procedures, producing an expression of any kind.  A Tcl character value
+can be passed to it: that character will be used first before reading from the
+input.  If end of file is encountered before an expression can be read in
+full, the procedure returns end of file (K{#EOF})I{end of file}.
 MD)
 
 PR(
 read-expr (internal);?char? tchr -> expreof
 PR)
 
-IX read-expr
 CB(
 proc ::constcl::read-expr {args} {
   upvar c c unget unget
@@ -306,167 +471,9 @@ TT(
 
 TT)
 
-MD(
-B{readc} procedure
-
-K{readc} reads one character from the unget store if it isn't empty or else from
-the input stream. If the input stream is at end-of-file, an eof object is
-returned.
-MD)
-
-PR(
-readc (internal);-> tchreof
-PR)
-
-IX readc
-CB(
-proc ::constcl::readc {} {
-  upvar unget unget
-  if {$unget ne {}} {
-    set c $unget
-    set unget {}
-  } else {
-    set c [$::constcl::Input_port get]
-    if {[$::constcl::Input_port eof]} {
-      return #EOF
-    }
-  }
-  return $c
-}
-CB)
-
-TT(
-# 3
-TT)
+H4 read-string-expr procedure
 
 MD(
-B{read-find} procedure
-
-K{read-find} reads ahead through whitespace to find a given character. Returns 1
-if it has found the character, and 0 if it has stopped at some other character.
-Returns end of file if eof is encountered.
-MD)
-
-PR(
-read-find (internal);char tchr -> tbooleof
-PR)
-
-IX read-find
-CB(
-proc ::constcl::read-find {char} {
-  upvar c c unget unget
-  while {[::string is space -strict $c]} {
-    set c [readc]
-    read-eof $c
-    set unget $c
-  }
-  return [expr {$c eq $char}]
-}
-CB)
-
-TT(
-# 4
-TT)
-
-MD(
-B{read-end} procedure
-
-K{read-end} reads one character and returns 1 if it is an interspace character or
-an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It
-ungets the character before returning.
-MD)
-
-PR(
-read-end (internal);-> tbooleof
-PR)
-
-IX read-end
-CB(
-proc ::constcl::read-end {} {
-  upvar c c unget unget
-  set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
-    set unget $c
-    return 1
-  } else {
-    set unget $c
-    return 0
-  }
-}
-CB)
-
-TT(
-# 5
-TT)
-
-MD(
-B{skip-ws} procedure
-
-K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). Uses the
-shared E{c} variable. It leaves the first character not to be skipped in E{c}.
-MD)
-
-PR(
-skip-ws (internal);-> none
-PR)
-
-IX skip-ws
-CB(
-proc ::constcl::skip-ws {} {
-  upvar c c unget unget
-  while true {
-    switch -regexp $c {
-      {[[:space:]]} {
-        set c [readc]
-      }
-      {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readc]
-        }
-      }
-      default {
-        set unget $c
-        return
-      }
-    }
-  }
-}
-CB)
-
-TT(
-# 6
-TT)
-
-MD(
-B{read-eof} procedure
-
-K{read-eof} checks a number of presumed characters for possible end-of-file
-objects. If it finds one, it returns E{from its caller} with the EOF value.
-MD)
-
-PR(
-read-eof (internal);chars chars
-PR)
-
-IX read-eof
-CB(
-proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
-    }
-  }
-}
-CB)
-
-TT(
-# 7
-TT)
-
-MD(
-B{read-string-expr} procedure
-
 K{read-string-expr} is activated by K{read-expr} when it reads a double quote. It
 collects characters until it reaches another (unescaped) double quote. It then
 returns a string expression--an immutable R{String}{strings} object.
@@ -476,7 +483,6 @@ PR(
 read-string-expr (internal);-> streof
 PR)
 
-IX read-string-expr
 CB(
 proc ::constcl::read-string-expr {} {
   upvar c c unget unget
@@ -541,9 +547,9 @@ TT(
 
 TT)
 
-MD(
-B{read-sharp} procedure
+H4 read-sharp procedure
 
+MD(
 K{read-sharp} is activated by K{read-expr} when it reads a sharp sign (K{#}). It
 in turn either delegates to the vector reader or the character reader, or
 returns boolean literals.
@@ -553,7 +559,6 @@ PR(
 read-sharp (internal);-> sharpeof
 PR)
 
-IX read-sharp
 CB(
 proc ::constcl::read-sharp {} {
   upvar c c unget unget
@@ -588,9 +593,9 @@ TT(
 
 TT)
 
-MD(
-B{read-vector-expr} procedure
+H4 read-vector-expr procedure
 
+MD(
 K{read-vector-expr} is activated by K{read-sharp} and reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
 expression and returns a R{Vector}{vectors} object.
@@ -600,7 +605,6 @@ PR(
 read-vector-expr (internal);-> veceof
 PR)
 
-IX read-vector-expr
 CB(
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
@@ -652,9 +656,9 @@ TT(
 
 TT)
 
-MD(
-B{read-character-expr} procedure
+H4 read-character-expr procedure
 
+MD(
 K{read-character-expr} reads input, producing a character and returning
 a R{Char}{characters} object.
 MD)
@@ -663,7 +667,6 @@ PR(
 read-character-expr (internal);-> chareof
 PR)
 
-IX read-character-expr
 CB(
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
@@ -718,9 +721,9 @@ TT(
 
 TT)
 
-MD(
-B{read-quoted-expr} procedure
+H4 read-quoted-expr procedure
 
+MD(
 K{read-quoted-expr} is activated by K{read-expr} when reading a single quote (').
 It then reads an entire expression beyond that, returning it wrapped in a list
 with K{quote}. The quoted expression is made constant.
@@ -730,7 +733,6 @@ PR(
 read-quoted-expr (internal);-> quoteeof
 PR)
 
-IX read-quoted-expr
 CB(
 proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
@@ -765,9 +767,9 @@ TT(
 
 TT)
 
-MD(
-B{read-pair-expr} procedure
+H4 read-pair-expr procedure
 
+MD(
 The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
 list, or a possibly recursive structure of R{Pair}{pairs-and-lists} objects,
@@ -779,7 +781,6 @@ PR(
 read-pair-expr (internal);char pterm -> pstreof
 PR)
 
-IX read-pair-expr
 CB(
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
@@ -812,7 +813,6 @@ bracket, it conses up the elements starting from the last, and returns the head
 of the list.
 MD)
 
-IX read-pair
 CB(
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
@@ -910,9 +910,9 @@ TT(
 
 TT)
 
-MD(
-B{read-plus-minus} procedure
+H4 read-plus-minus procedure
 
+MD(
 K{read-plus-minus} is called when a plus or minus is found in the input stream.
 If the next character is a digit, it delegates to the number reader. Otherwise,
 it returns a K{+} or K{-} symbol.
@@ -922,7 +922,6 @@ PR(
 read-plus-minus (internal);-> pmeof
 PR)
 
-IX read-plus-minus
 CB(
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
@@ -975,9 +974,9 @@ TT)
     ::tcltest::removeFile testrr.lsp
 } -output "+\n-\n-99\n"
 
-MD(
-B{read-number-expr} procedure
+H4 read-number-expr procedure
 
+MD(
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It actually takes in anything that starts out like a number and stops
 at whitespace or an ending parenthesis or bracket, and then it accepts or
@@ -989,7 +988,6 @@ PR(
 read-number-expr (internal);?char? tchr -> numeof
 PR)
 
-IX read-number-expr
 CB(
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
@@ -1052,9 +1050,9 @@ TT(
 
 TT)
 
-MD(
-B{read-unquoted-expr} procedure
+H4 read-unquoted-expr procedure
 
+MD(
 When a comma is found in the input stream, K{read-unquoted-expr} is activated.
 If it reads an at-sign (K{@}) it selects the symbol K{unquote-splicing}, otherwise
 it selects the symbol K{unquote}. Then it reads an entire expression and returns
@@ -1066,7 +1064,6 @@ PR(
 read-unquoted-expr (internal);-> unquoteeof
 PR)
 
-IX read-unquoted-expr
 CB(
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
@@ -1104,9 +1101,9 @@ TT(
 
 TT)
 
-MD(
-B{read-quasiquoted-expr} procedure
+H4 read-quasiquoted-expr procedure
 
+MD(
 K{read-quasiquoted-expr} is activated when there is a backquote (K{`}) in the
 input stream. It reads an entire expression and returns it wrapped in
 K{quasiquote}.
@@ -1116,7 +1113,6 @@ PR(
 read-quasiquoted-expr (internal);-> qquoteeof
 PR)
 
-IX read-quasiquoted-expr
 CB(
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
@@ -1147,9 +1143,9 @@ TT(
 
 TT)
 
-MD(
-B{read-identifier-expr} procedure
+H4 read-identifier-expr procedure
 
+MD(
 K{read-identifier-expr} is activated for 'anything else', and takes in
 characters until it finds whitespace or an ending parenthesis or bracket. It
 checks the input against the rules for identifiers, accepting or rejecting it
@@ -1160,7 +1156,6 @@ PR(
 read-identifier-expr (internal);?chars? tchrs -> symeof
 PR)
 
-IX read-identifier-expr
 CB(
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
@@ -1215,9 +1210,9 @@ TT(
 
 TT)
 
-MD(
-B{read-object-expr} procedure
+H4 read-object-expr procedure
 
+MD(
 A non-standard extension, K{read-object-expr} reads a ConsTcl object of any kind
 and passes its name along.
 MD)
@@ -1226,7 +1221,6 @@ PR(
 read-object-expr (internal);-> objeof
 PR)
 
-IX read-object-expr
 CB(
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget

@@ -136,6 +136,11 @@ function render(line) {
         sub(/R{([^{}]+)}{([^{}]+)}/, sprintf("[%s](https://github.com/hoodiecrow/ConsTcl#%s)", ref[1], ref[2]), line)
     }
 
+    while (match(line, /S{([^{}]+)}{([^{}]+)}/)) {
+	patsplit(substr(line, RSTART+2, RLENGTH-3), ref, /[^{}]+/)
+        sub(/S{([^{}]+)}{([^{}]+)}/, sprintf("[``%s``](https://github.com/hoodiecrow/ConsTcl#%s)", ref[1], ref[2]), line)
+    }
+
     while (match(line, /L{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), link, /[^{}]+/)
         sub(/L{([^{}]+)}{([^{}]+)}/, sprintf("[%s](%s)", link[1], link[2]), line)

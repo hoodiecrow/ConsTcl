@@ -77,6 +77,7 @@ $0 ~ modeline { next; }
     sub(/\n$/, "", $0)
     printf "\\subsubsection{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
     next
 }
 
@@ -193,6 +194,11 @@ function render(line) {
         sub(/R{([^{}]+)}{([^{}]+)}/, sprintf("%s (see page \\pageref{%s})", ref[1], ref[2]), line)
     }
 
+    while (match(line, /S{([^{}]+)}{([^{}]+)}/)) {
+	patsplit(substr(line, RSTART+2, RLENGTH-3), ref, /[^{}]+/)
+        sub(/S{([^{}]+)}{([^{}]+)}/, sprintf("\\texttt{%s} (see page \\pageref{%s})", ref[1], ref[2]), line)
+    }
+
     while (match(line, /L{([^{}]+)}{([^{}]+)}/)) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), link, /[^{}]+/)
         sub(/L{([^{}]+)}{([^{}]+)}/, sprintf("%s\\footnote{See \\%s{%s}}", link[1], hyperref?"url":"texttt", link[2]), line)
@@ -226,6 +232,7 @@ function render(line) {
 function makelabel (str) {
     gsub(/ /, "-", str)
     str = tolower(str)
+    gsub(/:/, "", str)
     while (str c in labels) {
 	c++
 	str = str c

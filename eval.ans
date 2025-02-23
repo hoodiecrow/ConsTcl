@@ -8,15 +8,7 @@ their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
 normal form (can't be reduced further) and the former is not.
 MD)
 
-H3 Syntactic forms
-
-MD(
-There are nine diffent forms or classes of expressions in Lisp. The evaluator
-recognizes each one by its internal representation and chooses the appropriate
-process to evaluate them. The nine forms will be described in the following
-sections.
-
-MD)
+H3 The evaluator
 
 MD(
 B{eval} procedure
@@ -27,7 +19,7 @@ it according to its syntactic form.
 K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
 on a non-atomic expression into a more concrete expression. See the part about
 R{macros}{macros} below, and 2) resolving E{local defines}, acting on expressions
-of the form K{(begin (define ...} when in a local environment. See the part
+of the form K{(begin (define D{}} when in a local environment. See the part
 about R{resolving local defines}{resolving-local-defines}.
 MD)
 
@@ -93,6 +85,29 @@ proc ::constcl::eval \
   }
 }
 CB)
+
+H3 Syntactic forms
+
+MD(
+There are nine diffent forms or classes of expressions in Lisp:
+MD)
+
+EN variable reference
+EN constant literal
+EN quotation
+EN conditional
+EN sequence
+EN definition
+EN assignment
+EN procedure definition
+EN procedure call
+
+MD(
+The evaluator
+recognizes each one by its internal representation and chooses the appropriate
+process to evaluate them. The nine forms will be described in the following
+sections.
+MD)
 
 H4 Variable reference
 
@@ -245,7 +260,7 @@ TT)
 H4 Definition
 
 MD(
-EM Example: K{(define r 10)} => ... (a definition doesn't evaluate to anything)
+EM Example: K{(define r 10)} => D{} (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. Through
 (variable) definitionI{variable definition}I{definition}, a symbol is bound to a
@@ -356,6 +371,8 @@ Under the hood, the helper K{/lambda} makes a R{Procedure}{control} object. Firs
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
 has more than one expression (K{S begin} stands for "the symbol begin".), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
+
+H5 Scheme formals lists: an aside
 
 A Scheme formals listI{formals list} is either:
 

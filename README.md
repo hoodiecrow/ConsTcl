@@ -57,9 +57,7 @@ namespace eval ::constcl {}
 
 Next, some procedures that make my life as developer somewhat easier.
 
-
-
-__reg__ procedure
+#### reg procedure
 
 
 `` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
@@ -88,9 +86,7 @@ I use all of these terms for the subroutines in ConsTcl. I try to stick to proce
 
 And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
 
-
-
-__regmacro__ procedure
+#### regmacro procedure
 
 
 ConsTcl has macros, i.e. succinct syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. `` regmacro `` registers macro names in the macro list, so the evaluator knows what to expand.
@@ -103,9 +99,7 @@ proc ::regmacro {name} {
   return
 }
 ```
-
-
-__pn__ procedure
+#### pn procedure
 
 
 `` pn `` stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
@@ -117,9 +111,7 @@ proc ::pn {} {
   lindex [split [lindex [info level -1] 0] :] end
 }
 ```
-
-
-__typeof?__ procedure
+#### typeof? procedure
 
 
 `` typeof? `` looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms the type, the procedure returns `` #t ``.
@@ -153,9 +145,7 @@ proc ::constcl::typeof? {val type} {
   }
 }
 ```
-
-
-__in-range__ procedure
+#### in-range procedure
 
 
 This one is a little bit of both, a utility function that is also among the builtins in the library. It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs.
@@ -199,9 +189,7 @@ proc ::constcl::in-range {x args} {
 }
 ```
 ### Testing commands
-
-
-__pew__ procedure
+#### pew procedure
 
 
 `` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled and get to see proper Lisp output from it.
@@ -215,9 +203,7 @@ proc ::pew {str} {
       ::constcl::parse $str]]
 }
 ```
-
-
-__pw__ procedure
+#### pw procedure
 
 
 `` pw `` is a similar command, except it doesn't eval the expression. It just writes what is parsed. It is useful for tests when the evaluator can't (yet) evaluate the form, but I can still check if it gets read and written correctly.
@@ -230,9 +216,7 @@ proc ::pw {str} {
     ::constcl::parse $str]
 }
 ```
-
-
-__rw__ procedure
+#### rw procedure
 
 
 `` rw `` is the reading variant of `` pw ``, that is it takes in its input via a port instead of an input buffer. The distinction mattered more when the input library was being written. The procedure just writes what is read.
@@ -245,9 +229,7 @@ proc ::rw {args} {
     ::constcl::read {*}$args]
 }
 ```
-
-
-__pe__ procedure
+#### pe procedure
 
 
 `` pe `` is also similar, but it doesn't write the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
@@ -260,9 +242,7 @@ proc ::pe {str} {
     ::constcl::parse $str]
 }
 ```
-
-
-__re__ procedure
+#### re procedure
 
 
 `` re `` is like `` pe ``, but it reads from a port instead of an input buffer. It evaluates what is read.
@@ -275,9 +255,7 @@ proc ::re {args} {
     ::constcl::read {*}$args]
 }
 ```
-
-
-__p__ procedure
+#### p procedure
 
 
 `` p `` only parses the input, returning an expression object.
@@ -289,9 +267,7 @@ proc ::p {str} {
   ::constcl::parse $str
 }
 ```
-
-
-__e__ procedure
+#### e procedure
 
 
 `` e `` is another single-action procedure, evaluating an expression and returning a value.
@@ -303,9 +279,7 @@ proc ::e {expr} {
   ::constcl::eval $expr
 }
 ```
-
-
-__w__ procedure
+#### w procedure
 
 
 `` w `` is the third single-action procedure, printing a value and that's all.
@@ -317,9 +291,7 @@ proc ::w {val} {
   ::constcl::write $val
 }
 ```
-
-
-__r__ procedure
+#### r procedure
 
 
 `` r `` is an extra single-action procedure, reading from default input or from a port and returning an expression object.
@@ -331,9 +303,7 @@ proc ::r {args} {
   ::constcl::read {*}$args
 }
 ```
-
-
-__prw__ procedure
+#### prw procedure
 
 
 `` prw `` reads an expression, resolves defines, and writes the result. It was handy during the time I was porting the 'resolve local defines' section.
@@ -348,9 +318,7 @@ proc ::prw {str} {
   ::constcl::write $expr
 }
 ```
-
-
-__pxw__ procedure
+#### pxw procedure
 
 
 `` pxw `` attempts to macro-expand whatever it reads, and writes the result. I know that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I was developing the macro facility.
@@ -403,9 +371,7 @@ oo::singleton create ::constcl::NIL {
   }
 }
 ```
-
-
-__null?__ procedure
+#### null? procedure
 
 
 The `` null? `` standard predicate recognizes the empty list.
@@ -424,9 +390,7 @@ proc ::constcl::null? {val} {
 }
 ```
 ### The classes Dot, Unspecified, Undefined, and EndOfFile
-
-
-__Dot__ class
+#### Dot class
 
 
 The `` Dot `` class is a helper class for the parser.
@@ -444,9 +408,7 @@ oo::class create ::constcl::Dot {
   }
 }
 ```
-
-
-__dot?__ procedure
+#### dot? procedure
 
 
 `` dot? `` is a type predicate that checks for membership in the type `` Dot ``.
@@ -458,9 +420,7 @@ proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
 ```
-
-
-__Unspecified__ class
+#### Unspecified class
 
 
 The `` Unspecified `` class is for unspecified things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'.
@@ -478,9 +438,7 @@ oo::class create ::constcl::Unspecified {
   }
 }
 ```
-
-
-__Undefined__ class
+#### Undefined class
 
 
 The `` Undefined `` class is for undefined things. Also a S9fES support class.
@@ -498,9 +456,7 @@ oo::class create ::constcl::Undefined {
   }
 }
 ```
-
-
-__EndOfFile__ class
+#### EndOfFile class
 
 
 The `` EndOfFile `` class is for end-of-file conditions.
@@ -528,9 +484,7 @@ proc eof? {val} {
 }
 ```
 ### The error and check procedures
-
-
-__error__ procedure
+#### error procedure
 
 
 `` error `` is used to signal an error, with _msg_ being a message string and the optional arguments being values to show after the message.
@@ -556,9 +510,7 @@ proc ::constcl::error {msg args} {
   ::error $msg
 }
 ```
-
-
-__check__ procedure
+#### check procedure
 
 
 `` check `` does a check (typically a type check) on something and throws an error if it fails.
@@ -574,9 +526,7 @@ proc ::constcl::check {cond msg} {
 }
 ```
 ### The atom? predicate
-
-
-__atom?__ procedure
+#### atom? procedure
 
 
 There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types.
@@ -601,8 +551,7 @@ proc ::constcl::atom? {val} {
 
 The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. `` read `` represents the interpreter's main input facility. The `` read- `` procedures read from standard input, or--if a port is provided--from the port's channel.
 
-### Parsing
-#### The parsing process
+### The parsing process
 
 
 [Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_ in internal form.
@@ -655,11 +604,16 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 Anyway, here is how it really looks like. `` ::oo::Obj491 `` was just the head of the list.
 
 ![#](images/intreplist.png)
+### Input procedures
+##### Ports: an aside
 
-__parse__ procedure
+
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or (a ConsTcl extension) a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+
+#### parse procedure
 
 
-`` parse `` can be called with either a string input port or a Tcl or ConsTcl string (which `` parse `` uses to open a string input port). Once the input port is established, `` parse `` leaves control to `` read-expr ``.
+`` parse `` can be called with either a string input port or a Tcl or ConsTcl string (which it uses to open a string input port). Once the input port is established, `` parse `` leaves control to [``read-expr``](https://github.com/hoodiecrow/ConsTcl#read-expr-procedure).
 
 <table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>inp</td><td>a Tcl string, Lisp string, or an input buffer</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -688,68 +642,10 @@ proc ::constcl::parse {inp} {
   return $expr
 }
 ```
+#### read procedure
 
 
-__make-constant__ procedure
-
-
-The `` make-constant `` helper procedure is called to set expressions to constants when read as a literal.
-
-```
-proc ::constcl::make-constant {val} {
-  if {[pair? $val] ne "#f"} {
-    $val mkconstant
-    make-constant [car $val]
-    make-constant [cdr $val]
-  } elseif {[null? $val] ne "#f"} {
-    return #NIL
-  } else {
-    $val mkconstant
-  }
-}
-```
-
-
-__interspace__ procedure
-
-
-The `` interspace `` helper procedure recognizes whitespace between value representations.
-
-```
-proc ::constcl::interspace {c} {
-  if {[::string is space $c] || $c eq ";"} {
-      return #t
-    } else {
-      return #f
-    }
-}
-```
-
-
-__character-check__ procedure
-
-
-The `` character-check `` helper procedure compares a potential character constant to the valid kinds.
-
-<table border=1><thead><tr><th colspan=2 align="left">character-check (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::character-check {name} {
-  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
-    return #t
-  } else {
-    return #f
-  }
-}
-```
-### read
-
-
-__read__ procedure
-
-
-The standard builtin `` read `` reads an input port the same way that `` parse `` takes in an input buffer. The `` read- `` procedures parse their input and produce ConsTcl objects.
+The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it. The `` read- `` procedures parse their input and produce ConsTcl objects.
 
 
 One can pass a port to `` read ``, in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard).
@@ -774,12 +670,166 @@ proc ::constcl::read {args} {
   return $expr
 }
 ```
+### Input helper procedures
+#### make-constant procedure
 
 
-__read-expr__ procedure
+The `` make-constant `` helper procedure is called to set expressions to constants when read as a literal.
+
+```
+proc ::constcl::make-constant {val} {
+  if {[pair? $val] ne "#f"} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[null? $val] ne "#f"} {
+    return #NIL
+  } else {
+    $val mkconstant
+  }
+}
+```
+#### interspace procedure
 
 
-The procedure `` read-expr `` reads input by reading the first available character and delegating to one of the more detailed reading procedures based on that, producing an expression of any kind. A Tcl character value can be passed to it, that character will be used first before reading from the input stream. If end of file is encountered before an expression can be read in full, the procedure returns end of file (`` #EOF ``).
+The `` interspace `` helper procedure recognizes whitespace between value representations.
+
+```
+proc ::constcl::interspace {c} {
+  if {[::string is space $c] || $c eq ";"} {
+      return #t
+    } else {
+      return #f
+    }
+}
+```
+#### character-check procedure
+
+
+The `` character-check `` helper procedure compares a potential character constant to the valid kinds.
+
+<table border=1><thead><tr><th colspan=2 align="left">character-check (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::character-check {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return #t
+  } else {
+    return #f
+  }
+}
+```
+#### readc procedure
+
+
+`` readc `` reads one character from the unget store if it isn't empty or else from the input port. If the input is at end-of-file, an eof object is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+
+```
+proc ::constcl::readc {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+```
+#### read-find procedure
+
+
+`` read-find `` reads ahead through whitespace to find a given character. It returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+
+```
+proc ::constcl::read-find {char} {
+  upvar c c unget unget
+  while {[::string is space -strict $c]} {
+    set c [readc]
+    read-eof $c
+    set unget $c
+  }
+  return [expr {$c eq $char}]
+}
+```
+#### read-end procedure
+
+
+`` read-end `` reads one character and returns 1 if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It ungets the character before returning.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+
+```
+proc ::constcl::read-end {} {
+  upvar c c unget unget
+  set c [readc]
+  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
+    set unget $c
+    return 1
+  } else {
+    set unget $c
+    return 0
+  }
+}
+```
+#### skip-ws procedure
+
+
+`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). Uses the shared _c_ variable. It leaves the first character not to be skipped in _c_.
+
+<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readc]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readc]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+```
+#### read-eof procedure
+
+
+`` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr></table>
+
+```
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
+}
+```
+### Reader procedures
+#### read-expr procedure
+
+
+The `` read-expr `` procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed reading procedures, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (`` #EOF ``).
 
 <table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
 
@@ -820,124 +870,7 @@ proc ::constcl::read-expr {args} {
   }
 }
 ```
-
-
-__readc__ procedure
-
-
-`` readc `` reads one character from the unget store if it isn't empty or else from the input stream. If the input stream is at end-of-file, an eof object is returned.
-
-<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
-
-```
-proc ::constcl::readc {} {
-  upvar unget unget
-  if {$unget ne {}} {
-    set c $unget
-    set unget {}
-  } else {
-    set c [$::constcl::Input_port get]
-    if {[$::constcl::Input_port eof]} {
-      return #EOF
-    }
-  }
-  return $c
-}
-```
-
-
-__read-find__ procedure
-
-
-`` read-find `` reads ahead through whitespace to find a given character. Returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
-
-```
-proc ::constcl::read-find {char} {
-  upvar c c unget unget
-  while {[::string is space -strict $c]} {
-    set c [readc]
-    read-eof $c
-    set unget $c
-  }
-  return [expr {$c eq $char}]
-}
-```
-
-
-__read-end__ procedure
-
-
-`` read-end `` reads one character and returns 1 if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It ungets the character before returning.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
-
-```
-proc ::constcl::read-end {} {
-  upvar c c unget unget
-  set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
-    set unget $c
-    return 1
-  } else {
-    set unget $c
-    return 0
-  }
-}
-```
-
-
-__skip-ws__ procedure
-
-
-`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). Uses the shared _c_ variable. It leaves the first character not to be skipped in _c_.
-
-<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::skip-ws {} {
-  upvar c c unget unget
-  while true {
-    switch -regexp $c {
-      {[[:space:]]} {
-        set c [readc]
-      }
-      {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readc]
-        }
-      }
-      default {
-        set unget $c
-        return
-      }
-    }
-  }
-}
-```
-
-
-__read-eof__ procedure
-
-
-`` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr></table>
-
-```
-proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
-    }
-  }
-}
-```
-
-
-__read-string-expr__ procedure
+#### read-string-expr procedure
 
 
 `` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
@@ -968,9 +901,7 @@ proc ::constcl::read-string-expr {} {
   return $expr
 }
 ```
-
-
-__read-sharp__ procedure
+#### read-sharp procedure
 
 
 `` read-sharp `` is activated by `` read-expr `` when it reads a sharp sign (`` # ``). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
@@ -995,9 +926,7 @@ proc ::constcl::read-sharp {} {
   return $n
 }
 ```
-
-
-__read-vector-expr__ procedure
+#### read-vector-expr procedure
 
 
 `` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
@@ -1031,9 +960,7 @@ proc ::constcl::read-vector-expr {} {
   return $expr
 }
 ```
-
-
-__read-character-expr__ procedure
+#### read-character-expr procedure
 
 
 `` read-character-expr `` reads input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
@@ -1058,9 +985,7 @@ proc ::constcl::read-character-expr {} {
   return $expr
 }
 ```
-
-
-__read-quoted-expr__ procedure
+#### read-quoted-expr procedure
 
 
 `` read-quoted-expr `` is activated by `` read-expr `` when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with `` quote ``. The quoted expression is made constant.
@@ -1077,9 +1002,7 @@ proc ::constcl::read-quoted-expr {} {
   return [list [S quote] $expr]
 }
 ```
-
-
-__read-pair-expr__ procedure
+#### read-pair-expr procedure
 
 
 The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member).
@@ -1145,9 +1068,7 @@ proc ::constcl::read-pair {char} {
   return $prev
 }
 ```
-
-
-__read-plus-minus__ procedure
+#### read-plus-minus procedure
 
 
 `` read-plus-minus `` is called when a plus or minus is found in the input stream. If the next character is a digit, it delegates to the number reader. Otherwise, it returns a `` + `` or `` - `` symbol.
@@ -1181,9 +1102,7 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 ```
-
-
-__read-number-expr__ procedure
+#### read-number-expr procedure
 
 
 `` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
@@ -1213,9 +1132,7 @@ proc ::constcl::read-number-expr {args} {
   return $expr
 }
 ```
-
-
-__read-unquoted-expr__ procedure
+#### read-unquoted-expr procedure
 
 
 When a comma is found in the input stream, `` read-unquoted-expr `` is activated. If it reads an at-sign (`` @ ``) it selects the symbol `` unquote-splicing ``, otherwise it selects the symbol `` unquote ``. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
@@ -1239,9 +1156,7 @@ proc ::constcl::read-unquoted-expr {} {
   return [list [S $symbol] $expr]
 }
 ```
-
-
-__read-quasiquoted-expr__ procedure
+#### read-quasiquoted-expr procedure
 
 
 `` read-quasiquoted-expr `` is activated when there is a backquote (`` ` ``) in the input stream. It reads an entire expression and returns it wrapped in `` quasiquote ``.
@@ -1259,9 +1174,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   return [list [S quasiquote] $expr]
 }
 ```
-
-
-__read-identifier-expr__ procedure
+#### read-identifier-expr procedure
 
 
 `` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
@@ -1296,9 +1209,7 @@ proc ::constcl::read-identifier-expr {args} {
   return [S $name]
 }
 ```
-
-
-__read-object-expr__ procedure
+#### read-object-expr procedure
 
 
 A non-standard extension, `` read-object-expr `` reads a ConsTcl object of any kind and passes its name along.
@@ -1333,11 +1244,7 @@ proc ::constcl::read-object-expr {} {
 
 The second thing an interpreter must be able to do is to reduce expressions to their _normal form_, or _evaluate_ them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
 
-### Syntactic forms
-
-
-There are nine diffent forms or classes of expressions in Lisp. The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
-
+### The evaluator
 
 
 __eval__ procedure
@@ -1407,6 +1314,24 @@ proc ::constcl::eval \
   }
 }
 ```
+### Syntactic forms
+
+
+There are nine diffent forms or classes of expressions in Lisp:
+
+1.  variable reference
+1.  constant literal
+1.  quotation
+1.  conditional
+1.  sequence
+1.  definition
+1.  assignment
+1.  procedure definition
+1.  procedure call
+
+
+The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
+
 #### Variable reference
 
 
