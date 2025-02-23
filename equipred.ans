@@ -8,14 +8,13 @@ exception for numbers), K{eqv} tests for value equality (except for booleans and
 procedures, where it tests for identity), and K{equal} tests for whether the
 output strings are equal.
 
-B{eq?} procedure
 MD)
+H4 eq? procedure
 
 PR(
 eq?, eqv?, equal? (public);expr1 expr expr2 expr -> bool
 PR)
 
-IX eq?
 CB(
 reg eq?
 
@@ -62,6 +61,7 @@ PR(
 teq (internal);typep proc expr1 expr expr2 expr -> tbool
 PR)
 
+IX teq
 CB(
 proc ::constcl::teq {typep expr1 expr2} {
     return [expr {[$typep $expr1] ne "#f" &&
@@ -79,6 +79,7 @@ PR(
 veq (internal);expr1 expr expr2 expr -> tbool
 PR)
 
+IX veq
 CB(
 proc ::constcl::veq {expr1 expr2} {
     return [expr {[$expr1 value] eq [$expr2 value]}]
@@ -95,11 +96,8 @@ TT(
 } -output "#t\n"
 TT)
 
-MD(
-B{eqv?} procedure
-MD)
+H4 eqv? procedure
 
-IX eqv?
 CB(
 reg eqv?
 
@@ -138,11 +136,8 @@ proc ::constcl::eqv? {expr1 expr2} {
 }
 CB)
 
-MD(
-B{equal?} procedure
-MD)
+H4 equal? procedure
 
-IX equal?
 CB(
 reg equal?
 

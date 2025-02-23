@@ -1,9 +1,7 @@
 
 H3 Input and output
 
-MD(
-B{Port} class
-MD)
+H4 Port class
 
 CB(
 catch { ::constcl::Port destroy }
@@ -36,9 +34,7 @@ oo::class create ::constcl::Port {
 }
 CB)
 
-MD(
-B{InputPort} class
-MD)
+H4 InputPort class
 
 CB(
 oo::class create ::constcl::InputPort {
@@ -72,9 +68,7 @@ oo::class create ::constcl::InputPort {
 }
 CB)
 
-MD(
-B{StringInputPort} class
-MD)
+H4 StringInputPort class
 
 CB(
 oo::class create ::constcl::StringInputPort {
@@ -115,9 +109,7 @@ oo::class create ::constcl::StringInputPort {
 }
 CB)
 
-MD(
-B{OutputPort} class
-MD)
+H4 OutputPort class
 
 CB(
 oo::class create ::constcl::OutputPort {
@@ -148,9 +140,9 @@ oo::class create ::constcl::OutputPort {
 }
 CB)
 
-MD(
-B{MkInputPort} generator
+H4 MkInputPort generator
 
+MD(
 K{MkInputPort} generates an InputPort object.
 MD)
 
@@ -158,15 +150,14 @@ PR(
 MkInputPort (internal);filename filename -> iport
 PR)
 
-IX MkInputPort
 CB(
 interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
 CB)
 
-MD(
-B{MkOutputPort} generator
+H4 MkOutputPort generator
 
+MD(
 K{MkOutputPort} generates an OutputPort object.
 MD)
 
@@ -174,7 +165,6 @@ PR(
 MkOutputPort (internal);filename filename -> oport
 PR)
 
-IX MkOutputPort
 CB(
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
@@ -197,9 +187,9 @@ set ::constcl::Output_port [
   ::constcl::MkOutputPort stdout]
 CB)
 
-MD(
-B{port?} procedure
+H4 port? procedure
 
+MD(
 K{port?} recognizes Port objects.
 MD)
 
@@ -211,9 +201,9 @@ proc ::constcl::port? {val} {
 }
 CB)
 
-MD(
-B{call-with-input-file} procedure
+H4 call-with-input-file procedure
 
+MD(
 K{call-with-input-file} opens a file for input and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
@@ -235,9 +225,9 @@ proc ::constcl::call-with-input-file {filename proc} {
 }
 CB)
 
-MD(
-B{call-with-output-file} procedure
+H4 call-with-output-file procedure
 
+MD(
 K{call-with-output-file} opens a file for output and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
@@ -263,9 +253,9 @@ proc ::constcl::call-with-output-file {filename proc} {
 }
 CB)
 
-MD(
-B{input-port?} procedure
+H4 input-port? procedure
 
+MD(
 K{input-port?} recognizes an InputPort object.
 MD)
 
@@ -281,9 +271,9 @@ proc ::constcl::input-port? {val} {
 }
 CB)
 
-MD(
-B{output-port?} procedure
+H4 output-port? procedure
 
+MD(
 K{output-port?} recognizes an OutputPort object.
 MD)
 
@@ -299,9 +289,9 @@ proc ::constcl::output-port? {val} {
 }
 CB)
 
-MD(
-B{current-input-port} procedure
+H4 current-input-port procedure
 
+MD(
 K{current-input-port} makes a copy of the current shared input port.
 MD)
 
@@ -317,9 +307,9 @@ proc ::constcl::current-input-port {} {
 }
 CB)
 
-MD(
-B{current-output-port} procedure
+H4 current-output-port procedure
 
+MD(
 K{current-output-port} makes a copy of the current shared output port.
 MD)
 
@@ -335,9 +325,9 @@ proc ::constcl::current-output-port {} {
 }
 CB)
 
-MD(
-B{with-input-from-file} procedure
+H4 with-input-from-file procedure
 
+MD(
 K{with-input-from-file} opens a file for input and calls a 'thunk' while the
 file is open.  The file is closed again when the call is done.
 MD)
@@ -373,9 +363,9 @@ TT(
 } -output "42\n()\n"
 TT)
 
-MD(
-B{with-output-to-file} procedure
+H4 with-output-to-file procedure
 
+MD(
 K{with-output-to-file} opens a file for output and calls a 'thunk' while the
 file is open.  The file is closed again when the call is done.
 MD)
@@ -401,9 +391,9 @@ proc ::constcl::with-output-to-file {filename thunk} {
 }
 CB)
 
-MD(
-B{open-input-file} procedure
+H4 open-input-file procedure
 
+MD(
 K{open-input-file} opens a file for input and returns the port.
 MD)
 
@@ -427,9 +417,9 @@ proc ::constcl::open-input-file {filename} {
 }
 CB)
 
-MD(
-B{open-output-file} procedure
+H4 open-output-file procedure
 
+MD(
 K{open-output-file} opens a file for output and returns the port.
 MD)
 
@@ -454,9 +444,9 @@ proc ::constcl::open-output-file {filename} {
 }
 CB)
 
-MD(
-B{close-input-port} procedure
+H4 close-input-port procedure
 
+MD(
 K{close-input-port} closes an input port.
 MD)
 
@@ -475,9 +465,9 @@ proc ::constcl::close-input-port {port} {
 }
 CB)
 
-MD(
-B{close-output-port} procedure
+H4 close-output-port procedure
 
+MD(
 K{close-output-port} closes an output port.
 MD)
 
@@ -522,9 +512,9 @@ MD(
 K{display} is implemented in the output chapter.
 MD)
 
-MD(
-B{newline} procedure
+H4 newline procedure
 
+MD(
 K{newline} outputs a newline character. Especially helpful when using K{display}
 for output, since it doesn't end lines with newline.
 MD)

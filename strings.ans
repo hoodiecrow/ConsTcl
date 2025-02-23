@@ -3,9 +3,11 @@ H3 Strings
 
 MD(
 Procedures for dealing with strings of characters.
+MD)
 
-B{String} class
+H4 String class
 
+MD(
 Strings have the internal representation of a vector of character objects, with
 the data elements of the vector address of the first element, and the length of
 the vector. External representation is surrounded by double quotes, with double
@@ -15,7 +17,6 @@ As a ConsTcl extension, a K{\n} pair in the external representation is
 stored as a newline character. It is restored to K{\n} on write.
 MD)
 
-IX String
 CB(
 oo::class create ::constcl::String {
   superclass ::constcl::NIL
@@ -121,9 +122,9 @@ oo::class create ::constcl::String {
 }
 CB)
 
-MD(
-B{MkString} generator
+H4 MkString generator
 
+MD(
 K{MkString} generates a String object.
 MD)
 
@@ -131,7 +132,6 @@ PR(
 MkString (internal);str estr -> str
 PR)
 
-IX MkString
 CB(
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
@@ -157,9 +157,9 @@ qux\bod
 }
 TT)
 
-MD(
-B{string?} procedure
+H4 string? procedure
 
+MD(
 K{string?} recognizes a string by type.
 MD)
 
@@ -167,7 +167,6 @@ PR(
 string? (public);val val -> bool
 PR)
 
-IX string?
 CB(
 reg string?
 
@@ -185,9 +184,9 @@ TT(
 
 TT)
 
-MD(
-B{make-string} procedure
+H4 make-string procedure
 
+MD(
 K{make-string} creates a string of E{k} characters, optionally filled with E{char}
 characters. If E{char} is omitted, the string will be filled with space characters.
 MD)
@@ -207,7 +206,6 @@ PR(
 make-string (public);k num ?char? char -> str
 PR)
 
-IX make-string
 CB(
 reg make-string
 
@@ -231,9 +229,9 @@ TT(
 
 TT)
 
-MD(
-B{string} procedure
+H4 string procedure
 
+MD(
 K{string} constructs a string from a number of Lisp characters.
 MD)
 
@@ -249,7 +247,6 @@ PR(
 string (public);args chars -> str
 PR)
 
-IX string
 CB(
 reg string
 
@@ -278,9 +275,9 @@ TT(
 
 TT)
 
-MD(
-B{string-length} procedure
+H4 string-length procedure
 
+MD(
 K{string-length} reports a string's length.
 MD)
 
@@ -296,7 +293,6 @@ PR(
 string-length (public);str str -> num
 PR)
 
-IX string-length
 CB(
 reg string-length
 
@@ -316,9 +312,9 @@ TT(
 
 TT)
 
-MD(
-B{string-ref} procedure
+H4 string-ref procedure
 
+MD(
 K{string-ref} yields the E{k}-th character (0-based) in E{str}.
 MD)
 
@@ -334,7 +330,6 @@ PR(
 string-ref (public);str str k num -> char
 PR)
 
-IX string-ref
 CB(
 reg string-ref
 
@@ -359,9 +354,9 @@ TT(
 
 TT)
 
-MD(
-B{string-set!} procedure
+H4 string-set! procedure
 
+MD(
 K{string-set!} replaces the character at E{k} with E{char} in a non-constant string.
 MD)
 
@@ -380,7 +375,6 @@ PR(
 string-set! (public);str str k num char char -> str
 PR)
 
-IX string-set!
 CB(
 reg string-set!
 
@@ -767,9 +761,9 @@ TT(
 
 TT)
 
-MD(
-B{substring} procedure
+H4 substring procedure
 
+MD(
 K{substring} yields the substring of E{str} that starts at E{start} and ends at E{end}.
 MD)
 
@@ -785,7 +779,6 @@ PR(
 substring (public);str str start num end num -> str
 PR)
 
-IX substring
 CB(
 reg substring
 
@@ -814,9 +807,9 @@ TT(
 
 TT)
 
-MD(
-B{string-append} procedure
+H4 string-append procedure
 
+MD(
 K{string-append} joins strings together.
 MD)
 
@@ -832,7 +825,6 @@ PR(
 string-append (public);args strs -> str
 PR)
 
-IX string-append
 CB(
 reg string-append
 
@@ -851,9 +843,9 @@ TT(
 
 TT)
 
-MD(
-B{string->list} procedure
+H4 string->list procedure
 
+MD(
 K{string->list} converts a string to a Lisp list of characters.
 MD)
 
@@ -869,7 +861,6 @@ PR(
 string->list (public);str str -> lchars
 PR)
 
-IX string->list
 CB(
 reg string->list
 
@@ -886,9 +877,9 @@ TT(
 
 TT)
 
-MD(
-B{list->string} procedure
+H4 list->string procedure
 
+MD(
 K{list->string} converts a Lisp list of characters to a string.
 MD)
 
@@ -904,7 +895,6 @@ PR(
 list->string (public);list lchars -> str
 PR)
 
-IX list->string
 CB(
 reg list->string
 
@@ -922,9 +912,9 @@ TT(
 
 TT)
 
-MD(
-B{string-copy} procedure
+H4 string-copy procedure
 
+MD(
 K{string-copy} makes a copy of a string.
 MD)
 
@@ -943,7 +933,6 @@ PR(
 string-copy (public);str str -> str
 PR)
 
-IX string-copy
 CB(
 reg string-copy
 
@@ -968,9 +957,9 @@ TT(
 
 TT)
 
-MD(
-B{string-fill!} procedure
+H4 string-fill! procedure
 
+MD(
 K{string-fill!} E{str} E{char} fills a non-constant string with E{char}.
 MD)
 
@@ -988,7 +977,6 @@ PR(
 string-fill! (public);str str char char -> str
 PR)
 
-IX string-fill!
 CB(
 reg string-fill!
 

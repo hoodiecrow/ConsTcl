@@ -9,11 +9,10 @@ by the find method to find which innermost environment a given symbol is bound i
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
 can be empty, a proper list, a symbol, or a dotted list.
-
-B{Environment} class
 MD)
 
-IX Environment
+H4 Environment class
+
 CB(
 catch { ::constcl::Environment destroy }
 

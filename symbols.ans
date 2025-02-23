@@ -4,11 +4,10 @@ H3 Symbols
 MD(
 Symbols are like little strings that are used to refer to things (variables, including
 procedure names, etc) or for comparing against each other.
-
-B{Symbol} class
 MD)
 
-IX Symbol
+H4 Symbol class
+
 CB(
 oo::class create ::constcl::Symbol {
   superclass ::constcl::NIL
@@ -56,9 +55,9 @@ unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
 CB)
 
-MD(
-B{MkSymbol} generator
+H4 MkSymbol generator
 
+MD(
 K{MkSymbol} generates a symbol with a given name. If a symbol with that name
 already exists, it is returned. Otherwise, a fresh symbol is created. Short
 form: K{S}.
@@ -68,7 +67,6 @@ PR(
 MkSymbol (internal);str tstr -> sym
 PR)
 
-IX MkSymbol
 CB(
 proc ::constcl::MkSymbol {str} {
   if {[dict exists $::constcl::symbolTable $str]} {
@@ -82,9 +80,9 @@ proc ::constcl::MkSymbol {str} {
 interp alias {} S {} ::constcl::MkSymbol
 CB)
 
-MD(
-B{symbol?} procedure
+H4 symbol? procedure
 
+MD(
 K{symbol?} recognizes a symbol by type.
 MD)
 
@@ -92,7 +90,6 @@ PR(
 symbol? (public);val val -> bool
 PR)
 
-IX symbol?
 CB(
 reg symbol? ::constcl::symbol?
 
@@ -115,9 +112,9 @@ TT(
 
 TT)
 
-MD(
-B{symbol->string} procedure
+H4 symbol->string procedure
 
+MD(
 K{symbol->string} yields a string consisting of the symbol name, usually
 lower-cased.
 
@@ -133,7 +130,6 @@ PR(
 symbol->string (public);sym sym -> str
 PR)
 
-IX symbol->string
 CB(
 reg symbol->string ::constcl::symbol->string
 
@@ -169,9 +165,9 @@ TT(
 
 TT)
 
-MD(
-B{string->symbol} procedure
+H4 string->symbol procedure
 
+MD(
 K{string->symbol} creates a symbol with the name given by the string. The symbol
 is 'case-constant', i.e. it will not be lower-cased.
 
@@ -189,7 +185,6 @@ PR(
 string->symbol (public);str str -> sym
 PR)
 
-IX string->symbol
 CB(
 reg string->symbol ::constcl::string->symbol
 

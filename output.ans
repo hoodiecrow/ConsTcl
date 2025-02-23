@@ -1,9 +1,9 @@
 
 H2 Output
 
-MD(
-B{write} procedure
+H4 write procedure
 
+MD(
 The third thing an interpreter must be able to do is to present the resulting
 code and data so that the user can know what the outcome was.
 
@@ -37,9 +37,9 @@ proc ::constcl::write {val args} {
 }
 CB)
 
-MD(
-B{display} procedure
+H4 display procedure
 
+MD(
 The K{display} procedure is like K{write} but it calls the method's K{display}
 method and doesn't print a newline.
 MD)
@@ -70,9 +70,9 @@ proc ::constcl::display {val args} {
 }
 CB)
 
-MD(
-B{write-pair} procedure
+H4 write-pair procedure
 
+MD(
 The K{write-pair} procedure prints a Pair object.
 MD)
 

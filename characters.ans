@@ -6,10 +6,10 @@ Characters are any Unicode printing character, and also space and newline space
 characters. External representation is K{#\A} (change A to relevant character)
 or K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
 
-B{Char} class
 MD)
 
-IX Char
+H4 Char class
+
 CB(
 oo::class create ::constcl::Char {
   superclass ::constcl::NIL
@@ -98,9 +98,9 @@ oo::class create ::constcl::Char {
 }
 CB)
 
-MD(
-B{MkChar} generator
+H4 MkChar generator
 
+MD(
 K{MkChar} generates a character object. If a character object with the same name
 already exists, that character will be returned, otherwise a fresh character
 will be created.
@@ -110,7 +110,6 @@ PR(
 MkChar (internal);char echar -> char
 PR)
 
-IX MkChar
 CB(
 proc ::constcl::MkChar {char} {
   if {[regexp -nocase {space|newline} $char]} {
@@ -126,9 +125,9 @@ proc ::constcl::MkChar {char} {
 }
 CB)
 
-MD(
-B{char?} procedure
+H4 char? procedure
 
+MD(
 K{char?} recognizes Char values by type.
 MD)
 
@@ -136,7 +135,6 @@ PR(
 char? (public);val val -> bool
 PR)
 
-IX char?
 CB(
 reg char?
 
@@ -153,9 +151,9 @@ TT(
 
 TT)
 
-MD(
-B{char=?} procedure
+H4 char=? procedure
 
+MD(
 B{char<?} procedure
 
 B{char>?} procedure
@@ -172,7 +170,6 @@ PR(
 char=?, char<?, char>?, char<=?, char>=? (public);char1 char char2 char -> bool
 PR)
 
-IX char=?
 CB(
 reg char=?
 
@@ -321,9 +318,9 @@ TT(
 
 TT)
 
-MD(
-B{char-ci=?} procedure
+H4 char-ci=? procedure
 
+MD(
 B{char-ci<?} procedure
 
 B{char-ci>?} procedure
@@ -340,7 +337,6 @@ PR(
 char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public);char1 char char2 char -> bool
 PR)
 
-IX char-ci=?
 CB(
 reg char-ci=?
 
@@ -491,9 +487,9 @@ TT(
 
 TT)
 
-MD(
-B{char-alphabetic?} procedure
+H4 char-alphabetic? procedure
 
+MD(
 B{char-numeric?} procedure
 
 B{char-whitespace?} procedure
@@ -519,7 +515,6 @@ PR(
 char-upper-case?, char-lower-case? (public);char char -> bool
 PR)
 
-IX char-alphabetic?
 CB(
 reg char-alphabetic?
 
@@ -644,11 +639,9 @@ TT(
 
 TT)
 
+H4 char->integer procedure
+
 MD(
-B{char->integer} procedure
-
-B{integer->char} procedure
-
 K{char->integer} and K{integer->char} convert between characters and their
 16-bit numeric codes.
 MD)
@@ -665,7 +658,6 @@ PR(
 char->integer (public);char char -> int
 PR)
 
-IX char->integer
 CB(
 reg char->integer
 
@@ -673,6 +665,8 @@ proc ::constcl::char->integer {char} {
   return [MkNumber [scan [$char char] %c]]
 }
 CB)
+
+H4 integer->char procedure
 
 MD(
 Example:
@@ -686,7 +680,6 @@ PR(
 integer->char (public);int int -> char
 PR)
 
-IX integer->char
 CB(
 reg integer->char
 
@@ -710,9 +703,9 @@ TT(
 
 TT)
 
-MD(
-B{char-upcase} procedure
+H4 char-upcase procedure
 
+MD(
 B{char-downcase} procedure
 
 K{char-upcase} and K{char-downcase} alter the case of a character.
@@ -722,7 +715,6 @@ PR(
 char-upcase, char-downcase (public);char char -> char
 PR)
 
-IX char-upcase
 CB(
 reg char-upcase
 

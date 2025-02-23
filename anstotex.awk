@@ -61,7 +61,7 @@ $0 ~ modeline { next; }
     sub(/\n$/, "", $0)
     printf "\\section{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
-    printf "\\index{%s}\n", tolower(substr($0, 4))
+    printf "\\index{%s}\n", substr($0, 4)
     next
 }
 
@@ -69,7 +69,7 @@ $0 ~ modeline { next; }
     sub(/\n$/, "", $0)
     printf "\\subsection{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
-    printf "\\index{%s}\n", tolower(substr($0, 4))
+    printf "\\index{%s}\n", substr($0, 4)
     next
 }
 
@@ -77,7 +77,7 @@ $0 ~ modeline { next; }
     sub(/\n$/, "", $0)
     printf "\\subsubsection{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
-    printf "\\index{%s}\n", tolower(substr($0, 4))
+    printf "\\index{%s}\n", substr($0, 4)
     next
 }
 
@@ -96,6 +96,11 @@ in_code_block && /^$/ { print " " ; next }
 
 $1 == "IX" { printf("\\index{%s}\n", $2) ; next }
 $1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
+$1 == "IF" {
+    for (i=3; i<=NF; i++) { caption = caption " " $i }
+    printf("\\begin{figure}[h!]\\includegraphics{%s}\\captionsetup{labelformat=empty}\\caption{%s}\\end{figure}\n", substr($2, 2), caption) ; next
+    caption = ""
+}
 $1 == "EM" {
     for (i=2; i<=NF; i++) collect($i)
     line = render(line)

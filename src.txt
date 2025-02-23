@@ -46,6 +46,7 @@ VB)	verb.off.---
 
 IX ...	index
 IG ...	graphix	![]()
+IF ...	graphix	![]()	floating graphics
 EM ...	\emph . ** . **
 EN ...	\enumer.1. ...
 IT ...	\itemiz.* ...

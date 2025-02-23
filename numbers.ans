@@ -7,10 +7,9 @@ library. The following is a reasonably complete framework for operations
 on integers and floating-point numbers. No rationals, no complex numbers,
 no gcd or lcm.
 
-B{Number} class procedure
-MD)
+H4 Number class
 
-IX Number
+MD)
 CB(
 oo::class create ::constcl::Number {
   superclass ::constcl::NIL
@@ -59,9 +58,9 @@ oo::class create ::constcl::Number {
 }
 CB)
 
-MD(
-B{MkNumber} generator
+H4 MkNumber generator
 
+MD(
 K{MkNumber} generates a Number object. Short form: K{N}.
 MD)
 
@@ -69,16 +68,15 @@ PR(
 MkNumber (internal);str str -> num
 PR)
 
-IX MkNumber
 CB(
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
 interp alias {} N {} ::constcl::Number new
 CB)
 
-MD(
-B{number?} procedure
+H4 number? procedure
 
+MD(
 K{number?} recognizes a number by object type, not by content.
 MD)
 
@@ -86,7 +84,6 @@ PR(
 number? (public);val val -> bool
 PR)
 
-IX number?
 CB(
 reg number?
 
@@ -111,9 +108,9 @@ TT(
 
 TT)
 
-MD(
-B{=} procedure
+H4 = procedure
 
+MD(
 B{<} procedure
 
 B{>} procedure
@@ -130,7 +127,6 @@ PR(
 =, <, >, <=, >= (public);nums nums -> bool
 PR)
 
-IX =
 CB(
 reg =
 
@@ -264,9 +260,9 @@ TT(
 
 TT)
 
-MD(
-B{zero?} procedure
+H4 zero? procedure
 
+MD(
 The K{zero?} predicate tests if a given number is equal to zero.
 MD)
 
@@ -274,7 +270,6 @@ PR(
 zero? (public);num num -> bool
 PR)
 
-IX zero?
 CB(
 reg zero?
 
@@ -298,9 +293,9 @@ TT(
 
 TT)
 
-MD(
-B{positive?} procedure
+H4 positive? procedure
 
+MD(
 B{negative?} procedure
 
 B{even?} procedure
@@ -315,7 +310,6 @@ PR(
 positive?, negative?, even?, odd? (public);num num -> bool
 PR)
 
-IX positive?
 CB(
 reg positive?
 
@@ -395,9 +389,9 @@ TT(
 
 TT)
 
-MD(
-B{max} procedure
+H4 max procedure
 
+MD(
 B{min} procedure
 
 The K{max} function selects the largest number, and the K{min} function
@@ -415,7 +409,6 @@ PR(
 max, min (public);num num nums nums -> num
 PR)
 
-IX max
 CB(
 reg max
 
@@ -461,9 +454,9 @@ TT(
 
 TT)
 
-MD(
-B{+} procedure
+H4 + procedure
 
+MD(
 B{*} procedure
 
 B{-} procedure
@@ -494,7 +487,6 @@ PR(
 -, / (public);num num ?nums? nums -> num
 PR)
 
-IX +
 CB(
 reg +
 
@@ -596,9 +588,9 @@ TT(
 
 TT)
 
-MD(
-B{abs} procedure
+H4 abs procedure
 
+MD(
 The K{abs} function yields the absolute value of a number.
 MD)
 
@@ -606,7 +598,6 @@ PR(
 abs (public);num num -> num
 PR)
 
-IX abs
 CB(
 reg abs
 
@@ -633,9 +624,9 @@ TT(
 } -returnCodes error -result "NUMBER expected\n(abs \"foo\")"
 TT)
 
-MD(
-B{quotient} procedure
+H4 quotient procedure
 
+MD(
 K{quotient} calculates the quotient between two numbers.
 MD)
 
@@ -651,7 +642,6 @@ PR(
 quotient (public);num1 num num2 num -> num
 PR)
 
-IX quotient
 CB(
 reg quotient
 
@@ -668,9 +658,9 @@ proc ::constcl::quotient {num1 num2} {
 }
 CB)
 
-MD(
-B{remainder} procedure
+H4 remainder procedure
 
+MD(
 K{remainder} is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
 MD)
@@ -687,7 +677,6 @@ PR(
 remainder (public);num1 num num2 num -> num
 PR)
 
-IX remainder
 CB(
 reg remainder
 
@@ -701,9 +690,9 @@ proc ::constcl::remainder {num1 num2} {
 }
 CB)
 
-MD(
-B{modulo} procedure
+H4 modulo procedure
 MD)
+MD(
 
 MD(
 Example:
@@ -717,7 +706,6 @@ PR(
 modulo (public);num1 num num2 num -> num
 PR)
 
-IX modulo
 CB(
 reg modulo
 
@@ -767,9 +755,9 @@ proc ::constcl::denominator {q} {
 }
 CB)
 
-MD(
-B{floor} procedure
+H4 floor procedure
 
+MD(
 B{ceiling} procedure
 
 B{truncate} procedure
@@ -795,7 +783,6 @@ PR(
 floor, ceiling, truncate, round (public);num num -> num
 PR)
 
-IX floor
 CB(
 reg floor
 
@@ -894,9 +881,9 @@ proc ::constcl::rationalize {x y} {
 }
 CB)
 
-MD(
-B{exp} procedure
+H4 exp procedure
 
+MD(
 B{log} procedure
 
 B{sin} procedure
@@ -937,7 +924,6 @@ PR(
 (binary) atan (public);num1 num num2 num -> num
 PR)
 
-IX exp
 CB(
 reg exp
 
@@ -1085,9 +1071,9 @@ TT(
 
 TT)
 
-MD(
-B{sqrt} procedure
+H4 sqrt procedure
 
+MD(
 K{sqrt} calculates the square root.
 MD)
 
@@ -1095,7 +1081,6 @@ PR(
 sqrt (public);num num -> num
 PR)
 
-IX sqrt
 CB(
 reg sqrt
 
@@ -1115,9 +1100,9 @@ TT(
 
 TT)
 
-MD(
-B{expt} procedure
+H4 expt procedure
 
+MD(
 K{expt} calculates the x to the power of y, or P{x}{y}.
 MD)
 
@@ -1125,7 +1110,6 @@ PR(
 expt (public);num1 num num2 num -> num
 PR)
 
-IX expt
 CB(
 reg expt
 
@@ -1199,9 +1183,9 @@ proc ::constcl::inexact->exact {z} {
 }
 CB)
 
-MD(
-B{number->string} procedure
+H4 number->string procedure
 
+MD(
 The procedures K{number->string} and K{string->number} convert between
 number and string with optional radix conversion.
 MD)
@@ -1221,7 +1205,6 @@ PR(
 number->string (public);num num ?radix? num -> str
 PR)
 
-IX number->string
 CB(
 reg number->string
 
@@ -1290,9 +1273,9 @@ TT(
 
 TT)
 
-MD(
-B{string->number} procedure
+H4 string->number procedure
 
+MD(
 As with K{number->string}, above.
 MD)
 
@@ -1311,7 +1294,6 @@ PR(
 string->number (public);str str ?radix? num -> num
 PR)
 
-IX string->number
 CB(
 reg string->number
 

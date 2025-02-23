@@ -9,6 +9,7 @@
 \usepackage{imakeidx}
 \usepackage{marginnote}
 \usepackage[table]{xcolor}
+\usepackage{caption}
 \lstset{
   showstringspaces=false,
   language=tcl,
@@ -119,6 +120,13 @@ and \LaTeX{} format. All these extractions are automated using \texttt{make}.
 Figures are made with Inkscape.  I create a PDF document from the \LaTeX{}
 source using TeXworks. On finishing up ConsTcl, it struck me that the
 documentation for this piece of software was fit for a book.
+
+ConsTcl is at least 97\% my own work, but I have ported one part (see page
+\pageref{resolving-local-defines}) from ``Scheme 9 from Empty
+Space''\footnote{See \texttt{https://t3x.org/s9book/index.html}} by Nils M
+Holm, a Lisp interpreter written in C and commented in a similar manner to this
+book. Another source of guidance and inspiration is ``Lisp in Small Pieces'' by
+Christian Queinnec.
 
 \subsection{About the program listings}
 \label{about-the-program-listings}

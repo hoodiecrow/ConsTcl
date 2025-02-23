@@ -12,8 +12,9 @@ When a K{Procedure} object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
 goes to the closure environment.
 
-B{Procedure} class
 MD)
+
+H4 Procedure class
 
 CB(
 catch { ::constcl::Procedure destroy }
@@ -45,9 +46,9 @@ oo::class create ::constcl::Procedure {
 }
 CB)
 
-MD(
-B{MkProcedure} generator
+H4 MkProcedure generator
 
+MD(
 K{MkProcedure} generates a Procedure object.
 MD)
 
@@ -55,21 +56,17 @@ PR(
 MkProcedure (internal);parms formals body expr env env -> proc
 PR)
 
-IX MkProcedure
 CB(
 interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
 CB)
 
-MD(
-B{procedure?} procedure
-MD)
+H4 procedure? procedure
 
 PR(
 procedure? (public);val val -> bool
 PR)
 
-IX procedure?
 CB(
 reg procedure?
 
@@ -94,9 +91,9 @@ TT(
 
 TT)
 
-MD(
-B{apply} procedure
+H4 apply procedure
 
+MD(
 K{apply} applies a procedure to a Lisp list of Lisp arguments.
 MD)
 
@@ -112,7 +109,6 @@ PR(
 apply (public);pr proc vals lvals -> invoke
 PR)
 
-IX apply
 CB(
 reg apply
 
@@ -141,9 +137,9 @@ TT(
 
 TT)
 
-MD(
-B{map} procedure
+H4 map procedure
 
+MD(
 K{map} iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The Lisp list of the results of the invocations is 
 returned.
@@ -161,7 +157,6 @@ PR(
 map (public);pr proc args lists -> lvals
 PR)
 
-IX map
 CB(
 reg map
 
@@ -208,9 +203,9 @@ TT(
 
 TT)
 
-MD(
-B{for-each} procedure
+H4 for-each procedure
 
+MD(
 K{for-each} iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
 MD)
@@ -231,7 +226,6 @@ PR(
 for-each (public);pr proc args lists -> nil
 PR)
 
-IX for-each
 CB(
 reg for-each
 

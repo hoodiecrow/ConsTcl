@@ -1,9 +1,9 @@
 
 H3 Macros
 
-MD(
-B{expand-macro} procedure
+H4 expand-macro procedure
 
+MD(
 Macros that allow concise, abstract expressions that are automatically rewritten
 into other, more concrete but also more verbose expressions is one of Lisp's
 strong points. This interpreter does macro expansion, but the user can't define
@@ -26,7 +26,6 @@ PR(
 expand-macro (internal);expr expr env env -> expr
 PR)
 
-IX expand-macro
 CB(
 proc ::constcl::expand-macro {expr env} {
   set op [car $expr]
@@ -46,9 +45,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-and} procedure
+H4 expand-and procedure
 
+MD(
 K{expand-and} expands the K{and} macro. It returns a K{begin}-expression if the
 macro has 0 or 1 elements, and a nested K{if} construct otherwise.
 MD)
@@ -57,7 +56,6 @@ PR(
 expand-and (internal);expr expr env env -> expr
 PR)
 
-IX expand-and
 CB(
 regmacro and
 
@@ -73,9 +71,9 @@ proc ::constcl::expand-and {expr env} {
 }
 CB)
 
-MD(
-B{do-and} procedure
+H4 do-and procedure
 
+MD(
 K{do-and} is called recursively for every argument of K{expand-or} if there are
 more than one.
 MD)
@@ -99,7 +97,6 @@ PR(
 do-and (internal);tail exprtail prev expr env env -> expr
 PR)
 
-IX do-and
 CB(
 proc ::constcl::do-and {tail prev env} {
   if {[null? $tail] ne "#f"} {
@@ -134,9 +131,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-case} procedure
+H4 expand-case procedure
 
+MD(
 The body of the K{case} form consists of a key-expression and a number of
 clauses. Each clause has a list of values and a body. If the key-expression
 evaluates to a value that occurs in one of the value-lists (considered in
@@ -162,7 +159,6 @@ PR(
 expand-case (internal);expr expr env env -> expr
 PR)
 
-IX expand-case
 CB(
 regmacro case
 
@@ -219,9 +215,9 @@ TT(
 } -output "consonant\n"
 TT)
 
-MD(
-B{expand-cond} procedure
+H4 expand-cond procedure
 
+MD(
 The K{cond} form has a list of clauses, each with a predicate and a body. The
 clauses is considered in order, and if a predicate evaluates to something other
 than K{#f} the body is evaluated and the remaining clauses are ignored.
@@ -235,7 +231,6 @@ PR(
 expand-cond (internal);expr expr env env -> expr
 PR)
 
-IX expand-cond
 CB(
 regmacro cond
 
@@ -244,9 +239,9 @@ proc ::constcl::expand-cond {expr env} {
 }
 CB)
 
-MD(
-B{do-cond} procedure
+H4 do-cond procedure
 
+MD(
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
 up the clause into predicate and body, stepping over any K{=>} symbols in
 between. In the last clause, the predicate is allowed to be K{else} (which gets
@@ -323,9 +318,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-define} procedure
+H4 expand-define procedure
 
+MD(
 K{define} has two variants, one of which requires some rewriting. It's the one
 with an implied K{lambda} call, the one that defines a procedure. 
 
@@ -342,7 +337,6 @@ PR(
 expand-define (internal);expr expr env env -> expr
 PR)
 
-IX expand-define
 CB(
 regmacro define
 
@@ -377,9 +371,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-del!} procedure
+H4 expand-del! procedure
 
+MD(
 The macro K{del!} updates a property list. It removes a key-value pair if the key
 is present, or leaves the list untouched if it isn't.
 MD)
@@ -388,7 +382,6 @@ PR(
 expand-del! (internal);expr expr env env -> expr
 PR)
 
-IX expand-del!
 CB(
 regmacro del!
 
@@ -439,9 +432,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-for} procedure
+H4 expand-for procedure
 
+MD(
 The K{expand-for} procedure expands the K{for} macro. It returns a K{begin}
 construct containing the iterations of each clause (multiple clauses
 weren't implemented for the longest time, but I brought up my strongest brain
@@ -452,7 +445,6 @@ PR(
 expand-for (internal);expr expr env env -> expr
 PR)
 
-IX expand-for
 CB(
 regmacro for
 
@@ -464,9 +456,9 @@ proc ::constcl::expand-for {expr env} {
 }
 CB)
 
-MD(
-B{for-seq} procedure
+H4 for-seq procedure
 
+MD(
 K{for-seq} is a helper procedure that sets up the sequence of values that the
 iteration is based on. First it evaluates the code that generates the sequence,
 and then it converts it to a Tcl list.
@@ -476,7 +468,6 @@ PR(
 for-seq (internal);seq expr env env -> tvals
 PR)
 
-IX for-seq
 CB(
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
@@ -497,9 +488,9 @@ proc ::constcl::for-seq {seq env} {
 }
 CB)
 
-MD(
-B{do-for} procedure
+H4 do-for procedure
 
+MD(
 K{do-for} is another helper procedure which does most of the work in the
 K{for/*} forms. It iterates over the clauses, extracting and preparing the
 sequence for each, and stores each of the sequence steps in a dictionary under a
@@ -518,7 +509,6 @@ PR(
 do-for (internal);tail exprtail env env -> texprs
 PR)
 
-IX do-for
 CB(
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
@@ -572,9 +562,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-for/and} procedure
+H4 expand-for/and procedure
 
+MD(
 The K{expand-for/and} procedure expands the K{for/and} macro. It returns an K{and}
 construct containing the iterations of the clauses.
 
@@ -586,7 +576,6 @@ PR(
 expand-for/and (internal);expr expr env env -> expr
 PR)
 
-IX expand for/and
 CB(
 regmacro for/and
 
@@ -604,9 +593,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-for/list} procedure
+H4 expand-for/list procedure
 
+MD(
 The K{expand-for/list} procedure expands the K{for/list} macro. It returns a K{list}
 construct containing the iterations of each clause.
 
@@ -618,7 +607,6 @@ PR(
 expand for/list (internal);expr expr env env -> expr
 PR)
 
-IX expand-for/list
 CB(
 regmacro for/list
 
@@ -664,9 +652,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-for/or} procedure
+H4 expand-for/or procedure
 
+MD(
 The K{expand-for/or} procedure expands the K{for/or} macro. It returns an K{or}
 construct containing the iterations of each clause.
 
@@ -678,7 +666,6 @@ PR(
 expand-for/or (internal);expr expr env env -> expr
 PR)
 
-IX expand-for/or
 CB(
 regmacro for/or
 
@@ -696,9 +683,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-let} procedure
+H4 expand-let procedure
 
+MD(
 K{expand-let} expands the named K{let} and 'regular' K{let} macros. They ultimately
 expand to K{lambda} constructs.
 
@@ -723,7 +710,6 @@ PR(
 expand-let (internal);expr expr env env -> expr
 PR)
 
-IX expand-let
 CB(
 regmacro let
 
@@ -772,9 +758,9 @@ proc ::constcl::expand-let {expr env} {
 }
 CB)
 
-MD(
-B{parse-bindings} procedure
+H4 parse-bindings procedure
 
+MD(
 K{parse-bindings} is a helper procedure that traverses a K{let} bindings list
 and extracts variables and values, which it puts in a dictionary. It throws an
 error if a variable occurs more than once.
@@ -832,9 +818,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-or} procedure
+H4 expand-or procedure
 
+MD(
 K{expand-or} expands the K{or} macro. It returns a K{begin}-expression if the macro
 has 0 or 1 elements, and a nested K{if} construct otherwise.
 MD)
@@ -843,7 +829,6 @@ PR(
 expand-or (internal);expr expr env env -> expr
 PR)
 
-IX expand-or
 CB(
 regmacro or
 
@@ -869,9 +854,9 @@ TT(
 
 TT)
 
-MD(
-B{do-or} procedure
+H4 do-or procedure
 
+MD(
 K{do-or} is called recursively for each argument to K{expand-or} if there are more than
 one argument. 
 MD)
@@ -880,7 +865,6 @@ PR(
 do-or (internal);tail exprtail env env -> expr
 PR)
 
-IX do-or
 CB(
 proc ::constcl::do-or {tail env} {
   /if {null? $tail} {
@@ -897,9 +881,9 @@ proc ::constcl::do-or {tail env} {
 }
 CB)
 
-MD(
-B{expand-pop!} procedure
+H4 expand-pop! procedure
 
+MD(
 The macro K{pop!} updates a list. It removes the first element.
 MD)
 
@@ -907,7 +891,6 @@ PR(
 expand-pop! (internal);expr expr env env -> expr
 PR)
 
-IX expand-pop!
 CB(
 regmacro pop!
 
@@ -943,9 +926,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-push!} procedure
+H4 expand-push! procedure
 
+MD(
 The macro K{push!} updates a list. It adds a new element as the new first element.
 MD)
 
@@ -953,7 +936,6 @@ PR(
 expand-push! (internal);expr expr env env -> expr
 PR)
 
-IX expand-push!
 CB(
 regmacro push!
 
@@ -989,9 +971,9 @@ TT(
 } -output "(d a b c)\n"
 TT)
 
-MD(
-B{expand-put!} procedure
+H4 expand-put! procedure
 
+MD(
 The macro K{put!} updates a property list. It adds a key-value pair if the key
 isn't present, or changes the value in place if it is.
 MD)
@@ -1000,7 +982,6 @@ PR(
 expand-put! (internal);expr expr env env -> expr
 PR)
 
-IX expand-put!
 CB(
 regmacro put!
 
@@ -1054,9 +1035,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-quasiquote} procedure
+H4 expand-quasiquote procedure
 
+MD(
 A quasi-quote isn't a macro, but we will deal with it in this section anyway.
 K{expand-quasiquote} traverses the quasi-quoted structure searching for K{unquote}
 and K{unquote-splicing}. This code is brittle and sprawling and I barely
@@ -1067,7 +1048,6 @@ PR(
 expand-quasiquote (internal);expr expr env env -> expr
 PR)
 
-IX expand-quasiquote
 CB(
 regmacro quasiquote
 
@@ -1111,7 +1091,6 @@ PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
 PR)
 
-IX qq-visit-child
 CB(
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
@@ -1181,9 +1160,9 @@ if no {
 
 TT)
 
-MD(
-B{expand-unless} procedure
+H4 expand-unless procedure
 
+MD(
 K{unless} is a conditional like K{if}, with the differences that it takes a number
 of expressions and only executes them for a false outcome of K{car $tail}.
 MD)
@@ -1192,7 +1171,6 @@ PR(
 expand-unless (internal);expr expr env env -> expr
 PR)
 
-IX expand-unless
 CB(
 regmacro unless
 
@@ -1220,9 +1198,9 @@ TT(
 
 TT)
 
-MD(
-B{expand-when} procedure
+H4 expand-when procedure
 
+MD(
 K{when} is a conditional like K{if}, with the differences that it takes a number
 of expressions and only executes them for a true outcome of K{car $tail}.
 MD)
@@ -1231,7 +1209,6 @@ PR(
 expand-when (internal);expr expr env env -> expr
 PR)
 
-IX expand-when
 CB(
 regmacro when
 

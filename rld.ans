@@ -8,15 +8,14 @@ form. It takes a list of expressions and extracts variables and values from the
 defines in the beginning of the list. It builds a double lambda expression with
 the variables and values, and the rest of the expressions from the original list
 as body.
-
-B{resolve-local-defines} procedure
 MD)
+
+H4 resolve-local-defines procedure
 
 PR(
 resolve-local-defines;exps lexprs -> expr
 PR)
 
-IX resolve-local-defines
 CB(
 proc ::constcl::resolve-local-defines {exps} {
   set rest [lassign [
@@ -36,9 +35,9 @@ proc ::constcl::resolve-local-defines {exps} {
 }
 CB)
 
-MD(
-B{extract-from-defines} procedure
+H4 extract-from-defines procedure
 
+MD(
 K{extract-from-defines} visits every define in the given list of expressions and
 extracts either a variable name or a value, depending on the state of the
 E{part} flag, from each one of them. A Tcl list of 1) the resulting list of
@@ -50,7 +49,6 @@ PR(
 extract-from-defines (internal);exps lexprs part varsvals -> tvals
 PR)
 
-IX extract-from-defines
 CB(
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
@@ -92,9 +90,9 @@ proc ::constcl::extract-from-defines {exps part} {
 }
 CB)
 
-MD(
-B{argument-list?} procedure
+H4 argument-list? procedure
 
+MD(
 K{argument-list?} accepts a Scheme formals list and rejects other values.
 MD)
 
@@ -102,7 +100,6 @@ PR(
 argument-list? (internal);val val -> bool
 PR)
 
-IX argument-list?
 CB(
 proc ::constcl::argument-list? {val} {
   if {$val eq "#NIL"} {
@@ -126,9 +123,9 @@ proc ::constcl::argument-list? {val} {
 }
 CB)
 
-MD(
-B{make-lambdas} procedure
+H4 make-lambdas procedure
 
+MD(
 K{make-lambdas} builds the K{letrec} structure.
 MD)
 
@@ -136,7 +133,6 @@ PR(
 make-lambdas (internal);vars lsyms args lexprs body lexprs -> expr
 PR)
 
-IX make-lambdas
 CB(
 proc ::constcl::make-lambdas {vars args body} {
   set tmps [make-temporaries $vars]
@@ -154,9 +150,9 @@ proc ::constcl::make-lambdas {vars args body} {
 }
 CB)
 
-MD(
-B{make-temporaries} procedure
+H4 make-temporaries procedure
 
+MD(
 K{make-temporaries} creates the symbols that will act as middlemen in
 transferring the values to the variables.
 MD)
@@ -165,7 +161,6 @@ PR(
 make-temporaries (internal);vals lvals -> lvals
 PR)
 
-IX make-temporaries
 CB(
 proc ::constcl::make-temporaries {vals} {
   set res #NIL
@@ -177,9 +172,9 @@ proc ::constcl::make-temporaries {vals} {
 }
 CB)
 
-MD(
-B{gensym} procedure
+H4 gensym procedure
 
+MD(
 K{gensym} generates a unique symbol. The candidate symbol is compared to all the
 symbols in the symbol table to avoid collisions.
 MD)
@@ -188,7 +183,6 @@ PR(
 gensym (internal);prefix str -> sym
 PR)
 
-IX gensym
 CB(
 proc ::constcl::gensym {prefix} {
   set symbolnames [
@@ -201,9 +195,9 @@ proc ::constcl::gensym {prefix} {
 }
 CB)
 
-MD(
-B{append-b} procedure
+H4 append-b procedure
 
+MD(
 K{append-b} joins two lists together.
 MD)
 
@@ -211,7 +205,6 @@ PR(
 append-b (internal);a lvals b lvals -> lvals
 PR)
 
-IX append-b
 CB(
 proc ::constcl::append-b {a b} {
   if {$a eq "#NIL"} {
@@ -230,9 +223,9 @@ proc ::constcl::append-b {a b} {
 }
 CB)
 
-MD(
-B{make-assignments} procedure
+H4 make-assignments procedure
 
+MD(
 K{make-assignments} creates the structure that holds the assignment statements.
 Later on, it will be joined to the body of the finished expression.
 MD)
@@ -241,7 +234,6 @@ PR(
 make-assignments (internal);vars lsyms tmps lsyms -> expr
 PR)
 
-IX make-assignments
 CB(
 proc ::constcl::make-assignments {vars tmps} {
   set res #NIL
@@ -257,9 +249,9 @@ proc ::constcl::make-assignments {vars tmps} {
 }
 CB)
 
-MD(
-B{make-undefineds} procedure
+H4 make-undefineds procedure
 
+MD(
 Due to a mysterious bug, K{make-undefineds} actually creates a list of NIL
 values instead of undefined values.
 MD)
@@ -268,7 +260,6 @@ PR(
 make-undefineds (internal);vals lvals -> lnils
 PR)
 
-IX make-undefineds
 CB(
 proc ::constcl::make-undefineds {vals} {
   # TODO find bug, substitute #UNDF

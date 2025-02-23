@@ -8,11 +8,10 @@ by integers.
 The number of elements that a vector contains (the E{length}) is set when the
 vector is created.  Elements can be indexed by integers from zero to length
 minus one.
-
-B{Vector} class
 MD)
 
-IX Vector
+H4 Vector class
+
 CB(
 oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
@@ -108,9 +107,9 @@ oo::class create ::constcl::Vector {
 }
 CB)
 
-MD(
-B{MkVector} generator
+H4 MkVector generator
 
+MD(
 K{MkVector} generates a Vector object.
 MD)
 
@@ -118,7 +117,6 @@ PR(
 MkVector (internal);vals tvals -> vec
 PR)
 
-IX MkVector
 CB(
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
@@ -132,7 +130,6 @@ PR(
 vector? (public);val val -> bool
 PR)
 
-IX vector?
 CB(
 reg vector? ::constcl::vector?
 
@@ -151,9 +148,9 @@ TT(
 
 TT)
 
-MD(
-B{make-vector}
+H4 make-vector procedure
 
+MD(
 K{make-vector} creates a vector with a given length and optionally a fill value.
 If a fill value isn't given, the empty list will be used.
 MD)
@@ -173,7 +170,6 @@ PR(
 make-vector? (public);k num ?val? val -> vec
 PR)
 
-IX make-vector
 CB(
 reg make-vector ::constcl::make-vector
 
@@ -187,9 +183,9 @@ proc ::constcl::make-vector {k args} {
 }
 CB)
 
-MD(
-B{vector}
+H4 vector procedure
 
+MD(
 Given a number of Lisp values, K{vector} creates a vector containing them.
 MD)
 
@@ -205,7 +201,6 @@ PR(
 vector (public);args vals -> vec
 PR)
 
-IX vector
 CB(
 reg vector ::constcl::vector
 
@@ -223,9 +218,9 @@ TT(
 
 TT)
 
-MD(
-B{vector-length}
+H4 vector-length procedure
 
+MD(
 K{vector-length} returns the length of a vector.
 MD)
 
@@ -241,7 +236,6 @@ PR(
 vector-length (public);vec vec -> num
 PR)
 
-IX vector-length
 CB(
 reg vector-length
 
@@ -261,9 +255,9 @@ TT(
 
 TT)
 
-MD(
-B{vector-ref}
+H4 vector-ref procedure
 
+MD(
 K{vector-ref} returns the element of E{vec} at index E{k} (0-based).
 MD)
 
@@ -280,7 +274,6 @@ PR(
 vector-ref (public);vec vec k num -> val
 PR)
 
-IX vector-ref
 CB(
 reg vector-ref ::constcl::vector-ref
 
@@ -303,9 +296,9 @@ TT(
 
 TT)
 
-MD(
-B{vector-set!}
+H4 vector-set! procedure
 
+MD(
 K{vector-set!}, for a non-constant vector, sets the element at index E{k} to E{val}.
 MD)
 
@@ -328,7 +321,6 @@ PR(
 vector-set! (public);vec vec k num val val -> vec
 PR)
 
-IX vector-set!
 CB(
 reg vector-set! ::constcl::vector-set!
 
@@ -352,9 +344,9 @@ TT(
 
 TT)
 
-MD(
-B{vector->list}
+H4 vector->list procedure
 
+MD(
 K{vector->list} converts a vector value to a Lisp list.
 MD)
 
@@ -370,7 +362,6 @@ PR(
 vector->list (public);vec vec -> lvals
 PR)
 
-IX vector->list
 CB(
 reg vector->list ::constcl::vector->list
 
@@ -387,9 +378,9 @@ TT(
 
 TT)
 
-MD(
-B{list->vector}
+H4 list->vector procedure
 
+MD(
 K{list->vector} converts a Lisp list value to a vector.
 MD)
 
@@ -405,7 +396,6 @@ PR(
 list->vector (public);list lvals -> vec
 PR)
 
-IX list->vector
 CB(
 reg list->vector ::constcl::list->vector
 
@@ -422,9 +412,9 @@ TT(
 
 TT)
 
-MD(
-B{vector-fill!}
+H4 vector-fill! procedure
 
+MD(
 K{vector-fill!} fills a non-constant vector with a given value.
 MD)
 
@@ -442,7 +432,6 @@ PR(
 vector-fill! (public);vec vec fill val -> vec
 PR)
 
-IX vector-fill!
 CB(
 reg vector-fill! ::constcl::vector-fill!
 
