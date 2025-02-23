@@ -68,12 +68,12 @@
      inkscape:groupmode="layer"
      id="layer1">
     <g
-       id="g6928"
+       id="g952"
        inkscape:export-filename="C:\Users\plewe\code\constcl\images\env1.png"
-       inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96">
+       inkscape:export-xdpi="599.96301"
+       inkscape:export-ydpi="599.96301">
       <rect
-         style="fill:#fff4c9;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect846"
          width="64.499908"
          height="49.340687"
@@ -85,7 +85,7 @@
          x="16.066444"
          y="38.020485"
          id="text5360"
-         transform="scale(1.0006031,0.99939725)"><tspan
+         transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan5358"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
@@ -97,7 +97,7 @@
          x="16.096746"
          y="45.54715"
          id="text28046"
-         transform="scale(1.0006031,0.99939725)"><tspan
+         transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan28044"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
@@ -109,7 +109,7 @@
          x="16.066444"
          y="53.073814"
          id="text37268"
-         transform="scale(1.0006031,0.99939725)"><tspan
+         transform="scale(1.0006031,0.99939726)"><tspan
            sodipodi:role="line"
            id="tspan37266"
            style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
@@ -121,7 +121,7 @@
          x="15.981249"
          y="57.405052"
          id="text54378"
-         transform="scale(1.0006031,0.99939723)"><tspan
+         transform="scale(1.0006031,0.99939725)"><tspan
            sodipodi:role="line"
            id="tspan54376"
            style="stroke-width:0.264583"
@@ -133,7 +133,7 @@
          x="14.775888"
          y="64.931717"
          id="text58980"
-         transform="scale(1.0006031,0.99939723)"><tspan
+         transform="scale(1.0006031,0.99939725)"><tspan
            sodipodi:role="line"
            id="tspan58978"
            style="stroke-width:0.264583"
@@ -151,7 +151,7 @@
            x="12.838049"
            y="25.229786">Global environment</tspan></text>
       <rect
-         style="fill:#e6e6e6;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect5216"
          width="64.499908"
          height="5.5"
@@ -174,12 +174,12 @@
            y="13.191244">Null environment</tspan></text>
     </g>
     <g
-       id="g1006"
+       id="g1330"
        inkscape:export-filename="C:\Users\plewe\code\constcl\images\env2.png"
-       inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96">
+       inkscape:export-xdpi="600"
+       inkscape:export-ydpi="600">
       <rect
-         style="fill:#fff4c9;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect60199"
          width="64.499908"
          height="49.340687"
@@ -246,14 +246,17 @@
            x="94.896317"
            y="64.931717">⋮</tspan></text>
       <rect
-         style="fill:#000000;fill-opacity:0.5;stroke:none;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#000000;fill-opacity:0.99596769;stroke:none;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect906"
          width="54.806282"
          height="12.396502"
          x="97.594635"
-         y="49.698208" />
+         y="49.698208"
+         inkscape:export-filename="C:\Users\plewe\code\constcl\images\env2.png"
+         inkscape:export-xdpi="600.34656"
+         inkscape:export-ydpi="600.34656" />
       <rect
-         style="fill:#c9f5ff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect59737"
          width="54.806282"
          height="12.396502"
@@ -310,7 +313,7 @@
            x="98.166176"
            y="52.614159">Local environment</tspan></text>
       <rect
-         style="fill:#e6e6e6;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
          id="rect6903"
          width="64.499908"
          height="5.5"
