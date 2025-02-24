@@ -11,6 +11,36 @@ proc ::reg {key args} {
   return
 }
 
+reg atom? ::constcl::atom?
+
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string
+      char boolean vector port eof} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
+}
+
+proc ::constcl::usage {usage expr} {
+  set u $usage
+  set e $expr
+  if {[[length $usage] numval] !=
+      [[length $expr] numval]} {
+    while {$u ne "#NIL" && $e ne "#NIL"} {
+      set u [cdr $u]
+      set e [cdr $e]
+    }
+    if {$e eq "#NIL" && $u ne "#NIL" &&
+      [regexp {\?.*\?} [[car $u] name]]} {
+      return
+    }
+    ::error "usage error\n[
+      $usage show] not [$expr show]"
+  }
+}
+
 proc ::regmacro {name} {
   lappend ::constcl::macrolist $name
   return
@@ -61,6 +91,33 @@ proc ::constcl::in-range {x args} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
+}
+
+reg error
+
+proc ::constcl::error {msg args} {
+  if {[llength $args]} {
+    lappend msg "("
+    set times 0
+    foreach arg $args {
+      if {$times} {
+        ::append msg " "
+      }
+      ::append msg [$arg show]
+      incr times
+    }
+    lappend msg ")"
+  }
+  ::error $msg
+}
+
+proc ::constcl::check {cond msg} {
+  if {[uplevel $cond] eq "#f"} {
+    ::error [
+      uplevel [
+        ::list subst [
+          ::string trim $msg]]]
+  }
 }
 
 proc ::pew {str} {
@@ -119,6 +176,42 @@ proc ::pxw {str} {
   ::constcl::write $expr
 }
 
+catch { ::constcl::Dot destroy }
+
+oo::class create ::constcl::Dot {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "."
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+
+proc ::constcl::dot? {val} {
+  typeof? $val "Dot"
+}
+
+catch { ::constcl::EndOfFile destroy }
+
+oo::class create ::constcl::EndOfFile {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<end-of-file>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+
 catch { ::constcl::NIL destroy }
 
 oo::singleton create ::constcl::NIL {
@@ -161,34 +254,6 @@ proc ::constcl::null? {val} {
   }
 }
 
-catch { ::constcl::Dot destroy }
-
-oo::class create ::constcl::Dot {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "."
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-
-proc ::constcl::dot? {val} {
-  typeof? $val "Dot"
-}
-
-catch { ::constcl::Unspecified destroy }
-
-oo::class create ::constcl::Unspecified {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<unspecified>"
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-
 catch { ::constcl::Undefined destroy }
 
 oo::class create ::constcl::Undefined {
@@ -201,63 +266,16 @@ oo::class create ::constcl::Undefined {
   }
 }
 
-catch { ::constcl::EndOfFile destroy }
+catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::EndOfFile {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<end-of-file>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle
   }
-}
-
-proc eof? {val} {
-  if {$val eq "#EOF"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-
-reg error
-
-proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    lappend msg "("
-    set times 0
-    foreach arg $args {
-      if {$times} {
-        ::append msg " "
-      }
-      ::append msg [$arg show]
-      incr times
-    }
-    lappend msg ")"
-  }
-  ::error $msg
-}
-
-proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq "#f"} {
-    ::error [
-      uplevel [
-        ::list subst [
-          ::string trim $msg]]]
-  }
-}
-
-reg atom? ::constcl::atom?
-
-proc ::constcl::atom? {val} {
-  foreach type {symbol number string
-      char boolean vector port eof} {
-    if {[$type? $val] eq "#t"} {
-      return #t
-    }
-  }
-  return #f
 }
 
 reg parse
@@ -431,72 +449,6 @@ proc ::constcl::read-expr {args} {
   }
 }
 
-proc ::constcl::read-string-expr {} {
-  upvar c c unget unget
-  set str {}
-  set c [readc]
-  read-eof $c
-  while {$c ne "\"" && $c ne "#EOF"} {
-    if {$c eq "\\"} {
-      ::append str $c
-      set c [readc]
-    }
-    ::append str $c
-    set c [readc]
-  }
-  if {$c eq "#EOF"} {
-    error "bad string (no ending double quote)"
-  }
-  set c [readc]
-  set expr [MkString $str]
-  read-eof $expr
-  $expr mkconstant
-  return $expr
-}
-
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
-}
-
-proc ::constcl::read-vector-expr {} {
-  upvar c c unget unget
-  set res {}
-  set last {}
-  set c [readc]
-  while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
-    if {$res eq {}} {
-      set res $e
-      set last $e
-    } else {
-      set-cdr! $last $e
-      set last $e
-    }
-    skip-ws
-    read-eof $c
-  }
-  if {$c ne ")"} {
-    ::error "Missing right paren. ($c)."
-  }
-  set expr [MkVector $res]
-  read-eof $expr
-  $expr mkconstant
-  return $expr
-}
-
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
@@ -514,13 +466,75 @@ proc ::constcl::read-character-expr {} {
   return $expr
 }
 
-proc ::constcl::read-quoted-expr {} {
+proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
-  set expr [read-expr]
-  read-eof $expr
-  make-constant $expr
-  return [list [S quote] $expr]
+  if {[llength $args]} {
+    set c [join $args {}]
+  } else {
+    set c [readc]
+  }
+  read-eof $c
+  set name {}
+  while {[::string is graph -strict $c]} {
+    if {$c eq "#EOF" || $c in {) \]}} {
+      break
+    }
+    ::append name $c
+    set c [readc]
+    # do not check for EOF here
+  }
+  if {$c ne "#EOF"} {
+    set unget $c
+  }
+  read-eof $name
+  # idcheck throws error if invalid identifier
+  idcheck $name
+  return [S $name]
+}
+
+proc ::constcl::read-number-expr {args} {
+  upvar c c unget unget
+  set unget {}
+  if {[llength $args]} {
+    lassign $args c
+  } else {
+    set c [readc]
+  }
+  read-eof $c
+  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+      $c ni {) ]}} {
+    ::append num $c
+    set c [readc]
+  }
+  set unget $c
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
+  set expr [N $num]
+  return $expr
+}
+
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  # first colon has already been read
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 
 proc ::constcl::read-pair-expr {char} {
@@ -602,25 +616,62 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 
-proc ::constcl::read-number-expr {args} {
+proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
-  if {[llength $args]} {
-    lassign $args c
-  } else {
-    set c [readc]
-  }
+  set expr [read-expr]
+  skip-ws
+  read-eof $expr
+  make-constant $expr
+  return [list [S quasiquote] $expr]
+}
+
+proc ::constcl::read-quoted-expr {} {
+  upvar c c unget unget
+  set unget {}
+  set expr [read-expr]
+  read-eof $expr
+  make-constant $expr
+  return [list [S quote] $expr]
+}
+
+proc ::constcl::read-sharp {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) ]}} {
-    ::append num $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+
+proc ::constcl::read-string-expr {} {
+  upvar c c unget unget
+  set str {}
+  set c [readc]
+  read-eof $c
+  while {$c ne "\"" && $c ne "#EOF"} {
+    if {$c eq "\\"} {
+      ::append str $c
+      set c [readc]
+    }
+    ::append str $c
     set c [readc]
   }
-  set unget $c
-  check {::string is double -strict $num} {
-      Invalid numeric constant $num
+  if {$c eq "#EOF"} {
+    error "bad string (no ending double quote)"
   }
-  set expr [N $num]
+  set c [readc]
+  set expr [MkString $str]
+  read-eof $expr
+  $expr mkconstant
   return $expr
 }
 
@@ -640,63 +691,30 @@ proc ::constcl::read-unquoted-expr {} {
   return [list [S $symbol] $expr]
 }
 
-proc ::constcl::read-quasiquoted-expr {} {
+proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
-  set unget {}
-  set expr [read-expr]
-  skip-ws
-  read-eof $expr
-  make-constant $expr
-  return [list [S quasiquote] $expr]
-}
-
-proc ::constcl::read-identifier-expr {args} {
-  upvar c c unget unget
-  set unget {}
-  if {[llength $args]} {
-    set c [join $args {}]
-  } else {
-    set c [readc]
-  }
-  read-eof $c
-  set name {}
-  while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || $c in {) \]}} {
-      break
-    }
-    ::append name $c
-    set c [readc]
-    # do not check for EOF here
-  }
-  if {$c ne "#EOF"} {
-    set unget $c
-  }
-  read-eof $name
-  # idcheck throws error if invalid identifier
-  idcheck $name
-  return [S $name]
-}
-
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
+  set res {}
+  set last {}
   set c [readc]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readc]
+  while {$c ne "#EOF" && $c ne ")"} {
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
+    skip-ws
     read-eof $c
   }
-  set unget $c
-  return $res
+  if {$c ne ")"} {
+    ::error "Missing right paren. ($c)."
+  }
+  set expr [MkVector $res]
+  read-eof $expr
+  $expr mkconstant
+  return $expr
 }
 
 reg eval
@@ -725,25 +743,36 @@ proc ::constcl::eval \
     }
     switch [$op name] {
       quote {
+        usage [parse "(quote datum)"] $expr
         car $args
       }
       if {
-        if {[eval [car $args] $env] ne "#f"} \
-          {eval [cadr $args] $env} \
-          {eval [caddr $args] $env}
+        if {[null? [cddr $args]] ne "#f"} {
+          usage [p "(if cond cons)"] $expr
+          /if1 {[eval [car $args] $env]} \
+            {eval [cadr $args] $env}
+        } {
+          usage [p "(if cond cons altr)"] $expr
+          /if {[eval [car $args] $env]} \
+            {eval [cadr $args] $env} \
+            {eval [caddr $args] $env}
+        }
       }
       begin {
         /begin $args $env
       }
       define {
+        usage [p "(define sym val)"] $expr
         /define [car $args] [
           eval [cadr $args] $env] $env
       }
       set! {
+        usage [p "(set! sym val)"] $expr
         /set! [car $args] [
           eval [cadr $args] $env] $env 
       }
       lambda {
+        # no point checking usage here
         /lambda [car $args] [
           cdr $args] $env
       }
@@ -760,16 +789,22 @@ proc ::constcl::lookup {sym env} {
 }
 
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
     uplevel $conseq
   } {
     uplevel $altern
   }
 }
 
+proc ::constcl::/if1 {cond conseq} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
+    uplevel $conseq
+  }
+}
+
 proc ::constcl::/begin {exps env} {
-  /if {pair? $exps} {
-    /if {pair? [cdr $exps]} {
+  /if {[pair? $exps]} {
+    /if {[pair? [cdr $exps]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
     } {
@@ -1134,7 +1169,7 @@ proc ::constcl::expand-or {expr env} {
 }
 
 proc ::constcl::do-or {tail env} {
-  /if {null? $tail} {
+  /if {[null? $tail]} {
     return #f
   } {
     set env [Environment new #NIL {} $env]

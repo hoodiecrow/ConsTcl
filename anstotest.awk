@@ -1,4 +1,11 @@
-# see https://www.mgmarlow.com/words/2024-03-23-markdown-awk/
+BEGIN {
+    print "package require tcltest"
+    print "source constcl.tcl\n"
+}
+
+END {
+    print "\n::tcltest::cleanupTests"
+}
 
 { gsub(/\r/, ""); }
 

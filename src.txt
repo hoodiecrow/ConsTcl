@@ -28,7 +28,7 @@ PR(	---	---
 	table	htmltable
 PR)	---	---
 
-CP(	"C Prototype": collected into .h-file: prototypes and #includes
+CP(	"C Prototype": collected into .h-file: prototypes and #includes*
 
 CP)
 
@@ -36,7 +36,7 @@ CB(	begin	```
 	print	print
 CB)	end	```
 
-TT(	---	---	have anstotest.awk write preamble and postamble instead of echo
+TT(	---	---
 	---	---
 TT)	---	---
 
@@ -51,3 +51,4 @@ EM ...	\emph . ** . **
 EN ...	\enumer.1. ...
 IT ...	\itemiz.* ...
 KB ...	\texttt	``...``
+

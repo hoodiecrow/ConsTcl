@@ -55,25 +55,36 @@ proc ::constcl::eval \
     }
     switch [$op name] {
       quote {
+        usage [parse "(quote datum)"] $expr
         car $args
       }
       if {
-        if {[eval [car $args] $env] ne "#f"} \
-          {eval [cadr $args] $env} \
-          {eval [caddr $args] $env}
+        if {[null? [cddr $args]] ne "#f"} {
+          usage [p "(if cond cons)"] $expr
+          /if1 {[eval [car $args] $env]} \
+            {eval [cadr $args] $env}
+        } {
+          usage [p "(if cond cons altr)"] $expr
+          /if {[eval [car $args] $env]} \
+            {eval [cadr $args] $env} \
+            {eval [caddr $args] $env}
+        }
       }
       begin {
         /begin $args $env
       }
       define {
+        usage [p "(define sym val)"] $expr
         /define [car $args] [
           eval [cadr $args] $env] $env
       }
       set! {
+        usage [p "(set! sym val)"] $expr
         /set! [car $args] [
           eval [cadr $args] $env] $env 
       }
       lambda {
+        # no point checking usage here
         /lambda [car $args] [
           cdr $args] $env
       }
@@ -178,6 +189,14 @@ TT(
 ::tcltest::test eval-3.0 {try eval-ing a quotation} -body {
   pew "'m"
 } -output "m\n"
+
+::tcltest::test eval-3.1 {try getting a usage error} -body {
+  pew "(quote)"
+} -returnCodes error -result "usage error\n(quote datum) not (quote)"
+
+::tcltest::test eval-3.2 {try getting a usage error} -body {
+  pew "(quote foo bar)"
+} -returnCodes error -result "usage error\n(quote datum) not (quote foo bar)"
 TT)
 
 H4 Conditional
@@ -192,20 +211,36 @@ evaluated and the value returned. Otherwise, the third expression (the
 E{alternate}) is evaluated and the value returned. One of the two latter
 expressions will be evaluated, and the other will remain unevaluated.
 
+The two procedures that handle the conditional form is K{/if} and K{/if1}. The
+former takes both a consequent and an alternate, the latter takes only a
+consequent.
+
 B{/if} procedure
+B{/if1} procedure
 MD)
 
 PR(
 /if (internal);condition expr consequent expr alternate expr -> val
 PR)
 
+PR(
+/if1 (internal);condition expr consequent expr -> val
+PR)
+
 IX /if
+IX /if1
 CB(
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
     uplevel $conseq
   } {
     uplevel $altern
+  }
+}
+
+proc ::constcl::/if1 {cond conseq} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
+    uplevel $conseq
   }
 }
 CB)
@@ -214,6 +249,10 @@ TT(
 ::tcltest::test eval-4.0 {try eval-ing a conditional} -body {
   pew "(if (= 2 2) (display 'a) (display 'b))"
 } -output "a"
+
+::tcltest::test eval-4.0 {try eval-ing a short conditional} -body {
+  pew "(if (= 2 3) (display 'a))"
+} -output ""
 TT)
 
 H4 Sequence
@@ -238,8 +277,8 @@ PR)
 IX /begin
 CB(
 proc ::constcl::/begin {exps env} {
-  /if {pair? $exps} {
-    /if {pair? [cdr $exps]} {
+  /if {[pair? $exps]} {
+    /if {[pair? [cdr $exps]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
     } {

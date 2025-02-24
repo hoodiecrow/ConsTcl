@@ -77,6 +77,36 @@ limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
 came out of the experience feeling a bit dissatisfied. In the latter part of
 January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
 
+\subsection{About Lisp}
+\label{about-lisp}
+
+ConsTcl is a \emph{Lisp interpreter}, specifically a \emph{Scheme interpreter}.
+Lisp is a family of programming languages that share the same basic form, and
+Scheme is one of those languages. Where some other languages use braces to
+structure code, and Python uses indents, Lisp instead uses parentheses. This
+Python snippet:
+
+\begin{verbatim}
+x = 1
+if x == 1:
+    print("x is 1.")
+\end{verbatim}
+
+\noindent looks like this in Scheme:
+
+\begin{verbatim}
+(let ((x 1))
+  (if (= x 1)
+    (write "x is 1.")))
+\end{verbatim}
+
+In Lisp, everything is either a list expression, starting and ending with
+parentheses and having an operator in the first position of the list, followed
+by operands, or else an atomic (indivisible) expression like \texttt{x} or
+\texttt{1}. A full description of Lisp is beyond the scope of this
+introduction, but Lisp will be explained from the inside out in the rest of
+this book.
+
 \subsection{About ConsTcl}
 \label{about-constcl}
 

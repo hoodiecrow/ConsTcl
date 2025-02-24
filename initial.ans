@@ -65,6 +65,78 @@ procedure, because that's the standard term in R5RSF{Revised5 Report on the
   `public' and those who aren't are `internal'.
 MD)
 
+H4 atom? procedure
+
+MD(
+There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
+collections of lists and atoms. Atoms are instances of types such as booleans,
+characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
+an atom by checking for membership in any one of the atomic types. It returns
+K{#t} (truth) if it is an atom, and K{#f} (falsehood) if not.
+
+H5 Predicates: an aside
+
+By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
+(procedures that return either K{#t} or K{#f}) have '?' at the end of their
+name. Some care is necessary when calling Scheme predicates from Tcl code (the
+Tcl K{if} command expects 1 or 0 as truth values). Example:
+
+KB if \{[typeof? $v Dot]\} D{}
+
+will not do, but 
+
+KB if \{[typeof? $v Dot] ne "#f"\} D{}
+
+works.
+MD)
+
+PR(
+atom? (public);val val -> bool
+PR)
+
+CB(
+reg atom? ::constcl::atom?
+
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string
+      char boolean vector port eof} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
+}
+CB)
+
+H4 usage procedure
+
+MD(
+MD)
+
+PR(
+usage (internal);usage expr expr expr-> none
+PR)
+
+CB(
+proc ::constcl::usage {usage expr} {
+  set u $usage
+  set e $expr
+  if {[[length $usage] numval] !=
+      [[length $expr] numval]} {
+    while {$u ne "#NIL" && $e ne "#NIL"} {
+      set u [cdr $u]
+      set e [cdr $e]
+    }
+    if {$e eq "#NIL" && $u ne "#NIL" &&
+      [regexp {\?.*\?} [[car $u] name]]} {
+      return
+    }
+    ::error "usage error\n[
+      $usage show] not [$expr show]"
+  }
+}
+CB)
+
 H4 regmacro procedure
 
 MD(
@@ -112,18 +184,6 @@ is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
 interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
 the type, the procedure returns K{#t}.
 
-By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
-(procedures that return either K{#t} or K{#f}) have '?' at the end of their
-name. Some care is necessary when calling Scheme predicates from Tcl code (the
-Tcl K{if} command expects 1 or 0 as truth values). Example:
-
-KB if \{[typeof? $v Dot]\} D{}
-
-will not do, but 
-
-KB if \{[typeof? $v Dot] ne "#f"\} D{}
-
-works.
 MD)
 
 PR(
@@ -194,6 +254,55 @@ proc ::constcl::in-range {x args} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
+}
+CB)
+
+H4 error procedure
+
+MD(
+K{error} is used to signal an error, with E{msg} being a message string and the
+optional arguments being values to show after the message.
+MD)
+
+PR(
+error (public);msg msg ?exprs? exprs -> dc
+PR)
+
+CB(
+reg error
+
+proc ::constcl::error {msg args} {
+  if {[llength $args]} {
+    lappend msg "("
+    set times 0
+    foreach arg $args {
+      if {$times} {
+        ::append msg " "
+      }
+      ::append msg [$arg show]
+      incr times
+    }
+    lappend msg ")"
+  }
+  ::error $msg
+}
+CB)
+
+H4 check procedure
+
+MD(
+K{check} does a check (typically a type check) on something and throws an error if
+it fails.
+MD)
+
+CB(
+proc ::constcl::check {cond msg} {
+  if {[uplevel $cond] eq "#f"} {
+    ::error [
+      uplevel [
+        ::list subst [
+          ::string trim $msg]]]
+  }
 }
 CB)
 
@@ -407,7 +516,85 @@ proc ::pxw {str} {
 }
 CB)
 
-H3 The NIL class
+H3 Some small classes
+
+H4 Dot class
+
+MD(
+The K{Dot} class is a helper class for the parser.
+MD)
+
+CB(
+catch { ::constcl::Dot destroy }
+
+oo::class create ::constcl::Dot {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "."
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+CB)
+
+H4 dot? procedure
+
+MD(
+K{dot?} is a type predicate that checks for membership in the type K{Dot}.
+MD)
+
+PR(
+dot? (internal);val val -> bool
+PR)
+
+CB(
+proc ::constcl::dot? {val} {
+  typeof? $val "Dot"
+}
+CB)
+
+H4 EndOfFile class
+
+MD(
+The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
+MD)
+
+CB(
+catch { ::constcl::EndOfFile destroy }
+
+oo::class create ::constcl::EndOfFile {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<end-of-file>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+CB)
+
+H4 eof? procedure
+
+MD(
+K{eof?} is a type predicate that recognizes the end-of-file object.
+MD)
+
+PR(
+eof? (internal);val val -> bool
+PR)
+
+CB(
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+CB)
+
+H4 NIL class
 
 MD(
 The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
@@ -470,41 +657,23 @@ proc ::constcl::null? {val} {
 }
 CB)
 
-H3 The classes Dot, Unspecified, Undefined, and EndOfFile
-
-H4 Dot class
+H4 Undefined class
 
 MD(
-The K{Dot} class is a helper class for the parser.
+The K{Undefined} class is for undefined things. Also a S9fES support class.
 MD)
 
 CB(
-catch { ::constcl::Dot destroy }
+catch { ::constcl::Undefined destroy }
 
-oo::class create ::constcl::Dot {
+oo::class create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "."
+    puts -nonewline $handle "#<undefined>"
   }
   method display {handle} {
     my write $handle
   }
-}
-CB)
-
-H4 dot? procedure
-
-MD(
-K{dot?} is a type predicate that checks for membership in the type K{Dot}.
-MD)
-
-PR(
-dot? (internal);val val -> bool
-PR)
-
-CB(
-proc ::constcl::dot? {val} {
-  typeof? $val "Dot"
 }
 CB)
 
@@ -526,136 +695,6 @@ oo::class create ::constcl::Unspecified {
   method display {handle} {
     my write $handle
   }
-}
-CB)
-
-H4 Undefined class
-
-MD(
-The K{Undefined} class is for undefined things. Also a S9fES support class.
-MD)
-
-CB(
-catch { ::constcl::Undefined destroy }
-
-oo::class create ::constcl::Undefined {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<undefined>"
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-CB)
-
-H4 EndOfFile class
-
-MD(
-The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
-MD)
-
-CB(
-catch { ::constcl::EndOfFile destroy }
-
-oo::class create ::constcl::EndOfFile {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<end-of-file>"
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-CB)
-
-CB(
-proc eof? {val} {
-  if {$val eq "#EOF"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-CB)
-
-H3 The error and check procedures
-
-H4 error procedure
-
-MD(
-K{error} is used to signal an error, with E{msg} being a message string and the
-optional arguments being values to show after the message.
-MD)
-
-PR(
-error (public);msg msg ?exprs? exprs -> dc
-PR)
-
-CB(
-reg error
-
-proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    lappend msg "("
-    set times 0
-    foreach arg $args {
-      if {$times} {
-        ::append msg " "
-      }
-      ::append msg [$arg show]
-      incr times
-    }
-    lappend msg ")"
-  }
-  ::error $msg
-}
-CB)
-
-H4 check procedure
-
-MD(
-K{check} does a check (typically a type check) on something and throws an error if
-it fails.
-MD)
-
-CB(
-proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq "#f"} {
-    ::error [
-      uplevel [
-        ::list subst [
-          ::string trim $msg]]]
-  }
-}
-CB)
-
-H3 The atom? predicate
-
-H4 atom? procedure
-
-MD(
-There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
-collections of lists and atoms. Atoms are instances of types such as booleans,
-characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
-an atom by checking for membership in any one of the atomic types.
-MD)
-
-PR(
-atom? (public);val val -> bool
-PR)
-
-CB(
-reg atom? ::constcl::atom?
-
-proc ::constcl::atom? {val} {
-  foreach type {symbol number string
-      char boolean vector port eof} {
-    if {[$type? $val] eq "#t"} {
-      return #t
-    }
-  }
-  return #f
 }
 CB)
 

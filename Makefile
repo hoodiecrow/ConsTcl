@@ -55,10 +55,7 @@ constcl.tcl: $(source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
-	echo 'package require tcltest' >$@
-	echo 'source constcl.tcl\n' >>$@
-	gawk -f anstotest.awk $^ >>$@
-	echo '\n::tcltest::cleanupTests' >>$@
+	gawk -f anstotest.awk $^ >$@
 
 #constcl.test: $(tcl_source_files)
 #	echo 'package require tcltest' >$@

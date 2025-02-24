@@ -22,18 +22,18 @@ ConsTcl, a true Lisp interpreter. In Tcl.
 
 #### About ConsTcl
 
-It's written with Vim, my editor of choice. I'm using annotated source which
-mixes code with documentation and test cases. Compared to Lispy/Thtcl, ConsTcl
-has, quote from Lispy, comments, quote and quasiquote notation, # literals,
-the derived expression types (such as cond, derived from if, or let, derived
-from lambda), and dotted list notation. And also real consed lists. Again
-compared to Lispy/Thtcl, ConsTcl has the data types, quote, strings,
-characters, booleans, ports, vectors. And pairs and procedures too. The number
-of missing primitive procedures is in the tens, not the 100s. The completeness
-comes with a price: due to the sheer number of calls for each action, ConsTcl
-is is fairly slow. On my cheap computer, the following code (which calculates
-the factorial of 100) takes 0.03 seconds to run. That is ten times slower than
-Lispy assuming that Norvig's computer is as slow as mine, which is unlikely.
+Compared to Lispy/Thtcl, ConsTcl has, (quote from Lispy), "comments, quote and
+quasiquote notation, # literals, the derived expression types (such as cond,
+derived from if, or let, derived from lambda), and dotted list notation."
+Again compared to Lispy/Thtcl, ConsTcl has the data types, quote, "strings,
+characters, booleans, ports, vectors." And pairs and procedures too. The
+number of missing primitive procedures is in the tens, not the 100s. 
+
+The completeness comes with a price: due to the sheer number of calls for each
+action, ConsTcl is is fairly slow. On my cheap computer, the following code
+(which calculates the factorial of 100) takes 0.03 seconds to run. That is ten
+times slower than Lispy assuming that Norvig's computer is as slow as mine,
+which is unlikely. So it's probably a factor of less than ten.
 
 ```
 time {pe "(fact 100)"} 10

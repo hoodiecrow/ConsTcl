@@ -71,9 +71,9 @@ proc ::constcl::expand-and {expr env} {
 }
 CB)
 
-H4 do-and procedure
-
 MD(
+B{do-and} procedure
+
 K{do-and} is called recursively for every argument of K{expand-or} if there are
 more than one.
 MD)
@@ -97,6 +97,7 @@ PR(
 do-and (internal);tail exprtail prev expr env env -> expr
 PR)
 
+IX do-and
 CB(
 proc ::constcl::do-and {tail prev env} {
   if {[null? $tail] ne "#f"} {
@@ -239,9 +240,9 @@ proc ::constcl::expand-cond {expr env} {
 }
 CB)
 
-H4 do-cond procedure
-
 MD(
+B{do-cond} procedure
+
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
 up the clause into predicate and body, stepping over any K{=>} symbols in
 between. In the last clause, the predicate is allowed to be K{else} (which gets
@@ -253,6 +254,7 @@ PR(
 do-cond (internal);tail lexprs env env -> expr
 PR)
 
+IX do-cond
 CB(
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
@@ -456,9 +458,9 @@ proc ::constcl::expand-for {expr env} {
 }
 CB)
 
-H4 for-seq procedure
-
 MD(
+B{for-seq} procedure
+
 K{for-seq} is a helper procedure that sets up the sequence of values that the
 iteration is based on. First it evaluates the code that generates the sequence,
 and then it converts it to a Tcl list.
@@ -468,6 +470,7 @@ PR(
 for-seq (internal);seq expr env env -> tvals
 PR)
 
+IX for-seq
 CB(
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
@@ -488,9 +491,9 @@ proc ::constcl::for-seq {seq env} {
 }
 CB)
 
-H4 do-for procedure
-
 MD(
+B{do-for} procedure
+
 K{do-for} is another helper procedure which does most of the work in the
 K{for/*} forms. It iterates over the clauses, extracting and preparing the
 sequence for each, and stores each of the sequence steps in a dictionary under a
@@ -509,6 +512,7 @@ PR(
 do-for (internal);tail exprtail env env -> texprs
 PR)
 
+IX do-for
 CB(
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
@@ -758,9 +762,9 @@ proc ::constcl::expand-let {expr env} {
 }
 CB)
 
-H4 parse-bindings procedure
-
 MD(
+B{parse-bindings} procedure
+
 K{parse-bindings} is a helper procedure that traverses a K{let} bindings list
 and extracts variables and values, which it puts in a dictionary. It throws an
 error if a variable occurs more than once.
@@ -770,6 +774,7 @@ PR(
 parse-bindings (internal);name name bindings lvals -> none
 PR)
 
+IX parse-bindings
 CB(
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
@@ -854,9 +859,9 @@ TT(
 
 TT)
 
-H4 do-or procedure
-
 MD(
+B{do-or} procedure
+
 K{do-or} is called recursively for each argument to K{expand-or} if there are more than
 one argument. 
 MD)
@@ -865,9 +870,10 @@ PR(
 do-or (internal);tail exprtail env env -> expr
 PR)
 
+IX do-or
 CB(
 proc ::constcl::do-or {tail env} {
-  /if {null? $tail} {
+  /if {[null? $tail]} {
     return #f
   } {
     set env [Environment new #NIL {} $env]
@@ -1091,6 +1097,7 @@ PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
 PR)
 
+IX qq-visit-child
 CB(
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
