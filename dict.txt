@@ -38,6 +38,9 @@ vals          -> some Lisp values
 lvals         -> a Lisp list of Lisp values
 tvals         -> a Tcl list of Lisp values
 tlvals        -> a Tcl list of Lisp lists of Lisp values
+valorf        -> a Lisp value OR #f
+ass           -> an association pair
+lasss         -> a Lisp list of association pairs
 nil           -> the empty list
 nils          -> some nil values
 lnils         -> a Lisp list of nil values

@@ -1,0 +1,173 @@
+
+H2 A Scheme base
+
+CB(
+; An assortment of procedures to supplement the builtins.
+CB)
+
+MD(
+K{get} is a procedure for picking out values out of property lists. It returns
+either the value or K{#f} if the key isn't found.
+MD)
+
+PR(
+get (public);plist lvals key sym -> valorf    
+PR)
+
+CB(
+(define (get plist key)
+  (let ((v (memq key plist)))
+    (if v
+      (cadr v)
+      #f)))
+CB)
+
+MD(
+K{list-find-key} searches for a key in a property list. If it finds it, it
+returns the (0-based) index of it. If it doesn't find it, it returns -1. It
+doesn't look at the values.
+MD)
+
+PR(
+list-find-key (public);lst lvals key sym -> num
+PR)
+
+CB(
+(define (list-find-key lst key)
+  (lfk lst key 0))
+CB)
+
+MD(
+K{lfk} does the work for K{list-find-key}.
+MD)
+
+PR(
+lfk (public);lst lvals key sym count num -> num
+PR)
+
+CB(
+(define (lfk lst key count)
+  (if (null? lst)
+    -1
+    (if (eq? (car lst) key)
+      count
+      (lfk (cddr lst) key (+ count 2)))))
+CB)
+
+MD(
+K{list-set!} works in analogy with K{string-set!}. Given a list and an index, it
+finds the place to insert a value. Is in real trouble if the index value is out
+of range.
+MD)
+
+PR(
+list-set! (public);lst lvals idx num val val -> val
+PR)
+
+CB(
+(define (list-set! lst idx val)
+  (if (zero? idx)
+    (set-car! lst val)
+    (list-set! (cdr lst) (- idx 1) val)))
+CB)
+
+MD(
+K{delete!} removes a key-value pair from a property list. Returns the list.
+MD)
+
+PR(
+delete! (public);lst lvals key sym -> lvals
+PR)
+
+CB(
+(define (delete! lst key)
+  (let ((idx (list-find-key lst key)))
+    (if (< idx 0)
+      lst
+      (if (= idx 0)
+        (set! lst (cddr lst))
+        (let ((bef (del-seek lst (- idx 1)))
+              (aft (del-seek lst (+ idx 2))))
+          (set-cdr! bef aft))))
+    lst))
+CB)
+
+MD(
+K{del-seek} does the searching for K{delete!}.
+MD)
+
+PR(
+del-seek (public);lst lvals idx num -> lvals
+PR)
+
+CB(
+(define (del-seek lst idx)
+  (if (zero? idx)
+    lst
+    (del-seek (cdr lst) (- idx 1))))
+CB)
+
+MD(
+K{get-alist} is like K{get} but for association lists.
+MD)
+
+PR(
+get-alist (public);lst lasss key sym -> val
+PR)
+
+CB(
+(define (get-alist lst key)
+  (let ((item (assq key lst)))
+    (if item
+      (cdr item)
+      #f)))
+CB)
+
+MD(
+K{pairlis} takes two lists like K{'(a b c)} and K{'(1 2 3)} and produces a list
+of association pairs K{'((a . 1) (b . 2) (c . 3))}.
+MD)
+
+PR(
+pairlis (public);a lvals b lvals -> lasss
+PR)
+
+CB(
+(define (pairlis a b)
+  (if (null? a)
+    ()
+    (cons
+      (cons (car a) (car b))
+      (pairlis (cdr a) (cdr b)))))
+CB)
+
+MD(
+K{set-alist!} updates a value in an association list, given a key.
+MD)
+
+PR(
+set-alist! (public);lst lasss key sym val val -> lasss
+PR)
+
+CB(
+(define (set-alist! lst key val)
+  (let ((item (assq key lst)))
+    (if item
+      (begin (set-cdr! item val) lst)
+      lst)))
+CB)
+
+MD(
+K{fact} calculates the factorial of E{n}.
+MD)
+
+PR(
+fact (public);n num -> num
+PR)
+
+CB(
+(define (fact n)
+  (if (<= n 1)
+    1
+    (* n (fact (- n 1)))))
+CB)

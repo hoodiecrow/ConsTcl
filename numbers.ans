@@ -731,29 +731,29 @@ TT(
 
 TT)
 
-CB(
+CB
 proc ::constcl::gcd {args} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::lcm {args} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::numerator {q} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::denominator {q} {
     # TODO
 }
-CB)
+CB
 
 H4 floor procedure
 
@@ -875,11 +875,11 @@ TT(
 
 TT)
 
-CB(
+CB
 proc ::constcl::rationalize {x y} {
     # TODO
 }
-CB)
+CB
 
 H4 exp procedure
 
@@ -1135,53 +1135,53 @@ TT(
 
 TT)
 
-CB(
+CB
 proc ::constcl::make-rectangular {x1 x2} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::make-polar {x3 x4} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::real-part {z} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::imag-part {z} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::magnitude {z} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::angle {z} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::exact->inexact {z} {
     # TODO
 }
-CB)
+CB
 
-CB(
+CB
 proc ::constcl::inexact->exact {z} {
     # TODO
 }
-CB)
+CB
 
 H4 number->string procedure
 

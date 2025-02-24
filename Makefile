@@ -15,11 +15,9 @@ LDOUT    = -o
 EXE      = 
 
 .PHONY: all
-all: book.tex README.md constcl.tcl constcl.test #wiki/type.md wiki/read.md $(PROGRAM)
+all: book.tex README.md constcl.tcl constcl.test schemebase.scm #wiki/type.md wiki/read.md $(PROGRAM)
 
 source_files = initial.ans input.ans eval.ans macros.ans rld.ans output.ans equipred.ans numbers.ans booleans.ans characters.ans control.ans io.ans pairslists.ans strings.ans symbols.ans vectors.ans idcheck.ans s9fes.ans environment.ans setup.ans repl.ans
-
-tcl_source_files = type.tcl read.tcl eval.tcl macros.tcl rld.tcl write.tcl equipred.tcl numbers.tcl booleans.tcl characters.tcl control.tcl io.tcl pairslists.tcl strings.tcl symbols.tcl vectors.tcl idcheck.tcl s9fes.tcl cons.tcl repl.tcl environment.class global_env.tcl
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf
@@ -27,7 +25,7 @@ constcl.pdf: README.md
 book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
-body.tex: $(source_files)
+body.tex: $(source_files) schemebase.ans
 	gawk -f anstotex.awk dict.txt $^ >$@
 
 #constcl.tex: book.md
@@ -36,13 +34,13 @@ body.tex: $(source_files)
 #book.md: booktop.md constcl.md lutables.md schemebase.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
-README.md: top.md constcl.md schemebase.md
+README.md: top.md constcl.md
 	cat $^ >$@
 
 #README.md: top.md constcl.md schemebase.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
-constcl.md: $(source_files)
+constcl.md: $(source_files) schemebase.ans
 	gawk -f anstomd.awk dict.txt $^ >$@
 
 #constcl.md: $(tcl_source_files)
@@ -66,8 +64,11 @@ constcl.test: $(source_files)
 lutables.md: lutables.tcl
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
-schemebase.md: schemebase.scm
-	gawk -f scmtomd.awk $< >$@
+schemebase.scm: schemebase.ans
+	gawk -f anstoscm.awk $< >$@
+
+#schemebase.md: schemebase.scm
+#	gawk -f scmtomd.awk $< >$@
 
 .PHONY: clean
 clean:

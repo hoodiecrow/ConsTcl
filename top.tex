@@ -100,12 +100,15 @@ if x == 1:
     (write "x is 1.")))
 \end{verbatim}
 
-In Lisp, everything is either a list expression, starting and ending with
-parentheses and having an operator in the first position of the list, followed
-by operands, or else an atomic (indivisible) expression like \texttt{x} or
-\texttt{1}. A full description of Lisp is beyond the scope of this
-introduction, but Lisp will be explained from the inside out in the rest of
-this book.
+In Lisp, everything is either an \emph{atom}, an indivisible value, like
+\texttt{x} and \texttt{1} (and e.g. \texttt{let} and \texttt{write} too) or
+else it is a \emph{list expression}, starting and ending with parentheses and
+having an operator at the front of the list, with the rest of the parts being
+operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
+the expression is a \emph{special form}. If not, like \texttt{+} or
+\texttt{write}, then it's a \emph{function call}.  A full description of Lisp
+is beyond the scope of this introduction, but Lisp will be explained from the
+inside out in the rest of this book. If you want to learn Scheme right away, there are good tutorials in different\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_8.html}} places\footnote{See \texttt{https://www.scheme.com/tspl4/start.html\#./start:h0}} on the web\footnote{See \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
 
 \subsection{About ConsTcl}
 \label{about-constcl}

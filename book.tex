@@ -100,12 +100,15 @@ if x == 1:
     (write "x is 1.")))
 \end{verbatim}
 
-In Lisp, everything is either a list expression, starting and ending with
-parentheses and having an operator in the first position of the list, followed
-by operands, or else an atomic (indivisible) expression like \texttt{x} or
-\texttt{1}. A full description of Lisp is beyond the scope of this
-introduction, but Lisp will be explained from the inside out in the rest of
-this book.
+In Lisp, everything is either an \emph{atom}, an indivisible value, like
+\texttt{x} and \texttt{1} (and e.g. \texttt{let} and \texttt{write} too) or
+else it is a \emph{list expression}, starting and ending with parentheses and
+having an operator at the front of the list, with the rest of the parts being
+operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
+the expression is a \emph{special form}. If not, like \texttt{+} or
+\texttt{write}, then it's a \emph{function call}.  A full description of Lisp
+is beyond the scope of this introduction, but Lisp will be explained from the
+inside out in the rest of this book. If you want to learn Scheme right away, there are good tutorials in different\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_8.html}} places\footnote{See \texttt{https://www.scheme.com/tspl4/start.html\#./start:h0}} on the web\footnote{See \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
 
 \subsection{About ConsTcl}
 \label{about-constcl}
@@ -4311,26 +4314,6 @@ proc ::constcl::modulo {num1 num2} {
     [$num2 numval]]]
 }
 \end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::gcd {args} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::lcm {args} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::numerator {q} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::denominator {q} {
-    # TODO
-}
-\end{lstlisting}
 \subsection{floor procedure}
 \label{floor-procedure}
 \index{floor procedure}
@@ -4409,11 +4392,6 @@ proc ::constcl::round {num} {
       NUMBER expected\n([pn] [$num show])
   }
   N [::tcl::mathfunc::round [$num numval]]
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::rationalize {x y} {
-    # TODO
 }
 \end{lstlisting}
 \subsection{exp procedure}
@@ -4621,46 +4599,6 @@ proc ::constcl::expt {num1 num2} {
   }
   N [::tcl::mathfunc::pow [$num1 numval] \
     [$num2 numval]]
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::make-rectangular {x1 x2} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::make-polar {x3 x4} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::real-part {z} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::imag-part {z} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::magnitude {z} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::angle {z} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::exact->inexact {z} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::inexact->exact {z} {
-    # TODO
 }
 \end{lstlisting}
 \subsection{number->string procedure}
@@ -6247,21 +6185,6 @@ proc ::constcl::close-output-port {port} {
   $port close
 }
 \end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::read-char {args} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::peek-char {args} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::char-ready? {args} {
-    # TODO
-}
-\end{lstlisting}
 
 
 \texttt{write} is implemented in the output (see page \pageref{output}) chapter.
@@ -6296,11 +6219,6 @@ proc ::constcl::newline {args} {
   pe "(display #\\newline $port)"
 }
 \end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::write-char {args} {
-    # TODO
-}
-\end{lstlisting}
 
 
 \textbf{load}
@@ -6329,16 +6247,6 @@ proc ::constcl::load {filename} {
     close-input-port $p
   }
   $p destroy
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::transcript-on {filename} {
-    # TODO
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::transcript-off {} {
-    # TODO
 }
 \end{lstlisting}
 \section{Pairs and lists}
@@ -8959,7 +8867,9 @@ proc ::constcl::input {prompt} {
 \index{repl}
 \begin{lstlisting}
 proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [Environment new #NIL {} ::global_env]
+  set cur_env [
+    ::constcl::Environment new #NIL {} \
+      ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
     set expr [::constcl::parse $str]
@@ -8969,6 +8879,204 @@ proc ::repl {{prompt "ConsTcl> "}} {
   }
   $cur_env destroy
 }
+\end{lstlisting}
+\chapter{A Scheme base}
+\label{a-scheme-base}
+\begin{lstlisting}
+; An assortment of procedures to supplement the builtins.
+\end{lstlisting}
+
+
+\texttt{get} is a procedure for picking out values out of property lists. It returns either the value or \texttt{\#f} if the key isn't found.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get (public)} \\
+plist & a Lisp list of Lisp values \\
+key & a symbol \\
+\textit{Returns:} & a Lisp value OR \#f \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (get plist key)
+  (let ((v (memq key plist)))
+    (if v
+      (cadr v)
+      #f)))
+\end{lstlisting}
+
+
+\texttt{list-find-key} searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-find-key (public)} \\
+lst & a Lisp list of Lisp values \\
+key & a symbol \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (list-find-key lst key)
+  (lfk lst key 0))
+\end{lstlisting}
+
+
+\texttt{lfk} does the work for \texttt{list-find-key}.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lfk (public)} \\
+lst & a Lisp list of Lisp values \\
+key & a symbol \\
+count & a number \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (lfk lst key count)
+  (if (null? lst)
+    -1
+    (if (eq? (car lst) key)
+      count
+      (lfk (cddr lst) key (+ count 2)))))
+\end{lstlisting}
+
+
+\texttt{list-set!} works in analogy with \texttt{string-set!}. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-set! (public)} \\
+lst & a Lisp list of Lisp values \\
+idx & a number \\
+val & a Lisp value \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (list-set! lst idx val)
+  (if (zero? idx)
+    (set-car! lst val)
+    (list-set! (cdr lst) (- idx 1) val)))
+\end{lstlisting}
+
+
+\texttt{delete!} removes a key-value pair from a property list. Returns the list.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delete! (public)} \\
+lst & a Lisp list of Lisp values \\
+key & a symbol \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (delete! lst key)
+  (let ((idx (list-find-key lst key)))
+    (if (< idx 0)
+      lst
+      (if (= idx 0)
+        (set! lst (cddr lst))
+        (let ((bef (del-seek lst (- idx 1)))
+              (aft (del-seek lst (+ idx 2))))
+          (set-cdr! bef aft))))
+    lst))
+\end{lstlisting}
+
+
+\texttt{del-seek} does the searching for \texttt{delete!}.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf del-seek (public)} \\
+lst & a Lisp list of Lisp values \\
+idx & a number \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (del-seek lst idx)
+  (if (zero? idx)
+    lst
+    (del-seek (cdr lst) (- idx 1))))
+\end{lstlisting}
+
+
+\texttt{get-alist} is like \texttt{get} but for association lists.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get-alist (public)} \\
+lst & a Lisp list of association pairs \\
+key & a symbol \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (get-alist lst key)
+  (let ((item (assq key lst)))
+    (if item
+      (cdr item)
+      #f)))
+\end{lstlisting}
+
+
+\texttt{pairlis} takes two lists like \texttt{'(a b c)} and \texttt{'(1 2 3)} and produces a list of association pairs \texttt{'((a . 1) (b . 2) (c . 3))}.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis (public)} \\
+a & a Lisp list of Lisp values \\
+b & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of association pairs \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (pairlis a b)
+  (if (null? a)
+    ()
+    (cons
+      (cons (car a) (car b))
+      (pairlis (cdr a) (cdr b)))))
+\end{lstlisting}
+
+
+\texttt{set-alist!} updates a value in an association list, given a key.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-alist! (public)} \\
+lst & a Lisp list of association pairs \\
+key & a symbol \\
+val & a Lisp value \\
+\textit{Returns:} & a Lisp list of association pairs \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (set-alist! lst key val)
+  (let ((item (assq key lst)))
+    (if item
+      (begin (set-cdr! item val) lst)
+      lst)))
+\end{lstlisting}
+
+
+\texttt{fact} calculates the factorial of \emph{n}.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf fact (public)} \\
+n & a number \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (fact n)
+  (if (<= n 1)
+    1
+    (* n (fact (- n 1)))))
 \end{lstlisting}
 
 \printindex

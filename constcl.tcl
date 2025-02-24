@@ -1952,22 +1952,6 @@ proc ::constcl::modulo {num1 num2} {
     [$num2 numval]]]
 }
 
-proc ::constcl::gcd {args} {
-    # TODO
-}
-
-proc ::constcl::lcm {args} {
-    # TODO
-}
-
-proc ::constcl::numerator {q} {
-    # TODO
-}
-
-proc ::constcl::denominator {q} {
-    # TODO
-}
-
 reg floor
 
 proc ::constcl::floor {num} {
@@ -2006,10 +1990,6 @@ proc ::constcl::round {num} {
       NUMBER expected\n([pn] [$num show])
   }
   N [::tcl::mathfunc::round [$num numval]]
-}
-
-proc ::constcl::rationalize {x y} {
-    # TODO
 }
 
 reg exp
@@ -2119,38 +2099,6 @@ proc ::constcl::expt {num1 num2} {
   }
   N [::tcl::mathfunc::pow [$num1 numval] \
     [$num2 numval]]
-}
-
-proc ::constcl::make-rectangular {x1 x2} {
-    # TODO
-}
-
-proc ::constcl::make-polar {x3 x4} {
-    # TODO
-}
-
-proc ::constcl::real-part {z} {
-    # TODO
-}
-
-proc ::constcl::imag-part {z} {
-    # TODO
-}
-
-proc ::constcl::magnitude {z} {
-    # TODO
-}
-
-proc ::constcl::angle {z} {
-    # TODO
-}
-
-proc ::constcl::exact->inexact {z} {
-    # TODO
-}
-
-proc ::constcl::inexact->exact {z} {
-    # TODO
 }
 
 reg number->string
@@ -3019,18 +2967,6 @@ proc ::constcl::close-output-port {port} {
   $port close
 }
 
-proc ::constcl::read-char {args} {
-    # TODO
-}
-
-proc ::constcl::peek-char {args} {
-    # TODO
-}
-
-proc ::constcl::char-ready? {args} {
-    # TODO
-}
-
 reg newline
 
 proc ::constcl::newline {args} {
@@ -3040,10 +2976,6 @@ proc ::constcl::newline {args} {
     set port [current-output-port]
   }
   pe "(display #\\newline $port)"
-}
-
-proc ::constcl::write-char {args} {
-    # TODO
 }
 
 reg load
@@ -3059,14 +2991,6 @@ proc ::constcl::load {filename} {
     close-input-port $p
   }
   $p destroy
-}
-
-proc ::constcl::transcript-on {filename} {
-    # TODO
-}
-
-proc ::constcl::transcript-off {} {
-    # TODO
 }
 
 catch { ::constcl::Pair destroy }
@@ -4314,7 +4238,9 @@ proc ::constcl::input {prompt} {
 }
 
 proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [Environment new #NIL {} ::global_env]
+  set cur_env [
+    ::constcl::Environment new #NIL {} \
+      ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
     set expr [::constcl::parse $str]

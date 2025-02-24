@@ -3285,26 +3285,6 @@ proc ::constcl::modulo {num1 num2} {
     [$num2 numval]]]
 }
 ```
-```
-proc ::constcl::gcd {args} {
-    # TODO
-}
-```
-```
-proc ::constcl::lcm {args} {
-    # TODO
-}
-```
-```
-proc ::constcl::numerator {q} {
-    # TODO
-}
-```
-```
-proc ::constcl::denominator {q} {
-    # TODO
-}
-```
 #### floor procedure
 
 
@@ -3373,11 +3353,6 @@ proc ::constcl::round {num} {
       NUMBER expected\n([pn] [$num show])
   }
   N [::tcl::mathfunc::round [$num numval]]
-}
-```
-```
-proc ::constcl::rationalize {x y} {
-    # TODO
 }
 ```
 #### exp procedure
@@ -3550,46 +3525,6 @@ proc ::constcl::expt {num1 num2} {
   }
   N [::tcl::mathfunc::pow [$num1 numval] \
     [$num2 numval]]
-}
-```
-```
-proc ::constcl::make-rectangular {x1 x2} {
-    # TODO
-}
-```
-```
-proc ::constcl::make-polar {x3 x4} {
-    # TODO
-}
-```
-```
-proc ::constcl::real-part {z} {
-    # TODO
-}
-```
-```
-proc ::constcl::imag-part {z} {
-    # TODO
-}
-```
-```
-proc ::constcl::magnitude {z} {
-    # TODO
-}
-```
-```
-proc ::constcl::angle {z} {
-    # TODO
-}
-```
-```
-proc ::constcl::exact->inexact {z} {
-    # TODO
-}
-```
-```
-proc ::constcl::inexact->exact {z} {
-    # TODO
 }
 ```
 #### number->string procedure
@@ -4897,21 +4832,6 @@ proc ::constcl::close-output-port {port} {
   $port close
 }
 ```
-```
-proc ::constcl::read-char {args} {
-    # TODO
-}
-```
-```
-proc ::constcl::peek-char {args} {
-    # TODO
-}
-```
-```
-proc ::constcl::char-ready? {args} {
-    # TODO
-}
-```
 
 
 `` write `` is implemented in the [output](https://github.com/hoodiecrow/ConsTcl#output) chapter.
@@ -4939,11 +4859,6 @@ proc ::constcl::newline {args} {
   pe "(display #\\newline $port)"
 }
 ```
-```
-proc ::constcl::write-char {args} {
-    # TODO
-}
-```
 
 
 __load__
@@ -4967,16 +4882,6 @@ proc ::constcl::load {filename} {
     close-input-port $p
   }
   $p destroy
-}
-```
-```
-proc ::constcl::transcript-on {filename} {
-    # TODO
-}
-```
-```
-proc ::constcl::transcript-off {} {
-    # TODO
 }
 ```
 ### Pairs and lists
@@ -7135,7 +7040,9 @@ __repl__
 
 ```
 proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [Environment new #NIL {} ::global_env]
+  set cur_env [
+    ::constcl::Environment new #NIL {} \
+      ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
     set expr [::constcl::parse $str]
@@ -7146,70 +7053,140 @@ proc ::repl {{prompt "ConsTcl> "}} {
   $cur_env destroy
 }
 ```
-
-
 ## A Scheme base
-
+```
+; An assortment of procedures to supplement the builtins.
 ```
 
-; An assortment of procedures to supplement the builtins.
 
+`` get `` is a procedure for picking out values out of property lists. It returns either the value or `` #f `` if the key isn't found.
+
+<table border=1><thead><tr><th colspan=2 align="left">get (public)</th></tr></thead><tr><td>plist</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value OR #f</td></tr></table>
+
+```
 (define (get plist key)
   (let ((v (memq key plist)))
     (if v
       (cadr v)
       #f)))
+```
 
+
+`` list-find-key `` searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
+
+<table border=1><thead><tr><th colspan=2 align="left">list-find-key (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
 (define (list-find-key lst key)
+  (lfk lst key 0))
+```
 
+
+`` lfk `` does the work for `` list-find-key ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">lfk (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>count</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
 (define (lfk lst key count)
   (if (null? lst)
     -1
     (if (eq? (car lst) key)
       count
       (lfk (cddr lst) key (+ count 2)))))
+```
 
+
+`` list-set! `` works in analogy with `` string-set! ``. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
+
+<table border=1><thead><tr><th colspan=2 align="left">list-set! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+```
 (define (list-set! lst idx val)
   (if (zero? idx)
     (set-car! lst val)
     (list-set! (cdr lst) (- idx 1) val)))
+```
 
+
+`` delete! `` removes a key-value pair from a property list. Returns the list.
+
+<table border=1><thead><tr><th colspan=2 align="left">delete! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+```
 (define (delete! lst key)
   (let ((idx (list-find-key lst key)))
+    (if (< idx 0)
       lst
+      (if (= idx 0)
         (set! lst (cddr lst))
         (let ((bef (del-seek lst (- idx 1)))
               (aft (del-seek lst (+ idx 2))))
           (set-cdr! bef aft))))
     lst))
+```
 
+
+`` del-seek `` does the searching for `` delete! ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">del-seek (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+```
 (define (del-seek lst idx)
   (if (zero? idx)
     lst
     (del-seek (cdr lst) (- idx 1))))
+```
 
+
+`` get-alist `` is like `` get `` but for association lists.
+
+<table border=1><thead><tr><th colspan=2 align="left">get-alist (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+```
 (define (get-alist lst key)
   (let ((item (assq key lst)))
     (if item
       (cdr item)
       #f)))
+```
 
+
+`` pairlis `` takes two lists like `` '(a b c) `` and `` '(1 2 3) `` and produces a list of association pairs `` '((a . 1) (b . 2) (c . 3)) ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">pairlis (public)</th></tr></thead><tr><td>a</td><td>a Lisp list of Lisp values</td></tr><tr><td>b</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+
+```
 (define (pairlis a b)
   (if (null? a)
     ()
     (cons
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
+```
 
+
+`` set-alist! `` updates a value in an association list, given a key.
+
+<table border=1><thead><tr><th colspan=2 align="left">set-alist! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+
+```
 (define (set-alist! lst key val)
   (let ((item (assq key lst)))
     (if item
       (begin (set-cdr! item val) lst)
       lst)))
+```
 
+
+`` fact `` calculates the factorial of _n_.
+
+<table border=1><thead><tr><th colspan=2 align="left">fact (public)</th></tr></thead><tr><td>n</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
 (define (fact n)
   (if (<= n 1)
     1
     (* n (fact (- n 1)))))
-
 ```
+
+
