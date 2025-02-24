@@ -428,7 +428,7 @@ proc ::constcl::read-expr {args} {
   }
   switch -regexp $c {
     {\"}          { read-string-expr }
-    {\#}          { read-sharp }
+    {\#}          { read-pound }
     {\'}          { read-quoted-expr }
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
@@ -616,6 +616,23 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 
+proc ::constcl::read-pound {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
+  read-eof $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
@@ -633,23 +650,6 @@ proc ::constcl::read-quoted-expr {} {
   read-eof $expr
   make-constant $expr
   return [list [S quote] $expr]
-}
-
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
 }
 
 proc ::constcl::read-string-expr {} {
@@ -2929,7 +2929,8 @@ proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-input-file: [cnof] $filename"
+    set fn [$filename value]
+    error "open-input-file: [cnof] $fn"
   }
   return $p
 }

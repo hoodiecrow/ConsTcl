@@ -360,7 +360,7 @@ PR(
 /set! (internal);var bsym val val env env -> val
 PR)
 
-IX /set!
+IX /set"!
 CB(
 proc ::constcl::/set! {var val env} {
   [$env find $var] set $var $val

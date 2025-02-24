@@ -589,7 +589,7 @@ The first thing an interpreter must be able to do is to take in the user's code 
 The parsing process translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
 
 
-For example, the external representation for a vector is a sharp sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader or parser is working through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader or parser is working through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
 
 ![#](images/vector-representation.png)
 
@@ -882,7 +882,7 @@ proc ::constcl::read-expr {args} {
   }
   switch -regexp $c {
     {\"}          { read-string-expr }
-    {\#}          { read-sharp }
+    {\#}          { read-pound }
     {\'}          { read-quoted-expr }
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
@@ -1126,6 +1126,31 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 ```
+#### read-pound procedure
+
+
+`` read-pound `` is activated by `` read-expr `` when it reads a pound sign (`` # ``). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-pound (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td></td></tr></table>
+
+```
+proc ::constcl::read-pound {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
+  read-eof $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+```
 #### read-quasiquoted-expr procedure
 
 
@@ -1159,31 +1184,6 @@ proc ::constcl::read-quoted-expr {} {
   read-eof $expr
   make-constant $expr
   return [list [S quote] $expr]
-}
-```
-#### read-sharp procedure
-
-
-`` read-sharp `` is activated by `` read-expr `` when it reads a sharp sign (`` # ``). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-sharp (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value or end of file</td></tr></table>
-
-```
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
 }
 ```
 #### read-string-expr procedure
@@ -1244,7 +1244,7 @@ proc ::constcl::read-unquoted-expr {} {
 #### read-vector-expr procedure
 
 
-`` read-vector-expr `` is activated by `` read-sharp `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -4770,7 +4770,8 @@ proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-input-file: [cnof] $filename"
+    set fn [$filename value]
+    error "open-input-file: [cnof] $fn"
   }
   return $p
 }
@@ -7057,6 +7058,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 ```
 ; An assortment of procedures to supplement the builtins.
 ```
+#### get procedure
 
 
 `` get `` is a procedure for picking out values out of property lists. It returns either the value or `` #f `` if the key isn't found.
@@ -7070,6 +7072,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
       (cadr v)
       #f)))
 ```
+#### list-find-key procedure
 
 
 `` list-find-key `` searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
@@ -7080,6 +7083,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 (define (list-find-key lst key)
   (lfk lst key 0))
 ```
+#### lfk procedure
 
 
 `` lfk `` does the work for `` list-find-key ``.
@@ -7094,6 +7098,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
       count
       (lfk (cddr lst) key (+ count 2)))))
 ```
+#### list-set! procedure
 
 
 `` list-set! `` works in analogy with `` string-set! ``. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
@@ -7106,6 +7111,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
     (set-car! lst val)
     (list-set! (cdr lst) (- idx 1) val)))
 ```
+#### delete! procedure
 
 
 `` delete! `` removes a key-value pair from a property list. Returns the list.
@@ -7124,6 +7130,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
           (set-cdr! bef aft))))
     lst))
 ```
+#### del-seek procedure
 
 
 `` del-seek `` does the searching for `` delete! ``.
@@ -7136,6 +7143,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
     lst
     (del-seek (cdr lst) (- idx 1))))
 ```
+#### get-alist procedure
 
 
 `` get-alist `` is like `` get `` but for association lists.
@@ -7149,6 +7157,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
       (cdr item)
       #f)))
 ```
+#### pairlis procedure
 
 
 `` pairlis `` takes two lists like `` '(a b c) `` and `` '(1 2 3) `` and produces a list of association pairs `` '((a . 1) (b . 2) (c . 3)) ``.
@@ -7163,6 +7172,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
 ```
+#### set-alist! procedure
 
 
 `` set-alist! `` updates a value in an association list, given a key.
@@ -7176,6 +7186,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
       (begin (set-cdr! item val) lst)
       lst)))
 ```
+#### fact procedure
 
 
 `` fact `` calculates the factorial of _n_.

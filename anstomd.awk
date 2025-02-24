@@ -50,7 +50,14 @@ $0 ~ modeline { next; }
 /^H1 / { printf "# %s\n", substr($0, 4) ; next }
 /^H2 / { printf "## %s\n", substr($0, 4) ; next }
 /^H3 / { printf "### %s\n", substr($0, 4) ; next }
-/^H4 / { printf "#### %s\n", substr($0, 4) ; next }
+/^H4 / {
+	heading = substr($0, 4)
+	gsub(/"!/, "!", heading)
+	gsub(/"@/, "@", heading)
+	gsub(/"\|/, "|", heading)
+       	printf "#### %s\n", heading
+       	next
+}
 /^H5 / { printf "##### %s\n", substr($0, 4) ; next }
 /^H6 / { printf "###### %s\n", substr($0, 4) ; next }
 

@@ -4,10 +4,10 @@ H3 Pairs and lists
 MD(
 List processing is another of Lisp's great strengths.
 
-B{Pair} class
 MD)
 
-IX Pair
+H4 Pair class
+
 CB(
 catch { ::constcl::Pair destroy }
 
@@ -66,9 +66,9 @@ oo::class create ::constcl::Pair {
 }
 CB)
 
-MD(
-B{MkPair} generator
+H4 MkPair generator
 
+MD(
 K{MkPair} generates a Pair object. Shorter form: K{cons}.
 MD)
 
@@ -76,7 +76,6 @@ PR(
 MkPair (internal);car val cdr val -> pair
 PR)
 
-IX MkPair
 CB(
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
@@ -109,15 +108,12 @@ TT(
 
 TT)
 
-MD(
-B{pair?} procedure
-MD)
+H4 pair? procedure
 
 PR(
 pair? (public);val val -> bool
 PR)
 
-IX pair?
 CB(
 reg pair?
 
@@ -136,9 +132,9 @@ TT(
 
 TT)
 
-MD(
-B{show-pair} procedure
+H4 show-pair procedure
 
+MD(
 Helper procedure to make a string representation of a list.
 MD)
 
@@ -146,7 +142,6 @@ PR(
 show-pair (internal);pair pair -> tstr
 PR)
 
-IX show-pair
 CB(
 proc ::constcl::show-pair {pair} {
   # take an object and print the car
@@ -183,9 +178,9 @@ TT(
 
 TT)
 
-MD(
-B{cons} procedure
+H4 cons procedure
 
+MD(
 K{cons} joins two values in a pair; useful in many operations such as pushing
 a new value onto a list.
 MD)
@@ -200,13 +195,12 @@ VB(
 (cons 'a (cons 'b nil))   =>  (a b)
 VB)
 
-IG /images/consing.png
+IF /images/consing.png Examples of consing
 
 PR(
 cons (public);car val cdr val -> pair
 PR)
 
-IX cons
 CB(
 reg cons
 
@@ -227,9 +221,9 @@ TT(
 
 TT)
 
-MD(
-B{car} procedure
+H4 car procedure
 
+MD(
 K{car} gets the contents of the first cell in a pair.
 MD)
 
@@ -245,7 +239,6 @@ PR(
 car (public);pair pair -> val
 PR)
 
-IX car
 CB(
 reg car
 
@@ -268,9 +261,9 @@ TT(
 
 TT)
 
-MD(
-B{cdr} procedure
+H4 cdr procedure
 
+MD(
 K{cdr} gets the contents of the second cell in a pair.
 MD)
 
@@ -286,7 +279,6 @@ PR(
 cdr (public);pair pair -> val
 PR)
 
-IX cdr
 CB(
 reg cdr
 
@@ -363,9 +355,9 @@ foreach ads {
 }
 CB)
 
-MD(
-B{set-car!} procedure
+H4 set-car"! procedure
 
+MD(
 K{set-car!} sets the contents of the first cell in a pair.
 MD)
 
@@ -382,7 +374,6 @@ PR(
 set-car! (public);pair pair val val -> pair
 PR)
 
-IX set-car!
 CB(
 reg set-car!
 
@@ -405,9 +396,9 @@ TT(
 
 TT)
 
-MD(
-B{set-cdr!} procedure
+H4 set-cdr"! procedure
 
+MD(
 K{set-cdr!} sets the contents of the second cell in a pair.
 MD)
 
@@ -424,7 +415,6 @@ PR(
 set-cdr! (public);pair pair val val -> pair
 PR)
 
-IX set-cdr!
 CB(
 reg set-cdr!
 
@@ -447,9 +437,9 @@ TT(
 
 TT)
 
-MD(
-B{list?} procedure
+H4 list? procedure
 
+MD(
 The K{list?} predicate tests if a pair is part of a proper list, one that
 ends with NIL.
 MD)
@@ -458,7 +448,6 @@ PR(
 list? (public);val val -> bool
 PR)
 
-IX list?
 CB(
 reg list?
 
@@ -522,9 +511,9 @@ TT(
 
 TT)
 
-MD(
-B{list} procedure
+H4 list procedure
 
+MD(
 K{list} constructs a Lisp list from a number of values.
 MD)
 
@@ -540,7 +529,6 @@ PR(
 list (public);args vals -> lvals
 PR)
 
-IX list
 CB(
 reg list
 
@@ -566,9 +554,9 @@ TT(
 
 TT)
 
-MD(
-B{length} procedure
+H4 length procedure
 
+MD(
 K{length} reports the length of a Lisp list.
 MD)
 
@@ -584,7 +572,6 @@ PR(
 length (public);pair pair -> num
 PR)
 
-IX length
 CB(
 reg length
 
@@ -628,9 +615,9 @@ TT(
 
 TT)
 
-MD(
-B{append} procedure
+H4 append procedure
 
+MD(
 K{append} joins lists together.
 MD)
 
@@ -646,7 +633,6 @@ PR(
 append (public);args lists -> lvals
 PR)
 
-IX append
 CB(
 reg append
 
@@ -703,9 +689,9 @@ TT(
 
 TT)
 
-MD(
-B{reverse} procedure
+H4 reverse procedure
 
+MD(
 K{reverse} produces a reversed copy of a Lisp list.
 MD)
 
@@ -721,7 +707,6 @@ PR(
 reverse (public);vals lvals -> lvals
 PR)
 
-IX reverse
 CB(
 reg reverse
 
@@ -739,9 +724,9 @@ TT(
 
 TT)
 
-MD(
-B{list-tail} procedure
+H4 list-tail procedure
 
+MD(
 Given a list index, K{list-tail} yields the sublist starting from that index.
 MD)
 
@@ -758,7 +743,6 @@ PR(
 list-tail (public);vals lvals k num -> lvals
 PR)
 
-IX list-tail
 CB(
 reg list-tail
 
@@ -779,9 +763,9 @@ TT(
 
 TT)
 
-MD(
-B{list-ref} procedure
+H4 list-ref procedure
 
+MD(
 K{list-ref} yields the list item at a given index.
 MD)
 
@@ -798,7 +782,6 @@ PR(
 list-ref (public);vals lvals k num -> val
 PR)
 
-IX list-ref
 CB(
 reg list-ref
 
@@ -815,9 +798,9 @@ TT(
 
 TT)
 
-MD(
-B{memq} procedure
+H4 memq procedure
 
+MD(
 B{memv} procedure
 
 B{member} procedure
@@ -840,7 +823,6 @@ PR(
 memq (public);val1 val val2 lvals -> lvfalse
 PR)
 
-IX memq
 CB(
 reg memq
 
@@ -927,9 +909,9 @@ proc ::constcl::member-proc {epred val1 val2} {
 }
 CB)
 
-MD(
-B{assq} procedure
+H4 assq procedure
 
+MD(
 B{assv} procedure
 
 B{assoc} procedure
@@ -951,7 +933,6 @@ PR(
 assq (public);val1 val val2 alist -> lvfalse
 PR)
 
-IX assq
 CB(
 reg assq
 

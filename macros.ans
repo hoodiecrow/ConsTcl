@@ -373,7 +373,7 @@ TT(
 
 TT)
 
-H4 expand-del! procedure
+H4 expand-del"! procedure
 
 MD(
 The macro K{del!} updates a property list. It removes a key-value pair if the key
@@ -887,7 +887,7 @@ proc ::constcl::do-or {tail env} {
 }
 CB)
 
-H4 expand-pop! procedure
+H4 expand-pop"! procedure
 
 MD(
 The macro K{pop!} updates a list. It removes the first element.
@@ -932,7 +932,7 @@ TT(
 
 TT)
 
-H4 expand-push! procedure
+H4 expand-push"! procedure
 
 MD(
 The macro K{push!} updates a list. It adds a new element as the new first element.
@@ -977,7 +977,7 @@ TT(
 } -output "(d a b c)\n"
 TT)
 
-H4 expand-put! procedure
+H4 expand-put"! procedure
 
 MD(
 The macro K{put!} updates a property list. It adds a key-value pair if the key

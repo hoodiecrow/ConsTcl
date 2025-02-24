@@ -5,6 +5,8 @@ CB(
 ; An assortment of procedures to supplement the builtins.
 CB)
 
+H4 get procedure
+
 MD(
 K{get} is a procedure for picking out values out of property lists. It returns
 either the value or K{#f} if the key isn't found.
@@ -22,6 +24,8 @@ CB(
       #f)))
 CB)
 
+H4 list-find-key procedure
+
 MD(
 K{list-find-key} searches for a key in a property list. If it finds it, it
 returns the (0-based) index of it. If it doesn't find it, it returns -1. It
@@ -36,6 +40,8 @@ CB(
 (define (list-find-key lst key)
   (lfk lst key 0))
 CB)
+
+H4 lfk procedure
 
 MD(
 K{lfk} does the work for K{list-find-key}.
@@ -54,6 +60,8 @@ CB(
       (lfk (cddr lst) key (+ count 2)))))
 CB)
 
+H4 list-set"! procedure
+
 MD(
 K{list-set!} works in analogy with K{string-set!}. Given a list and an index, it
 finds the place to insert a value. Is in real trouble if the index value is out
@@ -70,6 +78,8 @@ CB(
     (set-car! lst val)
     (list-set! (cdr lst) (- idx 1) val)))
 CB)
+
+H4 delete"! procedure
 
 MD(
 K{delete!} removes a key-value pair from a property list. Returns the list.
@@ -92,6 +102,8 @@ CB(
     lst))
 CB)
 
+H4 del-seek procedure
+
 MD(
 K{del-seek} does the searching for K{delete!}.
 MD)
@@ -106,6 +118,8 @@ CB(
     lst
     (del-seek (cdr lst) (- idx 1))))
 CB)
+
+H4 get-alist procedure
 
 MD(
 K{get-alist} is like K{get} but for association lists.
@@ -122,6 +136,8 @@ CB(
       (cdr item)
       #f)))
 CB)
+
+H4 pairlis procedure
 
 MD(
 K{pairlis} takes two lists like K{'(a b c)} and K{'(1 2 3)} and produces a list
@@ -141,6 +157,8 @@ CB(
       (pairlis (cdr a) (cdr b)))))
 CB)
 
+H4 set-alist"! procedure
+
 MD(
 K{set-alist!} updates a value in an association list, given a key.
 MD)
@@ -156,6 +174,8 @@ CB(
       (begin (set-cdr! item val) lst)
       lst)))
 CB)
+
+H4 fact procedure
 
 MD(
 K{fact} calculates the factorial of E{n}.

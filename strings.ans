@@ -354,7 +354,7 @@ TT(
 
 TT)
 
-H4 string-set! procedure
+H4 string-set"! procedure
 
 MD(
 K{string-set!} replaces the character at E{k} with E{char} in a non-constant string.
@@ -446,7 +446,7 @@ PR(
 string-ci<=?, string-ci>=? (public);str1 str str2 str -> bool
 PR)
 
-IX string=!
+IX string=?
 CB(
 reg string=?
 
@@ -477,7 +477,7 @@ TT(
 
 TT)
 
-IX string-ci=!
+IX string-ci=?
 CB(
 reg string-ci=?
 
@@ -509,7 +509,7 @@ TT(
 
 TT)
 
-IX string<!
+IX string<?
 CB(
 reg string<?
 
@@ -540,7 +540,7 @@ TT(
 
 TT)
 
-IX string-ci<!
+IX string-ci<?
 CB(
 reg string-ci<?
 
@@ -572,7 +572,7 @@ TT(
 
 TT)
 
-IX string>!
+IX string>?
 CB(
 reg string>?
 
@@ -603,7 +603,7 @@ TT(
 
 TT)
 
-IX string-ci>!
+IX string-ci>?
 CB(
 reg string-ci>?
 
@@ -635,7 +635,7 @@ TT(
 
 TT)
 
-IX string<=!
+IX string<=?
 CB(
 reg string<=?
 
@@ -666,7 +666,7 @@ TT(
 
 TT)
 
-IX string-ci<=!
+IX string-ci<=?
 CB(
 reg string-ci<=?
 
@@ -698,7 +698,7 @@ TT(
 
 TT)
 
-IX string>=!
+IX string>=?
 CB(
 reg string>=?
 
@@ -729,7 +729,7 @@ TT(
 
 TT)
 
-IX string-ci>=!
+IX string-ci>=?
 CB(
 reg string-ci>=?
 
@@ -957,7 +957,7 @@ TT(
 
 TT)
 
-H4 string-fill! procedure
+H4 string-fill"! procedure
 
 MD(
 K{string-fill!} E{str} E{char} fills a non-constant string with E{char}.

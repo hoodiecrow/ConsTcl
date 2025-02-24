@@ -934,7 +934,7 @@ Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsi
 The parsing process translates an expression from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
 
 
-For example, the external representation for a vector is a sharp sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader or parser is working through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader or parser is working through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
 
 \includegraphics{images/vector-representation.png}
 
@@ -1298,7 +1298,7 @@ proc ::constcl::read-expr {args} {
   }
   switch -regexp $c {
     {\"}          { read-string-expr }
-    {\#}          { read-sharp }
+    {\#}          { read-pound }
     {\'}          { read-quoted-expr }
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
@@ -1582,6 +1582,37 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 \end{lstlisting}
+\subsection{read-pound procedure}
+\label{read-pound-procedure}
+\index{read-pound procedure}
+
+
+\texttt{read-pound} is activated by \texttt{read-expr} when it reads a pound sign (\texttt{\#}). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pound (internal)} \\
+\textit{Returns:} &  \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-pound {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
+  read-eof $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+\end{lstlisting}
 \subsection{read-quasiquoted-expr procedure}
 \label{read-quasiquoted-expr-procedure}
 \index{read-quasiquoted-expr procedure}
@@ -1627,37 +1658,6 @@ proc ::constcl::read-quoted-expr {} {
   read-eof $expr
   make-constant $expr
   return [list [S quote] $expr]
-}
-\end{lstlisting}
-\subsection{read-sharp procedure}
-\label{read-sharp-procedure}
-\index{read-sharp procedure}
-
-
-\texttt{read-sharp} is activated by \texttt{read-expr} when it reads a sharp sign (\texttt{\#}). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-sharp (internal)} \\
-\textit{Returns:} & a vector, boolean, or character value or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
 }
 \end{lstlisting}
 \subsection{read-string-expr procedure}
@@ -1732,7 +1732,7 @@ proc ::constcl::read-unquoted-expr {} {
 \index{read-vector-expr procedure}
 
 
-\texttt{read-vector-expr} is activated by \texttt{read-sharp} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object.
+\texttt{read-vector-expr} is activated by \texttt{read-pound} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -2070,7 +2070,7 @@ env & an environment \\
 \textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
-\index{/set!}
+\index{/set"!}
 \begin{lstlisting}
 proc ::constcl::/set! {var val env} {
   [$env find $var] set $var $val
@@ -2508,8 +2508,8 @@ proc ::constcl::expand-define {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-del! procedure}
-\label{expand-del!-procedure}
-\index{expand-del! procedure}
+\label{expand-del"!-procedure}
+\index{expand-del"! procedure}
 
 
 The macro \texttt{del!} updates a property list. It removes a key-value pair if the key is present, or leaves the list untouched if it isn't.
@@ -2898,8 +2898,8 @@ proc ::constcl::do-or {tail env} {
 }
 \end{lstlisting}
 \subsection{expand-pop! procedure}
-\label{expand-pop!-procedure}
-\index{expand-pop! procedure}
+\label{expand-pop"!-procedure}
+\index{expand-pop"! procedure}
 
 
 The macro \texttt{pop!} updates a list. It removes the first element.
@@ -2932,8 +2932,8 @@ proc ::constcl::expand-pop! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-push! procedure}
-\label{expand-push!-procedure}
-\index{expand-push! procedure}
+\label{expand-push"!-procedure}
+\index{expand-push"! procedure}
 
 
 The macro \texttt{push!} updates a list. It adds a new element as the new first element.
@@ -2975,8 +2975,8 @@ proc ::constcl::expand-push! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-put! procedure}
-\label{expand-put!-procedure}
-\index{expand-put! procedure}
+\label{expand-put"!-procedure}
+\index{expand-put"! procedure}
 
 
 The macro \texttt{put!} updates a property list. It adds a key-value pair if the key isn't present, or changes the value in place if it is.
@@ -6102,7 +6102,8 @@ proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-input-file: [cnof] $filename"
+    set fn [$filename value]
+    error "open-input-file: [cnof] $fn"
   }
   return $p
 }
@@ -6533,8 +6534,8 @@ foreach ads {
 }
 \end{lstlisting}
 \subsection{set-car! procedure}
-\label{set-car!-procedure}
-\index{set-car! procedure}
+\label{set-car"!-procedure}
+\index{set-car"! procedure}
 
 
 \texttt{set-car!} sets the contents of the first cell in a pair.
@@ -6563,8 +6564,8 @@ proc ::constcl::set-car! {pair val} {
 }
 \end{lstlisting}
 \subsection{set-cdr! procedure}
-\label{set-cdr!-procedure}
-\index{set-cdr! procedure}
+\label{set-cdr"!-procedure}
+\index{set-cdr"! procedure}
 
 
 \texttt{set-cdr!} sets the contents of the second cell in a pair.
@@ -7414,8 +7415,8 @@ proc ::constcl::string-ref {str k} {
 }
 \end{lstlisting}
 \subsection{string-set! procedure}
-\label{string-set!-procedure}
-\index{string-set! procedure}
+\label{string-set"!-procedure}
+\index{string-set"! procedure}
 
 
 \texttt{string-set!} replaces the character at \emph{k} with \emph{char} in a non-constant string.
@@ -7510,7 +7511,7 @@ str2 & a string \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
-\index{string=!}
+\index{string=?}
 \begin{lstlisting}
 reg string=?
  
@@ -7530,7 +7531,7 @@ proc ::constcl::string=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci=!}
+\index{string-ci=?}
 \begin{lstlisting}
 reg string-ci=?
  
@@ -7551,7 +7552,7 @@ proc ::constcl::string-ci=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string<!}
+\index{string<?}
 \begin{lstlisting}
 reg string<?
  
@@ -7571,7 +7572,7 @@ proc ::constcl::string<? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci<!}
+\index{string-ci<?}
 \begin{lstlisting}
 reg string-ci<?
  
@@ -7592,7 +7593,7 @@ proc ::constcl::string-ci<? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string>!}
+\index{string>?}
 \begin{lstlisting}
 reg string>?
  
@@ -7612,7 +7613,7 @@ proc ::constcl::string>? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci>!}
+\index{string-ci>?}
 \begin{lstlisting}
 reg string-ci>?
  
@@ -7633,7 +7634,7 @@ proc ::constcl::string-ci>? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string<=!}
+\index{string<=?}
 \begin{lstlisting}
 reg string<=?
  
@@ -7653,7 +7654,7 @@ proc ::constcl::string<=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci<=!}
+\index{string-ci<=?}
 \begin{lstlisting}
 reg string-ci<=?
  
@@ -7674,7 +7675,7 @@ proc ::constcl::string-ci<=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string>=!}
+\index{string>=?}
 \begin{lstlisting}
 reg string>=?
  
@@ -7694,7 +7695,7 @@ proc ::constcl::string>=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci>=!}
+\index{string-ci>=?}
 \begin{lstlisting}
 reg string-ci>=?
  
@@ -7879,8 +7880,8 @@ proc ::constcl::string-copy {str} {
 }
 \end{lstlisting}
 \subsection{string-fill! procedure}
-\label{string-fill!-procedure}
-\index{string-fill! procedure}
+\label{string-fill"!-procedure}
+\index{string-fill"! procedure}
 
 
 \texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.
@@ -8366,8 +8367,8 @@ proc ::constcl::vector-ref {vec k} {
 }
 \end{lstlisting}
 \subsection{vector-set! procedure}
-\label{vector-set!-procedure}
-\index{vector-set! procedure}
+\label{vector-set"!-procedure}
+\index{vector-set"! procedure}
 
 
 \texttt{vector-set!}, for a non-constant vector, sets the element at index \emph{k} to \emph{val}.
@@ -8465,8 +8466,8 @@ proc ::constcl::list->vector {list} {
 }
 \end{lstlisting}
 \subsection{vector-fill! procedure}
-\label{vector-fill!-procedure}
-\index{vector-fill! procedure}
+\label{vector-fill"!-procedure}
+\index{vector-fill"! procedure}
 
 
 \texttt{vector-fill!} fills a non-constant vector with a given value.
@@ -8885,6 +8886,9 @@ proc ::repl {{prompt "ConsTcl> "}} {
 \begin{lstlisting}
 ; An assortment of procedures to supplement the builtins.
 \end{lstlisting}
+\subsection{get procedure}
+\label{get-procedure}
+\index{get procedure}
 
 
 \texttt{get} is a procedure for picking out values out of property lists. It returns either the value or \texttt{\#f} if the key isn't found.
@@ -8904,6 +8908,9 @@ key & a symbol \\
       (cadr v)
       #f)))
 \end{lstlisting}
+\subsection{list-find-key procedure}
+\label{list-find-key-procedure}
+\index{list-find-key procedure}
 
 
 \texttt{list-find-key} searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
@@ -8920,6 +8927,9 @@ key & a symbol \\
 (define (list-find-key lst key)
   (lfk lst key 0))
 \end{lstlisting}
+\subsection{lfk procedure}
+\label{lfk-procedure}
+\index{lfk procedure}
 
 
 \texttt{lfk} does the work for \texttt{list-find-key}.
@@ -8941,6 +8951,9 @@ count & a number \\
       count
       (lfk (cddr lst) key (+ count 2)))))
 \end{lstlisting}
+\subsection{list-set! procedure}
+\label{list-set"!-procedure}
+\index{list-set"! procedure}
 
 
 \texttt{list-set!} works in analogy with \texttt{string-set!}. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
@@ -8960,6 +8973,9 @@ val & a Lisp value \\
     (set-car! lst val)
     (list-set! (cdr lst) (- idx 1) val)))
 \end{lstlisting}
+\subsection{delete! procedure}
+\label{delete"!-procedure}
+\index{delete"! procedure}
 
 
 \texttt{delete!} removes a key-value pair from a property list. Returns the list.
@@ -8984,6 +9000,9 @@ key & a symbol \\
           (set-cdr! bef aft))))
     lst))
 \end{lstlisting}
+\subsection{del-seek procedure}
+\label{del-seek-procedure}
+\index{del-seek procedure}
 
 
 \texttt{del-seek} does the searching for \texttt{delete!}.
@@ -9002,6 +9021,9 @@ idx & a number \\
     lst
     (del-seek (cdr lst) (- idx 1))))
 \end{lstlisting}
+\subsection{get-alist procedure}
+\label{get-alist-procedure}
+\index{get-alist procedure}
 
 
 \texttt{get-alist} is like \texttt{get} but for association lists.
@@ -9021,6 +9043,9 @@ key & a symbol \\
       (cdr item)
       #f)))
 \end{lstlisting}
+\subsection{pairlis procedure}
+\label{pairlis-procedure}
+\index{pairlis procedure}
 
 
 \texttt{pairlis} takes two lists like \texttt{'(a b c)} and \texttt{'(1 2 3)} and produces a list of association pairs \texttt{'((a . 1) (b . 2) (c . 3))}.
@@ -9041,6 +9066,9 @@ b & a Lisp list of Lisp values \\
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
 \end{lstlisting}
+\subsection{set-alist! procedure}
+\label{set-alist"!-procedure}
+\index{set-alist"! procedure}
 
 
 \texttt{set-alist!} updates a value in an association list, given a key.
@@ -9061,6 +9089,9 @@ val & a Lisp value \\
       (begin (set-cdr! item val) lst)
       lst)))
 \end{lstlisting}
+\subsection{fact procedure}
+\label{fact-procedure}
+\index{fact procedure}
 
 
 \texttt{fact} calculates the factorial of \emph{n}.

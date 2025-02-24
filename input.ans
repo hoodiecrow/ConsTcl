@@ -20,7 +20,7 @@ The parsing process translates an expression from external representation to
 internal representation. The external representation is a 'recipe' for an
 expression that expresses it in a unique way. 
 
-For example, the external representation for a vector is a sharp sign (K{#}), a
+For example, the external representation for a vector is a pound sign (K{#}), a
 left parenthesis (K{(}), the external representation for some values, and a right
 parenthesis (K{)}). When the reader or parser is working through input, a K{#(}
 symbol signals that a vector structure is being read. A number of subexpressions
@@ -452,7 +452,7 @@ proc ::constcl::read-expr {args} {
   }
   switch -regexp $c {
     {\"}          { read-string-expr }
-    {\#}          { read-sharp }
+    {\#}          { read-pound }
     {\'}          { read-quoted-expr }
     {\(}          { read-pair-expr ")" }
     {\+} - {\-}   { read-plus-minus $c }
@@ -928,6 +928,52 @@ TT)
     ::tcltest::removeFile testrr.lsp
 } -output "+\n-\n-99\n"
 
+H4 read-pound procedure
+
+MD(
+K{read-pound} is activated by K{read-expr} when it reads a pound sign (K{#}). It
+in turn either delegates to the vector reader or the character reader, or
+returns boolean literals.
+MD)
+
+PR(
+read-pound (internal);-> poundeof
+PR)
+
+CB(
+proc ::constcl::read-pound {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
+  read-eof $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+CB)
+
+TT(
+
+::tcltest::test read-19.0 {try read-expr on booleans} -setup {
+    ::tcltest::makeFile {  #t  #f} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#t\n#f\n"
+
+TT)
+
 H4 read-quasiquoted-expr procedure
 
 MD(
@@ -1013,52 +1059,6 @@ TT(
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "(quote foo)\n"
-
-TT)
-
-H4 read-sharp procedure
-
-MD(
-K{read-sharp} is activated by K{read-expr} when it reads a sharp sign (K{#}). It
-in turn either delegates to the vector reader or the character reader, or
-returns boolean literals.
-MD)
-
-PR(
-read-sharp (internal);-> sharpeof
-PR)
-
-CB(
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
-}
-CB)
-
-TT(
-
-::tcltest::test read-19.0 {try read-expr on booleans} -setup {
-    ::tcltest::makeFile {  #t  #f} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
-} -body {
-    rw $p
-    rw $p
-} -cleanup {
-    ::constcl::close-input-port $p
-    ::tcltest::removeFile testrr.lsp
-} -output "#t\n#f\n"
 
 TT)
 
@@ -1195,7 +1195,7 @@ TT)
 H4 read-vector-expr procedure
 
 MD(
-K{read-vector-expr} is activated by K{read-sharp} and reads a number of
+K{read-vector-expr} is activated by K{read-pound} and reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
 expression and returns a R{Vector}{vectors} object.
 MD)

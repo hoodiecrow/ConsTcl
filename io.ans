@@ -411,7 +411,8 @@ proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
   if {[$p handle] eq "#NIL"} {
-    error "open-input-file: [cnof] $filename"
+    set fn [$filename value]
+    error "open-input-file: [cnof] $fn"
   }
   return $p
 }

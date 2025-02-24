@@ -296,7 +296,7 @@ TT(
 
 TT)
 
-H4 vector-set! procedure
+H4 vector-set"! procedure
 
 MD(
 K{vector-set!}, for a non-constant vector, sets the element at index E{k} to E{val}.
@@ -412,7 +412,7 @@ TT(
 
 TT)
 
-H4 vector-fill! procedure
+H4 vector-fill"! procedure
 
 MD(
 K{vector-fill!} fills a non-constant vector with a given value.

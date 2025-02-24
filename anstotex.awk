@@ -67,7 +67,11 @@ $0 ~ modeline { next; }
 
 /^H4 / {
     sub(/\n$/, "", $0)
-    printf "\\subsection{%s}\n", substr($0, 4)
+    heading = substr($0, 4)
+    gsub(/"!/, "!", heading)
+    gsub(/"@/, "@", heading)
+    gsub(/"\|/, "|", heading)
+    printf "\\subsection{%s}\n", heading
     printf "\\label{%s}\n", makelabel(substr($0, 4))
     printf "\\index{%s}\n", substr($0, 4)
     next
