@@ -77,6 +77,36 @@ limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
 came out of the experience feeling a bit dissatisfied. In the latter part of
 January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
 
+\subsection{About Lisp}
+\label{about-lisp}
+
+ConsTcl is a \emph{Lisp interpreter}, specifically a \emph{Scheme interpreter}.
+Lisp is a family of programming languages that share the same basic form, and
+Scheme is one of those languages. Where some other languages use braces to
+structure code, and Python uses indents, Lisp instead uses parentheses. This
+Python snippet:
+
+\begin{verbatim}
+x = 1
+if x == 1:
+    print("x is 1.")
+\end{verbatim}
+
+\noindent looks like this in Scheme:
+
+\begin{verbatim}
+(let ((x 1))
+  (if (= x 1)
+    (write "x is 1.")))
+\end{verbatim}
+
+In Lisp, everything is either a list expression, starting and ending with
+parentheses and having an operator in the first position of the list, followed
+by operands, or else an atomic (indivisible) expression like \texttt{x} or
+\texttt{1}. A full description of Lisp is beyond the scope of this
+introduction, but Lisp will be explained from the inside out in the rest of
+this book.
+
 \subsection{About ConsTcl}
 \label{about-constcl}
 
@@ -226,6 +256,82 @@ I use all of these terms for the subroutines in ConsTcl. I try to stick to proce
 
 And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg} are `public' and those who aren't are `internal'.
 
+\subsection{atom? procedure}
+\label{atom?-procedure}
+\index{atom? procedure}
+
+
+There are two kinds of data in Lisp: lists\index{list} and atoms\index{atom}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (truth) if it is an atom, and \texttt{\#f} (falsehood) if not.
+
+\subsubsection{Predicates: an aside}
+\label{predicates-an-aside}
+\index{Predicates: an aside}
+
+By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
+
+
+\texttt{if \{[typeof? \$v Dot]\} \ldots }
+
+
+will not do, but
+
+
+\texttt{if \{[typeof? \$v Dot] ne "\#f"\} \ldots }
+
+
+works.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf atom? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+reg atom? ::constcl::atom?
+ 
+proc ::constcl::atom? {val} {
+  foreach type {symbol number string
+      char boolean vector port eof} {
+    if {[$type? $val] eq "#t"} {
+      return #t
+    }
+  }
+  return #f
+}
+\end{lstlisting}
+\subsection{usage procedure}
+\label{usage-procedure}
+\index{usage procedure}
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf usage (internal)} \\
+usage & an expression \\
+expr &  \\
+none &  \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::usage {usage expr} {
+  set u $usage
+  set e $expr
+  if {[[length $usage] numval] !=
+      [[length $expr] numval]} {
+    while {$u ne "#NIL" && $e ne "#NIL"} {
+      set u [cdr $u]
+      set e [cdr $e]
+    }
+    if {$e eq "#NIL" && $u ne "#NIL" &&
+      [regexp {\?.*\?} [[car $u] name]]} {
+      return
+    }
+    ::error "usage error\n[
+      $usage show] not [$expr show]"
+  }
+}
+\end{lstlisting}
 \subsection{regmacro procedure}
 \label{regmacro-procedure}
 \index{regmacro procedure}
@@ -270,21 +376,6 @@ proc ::pn {} {
 
 
 \texttt{typeof?} looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter\footnote{the Tcl interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms the type, the procedure returns \texttt{\#t}.
-
-
-By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
-
-
-\texttt{if \{[typeof? \$v Dot]\} \ldots }
-
-
-will not do, but
-
-
-\texttt{if \{[typeof? \$v Dot] ne "\#f"\} \ldots }
-
-
-works.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -356,6 +447,57 @@ proc ::constcl::in-range {x args} {
     lappend res $start
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
+}
+\end{lstlisting}
+\subsection{error procedure}
+\label{error-procedure}
+\index{error procedure}
+
+
+\texttt{error} is used to signal an error, with \emph{msg} being a message string and the optional arguments being values to show after the message.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf error (public)} \\
+msg & a message string \\
+?exprs? & some expressions \\
+\textit{Returns:} & -don't care- \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+reg error
+ 
+proc ::constcl::error {msg args} {
+  if {[llength $args]} {
+    lappend msg "("
+    set times 0
+    foreach arg $args {
+      if {$times} {
+        ::append msg " "
+      }
+      ::append msg [$arg show]
+      incr times
+    }
+    lappend msg ")"
+  }
+  ::error $msg
+}
+\end{lstlisting}
+\subsection{check procedure}
+\label{check-procedure}
+\index{check procedure}
+
+
+\texttt{check} does a check (typically a type check) on something and throws an error if it fails.
+
+\begin{lstlisting}
+proc ::constcl::check {cond msg} {
+  if {[uplevel $cond] eq "#f"} {
+    ::error [
+      uplevel [
+        ::list subst [
+          ::string trim $msg]]]
+  }
 }
 \end{lstlisting}
 \section{Testing commands}
@@ -582,9 +724,94 @@ proc ::pxw {str} {
   ::constcl::write $expr
 }
 \end{lstlisting}
-\section{The NIL class}
-\label{the-nil-class}
-\index{The NIL class}
+\section{Some small classes}
+\label{some-small-classes}
+\index{Some small classes}
+\subsection{Dot class}
+\label{dot-class}
+\index{Dot class}
+
+
+The \texttt{Dot} class is a helper class for the parser.
+
+\begin{lstlisting}
+catch { ::constcl::Dot destroy }
+ 
+oo::class create ::constcl::Dot {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "."
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+\end{lstlisting}
+\subsection{dot? procedure}
+\label{dot?-procedure}
+\index{dot? procedure}
+
+
+\texttt{dot?} is a type predicate that checks for membership in the type \texttt{Dot}.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf dot? (internal)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::dot? {val} {
+  typeof? $val "Dot"
+}
+\end{lstlisting}
+\subsection{EndOfFile class}
+\label{endoffile-class}
+\index{EndOfFile class}
+
+
+The \texttt{EndOfFile} class is for end-of-file\index{end of file} conditions.
+
+\begin{lstlisting}
+catch { ::constcl::EndOfFile destroy }
+ 
+oo::class create ::constcl::EndOfFile {
+  method mkconstant {} {}
+  method write {handle} {
+    puts -nonewline $handle "#<end-of-file>"
+  }
+  method display {handle} {
+    my write $handle
+  }
+}
+\end{lstlisting}
+\subsection{eof? procedure}
+\label{eof?-procedure}
+\index{eof? procedure}
+
+
+\texttt{eof?} is a type predicate that recognizes the end-of-file object.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eof? (internal)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc eof? {val} {
+  if {$val eq "#EOF"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+\end{lstlisting}
+\subsection{NIL class}
+\label{nil-class}
+\index{NIL class}
 
 
 The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It is also base class for many other type classes.
@@ -647,68 +874,6 @@ proc ::constcl::null? {val} {
   }
 }
 \end{lstlisting}
-\section{The classes Dot, Unspecified, Undefined, and EndOfFile}
-\label{the-classes-dot,-unspecified,-undefined,-and-endoffile}
-\index{The classes Dot, Unspecified, Undefined, and EndOfFile}
-\subsection{Dot class}
-\label{dot-class}
-\index{Dot class}
-
-
-The \texttt{Dot} class is a helper class for the parser.
-
-\begin{lstlisting}
-catch { ::constcl::Dot destroy }
- 
-oo::class create ::constcl::Dot {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "."
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-\end{lstlisting}
-\subsection{dot? procedure}
-\label{dot?-procedure}
-\index{dot? procedure}
-
-
-\texttt{dot?} is a type predicate that checks for membership in the type \texttt{Dot}.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf dot? (internal)} \\
-val & a Lisp value \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::dot? {val} {
-  typeof? $val "Dot"
-}
-\end{lstlisting}
-\subsection{Unspecified class}
-\label{unspecified-class}
-\index{Unspecified class}
-
-
-The \texttt{Unspecified} class is for unspecified things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'\index{S9fES}.
-
-\begin{lstlisting}
-catch { ::constcl::Unspecified destroy }
- 
-oo::class create ::constcl::Unspecified {
-  method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<unspecified>"
-  }
-  method display {handle} {
-    my write $handle
-  }
-}
-\end{lstlisting}
 \subsection{Undefined class}
 \label{undefined-class}
 \index{Undefined class}
@@ -729,117 +894,24 @@ oo::class create ::constcl::Undefined {
   }
 }
 \end{lstlisting}
-\subsection{EndOfFile class}
-\label{endoffile-class}
-\index{EndOfFile class}
+\subsection{Unspecified class}
+\label{unspecified-class}
+\index{Unspecified class}
 
 
-The \texttt{EndOfFile} class is for end-of-file\index{end of file} conditions.
+The \texttt{Unspecified} class is for unspecified things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'\index{S9fES}.
 
 \begin{lstlisting}
-catch { ::constcl::EndOfFile destroy }
+catch { ::constcl::Unspecified destroy }
  
-oo::class create ::constcl::EndOfFile {
+oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
-    puts -nonewline $handle "#<end-of-file>"
+    puts -nonewline $handle "#<unspecified>"
   }
   method display {handle} {
     my write $handle
   }
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc eof? {val} {
-  if {$val eq "#EOF"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-\end{lstlisting}
-\section{The error and check procedures}
-\label{the-error-and-check-procedures}
-\index{The error and check procedures}
-\subsection{error procedure}
-\label{error-procedure}
-\index{error procedure}
-
-
-\texttt{error} is used to signal an error, with \emph{msg} being a message string and the optional arguments being values to show after the message.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf error (public)} \\
-msg & a message string \\
-?exprs? & some expressions \\
-\textit{Returns:} & -don't care- \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg error
- 
-proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    lappend msg "("
-    set times 0
-    foreach arg $args {
-      if {$times} {
-        ::append msg " "
-      }
-      ::append msg [$arg show]
-      incr times
-    }
-    lappend msg ")"
-  }
-  ::error $msg
-}
-\end{lstlisting}
-\subsection{check procedure}
-\label{check-procedure}
-\index{check procedure}
-
-
-\texttt{check} does a check (typically a type check) on something and throws an error if it fails.
-
-\begin{lstlisting}
-proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq "#f"} {
-    ::error [
-      uplevel [
-        ::list subst [
-          ::string trim $msg]]]
-  }
-}
-\end{lstlisting}
-\section{The atom? predicate}
-\label{the-atom?-predicate}
-\index{The atom? predicate}
-\subsection{atom? procedure}
-\label{atom?-procedure}
-\index{atom? procedure}
-
-
-There are two kinds of data in Lisp: lists\index{list} and atoms\index{atom}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf atom? (public)} \\
-val & a Lisp value \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg atom? ::constcl::atom?
- 
-proc ::constcl::atom? {val} {
-  foreach type {symbol number string
-      char boolean vector port eof} {
-    if {[$type? $val] eq "#t"} {
-      return #t
-    }
-  }
-  return #f
 }
 \end{lstlisting}
 \chapter{Input}
@@ -1189,12 +1261,16 @@ proc ::constcl::read-eof {args} {
 \section{Reader procedures}
 \label{reader-procedures}
 \index{Reader procedures}
+
+
+Reader procedures specialize in reading a certain kind of input, except for \texttt{read-expr} which reads them all (with a little help).
+
 \subsection{read-expr procedure}
 \label{read-expr-procedure}
 \index{read-expr procedure}
 
 
-The \texttt{read-expr} procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed reading procedures, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (\texttt{\#EOF})\index{end of file}.
+The \texttt{read-expr} procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed readers, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (\texttt{\#EOF})\index{end of file}.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -1240,114 +1316,6 @@ proc ::constcl::read-expr {args} {
   }
 }
 \end{lstlisting}
-\subsection{read-string-expr procedure}
-\label{read-string-expr-procedure}
-\index{read-string-expr procedure}
-
-
-\texttt{read-string-expr} is activated by \texttt{read-expr} when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. It then returns a string expression--an immutable String (see page \pageref{strings}) object.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-string-expr (internal)} \\
-\textit{Returns:} & a string or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-string-expr {} {
-  upvar c c unget unget
-  set str {}
-  set c [readc]
-  read-eof $c
-  while {$c ne "\"" && $c ne "#EOF"} {
-    if {$c eq "\\"} {
-      ::append str $c
-      set c [readc]
-    }
-    ::append str $c
-    set c [readc]
-  }
-  if {$c eq "#EOF"} {
-    error "bad string (no ending double quote)"
-  }
-  set c [readc]
-  set expr [MkString $str]
-  read-eof $expr
-  $expr mkconstant
-  return $expr
-}
-\end{lstlisting}
-\subsection{read-sharp procedure}
-\label{read-sharp-procedure}
-\index{read-sharp procedure}
-
-
-\texttt{read-sharp} is activated by \texttt{read-expr} when it reads a sharp sign (\texttt{\#}). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-sharp (internal)} \\
-\textit{Returns:} & a vector, boolean, or character value or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-sharp {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
-    "\\" { set n [read-character-expr] }
-    default {
-      ::error "Illegal #-literal: #$c"
-    }
-  }
-  return $n
-}
-\end{lstlisting}
-\subsection{read-vector-expr procedure}
-\label{read-vector-expr-procedure}
-\index{read-vector-expr procedure}
-
-
-\texttt{read-vector-expr} is activated by \texttt{read-sharp} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-vector-expr (internal)} \\
-\textit{Returns:} & a vector or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-vector-expr {} {
-  upvar c c unget unget
-  set res {}
-  set last {}
-  set c [readc]
-  while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
-    if {$res eq {}} {
-      set res $e
-      set last $e
-    } else {
-      set-cdr! $last $e
-      set last $e
-    }
-    skip-ws
-    read-eof $c
-  }
-  if {$c ne ")"} {
-    ::error "Missing right paren. ($c)."
-  }
-  set expr [MkVector $res]
-  read-eof $expr
-  $expr mkconstant
-  return $expr
-}
-\end{lstlisting}
 \subsection{read-character-expr procedure}
 \label{read-character-expr-procedure}
 \index{read-character-expr procedure}
@@ -1379,27 +1347,119 @@ proc ::constcl::read-character-expr {} {
   return $expr
 }
 \end{lstlisting}
-\subsection{read-quoted-expr procedure}
-\label{read-quoted-expr-procedure}
-\index{read-quoted-expr procedure}
+\subsection{read-identifier-expr procedure}
+\label{read-identifier-expr-procedure}
+\index{read-identifier-expr procedure}
 
 
-\texttt{read-quoted-expr} is activated by \texttt{read-expr} when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
+\texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-quoted-expr (internal)} \\
-\textit{Returns:} & an expression wrapped in the quote symbol or end of file \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-identifier-expr (internal)} \\
+?chars? & some Tcl characters \\
+\textit{Returns:} & a symbol or end of file \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::constcl::read-quoted-expr {} {
+proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
-  set expr [read-expr]
-  read-eof $expr
-  make-constant $expr
-  return [list [S quote] $expr]
+  if {[llength $args]} {
+    set c [join $args {}]
+  } else {
+    set c [readc]
+  }
+  read-eof $c
+  set name {}
+  while {[::string is graph -strict $c]} {
+    if {$c eq "#EOF" || $c in {) \]}} {
+      break
+    }
+    ::append name $c
+    set c [readc]
+    # do not check for EOF here
+  }
+  if {$c ne "#EOF"} {
+    set unget $c
+  }
+  read-eof $name
+  # idcheck throws error if invalid identifier
+  idcheck $name
+  return [S $name]
+}
+\end{lstlisting}
+\subsection{read-number-expr procedure}
+\label{read-number-expr-procedure}
+\index{read-number-expr procedure}
+
+
+\texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-number-expr (internal)} \\
+?char? & a Tcl character \\
+\textit{Returns:} & a number or end of file \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-number-expr {args} {
+  upvar c c unget unget
+  set unget {}
+  if {[llength $args]} {
+    lassign $args c
+  } else {
+    set c [readc]
+  }
+  read-eof $c
+  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+      $c ni {) ]}} {
+    ::append num $c
+    set c [readc]
+  }
+  set unget $c
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
+  set expr [N $num]
+  return $expr
+}
+\end{lstlisting}
+\subsection{read-object-expr procedure}
+\label{read-object-expr-procedure}
+\index{read-object-expr procedure}
+
+
+A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of any kind and passes its name along.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-object-expr (internal)} \\
+\textit{Returns:} & a ConsTcl object or end of file \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-object-expr {} {
+  upvar c c unget unget
+  # first colon has already been read
+  foreach ch [split ":oo::Obj" {}] {
+    set c [readc]
+    read-eof $c
+    if {$c ne $ch} {
+      error "bad object name"
+    }
+  }
+  set res "::oo::Obj"
+  set c [readc]
+  read-eof $c
+  while {[::string is digit $c]} {
+    ::append res $c
+    set c [readc]
+    read-eof $c
+  }
+  set unget $c
+  return $res
 }
 \end{lstlisting}
 \subsection{read-pair-expr procedure}
@@ -1439,8 +1499,12 @@ proc ::constcl::read-pair-expr {char} {
 \end{lstlisting}
 
 
+\textbf{read-pair} procedure
+
+
 \texttt{read-pair} is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning \texttt{\#NIL} in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When \texttt{read-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
 
+\index{read-pair}
 \begin{lstlisting}
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
@@ -1515,73 +1579,6 @@ proc ::constcl::read-plus-minus {char} {
   }
 }
 \end{lstlisting}
-\subsection{read-number-expr procedure}
-\label{read-number-expr-procedure}
-\index{read-number-expr procedure}
-
-
-\texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-number-expr (internal)} \\
-?char? & a Tcl character \\
-\textit{Returns:} & a number or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-number-expr {args} {
-  upvar c c unget unget
-  set unget {}
-  if {[llength $args]} {
-    lassign $args c
-  } else {
-    set c [readc]
-  }
-  read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) ]}} {
-    ::append num $c
-    set c [readc]
-  }
-  set unget $c
-  check {::string is double -strict $num} {
-      Invalid numeric constant $num
-  }
-  set expr [N $num]
-  return $expr
-}
-\end{lstlisting}
-\subsection{read-unquoted-expr procedure}
-\label{read-unquoted-expr-procedure}
-\index{read-unquoted-expr procedure}
-
-
-When a comma is found in the input stream, \texttt{read-unquoted-expr} is activated. If it reads an at-sign (\texttt{@}) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only suppposed to occur inside a quasiquoted expression.
-
-\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-unquoted-expr (internal)} \\
-\textit{Returns:} & an expr. wr. in the unquote/-splicing symbol or end of file \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::read-unquoted-expr {} {
-  upvar c c unget unget
-  set unget {}
-  set c [readc]
-  read-eof $c
-  if {$c eq "@"} {
-    set symbol "unquote-splicing"
-    set expr [read-expr]
-  } else {
-    set symbol "unquote"
-    set expr [read-expr $c]
-  }
-  read-eof $expr
-  return [list [S $symbol] $expr]
-}
-\end{lstlisting}
 \subsection{read-quasiquoted-expr procedure}
 \label{read-quasiquoted-expr-procedure}
 \index{read-quasiquoted-expr procedure}
@@ -1606,82 +1603,165 @@ proc ::constcl::read-quasiquoted-expr {} {
   return [list [S quasiquote] $expr]
 }
 \end{lstlisting}
-\subsection{read-identifier-expr procedure}
-\label{read-identifier-expr-procedure}
-\index{read-identifier-expr procedure}
+\subsection{read-quoted-expr procedure}
+\label{read-quoted-expr-procedure}
+\index{read-quoted-expr procedure}
 
 
-\texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object.
+\texttt{read-quoted-expr} is activated by \texttt{read-expr} when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-identifier-expr (internal)} \\
-?chars? & some Tcl characters \\
-\textit{Returns:} & a symbol or end of file \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-quoted-expr (internal)} \\
+\textit{Returns:} & an expression wrapped in the quote symbol or end of file \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::constcl::read-identifier-expr {args} {
+proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
   set unget {}
-  if {[llength $args]} {
-    set c [join $args {}]
-  } else {
-    set c [readc]
-  }
-  read-eof $c
-  set name {}
-  while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || $c in {) \]}} {
-      break
-    }
-    ::append name $c
-    set c [readc]
-    # do not check for EOF here
-  }
-  if {$c ne "#EOF"} {
-    set unget $c
-  }
-  read-eof $name
-  # idcheck throws error if invalid identifier
-  idcheck $name
-  return [S $name]
+  set expr [read-expr]
+  read-eof $expr
+  make-constant $expr
+  return [list [S quote] $expr]
 }
 \end{lstlisting}
-\subsection{read-object-expr procedure}
-\label{read-object-expr-procedure}
-\index{read-object-expr procedure}
+\subsection{read-sharp procedure}
+\label{read-sharp-procedure}
+\index{read-sharp procedure}
 
 
-A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of any kind and passes its name along.
+\texttt{read-sharp} is activated by \texttt{read-expr} when it reads a sharp sign (\texttt{\#}). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-object-expr (internal)} \\
-\textit{Returns:} & a ConsTcl object or end of file \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-sharp (internal)} \\
+\textit{Returns:} & a vector, boolean, or character value or end of file \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::constcl::read-object-expr {} {
+proc ::constcl::read-sharp {} {
   upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
+  set unget {}
   set c [readc]
   read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
+  switch $c {
+    (    { set n [read-vector-expr] }
+    t    { if {[read-end]} {set n #t} }
+    f    { if {[read-end]} {set n #f} }
+    "\\" { set n [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $n
+}
+\end{lstlisting}
+\subsection{read-string-expr procedure}
+\label{read-string-expr-procedure}
+\index{read-string-expr procedure}
+
+
+\texttt{read-string-expr} is activated by \texttt{read-expr} when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable String (see page \pageref{strings}) object.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-string-expr (internal)} \\
+\textit{Returns:} & a string or end of file \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-string-expr {} {
+  upvar c c unget unget
+  set str {}
+  set c [readc]
+  read-eof $c
+  while {$c ne "\"" && $c ne "#EOF"} {
+    if {$c eq "\\"} {
+      ::append str $c
+      set c [readc]
+    }
+    ::append str $c
     set c [readc]
+  }
+  if {$c eq "#EOF"} {
+    error "bad string (no ending double quote)"
+  }
+  set c [readc]
+  set expr [MkString $str]
+  read-eof $expr
+  $expr mkconstant
+  return $expr
+}
+\end{lstlisting}
+\subsection{read-unquoted-expr procedure}
+\label{read-unquoted-expr-procedure}
+\index{read-unquoted-expr procedure}
+
+
+When a comma is found in the input stream, \texttt{read-unquoted-expr} is activated. If it reads an at-sign (\texttt{@}) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only supposed to occur inside a quasiquoted expression.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-unquoted-expr (internal)} \\
+\textit{Returns:} & an expr. wr. in the unquote/-splicing symbol or end of file \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-unquoted-expr {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readc]
+  read-eof $c
+  if {$c eq "@"} {
+    set symbol "unquote-splicing"
+    set expr [read-expr]
+  } else {
+    set symbol "unquote"
+    set expr [read-expr $c]
+  }
+  read-eof $expr
+  return [list [S $symbol] $expr]
+}
+\end{lstlisting}
+\subsection{read-vector-expr procedure}
+\label{read-vector-expr-procedure}
+\index{read-vector-expr procedure}
+
+
+\texttt{read-vector-expr} is activated by \texttt{read-sharp} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object.
+
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-vector-expr (internal)} \\
+\textit{Returns:} & a vector or end of file \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::read-vector-expr {} {
+  upvar c c unget unget
+  set res {}
+  set last {}
+  set c [readc]
+  while {$c ne "#EOF" && $c ne ")"} {
+    set e [cons [read-expr $c] #NIL]
+    if {$res eq {}} {
+      set res $e
+      set last $e
+    } else {
+      set-cdr! $last $e
+      set last $e
+    }
+    skip-ws
     read-eof $c
   }
-  set unget $c
-  return $res
+  if {$c ne ")"} {
+    ::error "Missing right paren. ($c)."
+  }
+  set expr [MkVector $res]
+  read-eof $expr
+  $expr mkconstant
+  return $expr
 }
 \end{lstlisting}
 \chapter{Evaluation}
@@ -1739,25 +1819,36 @@ proc ::constcl::eval \
     }
     switch [$op name] {
       quote {
+        usage [parse "(quote datum)"] $expr
         car $args
       }
       if {
-        if {[eval [car $args] $env] ne "#f"} \
-          {eval [cadr $args] $env} \
-          {eval [caddr $args] $env}
+        if {[null? [cddr $args]] ne "#f"} {
+          usage [p "(if cond cons)"] $expr
+          /if1 {[eval [car $args] $env]} \
+            {eval [cadr $args] $env}
+        } {
+          usage [p "(if cond cons altr)"] $expr
+          /if {[eval [car $args] $env]} \
+            {eval [cadr $args] $env} \
+            {eval [caddr $args] $env}
+        }
       }
       begin {
         /begin $args $env
       }
       define {
+        usage [p "(define sym val)"] $expr
         /define [car $args] [
           eval [cadr $args] $env] $env
       }
       set! {
+        usage [p "(set! sym val)"] $expr
         /set! [car $args] [
           eval [cadr $args] $env] $env 
       }
       lambda {
+        # no point checking usage here
         /lambda [car $args] [
           cdr $args] $env
       }
@@ -1849,7 +1940,10 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 The conditional\index{conditional} form \texttt{if} evaluates a Lisp list of three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
 
-\textbf{/if} procedure
+The two procedures that handle the conditional form is \texttt{/if} and \texttt{/if1}. The former takes both a consequent and an alternate, the latter takes only a consequent.
+
+
+\textbf{/if} procedure \textbf{/if1} procedure
 
 \noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
 \hline
@@ -1860,13 +1954,28 @@ alternate & an expression \\
 \textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
+\noindent\begin{tabular}{ |p{1.5cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if1 (internal)} \\
+condition & an expression \\
+consequent & an expression \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
 \index{/if}
+\index{/if1}
 \begin{lstlisting}
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel $cond] ne "#f"} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
     uplevel $conseq
   } {
     uplevel $altern
+  }
+}
+ 
+proc ::constcl::/if1 {cond conseq} {
+  if {[uplevel [::list expr $cond]] ne "#f"} {
+    uplevel $conseq
   }
 }
 \end{lstlisting}
@@ -1894,8 +2003,8 @@ env & an environment \\
 \index{/begin}
 \begin{lstlisting}
 proc ::constcl::/begin {exps env} {
-  /if {pair? $exps} {
-    /if {pair? [cdr $exps]} {
+  /if {[pair? $exps]} {
+    /if {[pair? [cdr $exps]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
     } {
@@ -2175,9 +2284,9 @@ proc ::constcl::expand-and {expr env} {
   }
 }
 \end{lstlisting}
-\subsection{do-and procedure}
-\label{do-and-procedure}
-\index{do-and procedure}
+
+
+\textbf{do-and} procedure
 
 
 \texttt{do-and} is called recursively for every argument of \texttt{expand-or} if there are more than one.
@@ -2198,6 +2307,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
+\index{do-and}
 \begin{lstlisting}
 proc ::constcl::do-and {tail prev env} {
   if {[null? $tail] ne "#f"} {
@@ -2301,9 +2411,9 @@ proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
 \end{lstlisting}
-\subsection{do-cond procedure}
-\label{do-cond-procedure}
-\index{do-cond procedure}
+
+
+\textbf{do-cond} procedure
 
 
 \texttt{do-cond} is called recursively for every clause of the \texttt{cond} form. It chops up the clause into predicate and body, stepping over any \texttt{=>} symbols in between. In the last clause, the predicate is allowed to be \texttt{else} (which gets translated to \texttt{\#t}. If there is no body, the body is set to the predicate. The macro is expanded to a recursive \texttt{if} form.
@@ -2316,6 +2426,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
+\index{do-cond}
 \begin{lstlisting}
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
@@ -2454,9 +2565,9 @@ proc ::constcl::expand-for {expr env} {
   return [list [S begin] {*}$res]
 }
 \end{lstlisting}
-\subsection{for-seq procedure}
-\label{for-seq-procedure}
-\index{for-seq procedure}
+
+
+\textbf{for-seq} procedure
 
 
 \texttt{for-seq} is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
@@ -2469,6 +2580,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of Lisp values \\
 \hline
 \end{tabular}
+\index{for-seq}
 \begin{lstlisting}
 proc ::constcl::for-seq {seq env} {
   if {[number? $seq] ne "#f"} {
@@ -2488,9 +2600,9 @@ proc ::constcl::for-seq {seq env} {
   }
 }
 \end{lstlisting}
-\subsection{do-for procedure}
-\label{do-for-procedure}
-\index{do-for procedure}
+
+
+\textbf{do-for} procedure
 
 
 \texttt{do-for} is another helper procedure which does most of the work in the \texttt{for/*} forms. It iterates over the clauses, extracting and preparing the sequence for each, and stores each of the sequence steps in a dictionary under a double key: the identifier and the ordinal of the step.
@@ -2509,6 +2621,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of expressions \\
 \hline
 \end{tabular}
+\index{do-for}
 \begin{lstlisting}
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
@@ -2691,9 +2804,9 @@ proc ::constcl::expand-let {expr env} {
   }
 }
 \end{lstlisting}
-\subsection{parse-bindings procedure}
-\label{parse-bindings-procedure}
-\index{parse-bindings procedure}
+
+
+\textbf{parse-bindings} procedure
 
 
 \texttt{parse-bindings} is a helper procedure that traverses a \texttt{let} bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
@@ -2706,6 +2819,7 @@ bindings & a Lisp list of Lisp values \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
+\index{parse-bindings}
 \begin{lstlisting}
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
@@ -2749,9 +2863,9 @@ proc ::constcl::expand-or {expr env} {
   }
 }
 \end{lstlisting}
-\subsection{do-or procedure}
-\label{do-or-procedure}
-\index{do-or procedure}
+
+
+\textbf{do-or} procedure
 
 
 \texttt{do-or} is called recursively for each argument to \texttt{expand-or} if there are more than one argument.
@@ -2764,9 +2878,10 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
+\index{do-or}
 \begin{lstlisting}
 proc ::constcl::do-or {tail env} {
-  /if {null? $tail} {
+  /if {[null? $tail]} {
     return #f
   } {
     set env [Environment new #NIL {} $env]
@@ -2964,6 +3079,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of expressions \\
 \hline
 \end{tabular}
+\index{qq-visit-child}
 \begin{lstlisting}
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
