@@ -19,7 +19,7 @@ it according to its syntactic form.
 K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
 on a non-atomic expression into a more concrete expression. See the part about
 R{macros}{macros} below, and 2) resolving E{local defines}, acting on expressions
-of the form K{(begin (define D{}} when in a local environment. See the part
+of the form K{(begin (define ...} when in a local environment. See the part
 about R{resolving local defines}{resolving-local-defines}.
 MD)
 
@@ -33,10 +33,10 @@ reg eval
 
 proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
-  if {[symbol? $expr] ne "#f"} {
+  if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" ||
-    [atom? $expr] ne "#f"} {
+  } elseif {[T [null? $expr]] ||
+    [T [atom? $expr]]} {
     set expr
   } else {
     while {[[car $expr] name] in
@@ -47,7 +47,7 @@ proc ::constcl::eval \
     set args [cdr $expr]
     if {$env ne "::constcl::global_env" &&
       [$op name] eq "begin" &&
-      ([pair? [car $args]] ne "#f" &&
+      ([T [pair? [car $args]]] &&
       [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
@@ -59,7 +59,7 @@ proc ::constcl::eval \
         car $args
       }
       if {
-        if {[null? [cddr $args]] ne "#f"} {
+        if {[T [null? [cddr $args]]]} {
           usage [p "(if cond cons)"] $expr
           /if1 {[eval [car $args] $env]} \
             {eval [cadr $args] $env}
@@ -123,7 +123,7 @@ MD)
 H4 Variable reference
 
 MD(
-EM Example: K{r} => 10 (a symbol K{r} is evaluated to 10)
+EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to 10)
 
 A variableI{variable}I{variable reference} is an identifier (symbol) bound to a
 location in the environment. If an expression consists of an identifier it is
@@ -159,7 +159,7 @@ TT)
 H4 Constant literal
 
 MD(
-EM Example: K{99} => 99 (a number evaluates to itself)
+EM Example: K{99} ==> 99 (a number evaluates to itself)
 
 Not just numbersI{constant literal} but booleans, characters, strings, and
 vectors evaluate to themselves, to their innate value. Because of this, they are
@@ -175,7 +175,7 @@ TT)
 H4 Quotation
 
 MD(
-EM Example: K{(quote r)} => K{r} (quotation makes the symbol evaluate to itself, like a constant)
+EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself, like a constant)
 
 According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
@@ -202,7 +202,7 @@ TT)
 H4 Conditional
 
 MD(
-EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} => 6
+EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} ==> 6
 
 The conditionalI{conditional} form K{if} evaluates a Lisp list of three
 expressions. The first, the E{condition}, is evaluated first. If it evaluates to
@@ -211,7 +211,7 @@ evaluated and the value returned. Otherwise, the third expression (the
 E{alternate}) is evaluated and the value returned. One of the two latter
 expressions will be evaluated, and the other will remain unevaluated.
 
-The two procedures that handle the conditional form is K{/if} and K{/if1}. The
+The two procedures that handle the conditional form are K{/if} and K{/if1}. The
 former takes both a consequent and an alternate, the latter takes only a
 consequent.
 
@@ -231,7 +231,7 @@ IX /if
 IX /if1
 CB(
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   } {
     uplevel $altern
@@ -239,7 +239,7 @@ proc ::constcl::/if {cond conseq altern} {
 }
 
 proc ::constcl::/if1 {cond conseq} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   }
 }
@@ -258,7 +258,7 @@ TT)
 H4 Sequence
 
 MD(
-EM Example: K{(begin (define r 10) (* r r))} => 100
+EM Example: K{(begin (define r 10) (* r r))} ==> 100
 
 When expressions are evaluated in sequenceI{sequence}, the order is important
 for two reasons. If the expressions have any side effects, they happen in the
@@ -299,7 +299,7 @@ TT)
 H4 Definition
 
 MD(
-EM Example: K{(define r 10)} => D{} (a definition doesn't evaluate to anything)
+EM Example: K{(define r 10)} ==> ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. Through
 (variable) definitionI{variable definition}I{definition}, a symbol is bound to a
@@ -342,16 +342,16 @@ TT)
 H4 Assignment
 
 MD(
-EM Example: K{(set! r 20)} => 20 (K{r} is a bound symbol, so it's allowed to assign to it)
+EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to assign to it)
 
 Once a variable has been created, the value at the location it is bound to can
-be changed (hence the name "variable", something that can be modified). The
+be changed (hence the name `variable', something that can vary). The
 process is called assignmentI{assignment}. The K{/set!} helper does assignment:
 it modifies an existing variable that is bound somewhere in the environment
 chain. It finds the variable's environment and updates the binding. It returns
 the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
 both variables to 99. By Scheme convention, procedures that modify variables
-have "!" at the end of their name.
+have `!' at the end of their name.
 
 B{/set!} procedure
 MD)
@@ -379,7 +379,7 @@ TT)
 H4 Procedure definition
 
 MD(
-EM Example: K{(lambda (r) (* r r))} => K{::oo::Obj3601} (it will be a different object each time)
+EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different object each time)
 
 In Lisp, procedures are values just like numbers or characters. They can be
 definedI{procedure definition} as the value of a symbol, passed to other
@@ -391,12 +391,12 @@ procedure to make it possible to calculate its result?
 
 As an example, imagine that we want to have a procedure that calculates the
 square (K{x * x}) of a given number. In Lisp, expressions are written with
-the operator first and then the operands: K{(* x x)}. That is the body of the
-procedure. Now, what data will we have to provide to the procedure to make it
-work? A value stored in the variable K{x} will do. It's only a single variable,
-but by custom we need to put it in a list: K{(x)}. The operator that defines
-procedures is called K{lambda}I{lambda}, and we define the function with
-K{(lambda (x) (* x x))}.
+the operator first and then the operandsI{operator operand order}: K{(* x x)}.
+That is the body of the procedure. Now, what data will we have to provide to the
+procedure to make it work? A value stored in the variable K{x} will do. It's
+only a single variable, but by custom we need to put it in a list: K{(x)}. The
+operator that defines procedures is called K{lambda}I{lambda}, and we define the
+function with K{(lambda (x) (* x x))}.
 
 One more step is needed before we can use the procedure. It must have a name. We
 could define it like this: K{(define square (lambda (x) (* x x)))} but there is
@@ -408,7 +408,7 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
 
 Under the hood, the helper K{/lambda} makes a R{Procedure}{control} object. First
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
-has more than one expression (K{S begin} stands for "the symbol begin".), and
+has more than one expression (K{S begin} stands for `the symbol begin'.), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
 
 H5 Scheme formals lists: an aside
@@ -449,7 +449,7 @@ TT)
 H4 Procedure call
 
 MD(
-EM Example: K{(+ 1 6)} => 7
+EM Example: K{(+ 1 6)} ==> 7
 
 Once we have procedures, we can callI{procedure call} them to have their
 calculations performed and yield results. The procedure name is put in the
@@ -458,8 +458,8 @@ the list. Our K{square} procedure would be called for instance like this:
 K{(square 11)}, and it will return 121.
 
 K{invoke} arranges for a procedure to be called with each of the values in
-the E{argument list} (the list of operands). It checks if pr really is a
-procedure, and determines whether to call pr as an object or as a Tcl command.
+the E{argument list} (the list of operands). It checks if E{pr} really is a
+procedure, and determines whether to call E{pr} as an object or as a Tcl command.
 
 B{invoke} procedure
 MD)
@@ -506,7 +506,7 @@ IX splitlist
 CB(
 proc ::constcl::splitlist {vals} {
   set result {}
-  while {[pair? $vals] ne "#f"} {
+  while {[T [pair? $vals]]} {
     lappend result [car $vals]
     set vals [cdr $vals]
   }
@@ -529,7 +529,7 @@ IX eval-list
 CB(
 proc ::constcl::eval-list {exps env} {
   # don't convert to /if, it breaks (fact 100)
-  if {[pair? $exps] ne "#f"} {
+  if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } {

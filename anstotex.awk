@@ -19,7 +19,7 @@ $1 == "PR(" { inside_pr_block = 1; next; }
 $1 == "PR)" { inside_pr_block = 0; next; }
 inside_pr_block {
 	if (match($0, /;/)) {
-		print "\\noindent\\begin{tabular}{ |p{1.5cm} p{8cm}| }\n\\hline";
+		print "\\noindent\\begin{tabular}{ |p{1.9cm} p{8cm}| }\n\\hline";
 		printf "\\rowcolor[HTML]{CCCCCC} \\multicolumn{2}{|l|}{\\bf %s} \\\\\n", substr($0, 1, RSTART-1);
 		$0 = substr($0, RSTART+RLENGTH);
 		for (i = 1; i <= NF; i += 2) {
@@ -102,8 +102,9 @@ $1 == "IX" { printf("\\index{%s}\n", $2) ; next }
 $1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
 $1 == "IF" {
     for (i=3; i<=NF; i++) { caption = caption " " $i }
-    printf("\\begin{figure}[h!]\\includegraphics{%s}\\captionsetup{labelformat=empty}\\caption{%s}\\end{figure}\n", substr($2, 2), caption) ; next
+    printf("\\begin{figure}[h!]\\includegraphics{%s}\\captionsetup{labelformat=empty}\\caption{%s}\\end{figure}\n", substr($2, 2), caption)
     caption = ""
+    next
 }
 $1 == "EM" {
     for (i=2; i<=NF; i++) collect($i)
@@ -117,6 +118,14 @@ $1 == "KB" {
     for (i=2; i<=NF; i++) collect($i)
     line = render(line)
     line = sprintf("\\texttt{%s}", line)
+    print "\n" line "\n"
+    line = sep = ""
+    next
+}
+$1 == "NI" {
+    for (i=2; i<=NF; i++) collect($i)
+    line = render(line)
+    line = sprintf("\\noindent %s", line)
     print "\n" line "\n"
     line = sep = ""
     next
@@ -194,6 +203,10 @@ function render(line) {
         sub(/D{([^{}]*)}/, sprintf("\\ldots "), line)
     }
 
+    if (match(line, /\.\.\./)) {
+        gsub(/\.\.\./, sprintf("\\ldots "), line)
+    }
+
     while (match(line, /\(La\)TeX/)) {
         sub(/\(La\)TeX/, sprintf("\\LaTeX{}"), line)
     }
@@ -224,6 +237,10 @@ function render(line) {
 	patsplit(substr(line, RSTART+2, RLENGTH-3), pow, /[^{}]+/)
         sub(/P{([^{}]+)}{([^{}]+)}/, sprintf("${%s}^{%s}$", pow[1], pow[2]), line)
     }
+
+    if (match(line, /===>/)) { gsub(/===>/, sprintf("$\\Longrightarrow$"), line) }
+
+    if (match(line, /==>/)) { gsub(/==>/, sprintf("$\\Rightarrow$"), line) }
 
     if (match(line, /#/)) { gsub(/#/, "\\#", line) }
 

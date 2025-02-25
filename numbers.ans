@@ -110,15 +110,15 @@ TT)
 
 H4 = procedure
 
+NI B{<} procedure
+
+NI B{>} procedure
+
+NI B{<=} procedure
+
+NI B{>=} procedure
+
 MD(
-B{<} procedure
-
-B{>} procedure
-
-B{<=} procedure
-
-B{>=} procedure
-
 The predicates K{=}, K{<}, K{>}, K{<=}, and K{>=} are implemented.
 
 MD)
@@ -605,7 +605,7 @@ proc ::constcl::abs {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
   } else {
     return $num
@@ -683,7 +683,7 @@ reg remainder
 proc ::constcl::remainder {num1 num2} {
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
-  if {[$num1 negative?] ne "#f"} {
+  if {[T [$num1 negative?]]} {
     set n -$n
   }
   return [N $n]
@@ -830,7 +830,7 @@ proc ::constcl::truncate {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     N [::tcl::mathfunc::ceil [$num numval]]
   } else {
     N [::tcl::mathfunc::floor [$num numval]]

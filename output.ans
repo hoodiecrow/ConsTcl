@@ -5,7 +5,7 @@ H4 write procedure
 
 MD(
 The third thing an interpreter must be able to do is to present the resulting
-code and data so that the user can know what the outcome was.
+code and data so that the user can know what the outcome of the evaluation was.
 
 As long as the object given to K{write} isn't the empty string, it calls the
 object's K{write} method and writes a newline.
@@ -88,11 +88,11 @@ proc ::constcl::write-pair {handle pair} {
   set d [cdr $pair]
   # print car
   $a write $handle
-  if {[pair? $d] ne "#f"} {
+  if {[T [pair? $d]]} {
     # cdr is a cons pair
     puts -nonewline $handle " "
     write-pair $handle $d
-  } elseif {[null? $d] ne "#f"} {
+  } elseif {[T [null? $d]]} {
     # cdr is nil
     return
   } else {

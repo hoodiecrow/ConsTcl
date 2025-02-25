@@ -64,8 +64,8 @@ PR)
 IX teq
 CB(
 proc ::constcl::teq {typep expr1 expr2} {
-    return [expr {[$typep $expr1] ne "#f" &&
-      [$typep $expr2] ne "#f"}]
+    return [expr {[T [$typep $expr1]] &&
+      [T [$typep $expr2]]}]
 }
 CB)
 
@@ -116,8 +116,8 @@ proc ::constcl::eqv? {expr1 expr2} {
     return #t
   } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $expr1] ne "#f" &&
-      [pair? $expr2] ne "#f" &&
+  } elseif {[T [pair? $expr1]] &&
+      [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
     return #t

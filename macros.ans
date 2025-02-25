@@ -10,7 +10,7 @@ strong points. This interpreter does macro expansion, but the user can't define
 new macros--the ones available are hardcoded in the code below.
 
 K{expand-macro} takes an expression and an environment as a parameter. First, the
-operator (K{op}) and operands (K{args}) are extracted to check if expansion is
+operator (E{op}) and operands (E{args}) are extracted to check if expansion is
 necessary (the operator K{car}, for historical reasons, stands for the first
 element of a list, while K{cdr} stands for the rest of the elements after the
 first in a list). If the operator is the symbol K{define} and the first of the
@@ -100,7 +100,7 @@ PR)
 IX do-and
 CB(
 proc ::constcl::do-and {tail prev env} {
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     return $prev
   } else {
     set env [Environment new #NIL {} $env]
@@ -149,10 +149,10 @@ H5 caar, cadr, cdar, and the rest: an aside
 MD(
 The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
 and K{cdar}. K{car}/K{cdr} notation gets really powerful when combined to form
-operators from K{caar} to K{cddddr}. One can read K{caar L} as "the first element of
-the first element of L", implying that the first element of K{L} is a list.
-K{cdar L} is "the rest of the elements of the first element of L", and K{cadr L}
-is "the first element of the rest of the elements of L" or in layman's terms,
+operators from K{caar} to K{cddddr}. One can read K{caar L} as `the first element of
+the first element of L', implying that the first element of K{L} is a list.
+K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
+is `the first element of the rest of the elements of L' or in layman's terms,
 the second element of L.
 MD)
 
@@ -169,7 +169,7 @@ proc ::constcl::expand-case {expr env} {
 }
 
 proc ::constcl::do-case {keyexpr clauses env} {
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set keyl [caar $clauses]
@@ -177,9 +177,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set keyl [list [S memv] $keyexpr \
         [list [S quote] $keyl]]
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the condition
-      if {[eq? [caar $clauses] [S else]] ne "#f"} {
+      if {[T [eq? [caar $clauses] [S else]]]} {
         set keyl #t
       }
     }
@@ -246,7 +246,7 @@ B{do-cond} procedure
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
 up the clause into predicate and body, stepping over any K{=>} symbols in
 between. In the last clause, the predicate is allowed to be K{else} (which gets
-translated to K{#t}. If there is no body, the body is set to the predicate. The
+translated to K{#t}). If there is no body, the body is set to the predicate. The
 macro is expanded to a recursive K{if} form.
 MD)
 
@@ -258,23 +258,23 @@ IX do-cond
 CB(
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
-    if {[symbol? [car $body]] ne "#f" &&
+    if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
       set body [cddar $clauses]
     }
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the predicate
-      if {[eq? $pred [S else]] ne "#f"} {
+      if {[T [eq? $pred [S else]]]} {
         set pred #t
       }
     }
-    if {[null? $body] ne "#f"} {
+    if {[T [null? $body]]} {
         set body $pred
     }
     set env [Environment new #NIL {} $env]
@@ -390,11 +390,11 @@ regmacro del!
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
   /define [S listname] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error "too few arguments, 1 of 2"
   }
   /define [S key] [cadr $tail] $env
@@ -473,19 +473,19 @@ PR)
 IX for-seq
 CB(
 proc ::constcl::for-seq {seq env} {
-  if {[number? $seq] ne "#f"} {
+  if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
   # make it a Tcl list, one way or another
-  if {[list? $seq] ne "#f"} {
+  if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[string? $seq] ne "#f"} { 
+  } elseif {[T [string? $seq]]} { 
     set seq [lmap c [split [$seq value] {}] {
       MkChar #\\$c
     }]
-  } elseif {[vector? $seq] ne "#f"} {
+  } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
   }
 }
@@ -603,7 +603,7 @@ MD(
 The K{expand-for/list} procedure expands the K{for/list} macro. It returns a K{list}
 construct containing the iterations of each clause.
 
-The only difference from K{expand for/and} is that it wraps the list of iterations
+The only difference from K{expand-for/and} is that it wraps the list of iterations
 in K{list} instead of K{and}.
 MD)
 
@@ -662,7 +662,7 @@ MD(
 The K{expand-for/or} procedure expands the K{for/or} macro. It returns an K{or}
 construct containing the iterations of each clause.
 
-The only difference from K{expand for/list} is that it wraps the list of iterations
+The only difference from K{expand-for/list} is that it wraps the list of iterations
 in K{or} instead of K{list}.
 MD)
 
@@ -690,23 +690,23 @@ TT)
 H4 expand-let procedure
 
 MD(
-K{expand-let} expands the named K{let} and 'regular' K{let} macros. They ultimately
+K{expand-let} expands the named K{let} and `regular' K{let} macros. They ultimately
 expand to K{lambda} constructs.
 
-Named K{let} chops up the expression into variable, bindings, and body. It
-creates a dictionary with the variable as key and K{#f} as value. Then it fills
-up the dictionary with variable/value pairs from the bindings. It uses the
+Named K{let} chops up the expression into E{variable}, E{bindings}, and E{body}. It
+creates a dictionary with the E{variable} as key and K{#f} as value. Then it fills
+up the dictionary with variable/value pairs from the E{bindings}. It uses the
 dictionary to build a declaration list for a K{let} form, a variable list for
 a K{lambda} form, and a procedure call. Then it assembles a K{let} form with the
 declaration list and a body consisting of an assignment and the procedure call.
-The assignment binds the variable to a K{lambda} for with the varlist and the
-original body. The K{let} form is returned, meaning that the primary expansion
+The assignment binds the variable to a K{lambda} form with the varlist and the
+original E{body}. The K{let} form is returned, meaning that the primary expansion
 of the named K{let} is a regular K{let} form.
 
-Regular K{let} chops up the original expression into bindings and body. It
+Regular K{let} chops up the original expression into E{bindings} and E{body}. It
 creates an empty dictionary and fills it up with variable/value pairs from the
-bindings. Then it builds a K{lambda} operator form with the variable list, the
-body, and the value list. The K{lambda} call is returned as the expansion of the
+E{bindings}. Then it builds a K{lambda} operator form with the variable list, the
+E{body}, and the value list. The K{lambda} call is returned as the expansion of the
 regular K{let} form.
 MD)
 
@@ -720,7 +720,7 @@ regmacro let
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[symbol? [car $tail]] ne "#f"} {
+  if {[T [symbol? [car $tail]]]} {
     # named let
     set variable [car $tail]
     set bindings [cadr $tail]
@@ -839,9 +839,9 @@ regmacro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
-  if {[eq? [length $tail] #0] ne "#f"} {
+  if {[T [eq? [length $tail] #0]]} {
     return [list [S begin] #f]
-  } elseif {[eq? [length $tail] #1] ne "#f"} {
+  } elseif {[T [eq? [length $tail] #1]]} {
     return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
@@ -903,7 +903,7 @@ regmacro pop!
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
   if {[symbol? [car $tail]] eq "#f"} {
@@ -948,12 +948,12 @@ regmacro push!
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
   /define [S obj] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
@@ -994,15 +994,15 @@ regmacro put!
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
   /define [S name] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
       ::error "too few arguments, 1 of 3"
   }
   /define [S key] [cadr $tail] $env
-  if {[null? [cddr $tail]] ne "#f"} {
+  if {[T [null? [cddr $tail]]]} {
       ::error "too few arguments, 2 of 3"
   }
   /define [S val] [caddr $tail] $env
@@ -1060,30 +1060,30 @@ regmacro quasiquote
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
   set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
+  if {[T [list? [car $tail]]]} {
     set node [car $tail]
     return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
+  } elseif {[T [vector? [car $tail]]]} {
     set vect [car $tail]
     set res {}
     for {set i 0} {$i < [
         [vector-length $vect] numval]} {incr i} {
       set idx [MkNumber $i]
       set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
+      if {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $vecref] $env]
         }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $vecref] $env]]
         }
-      } elseif {[atom? $vecref] ne "#f"} {
+      } elseif {[T [atom? $vecref]]} {
         lappend res $vecref
       } else {
       }
@@ -1092,6 +1092,10 @@ proc ::constcl::expand-quasiquote {expr env} {
   }
 }
 CB)
+
+MD(
+B{qq-visit-child} procedure
+MD)
 
 PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
@@ -1103,11 +1107,11 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
   }
-  if {[list? $node] ne "#f"} {
+  if {[T [list? $node]]} {
     set res {}
     foreach child [splitlist $node] {
-      if {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S unquote]] ne "#f"} {
+      if {[T [pair? $child]] &&
+          [T [eq? [car $child] [S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
@@ -1115,19 +1119,19 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
             qq-visit-child [cadr $child] [
             expr {$qqlevel - 1}] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [
-          S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [
+          S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $child] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S quasiquote]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [S quasiquote]]]} {
         lappend res [list [S quasiquote] [car [
           qq-visit-child [cdr $child] [
             expr {$qqlevel + 1}] $env]]] 
-      } elseif {[atom? $child] ne "#f"} {
+      } elseif {[T [atom? $child]]} {
         lappend res $child
       } else {
         lappend res [
@@ -1170,8 +1174,8 @@ TT)
 H4 expand-unless procedure
 
 MD(
-K{unless} is a conditional like K{if}, with the differences that it takes a number
-of expressions and only executes them for a false outcome of K{car $tail}.
+K{unless} is a conditional like K{if}, but it takes a number
+of expressions. It executes them on a false outcome of K{car $tail}.
 MD)
 
 PR(
@@ -1208,8 +1212,8 @@ TT)
 H4 expand-when procedure
 
 MD(
-K{when} is a conditional like K{if}, with the differences that it takes a number
-of expressions and only executes them for a true outcome of K{car $tail}.
+K{when} is a conditional like K{if}, but it takes a number
+of expressions. It executes them on a true outcome of K{car $tail}.
 MD)
 
 PR(

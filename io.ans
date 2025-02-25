@@ -50,10 +50,10 @@ oo::class create ::constcl::InputPort {
     return $handle
   }
   method get {} {
-    read $handle 1
+    chan read $handle 1
   }
   method eof {} {
-    eof $handle
+    chan eof $handle
   }
   method copy {} {
     ::constcl::InputPort new $handle

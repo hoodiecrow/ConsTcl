@@ -23,6 +23,17 @@ proc ::constcl::atom? {val} {
   return #f
 }
 
+proc ::T {val} {
+  if {$val eq "#f"} {
+    return 0
+  } elseif {[::constcl::boolean? $val] eq "#t" &&
+    [$val boolval] eq "#f"} {
+    return 0
+  } else {
+    return 1
+  }
+}
+
 proc ::constcl::usage {usage expr} {
   set u $usage
   set e $expr
@@ -284,9 +295,9 @@ proc ::constcl::parse {inp} {
   set c {}
   set unget {}
   if {[info object isa object $inp]} {
-    if {[typeof? $inp StringInputPort] ne "#f"} {
+    if {[T [typeof? $inp StringInputPort]]} {
       set port $inp
-    } elseif {[typeof? $inp String] ne "#f"} {
+    } elseif {[T [typeof? $inp String]]} {
       set port [StringInputPort new [$inp value]]
     } else {
       ::error "Unknown object [$inp show]"
@@ -320,18 +331,18 @@ proc ::constcl::read {args} {
 }
 
 proc ::constcl::make-constant {val} {
-  if {[pair? $val] ne "#f"} {
+  if {[T [pair? $val]]} {
     $val mkconstant
     make-constant [car $val]
     make-constant [cdr $val]
-  } elseif {[null? $val] ne "#f"} {
+  } elseif {[T [null? $val]]} {
     return #NIL
   } else {
     $val mkconstant
   }
 }
 
-proc ::constcl::interspace {c} {
+proc ::constcl::interspace? {c} {
   if {[::string is space $c] || $c eq ";"} {
       return #t
     } else {
@@ -339,7 +350,7 @@ proc ::constcl::interspace {c} {
     }
 }
 
-proc ::constcl::character-check {name} {
+proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
     return #t
@@ -362,25 +373,25 @@ proc ::constcl::readc {} {
   return $c
 }
 
-proc ::constcl::read-find {char} {
+proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
     set c [readc]
     read-eof $c
     set unget $c
   }
-  return [expr {$c eq $char}]
+  expr {($c eq $char) ? "#t" : "#f"}
 }
 
-proc ::constcl::read-end {} {
+proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
+  if {[T [interspace? $c]] || $c in {) ]} || $c eq "#EOF"} {
     set unget $c
-    return 1
+    return #t
   } else {
     set unget $c
-    return 0
+    return #f
   }
 }
 
@@ -440,7 +451,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return}
+    {^$}          { return }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -458,7 +469,7 @@ proc ::constcl::read-character-expr {} {
     ::append name $c
     set c [readc]
   }
-  check {character-check $name} {
+  check {valid-char? $name} {
       Invalid character constant $name
   }
   set expr [MkChar $name]
@@ -502,7 +513,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readc]
   }
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+  while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
       $c ni {) ]}} {
     ::append num $c
     set c [readc]
@@ -561,7 +572,7 @@ proc ::constcl::read-pair {char} {
   upvar c c unget unget
   set c [readc]
   read-eof $c
-  if {[read-find $char]} {
+  if {[T [find-char? $char]]} {
     # read right paren/brack
     #set c [readc]
     return #NIL
@@ -570,11 +581,11 @@ proc ::constcl::read-pair {char} {
   set res $a
   skip-ws
   set prev #NIL
-  while {![read-find $char]} {
+  while {[find-char? $char] eq "#f"} {
     set x [read-expr $c]
     skip-ws
     read-eof $c
-    if {[dot? $x] ne "#f"} {
+    if {[T [dot? $x]]} {
       set prev [read-expr $c]
       skip-ws
       read-eof $c
@@ -623,8 +634,8 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
+    t    { if {[T [read-end?]]} {set n #t} }
+    f    { if {[T [read-end?]]} {set n #f} }
     "\\" { set n [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
@@ -721,10 +732,10 @@ reg eval
 
 proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
-  if {[symbol? $expr] ne "#f"} {
+  if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" ||
-    [atom? $expr] ne "#f"} {
+  } elseif {[T [null? $expr]] ||
+    [T [atom? $expr]]} {
     set expr
   } else {
     while {[[car $expr] name] in
@@ -735,7 +746,7 @@ proc ::constcl::eval \
     set args [cdr $expr]
     if {$env ne "::constcl::global_env" &&
       [$op name] eq "begin" &&
-      ([pair? [car $args]] ne "#f" &&
+      ([T [pair? [car $args]]] &&
       [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
@@ -747,7 +758,7 @@ proc ::constcl::eval \
         car $args
       }
       if {
-        if {[null? [cddr $args]] ne "#f"} {
+        if {[T [null? [cddr $args]]]} {
           usage [p "(if cond cons)"] $expr
           /if1 {[eval [car $args] $env]} \
             {eval [cadr $args] $env}
@@ -789,7 +800,7 @@ proc ::constcl::lookup {sym env} {
 }
 
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   } {
     uplevel $altern
@@ -797,7 +808,7 @@ proc ::constcl::/if {cond conseq altern} {
 }
 
 proc ::constcl::/if1 {cond conseq} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   }
 }
@@ -848,7 +859,7 @@ proc ::constcl::invoke {pr vals} {
 
 proc ::constcl::splitlist {vals} {
   set result {}
-  while {[pair? $vals] ne "#f"} {
+  while {[T [pair? $vals]]} {
     lappend result [car $vals]
     set vals [cdr $vals]
   }
@@ -857,7 +868,7 @@ proc ::constcl::splitlist {vals} {
 
 proc ::constcl::eval-list {exps env} {
   # don't convert to /if, it breaks (fact 100)
-  if {[pair? $exps] ne "#f"} {
+  if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } {
@@ -889,7 +900,7 @@ proc ::constcl::expand-and {expr env} {
 }
 
 proc ::constcl::do-and {tail prev env} {
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     return $prev
   } else {
     set env [Environment new #NIL {} $env]
@@ -911,7 +922,7 @@ proc ::constcl::expand-case {expr env} {
 }
 
 proc ::constcl::do-case {keyexpr clauses env} {
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set keyl [caar $clauses]
@@ -919,9 +930,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set keyl [list [S memv] $keyexpr \
         [list [S quote] $keyl]]
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the condition
-      if {[eq? [caar $clauses] [S else]] ne "#f"} {
+      if {[T [eq? [caar $clauses] [S else]]]} {
         set keyl #t
       }
     }
@@ -947,23 +958,23 @@ proc ::constcl::expand-cond {expr env} {
 
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
-    if {[symbol? [car $body]] ne "#f" &&
+    if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
       set body [cddar $clauses]
     }
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the predicate
-      if {[eq? $pred [S else]] ne "#f"} {
+      if {[T [eq? $pred [S else]]]} {
         set pred #t
       }
     }
-    if {[null? $body] ne "#f"} {
+    if {[T [null? $body]]} {
         set body $pred
     }
     set env [Environment new #NIL {} $env]
@@ -998,11 +1009,11 @@ regmacro del!
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
   /define [S listname] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error "too few arguments, 1 of 2"
   }
   /define [S key] [cadr $tail] $env
@@ -1023,19 +1034,19 @@ proc ::constcl::expand-for {expr env} {
 }
 
 proc ::constcl::for-seq {seq env} {
-  if {[number? $seq] ne "#f"} {
+  if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
   # make it a Tcl list, one way or another
-  if {[list? $seq] ne "#f"} {
+  if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[string? $seq] ne "#f"} { 
+  } elseif {[T [string? $seq]]} { 
     set seq [lmap c [split [$seq value] {}] {
       MkChar #\\$c
     }]
-  } elseif {[vector? $seq] ne "#f"} {
+  } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
   }
 }
@@ -1101,7 +1112,7 @@ regmacro let
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[symbol? [car $tail]] ne "#f"} {
+  if {[T [symbol? [car $tail]]]} {
     # named let
     set variable [car $tail]
     set bindings [cadr $tail]
@@ -1159,9 +1170,9 @@ regmacro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
-  if {[eq? [length $tail] #0] ne "#f"} {
+  if {[T [eq? [length $tail] #0]]} {
     return [list [S begin] #f]
-  } elseif {[eq? [length $tail] #1] ne "#f"} {
+  } elseif {[T [eq? [length $tail] #1]]} {
     return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
@@ -1187,7 +1198,7 @@ regmacro pop!
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
   if {[symbol? [car $tail]] eq "#f"} {
@@ -1205,12 +1216,12 @@ regmacro push!
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
   /define [S obj] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
@@ -1232,15 +1243,15 @@ regmacro put!
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
   /define [S name] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
       ::error "too few arguments, 1 of 3"
   }
   /define [S key] [cadr $tail] $env
-  if {[null? [cddr $tail]] ne "#f"} {
+  if {[T [null? [cddr $tail]]]} {
       ::error "too few arguments, 2 of 3"
   }
   /define [S val] [caddr $tail] $env
@@ -1262,30 +1273,30 @@ regmacro quasiquote
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
   set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
+  if {[T [list? [car $tail]]]} {
     set node [car $tail]
     return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
+  } elseif {[T [vector? [car $tail]]]} {
     set vect [car $tail]
     set res {}
     for {set i 0} {$i < [
         [vector-length $vect] numval]} {incr i} {
       set idx [MkNumber $i]
       set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
+      if {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $vecref] $env]
         }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $vecref] $env]]
         }
-      } elseif {[atom? $vecref] ne "#f"} {
+      } elseif {[T [atom? $vecref]]} {
         lappend res $vecref
       } else {
       }
@@ -1298,11 +1309,11 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
   }
-  if {[list? $node] ne "#f"} {
+  if {[T [list? $node]]} {
     set res {}
     foreach child [splitlist $node] {
-      if {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S unquote]] ne "#f"} {
+      if {[T [pair? $child]] &&
+          [T [eq? [car $child] [S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
@@ -1310,19 +1321,19 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
             qq-visit-child [cadr $child] [
             expr {$qqlevel - 1}] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [
-          S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [
+          S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $child] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S quasiquote]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [S quasiquote]]]} {
         lappend res [list [S quasiquote] [car [
           qq-visit-child [cdr $child] [
             expr {$qqlevel + 1}] $env]]] 
-      } elseif {[atom? $child] ne "#f"} {
+      } elseif {[T [atom? $child]]} {
         lappend res $child
       } else {
         lappend res [
@@ -1364,16 +1375,16 @@ proc ::constcl::expand-when {expr env} {
 proc ::constcl::resolve-local-defines {exps} {
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   set rest [lassign [
     extract-from-defines $exps VARS] v error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   if {$rest eq "#NIL"} {
-    set rest [cons #UNSP #NIL]
+    set rest [cons #UNS #NIL]
   }
   return [make-lambdas $v $a $rest]
 }
@@ -1381,8 +1392,8 @@ proc ::constcl::resolve-local-defines {exps} {
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
   while {$exps ne "#NIL"} {
-    if {[atom? $exps] ne "#f" ||
-        [atom? [car $exps]] ne "#f" ||
+    if {[T [atom? $exps]] ||
+        [T [atom? [car $exps]]] ||
         [eq? [caar $exps] [S define]] eq "#f"} {
       break
     }
@@ -1391,12 +1402,12 @@ proc ::constcl::extract-from-defines {exps part} {
     if {[list? $n] eq "#f" ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
-        ([argument-list? [cadr $n]] ne "#f" ||
-        [symbol? [cadr $n]] eq "#f")
+        ([T [argument-list? [cadr $n]]] ||
+        ![T [symbol? [cadr $n]]])
       eq "#f"} {
         return [::list #NIL "#t" #NIL]
       }
-      if {[pair? [cadr $n]] ne "#f"} {
+      if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
           set a [cons [caadr $n] $a]
         } else {
@@ -1420,12 +1431,12 @@ proc ::constcl::extract-from-defines {exps part} {
 proc ::constcl::argument-list? {val} {
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
-  } elseif {[atom? $val] ne "#f"} {
+  } elseif {[T [atom? $val]]} {
     return #f
   }
-  while {[pair? $val] ne "#f"} {
+  while {[T [pair? $val]]} {
     if {[symbol? [car $val]] eq "#f"} {
       return #f
     }
@@ -1433,7 +1444,7 @@ proc ::constcl::argument-list? {val} {
   }
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
   }
 }
@@ -1478,7 +1489,7 @@ proc ::constcl::append-b {a b} {
   }
   set p $a
   while {$p ne "#NIL"} {
-    if {[atom? $p] ne "#f"} {
+    if {[T [atom? $p]]} {
       ::error "append: improper list"
     }
     set last $p
@@ -1502,7 +1513,7 @@ proc ::constcl::make-assignments {vars tmps} {
 }
 
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UNDF
+  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons #NIL $res]
@@ -1558,11 +1569,11 @@ proc ::constcl::write-pair {handle pair} {
   set d [cdr $pair]
   # print car
   $a write $handle
-  if {[pair? $d] ne "#f"} {
+  if {[T [pair? $d]]} {
     # cdr is a cons pair
     puts -nonewline $handle " "
     write-pair $handle $d
-  } elseif {[null? $d] ne "#f"} {
+  } elseif {[T [null? $d]]} {
     # cdr is nil
     return
   } else {
@@ -1608,8 +1619,8 @@ proc ::constcl::eq? {expr1 expr2} {
 }
 
 proc ::constcl::teq {typep expr1 expr2} {
-    return [expr {[$typep $expr1] ne "#f" &&
-      [$typep $expr2] ne "#f"}]
+    return [expr {[T [$typep $expr1]] &&
+      [T [$typep $expr2]]}]
 }
 
 proc ::constcl::veq {expr1 expr2} {
@@ -1633,8 +1644,8 @@ proc ::constcl::eqv? {expr1 expr2} {
     return #t
   } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $expr1] ne "#f" &&
-      [pair? $expr2] ne "#f" &&
+  } elseif {[T [pair? $expr1]] &&
+      [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
@@ -1913,7 +1924,7 @@ proc ::constcl::abs {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
   } else {
     return $num
@@ -1939,7 +1950,7 @@ reg remainder
 proc ::constcl::remainder {num1 num2} {
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
-  if {[$num1 negative?] ne "#f"} {
+  if {[T [$num1 negative?]]} {
     set n -$n
   }
   return [N $n]
@@ -1976,7 +1987,7 @@ proc ::constcl::truncate {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     N [::tcl::mathfunc::ceil [$num numval]]
   } else {
     N [::tcl::mathfunc::floor [$num numval]]
@@ -2748,10 +2759,10 @@ oo::class create ::constcl::InputPort {
     return $handle
   }
   method get {} {
-    read $handle 1
+    chan read $handle 1
   }
   method eof {} {
-    eof $handle
+    chan eof $handle
   }
   method copy {} {
     ::constcl::InputPort new $handle
@@ -3067,11 +3078,11 @@ proc ::constcl::show-pair {pair} {
   set d [cdr $pair]
   # print car
   ::append str [$a show]
-  if {[pair? $d] ne "#f"} {
+  if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
     ::append str [show-pair $d]
-  } elseif {[null? $d] ne "#f"} {
+  } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
   } else {
@@ -3161,9 +3172,9 @@ reg list?
 
 proc ::constcl::list? {val} {
   set visited {}
-  if {[null? $val] ne "#f"} {
+  if {[T [null? $val]]} {
       return #t
-  } elseif {[pair? $val] ne "#f"} {
+  } elseif {[T [pair? $val]]} {
       return [listp $val]
   } else {
       return #f
@@ -3176,9 +3187,9 @@ proc ::constcl::listp {pair} {
     return #f
   }
   lappend visited $pair
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     return #t
-  } elseif {[pair? $pair] ne "#f"} {
+  } elseif {[T [pair? $pair]]} {
     return [listp [cdr $pair]]
   } else {
     return #f
@@ -3209,7 +3220,7 @@ proc ::constcl::length {pair} {
 }
 
 proc ::constcl::length-helper {pair} {
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     return 0
   } else {
     return [expr {1 +
@@ -3232,9 +3243,9 @@ proc ::constcl::append {args} {
 
 proc ::constcl::copy-list {pair next} {
   # TODO only fresh conses in the direct chain to NIL
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     set next
-  } elseif {[null? [cdr $pair]] ne "#f"} {
+  } elseif {[T [null? [cdr $pair]]]} {
     cons [car $pair] $next
   } else {
     cons [car $pair] [copy-list [cdr $pair] $next]
@@ -3250,7 +3261,7 @@ proc ::constcl::reverse {vals} {
 reg list-tail
 
 proc ::constcl::list-tail {vals k} {
-  if {[zero? $k] ne "#f"} {
+  if {[T [zero? $k]]} {
     return $vals
   } else {
     list-tail [cdr $vals] [- $k #1]
@@ -3290,10 +3301,10 @@ proc ::constcl::member-proc {epred val1 val2} {
   check {list? $val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
-  if {[null? $val2] ne "#f"} {
+  if {[T [null? $val2]]} {
     return #f
-  } elseif {[pair? $val2] ne "#f"} {
-    if {[$epred $val1 [car $val2]] ne "#f"} {
+  } elseif {[T [pair? $val2]]} {
+    if {[T [$epred $val1 [car $val2]]]} {
       return $val2
     } else {
       return [member-proc $epred $val1 [cdr $val2]]
@@ -3328,11 +3339,11 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   check {list? $val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
-  if {[null? $val2] ne "#f"} {
+  if {[T [null? $val2]]} {
     return #f
-  } elseif {[pair? $val2] ne "#f"} {
-    if {[pair? [car $val2]] ne "#f" && 
-      [$epred $val1 [caar $val2]] ne "#f"} {
+  } elseif {[T [pair? $val2]]} {
+    if {[T [pair? [car $val2]]] && 
+      [T [$epred $val1 [caar $val2]]]} {
       return [car $val2]
     } else {
       return [assoc-proc $epred $val1 [cdr $val2]]
@@ -3858,7 +3869,7 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    if {[::constcl::list? $v] ne "#f"} {
+    if {[T [::constcl::list? $v]]} {
       set len [[::constcl::length $v] numval]
       set vsa [::constcl::vsAlloc $len]
       set idx $vsa

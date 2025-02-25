@@ -20,16 +20,16 @@ CB(
 proc ::constcl::resolve-local-defines {exps} {
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   set rest [lassign [
     extract-from-defines $exps VARS] v error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   if {$rest eq "#NIL"} {
-    set rest [cons #UNSP #NIL]
+    set rest [cons #UNS #NIL]
   }
   return [make-lambdas $v $a $rest]
 }
@@ -53,8 +53,8 @@ CB(
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
   while {$exps ne "#NIL"} {
-    if {[atom? $exps] ne "#f" ||
-        [atom? [car $exps]] ne "#f" ||
+    if {[T [atom? $exps]] ||
+        [T [atom? [car $exps]]] ||
         [eq? [caar $exps] [S define]] eq "#f"} {
       break
     }
@@ -63,12 +63,12 @@ proc ::constcl::extract-from-defines {exps part} {
     if {[list? $n] eq "#f" ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
-        ([argument-list? [cadr $n]] ne "#f" ||
-        [symbol? [cadr $n]] eq "#f")
+        ([T [argument-list? [cadr $n]]] ||
+        ![T [symbol? [cadr $n]]])
       eq "#f"} {
         return [::list #NIL "#t" #NIL]
       }
-      if {[pair? [cadr $n]] ne "#f"} {
+      if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
           set a [cons [caadr $n] $a]
         } else {
@@ -104,12 +104,12 @@ CB(
 proc ::constcl::argument-list? {val} {
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
-  } elseif {[atom? $val] ne "#f"} {
+  } elseif {[T [atom? $val]]} {
     return #f
   }
-  while {[pair? $val] ne "#f"} {
+  while {[T [pair? $val]]} {
     if {[symbol? [car $val]] eq "#f"} {
       return #f
     }
@@ -117,7 +117,7 @@ proc ::constcl::argument-list? {val} {
   }
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
   }
 }
@@ -212,7 +212,7 @@ proc ::constcl::append-b {a b} {
   }
   set p $a
   while {$p ne "#NIL"} {
-    if {[atom? $p] ne "#f"} {
+    if {[T [atom? $p]]} {
       ::error "append: improper list"
     }
     set last $p
@@ -262,7 +262,7 @@ PR)
 
 CB(
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UNDF
+  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons #NIL $res]

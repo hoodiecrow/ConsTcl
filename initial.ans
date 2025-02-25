@@ -88,7 +88,7 @@ will not do, but
 
 KB if \{[atom? $x] ne "#f"\} D{}
 
-(``atom?(x) not equal to false'') works.
+(``[atom? $x] not equal to false'') works. Or see next procedure.
 MD)
 
 PR(
@@ -106,6 +106,39 @@ proc ::constcl::atom? {val} {
     }
   }
   return #f
+}
+CB)
+
+H4 T procedure
+
+MD(
+The K{T} procedure is intended to reduce the hassle of trying to make Lisp
+booleans work with Tcl conditions. The idea is to `line' the Tcl condition with
+K{[T ...]} and have the Lisp expression inside K{T}. K{T} returns 0 if and only
+the value passed to it is K{#f}, and 1 otherwise. The procedure's name stands
+for ``truth''.
+
+Example:
+MD)
+
+VB(
+if {[T [atom? $x]]} ...
+VB)
+
+PR(
+T (internal);val val -> tbool
+PR)
+
+CB(
+proc ::T {val} {
+  if {$val eq "#f"} {
+    return 0
+  } elseif {[::constcl::boolean? $val] eq "#t" &&
+    [$val boolval] eq "#f"} {
+    return 0
+  } else {
+    return 1
+  }
 }
 CB)
 

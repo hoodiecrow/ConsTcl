@@ -105,7 +105,7 @@ will not do, but
 ``if {[atom? $x] ne "#f"} ...``
 
 
-(``atom?(x) not equal to false'') works.
+(``[atom? $x] not equal to false'') works. Or see next procedure.
 
 <table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -120,6 +120,31 @@ proc ::constcl::atom? {val} {
     }
   }
   return #f
+}
+```
+#### T procedure
+
+
+The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to `line' the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for ``truth''.
+
+
+Example:
+
+```
+if {[T [atom? $x]]} ...
+```
+<table border=1><thead><tr><th colspan=2 align="left">T (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
+proc ::T {val} {
+  if {$val eq "#f"} {
+    return 0
+  } elseif {[::constcl::boolean? $val] eq "#t" &&
+    [$val boolval] eq "#f"} {
+    return 0
+  } else {
+    return 1
+  }
 }
 ```
 #### usage procedure
@@ -643,7 +668,7 @@ Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was ju
 ##### Ports: an aside
 
 
-Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work on Windows.)) or a file opened for input or (a ConsTcl extension) a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or (a ConsTcl extension) a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 
 #### parse procedure
 
@@ -659,9 +684,9 @@ proc ::constcl::parse {inp} {
   set c {}
   set unget {}
   if {[info object isa object $inp]} {
-    if {[typeof? $inp StringInputPort] ne "#f"} {
+    if {[T [typeof? $inp StringInputPort]]} {
       set port $inp
-    } elseif {[typeof? $inp String] ne "#f"} {
+    } elseif {[T [typeof? $inp String]]} {
       set port [StringInputPort new [$inp value]]
     } else {
       ::error "Unknown object [$inp show]"
@@ -683,7 +708,7 @@ proc ::constcl::parse {inp} {
 The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it. The `` read- `` procedures parse their input and produce ConsTcl objects.
 
 
-One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which, again, doesn't work on Windows)).
+One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which, again, doesn't work in a Windows windowing application.)).
 
 <table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -713,24 +738,24 @@ The `` make-constant `` helper procedure is called to set expressions to constan
 
 ```
 proc ::constcl::make-constant {val} {
-  if {[pair? $val] ne "#f"} {
+  if {[T [pair? $val]]} {
     $val mkconstant
     make-constant [car $val]
     make-constant [cdr $val]
-  } elseif {[null? $val] ne "#f"} {
+  } elseif {[T [null? $val]]} {
     return #NIL
   } else {
     $val mkconstant
   }
 }
 ```
-#### interspace procedure
+#### interspace? procedure
 
 
-The `` interspace `` helper procedure recognizes whitespace between value representations.
+The `` interspace? `` helper procedure recognizes whitespace between value representations.
 
 ```
-proc ::constcl::interspace {c} {
+proc ::constcl::interspace? {c} {
   if {[::string is space $c] || $c eq ";"} {
       return #t
     } else {
@@ -738,15 +763,15 @@ proc ::constcl::interspace {c} {
     }
 }
 ```
-#### character-check procedure
+#### valid-char? procedure
 
 
-The `` character-check `` helper procedure compares a potential character constant to the valid kinds.
+The `` valid-char? `` helper procedure compares a potential character constant to the valid kinds.
 
-<table border=1><thead><tr><th colspan=2 align="left">character-check (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">valid-char? (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
-proc ::constcl::character-check {name} {
+proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
     return #t
@@ -758,7 +783,7 @@ proc ::constcl::character-check {name} {
 #### readc procedure
 
 
-`` readc `` reads one character from the unget store if it isn't empty or else from the input port. If the input is at end-of-file, an eof object is returned.
+`` readc `` reads one character from the unget store if it isn't empty or else from the input port. If the input is at end-of-file, an eof object is returned. Shares the variable `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
 
@@ -777,48 +802,48 @@ proc ::constcl::readc {} {
   return $c
 }
 ```
-#### read-find procedure
+#### find-char? procedure
 
 
-`` read-find `` reads ahead through whitespace to find a given character. It returns 1 if it has found the character, and 0 if it has stopped at some other character. Returns end of file if eof is encountered.
+`` find-char? `` reads ahead through whitespace to find a given character. It returns `` #t `` if it has found the character, and `` #f `` if it has stopped at some other character. Returns end of file if eof is encountered. Shares the variables `` c `` and `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-find (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">find-char? (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
 
 ```
-proc ::constcl::read-find {char} {
+proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
     set c [readc]
     read-eof $c
     set unget $c
   }
-  return [expr {$c eq $char}]
+  expr {($c eq $char) ? "#t" : "#f"}
 }
 ```
-#### read-end procedure
+#### read-end? procedure
 
 
-`` read-end `` reads one character and returns 1 if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns 0. It ungets the character before returning.
+`` read-end? `` reads one character and returns `` #t `` if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns `` #f ``. It ungets the character before returning. Shares the variables `` c `` and `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-end (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0) or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-end? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
 
 ```
-proc ::constcl::read-end {} {
+proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readc]
-  if {[interspace $c] ne "#f" || $c in {) ]} || $c eq "#EOF"} {
+  if {[T [interspace? $c]] || $c in {) ]} || $c eq "#EOF"} {
     set unget $c
-    return 1
+    return #t
   } else {
     set unget $c
-    return 0
+    return #f
   }
 }
 ```
 #### skip-ws procedure
 
 
-`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). Uses the shared _c_ variable. It leaves the first character not to be skipped in _c_.
+`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). It leaves the first character not to be skipped in `` c `` and also ungets it. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -868,7 +893,7 @@ Reader procedures specialize in reading a certain kind of input, except for `` r
 #### read-expr procedure
 
 
-The `` read-expr `` procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed readers, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (`` #EOF ``).
+The `` read-expr `` procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed readers, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (`` #EOF ``). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>an expression or end of file</td></tr></table>
 
@@ -900,7 +925,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return}
+    {^$}          { return }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -912,7 +937,7 @@ proc ::constcl::read-expr {args} {
 #### read-character-expr procedure
 
 
-`` read-character-expr `` reads input, producing a character and returning a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object.
+`` read-character-expr `` is activated by `` read-pound `` when that procedure finds a backslash in the input stream (pound-backslash is the external representation prefix for characters). It reads one or more characters to produce a character expression and return a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character or end of file</td></tr></table>
 
@@ -926,7 +951,7 @@ proc ::constcl::read-character-expr {} {
     ::append name $c
     set c [readc]
   }
-  check {character-check $name} {
+  check {valid-char? $name} {
       Invalid character constant $name
   }
   set expr [MkChar $name]
@@ -937,7 +962,7 @@ proc ::constcl::read-character-expr {} {
 #### read-identifier-expr procedure
 
 
-`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object.
+`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
@@ -972,7 +997,7 @@ proc ::constcl::read-identifier-expr {args} {
 #### read-number-expr procedure
 
 
-`` read-number-expr `` reads numerical input, both integers and floating point numbers. It actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object.
+`` read-number-expr `` reads numerical input, both integers and floating point numbers. It is activated by `` read-expr `` or `` read-plus-minus `` if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
@@ -986,7 +1011,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readc]
   }
   read-eof $c
-  while {[interspace $c] ne "#t" && $c ne "#EOF" &&
+  while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
       $c ni {) ]}} {
     ::append num $c
     set c [readc]
@@ -1002,7 +1027,7 @@ proc ::constcl::read-number-expr {args} {
 #### read-object-expr procedure
 
 
-A non-standard extension, `` read-object-expr `` reads a ConsTcl object of any kind and passes its name along.
+A non-standard extension, `` read-object-expr `` reads a ConsTcl object of any kind and passes its name along. It is activated when `` read-expr `` finds a colon in the input. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
 
@@ -1032,8 +1057,9 @@ proc ::constcl::read-object-expr {} {
 #### read-pair-expr procedure
 
 
-The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member).
+The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member). Shares the variables `` c `` and `` unget `` with its caller.
 
+![#](images/prop-improp.png)
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
 
 ```
@@ -1062,14 +1088,14 @@ proc ::constcl::read-pair-expr {char} {
 __read-pair__ procedure
 
 
-`` read-pair `` is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning `` #NIL `` in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When `` read-pair `` has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list.
+`` read-pair `` is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning `` #NIL `` in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When `` read-pair `` has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list. Shares the variables `` c `` and `` unget `` with its caller.
 
 ```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   set c [readc]
   read-eof $c
-  if {[read-find $char]} {
+  if {[T [find-char? $char]]} {
     # read right paren/brack
     #set c [readc]
     return #NIL
@@ -1078,11 +1104,11 @@ proc ::constcl::read-pair {char} {
   set res $a
   skip-ws
   set prev #NIL
-  while {![read-find $char]} {
+  while {[find-char? $char] eq "#f"} {
     set x [read-expr $c]
     skip-ws
     read-eof $c
-    if {[dot? $x] ne "#f"} {
+    if {[T [dot? $x]]} {
       set prev [read-expr $c]
       skip-ws
       read-eof $c
@@ -1101,7 +1127,7 @@ proc ::constcl::read-pair {char} {
 #### read-plus-minus procedure
 
 
-`` read-plus-minus `` is called when a plus or minus is found in the input stream. If the next character is a digit, it delegates to the number reader. Otherwise, it returns a `` + `` or `` - `` symbol.
+`` read-plus-minus `` is called when a plus or minus is found in the input stream. If the next character is a digit, it delegates to the number reader. Otherwise, it returns a `` + `` or `` - `` symbol. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number or end of file</td></tr></table>
 
@@ -1135,9 +1161,9 @@ proc ::constcl::read-plus-minus {char} {
 #### read-pound procedure
 
 
-`` read-pound `` is activated by `` read-expr `` when it reads a pound sign (`` # ``). It in turn either delegates to the vector reader or the character reader, or returns boolean literals.
+`` read-pound `` is activated by `` read-expr `` when it reads a pound sign (`` # ``). It in turn either delegates to the vector reader or the character reader, or returns boolean literals. Shares the variables `` c `` and `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-pound (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td></td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-pound (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector, boolean, or character value or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-pound {} {
@@ -1147,8 +1173,8 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
-    t    { if {[read-end]} {set n #t} }
-    f    { if {[read-end]} {set n #f} }
+    t    { if {[T [read-end?]]} {set n #t} }
+    f    { if {[T [read-end?]]} {set n #f} }
     "\\" { set n [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
@@ -1160,7 +1186,7 @@ proc ::constcl::read-pound {} {
 #### read-quasiquoted-expr procedure
 
 
-`` read-quasiquoted-expr `` is activated when there is a backquote (`` ` ``) in the input stream. It reads an entire expression and returns it wrapped in `` quasiquote ``.
+`` read-quasiquoted-expr `` is activated when there is a backquote (`` ` ``) in the input stream. It reads an entire expression and returns it wrapped in `` quasiquote ``. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-quasiquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the quasiquote symbol or end of file</td></tr></table>
 
@@ -1178,7 +1204,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 #### read-quoted-expr procedure
 
 
-`` read-quoted-expr `` is activated by `` read-expr `` when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with `` quote ``. The quoted expression is made constant.
+`` read-quoted-expr `` is activated by `` read-expr `` when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with `` quote ``. The quoted expression is made constant. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-quoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expression wrapped in the quote symbol or end of file</td></tr></table>
 
@@ -1195,7 +1221,7 @@ proc ::constcl::read-quoted-expr {} {
 #### read-string-expr procedure
 
 
-`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable [String](https://github.com/hoodiecrow/ConsTcl#strings) object.
+`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable [String](https://github.com/hoodiecrow/ConsTcl#strings) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
 
@@ -1226,7 +1252,7 @@ proc ::constcl::read-string-expr {} {
 #### read-unquoted-expr procedure
 
 
-When a comma is found in the input stream, `` read-unquoted-expr `` is activated. If it reads an at-sign (`` @ ``) it selects the symbol `` unquote-splicing ``, otherwise it selects the symbol `` unquote ``. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only supposed to occur inside a quasiquoted expression.
+When a comma is found in the input stream, `` read-unquoted-expr `` is activated. If it reads an at-sign (`` @ ``) it selects the symbol `` unquote-splicing ``, otherwise it selects the symbol `` unquote ``. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only supposed to occur inside a quasiquoted expression. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-unquoted-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an expr. wr. in the unquote/-splicing symbol or end of file</td></tr></table>
 
@@ -1250,7 +1276,7 @@ proc ::constcl::read-unquoted-expr {} {
 #### read-vector-expr procedure
 
 
-`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object.
+`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -1295,7 +1321,7 @@ __eval__ procedure
 The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its syntactic form.
 
 
-`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form K{(begin (define ...} when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1304,10 +1330,10 @@ reg eval
 
 proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
-  if {[symbol? $expr] ne "#f"} {
+  if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[null? $expr] ne "#f" ||
-    [atom? $expr] ne "#f"} {
+  } elseif {[T [null? $expr]] ||
+    [T [atom? $expr]]} {
     set expr
   } else {
     while {[[car $expr] name] in
@@ -1318,7 +1344,7 @@ proc ::constcl::eval \
     set args [cdr $expr]
     if {$env ne "::constcl::global_env" &&
       [$op name] eq "begin" &&
-      ([pair? [car $args]] ne "#f" &&
+      ([T [pair? [car $args]]] &&
       [[caar $args] name] eq "define")} {
       set expr [resolve-local-defines $args]
       set op [car $expr]
@@ -1330,7 +1356,7 @@ proc ::constcl::eval \
         car $args
       }
       if {
-        if {[null? [cddr $args]] ne "#f"} {
+        if {[T [null? [cddr $args]]]} {
           usage [p "(if cond cons)"] $expr
           /if1 {[eval [car $args] $env]} \
             {eval [cadr $args] $env}
@@ -1388,7 +1414,7 @@ The evaluator recognizes each one by its internal representation and chooses the
 #### Variable reference
 
 
-_Example: `` r `` => 10 (a symbol `` r `` is evaluated to 10)_
+_Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to 10)_
 
 
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
@@ -1406,7 +1432,7 @@ proc ::constcl::lookup {sym env} {
 #### Constant literal
 
 
-_Example: `` 99 `` => 99 (a number evaluates to itself)_
+_Example: `` 99 `` ==> 99 (a number evaluates to itself)_
 
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
@@ -1414,7 +1440,7 @@ Not just numbers but booleans, characters, strings, and vectors evaluate to them
 #### Quotation
 
 
-_Example: `` (quote r) `` => `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
+_Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader.
@@ -1422,13 +1448,13 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 #### Conditional
 
 
-_Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` => 6_
+_Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
 
 
 The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
 
-The two procedures that handle the conditional form is `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
+The two procedures that handle the conditional form are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
 
 
 __/if__ procedure __/if1__ procedure
@@ -1439,7 +1465,7 @@ __/if__ procedure __/if1__ procedure
 
 ```
 proc ::constcl::/if {cond conseq altern} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   } {
     uplevel $altern
@@ -1447,7 +1473,7 @@ proc ::constcl::/if {cond conseq altern} {
 }
 
 proc ::constcl::/if1 {cond conseq} {
-  if {[uplevel [::list expr $cond]] ne "#f"} {
+  if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
   }
 }
@@ -1455,7 +1481,7 @@ proc ::constcl::/if1 {cond conseq} {
 #### Sequence
 
 
-_Example: `` (begin (define r 10) (* r r)) `` => 100_
+_Example: `` (begin (define r 10) (* r r)) `` ==> 100_
 
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The `` /begin `` helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
@@ -1482,7 +1508,7 @@ proc ::constcl::/begin {exps env} {
 #### Definition
 
 
-_Example: `` (define r 10) `` => ... (a definition doesn't evaluate to anything)_
+_Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything)_
 
 
 We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
@@ -1502,10 +1528,10 @@ proc ::constcl::/define {sym val env} {
 #### Assignment
 
 
-_Example: `` (set! r 20) `` => 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
+_Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name "variable", something that can be modified). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have "!" at the end of their name.
+Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 
 __/set!__ procedure
@@ -1521,7 +1547,7 @@ proc ::constcl::/set! {var val env} {
 #### Procedure definition
 
 
-_Example: `` (lambda (r) (* r r)) `` => `` ::oo::Obj3601 `` (it will be a different object each time)_
+_Example: `` (lambda (r) (* r r)) `` ==> `` ::oo::Obj3601 `` (it will be a different object each time)_
 
 
 In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
@@ -1536,7 +1562,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
 
-Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for "the symbol begin".), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
 ##### Scheme formals lists: an aside
 
@@ -1564,13 +1590,13 @@ proc ::constcl::/lambda {formals body env} {
 #### Procedure call
 
 
-_Example: `` (+ 1 6) `` => 7_
+_Example: `` (+ 1 6) `` ==> 7_
 
 
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121.
 
 
-`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if pr really is a procedure, and determines whether to call pr as an object or as a Tcl command.
+`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
 
 __invoke__ procedure
@@ -1601,7 +1627,7 @@ __splitlist__ procedure
 ```
 proc ::constcl::splitlist {vals} {
   set result {}
-  while {[pair? $vals] ne "#f"} {
+  while {[T [pair? $vals]]} {
     lappend result [car $vals]
     set vals [cdr $vals]
   }
@@ -1620,7 +1646,7 @@ __eval-list__ procedure
 ```
 proc ::constcl::eval-list {exps env} {
   # don't convert to /if, it breaks (fact 100)
-  if {[pair? $exps] ne "#f"} {
+  if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } {
@@ -1635,7 +1661,7 @@ proc ::constcl::eval-list {exps env} {
 Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
 
 
-`` expand-macro `` takes an expression and an environment as a parameter. First, the operator (`` op ``) and operands (`` args ``) are extracted to check if expansion is necessary (the operator `` car ``, for historical reasons, stands for the first element of a list, while `` cdr `` stands for the rest of the elements after the first in a list). If the operator is the symbol `` define `` and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in `` eval ``.
+`` expand-macro `` takes an expression and an environment as a parameter. First, the operator (_op_) and operands (_args_) are extracted to check if expansion is necessary (the operator `` car ``, for historical reasons, stands for the first element of a list, while `` cdr `` stands for the rest of the elements after the first in a list). If the operator is the symbol `` define `` and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in `` eval ``.
 
 
 The operator's symbol name is then used to select the right expansion procedure, and the whole expression and the environment is passed to it. In the end, the expanded expression is passed back to `` eval ``.
@@ -1690,7 +1716,7 @@ In this and many other macro expanders I use a quasiquote construct to lay out h
 
 ```
 proc ::constcl::do-and {tail prev env} {
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     return $prev
   } else {
     set env [Environment new #NIL {} $env]
@@ -1715,7 +1741,7 @@ The `` case `` macro is expanded by `` expand-case ``. It expands to `` '() `` i
 ##### caar, cadr, cdar, and the rest: an aside
 
 
-The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as "the first element of the first element of L", implying that the first element of `` L `` is a list. `` cdar L `` is "the rest of the elements of the first element of L", and `` cadr L `` is "the first element of the rest of the elements of L" or in layman's terms, the second element of L.
+The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1728,7 +1754,7 @@ proc ::constcl::expand-case {expr env} {
 }
 
 proc ::constcl::do-case {keyexpr clauses env} {
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set keyl [caar $clauses]
@@ -1736,9 +1762,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set keyl [list [S memv] $keyexpr \
         [list [S quote] $keyl]]
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the condition
-      if {[eq? [caar $clauses] [S else]] ne "#f"} {
+      if {[T [eq? [caar $clauses] [S else]]]} {
         set keyl #t
       }
     }
@@ -1778,30 +1804,30 @@ proc ::constcl::expand-cond {expr env} {
 __do-cond__ procedure
 
 
-`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``. If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
+`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
-  if {[null? $clauses] ne "#f"} {
+  if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
     set pred [caar $clauses]
     set body [cdar $clauses]
-    if {[symbol? [car $body]] ne "#f" &&
+    if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
       set body [cddar $clauses]
     }
     # if this is the last clause...
-    if {[eq? [length $clauses] #1] ne "#f"} {
+    if {[T [eq? [length $clauses] #1]]} {
       # ...allow 'else' in the predicate
-      if {[eq? $pred [S else]] ne "#f"} {
+      if {[T [eq? $pred [S else]]]} {
         set pred #t
       }
     }
-    if {[null? $body] ne "#f"} {
+    if {[T [null? $body]]} {
         set body $pred
     }
     set env [Environment new #NIL {} $env]
@@ -1864,11 +1890,11 @@ regmacro del!
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
   /define [S listname] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error "too few arguments, 1 of 2"
   }
   /define [S key] [cadr $tail] $env
@@ -1907,19 +1933,19 @@ __for-seq__ procedure
 
 ```
 proc ::constcl::for-seq {seq env} {
-  if {[number? $seq] ne "#f"} {
+  if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
   # make it a Tcl list, one way or another
-  if {[list? $seq] ne "#f"} {
+  if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[string? $seq] ne "#f"} { 
+  } elseif {[T [string? $seq]]} { 
     set seq [lmap c [split [$seq value] {}] {
       MkChar #\\$c
     }]
-  } elseif {[vector? $seq] ne "#f"} {
+  } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
   }
 }
@@ -1997,7 +2023,7 @@ proc ::constcl::expand-for/and {expr env} {
 The `` expand-for/list `` procedure expands the `` for/list `` macro. It returns a `` list `` construct containing the iterations of each clause.
 
 
-The only difference from `` expand for/and `` is that it wraps the list of iterations in `` list `` instead of `` and ``.
+The only difference from `` expand-for/and `` is that it wraps the list of iterations in `` list `` instead of `` and ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand for/list (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2016,7 +2042,7 @@ proc ::constcl::expand-for/list {expr env} {
 The `` expand-for/or `` procedure expands the `` for/or `` macro. It returns an `` or `` construct containing the iterations of each clause.
 
 
-The only difference from `` expand for/list `` is that it wraps the list of iterations in `` or `` instead of `` list ``.
+The only difference from `` expand-for/list `` is that it wraps the list of iterations in `` or `` instead of `` list ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/or (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2032,13 +2058,13 @@ proc ::constcl::expand-for/or {expr env} {
 #### expand-let procedure
 
 
-`` expand-let `` expands the named `` let `` and 'regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
+`` expand-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
 
 
-Named `` let `` chops up the expression into variable, bindings, and body. It creates a dictionary with the variable as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the bindings. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` for with the varlist and the original body. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
 
 
-Regular `` let `` chops up the original expression into bindings and body. It creates an empty dictionary and fills it up with variable/value pairs from the bindings. Then it builds a `` lambda `` operator form with the variable list, the body, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2048,7 +2074,7 @@ regmacro let
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[symbol? [car $tail]] ne "#f"} {
+  if {[T [symbol? [car $tail]]]} {
     # named let
     set variable [car $tail]
     set bindings [cadr $tail]
@@ -2124,9 +2150,9 @@ regmacro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
-  if {[eq? [length $tail] #0] ne "#f"} {
+  if {[T [eq? [length $tail] #0]]} {
     return [list [S begin] #f]
-  } elseif {[eq? [length $tail] #1] ne "#f"} {
+  } elseif {[T [eq? [length $tail] #1]]} {
     return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
@@ -2170,7 +2196,7 @@ regmacro pop!
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
   if {[symbol? [car $tail]] eq "#f"} {
@@ -2196,12 +2222,12 @@ regmacro push!
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
   /define [S obj] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
@@ -2231,15 +2257,15 @@ regmacro put!
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
-  if {[null? $tail] ne "#f"} {
+  if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
   /define [S name] [car $tail] $env
-  if {[null? [cdr $tail]] ne "#f"} {
+  if {[T [null? [cdr $tail]]]} {
       ::error "too few arguments, 1 of 3"
   }
   /define [S key] [cadr $tail] $env
-  if {[null? [cddr $tail]] ne "#f"} {
+  if {[T [null? [cddr $tail]]]} {
       ::error "too few arguments, 2 of 3"
   }
   /define [S val] [caddr $tail] $env
@@ -2269,30 +2295,30 @@ regmacro quasiquote
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
   set qqlevel 0
-  if {[list? [car $tail]] ne "#f"} {
+  if {[T [list? [car $tail]]]} {
     set node [car $tail]
     return [qq-visit-child $node 0 $env]
-  } elseif {[vector? [car $tail]] ne "#f"} {
+  } elseif {[T [vector? [car $tail]]]} {
     set vect [car $tail]
     set res {}
     for {set i 0} {$i < [
         [vector-length $vect] numval]} {incr i} {
       set idx [MkNumber $i]
       set vecref [vector-ref $vect $idx]
-      if {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote]] ne "#f"} {
+      if {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $vecref] $env]
         }
-      } elseif {[pair? $vecref] ne "#f" &&
-          [eq? [car $vecref] [
-            S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $vecref]] &&
+          [T [eq? [car $vecref] [
+            S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $vecref] $env]]
         }
-      } elseif {[atom? $vecref] ne "#f"} {
+      } elseif {[T [atom? $vecref]]} {
         lappend res $vecref
       } else {
       }
@@ -2301,6 +2327,10 @@ proc ::constcl::expand-quasiquote {expr env} {
   }
 }
 ```
+
+
+__qq-visit-child__ procedure
+
 <table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
 
 ```
@@ -2308,11 +2338,11 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
   }
-  if {[list? $node] ne "#f"} {
+  if {[T [list? $node]]} {
     set res {}
     foreach child [splitlist $node] {
-      if {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S unquote]] ne "#f"} {
+      if {[T [pair? $child]] &&
+          [T [eq? [car $child] [S unquote]]]} {
         if {$qqlevel == 0} {
           lappend res [eval [cadr $child] $env]
         } else {
@@ -2320,19 +2350,19 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
             qq-visit-child [cadr $child] [
             expr {$qqlevel - 1}] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [
-          S unquote-splicing]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [
+          S unquote-splicing]]]} {
         if {$qqlevel == 0} {
           lappend res {*}[splitlist [
             eval [cadr $child] $env]]
         }
-      } elseif {[pair? $child] ne "#f" &&
-          [eq? [car $child] [S quasiquote]] ne "#f"} {
+      } elseif {[T [pair? $child]] &&
+          [T [eq? [car $child] [S quasiquote]]]} {
         lappend res [list [S quasiquote] [car [
           qq-visit-child [cdr $child] [
             expr {$qqlevel + 1}] $env]]] 
-      } elseif {[atom? $child] ne "#f"} {
+      } elseif {[T [atom? $child]]} {
         lappend res $child
       } else {
         lappend res [
@@ -2346,7 +2376,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 #### expand-unless procedure
 
 
-`` unless `` is a conditional like `` if ``, with the differences that it takes a number of expressions and only executes them for a false outcome of `` car $tail ``.
+`` unless `` is a conditional like `` if ``, but it takes a number of expressions. It executes them on a false outcome of `` car $tail ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-unless (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2368,7 +2398,7 @@ proc ::constcl::expand-unless {expr env} {
 #### expand-when procedure
 
 
-`` when `` is a conditional like `` if ``, with the differences that it takes a number of expressions and only executes them for a true outcome of `` car $tail ``.
+`` when `` is a conditional like `` if ``, but it takes a number of expressions. It executes them on a true outcome of `` car $tail ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-when (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2399,16 +2429,16 @@ This section is ported from 'Scheme 9 from Empty Space'. `` resolve-local-define
 proc ::constcl::resolve-local-defines {exps} {
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   set rest [lassign [
     extract-from-defines $exps VARS] v error]
-  if {$error ne "#f"} {
+  if {[T $error]} {
     return #NIL
   }
   if {$rest eq "#NIL"} {
-    set rest [cons #UNSP #NIL]
+    set rest [cons #UNS #NIL]
   }
   return [make-lambdas $v $a $rest]
 }
@@ -2424,8 +2454,8 @@ proc ::constcl::resolve-local-defines {exps} {
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
   while {$exps ne "#NIL"} {
-    if {[atom? $exps] ne "#f" ||
-        [atom? [car $exps]] ne "#f" ||
+    if {[T [atom? $exps]] ||
+        [T [atom? [car $exps]]] ||
         [eq? [caar $exps] [S define]] eq "#f"} {
       break
     }
@@ -2434,12 +2464,12 @@ proc ::constcl::extract-from-defines {exps part} {
     if {[list? $n] eq "#f" ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
-        ([argument-list? [cadr $n]] ne "#f" ||
-        [symbol? [cadr $n]] eq "#f")
+        ([T [argument-list? [cadr $n]]] ||
+        ![T [symbol? [cadr $n]]])
       eq "#f"} {
         return [::list #NIL "#t" #NIL]
       }
-      if {[pair? [cadr $n]] ne "#f"} {
+      if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
           set a [cons [caadr $n] $a]
         } else {
@@ -2471,12 +2501,12 @@ proc ::constcl::extract-from-defines {exps part} {
 proc ::constcl::argument-list? {val} {
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
-  } elseif {[atom? $val] ne "#f"} {
+  } elseif {[T [atom? $val]]} {
     return #f
   }
-  while {[pair? $val] ne "#f"} {
+  while {[T [pair? $val]]} {
     if {[symbol? [car $val]] eq "#f"} {
       return #f
     }
@@ -2484,7 +2514,7 @@ proc ::constcl::argument-list? {val} {
   }
   if {$val eq "#NIL"} {
     return #t
-  } elseif {[symbol? $val] ne "#f"} {
+  } elseif {[T [symbol? $val]]} {
     return #t
   }
 }
@@ -2561,7 +2591,7 @@ proc ::constcl::append-b {a b} {
   }
   set p $a
   while {$p ne "#NIL"} {
-    if {[atom? $p] ne "#f"} {
+    if {[T [atom? $p]]} {
       ::error "append: improper list"
     }
     set last $p
@@ -2601,7 +2631,7 @@ Due to a mysterious bug, `` make-undefineds `` actually creates a list of NIL va
 
 ```
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UNDF
+  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons #NIL $res]
@@ -2614,7 +2644,7 @@ proc ::constcl::make-undefineds {vals} {
 #### write procedure
 
 
-The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome was.
+The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome of the evaluation was.
 
 
 As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
@@ -2685,11 +2715,11 @@ proc ::constcl::write-pair {handle pair} {
   set d [cdr $pair]
   # print car
   $a write $handle
-  if {[pair? $d] ne "#f"} {
+  if {[T [pair? $d]]} {
     # cdr is a cons pair
     puts -nonewline $handle " "
     write-pair $handle $d
-  } elseif {[null? $d] ne "#f"} {
+  } elseif {[T [null? $d]]} {
     # cdr is nil
     return
   } else {
@@ -2755,8 +2785,8 @@ __teq__ procedure
 
 ```
 proc ::constcl::teq {typep expr1 expr2} {
-    return [expr {[$typep $expr1] ne "#f" &&
-      [$typep $expr2] ne "#f"}]
+    return [expr {[T [$typep $expr1]] &&
+      [T [$typep $expr2]]}]
 }
 ```
 
@@ -2792,8 +2822,8 @@ proc ::constcl::eqv? {expr1 expr2} {
     return #t
   } elseif {[teq null? $expr1 $expr2]} {
     return #t
-  } elseif {[pair? $expr1] ne "#f" &&
-      [pair? $expr2] ne "#f" &&
+  } elseif {[T [pair? $expr1]] &&
+      [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
     return #t
@@ -2905,17 +2935,17 @@ proc ::constcl::number? {val} {
 ```
 #### = procedure
 
-
-__<__ procedure
-
-
-__>__ procedure
+``__<__ procedure``
 
 
-__<=__ procedure
+``__>__ procedure``
 
 
-__>=__ procedure
+``__<=__ procedure``
+
+
+``__>=__ procedure``
+
 
 
 The predicates `` = ``, `` < ``, `` > ``, `` <= ``, and `` >= `` are implemented.
@@ -3210,7 +3240,7 @@ proc ::constcl::abs {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
   } else {
     return $num
@@ -3266,7 +3296,7 @@ reg remainder
 proc ::constcl::remainder {num1 num2} {
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
-  if {[$num1 negative?] ne "#f"} {
+  if {[T [$num1 negative?]]} {
     set n -$n
   }
   return [N $n]
@@ -3344,7 +3374,7 @@ proc ::constcl::truncate {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
   }
-  if {[$num negative?] ne "#f"} {
+  if {[T [$num negative?]]} {
     N [::tcl::mathfunc::ceil [$num numval]]
   } else {
     N [::tcl::mathfunc::floor [$num numval]]
@@ -4483,10 +4513,10 @@ oo::class create ::constcl::InputPort {
     return $handle
   }
   method get {} {
-    read $handle 1
+    chan read $handle 1
   }
   method eof {} {
-    eof $handle
+    chan eof $handle
   }
   method copy {} {
     ::constcl::InputPort new $handle
@@ -4991,11 +5021,11 @@ proc ::constcl::show-pair {pair} {
   set d [cdr $pair]
   # print car
   ::append str [$a show]
-  if {[pair? $d] ne "#f"} {
+  if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
     ::append str [show-pair $d]
-  } elseif {[null? $d] ne "#f"} {
+  } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
   } else {
@@ -5181,9 +5211,9 @@ reg list?
 
 proc ::constcl::list? {val} {
   set visited {}
-  if {[null? $val] ne "#f"} {
+  if {[T [null? $val]]} {
       return #t
-  } elseif {[pair? $val] ne "#f"} {
+  } elseif {[T [pair? $val]]} {
       return [listp $val]
   } else {
       return #f
@@ -5206,9 +5236,9 @@ proc ::constcl::listp {pair} {
     return #f
   }
   lappend visited $pair
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     return #t
-  } elseif {[pair? $pair] ne "#f"} {
+  } elseif {[T [pair? $pair]]} {
     return [listp [cdr $pair]]
   } else {
     return #f
@@ -5279,7 +5309,7 @@ __length-helper__ procedure
 
 ```
 proc ::constcl::length-helper {pair} {
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     return 0
   } else {
     return [expr {1 +
@@ -5327,9 +5357,9 @@ __copy-list__ procedure
 ```
 proc ::constcl::copy-list {pair next} {
   # TODO only fresh conses in the direct chain to NIL
-  if {[null? $pair] ne "#f"} {
+  if {[T [null? $pair]]} {
     set next
-  } elseif {[null? [cdr $pair]] ne "#f"} {
+  } elseif {[T [null? [cdr $pair]]]} {
     cons [car $pair] $next
   } else {
     cons [car $pair] [copy-list [cdr $pair] $next]
@@ -5376,7 +5406,7 @@ Example:
 reg list-tail
 
 proc ::constcl::list-tail {vals k} {
-  if {[zero? $k] ne "#f"} {
+  if {[T [zero? $k]]} {
     return $vals
   } else {
     list-tail [cdr $vals] [- $k #1]
@@ -5470,10 +5500,10 @@ proc ::constcl::member-proc {epred val1 val2} {
   check {list? $val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
-  if {[null? $val2] ne "#f"} {
+  if {[T [null? $val2]]} {
     return #f
-  } elseif {[pair? $val2] ne "#f"} {
-    if {[$epred $val1 [car $val2]] ne "#f"} {
+  } elseif {[T [pair? $val2]]} {
+    if {[T [$epred $val1 [car $val2]]]} {
       return $val2
     } else {
       return [member-proc $epred $val1 [cdr $val2]]
@@ -5545,11 +5575,11 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   check {list? $val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
-  if {[null? $val2] ne "#f"} {
+  if {[T [null? $val2]]} {
     return #f
-  } elseif {[pair? $val2] ne "#f"} {
-    if {[pair? [car $val2]] ne "#f" && 
-      [$epred $val1 [caar $val2]] ne "#f"} {
+  } elseif {[T [pair? $val2]]} {
+    if {[T [pair? [car $val2]]] && 
+      [T [$epred $val1 [caar $val2]]]} {
       return [car $val2]
     } else {
       return [assoc-proc $epred $val1 [cdr $val2]]
@@ -6383,7 +6413,7 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    if {[::constcl::list? $v] ne "#f"} {
+    if {[T [::constcl::list? $v]]} {
       set len [[::constcl::length $v] numval]
       set vsa [::constcl::vsAlloc $len]
       set idx $vsa

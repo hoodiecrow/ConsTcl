@@ -17,7 +17,7 @@ oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    if {[::constcl::list? $v] ne "#f"} {
+    if {[T [::constcl::list? $v]]} {
       set len [[::constcl::length $v] numval]
       set vsa [::constcl::vsAlloc $len]
       set idx $vsa
