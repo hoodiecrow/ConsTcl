@@ -10,6 +10,7 @@
 \usepackage{marginnote}
 \usepackage[table]{xcolor}
 \usepackage{caption}
+\usepackage{etoc}
 \lstset{
   showstringspaces=false,
   language=tcl,
@@ -22,7 +23,7 @@
   basicstyle=\small\ttfamily,
 }
 %\renewcommand{\thesection}{\arabic{section}}
-\title{Into the Interpreter\\--with ConsTcl}
+\title{Into the Interpreter\\with ConsTcl}
 \author{Peter Lewerin}
 \date{\today}
 \makeatletter
@@ -49,7 +50,15 @@
 \begin{document}
 \pagestyle{headings}
 \maketitle
+
+\renewcommand*{\contentsname}{Short contents}
+\etocsettocdepth.toc{section}
 \tableofcontents
+
+\renewcommand*\contentsname{Detailed contents}
+\etocignoretoctocdepth
+\tableofcontents
+
 
 \chapter{Introduction}
 \label{introduction}
@@ -147,7 +156,7 @@ put together using tools like \texttt{awk}. It looks like this:
 
 In the middle are a bunch of \texttt{.ans} files (ANnotated Source). These are
 written with Vim. From the TT tags of those, I extract a \texttt{.test} file.
-From the CB tags I extract \texttt{.tcl} source (or C source, as the case might
+From the CB tags I extract \texttt{.tcl} source (or Scheme or C source, as the case might
 be). From all the tags except TT I extract formatted documentation in Markdown
 and \LaTeX{} format. All these extractions are automated using \texttt{make}.
 Figures are made with Inkscape.  I create a PDF document from the \LaTeX{}
@@ -157,8 +166,8 @@ documentation for this piece of software was fit for a book.
 ConsTcl is at least 97\% my own work, but I have ported one part (see page
 \pageref{resolving-local-defines}) from ``Scheme 9 from Empty
 Space''\footnote{See \texttt{https://t3x.org/s9book/index.html}} by Nils M
-Holm, a Lisp interpreter written in C and commented in a similar manner to this
-book. Another source of guidance and inspiration is ``Lisp in Small Pieces'' by
+Holm\index{Holm, Nils M}, a Lisp interpreter written in C and commented in a similar manner to this
+book. Another source of guidance and inspiration was ``Lisp in Small Pieces'' by
 Christian Queinnec.
 
 \subsection{About the program listings}
@@ -177,12 +186,12 @@ lines have the \textbackslash: some are broken inside a
 
 I'm a 60 year old former system manager who has been active in programming
 since 1979. Currently, since around 25 years, my language of choice is the
-rather marginal Tcl (it's not even in the 100 most used languages). Tcl suits
-me, and there are things that one can do in Tcl that one can't easily do in
-other languages. Lisp is a runner-up in my affections, a language that
-fascinates me but doesn't fit my brain very well (though I have written one
-large piece of software in AutoLisp, a CAD subsystem for designing drilling
-boxes).
+rather marginal Tcl\footnote{See \texttt{https://www.tcl-lang.org/}} (it's not
+even in the 100 most used languages). Tcl suits me, and there are things that
+one can do in Tcl that one can't easily do in other languages. Lisp is a
+runner-up in my affections, a language that fascinates me but doesn't fit my
+brain very well (though I have written one large piece of software in AutoLisp,
+a CAD subsystem for designing drilling boxes).
 
 In addition to my terms as programmer and system manager, I have worked as a
 teacher (teaching C/C++ in upper secondary school) and for a short while I

@@ -6,6 +6,10 @@ The first thing an interpreter must be able to do is to take in the user's code
 and data inputI{input}, whether from the keyboard or from a source file.  K{read}
 represents the interpreter's main input facility. The K{read-} procedures read
 from standard input, or--if a port is provided--from the port's channel.
+
+The main input procedures, K{read} and the non-standard K{parse}, do more than
+just read in the text of code and data: they also E{parse} the input into an
+E{internal representation} that the evaluator can use.
 MD)
 
 H3 The parsing process
@@ -14,9 +18,9 @@ MD(
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
 letters, digits, and other characters, conforming to the rules of E{external
   representation}I{external representation}. The result of parsing is an
-  E{expression}I{expression} in internal form.
+  E{expression}I{expression}.
 
-The parsing process translates an expression from external representation to
+The parsing process translates a piece of text from external representation to
 internal representation. The external representation is a 'recipe' for an
 expression that expresses it in a unique way. 
 
@@ -30,13 +34,13 @@ vector gets the address to the first element and the number of elements.
 
 IG /images/vector-representation.png
 
-The K{parse} procedure takes in the input buffer character by character, matching
-each character against a fitting external representation. When done, it creates
-a ConsTcl object, which is the internal representation of an expression.  The
-object can then be passed to the evaluator.
+The K{parse} or K{read} procedure takes in the input buffer character by
+character, matching each character against a fitting external representation.
+When done, it creates a ConsTcl object, which is the internal representation of
+an expression.  The object can then be passed to the evaluator.
 
-Given a string, K{parse} fills the input buffer. It then parses the input and
-produces the internal representation of an expression.
+Given a string, K{parse} creates a string input port for itself to read from. It
+then parses the input and produces the internal representation of an expression.
 
 Example:
 MD)
@@ -49,9 +53,10 @@ VB)
 MD(
 Here, K{parse} parsed the external representation of a list with three elements,
 +, 2, and 3. It produced the expression that has an internal representation
-labeled K{::oo::Obj491}. We will later meet procedures like K{eval}, which
-transforms an expression into a value, and K{write}, which prints a printed
-representation of expressions and values. Putting them together: we can see
+labeled K{::oo::Obj491}. I will now reach briefly into the following chapters
+and present procedures like K{eval}, which transforms an expression into a
+value, and K{write}, which writes a printed external representation of
+expressions and values. Putting them together we can see
 MD)
 
 VB(
@@ -64,7 +69,7 @@ VB(
 VB)
 
 MD(
-Fortunately, we don't have to work at such a low level. We can use the
+Fortunately, we don't E{have} to work at such a low level. We can use the
 K{repl}I{repl} instead:
 MD)
 
@@ -77,11 +82,11 @@ MD(
 Then, parsing and evaluation and writing goes on in the background and the
 internal representations of expressions and values are hidden.
 
-Anyway, here is how it really looks like. K{::oo::Obj491} was just the head of
-the list.
-
-IG /images/intreplist.png
+Anyway, the figure shows is what it really looks like. K{::oo::Obj491} was just
+the head of the list.
 MD)
+
+IF /images/intreplist.png The internal structure of the expression
 
 H3 Input procedures
 
@@ -89,12 +94,13 @@ H5 Ports: an aside
 
 MD(
 Ports are an abstraction of the input or output mechanism. An input port can be
-connected to standard input (the keyboard) or a file opened for input or (a
-ConsTcl extension) a string input buffer where the complete available input is
-laid out before reading starts. Regardless of what kind of input port it is, one
-can read characters from it until it runs out and signals end-of-file. Likewise,
-an output port, regardless of whether it's the standard output--the screen--or a
-file opened for output, will receive characters sent to it.
+connected to standard input (the keyboardF{which doesn't work on Windows.}) or a
+file opened for input or (a ConsTcl extension) a string input buffer where the
+complete available input is laid out before reading starts. Regardless of what
+kind of input port it is, one can read characters from it until it runs out and
+signals end-of-file. Likewise, an output port, regardless of whether it's the
+standard output--the screen--or a file opened for output, will receive
+characters sent to it.
 MD)
 
 H4 parse procedure
@@ -156,9 +162,10 @@ The standard builtin K{read} reads an input port the same way that K{parse}
 does, but one can't pass a string to it. The K{read-} procedures parse their
 input and produce ConsTcl objects.
 
-One can pass a port to K{read}, in which case K{read} sets the standard input
-port temporarily to the provided port. If not, K{read} uses the default standard
-input port (usually the keyboard).
+One can pass a port to K{read} (including a string input port) in which case
+K{read} sets the standard input port temporarily to the provided port. If not,
+K{read} uses the default standard input port (usually the keyboardF{which,
+  again, doesn't work on Windows}).
 MD)
 
 PR(

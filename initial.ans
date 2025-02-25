@@ -68,6 +68,7 @@ MD)
 H4 atom? procedure
 
 MD(
+THis one isn't just for my convenience: it's a standard procedure in Scheme.
 There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
 collections of lists and atoms. Atoms are instances of types such as booleans,
 characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
@@ -81,13 +82,13 @@ By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
 name. Some care is necessary when calling Scheme predicates from Tcl code (the
 Tcl K{if} command expects 1 or 0 as truth values). Example:
 
-KB if \{[typeof? $v Dot]\} D{}
+KB if \{[atom? $x]\} D{}
 
 will not do, but 
 
-KB if \{[typeof? $v Dot] ne "#f"\} D{}
+KB if \{[atom? $x] ne "#f"\} D{}
 
-works.
+(``atom?(x) not equal to false'') works.
 MD)
 
 PR(
@@ -111,6 +112,9 @@ CB)
 H4 usage procedure
 
 MD(
+K{usage} is a simple procedure to compare a Lisp list (to wit: a Lisp
+expression) with the expected format of the expression. Mostly it just compares
+lengths.
 MD)
 
 PR(
@@ -207,8 +211,9 @@ H4 in-range procedure
 
 MD(
 This one is a little bit of both, a utility function that is also among the
-builtins in the library. It started out as a one-liner by Donal K.
-FellowsI{Fellows, Donal}, but has grown a bit since then to suit my needs.
+builtins in the library (it's not standard, though). It started out as a
+one-liner by Donal K. FellowsI{Fellows, Donal}, but has grown a bit since then
+to suit my needs.
 
 The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
 Number objects. If one is passed to the procedure, it is used as the end of the
@@ -356,8 +361,8 @@ CB)
 H4 rw procedure
 
 MD(
-K{rw} is the reading variant of K{pw}, that is it takes in its input via a port
-instead of an input buffer. The distinction mattered more when the input library
+K{rw} is the reading variant of K{pw}. Instead of taking string input it takes a
+regular input port. The distinction mattered more while the input library
 was being written. The procedure just writes what is read.
 MD)
 
@@ -394,8 +399,8 @@ CB)
 H4 re procedure
 
 MD(
-K{re} is like K{pe}, but it reads from a port instead of an input buffer. It
-evaluates what is read.
+K{re} is like K{pe}, but it reads from a regular port instead of an string input
+port. It evaluates what is read.
 MD)
 
 PR(
@@ -479,7 +484,7 @@ H4 prw procedure
 
 MD(
 K{prw}  reads an expression, resolves defines, and writes the result. It was
-handy during the time I was porting the 'resolve local defines' section.
+handy during the time I was porting the `resolve local defines' section.
 MD)
 
 PR(
@@ -563,7 +568,7 @@ MD)
 CB(
 catch { ::constcl::EndOfFile destroy }
 
-oo::class create ::constcl::EndOfFile {
+oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<end-of-file>"
@@ -660,7 +665,8 @@ CB)
 H4 Undefined class
 
 MD(
-The K{Undefined} class is for undefined things. Also a S9fES support class.
+The K{Undefined} class is for undefined things. It was created to facilitate
+porting of code from `Scheme 9 from Empty Space'I{S9fES}.
 MD)
 
 CB(
@@ -680,8 +686,7 @@ CB)
 H4 Unspecified class
 
 MD(
-The K{Unspecified} class is for unspecified things. It was created to facilitate
-porting of code from `Scheme 9 from Empty Space'I{S9fES}.
+The K{Unspecified} class is for unspecified things. Also a S9fES support class.
 MD)
 
 CB(

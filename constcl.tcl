@@ -194,7 +194,7 @@ proc ::constcl::dot? {val} {
 
 catch { ::constcl::EndOfFile destroy }
 
-oo::class create ::constcl::EndOfFile {
+oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<end-of-file>"

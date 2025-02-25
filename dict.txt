@@ -6,7 +6,7 @@ formals       -> a Scheme formals list
 lisp          -> Lisp source text
 inpbuf        -> an input buffer
 tstrinpbuf    -> a Tcl string or an input buffer
-tstrstrinpbuf -> a Tcl string, Lisp string, or an input buffer
+tstrstrinpbuf -> a Tcl string, Lisp string, or a string input port
 none          -> nothing
 noneeof       -> nothing, or end of file
 filename      -> a filename string
