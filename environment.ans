@@ -76,6 +76,79 @@ oo::class create ::constcl::Environment {
 }
 CB)
 
+H3 MIT Scheme environment library
+
+MD(
+Definition my MIT, implementation by me.
+MD)
+
+H4 Environment procedures
+
+CB(
+proc environment? {object} {
+  #Returns #t if object is an environment; otherwise returns #f.
+  typeof? $object Environment
+}
+
+proc environment-has-parent? {env} {
+  # Returns #t if environment has a parent environment; otherwise returns #f.
+  if {[$env parent] ne "#NIL"} {
+    return #t
+  } else {
+    return #f
+  }
+}
+
+proc environment-parent {env} {
+  # Returns the parent environment of environment. It is an error if environment has no parent.
+  set parent [$env parent]
+  if {$parent ne "#NIL"} {
+    return $parent
+  } else {
+    error "[$env show] has no parent"
+  }
+}
+
+proc environment-bound-names {env} {
+  # Returns a newly allocated list of the names (symbols) that are bound by environment. This does not include the names that are bound by the parent environment of environment.
+  list {*}[$env names]
+}
+
+proc environment-bindings {env} {
+  # Returns a newly allocated list of the bindings of environment; does not include the bindings of the parent environment. Each element of this list takes one of two forms: (name) indicates that name is bound but unassigned, while (name object) indicates that name is bound, and its value is object.
+  list {*}[$env bindings]
+}
+
+proc environment-bound? {env sym} {
+  # Returns #t if symbol is bound in environment or one of its ancestor environments; otherwise returns #f.
+  set e [$env find $sym]
+  if {$e eq "::constcl::null_env"} {
+    return #f
+  } else {
+    return #t
+  }
+}
+
+proc environment-lookup {env sym} {
+  # Symbol must be bound in environment or one of its ancestor environments. Returns the value to which it is bound.
+  if {[T [environment-bound? $sym]]} {
+    lookup $sym [$env find $sym]
+  }
+}
+
+proc environment-assignable? {env sym} {
+  # Symbol must be bound in environment or one of its ancestor environments. Returns #t if the binding may be modified by side effect.
+}
+
+proc environment-assign! {env sym obj} {
+  # Symbol must be bound in environment or one of its ancestor environments, and must be assignable. Modifies the binding to have object as its value, and returns an unspecified result.
+}
+
+proc environment-eval {expr env} {
+  # Evaluates expression, a list-structure representation (sometimes called s-expression representation) of a Scheme expression, in environment. You rarely need eval in ordinary programs; it is useful mostly for evaluating expressions that have been created "on the fly" by a program. eval is relatively expensive because it must convert expression to an internal form before it is executed.
+}
+CB)
+
 H3 Lexical scoping
 
 MD(

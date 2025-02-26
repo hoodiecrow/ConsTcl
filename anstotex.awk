@@ -92,6 +92,8 @@ $0 ~ modeline { next; }
     next
 }
 
+$1 == H9 { print "\\section{Unfinished code in file " FILENAME " line " (FNR+2) "}" ; next }
+
 $1 == "CB(" { in_code_block = 1 ; print "\\begin{lstlisting}" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "\\end{lstlisting}" ; next }
 in_code_block && /./  { print ; next }

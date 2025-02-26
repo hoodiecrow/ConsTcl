@@ -61,6 +61,8 @@ $0 ~ modeline { next; }
 /^H5 / { printf "##### %s\n", substr($0, 4) ; next }
 /^H6 / { printf "###### %s\n", substr($0, 4) ; next }
 
+$1 == H9 { next }
+
 $1 == "CB(" { in_code_block = 1 ; print "```" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "```" ; next }
 in_code_block { print ; next }
