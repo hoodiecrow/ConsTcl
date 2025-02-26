@@ -4,7 +4,7 @@ H3 Booleans
 MD(
 Booleans are logic values, either true (K{#t}) or false (K{#f}).
 All predicates (procedures whose name end with -?) return
-boolean values. The conditional K{if} operator considers all
+boolean values. Scheme's conditional K{if} operator considers all
 values except for K{#f} to be true.
 MD)
 

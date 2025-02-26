@@ -102,7 +102,7 @@ $1 == "IX" { printf("\\index{%s}\n", $2) ; next }
 $1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
 $1 == "IF" {
     for (i=3; i<=NF; i++) { caption = caption " " $i }
-    printf("\\begin{figure}[h!]\\includegraphics{%s}\\captionsetup{labelformat=empty}\\caption{%s}\\end{figure}\n", substr($2, 2), caption)
+    printf("\\begin{figure}[h!]\\includegraphics{%s}\\captionsetup{labelformat=empty}\\caption{%s}\\label{fig:%s}\\end{figure}\n", substr($2, 2), caption, makelabel(caption))
     caption = ""
     next
 }
@@ -171,7 +171,7 @@ function flushp() {
 function render(line) {
     if (match(line, /\\{/)) { gsub(/\\{/, "LBRACE", line) }
     if (match(line, /\\}/)) { gsub(/\\}/, "RBRACE", line) }
-    if (match(line, /\\/)) { gsub(/\\/, "\\textbackslash\\ ", line) }
+    if (match(line, /\\/)) { gsub(/\\/, "\\textbackslash ", line) }
     if (match(line, /LBRACE/)) { gsub(/LBRACE/, "\\{", line) }
     if (match(line, /RBRACE/)) { gsub(/RBRACE/, "\\}", line) }
 
@@ -258,7 +258,7 @@ function render(line) {
 function makelabel (str) {
     gsub(/ /, "-", str)
     str = tolower(str)
-    gsub(/:/, "", str)
+    gsub(/[:.]/, "", str)
     while (str c in labels) {
 	c++
 	str = str c

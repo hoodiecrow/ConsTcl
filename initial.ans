@@ -113,10 +113,10 @@ H4 T procedure
 
 MD(
 The K{T} procedure is intended to reduce the hassle of trying to make Lisp
-booleans work with Tcl conditions. The idea is to `line' the Tcl condition with
+booleans work with Tcl conditions. The idea is to line the Tcl condition with
 K{[T ...]} and have the Lisp expression inside K{T}. K{T} returns 0 if and only
-the value passed to it is K{#f}, and 1 otherwise. The procedure's name stands
-for ``truth''.
+if the value passed to it is K{#f}, and 1 otherwise. The procedure's name stands
+for `truth'.
 
 Example:
 MD)
@@ -138,6 +138,25 @@ proc ::T {val} {
     return 0
   } else {
     return 1
+  }
+}
+CB)
+
+H4 assert procedure
+
+MD(
+K{assert} signals an error if an assertion fails.
+MD)
+
+PR(
+assert (internal);expr texpr -> none
+PR)
+
+CB(
+proc assert {expr} {
+  if {![uplevel [list expr $expr]]} {
+    error "Failed assertion [
+      uplevel [list subst $expr]]"
   }
 }
 CB)

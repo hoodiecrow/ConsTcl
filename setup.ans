@@ -17,7 +17,14 @@ proc ::constcl::vsAlloc {num} {
 }
 CB)
 
+MD(
+Initialize the symbol table and gensym number.
+MD)
+
 CB(
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
+
 set ::constcl::gensymnum 0
 CB)
 

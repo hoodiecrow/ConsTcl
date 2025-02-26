@@ -3,9 +3,8 @@ H3 Characters
 
 MD(
 Characters are any Unicode printing character, and also space and newline space
-characters. External representation is K{#\A} (change A to relevant character)
-or K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
-
+characters. External representation is K{#\A} (A stands for any character) or
+K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
 MD)
 
 H4 Char class
@@ -153,15 +152,15 @@ TT)
 
 H4 char=? procedure
 
+NI B{char<?} procedure
+
+NI B{char>?} procedure
+
+NI B{char<=?} procedure
+
+NI B{char>=?} procedure
+
 MD(
-B{char<?} procedure
-
-B{char>?} procedure
-
-B{char<=?} procedure
-
-B{char>=?} procedure
-
 K{char=?}, K{char<?}, K{char>?}, K{char<=?}, and K{char>=?} compare character
 values. They only compare two characters at a time.
 MD)
@@ -320,15 +319,15 @@ TT)
 
 H4 char-ci=? procedure
 
+NI B{char-ci<?} procedure
+
+NI B{char-ci>?} procedure
+
+NI B{char-ci<=?} procedure
+
+NI B{char-ci>=?} procedure
+
 MD(
-B{char-ci<?} procedure
-
-B{char-ci>?} procedure
-
-B{char-ci<=?} procedure
-
-B{char-ci>=?} procedure
-
 K{char-ci=?}, K{char-ci<?}, K{char-ci>?}, K{char-ci<=?}, and K{char-ci>=?} compare character
 values in a case insensitive manner. They only compare two characters at a time.
 MD)
@@ -489,15 +488,15 @@ TT)
 
 H4 char-alphabetic? procedure
 
+NI B{char-numeric?} procedure
+
+NI B{char-whitespace?} procedure
+
+NI B{char-upper-case?} procedure
+
+NI B{char-lower-case?} procedure
+
 MD(
-B{char-numeric?} procedure
-
-B{char-whitespace?} procedure
-
-B{char-upper-case?} procedure
-
-B{char-lower-case?} procedure
-
 The predicates K{char-alphabetic?}, K{char-numeric?}, and K{char-whitespace?}
  test a character for these
 conditions.

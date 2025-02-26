@@ -295,13 +295,13 @@ TT)
 
 H4 positive? procedure
 
+NI B{negative?} procedure
+
+NI B{even?} procedure
+
+NI B{odd?} procedure
+
 MD(
-B{negative?} procedure
-
-B{even?} procedure
-
-B{odd?} procedure
-
 The K{positive?}/K{negative?}/K{even?}/K{odd?} predicates test a number
 for those traits.
 MD)
@@ -456,13 +456,13 @@ TT)
 
 H4 + procedure
 
+NI B{*} procedure
+
+NI B{-} procedure
+
+NI B{/} procedure
+
 MD(
-B{*} procedure
-
-B{-} procedure
-
-B{/} procedure
-
 The operators K{+}, K{*}, K{-}, and K{/} stand for the respective mathematical
 operations.  They take a number of operands, but at least one for K{-} and K{/}.
 
@@ -757,13 +757,13 @@ CB
 
 H4 floor procedure
 
+NI B{ceiling} procedure
+
+NI B{truncate} procedure
+
+NI B{round} procedure
+
 MD(
-B{ceiling} procedure
-
-B{truncate} procedure
-
-B{round} procedure
-
 K{floor}, K{ceiling}, K{truncate}, and K{round} are different methods for
 converting a real number to an integer.
 MD)
@@ -883,21 +883,21 @@ CB
 
 H4 exp procedure
 
+NI B{log} procedure
+
+NI B{sin} procedure
+
+NI B{cos} procedure
+
+NI B{tan} procedure
+
+NI B{asin} procedure
+
+NI B{acos} procedure
+
+NI B{atan} procedure
+
 MD(
-B{log} procedure
-
-B{sin} procedure
-
-B{cos} procedure
-
-B{tan} procedure
-
-B{asin} procedure
-
-B{acos} procedure
-
-B{atan} procedure
-
 The mathematical functions P{e}{x}, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
 calculated by K{exp}, K{log}, K{sin}, K{cos}, K{tan}, K{asin}, K{acos},
@@ -1239,7 +1239,7 @@ proc ::constcl::number->string {num args} {
 CB)
 
 MD(
-Due to L{Richard Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth, Richard}.
+K{base} is due to L{Richard Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth, Richard}.
 MD)
 
 IX base
@@ -1324,7 +1324,7 @@ proc ::constcl::string->number {str args} {
 CB)
 
 MD(
-Due to L{Richard
+K{frombase} is due to L{Richard
   Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth,
     Richard}.
 MD)

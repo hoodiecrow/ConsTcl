@@ -6,7 +6,8 @@ This section concerns itself with procedures and the application of the same.
 
 A K{Procedure} object is a W{closure}{Closure_(computer_programming)}I{closure},
 storing the procedure's parameter list, the body, and the environment that is
-current when the object is created, i.e. when the procedure is defined.
+current when the object is created, i.e. when the procedure is
+R{defined}{procedure-definition}.
 
 When a K{Procedure} object is called, the body is evaluated in a new environment
 where the parameters are given values from the argument list and the outer link
@@ -53,7 +54,7 @@ K{MkProcedure} generates a Procedure object.
 MD)
 
 PR(
-MkProcedure (internal);parms formals body expr env env -> proc
+MkProcedure (internal);parms formals body lexprs env env -> proc
 PR)
 
 CB(

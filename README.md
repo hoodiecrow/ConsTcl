@@ -125,7 +125,7 @@ proc ::constcl::atom? {val} {
 #### T procedure
 
 
-The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to `line' the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for ``truth''.
+The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only if the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for `truth'.
 
 
 Example:
@@ -144,6 +144,21 @@ proc ::T {val} {
     return 0
   } else {
     return 1
+  }
+}
+```
+#### assert procedure
+
+
+`` assert `` signals an error if an assertion fails.
+
+<table border=1><thead><tr><th colspan=2 align="left">assert (internal)</th></tr></thead><tr><td>expr</td><td></td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc assert {expr} {
+  if {![uplevel [list expr $expr]]} {
+    error "Failed assertion [
+      uplevel [list subst $expr]]"
   }
 }
 ```
@@ -3051,14 +3066,14 @@ proc ::constcl::zero? {num} {
 ```
 #### positive? procedure
 
-
-__negative?__ procedure
-
-
-__even?__ procedure
+``__negative?__ procedure``
 
 
-__odd?__ procedure
+``__even?__ procedure``
+
+
+``__odd?__ procedure``
+
 
 
 The `` positive? ``/`` negative? ``/`` even? ``/`` odd? `` predicates test a number for those traits.
@@ -3150,14 +3165,14 @@ proc ::constcl::min {num args} {
 ```
 #### + procedure
 
-
-__*__ procedure
-
-
-__-__ procedure
+``__*__ procedure``
 
 
-__/__ procedure
+``__-__ procedure``
+
+
+``__/__ procedure``
+
 
 
 The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations. They take a number of operands, but at least one for `` - `` and `` / ``.
@@ -3323,14 +3338,14 @@ proc ::constcl::modulo {num1 num2} {
 ```
 #### floor procedure
 
-
-__ceiling__ procedure
-
-
-__truncate__ procedure
+``__ceiling__ procedure``
 
 
-__round__ procedure
+``__truncate__ procedure``
+
+
+``__round__ procedure``
+
 
 
 `` floor ``, `` ceiling ``, `` truncate ``, and `` round `` are different methods for converting a real number to an integer.
@@ -3393,26 +3408,26 @@ proc ::constcl::round {num} {
 ```
 #### exp procedure
 
-
-__log__ procedure
-
-
-__sin__ procedure
+``__log__ procedure``
 
 
-__cos__ procedure
+``__sin__ procedure``
 
 
-__tan__ procedure
+``__cos__ procedure``
 
 
-__asin__ procedure
+``__tan__ procedure``
 
 
-__acos__ procedure
+``__asin__ procedure``
 
 
-__atan__ procedure
+``__acos__ procedure``
+
+
+``__atan__ procedure``
+
 
 
 The mathematical functions e<sup>x</sup>, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by `` exp ``, `` log ``, `` sin ``, `` cos ``, `` tan ``, `` asin ``, `` acos ``, and `` atan ``, respectively. `` atan `` can be called both as a unary (one argument) function and a binary (two arguments) one.
@@ -3614,7 +3629,7 @@ proc ::constcl::number->string {num args} {
 ```
 
 
-Due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
+`` base `` is due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
 
 ```
 proc base {base number} {
@@ -3677,7 +3692,7 @@ proc ::constcl::string->number {str args} {
 ```
 
 
-Due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
+`` frombase `` is due to [Richard Suchenwirth](https://wiki.tcl-lang.org/page/Based+numbers).
 
 ```
 proc frombase {base number} {
@@ -3699,7 +3714,7 @@ proc frombase {base number} {
 ### Booleans
 
 
-Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. The conditional `` if `` operator considers all values except for `` #f `` to be true.
+Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. Scheme's conditional `` if `` operator considers all values except for `` #f `` to be true.
 
 #### Boolean class
 ```
@@ -3794,7 +3809,7 @@ proc ::constcl::not {val} {
 ### Characters
 
 
-Characters are any Unicode printing character, and also space and newline space characters. External representation is `` #\A `` (change A to relevant character) or `` #\space `` or `` #\newline ``. Internal representation is simply a Tcl character.
+Characters are any Unicode printing character, and also space and newline space characters. External representation is `` #\A `` (A stands for any character) or `` #\space `` or `` #\newline ``. Internal representation is simply a Tcl character.
 
 #### Char class
 ```
@@ -3921,17 +3936,17 @@ proc ::constcl::char? {val} {
 ```
 #### char=? procedure
 
-
-__char<?__ procedure
-
-
-__char>?__ procedure
+``__char<?__ procedure``
 
 
-__char<=?__ procedure
+``__char>?__ procedure``
 
 
-__char>=?__ procedure
+``__char<=?__ procedure``
+
+
+``__char>=?__ procedure``
+
 
 
 `` char=? ``, `` char<? ``, `` char>? ``, `` char<=? ``, and `` char>=? `` compare character values. They only compare two characters at a time.
@@ -4025,17 +4040,17 @@ proc ::constcl::char>=? {char1 char2} {
 ```
 #### char-ci=? procedure
 
-
-__char-ci<?__ procedure
-
-
-__char-ci>?__ procedure
+``__char-ci<?__ procedure``
 
 
-__char-ci<=?__ procedure
+``__char-ci>?__ procedure``
 
 
-__char-ci>=?__ procedure
+``__char-ci<=?__ procedure``
+
+
+``__char-ci>=?__ procedure``
+
 
 
 `` char-ci=? ``, `` char-ci<? ``, `` char-ci>? ``, `` char-ci<=? ``, and `` char-ci>=? `` compare character values in a case insensitive manner. They only compare two characters at a time.
@@ -4134,17 +4149,17 @@ proc ::constcl::char-ci>=? {char1 char2} {
 ```
 #### char-alphabetic? procedure
 
-
-__char-numeric?__ procedure
-
-
-__char-whitespace?__ procedure
+``__char-numeric?__ procedure``
 
 
-__char-upper-case?__ procedure
+``__char-whitespace?__ procedure``
 
 
-__char-lower-case?__ procedure
+``__char-upper-case?__ procedure``
+
+
+``__char-lower-case?__ procedure``
+
 
 
 The predicates `` char-alphabetic? ``, `` char-numeric? ``, and `` char-whitespace? `` test a character for these conditions.
@@ -4289,7 +4304,7 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 
-A `` Procedure `` object is a [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
+A `` Procedure `` object is a [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is [defined](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
 
 
 When a `` Procedure `` object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
@@ -4329,7 +4344,7 @@ oo::class create ::constcl::Procedure {
 
 `` MkProcedure `` generates a Procedure object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkProcedure (internal)</th></tr></thead><tr><td>parms</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkProcedure (internal)</th></tr></thead><tr><td>parms</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkProcedure \
@@ -5202,7 +5217,7 @@ proc ::constcl::set-cdr! {pair val} {
 #### list? procedure
 
 
-The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL.
+The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:-a-proper-list-and-two-improper-ones).
 
 <table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5437,11 +5452,11 @@ proc ::constcl::list-ref {vals k} {
 ```
 #### memq procedure
 
+``__memv__ procedure``
 
-__memv__ procedure
 
+``__member__ procedure``
 
-__member__ procedure
 
 
 `` memq ``, `` memv ``, and `` member `` return the sublist starting with a given item, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison.
@@ -5486,7 +5501,7 @@ proc ::constcl::member {val1 val2} {
 __member-proc__ procedure
 
 
-`` member-proc `` helper procedure which does the work for the `` memq ``, `` memv ``, and `` member `` procedures. Works by recursively taking the `` cdr `` of the list, comparing against the `` car `` of the list.
+The `` member-proc `` helper procedure does the work for the `` memq ``, `` memv ``, and `` member `` procedures. It works by comparing against the `` car `` of the list, then recursively taking the `` cdr `` of the list.
 
 <table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
@@ -5513,23 +5528,23 @@ proc ::constcl::member-proc {epred val1 val2} {
 ```
 #### assq procedure
 
-
-__assv__ procedure
-
-
-__assoc__ procedure
+``__assv__ procedure``
 
 
-`` assq ``, `` assv ``, and `` assoc `` return the associative item marked with a given key, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison. They implement lookup in the form of lookup table known as an association list, or _alist_.
+``__assoc__ procedure``
+
+
+
+`` assq ``, `` assv ``, and `` assoc `` scan an association list and return the association pair with a given key, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or _alist_.
 
 
 Example:
 
 ```
-(define e '((a 1) (b 2) (c 3)))
-(assq 'a e)                       => (a 1)
+(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
+  (assq key e))                                  => (a . 1)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assq
@@ -5538,7 +5553,7 @@ proc ::constcl::assq {val1 val2} {
   return [assoc-proc eq? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assv
@@ -5547,7 +5562,7 @@ proc ::constcl::assv {val1 val2} {
   return [assoc-proc eqv? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assoc
@@ -5563,7 +5578,7 @@ __assoc-proc__ procedure
 
 `` assoc-proc `` is a helper procedure which does the work for `` assq ``, `` assv ``, and `` assoc ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 proc ::constcl::assoc-proc {epred val1 val2} {
@@ -5595,10 +5610,10 @@ Procedures for dealing with strings of characters.
 #### String class
 
 
-Strings have the internal representation of a vector of character objects, with the data elements of the vector address of the first element, and the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 
-As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` on write.
+As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed with `` display ``.
 
 ```
 oo::class create ::constcl::String {
@@ -6258,7 +6273,7 @@ proc ::constcl::string-fill! {str char} {
 ### Symbols
 
 
-Symbols are like little strings that are used to refer to things (variables, including procedure names, etc) or for comparing against each other.
+Symbols are like little immutable strings that are used to refer to things (variables, category labels, collection keys, etc) or for equality comparison against each other.
 
 #### Symbol class
 ```
@@ -6300,12 +6315,9 @@ oo::class create ::constcl::Symbol {
     my write $handle
   }
   method show {} {
-    set name
+    my name
   }
 }
-
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
 ```
 #### MkSymbol generator
 
@@ -6402,10 +6414,7 @@ proc ::constcl::string->symbol {str} {
 ### Vectors
 
 
-Vectors are heterogenous structures of fixed length whose elements are indexed by integers.
-
-
-The number of elements that a vector contains (the _length_) is set when the vector is created. Elements can be indexed by integers from zero to length minus one.
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the _length_) is set when the vector is created. Elements can be indexed by integers from zero to length (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
 
 #### Vector class
 ```
@@ -6513,9 +6522,10 @@ oo::class create ::constcl::Vector {
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 ```
+#### vector? procedure
 
 
-__vector?__
+`` vector? `` recognizes vectors by type.
 
 <table border=1><thead><tr><th colspan=2 align="left">vector? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6565,7 +6575,7 @@ Given a number of Lisp values, `` vector `` creates a vector containing them.
 Example:
 
 ```
-(vector 'a 'b 'c)   =>  #(a b c)
+(vector 'a "foo" 99)   =>  #(a "foo" 99)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -6586,7 +6596,7 @@ proc ::constcl::vector {args} {
 Example:
 
 ```
-(vector-length #(a b c))   =>  3
+(vector-length #(a "foo" 99))   =>  3
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -6610,8 +6620,7 @@ proc ::constcl::vector-length {vec} {
 Example:
 
 ```
-(let ((vec #(a b c)) (k 1))
-  (vector-ref vec k))          =>  b
+(let ((vec #(a "foo" 99)) (k 1))  (vector-ref vec k))          =>  "foo"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -6943,7 +6952,14 @@ proc ::constcl::vsAlloc {num} {
   return $va
 }
 ```
+
+
+Initialize the symbol table and gensym number.
+
 ```
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
+
 set ::constcl::gensymnum 0
 ```
 

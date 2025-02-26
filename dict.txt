@@ -27,6 +27,7 @@ pmeof         -> either the symbols + or - or a number or end of file
 obj           -> a ConsTcl object
 objeof        -> a ConsTcl object or end of file
 lvfalse       -> a Lisp list of values OR #f
+apfalse       -> an association pair or #f
 alist         -> an association list
 plist         -> a property list
 handle        -> a channel handle

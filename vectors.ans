@@ -4,10 +4,9 @@ H3 Vectors
 MD(
 Vectors are heterogenous structures of fixed length whose elements are indexed
 by integers.
-
 The number of elements that a vector contains (the E{length}) is set when the
 vector is created.  Elements can be indexed by integers from zero to length
-minus one.
+(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
 MD)
 
 H4 Vector class
@@ -122,8 +121,10 @@ interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 CB)
 
+H4 vector? procedure
+
 MD(
-B{vector?}
+K{vector?} recognizes vectors by type.
 MD)
 
 PR(
@@ -140,11 +141,12 @@ CB)
 
 TT(
 
-::tcltest::test vectors-1.0 {try vector? (and make-vector, vector)} -body {
+::tcltest::test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
     pew {(vector? #(0 (2 2 2 2) "Anna"))}
     pew {(vector? (make-vector 3 #\X))}
     pew {(vector? (vector 'a 'b 'c))}
-} -output "#t\n#t\n#t\n"
+    pew {(vector? #(a b c))}
+} -output "#t\n#t\n#t\n#t\n"
 
 TT)
 
@@ -194,7 +196,7 @@ Example:
 MD)
 
 VB(
-(vector 'a 'b 'c)   =>  #(a b c)
+(vector 'a "foo" 99)   =>  #(a "foo" 99)
 VB)
 
 PR(
@@ -229,7 +231,7 @@ Example:
 MD)
 
 VB(
-(vector-length #(a b c))   =>  3
+(vector-length #(a "foo" 99))   =>  3
 VB)
 
 PR(
@@ -266,8 +268,7 @@ Example:
 MD)
 
 VB(
-(let ((vec #(a b c)) (k 1))
-  (vector-ref vec k))          =>  b
+(let ((vec #(a "foo" 99)) (k 1))  (vector-ref vec k))          =>  "foo"
 VB)
 
 PR(
@@ -292,6 +293,10 @@ TT(
 
 ::tcltest::test vectors-1.3 {try vector-ref} -body {
     pew {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+::tcltest::test vectors-1.4 {try vector-ref} -body {
+    pew {(let ((vec #(a b c)) (k 1)) (vector-ref vec k))}
 } -output "b\n"
 
 TT)
@@ -337,7 +342,7 @@ CB)
 
 TT(
 
-::tcltest::test vectors-1.4 {try vector-set!} -body {
+::tcltest::test vectors-1.5 {try vector-set!} -body {
     pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
     pew {(vector-set! (x) 1 '(foo bar))}
 } -output "#(0 (foo bar) \"Anna\")\n"
@@ -372,7 +377,7 @@ CB)
 
 TT(
 
-::tcltest::test vectors-1.5 {try vector->list} -body {
+::tcltest::test vectors-1.6 {try vector->list} -body {
     pew {(vector->list (vector 'a 'b 'c))}
 } -output "(a b c)\n"
 
@@ -406,7 +411,7 @@ CB)
 
 TT(
 
-::tcltest::test vectors-1.6 {try list->vector} -body {
+::tcltest::test vectors-1.7 {try list->vector} -body {
     pew {(list->vector '(a b c))}
 } -output "#(a b c)\n"
 
@@ -446,7 +451,7 @@ CB)
 
 TT(
 
-::tcltest::test vectors-1.7 {try vector-fill!} -body {
+::tcltest::test vectors-1.8 {try vector-fill!} -body {
     pew {(vector-fill! (vector 'a 'b 'c) 'x)}
 } -output "#(x x x)\n"
 

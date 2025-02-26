@@ -9,12 +9,14 @@ H4 String class
 
 MD(
 Strings have the internal representation of a vector of character objects, with
-the data elements of the vector address of the first element, and the length of
-the vector. External representation is surrounded by double quotes, with double
-quotes and backslashes within the string escaped with a backslash.
+the data elements of 1) the vector address of the first element, and 2) the
+length of the vector. External representation is surrounded by double quotes,
+with double quotes and backslashes within the string escaped with a backslash.
 
 As a ConsTcl extension, a K{\n} pair in the external representation is
-stored as a newline character. It is restored to K{\n} on write.
+stored as a newline character. It is restored to K{\n} if the string is printed
+using K{write}, but remains a newline character if the string is printed with
+K{display}.
 MD)
 
 CB(

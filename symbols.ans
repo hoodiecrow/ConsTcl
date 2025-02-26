@@ -2,8 +2,9 @@
 H3 Symbols
 
 MD(
-Symbols are like little strings that are used to refer to things (variables, including
-procedure names, etc) or for comparing against each other.
+Symbols are like little immutable strings that are used to refer to things
+(variables, category labels, collection keys, etc) or for equality comparison
+against each other.
 MD)
 
 H4 Symbol class
@@ -47,12 +48,9 @@ oo::class create ::constcl::Symbol {
     my write $handle
   }
   method show {} {
-    set name
+    my name
   }
 }
-
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
 CB)
 
 H4 MkSymbol generator

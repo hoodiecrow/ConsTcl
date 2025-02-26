@@ -131,9 +131,9 @@ number of missing primitive procedures is in the tens, not the 100s.
 
 The completeness comes with a price: due to the sheer number of calls for each
 action, ConsTcl is is fairly slow. On my cheap computer, the following code
-(which calculates the factorial of 100) takes 0.03 seconds to run. That is ten
+(which calculates the factorial of 100) takes 0.06 seconds to run. That is twenty
 times slower than Lispy assuming that Norvig's computer is as slow as mine,
-which is unlikely. So it's probably a factor of less than ten.
+which is unlikely. So it's probably less than a factor of twenty.
 
 \begin{verbatim}
 time {pe "(fact 100)"} 10
@@ -318,7 +318,7 @@ proc ::constcl::atom? {val} {
 \index{T procedure}
 
 
-The \texttt{T} procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to `line' the Tcl condition with \texttt{[T \ldots ]} and have the Lisp expression inside \texttt{T}. \texttt{T} returns 0 if and only the value passed to it is \texttt{\#f}, and 1 otherwise. The procedure's name stands for ``truth''.
+The \texttt{T} procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with \texttt{[T \ldots ]} and have the Lisp expression inside \texttt{T}. \texttt{T} returns 0 if and only if the value passed to it is \texttt{\#f}, and 1 otherwise. The procedure's name stands for `truth'.
 
 
 Example:
@@ -342,6 +342,28 @@ proc ::T {val} {
     return 0
   } else {
     return 1
+  }
+}
+\end{lstlisting}
+\subsection{assert procedure}
+\label{assert-procedure}
+\index{assert procedure}
+
+
+\texttt{assert} signals an error if an assertion fails.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assert (internal)} \\
+expr &  \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc assert {expr} {
+  if {![uplevel [list expr $expr]]} {
+    error "Failed assertion [
+      uplevel [list subst $expr]]"
   }
 }
 \end{lstlisting}
@@ -1024,7 +1046,7 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 
 Anyway, the figure shows is what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
 
-\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{ The internal structure of the expression}\end{figure}
+\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{ The internal structure of the expression}\label{fig:-the-internal-structure-of-the-expression}\end{figure}
 \section{Input procedures}
 \label{input-procedures}
 \index{Input procedures}
@@ -1519,7 +1541,7 @@ proc ::constcl::read-object-expr {} {
 
 The \texttt{read-pair-expr} procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of Pair (see page \pageref{pairs-and-lists}) objects, either a proper list (one that ends in \texttt{\#NIL}), or an improper one (one that has an atom as its last member). Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
-\begin{figure}[h!]\includegraphics{images/prop-improp.png}\captionsetup{labelformat=empty}\caption{ A proper list and two improper ones.}\end{figure}
+\begin{figure}[h!]\includegraphics{images/prop-improp.png}\captionsetup{labelformat=empty}\caption{ A proper list and two improper ones.}\label{fig:-a-proper-list-and-two-improper-ones}\end{figure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pair-expr (internal)} \\
@@ -4032,14 +4054,14 @@ proc ::constcl::zero? {num} {
 \label{positive?-procedure}
 \index{positive? procedure}
 
-
-\textbf{negative?} procedure
-
-
-\textbf{even?} procedure
+\noindent \textbf{negative?} procedure
 
 
-\textbf{odd?} procedure
+\noindent \textbf{even?} procedure
+
+
+\noindent \textbf{odd?} procedure
+
 
 
 The \texttt{positive?}/\texttt{negative?}/\texttt{even?}/\texttt{odd?} predicates test a number for those traits.
@@ -4150,14 +4172,14 @@ proc ::constcl::min {num args} {
 \label{+-procedure}
 \index{+ procedure}
 
-
-\textbf{*} procedure
-
-
-\textbf{-} procedure
+\noindent \textbf{*} procedure
 
 
-\textbf{/} procedure
+\noindent \textbf{-} procedure
+
+
+\noindent \textbf{/} procedure
+
 
 
 The operators \texttt{+}, \texttt{*}, \texttt{-}, and \texttt{/} stand for the respective mathematical operations. They take a number of operands, but at least one for \texttt{-} and \texttt{/}.
@@ -4370,14 +4392,14 @@ proc ::constcl::modulo {num1 num2} {
 \label{floor-procedure}
 \index{floor procedure}
 
-
-\textbf{ceiling} procedure
-
-
-\textbf{truncate} procedure
+\noindent \textbf{ceiling} procedure
 
 
-\textbf{round} procedure
+\noindent \textbf{truncate} procedure
+
+
+\noindent \textbf{round} procedure
+
 
 
 \texttt{floor}, \texttt{ceiling}, \texttt{truncate}, and \texttt{round} are different methods for converting a real number to an integer.
@@ -4450,26 +4472,26 @@ proc ::constcl::round {num} {
 \label{exp-procedure}
 \index{exp procedure}
 
-
-\textbf{log} procedure
-
-
-\textbf{sin} procedure
+\noindent \textbf{log} procedure
 
 
-\textbf{cos} procedure
+\noindent \textbf{sin} procedure
 
 
-\textbf{tan} procedure
+\noindent \textbf{cos} procedure
 
 
-\textbf{asin} procedure
+\noindent \textbf{tan} procedure
 
 
-\textbf{acos} procedure
+\noindent \textbf{asin} procedure
 
 
-\textbf{atan} procedure
+\noindent \textbf{acos} procedure
+
+
+\noindent \textbf{atan} procedure
+
 
 
 The mathematical functions ${e}^{x}$, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by \texttt{exp}, \texttt{log}, \texttt{sin}, \texttt{cos}, \texttt{tan}, \texttt{asin}, \texttt{acos}, and \texttt{atan}, respectively. \texttt{atan} can be called both as a unary (one argument) function and a binary (two arguments) one.
@@ -4712,7 +4734,7 @@ proc ::constcl::number->string {num args} {
 \end{lstlisting}
 
 
-Due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
+\texttt{base} is due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
 
 \index{base}
 \begin{lstlisting}
@@ -4784,7 +4806,7 @@ proc ::constcl::string->number {str args} {
 \end{lstlisting}
 
 
-Due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
+\texttt{frombase} is due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
 
 \index{frombase}
 \begin{lstlisting}
@@ -4809,7 +4831,7 @@ proc frombase {base number} {
 \index{Booleans}
 
 
-Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. The conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
+Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. Scheme's conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
 
 \subsection{Boolean class}
 \label{boolean-class}
@@ -4929,7 +4951,7 @@ proc ::constcl::not {val} {
 \index{Characters}
 
 
-Characters are any Unicode printing character, and also space and newline space characters. External representation is \texttt{\#\textbackslash\ A} (change A to relevant character) or \texttt{\#\textbackslash\ space} or \texttt{\#\textbackslash\ newline}. Internal representation is simply a Tcl character.
+Characters are any Unicode printing character, and also space and newline space characters. External representation is \texttt{\#\textbackslash A} (A stands for any character) or \texttt{\#\textbackslash space} or \texttt{\#\textbackslash newline}. Internal representation is simply a Tcl character.
 
 \subsection{Char class}
 \label{char-class}
@@ -5074,17 +5096,17 @@ proc ::constcl::char? {val} {
 \label{char=?-procedure}
 \index{char=? procedure}
 
-
-\textbf{char<?} procedure
-
-
-\textbf{char>?} procedure
+\noindent \textbf{char<?} procedure
 
 
-\textbf{char<=?} procedure
+\noindent \textbf{char>?} procedure
 
 
-\textbf{char>=?} procedure
+\noindent \textbf{char<=?} procedure
+
+
+\noindent \textbf{char>=?} procedure
+
 
 
 \texttt{char=?}, \texttt{char<?}, \texttt{char>?}, \texttt{char<=?}, and \texttt{char>=?} compare character values. They only compare two characters at a time.
@@ -5190,17 +5212,17 @@ proc ::constcl::char>=? {char1 char2} {
 \label{char-ci=?-procedure}
 \index{char-ci=? procedure}
 
-
-\textbf{char-ci<?} procedure
-
-
-\textbf{char-ci>?} procedure
+\noindent \textbf{char-ci<?} procedure
 
 
-\textbf{char-ci<=?} procedure
+\noindent \textbf{char-ci>?} procedure
 
 
-\textbf{char-ci>=?} procedure
+\noindent \textbf{char-ci<=?} procedure
+
+
+\noindent \textbf{char-ci>=?} procedure
+
 
 
 \texttt{char-ci=?}, \texttt{char-ci<?}, \texttt{char-ci>?}, \texttt{char-ci<=?}, and \texttt{char-ci>=?} compare character values in a case insensitive manner. They only compare two characters at a time.
@@ -5311,17 +5333,17 @@ proc ::constcl::char-ci>=? {char1 char2} {
 \label{char-alphabetic?-procedure}
 \index{char-alphabetic? procedure}
 
-
-\textbf{char-numeric?} procedure
-
-
-\textbf{char-whitespace?} procedure
+\noindent \textbf{char-numeric?} procedure
 
 
-\textbf{char-upper-case?} procedure
+\noindent \textbf{char-whitespace?} procedure
 
 
-\textbf{char-lower-case?} procedure
+\noindent \textbf{char-upper-case?} procedure
+
+
+\noindent \textbf{char-lower-case?} procedure
+
 
 
 The predicates \texttt{char-alphabetic?}, \texttt{char-numeric?}, and \texttt{char-whitespace?} test a character for these conditions.
@@ -5504,7 +5526,7 @@ proc ::constcl::char-downcase {char} {
 This section concerns itself with procedures and the application of the same.
 
 
-A \texttt{Procedure} object is a closure\footnote{See \texttt{https://en.wikipedia.org/wiki/Closure\_(computer\_programming)}}\index{closure}, storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined.
+A \texttt{Procedure} object is a closure\footnote{See \texttt{https://en.wikipedia.org/wiki/Closure\_(computer\_programming)}}\index{closure}, storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is defined (see page \pageref{procedure-definition}).
 
 
 When a \texttt{Procedure} object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
@@ -5552,7 +5574,7 @@ oo::class create ::constcl::Procedure {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkProcedure (internal)} \\
 parms & a Scheme formals list \\
-body & an expression \\
+body & a Lisp list of expressions \\
 env & an environment \\
 \textit{Returns:} & a procedure \\
 \hline
@@ -6459,7 +6481,7 @@ Example:
 (cons 'a nil)             =>  (a)
 (cons 'a (cons 'b nil))   =>  (a b)
 \end{verbatim}
-\begin{figure}[h!]\includegraphics{images/consing.png}\captionsetup{labelformat=empty}\caption{ Examples of consing}\end{figure}
+\begin{figure}[h!]\includegraphics{images/consing.png}\captionsetup{labelformat=empty}\caption{ Examples of consing}\label{fig:-examples-of-consing}\end{figure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cons (public)} \\
@@ -6650,7 +6672,7 @@ proc ::constcl::set-cdr! {pair val} {
 \index{list? procedure}
 
 
-The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL.
+The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:-a-proper-list-and-two-improper-ones}).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -6955,11 +6977,11 @@ proc ::constcl::list-ref {vals k} {
 \label{memq-procedure}
 \index{memq procedure}
 
+\noindent \textbf{memv} procedure
 
-\textbf{memv} procedure
 
+\noindent \textbf{member} procedure
 
-\textbf{member} procedure
 
 
 \texttt{memq}, \texttt{memv}, and \texttt{member} return the sublist starting with a given item, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison.
@@ -7024,7 +7046,7 @@ proc ::constcl::member {val1 val2} {
 \textbf{member-proc} procedure
 
 
-\texttt{member-proc} helper procedure which does the work for the \texttt{memq}, \texttt{memv}, and \texttt{member} procedures. Works by recursively taking the \texttt{cdr} of the list, comparing against the \texttt{car} of the list.
+The \texttt{member-proc} helper procedure does the work for the \texttt{memq}, \texttt{memv}, and \texttt{member} procedures. It works by comparing against the \texttt{car} of the list, then recursively taking the \texttt{cdr} of the list.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7061,28 +7083,28 @@ proc ::constcl::member-proc {epred val1 val2} {
 \label{assq-procedure}
 \index{assq procedure}
 
-
-\textbf{assv} procedure
-
-
-\textbf{assoc} procedure
+\noindent \textbf{assv} procedure
 
 
-\texttt{assq}, \texttt{assv}, and \texttt{assoc} return the associative item marked with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the form of lookup table known as an association list, or \emph{alist}.
+\noindent \textbf{assoc} procedure
+
+
+
+\texttt{assq}, \texttt{assv}, and \texttt{assoc} scan an association list and return the association pair with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or \emph{alist}.
 
 
 Example:
 
 \begin{verbatim}
-(define e '((a 1) (b 2) (c 3)))
-(assq 'a e)                       => (a 1)
+(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
+  (assq key e))                                  => (a . 1)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assq (public)} \\
 val1 & a Lisp value \\
 val2 & an association list \\
-\textit{Returns:} & a Lisp list of values OR \#f \\
+\textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7097,7 +7119,7 @@ proc ::constcl::assq {val1 val2} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assv (public)} \\
 val1 & a Lisp value \\
 val2 & an association list \\
-\textit{Returns:} & a Lisp list of values OR \#f \\
+\textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
 \index{assv}
@@ -7113,7 +7135,7 @@ proc ::constcl::assv {val1 val2} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc (public)} \\
 val1 & a Lisp value \\
 val2 & an association list \\
-\textit{Returns:} & a Lisp list of values OR \#f \\
+\textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
 \index{assoc}
@@ -7137,7 +7159,7 @@ proc ::constcl::assoc {val1 val2} {
 epred & an equivalence predicate \\
 val1 & a Lisp value \\
 val2 & an association list \\
-\textit{Returns:} & a Lisp list of values OR \#f \\
+\textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
 \index{assoc-proc}
@@ -7175,10 +7197,10 @@ Procedures for dealing with strings of characters.
 \index{String class}
 
 
-Strings have the internal representation of a vector of character objects, with the data elements of the vector address of the first element, and the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 
-As a ConsTcl extension, a \texttt{\textbackslash\ n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash\ n} on write.
+As a ConsTcl extension, a \texttt{\textbackslash n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash n} if the string is printed using \texttt{write}, but remains a newline character if the string is printed with \texttt{display}.
 
 \begin{lstlisting}
 oo::class create ::constcl::String {
@@ -7972,7 +7994,7 @@ proc ::constcl::string-fill! {str char} {
 \index{Symbols}
 
 
-Symbols are like little strings that are used to refer to things (variables, including procedure names, etc) or for comparing against each other.
+Symbols are like little immutable strings that are used to refer to things (variables, category labels, collection keys, etc) or for equality comparison against each other.
 
 \subsection{Symbol class}
 \label{symbol-class}
@@ -8016,12 +8038,9 @@ oo::class create ::constcl::Symbol {
     my write $handle
   }
   method show {} {
-    set name
+    my name
   }
 }
- 
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
 \end{lstlisting}
 \subsection{MkSymbol generator}
 \label{mksymbol-generator}
@@ -8148,10 +8167,7 @@ proc ::constcl::string->symbol {str} {
 \index{Vectors}
 
 
-Vectors are heterogenous structures of fixed length whose elements are indexed by integers.
-
-
-The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length minus one.
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
 
 \subsection{Vector class}
 \label{vector-class}
@@ -8268,9 +8284,12 @@ vals & a Tcl list of Lisp values \\
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 \end{lstlisting}
+\subsection{vector? procedure}
+\label{vector?-procedure}
+\index{vector? procedure}
 
 
-\textbf{vector?}
+\texttt{vector?} recognizes vectors by type.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8335,7 +8354,7 @@ Given a number of Lisp values, \texttt{vector} creates a vector containing them.
 Example:
 
 \begin{verbatim}
-(vector 'a 'b 'c)   =>  #(a b c)
+(vector 'a "foo" 99)   =>  #(a "foo" 99)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8363,7 +8382,7 @@ proc ::constcl::vector {args} {
 Example:
 
 \begin{verbatim}
-(vector-length #(a b c))   =>  3
+(vector-length #(a "foo" 99))   =>  3
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8394,8 +8413,7 @@ proc ::constcl::vector-length {vec} {
 Example:
 
 \begin{verbatim}
-(let ((vec #(a b c)) (k 1))
-  (vector-ref vec k))          =>  b
+(let ((vec #(a "foo" 99)) (k 1))  (vector-ref vec k))          =>  "foo"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8776,7 +8794,14 @@ proc ::constcl::vsAlloc {num} {
   return $va
 }
 \end{lstlisting}
+
+
+Initialize the symbol table and gensym number.
+
 \begin{lstlisting}
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
+ 
 set ::constcl::gensymnum 0
 \end{lstlisting}
 

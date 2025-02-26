@@ -34,6 +34,13 @@ proc ::T {val} {
   }
 }
 
+proc assert {expr} {
+  if {![uplevel [list expr $expr]]} {
+    error "Failed assertion [
+      uplevel [list subst $expr]]"
+  }
+}
+
 proc ::constcl::usage {usage expr} {
   set u $usage
   set e $expr
@@ -3814,12 +3821,9 @@ oo::class create ::constcl::Symbol {
     my write $handle
   }
   method show {} {
-    set name
+    my name
   }
 }
-
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
 
 proc ::constcl::MkSymbol {str} {
   if {[dict exists $::constcl::symbolTable $str]} {
@@ -4175,6 +4179,9 @@ proc ::constcl::vsAlloc {num} {
   incr ::constcl::vectorAssign $num
   return $va
 }
+
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 

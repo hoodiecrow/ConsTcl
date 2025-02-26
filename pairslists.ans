@@ -441,7 +441,8 @@ H4 list? procedure
 
 MD(
 The K{list?} predicate tests if a pair is part of a proper list, one that
-ends with NIL.
+ends with NIL. See figure showing R{proper and improper
+  lists}{fig:-a-proper-list-and-two-improper-ones}.
 MD)
 
 PR(
@@ -800,11 +801,11 @@ TT)
 
 H4 memq procedure
 
+NI B{memv} procedure
+
+NI B{member} procedure
+
 MD(
-B{memv} procedure
-
-B{member} procedure
-
 K{memq}, K{memv}, and K{member} return the sublist starting with a given
 item, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?}, 
 respectively, for the comparison.
@@ -877,9 +878,9 @@ CB)
 MD(
 B{member-proc} procedure
 
-K{member-proc} helper procedure which does the work for the K{memq}, K{memv}, and
-K{member} procedures. Works by recursively taking the K{cdr} of the
-list, comparing against the K{car} of the list.
+The K{member-proc} helper procedure does the work for the K{memq}, K{memv}, and
+K{member} procedures. It works by comparing against the K{car} of the list, then
+recursively taking the K{cdr} of the list.
 MD)
 
 PR(
@@ -911,26 +912,26 @@ CB)
 
 H4 assq procedure
 
+NI B{assv} procedure
+
+NI B{assoc} procedure
+
 MD(
-B{assv} procedure
-
-B{assoc} procedure
-
-K{assq}, K{assv}, and K{assoc} return the associative item marked with a given
-key, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?}, 
-respectively, for the comparison. They implement lookup in the form of lookup
-table known as an association list, or E{alist}.
+K{assq}, K{assv}, and K{assoc} scan an association list and return the
+association pair with a given key, or K{#f} if there is none. They use K{eq?},
+K{eqv?}, and K{equal?}, respectively, for the comparison. They implement lookup
+in the kind of lookup table known as an association list, or E{alist}.
 
 Example:
 MD)
 
 VB(
-(define e '((a 1) (b 2) (c 3)))
-(assq 'a e)                       => (a 1)
+(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
+  (assq key e))                                  => (a . 1)
 VB)
 
 PR(
-assq (public);val1 val val2 alist -> lvfalse
+assq (public);val1 val val2 alist -> apfalse
 PR)
 
 CB(
@@ -942,7 +943,7 @@ proc ::constcl::assq {val1 val2} {
 CB)
 
 PR(
-assv (public);val1 val val2 alist -> lvfalse
+assv (public);val1 val val2 alist -> apfalse
 PR)
 
 
@@ -956,7 +957,7 @@ proc ::constcl::assv {val1 val2} {
 CB)
 
 PR(
-assoc (public);val1 val val2 alist -> lvfalse
+assoc (public);val1 val val2 alist -> apfalse
 PR)
 
 
@@ -977,7 +978,7 @@ K{assoc-proc} is a helper procedure which does the work for K{assq}, K{assv},
 MD)
 
 PR(
-assoc-proc (internal);epred epred val1 val val2 alist -> lvfalse
+assoc-proc (internal);epred epred val1 val val2 alist -> apfalse
 PR)
 
 IX assoc-proc
