@@ -41,6 +41,16 @@ proc assert {expr} {
   }
 }
 
+proc pairlis-tcl {a b} {
+  if {[T [null? $a]]} {
+    parse {()}
+  } else {
+    cons \
+      [cons [car $a] [car $b]] \
+      [pairlis-tcl [cdr $a] [cdr $b]]
+  }
+}
+
 proc ::constcl::usage {usage expr} {
   set u $usage
   set e $expr
@@ -4169,15 +4179,24 @@ oo::class create ::constcl::Environment {
   method set {sym val} {
     dict set bindings $sym $val
   }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
 }
 
-proc environment? {object} {
-  #Returns #t if object is an environment; otherwise returns #f.
-  typeof? $object Environment
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
 }
 
-proc environment-has-parent? {env} {
-  # Returns #t if environment has a parent environment; otherwise returns #f.
+reg environment-has-parent?
+
+proc ::constcl::environment-has-parent? {env} {
   if {[$env parent] ne "#NIL"} {
     return #t
   } else {
@@ -4185,8 +4204,9 @@ proc environment-has-parent? {env} {
   }
 }
 
-proc environment-parent {env} {
-  # Returns the parent environment of environment. It is an error if environment has no parent.
+reg environment-parent
+
+proc ::constcl::environment-parent {env} {
   set parent [$env parent]
   if {$parent ne "#NIL"} {
     return $parent
@@ -4195,18 +4215,22 @@ proc environment-parent {env} {
   }
 }
 
-proc environment-bound-names {env} {
-  # Returns a newly allocated list of the names (symbols) that are bound by environment. This does not include the names that are bound by the parent environment of environment.
+reg environment-bound-names
+
+proc ::constcl::environment-bound-names {env} {
   list {*}[$env names]
 }
 
-proc environment-bindings {env} {
-  # Returns a newly allocated list of the bindings of environment; does not include the bindings of the parent environment. Each element of this list takes one of two forms: (name) indicates that name is bound but unassigned, while (name object) indicates that name is bound, and its value is object.
-  list {*}[$env bindings]
+reg environment-bindings
+
+proc ::constcl::environment-bindings {env} {
+  pairlis-tcl [list {*}[$env names]] [list {*}[$env values]]
 }
 
-proc environment-bound? {env sym} {
-  # Returns #t if symbol is bound in environment or one of its ancestor environments; otherwise returns #f.
+reg environment-bound?
+
+proc ::constcl::environment-bound? {env sym} {
+  # X
   set e [$env find $sym]
   if {$e eq "::constcl::null_env"} {
     return #f
@@ -4215,23 +4239,59 @@ proc environment-bound? {env sym} {
   }
 }
 
-proc environment-lookup {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns the value to which it is bound.
-  if {[T [environment-bound? $sym]]} {
+reg environment-lookup
+
+proc ::constcl::environment-lookup {env sym} {
+  if {[T [environment-bound? $env $sym]]} {
     lookup $sym [$env find $sym]
   }
 }
 
-proc environment-assignable? {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns #t if the binding may be modified by side effect.
+reg environment-assignable?
+
+proc ::constcl::environment-assignable? {env sym} {
+  if {[environment-bound? $env $sym]} {
+    # all bound names are assignable in ConsTcl
+    return #t
+  }
 }
 
-proc environment-assign! {env sym obj} {
-  # Symbol must be bound in environment or one of its ancestor environments, and must be assignable. Modifies the binding to have object as its value, and returns an unspecified result.
+reg environment-assign!
+
+proc ::constcl::environment-assign! {env sym obj} {
+  /set! $sym $obj $env  
 }
 
-proc environment-eval {expr env} {
-  # Evaluates expression, a list-structure representation (sometimes called s-expression representation) of a Scheme expression, in environment. You rarely need eval in ordinary programs; it is useful mostly for evaluating expressions that have been created "on the fly" by a program. eval is relatively expensive because it must convert expression to an internal form before it is executed.
+proc ::constcl::nearest-repl/environment {} {
+  # TODO
+}
+
+proc ::constcl::ge {env} {
+  # TODO
+}
+
+reg make-environment
+
+proc make-environment {exps} {
+  set env [
+    Environment new #NIL {} [the-environment]]
+  set body $exps
+  /define [S body] $body $env
+  set qq "`(let ()
+             ,@body
+             (the-environment))"
+  set expr [expand-quasiquote [parse $qq] $env]
+  return [eval $expr $env]
+}
+
+proc the-environment {} {
+  # TODO
+}
+
+reg interpreter-environment
+
+proc interpreter-environment {val} {
+  # TODO
 }
 
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]

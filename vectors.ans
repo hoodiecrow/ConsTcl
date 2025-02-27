@@ -268,7 +268,8 @@ Example:
 MD)
 
 VB(
-(let ((vec #(a "foo" 99)) (k 1))  (vector-ref vec k))          =>  "foo"
+(let ((vec #(a "foo" 99)) (k 1))
+  (vector-ref vec k))              =>  "foo"
 VB)
 
 PR(
@@ -304,7 +305,8 @@ TT)
 H4 vector-set"! procedure
 
 MD(
-K{vector-set!}, for a non-constant vector, sets the element at index E{k} to E{val}.
+K{vector-set!} sets the element at index E{k} to E{val} on a vector that isn't
+constant.
 MD)
 
 MD(

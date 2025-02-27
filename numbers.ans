@@ -1,5 +1,5 @@
 
-H3 Numbers
+h3 Numbers
 
 MD(
 I have only implemented a bare-bones version of Scheme's numerical
@@ -329,7 +329,7 @@ TT(
 
 TT)
 
-IX negative?
+IX negative? procedure
 CB(
 reg negative?
 
@@ -349,7 +349,7 @@ TT(
 
 TT)
 
-IX even?
+IX even? procedure
 CB(
 reg even?
 
@@ -369,7 +369,7 @@ TT(
 
 TT)
 
-IX odd?
+IX odd? procedure
 CB(
 reg odd?
 
@@ -431,7 +431,7 @@ TT(
 
 TT)
 
-IX min
+IX min procedure
 CB(
 reg min
 
@@ -510,7 +510,7 @@ TT(
 
 TT)
 
-IX *
+IX * procedure
 CB(
 reg *
 
@@ -534,7 +534,7 @@ TT(
 
 TT)
 
-IX -
+IX - procedure
 CB(
 reg -
 
@@ -561,7 +561,7 @@ TT(
 
 TT)
 
-IX /
+IX / procedure
 CB(
 reg /
 
@@ -802,7 +802,7 @@ TT(
 
 TT)
 
-IX ceiling
+IX ceiling procedure
 CB(
 reg ceiling
 
@@ -822,7 +822,7 @@ TT(
 
 TT)
 
-IX truncate
+IX truncate procedure
 CB(
 reg truncate
 
@@ -847,7 +847,7 @@ TT(
 
 TT)
 
-IX round
+IX round procedure
 CB(
 reg round
 
@@ -943,7 +943,7 @@ TT(
 
 TT)
 
-IX log
+IX log procedure
 CB(
 reg log
 
@@ -963,7 +963,7 @@ TT(
 
 TT)
 
-IX sin
+IX sin procedure
 CB(
 reg sin
 
@@ -975,7 +975,7 @@ proc ::constcl::sin {num} {
 }
 CB)
 
-IX cos
+IX cos procedure
 CB(
 reg cos
 
@@ -987,7 +987,7 @@ proc ::constcl::cos {num} {
 }
 CB)
 
-IX tan
+IX tan procedure
 CB(
 reg tan
 
@@ -1012,7 +1012,7 @@ TT(
 } -returnCodes error -result "NUMBER expected\n(tan #\\A)"
 TT)
 
-IX asin
+IX asin procedure
 CB(
 reg asin
 
@@ -1024,7 +1024,7 @@ proc ::constcl::asin {num} {
 }
 CB)
 
-IX acos
+IX acos procedure
 CB(
 reg acos
 
@@ -1036,7 +1036,7 @@ proc ::constcl::acos {num} {
 }
 CB)
 
-IX atan
+IX atan procedure
 CB(
 reg atan
 

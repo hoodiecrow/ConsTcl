@@ -201,7 +201,7 @@ TT(
 
 TT)
 
-IX char<?
+IX char<? procedure
 CB(
 reg char<?
 
@@ -230,7 +230,7 @@ TT(
 
 TT)
 
-IX char>?
+IX char>? procedure
 CB(
 reg char>?
 
@@ -259,7 +259,7 @@ TT(
 
 TT)
 
-IX char<=?
+IX char<=? procedure
 CB(
 reg char<=?
 
@@ -288,7 +288,7 @@ TT(
 
 TT)
 
-IX char>=?
+IX char>=? procedure
 CB(
 reg char>=?
 
@@ -365,7 +365,7 @@ TT(
 
 TT)
 
-IX char-ci<?
+IX char-ci<? procedure
 CB(
 reg char-ci<?
 
@@ -395,7 +395,7 @@ TT(
 
 TT)
 
-IX char-ci>?
+IX char-ci>? procedure
 CB(
 reg char-ci>?
 
@@ -425,7 +425,7 @@ TT(
 
 TT)
 
-IX char-ci<=?
+IX char-ci<=? procedure
 CB(
 reg char-ci<=?
 
@@ -455,7 +455,7 @@ TT(
 
 TT)
 
-IX char-ci>=?
+IX char-ci>=? procedure
 CB(
 reg char-ci>=?
 
@@ -538,7 +538,7 @@ TT(
 
 TT)
 
-IX char-numeric?
+IX char-numeric? procedure
 CB(
 reg char-numeric?
 
@@ -563,7 +563,7 @@ TT(
 
 TT)
 
-IX char-whitespace?
+IX char-whitespace? procedure
 CB(
 reg char-whitespace?
 
@@ -588,7 +588,7 @@ TT(
 
 TT)
 
-IX char-upper-case?
+IX char-upper-case? procedure
 CB(
 reg char-upper-case?
 
@@ -613,7 +613,7 @@ TT(
 
 TT)
 
-IX char-lower-case?
+IX char-lower-case? procedure
 CB(
 reg char-lower-case?
 
@@ -737,7 +737,7 @@ TT(
 TT)
 
 
-IX char-downcase
+IX char-downcase procedure
 CB(
 reg char-downcase
 

@@ -1,6 +1,6 @@
 H2 Built-in procedures
 
-H3 Equivalence predicates
+h3 Equivalence predicates
 
 MD(
 Of the three equivalence predicates, K{eq} generally tests for identity (with

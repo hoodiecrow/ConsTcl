@@ -44,7 +44,6 @@ tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
 tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
 
-## Initial declarations
 
 
 First, I need to create the namespace that will be used for most identifiers:
@@ -60,7 +59,10 @@ Next, some procedures that make my life as developer somewhat easier.
 #### reg procedure
 
 
-`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup). You can call `` reg `` with two values: _key_ and _val_. _Key_ is the string that will eventually become the lookup symbol in the standard library, and _val_ is the name of the Tcl command that will carry out the procedure. If you don't give a value for _val_, `` reg `` creates a value by prepending the `` ::constcl:: `` namespace to the _key_ value, which is sufficient 99% of the time.
+`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
+
+
+You can call `` reg `` with two values: _key_ and _val_. _Key_ is the string that will eventually become the lookup symbol in the standard library, and _val_ is the name of the Tcl command that will carry out the procedure. If you don't give a value for _val_, `` reg `` creates a value by prepending the `` ::constcl:: `` namespace to the _key_ value, which is sufficient 99% of the time.
 
 <table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>key</td><td>a Tcl string</td></tr><tr><td>?val?</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -78,16 +80,28 @@ proc ::reg {key args} {
 ##### Procedures, functions, and commands: an aside
 
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl. And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+
+
+And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
 
 #### atom? procedure
 
+
+THis one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (truth) if it is an atom, and `` #f `` (falsehood) if not.
+
 ##### Predicates: an aside
 
-``THis one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (truth) if it is an atom, and `` #f `` (falsehood) if not. By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example: if {[atom? $x]} ...``
+By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
 
 
-``will not do, but if {[atom? $x] ne "#f"} ...``
+``if {[atom? $x]} ...``
+
+
+will not do, but
+
+
+``if {[atom? $x] ne "#f"} ...``
 
 
 (``[atom? $x] not equal to false'') works. Or see next procedure.
@@ -96,6 +110,7 @@ I use all of these terms for the subroutines in ConsTcl. I try to stick to proce
 
 ```
 reg atom? ::constcl::atom?
+
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
@@ -109,7 +124,10 @@ proc ::constcl::atom? {val} {
 #### T procedure
 
 
-The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only if the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for `truth'. Example:
+The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only if the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for `truth'.
+
+
+Example:
 
 ```
 if {[T [atom? $x]]} ...
@@ -140,6 +158,24 @@ proc assert {expr} {
   if {![uplevel [list expr $expr]]} {
     error "Failed assertion [
       uplevel [list subst $expr]]"
+  }
+}
+```
+#### pairlis-tcl procedure
+
+
+A Tcl version of the procedure in the Scheme base.
+
+<table border=1><thead><tr><th colspan=2 align="left">pairlis-tcl (internal)</th></tr></thead><tr><td>lvals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+
+```
+proc pairlis-tcl {a b} {
+  if {[T [null? $a]]} {
+    parse {()}
+  } else {
+    cons \
+      [cons [car $a] [car $b]] \
+      [pairlis-tcl [cdr $a] [cdr $b]]
   }
 }
 ```
@@ -216,16 +252,21 @@ proc ::constcl::typeof? {val type} {
 #### in-range procedure
 
 
-This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs. The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
+This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K. Fellows, but has grown a bit since then to suit my needs.
+
+
+The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
 
 <table border=1><thead><tr><th colspan=2 align="left">in-range (public)</th></tr></thead><tr><td>x</td><td>a number</td></tr><tr><td>?e?</td><td>a number</td></tr><tr><td>?t?</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of numbers</td></tr></table>
 
 ```
 reg in-range
+
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
   switch [llength $args] {
+    0 {
       set e $x
       set end [$e numval]
     }
@@ -260,6 +301,7 @@ proc ::constcl::in-range {x args} {
 
 ```
 reg error
+
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
     lappend msg "("
@@ -444,6 +486,7 @@ The `` Dot `` class is a helper class for the parser.
 
 ```
 catch { ::constcl::Dot destroy }
+
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
   method write {handle} {
@@ -473,6 +516,7 @@ The `` EndOfFile `` class is for end-of-file conditions.
 
 ```
 catch { ::constcl::EndOfFile destroy }
+
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {handle} {
@@ -506,6 +550,7 @@ The `` NIL `` class has one object: the empty list called `` #NIL ``. It is also
 
 ```
 catch { ::constcl::NIL destroy }
+
 oo::singleton create ::constcl::NIL {
   method boolval {} {
     return #t
@@ -545,6 +590,7 @@ The `` null? `` standard predicate recognizes the empty list.
 
 ```
 reg null?
+
 proc ::constcl::null? {val} {
   if {$val eq "#NIL"} {
     return #t
@@ -560,6 +606,7 @@ The `` Undefined `` class is for undefined things. It was created to facilitate 
 
 ```
 catch { ::constcl::Undefined destroy }
+
 oo::class create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
@@ -577,6 +624,7 @@ The `` Unspecified `` class is for unspecified things. Also a S9fES support clas
 
 ```
 catch { ::constcl::Unspecified destroy }
+
 oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
@@ -590,13 +638,31 @@ oo::class create ::constcl::Unspecified {
 ## Input
 
 
-The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. `` read `` represents the interpreter's main input facility. The `` read- `` procedures read from standard input, or--if a port is provided--from the port's channel. The main input procedures, `` read `` and the non-standard `` parse ``, do more than just read in the text of code and data: they also _parse_ the input into an _internal representation_ that the evaluator can use.
+The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. `` read `` represents the interpreter's main input facility. The `` read- `` procedures read from standard input, or--if a port is provided--from the port's channel.
+
+
+The main input procedures, `` read `` and the non-standard `` parse ``, do more than just read in the text of code and data: they also _parse_ the input into an _internal representation_ that the evaluator can use.
 
 ### The parsing process
 
+
+[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_.
+
+
+The parsing process translates a piece of text from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
+
+
+For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader or parser is working through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+
 ![#](images/vector-representation.png)
 
-[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_. The parsing process translates a piece of text from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way. For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader or parser is working through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements. The `` parse `` or `` read `` procedure takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator. Given a string, `` parse `` creates a string input port for itself to read from. It then parses the input and produces the internal representation of an expression. Example:
+The `` parse `` or `` read `` procedure takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+
+
+Given a string, `` parse `` creates a string input port for itself to read from. It then parses the input and produces the internal representation of an expression.
+
+
+Example:
 
 ```
 % ::constcl::parse "(+ 2 3)"
@@ -624,14 +690,17 @@ ConsTcl> (+ 2 3)
 ```
 
 
-Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden. Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
+Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
+
+
+Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
 
 ![#](images/intreplist.png)
 ### Input procedures
 ##### Ports: an aside
 
 
-Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or (a ConsTcl extension) a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 
 #### parse procedure
 
@@ -642,6 +711,7 @@ Ports are an abstraction of the input or output mechanism. An input port can be 
 
 ```
 reg parse
+
 proc ::constcl::parse {inp} {
   set c {}
   set unget {}
@@ -667,12 +737,16 @@ proc ::constcl::parse {inp} {
 #### read procedure
 
 
-The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it. The `` read- `` procedures parse their input and produce ConsTcl objects. One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which, again, doesn't work in a Windows windowing application.)).
+The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it. The `` read- `` procedures parse their input and produce ConsTcl objects.
+
+
+One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which, again, doesn't work in a Windows windowing application.)).
 
 <table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg read
+
 proc ::constcl::read {args} {
   set c {}
   set unget {}
@@ -1043,7 +1117,10 @@ proc ::constcl::read-pair-expr {char} {
 ```
 
 
-__read-pair__ procedure `` read-pair `` is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning `` #NIL `` in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When `` read-pair `` has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list. Shares the variables `` c `` and `` unget `` with its caller.
+__read-pair__ procedure
+
+
+`` read-pair `` is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning `` #NIL `` in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When `` read-pair `` has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list. Shares the variables `` c `` and `` unget `` with its caller.
 
 ```
 proc ::constcl::read-pair {char} {
@@ -1272,12 +1349,19 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 ### The evaluator
 
 
-__eval__ procedure The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its syntactic form. `` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+__eval__ procedure
+
+
+The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its syntactic form.
+
+
+`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg eval
+
 proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
@@ -1357,13 +1441,20 @@ There are nine diffent forms or classes of expressions in Lisp:
 1.  assignment
 1.  procedure definition
 1.  procedure call
+
+
+The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
+
 #### Variable reference
 
 
 _Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to 10)_
 
 
-A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol. __lookup__ procedure
+A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
+
+
+__lookup__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1394,7 +1485,13 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
 
 
-The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated. The two procedures that handle the conditional form are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent. __/if__ procedure __/if1__ procedure
+The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
+
+
+The two procedures that handle the conditional form are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
+
+
+__/if__ procedure __/if1__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1408,6 +1505,7 @@ proc ::constcl::/if {cond conseq altern} {
     uplevel $altern
   }
 }
+
 proc ::constcl::/if1 {cond conseq} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
@@ -1420,7 +1518,10 @@ proc ::constcl::/if1 {cond conseq} {
 _Example: `` (begin (define r 10) (* r r)) `` ==> 100_
 
 
-When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The `` /begin `` helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one. __/begin__ procedure
+When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The `` /begin `` helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
+
+
+__/begin__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">/begin (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1444,7 +1545,10 @@ proc ::constcl::/begin {exps env} {
 _Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything)_
 
 
-We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding. __/define__ procedure
+We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
+
+
+__/define__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">/define (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -1461,7 +1565,10 @@ proc ::constcl::/define {sym val env} {
 _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name. __/set!__ procedure
+Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+
+
+__/set!__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">/set! (internal)</th></tr></thead><tr><td>var</td><td>a bound symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1476,13 +1583,31 @@ proc ::constcl::/set! {var val env} {
 
 _Example: `` (lambda (r) (* r r)) `` ==> `` ::oo::Obj3601 `` (it will be a different object each time)_
 
+
+In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
+
+
+As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single variable, but by custom we need to put it in a list: `` (x) ``. The operator that defines procedures is called `` lambda ``, and we define the function with `` (lambda (x) (* x x)) ``.
+
+
+One more step is needed before we can use the procedure. It must have a name. We could define it like this: `` (define square (lambda (x) (* x x))) `` but there is actually a shortcut notation for it: `` (define (square x) (* x x)) ``.
+
+
+Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
+
+
+Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+
 ##### Scheme formals lists: an aside
+
+A Scheme formals list is either:
+
 *  An _empty list_, `` () ``, meaning that no arguments are accepted,
 *  A _proper list_, `` (a b c) ``, meaning it accepts three arguments, one in each symbol,
 *  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
 *  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
 
-In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result? As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single variable, but by custom we need to put it in a list: `` (x) ``. The operator that defines procedures is called `` lambda ``, and we define the function with `` (lambda (x) (* x x)) ``. One more step is needed before we can use the procedure. It must have a name. We could define it like this: `` (define square (lambda (x) (* x x))) `` but there is actually a shortcut notation for it: `` (define (square x) (* x x)) ``. Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares. Under the hood, the helper `` /lambda `` makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is. A Scheme formals list is either:
+__/lambda__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">/lambda (internal)</th></tr></thead><tr><td>formals</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
@@ -1502,7 +1627,13 @@ proc ::constcl::/lambda {formals body env} {
 _Example: `` (+ 1 6) `` ==> 7_
 
 
-Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121. `` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. __invoke__ procedure
+Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121.
+
+
+`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+
+
+__invoke__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
@@ -1520,7 +1651,10 @@ proc ::constcl::invoke {pr vals} {
 ```
 
 
-__splitlist__ procedure `` splitlist `` converts a Lisp list to a Tcl list with Lisp objects.
+__splitlist__ procedure
+
+
+`` splitlist `` converts a Lisp list to a Tcl list with Lisp objects.
 
 <table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
 
@@ -1536,7 +1670,10 @@ proc ::constcl::splitlist {vals} {
 ```
 
 
-__eval-list__ procedure `` eval-list `` successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
+__eval-list__ procedure
+
+
+`` eval-list `` successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval-list (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -1555,7 +1692,13 @@ proc ::constcl::eval-list {exps env} {
 #### expand-macro procedure
 
 
-Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below. `` expand-macro `` takes an expression and an environment as a parameter. First, the operator (_op_) and operands (_args_) are extracted to check if expansion is necessary (the operator `` car ``, for historical reasons, stands for the first element of a list, while `` cdr `` stands for the rest of the elements after the first in a list). If the operator is the symbol `` define `` and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in `` eval ``. The operator's symbol name is then used to select the right expansion procedure, and the whole expression and the environment is passed to it. In the end, the expanded expression is passed back to `` eval ``.
+Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
+
+
+`` expand-macro `` takes an expression and an environment as a parameter. First, the operator (_op_) and operands (_args_) are extracted to check if expansion is necessary (the operator `` car ``, for historical reasons, stands for the first element of a list, while `` cdr `` stands for the rest of the elements after the first in a list). If the operator is the symbol `` define `` and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in `` eval ``.
+
+
+The operator's symbol name is then used to select the right expansion procedure, and the whole expression and the environment is passed to it. In the end, the expanded expression is passed back to `` eval ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1579,6 +1722,7 @@ proc ::constcl::expand-macro {expr env} {
 
 ```
 regmacro and
+
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
@@ -1592,7 +1736,10 @@ proc ::constcl::expand-and {expr env} {
 ```
 
 
-__do-and__ procedure `` do-and `` is called recursively for every argument of `` expand-or `` if there are more than one.
+__do-and__ procedure
+
+
+`` do-and `` is called recursively for every argument of `` expand-or `` if there are more than one.
 
 ##### Quasiquote: an aside
 
@@ -1620,7 +1767,10 @@ proc ::constcl::do-and {tail prev env} {
 #### expand-case procedure
 
 
-The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored. The `` case `` macro is expanded by `` expand-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
+
+
+The `` case `` macro is expanded by `` expand-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
 ##### caar, cadr, cdar, and the rest: an aside
 
@@ -1631,10 +1781,12 @@ The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators
 
 ```
 regmacro case
+
 proc ::constcl::expand-case {expr env} {
   set tail [cdr $expr]
   do-case [car $tail] [cdr $tail] $env
 }
+
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -1667,19 +1819,26 @@ proc ::constcl::do-case {keyexpr clauses env} {
 #### expand-cond procedure
 
 
-The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored. The `` cond `` macro is expanded by `` expand-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
+
+
+The `` cond `` macro is expanded by `` expand-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro cond
+
 proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
 ```
 
 
-__do-cond__ procedure `` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
+__do-cond__ procedure
+
+
+`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1722,12 +1881,25 @@ proc ::constcl::do-cond {tail env} {
 #### expand-define procedure
 
 
-`` define `` has two variants, one of which requires some rewriting. It's the one with an implied `` lambda `` call, the one that defines a procedure. (define (_symbol_ _formals_) _body_) is transformed into (define _symbol_ (lambda _formals_ _body_)) which conforms better to `` eval ``'s standard of (define _symbol_ _value_).
+`` define `` has two variants, one of which requires some rewriting. It's the one with an implied `` lambda `` call, the one that defines a procedure.
+
+
+(define (_symbol_ _formals_) _body_)
+
+
+is transformed into
+
+
+(define _symbol_ (lambda _formals_ _body_))
+
+
+which conforms better to `` eval ``'s standard of (define _symbol_ _value_).
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-define (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro define
+
 proc ::constcl::expand-define {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
@@ -1748,6 +1920,7 @@ The macro `` del! `` updates a property list. It removes a key-value pair if the
 
 ```
 regmacro del!
+
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -1775,6 +1948,7 @@ The `` expand-for `` procedure expands the `` for `` macro. It returns a `` begi
 
 ```
 regmacro for
+
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -1784,7 +1958,10 @@ proc ::constcl::expand-for {expr env} {
 ```
 
 
-__for-seq__ procedure `` for-seq `` is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
+__for-seq__ procedure
+
+
+`` for-seq `` is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
 
 <table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
 
@@ -1809,7 +1986,16 @@ proc ::constcl::for-seq {seq env} {
 ```
 
 
-__do-for__ procedure `` do-for `` is another helper procedure which does most of the work in the `` for/* `` forms. It iterates over the clauses, extracting and preparing the sequence for each, and stores each of the sequence steps in a dictionary under a double key: the identifier and the ordinal of the step. Then it creates a `` let `` construct for each step, in which each of the clauses' identifiers is bound to the step's value. The Tcl list of `` let `` constructs is returned. Each clause's sequence is supposed to be the same length as the others. One weakness of this implementation is that it doesn't ensure this, just hopes that the user does the right thing.
+__do-for__ procedure
+
+
+`` do-for `` is another helper procedure which does most of the work in the `` for/* `` forms. It iterates over the clauses, extracting and preparing the sequence for each, and stores each of the sequence steps in a dictionary under a double key: the identifier and the ordinal of the step.
+
+
+Then it creates a `` let `` construct for each step, in which each of the clauses' identifiers is bound to the step's value. The Tcl list of `` let `` constructs is returned.
+
+
+Each clause's sequence is supposed to be the same length as the others. One weakness of this implementation is that it doesn't ensure this, just hopes that the user does the right thing.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-for (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
 
@@ -1849,12 +2035,16 @@ proc ::constcl::do-for {tail env} {
 #### expand-for/and procedure
 
 
-The `` expand-for/and `` procedure expands the `` for/and `` macro. It returns an `` and `` construct containing the iterations of the clauses. The only differences from `` expand-for `` is that it doesn't add `` (quote ()) `` and that it wraps the list of iterations in `` and `` instead of `` begin ``.
+The `` expand-for/and `` procedure expands the `` for/and `` macro. It returns an `` and `` construct containing the iterations of the clauses.
+
+
+The only differences from `` expand-for `` is that it doesn't add `` (quote ()) `` and that it wraps the list of iterations in `` and `` instead of `` begin ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/and (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro for/and
+
 proc ::constcl::expand-for/and {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -1864,12 +2054,16 @@ proc ::constcl::expand-for/and {expr env} {
 #### expand-for/list procedure
 
 
-The `` expand-for/list `` procedure expands the `` for/list `` macro. It returns a `` list `` construct containing the iterations of each clause. The only difference from `` expand-for/and `` is that it wraps the list of iterations in `` list `` instead of `` and ``.
+The `` expand-for/list `` procedure expands the `` for/list `` macro. It returns a `` list `` construct containing the iterations of each clause.
+
+
+The only difference from `` expand-for/and `` is that it wraps the list of iterations in `` list `` instead of `` and ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand for/list (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro for/list
+
 proc ::constcl::expand-for/list {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -1879,12 +2073,16 @@ proc ::constcl::expand-for/list {expr env} {
 #### expand-for/or procedure
 
 
-The `` expand-for/or `` procedure expands the `` for/or `` macro. It returns an `` or `` construct containing the iterations of each clause. The only difference from `` expand-for/list `` is that it wraps the list of iterations in `` or `` instead of `` list ``.
+The `` expand-for/or `` procedure expands the `` for/or `` macro. It returns an `` or `` construct containing the iterations of each clause.
+
+
+The only difference from `` expand-for/list `` is that it wraps the list of iterations in `` or `` instead of `` list ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/or (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro for/or
+
 proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -1894,12 +2092,19 @@ proc ::constcl::expand-for/or {expr env} {
 #### expand-let procedure
 
 
-`` expand-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs. Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form. Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+`` expand-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
+
+
+Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+
+
+Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 regmacro let
+
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -1946,7 +2151,10 @@ proc ::constcl::expand-let {expr env} {
 ```
 
 
-__parse-bindings__ procedure `` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
+__parse-bindings__ procedure
+
+
+`` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
 
 <table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -1973,6 +2181,7 @@ proc ::constcl::parse-bindings {name bindings} {
 
 ```
 regmacro or
+
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[T [eq? [length $tail] #0]]} {
@@ -1986,7 +2195,10 @@ proc ::constcl::expand-or {expr env} {
 ```
 
 
-__do-or__ procedure `` do-or `` is called recursively for each argument to `` expand-or `` if there are more than one argument.
+__do-or__ procedure
+
+
+`` do-or `` is called recursively for each argument to `` expand-or `` if there are more than one argument.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-or (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2014,6 +2226,7 @@ The macro `` pop! `` updates a list. It removes the first element.
 
 ```
 regmacro pop!
+
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2039,6 +2252,7 @@ The macro `` push! `` updates a list. It adds a new element as the new first ele
 
 ```
 regmacro push!
+
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2073,6 +2287,7 @@ The macro `` put! `` updates a property list. It adds a key-value pair if the ke
 
 ```
 regmacro put!
+
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
@@ -2110,6 +2325,7 @@ A quasi-quote isn't a macro, but we will deal with it in this section anyway. ``
 
 ```
 regmacro quasiquote
+
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
   set qqlevel 0
@@ -2200,6 +2416,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 
 ```
 regmacro unless
+
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2221,6 +2438,7 @@ proc ::constcl::expand-unless {expr env} {
 
 ```
 regmacro when
+
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2460,12 +2678,16 @@ proc ::constcl::make-undefineds {vals} {
 #### write procedure
 
 
-The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome of the evaluation was. As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
+The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome of the evaluation was.
+
+
+As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
 
 <table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg write ::constcl::write
+
 proc ::constcl::write {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
@@ -2493,6 +2715,7 @@ The `` display `` procedure is like `` write `` but it calls the method's `` dis
 
 ```
 reg display ::constcl::display
+
 proc ::constcl::display {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
@@ -2552,6 +2775,7 @@ Of the three equivalence predicates, `` eq `` generally tests for identity (with
 
 ```
 reg eq?
+
 proc ::constcl::eq? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
@@ -2586,7 +2810,10 @@ proc ::constcl::eq? {expr1 expr2} {
 ```
 
 
-__teq__ procedure `` teq `` tests for type equality, i.e. that the expressions have the same type.
+__teq__ procedure
+
+
+`` teq `` tests for type equality, i.e. that the expressions have the same type.
 
 <table border=1><thead><tr><th colspan=2 align="left">teq (internal)</th></tr></thead><tr><td>typep</td><td>a procedure</td></tr><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
@@ -2598,7 +2825,10 @@ proc ::constcl::teq {typep expr1 expr2} {
 ```
 
 
-__veq__ procedure `` veq `` tests for value equality, i.e. that the expressions have the same value.
+__veq__ procedure
+
+
+`` veq `` tests for value equality, i.e. that the expressions have the same value.
 
 <table border=1><thead><tr><th colspan=2 align="left">veq (internal)</th></tr></thead><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
@@ -2610,6 +2840,7 @@ proc ::constcl::veq {expr1 expr2} {
 #### eqv? procedure
 ```
 reg eqv?
+
 proc ::constcl::eqv? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
@@ -2647,6 +2878,7 @@ proc ::constcl::eqv? {expr1 expr2} {
 #### equal? procedure
 ```
 reg equal?
+
 proc ::constcl::equal? {expr1 expr2} {
   if {[$expr1 show] eq [$expr2 show]} {
     return #t
@@ -2658,10 +2890,10 @@ proc ::constcl::equal? {expr1 expr2} {
 ```
 ### Numbers
 
-#### Number class
 
 I have only implemented a bare-bones version of Scheme's numerical library. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
 
+#### Number class
 ```
 oo::class create ::constcl::Number {
   superclass ::constcl::NIL
@@ -2730,6 +2962,7 @@ interp alias {} N {} ::constcl::Number new
 
 ```
 reg number?
+
 proc ::constcl::number? {val} {
   return [typeof? $val Number]
 }
@@ -2755,6 +2988,7 @@ The predicates `` = ``, `` < ``, `` > ``, `` <= ``, and `` >= `` are implemented
 
 ```
 reg =
+
 proc ::constcl::= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2770,6 +3004,7 @@ proc ::constcl::= {args} {
 ```
 ```
 reg <
+
 proc ::constcl::< {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2785,6 +3020,7 @@ proc ::constcl::< {args} {
 ```
 ```
 reg >
+
 proc ::constcl::> {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2800,6 +3036,7 @@ proc ::constcl::> {args} {
 ```
 ```
 reg <=
+
 proc ::constcl::<= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2815,6 +3052,7 @@ proc ::constcl::<= {args} {
 ```
 ```
 reg >=
+
 proc ::constcl::>= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2837,6 +3075,7 @@ The `` zero? `` predicate tests if a given number is equal to zero.
 
 ```
 reg zero?
+
 proc ::constcl::zero? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -2862,6 +3101,7 @@ The `` positive? ``/`` negative? ``/`` even? ``/`` odd? `` predicates test a num
 
 ```
 reg positive?
+
 proc ::constcl::positive? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -2871,6 +3111,7 @@ proc ::constcl::positive? {num} {
 ```
 ```
 reg negative?
+
 proc ::constcl::negative? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -2880,6 +3121,7 @@ proc ::constcl::negative? {num} {
 ```
 ```
 reg even?
+
 proc ::constcl::even? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -2889,6 +3131,7 @@ proc ::constcl::even? {num} {
 ```
 ```
 reg odd?
+
 proc ::constcl::odd? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -2899,7 +3142,13 @@ proc ::constcl::odd? {num} {
 #### max procedure
 
 
-__min__ procedure The `` max `` function selects the largest number, and the `` min `` function selects the smallest number. Example:
+__min__ procedure
+
+
+The `` max `` function selects the largest number, and the `` min `` function selects the smallest number.
+
+
+Example:
 
 ```
 (max 7 1 10 3)   =>  10
@@ -2909,6 +3158,7 @@ __min__ procedure The `` max `` function selects the largest number, and the `` 
 
 ```
 reg max
+
 proc ::constcl::max {num args} {
   lappend args $num
   try {
@@ -2921,6 +3171,7 @@ proc ::constcl::max {num args} {
 ```
 ```
 reg min
+
 proc ::constcl::min {num args} {
   lappend args $num
   try {
@@ -2943,7 +3194,10 @@ proc ::constcl::min {num args} {
 
 
 
-The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations. They take a number of operands, but at least one for `` - `` and `` / ``. Example:
+The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective mathematical operations. They take a number of operands, but at least one for `` - `` and `` / ``.
+
+
+Example:
 
 ```
 (list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))   =>  (4 4 4 4)
@@ -2960,6 +3214,7 @@ The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective ma
 
 ```
 reg +
+
 proc ::constcl::+ {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2971,6 +3226,7 @@ proc ::constcl::+ {args} {
 ```
 ```
 reg *
+
 proc ::constcl::* {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2982,6 +3238,7 @@ proc ::constcl::* {args} {
 ```
 ```
 reg -
+
 proc ::constcl::- {num args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2993,6 +3250,7 @@ proc ::constcl::- {num args} {
 ```
 ```
 reg /
+
 proc ::constcl::/ {num args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -3011,6 +3269,7 @@ The `` abs `` function yields the absolute value of a number.
 
 ```
 reg abs
+
 proc ::constcl::abs {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3038,6 +3297,7 @@ Example:
 
 ```
 reg quotient
+
 proc ::constcl::quotient {num1 num2} {
   set q [::tcl::mathop::/ [$num1 numval] \
     [$num2 numval]]
@@ -3066,6 +3326,7 @@ Example:
 
 ```
 reg remainder
+
 proc ::constcl::remainder {num1 num2} {
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
@@ -3088,6 +3349,7 @@ Example:
 
 ```
 reg modulo
+
 proc ::constcl::modulo {num1 num2} {
   return [N [::tcl::mathop::% [$num1 numval] \
     [$num2 numval]]]
@@ -3121,6 +3383,7 @@ Example:
 
 ```
 reg floor
+
 proc ::constcl::floor {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3130,6 +3393,7 @@ proc ::constcl::floor {num} {
 ```
 ```
 reg ceiling
+
 proc ::constcl::ceiling {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3139,6 +3403,7 @@ proc ::constcl::ceiling {num} {
 ```
 ```
 reg truncate
+
 proc ::constcl::truncate {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3152,6 +3417,7 @@ proc ::constcl::truncate {num} {
 ```
 ```
 reg round
+
 proc ::constcl::round {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3200,6 +3466,7 @@ Example:
 
 ```
 reg exp
+
 proc ::constcl::exp {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3209,6 +3476,7 @@ proc ::constcl::exp {num} {
 ```
 ```
 reg log
+
 proc ::constcl::log {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3218,6 +3486,7 @@ proc ::constcl::log {num} {
 ```
 ```
 reg sin
+
 proc ::constcl::sin {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3227,6 +3496,7 @@ proc ::constcl::sin {num} {
 ```
 ```
 reg cos
+
 proc ::constcl::cos {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3236,6 +3506,7 @@ proc ::constcl::cos {num} {
 ```
 ```
 reg tan
+
 proc ::constcl::tan {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3245,6 +3516,7 @@ proc ::constcl::tan {num} {
 ```
 ```
 reg asin
+
 proc ::constcl::asin {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3254,6 +3526,7 @@ proc ::constcl::asin {num} {
 ```
 ```
 reg acos
+
 proc ::constcl::acos {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3263,6 +3536,7 @@ proc ::constcl::acos {num} {
 ```
 ```
 reg atan
+
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
@@ -3292,6 +3566,7 @@ proc ::constcl::atan {args} {
 
 ```
 reg sqrt
+
 proc ::constcl::sqrt {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -3308,6 +3583,7 @@ proc ::constcl::sqrt {num} {
 
 ```
 reg expt
+
 proc ::constcl::expt {num1 num2} {
   check {number? $num1} {
       NUMBER expected\n([pn] [$num1 show] \
@@ -3340,6 +3616,7 @@ Example:
 
 ```
 reg number->string
+
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
     check {number? $num} {
@@ -3406,6 +3683,7 @@ Example:
 
 ```
 reg string->number
+
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
     check {string? $str} {
@@ -3516,6 +3794,7 @@ The `` boolean? `` predicate recognizes a Boolean by type.
 
 ```
 reg boolean? ::constcl::boolean?
+
 proc ::constcl::boolean? {val} {
   return [typeof? $val Boolean]
 }
@@ -3537,6 +3816,7 @@ Example:
 
 ```
 reg not ::constcl::not
+
 proc ::constcl::not {val} {
   if {[$val boolval] eq "#f"} {
     return #t
@@ -3668,6 +3948,7 @@ proc ::constcl::MkChar {char} {
 
 ```
 reg char?
+
 proc ::constcl::char? {val} {
   return [typeof? $val Char]
 }
@@ -3693,6 +3974,7 @@ proc ::constcl::char? {val} {
 
 ```
 reg char=?
+
 proc ::constcl::char=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3709,6 +3991,7 @@ proc ::constcl::char=? {char1 char2} {
 ```
 ```
 reg char<?
+
 proc ::constcl::char<? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3725,6 +4008,7 @@ proc ::constcl::char<? {char1 char2} {
 ```
 ```
 reg char>?
+
 proc ::constcl::char>? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3741,6 +4025,7 @@ proc ::constcl::char>? {char1 char2} {
 ```
 ```
 reg char<=?
+
 proc ::constcl::char<=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3757,6 +4042,7 @@ proc ::constcl::char<=? {char1 char2} {
 ```
 ```
 reg char>=?
+
 proc ::constcl::char>=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3792,6 +4078,7 @@ proc ::constcl::char>=? {char1 char2} {
 
 ```
 reg char-ci=?
+
 proc ::constcl::char-ci=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3809,6 +4096,7 @@ proc ::constcl::char-ci=? {char1 char2} {
 ```
 ```
 reg char-ci<?
+
 proc ::constcl::char-ci<? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3826,6 +4114,7 @@ proc ::constcl::char-ci<? {char1 char2} {
 ```
 ```
 reg char-ci>?
+
 proc ::constcl::char-ci>? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3843,6 +4132,7 @@ proc ::constcl::char-ci>? {char1 char2} {
 ```
 ```
 reg char-ci<=?
+
 proc ::constcl::char-ci<=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3860,6 +4150,7 @@ proc ::constcl::char-ci<=? {char1 char2} {
 ```
 ```
 reg char-ci>=?
+
 proc ::constcl::char-ci>=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -3902,6 +4193,7 @@ The predicates `` char-alphabetic? ``, `` char-numeric? ``, and `` char-whitespa
 
 ```
 reg char-alphabetic?
+
 proc ::constcl::char-alphabetic? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -3911,6 +4203,7 @@ proc ::constcl::char-alphabetic? {char} {
 ```
 ```
 reg char-numeric?
+
 proc ::constcl::char-numeric? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -3920,6 +4213,7 @@ proc ::constcl::char-numeric? {char} {
 ```
 ```
 reg char-whitespace?
+
 proc ::constcl::char-whitespace? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -3929,6 +4223,7 @@ proc ::constcl::char-whitespace? {char} {
 ```
 ```
 reg char-upper-case?
+
 proc ::constcl::char-upper-case? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -3938,6 +4233,7 @@ proc ::constcl::char-upper-case? {char} {
 ```
 ```
 reg char-lower-case?
+
 proc ::constcl::char-lower-case? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -3961,6 +4257,7 @@ Example:
 
 ```
 reg char->integer
+
 proc ::constcl::char->integer {char} {
   return [MkNumber [scan [$char char] %c]]
 }
@@ -3977,6 +4274,7 @@ Example:
 
 ```
 reg integer->char
+
 proc ::constcl::integer->char {int} {
   if {$int == 10} {
     return [MkChar #\\newline]
@@ -3990,12 +4288,16 @@ proc ::constcl::integer->char {int} {
 #### char-upcase procedure
 
 
-__char-downcase__ procedure `` char-upcase `` and `` char-downcase `` alter the case of a character.
+__char-downcase__ procedure
+
+
+`` char-upcase `` and `` char-downcase `` alter the case of a character.
 
 <table border=1><thead><tr><th colspan=2 align="left">char-upcase, char-downcase (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 reg char-upcase
+
 proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -4006,6 +4308,7 @@ proc ::constcl::char-upcase {char} {
 ```
 ```
 reg char-downcase
+
 proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -4017,11 +4320,18 @@ proc ::constcl::char-downcase {char} {
 ### Control
 
 
-This section concerns itself with procedures and the application of the same. A `` Procedure `` object is a [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is [defined](https://github.com/hoodiecrow/ConsTcl#procedure-definition). When a `` Procedure `` object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
+This section concerns itself with procedures and the application of the same.
+
+
+A `` Procedure `` object is a [closure](https://en.wikipedia.org/wiki/Closure_(computer_programming)), storing the procedure's parameter list, the body, and the environment that is current when the object is created, i.e. when the procedure is [defined](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
+
+
+When a `` Procedure `` object is called, the body is evaluated in a new environment where the parameters are given values from the argument list and the outer link goes to the closure environment.
 
 #### Procedure class
 ```
 catch { ::constcl::Procedure destroy }
+
 oo::class create ::constcl::Procedure {
   superclass ::constcl::NIL
   variable parms body env
@@ -4045,6 +4355,7 @@ oo::class create ::constcl::Procedure {
     ::constcl::eval $body [
       ::constcl::Environment new $parms $args $env]
   }
+
 }
 ```
 #### MkProcedure generator
@@ -4063,6 +4374,7 @@ interp alias {} ::constcl::MkProcedure \
 
 ```
 reg procedure?
+
 proc ::constcl::procedure? {val} {
   if {[typeof? $val Procedure] eq "#t"} {
     return #t
@@ -4089,6 +4401,7 @@ Example:
 
 ```
 reg apply
+
 proc ::constcl::apply {pr vals} {
   check {procedure? $pr} {
     PROCEDURE expected\n([pn] [$pr show] ...)
@@ -4112,6 +4425,7 @@ Example:
 
 ```
 reg map
+
 proc ::constcl::map {pr args} {
   check {procedure? $pr} {
     PROCEDURE expected\n([pn] [$pr show] ...)
@@ -4159,6 +4473,7 @@ Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomac
 
 ```
 reg for-each
+
 proc ::constcl::for-each {proc args} {
   check {procedure? $proc} {
     PROCEDURE expected\n([pn] [$proc show] ...)
@@ -4189,6 +4504,7 @@ proc ::constcl::for-each {proc args} {
 #### Port class
 ```
 catch { ::constcl::Port destroy }
+
 oo::class create ::constcl::Port {
   superclass ::constcl::NIL
   variable handle
@@ -4340,7 +4656,13 @@ interp alias {} ::constcl::MkOutputPort \
 ```
 
 
-__Input_Port__ variable __Output_port__ variable These two variables store globally the current configuration of the shared input and output ports. They are initially set to standard input and output respectively.
+__Input_Port__ variable
+
+
+__Output_port__ variable
+
+
+These two variables store globally the current configuration of the shared input and output ports. They are initially set to standard input and output respectively.
 
 ```
 set ::constcl::Input_port [
@@ -4355,6 +4677,7 @@ set ::constcl::Output_port [
 
 ```
 reg port?
+
 proc ::constcl::port? {val} {
   typeof? $val Port
 }
@@ -4368,6 +4691,7 @@ proc ::constcl::port? {val} {
 
 ```
 reg call-with-input-file
+
 proc ::constcl::call-with-input-file {filename proc} {
   set port [open-input-file $filename]
   set res [invoke $proc [list $port]]
@@ -4379,12 +4703,16 @@ proc ::constcl::call-with-input-file {filename proc} {
 #### call-with-output-file procedure
 
 
-`` call-with-output-file `` opens a file for output and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned. You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
+`` call-with-output-file `` opens a file for output and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
+
+
+You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
 
 <table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg call-with-output-file
+
 proc ::constcl::call-with-output-file {filename proc} {
   ::error "remove this line to use"
   set port [open-output-file $filename]
@@ -4403,6 +4731,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 
 ```
 reg input-port?
+
 proc ::constcl::input-port? {val} {
   typeof? $val InputPort
 }
@@ -4416,6 +4745,7 @@ proc ::constcl::input-port? {val} {
 
 ```
 reg output-port?
+
 proc ::constcl::output-port? {val} {
   typeof? $val OutputPort
 }
@@ -4429,6 +4759,7 @@ proc ::constcl::output-port? {val} {
 
 ```
 reg current-input-port
+
 proc ::constcl::current-input-port {} {
   return [$::constcl::Input_port copy]
 }
@@ -4442,6 +4773,7 @@ proc ::constcl::current-input-port {} {
 
 ```
 reg current-output-port
+
 proc ::constcl::current-output-port {} {
   return [$::constcl::Output_port copy]
 }
@@ -4455,6 +4787,7 @@ proc ::constcl::current-output-port {} {
 
 ```
 reg with-input-from-file
+
 proc ::constcl::with-input-from-file {filename thunk} {
   set newport [open-input-file $filename]
   if {[$newport handle] ne "#NIL"} {
@@ -4476,6 +4809,7 @@ proc ::constcl::with-input-from-file {filename thunk} {
 
 ```
 reg with-output-to-file
+
 proc ::constcl::with-output-to-file {filename thunk} {
   ::error "remove this line to use"
   set newport [open-output-file $filename]
@@ -4498,8 +4832,10 @@ proc ::constcl::with-output-to-file {filename thunk} {
 
 ```
 reg open-input-file
+
 proc cnof {} {return "could not open file"}
 proc fae {} {return "file already exists"}
+
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
@@ -4519,6 +4855,7 @@ proc ::constcl::open-input-file {filename} {
 
 ```
 reg open-output-file
+
 proc ::constcl::open-output-file {filename} {
   ::error "remove this line to use"
   if {[file exists $filename]} {
@@ -4541,6 +4878,7 @@ proc ::constcl::open-output-file {filename} {
 
 ```
 reg close-input-port
+
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
     error "don't close the standard input port"
@@ -4557,6 +4895,7 @@ proc ::constcl::close-input-port {port} {
 
 ```
 reg close-output-port
+
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
     error "don't close the standard output port"
@@ -4581,6 +4920,7 @@ proc ::constcl::close-output-port {port} {
 
 ```
 reg newline
+
 proc ::constcl::newline {args} {
   if {[llength $args]} {
     lassign $args port
@@ -4592,12 +4932,16 @@ proc ::constcl::newline {args} {
 ```
 
 
-__load__ `` load `` reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+__load__
+
+
+`` load `` reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
 <table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg load
+
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
   if {[$p handle] ne "#NIL"} {
@@ -4619,6 +4963,7 @@ List processing is another of Lisp's great strengths.
 #### Pair class
 ```
 catch { ::constcl::Pair destroy }
+
 oo::class create ::constcl::Pair {
   superclass ::constcl::NIL
   variable car cdr constant
@@ -4689,6 +5034,7 @@ interp alias {} ::constcl::MkPair \
 
 ```
 reg pair?
+
 proc ::constcl::pair? {val} {
   typeof? $val Pair
 }
@@ -4743,6 +5089,7 @@ Example:
 
 ```
 reg cons
+
 proc ::constcl::cons {car cdr} {
   MkPair $car $cdr
 }
@@ -4763,6 +5110,7 @@ Example:
 
 ```
 reg car
+
 proc ::constcl::car {pair} {
   $pair car
 }
@@ -4783,13 +5131,17 @@ Example:
 
 ```
 reg cdr
+
 proc ::constcl::cdr {pair} {
   $pair cdr
 }
 ```
 
 
-__caar__ to __cddddr__ `` car `` and `` cdr `` can be combined to form 28 composite access operations.
+__caar__ to __cddddr__
+
+
+`` car `` and `` cdr `` can be combined to form 28 composite access operations.
 
 ```
 foreach ads {
@@ -4823,6 +5175,7 @@ foreach ads {
   dddd
 } {
     reg c${ads}r
+
     proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
@@ -4833,6 +5186,7 @@ foreach ads {
         }
         return \$pair
     "
+
 }
 ```
 #### set-car! procedure
@@ -4852,6 +5206,7 @@ Example:
 
 ```
 reg set-car!
+
 proc ::constcl::set-car! {pair val} {
   $pair set-car! $val
 }
@@ -4873,6 +5228,7 @@ Example:
 
 ```
 reg set-cdr!
+
 proc ::constcl::set-cdr! {pair val} {
   $pair set-cdr! $val
 }
@@ -4886,6 +5242,7 @@ The `` list? `` predicate tests if a pair is part of a proper list, one that end
 
 ```
 reg list?
+
 proc ::constcl::list? {val} {
   set visited {}
   if {[T [null? $val]]} {
@@ -4899,7 +5256,10 @@ proc ::constcl::list? {val} {
 ```
 
 
-__listp__ procedure `` listp `` is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in `` #NIL ``, which means that it returns true.
+__listp__ procedure
+
+
+`` listp `` is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in `` #NIL ``, which means that it returns true.
 
 <table border=1><thead><tr><th colspan=2 align="left">listp (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4935,6 +5295,7 @@ Example:
 
 ```
 reg list
+
 proc ::constcl::list {args} {
   if {[llength $args] == 0} {
     return #NIL
@@ -4963,6 +5324,7 @@ Example:
 
 ```
 reg length
+
 proc ::constcl::length {pair} {
   check {list? $pair} {
     LIST expected\n([pn] lst)
@@ -4972,7 +5334,10 @@ proc ::constcl::length {pair} {
 ```
 
 
-__length-helper__ procedure `` length-helper `` is a helper procedure which measures a list recursively.
+__length-helper__ procedure
+
+
+`` length-helper `` is a helper procedure which measures a list recursively.
 
 <table border=1><thead><tr><th colspan=2 align="left">length-helper (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
 
@@ -5002,6 +5367,7 @@ Example:
 
 ```
 reg append
+
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
@@ -5015,7 +5381,10 @@ proc ::constcl::append {args} {
 ```
 
 
-__copy-list__ procedure `` copy-list `` joins together two lists by recursively consing items from the first list towards the second.
+__copy-list__ procedure
+
+
+`` copy-list `` joins together two lists by recursively consing items from the first list towards the second.
 
 <table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -5047,6 +5416,7 @@ Example:
 
 ```
 reg reverse
+
 proc ::constcl::reverse {vals} {
   list {*}[lreverse [splitlist $vals]]
 }
@@ -5068,6 +5438,7 @@ Example:
 
 ```
 reg list-tail
+
 proc ::constcl::list-tail {vals k} {
   if {[T [zero? $k]]} {
     return $vals
@@ -5093,6 +5464,7 @@ Example:
 
 ```
 reg list-ref
+
 proc ::constcl::list-ref {vals k} {
   car [list-tail $vals $k]
 }
@@ -5120,6 +5492,7 @@ Example:
 
 ```
 reg memq
+
 proc ::constcl::memq {val1 val2} {
   return [member-proc eq? $val1 $val2]
 }
@@ -5128,6 +5501,7 @@ proc ::constcl::memq {val1 val2} {
 
 ```
 reg memv
+
 proc ::constcl::memv {val1 val2} {
   return [member-proc eqv? $val1 $val2]
 }
@@ -5136,13 +5510,17 @@ proc ::constcl::memv {val1 val2} {
 
 ```
 reg member
+
 proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
 ```
 
 
-__member-proc__ procedure The `` member-proc `` helper procedure does the work for the `` memq ``, `` memv ``, and `` member `` procedures. It works by comparing against the `` car `` of the list, then recursively taking the `` cdr `` of the list.
+__member-proc__ procedure
+
+
+The `` member-proc `` helper procedure does the work for the `` memq ``, `` memv ``, and `` member `` procedures. It works by comparing against the `` car `` of the list, then recursively taking the `` cdr `` of the list.
 
 <table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
@@ -5176,7 +5554,10 @@ proc ::constcl::member-proc {epred val1 val2} {
 
 
 
-`` assq ``, `` assv ``, and `` assoc `` scan an association list and return the association pair with a given key, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or _alist_. Example:
+`` assq ``, `` assv ``, and `` assoc `` scan an association list and return the association pair with a given key, or `` #f `` if there is none. They use `` eq? ``, `` eqv? ``, and `` equal? ``, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or _alist_.
+
+
+Example:
 
 ```
 (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
@@ -5186,6 +5567,7 @@ proc ::constcl::member-proc {epred val1 val2} {
 
 ```
 reg assq
+
 proc ::constcl::assq {val1 val2} {
   return [assoc-proc eq? $val1 $val2]
 }
@@ -5194,6 +5576,7 @@ proc ::constcl::assq {val1 val2} {
 
 ```
 reg assv
+
 proc ::constcl::assv {val1 val2} {
   return [assoc-proc eqv? $val1 $val2]
 }
@@ -5202,13 +5585,17 @@ proc ::constcl::assv {val1 val2} {
 
 ```
 reg assoc
+
 proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
 ```
 
 
-__assoc-proc__ procedure `` assoc-proc `` is a helper procedure which does the work for `` assq ``, `` assv ``, and `` assoc ``.
+__assoc-proc__ procedure
+
+
+`` assoc-proc `` is a helper procedure which does the work for `` assq ``, `` assv ``, and `` assoc ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
@@ -5242,7 +5629,10 @@ Procedures for dealing with strings of characters.
 #### String class
 
 
-Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash. As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed with `` display ``.
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+
+
+As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed with `` display ``.
 
 ```
 oo::class create ::constcl::String {
@@ -5368,6 +5758,7 @@ interp alias {} ::constcl::MkString \
 
 ```
 reg string?
+
 proc ::constcl::string? {val} {
   typeof? $val String
 }
@@ -5391,6 +5782,7 @@ Example:
 
 ```
 reg make-string
+
 proc ::constcl::make-string {k args} {
   set i [$k numval]
   if {[llength $args] == 0} {
@@ -5418,6 +5810,7 @@ Example:
 
 ```
 reg string
+
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
@@ -5446,6 +5839,7 @@ Example:
 
 ```
 reg string-length
+
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
     STRING expected\n([pn] [$str show])
@@ -5469,6 +5863,7 @@ Example:
 
 ```
 reg string-ref
+
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -5500,6 +5895,7 @@ Example:
 
 ```
 reg string-set!
+
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] [$k show] \
@@ -5519,7 +5915,22 @@ proc ::constcl::string-set! {str k char} {
 ```
 
 
-__string=?__, __string-ci=?__ __string<?__, __string-ci<?__ __string>?__, __string-ci>?__ __string<=?__, __string-ci<=?__ __string>=?__, __string-ci>=?__ `` string=? ``, `` string<? ``, `` string>? ``, `` string<=? ``, `` string>=? `` and their case insensitive variants `` string-ci=? ``, `` string-ci<? ``, `` string-ci>? ``, `` string-ci<=? ``, `` string-ci>=? `` compare strings.
+__string=?__, __string-ci=?__
+
+
+__string<?__, __string-ci<?__
+
+
+__string>?__, __string-ci>?__
+
+
+__string<=?__, __string-ci<=?__
+
+
+__string>=?__, __string-ci>=?__
+
+
+`` string=? ``, `` string<? ``, `` string>? ``, `` string<=? ``, `` string>=? `` and their case insensitive variants `` string-ci=? ``, `` string-ci<? ``, `` string-ci>? ``, `` string-ci<=? ``, `` string-ci>=? `` compare strings.
 
 <table border=1><thead><tr><th colspan=2 align="left">string=?, string&lt;?, string&gt;? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5531,6 +5942,7 @@ __string=?__, __string-ci=?__ __string<?__, __string-ci<?__ __string>?__, __stri
 
 ```
 reg string=?
+
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5549,6 +5961,7 @@ proc ::constcl::string=? {str1 str2} {
 ```
 ```
 reg string-ci=?
+
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5568,6 +5981,7 @@ proc ::constcl::string-ci=? {str1 str2} {
 ```
 ```
 reg string<?
+
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5586,6 +6000,7 @@ proc ::constcl::string<? {str1 str2} {
 ```
 ```
 reg string-ci<?
+
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5605,6 +6020,7 @@ proc ::constcl::string-ci<? {str1 str2} {
 ```
 ```
 reg string>?
+
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5623,6 +6039,7 @@ proc ::constcl::string>? {str1 str2} {
 ```
 ```
 reg string-ci>?
+
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5642,6 +6059,7 @@ proc ::constcl::string-ci>? {str1 str2} {
 ```
 ```
 reg string<=?
+
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5660,6 +6078,7 @@ proc ::constcl::string<=? {str1 str2} {
 ```
 ```
 reg string-ci<=?
+
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5679,6 +6098,7 @@ proc ::constcl::string-ci<=? {str1 str2} {
 ```
 ```
 reg string>=?
+
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5697,6 +6117,7 @@ proc ::constcl::string>=? {str1 str2} {
 ```
 ```
 reg string-ci>=?
+
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -5730,6 +6151,7 @@ Example:
 
 ```
 reg substring
+
 proc ::constcl::substring {str start end} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -5762,6 +6184,7 @@ Example:
 
 ```
 reg string-append
+
 proc ::constcl::string-append {args} {
     MkString [::append --> {*}[lmap arg $args {
       $arg value
@@ -5784,6 +6207,7 @@ Example:
 
 ```
 reg string->list
+
 proc ::constcl::string->list {str} {
   list {*}[$str store]
 }
@@ -5804,6 +6228,7 @@ Example:
 
 ```
 reg list->string
+
 proc ::constcl::list->string {list} {
   MkString [::append --> {*}[
     lmap c [splitlist $list] {$c char}]]
@@ -5828,6 +6253,7 @@ Example:
 
 ```
 reg string-copy
+
 proc ::constcl::string-copy {str} {
   check {string? $str} {
     STRING expected\n([pn] [$str show])
@@ -5853,6 +6279,7 @@ Example:
 
 ```
 reg string-fill!
+
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -5939,6 +6366,7 @@ interp alias {} S {} ::constcl::MkSymbol
 
 ```
 reg symbol? ::constcl::symbol?
+
 proc ::constcl::symbol? {val} {
   typeof? $val Symbol
 }
@@ -5946,7 +6374,10 @@ proc ::constcl::symbol? {val} {
 #### symbol->string procedure
 
 
-`` symbol->string `` yields a string consisting of the symbol name, usually lower-cased. Example:
+`` symbol->string `` yields a string consisting of the symbol name, usually lower-cased.
+
+
+Example:
 
 ```
 (let ((sym 'Foobar))
@@ -5956,6 +6387,7 @@ proc ::constcl::symbol? {val} {
 
 ```
 reg symbol->string ::constcl::symbol->string
+
 proc ::constcl::symbol->string {sym} {
   check {symbol? $sym} {
     SYMBOL expected\n([pn] [$sym show])
@@ -5973,7 +6405,10 @@ proc ::constcl::symbol->string {sym} {
 #### string->symbol procedure
 
 
-`` string->symbol `` creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased. Example:
+`` string->symbol `` creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased.
+
+
+Example:
 
 ```
 (define sym (let ((str "Foobar"))
@@ -5985,6 +6420,7 @@ sym                                    =>  Foobar
 
 ```
 reg string->symbol ::constcl::string->symbol
+
 proc ::constcl::string->symbol {str} {
   check {string? $str} {
     STRING expected\n([pn] [$obj show])
@@ -6114,6 +6550,7 @@ interp alias {} ::constcl::MkVector \
 
 ```
 reg vector? ::constcl::vector?
+
 proc ::constcl::vector? {val} {
   typeof? $val Vector
 }
@@ -6137,6 +6574,7 @@ Example:
 
 ```
 reg make-vector ::constcl::make-vector
+
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
     set val #NIL
@@ -6162,6 +6600,7 @@ Example:
 
 ```
 reg vector ::constcl::vector
+
 proc ::constcl::vector {args} {
   MkVector $args
 }
@@ -6182,6 +6621,7 @@ Example:
 
 ```
 reg vector-length
+
 proc ::constcl::vector-length {vec} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show])
@@ -6199,12 +6639,14 @@ proc ::constcl::vector-length {vec} {
 Example:
 
 ```
-(let ((vec #(a "foo" 99)) (k 1))  (vector-ref vec k))          =>  "foo"
+(let ((vec #(a "foo" 99)) (k 1))
+  (vector-ref vec k))              =>  "foo"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg vector-ref ::constcl::vector-ref
+
 proc ::constcl::vector-ref {vec k} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] [$k show])
@@ -6218,7 +6660,7 @@ proc ::constcl::vector-ref {vec k} {
 #### vector-set! procedure
 
 
-`` vector-set! ``, for a non-constant vector, sets the element at index _k_ to _val_.
+`` vector-set! `` sets the element at index _k_ to _val_ on a vector that isn't constant.
 
 
 
@@ -6238,6 +6680,7 @@ Example:
 
 ```
 reg vector-set! ::constcl::vector-set!
+
 proc ::constcl::vector-set! {vec k val} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] [$k show])
@@ -6264,6 +6707,7 @@ Example:
 
 ```
 reg vector->list ::constcl::vector->list
+
 proc ::constcl::vector->list {vec} {
   list {*}[$vec value]
 }
@@ -6284,6 +6728,7 @@ Example:
 
 ```
 reg list->vector ::constcl::list->vector
+
 proc ::constcl::list->vector {list} {
   vector {*}[splitlist $list]
 }
@@ -6306,6 +6751,7 @@ vec                               =>  #(x x x)
 
 ```
 reg vector-fill! ::constcl::vector-fill!
+
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] \
@@ -6317,7 +6763,19 @@ proc ::constcl::vector-fill! {vec fill} {
 ## Identifier validation
 
 
-__idcheckinit__ __idchecksubs__ __idcheck__ __varcheck__ Some routines for checking if a string is a valid identifier. `` idcheckinit `` checks the first character, `` idchecksubs `` checks the rest. `` idcheck `` calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which `` varcheck `` checks, for a set of keywords given in the standard.
+__idcheckinit__
+
+
+__idchecksubs__
+
+
+__idcheck__
+
+
+__varcheck__
+
+
+Some routines for checking if a string is a valid identifier. `` idcheckinit `` checks the first character, `` idchecksubs `` checks the rest. `` idcheck `` calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which `` varcheck `` checks, for a set of keywords given in the standard.
 
 ```
 proc ::constcl::idcheckinit {init} {
@@ -6366,7 +6824,10 @@ proc ::constcl::varcheck {sym} {
 ## S9fES
 
 
-I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful. I've already mixed this up with my own stuff.
+I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
+
+
+I've already mixed this up with my own stuff.
 
 ```
 proc ::constcl::new-atom {pa pd} {
@@ -6400,11 +6861,15 @@ proc ::constcl::read_c_ci {} {
 ## Environment class and objects
 
 
-The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in. The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+
+
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
 
 #### Environment class
 ```
 catch { ::constcl::Environment destroy }
+
 oo::class create ::constcl::Environment {
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
@@ -6462,29 +6927,63 @@ oo::class create ::constcl::Environment {
   method set {sym val} {
     dict set bindings $sym $val
   }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
 }
 ```
 ### MIT Scheme environment library
 
 
-Definition my MIT, implementation by me.
+Definition by MIT, implementation by me.
 
-#### Environment procedures
+#### environment? procedure
+
+
+Recognizes an environment by type.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
 ```
-proc environment? {object} {
-  #Returns #t if object is an environment; otherwise returns #f.
-  typeof? $object Environment
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
 }
-proc environment-has-parent? {env} {
-  # Returns #t if environment has a parent environment; otherwise returns #f.
+```
+#### environment-has-parent? procedure
+
+
+Returns `` #t `` if _env_ has a parent environment; otherwise returns `` #f ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-has-parent? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg environment-has-parent?
+
+proc ::constcl::environment-has-parent? {env} {
   if {[$env parent] ne "#NIL"} {
     return #t
   } else {
     return #f
   }
 }
-proc environment-parent {env} {
-  # Returns the parent environment of environment. It is an error if environment has no parent.
+```
+#### environment-parent procedure
+
+
+Returns the parent environment of _env_. It is an error if _env_ has no parent.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-parent (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+reg environment-parent
+
+proc ::constcl::environment-parent {env} {
   set parent [$env parent]
   if {$parent ne "#NIL"} {
     return $parent
@@ -6492,16 +6991,47 @@ proc environment-parent {env} {
     error "[$env show] has no parent"
   }
 }
-proc environment-bound-names {env} {
-  # Returns a newly allocated list of the names (symbols) that are bound by environment. This does not include the names that are bound by the parent environment of environment.
+```
+#### environment-bound-names procedure
+
+
+Returns a newly allocated list of the names (symbols) that are bound by _env_. This does not include the names that are bound by the parent environment of _env_.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-bound-names (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of symbols</td></tr></table>
+
+```
+reg environment-bound-names
+
+proc ::constcl::environment-bound-names {env} {
   list {*}[$env names]
 }
-proc environment-bindings {env} {
-  # Returns a newly allocated list of the bindings of environment; does not include the bindings of the parent environment. Each element of this list takes one of two forms: (name) indicates that name is bound but unassigned, while (name object) indicates that name is bound, and its value is object.
-  list {*}[$env bindings]
+```
+#### environment-bindings procedure
+
+
+Returns a newly allocated list of the bindings of _env_; does not include the bindings of the parent environment. Each element of this list takes one of two forms: `` (name) `` indicates that name is bound but unassigned, while `` (name . object) `` indicates that _name_ is bound, and its value is _object_.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-bindings (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+
+```
+reg environment-bindings
+
+proc ::constcl::environment-bindings {env} {
+  pairlis-tcl [list {*}[$env names]] [list {*}[$env values]]
 }
-proc environment-bound? {env sym} {
-  # Returns #t if symbol is bound in environment or one of its ancestor environments; otherwise returns #f.
+```
+#### environment-bound?
+
+
+Returns `` #t `` if _sym_ is bound in _env_ or one of its ancestor environments; otherwise returns `` #f ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-bound? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg environment-bound?
+
+proc ::constcl::environment-bound? {env sym} {
+  # X
   set e [$env find $sym]
   if {$e eq "::constcl::null_env"} {
     return #f
@@ -6509,20 +7039,146 @@ proc environment-bound? {env sym} {
     return #t
   }
 }
-proc environment-lookup {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns the value to which it is bound.
-  if {[T [environment-bound? $sym]]} {
+```
+#### environment-lookup procedure
+
+
+_Sym_ must be bound in _env_ or one of its ancestor environments. Returns the value to which it is bound.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-lookup (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+```
+reg environment-lookup
+
+proc ::constcl::environment-lookup {env sym} {
+  if {[T [environment-bound? $env $sym]]} {
     lookup $sym [$env find $sym]
   }
 }
-proc environment-assignable? {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns #t if the binding may be modified by side effect.
+```
+#### environment-assignable? procedure
+
+
+Symbol must be bound in environment or one of its ancestor environments. Returns `` #t `` if the binding may be modified by side effect.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-assignable? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg environment-assignable?
+
+proc ::constcl::environment-assignable? {env sym} {
+  if {[environment-bound? $env $sym]} {
+    # all bound names are assignable in ConsTcl
+    return #t
+  }
 }
-proc environment-assign! {env sym obj} {
-  # Symbol must be bound in environment or one of its ancestor environments, and must be assignable. Modifies the binding to have object as its value, and returns an unspecified result.
+```
+#### environment-assign! procedure
+
+
+_Sym_ must be bound in _env_ or one of its ancestor environments, and must be assignable. Modifies the binding to have _obj_ as its value, and returns an unspecified result.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment-assign! (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td>obj</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+reg environment-assign!
+
+proc ::constcl::environment-assign! {env sym obj} {
+  /set! $sym $obj $env  
 }
-proc environment-eval {expr env} {
-  # Evaluates expression, a list-structure representation (sometimes called s-expression representation) of a Scheme expression, in environment. You rarely need eval in ordinary programs; it is useful mostly for evaluating expressions that have been created "on the fly" by a program. eval is relatively expensive because it must convert expression to an internal form before it is executed.
+```
+#### system-global-environment variable
+
+
+The variable `` system-global-environment `` is bound to the environment that's the parent of the `` user-initial-environment ``. Primitives and system procedures are bound (and sometimes closed) in this environment.
+
+#### user-initial-environment variable
+
+
+The variable `` user-initial-environment `` is bound to the default environment in which typed expressions are evaluated by the top-level REP loop.
+
+#### nearest-repl/environment procedure
+
+
+Returns the current REP loop environment (i.e. the current environment of the closest enclosing REP loop). When Scheme first starts up, this is the same as `` user-initial-environment ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">nearest-repl/environment (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+proc ::constcl::nearest-repl/environment {} {
+  # TODO
+}
+```
+#### ge procedure
+
+
+Changes the current REP loop environment to `` env ``. `` env `` can be either an environment or a procedure object. If it's a procedure, the environment in which that procedure was closed is the new environment.
+
+<table border=1><thead><tr><th colspan=2 align="left">ge (public)</th></tr></thead><tr><td>env</td><td>an environment or procedure object</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::ge {env} {
+  # TODO
+}
+```
+#### make-environment special form
+
+
+Produces a new environment that is a child of the environment in which it is executed, evaluates the expressions sequentially in the new environment, and returns the new environment. Note that
+
+
+``(make-environment expression ...)``
+
+
+
+is equivalent to:
+
+```
+(let ()
+  expression ...
+  (the-environment))
+```
+<table border=1><thead><tr><th colspan=2 align="left">make-environment (public)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+reg make-environment
+
+proc make-environment {exps} {
+  set env [
+    Environment new #NIL {} [the-environment]]
+  set body $exps
+  /define [S body] $body $env
+  set qq "`(let ()
+             ,@body
+             (the-environment))"
+  set expr [expand-quasiquote [parse $qq] $env]
+  return [eval $expr $env]
+}
+```
+#### the-environment special form
+
+
+Returns the current environment.
+
+<table border=1><thead><tr><th colspan=2 align="left">the-environment (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+proc the-environment {} {
+  # TODO
+}
+```
+#### interpreter-environment? procedure
+
+
+Returns `` #t `` if _val_ is an interpreter environment; otherwise returns `` #f ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">interpreter-environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+reg interpreter-environment
+
+proc interpreter-environment {val} {
+  # TODO
 }
 ```
 ### Lexical scoping
@@ -6536,12 +7192,21 @@ ConsTcl> (circle-area 10)
 314.1592653589793
 ```
 
+
+During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a [local variable](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of [lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope).
+
+
+In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to):
+
 ![#](images/env1.png)
+
+During the call. Note how the global `` r `` is shadowed by the local one, and how the local environment links to the global one to find `` * `` and `` pi ``.
+
 ![#](images/env2.png)
+
+After the call, we are back to the first state again.
+
 ![#](images/env1.png)
-
-During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a [local variable](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of [lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope). In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to): During the call. Note how the global `` r `` is shadowed by the local one, and how the local environment links to the global one to find `` * `` and `` pi ``. After the call, we are back to the first state again.
-
 ## Initialization
 
 
@@ -6549,7 +7214,9 @@ Initialize the memory space for vector contents.
 
 ```
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
+
 set ::constcl::vectorAssign 0
+
 proc ::constcl::vsAlloc {num} {
   # TODO calculate free space
   set va $::constcl::vectorAssign
@@ -6564,6 +7231,7 @@ Initialize the symbol table and gensym number.
 ```
 unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
+
 set ::constcl::gensymnum 0
 ```
 
@@ -6572,15 +7240,25 @@ Pre-make a set of constants (e.g. #NIL, #t, and #f) and give them aliases for us
 
 ```
 interp alias {} #NIL {} [::constcl::NIL new]
+
 interp alias {} #t {} [::constcl::MkBoolean #t]
+
 interp alias {} #f {} [::constcl::MkBoolean #f]
+
 interp alias {} #-1 {} [N -1]
+
 interp alias {} #0 {} [N 0]
+
 interp alias {} #1 {} [N 1]
+
 interp alias {} #+ {} [::constcl::MkSymbol +]
+
 interp alias {} #- {} [::constcl::MkSymbol -]
+
 interp alias {} #UNS {} [::constcl::Unspecified new]
+
 interp alias {} #UND {} [::constcl::Undefined new]
+
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 ```
 
@@ -6600,11 +7278,15 @@ reg nil #NIL
 ### Environment startup
 
 
-On startup, two `` Environment `` objects called `` null_env `` (the null environment, not the same as `` null-environment `` in Scheme) and `` global_env `` (the global environment) are created. Make `` null_env `` empty and judgemental: this is where searches for unbound symbols end up.
+On startup, two `` Environment `` objects called `` null_env `` (the null environment, not the same as `` null-environment `` in Scheme) and `` global_env `` (the global environment) are created.
+
+
+Make `` null_env `` empty and judgemental: this is where searches for unbound symbols end up.
 
 ```
 ::constcl::Environment create \
   ::constcl::null_env #NIL {}
+
 oo::objdefine ::constcl::null_env {
   method find {sym} {
     self
@@ -6649,7 +7331,10 @@ The REPL (read-eval-print loop) is a loop that repeatedly _reads_ a Scheme sourc
 
 
 
-__input__ `` input `` is modelled after the Python 3 function. It displays a prompt and reads a string.
+__input__
+
+
+`` input `` is modelled after the Python 3 function. It displays a prompt and reads a string.
 
 ```
 proc ::constcl::input {prompt} {
@@ -6673,7 +7358,10 @@ proc ::constcl::input {prompt} {
 ```
 
 
-__repl__ `` repl `` puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+__repl__
+
+
+`` repl `` puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
 
 ```
 proc ::repl {{prompt "ConsTcl> "}} {

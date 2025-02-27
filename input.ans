@@ -12,7 +12,7 @@ just read in the text of code and data: they also E{parse} the input into an
 E{internal representation} that the evaluator can use.
 MD)
 
-H3 The parsing process
+h3 The parsing process
 
 MD(
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
@@ -88,7 +88,7 @@ MD)
 
 IF /images/intreplist.png The internal structure of the expression
 
-H3 Input procedures
+h3 Input procedures
 
 H5 Ports: an aside
 
@@ -96,12 +96,11 @@ MD(
 Ports are an abstraction of the input or output mechanism. An input port can be
 connected to standard input (the keyboardF{which doesn't work in a Windows
   windowing environment, i.e. wish or tkcon. repl does work, though.}) or a file
-  opened for input or (a ConsTcl extension) a string input buffer where the
-  complete available input is laid out before reading starts. Regardless of what
-  kind of input port it is, one can read characters from it until it runs out
-  and signals end-of-file.  Likewise, an output port, regardless of whether it's
-  the standard output--the screen--or a file opened for output, will receive
-  characters sent to it.
+  opened for input or a string input buffer where the complete available input
+  is laid out before reading starts. Regardless of what kind of input port it
+  is, one can read characters from it until it runs out and signals end-of-file.
+  Likewise, an output port, regardless of whether it's the standard output--the
+  screen--or a file opened for output, will receive characters sent to it.
 MD)
 
 H4 parse procedure
@@ -196,7 +195,7 @@ TT(
 # 2
 TT)
 
-H3 Input helper procedures
+h3 Input helper procedures
 
 H4 make-constant procedure
 
@@ -425,7 +424,7 @@ TT(
 # 10
 TT)
 
-H3 Reader procedures
+h3 Reader procedures
 
 MD(
 Reader procedures specialize in reading a certain kind of input, except for

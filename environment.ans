@@ -73,36 +73,78 @@ oo::class create ::constcl::Environment {
   method set {sym val} {
     dict set bindings $sym $val
   }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
 }
 CB)
 
 H3 MIT Scheme environment library
 
 MD(
-Definition my MIT, implementation by me.
+Definition by MIT, implementation by me.
 MD)
 
-H4 Environment procedures
+H4 environment? procedure
 
-H9
+MD(
+Recognizes an environment by type.
+MD)
+
+PR(
+reg environment?
+
+environment? (public);val val -> bool
+PR)
 
 CB(
-proc environment? {object} {
-  #Returns #t if object is an environment; otherwise returns #f.
-  typeof? $object Environment
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
 }
+CB)
 
-proc environment-has-parent? {env} {
-  # Returns #t if environment has a parent environment; otherwise returns #f.
+H4 environment-has-parent? procedure
+MD(
+Returns K{#t} if E{env} has a parent environment; otherwise returns K{#f}.
+MD)
+
+PR(
+environment-has-parent? (public); env env -> bool
+PR)
+
+CB(
+reg environment-has-parent?
+
+proc ::constcl::environment-has-parent? {env} {
   if {[$env parent] ne "#NIL"} {
     return #t
   } else {
     return #f
   }
 }
+CB)
 
-proc environment-parent {env} {
-  # Returns the parent environment of environment. It is an error if environment has no parent.
+H4 environment-parent procedure
+
+MD(
+Returns the parent environment of E{env}. It is an error if E{env} has
+no parent.
+MD)
+
+PR(
+environment-parent (public);env env -> env
+PR)
+
+CB(
+reg environment-parent
+
+proc ::constcl::environment-parent {env} {
   set parent [$env parent]
   if {$parent ne "#NIL"} {
     return $parent
@@ -110,19 +152,65 @@ proc environment-parent {env} {
     error "[$env show] has no parent"
   }
 }
+CB)
 
-proc environment-bound-names {env} {
-  # Returns a newly allocated list of the names (symbols) that are bound by environment. This does not include the names that are bound by the parent environment of environment.
+H4 environment-bound-names procedure
+
+MD(
+Returns a newly allocated list of the names (symbols) that are bound by
+E{env}. This does not include the names that are bound by the parent
+environment of E{env}.
+MD)
+
+PR(
+environment-bound-names (public);env env -> lsyms
+PR)
+
+CB(
+reg environment-bound-names
+
+proc ::constcl::environment-bound-names {env} {
   list {*}[$env names]
 }
+CB)
 
-proc environment-bindings {env} {
-  # Returns a newly allocated list of the bindings of environment; does not include the bindings of the parent environment. Each element of this list takes one of two forms: (name) indicates that name is bound but unassigned, while (name object) indicates that name is bound, and its value is object.
-  list {*}[$env bindings]
+H4 environment-bindings procedure
+
+MD(
+Returns a newly allocated list of the bindings of E{env}; does not
+include the bindings of the parent environment. Each element of this list takes
+one of two forms: K{(name)} indicates that name is bound but unassigned, while
+K{(name . object)} indicates that E{name} is bound, and its value is E{object}.
+MD)
+
+PR(
+environment-bindings (public);env env -> lasss
+PR)
+
+CB(
+reg environment-bindings
+
+proc ::constcl::environment-bindings {env} {
+  pairlis-tcl [list {*}[$env names]] [list {*}[$env values]]
 }
+CB)
 
-proc environment-bound? {env sym} {
-  # Returns #t if symbol is bound in environment or one of its ancestor environments; otherwise returns #f.
+H4 environment-bound?
+
+MD(
+Returns K{#t} if E{sym} is bound in E{env} or one of its ancestor
+environments; otherwise returns K{#f}.
+MD)
+
+PR(
+environment-bound? (public);env env sym sym -> bool
+PR)
+
+CB(
+reg environment-bound?
+
+proc ::constcl::environment-bound? {env sym} {
+  # X
   set e [$env find $sym]
   if {$e eq "::constcl::null_env"} {
     return #f
@@ -130,24 +218,193 @@ proc environment-bound? {env sym} {
     return #t
   }
 }
+CB)
 
-proc environment-lookup {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns the value to which it is bound.
-  if {[T [environment-bound? $sym]]} {
+H4 environment-lookup procedure
+
+MD(
+E{Sym} must be bound in E{env} or one of its ancestor environments. Returns
+the value to which it is bound.
+MD)
+
+PR(
+environment-lookup (public);env env sym sym -> val
+PR)
+
+CB(
+reg environment-lookup
+
+proc ::constcl::environment-lookup {env sym} {
+  if {[T [environment-bound? $env $sym]]} {
     lookup $sym [$env find $sym]
   }
 }
+CB)
 
-proc environment-assignable? {env sym} {
-  # Symbol must be bound in environment or one of its ancestor environments. Returns #t if the binding may be modified by side effect.
+H4 environment-assignable? procedure
+
+MD(
+Symbol must be bound in environment or one of its ancestor environments. Returns
+K{#t} if the binding may be modified by side effect.
+MD)
+
+PR(
+environment-assignable? (public);env env sym sym -> bool
+PR)
+
+CB(
+reg environment-assignable?
+
+proc ::constcl::environment-assignable? {env sym} {
+  if {[environment-bound? $env $sym]} {
+    # all bound names are assignable in ConsTcl
+    return #t
+  }
 }
+CB)
 
-proc environment-assign! {env sym obj} {
-  # Symbol must be bound in environment or one of its ancestor environments, and must be assignable. Modifies the binding to have object as its value, and returns an unspecified result.
+H4 environment-assign! procedure
+
+MD(
+E{Sym} must be bound in E{env} or one of its ancestor environments, and
+must be assignable. Modifies the binding to have E{obj} as its value, and
+returns an unspecified result.
+MD)
+
+PR(
+environment-assign! (public);env env sym sym obj val -> none
+PR)
+
+CB(
+reg environment-assign!
+
+proc ::constcl::environment-assign! {env sym obj} {
+  /set! $sym $obj $env  
 }
+CB)
 
-proc environment-eval {expr env} {
-  # Evaluates expression, a list-structure representation (sometimes called s-expression representation) of a Scheme expression, in environment. You rarely need eval in ordinary programs; it is useful mostly for evaluating expressions that have been created "on the fly" by a program. eval is relatively expensive because it must convert expression to an internal form before it is executed.
+H4 system-global-environment variable
+
+MD(
+The variable K{system-global-environment} is bound to the environment that's the
+parent of the K{user-initial-environment}. Primitives and system procedures are
+bound (and sometimes closed) in this environment.
+MD)
+
+H4 user-initial-environment variable
+
+MD(
+The variable K{user-initial-environment} is bound to the default environment in
+which typed expressions are evaluated by the top-level REP loop.
+MD)
+
+H4 nearest-repl/environment procedure
+
+MD(
+Returns the current REP loop environment (i.e. the current environment of the
+closest enclosing REP loop). When Scheme first starts up, this is the same as
+K{user-initial-environment}.
+MD)
+
+PR(
+nearest-repl/environment (public);-> env
+PR)
+
+CB(
+proc ::constcl::nearest-repl/environment {} {
+  # TODO
+}
+CB)
+
+H4 ge procedure
+
+MD(
+Changes the current REP loop environment to K{env}. K{env} can be
+either an environment or a procedure object. If it's a procedure, the
+environment in which that procedure was closed is the new environment.
+MD)
+
+PR(
+ge (public);env envproc -> none
+PR)
+
+CB(
+proc ::constcl::ge {env} {
+  # TODO
+}
+CB)
+
+H4 make-environment special form
+
+MD(
+Produces a new environment that is a child of the environment in which it is
+executed, evaluates the expressions sequentially in the new environment, and
+returns the new environment. Note that
+MD)
+
+KB (make-environment expression ...)
+
+MD(
+is equivalent to:
+MD)
+
+VB(
+(let ()
+  expression ...
+  (the-environment))
+VB)
+
+PR(
+make-environment (public);exps lexprs -> env
+PR)
+
+CB(
+reg make-environment
+
+proc make-environment {exps} {
+  set env [
+    Environment new #NIL {} [the-environment]]
+  set body $exps
+  /define [S body] $body $env
+  set qq "`(let ()
+             ,@body
+             (the-environment))"
+  set expr [expand-quasiquote [parse $qq] $env]
+  return [eval $expr $env]
+}
+CB)
+
+H4 the-environment special form
+
+MD(
+Returns the current environment.
+MD)
+
+PR(
+the-environment (public);-> env
+PR)
+
+CB(
+proc the-environment {} {
+  # TODO
+}
+CB)
+
+H4 interpreter-environment? procedure
+
+MD(
+Returns K{#t} if E{val} is an interpreter environment; otherwise returns K{#f}.
+MD)
+
+PR(
+interpreter-environment? (public);val val -> bool
+PR)
+
+CB(
+reg interpreter-environment
+
+proc interpreter-environment {val} {
+  # TODO
 }
 CB)
 

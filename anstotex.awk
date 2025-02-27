@@ -65,6 +65,14 @@ $0 ~ modeline { next; }
     next
 }
 
+/^h3 / {
+    sub(/\n$/, "", $0)
+    printf "\\section{%s}\n", substr($0, 4)
+    printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
+    next
+}
+
 /^H4 / {
     sub(/\n$/, "", $0)
     heading = substr($0, 4)
@@ -77,11 +85,31 @@ $0 ~ modeline { next; }
     next
 }
 
+/^h4 / {
+    sub(/\n$/, "", $0)
+    heading = substr($0, 4)
+    gsub(/"!/, "!", heading)
+    gsub(/"@/, "@", heading)
+    gsub(/"\|/, "|", heading)
+    printf "\\subsection{%s}\n", heading
+    printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
+    next
+}
+
 /^H5 / {
     sub(/\n$/, "", $0)
     printf "\\subsubsection{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
     printf "\\index{%s}\n", substr($0, 4)
+    next
+}
+
+/^h5 / {
+    sub(/\n$/, "", $0)
+    printf "\\subsubsection{%s}\n", substr($0, 4)
+    printf "\\label{%s}\n", makelabel(substr($0, 4))
+    printf "\\index{%s}\n", tolower(substr($0, 4))
     next
 }
 
@@ -92,7 +120,7 @@ $0 ~ modeline { next; }
     next
 }
 
-$1 == H9 { print "\\section{Unfinished code in file " FILENAME " line " (FNR+2) "}" ; next }
+$1 == "H9" { print "\\section{Unfinished code in file " FILENAME " line " (FNR+2) "}" ; next }
 
 $1 == "CB(" { in_code_block = 1 ; print "\\begin{lstlisting}" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "\\end{lstlisting}" ; next }
@@ -100,7 +128,7 @@ in_code_block && /./  { print ; next }
 in_code_block && /^$/ { print " " ; next }
 
 
-$1 == "IX" { printf("\\index{%s}\n", $2) ; next }
+$1 == "IX" { printf("\\index{%s}\n", substr($0, 4)) ; next }
 $1 == "IG" { printf("\\includegraphics{%s}\n", substr($2, 2)) ; next }
 $1 == "IF" {
     for (i=3; i<=NF; i++) { caption = caption " " $i }

@@ -1,5 +1,5 @@
 
-H2 Initial declarations
+h2 Initial declarations
 
 MD(
 First, I need to create the namespace that will be used for most identifiers:
@@ -9,7 +9,7 @@ CB(
 namespace eval ::constcl {}
 CB)
 
-H3 Utility commands
+h3 Utility commands
 
 MD(
 Next, some procedures that make my life as developer somewhat easier.
@@ -47,7 +47,7 @@ proc ::reg {key args} {
 }
 CB)
 
-H5 Procedures, functions, and commands: an aside
+h5 Procedures, functions, and commands: an aside
 
 MD(
 I use all of these terms for the subroutines in ConsTcl. I try to stick to
@@ -69,13 +69,13 @@ H4 atom? procedure
 
 MD(
 THis one isn't just for my convenience: it's a standard procedure in Scheme.
-There are two kinds of data in Lisp: listsI{list} and atomsI{atom}. Lists are
+There are two kinds of data in Lisp: listsI{lists} and atomsI{atoms}. Lists are
 collections of lists and atoms. Atoms are instances of types such as booleans,
 characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
 an atom by checking for membership in any one of the atomic types. It returns
 K{#t} (truth) if it is an atom, and K{#f} (falsehood) if not.
 
-H5 Predicates: an aside
+h5 Predicates: an aside
 
 By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
 (procedures that return either K{#t} or K{#f}) have '?' at the end of their
@@ -157,6 +157,28 @@ proc assert {expr} {
   if {![uplevel [list expr $expr]]} {
     error "Failed assertion [
       uplevel [list subst $expr]]"
+  }
+}
+CB)
+
+H4 pairlis-tcl procedure
+
+MD(
+A Tcl version of the procedure in the Scheme base.
+MD)
+
+PR(
+pairlis-tcl (internal);lvals lvals -> lasss
+PR)
+
+CB(
+proc pairlis-tcl {a b} {
+  if {[T [null? $a]]} {
+    parse {()}
+  } else {
+    cons \
+      [cons [car $a] [car $b]] \
+      [pairlis-tcl [cdr $a] [cdr $b]]
   }
 }
 CB)
@@ -573,7 +595,7 @@ proc ::pxw {str} {
 }
 CB)
 
-H3 Some small classes
+h3 Some small classes
 
 H4 Dot class
 

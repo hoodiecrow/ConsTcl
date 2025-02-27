@@ -8,7 +8,7 @@ their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
 normal form (can't be reduced further) and the former is not.
 MD)
 
-H3 The evaluator
+h3 The evaluator
 
 MD(
 B{eval} procedure
@@ -97,7 +97,7 @@ proc ::constcl::eval \
 }
 CB)
 
-H3 Syntactic forms
+h3 Syntactic forms
 
 MD(
 There are nine diffent forms or classes of expressions in Lisp:
@@ -120,7 +120,7 @@ process to evaluate them. The nine forms will be described in the following
 sections.
 MD)
 
-H4 Variable reference
+h4 Variable reference
 
 MD(
 EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to 10)
@@ -156,7 +156,7 @@ TT(
 } -returnCodes error -result "Unbound variable: k"
 TT)
 
-H4 Constant literal
+h4 Constant literal
 
 MD(
 EM Example: K{99} ==> 99 (a number evaluates to itself)
@@ -172,7 +172,7 @@ TT(
 } -output "99\n"
 TT)
 
-H4 Quotation
+h4 Quotation
 
 MD(
 EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself, like a constant)
@@ -199,7 +199,7 @@ TT(
 } -returnCodes error -result "usage error\n(quote datum) not (quote foo bar)"
 TT)
 
-H4 Conditional
+h4 Conditional
 
 MD(
 EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} ==> 6
@@ -255,7 +255,7 @@ TT(
 } -output ""
 TT)
 
-H4 Sequence
+h4 Sequence
 
 MD(
 EM Example: K{(begin (define r 10) (* r r))} ==> 100
@@ -296,7 +296,7 @@ TT(
 } -output "ab"
 TT)
 
-H4 Definition
+h4 Definition
 
 MD(
 EM Example: K{(define r 10)} ==> ... (a definition doesn't evaluate to anything)
@@ -339,14 +339,14 @@ TT(
 } -returnCodes error -result "Identifier expected (+foo)"
 TT)
 
-H4 Assignment
+h4 Assignment
 
 MD(
 EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to assign to it)
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name `variable', something that can vary). The
-process is called assignmentI{assignment}. The K{/set!} helper does assignment:
+process is called assignment. The K{/set!} helper does assignment:
 it modifies an existing variable that is bound somewhere in the environment
 chain. It finds the variable's environment and updates the binding. It returns
 the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
@@ -376,7 +376,7 @@ TT(
 } -output "20\n20\n"
 TT)
 
-H4 Procedure definition
+h4 Procedure definition
 
 MD(
 EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different object each time)
@@ -446,7 +446,7 @@ TT(
 } -output "400\n"
 TT)
 
-H4 Procedure call
+h4 Procedure call
 
 MD(
 EM Example: K{(+ 1 6)} ==> 7

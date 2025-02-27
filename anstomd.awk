@@ -47,10 +47,10 @@ function html_textify(str) {
 # skip any modeline
 $0 ~ modeline { next; }
 
-/^H1 / { printf "# %s\n", substr($0, 4) ; next }
-/^H2 / { printf "## %s\n", substr($0, 4) ; next }
-/^H3 / { printf "### %s\n", substr($0, 4) ; next }
-/^H4 / {
+/^H1 /    { printf "# %s\n", substr($0, 4) ; next }
+/^H2 /    { printf "## %s\n", substr($0, 4) ; next }
+/^[Hh]3 / { printf "### %s\n", substr($0, 4) ; next }
+/^[Hh]4 / {
 	heading = substr($0, 4)
 	gsub(/"!/, "!", heading)
 	gsub(/"@/, "@", heading)
@@ -58,10 +58,10 @@ $0 ~ modeline { next; }
        	printf "#### %s\n", heading
        	next
 }
-/^H5 / { printf "##### %s\n", substr($0, 4) ; next }
-/^H6 / { printf "###### %s\n", substr($0, 4) ; next }
+/^[Hh]5 / { printf "##### %s\n", substr($0, 4) ; next }
+/^H6 /    { printf "###### %s\n", substr($0, 4) ; next }
 
-$1 == H9 { next }
+$1 == "H9" { next }
 
 $1 == "CB(" { in_code_block = 1 ; print "```" ; next }
 $1 == "CB)" { in_code_block = 0 ; print "```" ; next }

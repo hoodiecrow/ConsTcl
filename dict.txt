@@ -1,4 +1,5 @@
 env           -> an environment
+envproc       -> an environment or procedure object
 dc            -> -don't care-
 msg           -> a message string
 invoke        -> what pr returns
