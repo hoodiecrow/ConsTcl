@@ -1257,6 +1257,8 @@ proc ::constcl::read-vector-expr {} {
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
+  set unget {}
+  set c [readc]
   set expr [MkVector $res]
   read-eof $expr
   $expr mkconstant

@@ -84,6 +84,8 @@ MD)
 
 H4 Environment procedures
 
+H9
+
 CB(
 proc environment? {object} {
   #Returns #t if object is an environment; otherwise returns #f.
