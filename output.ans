@@ -16,7 +16,7 @@ write (public);val val ?port? port -> none
 PR)
 
 CB(
-reg write ::constcl::write
+reg write
 
 proc ::constcl::write {val args} {
   if {$val ne ""} {
@@ -49,7 +49,7 @@ display (public);val val ?port? port -> none
 PR)
 
 CB(
-reg display ::constcl::display
+reg display
 
 proc ::constcl::display {val args} {
   if {$val ne ""} {

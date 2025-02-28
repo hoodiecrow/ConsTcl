@@ -233,25 +233,60 @@ Next, some procedures that make my life as developer somewhat easier.
 \texttt{reg} registers selected built-in procedures in the definitions register\index{definitions register}. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard library (see page \pageref{environment-startup}).
 
 
-You can call \texttt{reg} with two values: \emph{key} and \emph{val}. \emph{Key} is the string that will eventually become the lookup symbol in the standard library, and \emph{val} is the name of the Tcl command that will carry out the procedure. If you don't give a value for \emph{val}, \texttt{reg} creates a value by prepending the \texttt{::constcl::} namespace to the \emph{key} value, which is sufficient 99\% of the time.
+You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is the string that will eventually become the lookup symbol in the standard library. Following \texttt{reg} are two similar procedures: \texttt{regspecial} and \texttt{regmacro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}. FInally there is \texttt{regvar}, which registers variables.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reg (internal)} \\
-key & a Tcl string \\
-?val? & a Tcl string \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reg, regspecial, regmacro (internal)} \\
+name & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf regvar (internal)} \\
+name & a Tcl string \\
+val & a Lisp value \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::reg {key args} {
-  if {[llength $args]} {
-    lassign $args val
-  } else {
-    set val ::constcl::$key
+proc reg {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
   }
-  dict set ::constcl::defreg $key $val
+  set val [::list VARIABLE ::constcl::$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
+}
+
+proc regspecial {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list SPECIAL ::constcl::special-$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
   return
+}
+
+proc regmacro {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list SYNTAX ::constcl::expand-$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
+  return
+}
+
+proc regvar {name value} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list VARIABLE $value]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
 }
 \end{lstlisting}
 \subsubsection{Procedures, functions, and commands: an aside}
@@ -297,8 +332,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg atom? ::constcl::atom?
- 
+reg atom?
+
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
@@ -378,7 +413,7 @@ lvals & a Lisp list of Lisp values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc pairlis-tcl {a b} {
+proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
     parse {()}
   } else {
@@ -422,26 +457,6 @@ proc ::constcl::usage {usage expr} {
   }
 }
 \end{lstlisting}
-\subsection{regmacro procedure}
-\label{regmacro-procedure}
-\index{regmacro procedure}
-
-
-ConsTcl has macros\index{macro}, i.e. succinct syntactic forms that are rewritten to concrete--but more verbose--forms. The evaluator passes macro forms to a command for expansion before they are fully processed. \texttt{regmacro} registers macro names in the macro list, so the evaluator knows what to expand.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf regmacro (internal)} \\
-name & a Tcl string \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::regmacro {name} {
-  lappend ::constcl::macrolist $name
-  return
-}
-\end{lstlisting}
 \subsection{pn procedure}
 \label{pn-procedure}
 \index{pn procedure}
@@ -458,6 +473,29 @@ proc ::regmacro {name} {
 \begin{lstlisting}
 proc ::pn {} {
   lindex [split [lindex [info level -1] 0] :] end
+}
+\end{lstlisting}
+\subsection{unbind procedure}
+\label{unbind-procedure}
+\index{unbind procedure}
+
+
+\texttt{unbind} removes one binding from the environment it is bound in.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf unbind (internal)} \\
+sym & a symbol \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::unbind {sym} {
+  # TODO go from current environment
+  set env [::constcl::global_env find $sym]
+  if {$env ne "::constcl::null_env"} {
+    $env unbind $sym
+  }
 }
 \end{lstlisting}
 \subsection{typeof? procedure}
@@ -508,7 +546,7 @@ x & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg in-range
- 
+
 proc ::constcl::in-range {x args} {
   set start 0
   set step 1
@@ -556,7 +594,7 @@ msg & a message string \\
 \end{tabular}
 \begin{lstlisting}
 reg error
- 
+
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
     lappend msg "("
@@ -826,7 +864,7 @@ The \texttt{Dot} class is a helper class for the parser.
 
 \begin{lstlisting}
 catch { ::constcl::Dot destroy }
- 
+
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
   method write {handle} {
@@ -865,7 +903,7 @@ The \texttt{EndOfFile} class is for end-of-file\index{end of file} conditions.
 
 \begin{lstlisting}
 catch { ::constcl::EndOfFile destroy }
- 
+
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {handle} {
@@ -908,7 +946,7 @@ The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It 
 
 \begin{lstlisting}
 catch { ::constcl::NIL destroy }
- 
+
 oo::singleton create ::constcl::NIL {
   method boolval {} {
     return #t
@@ -955,7 +993,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg null?
- 
+
 proc ::constcl::null? {val} {
   if {$val eq "#NIL"} {
     return #t
@@ -973,7 +1011,7 @@ The \texttt{Undefined} class is for undefined things. It was created to facilita
 
 \begin{lstlisting}
 catch { ::constcl::Undefined destroy }
- 
+
 oo::class create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
@@ -993,7 +1031,7 @@ The \texttt{Unspecified} class is for unspecified things. Also a S9fES support c
 
 \begin{lstlisting}
 catch { ::constcl::Unspecified destroy }
- 
+
 oo::class create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
@@ -1094,7 +1132,7 @@ inp & a Tcl string, Lisp string, or a string input port \\
 \end{tabular}
 \begin{lstlisting}
 reg parse
- 
+
 proc ::constcl::parse {inp} {
   set c {}
   set unget {}
@@ -1136,7 +1174,7 @@ One can pass a port to \texttt{read} (including a string input port) in which ca
 \end{tabular}
 \begin{lstlisting}
 reg read
- 
+
 proc ::constcl::read {args} {
   set c {}
   set unget {}
@@ -1869,15 +1907,12 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 \section{The evaluator}
 \label{the-evaluator}
 \index{the evaluator}
+\subsection{eval procedure}
+\label{eval-procedure}
+\index{eval procedure}
 
 
-\textbf{eval} procedure
-
-
-The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its syntactic form.
-
-
-\texttt{eval} also does two kinds of rewriting of expressions: 1) \emph{macro expansion} on a non-atomic expression into a more concrete expression. See the part about macros (see page \pageref{macros}) below, and 2) resolving \emph{local defines}, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
+The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form. Symbols to the value they refer to (see page \pageref{variable-reference}), numbers etc to their own value (see page \pageref{constant-literal}), and expressions that are lists to the value that \texttt{eval-form} assigns to them.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1887,10 +1922,9 @@ env & an environment \\
 \textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
-\index{eval}
 \begin{lstlisting}
 reg eval
- 
+
 proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
@@ -1898,61 +1932,81 @@ proc ::constcl::eval \
   } elseif {[T [null? $expr]] ||
     [T [atom? $expr]]} {
     set expr
+  } elseif {[T [pair? $expr]]} {
+    eval-form $expr $env
   } else {
-    while {[[car $expr] name] in
-      $::constcl::macrolist} {
-      set expr [expand-macro $expr $env]
-    }
-    set op [car $expr]
-    set args [cdr $expr]
-    if {$env ne "::constcl::global_env" &&
-      [$op name] eq "begin" &&
-      ([T [pair? [car $args]]] &&
-      [[caar $args] name] eq "define")} {
-      set expr [resolve-local-defines $args]
-      set op [car $expr]
-      set args [cdr $expr]
-    }
-    switch [$op name] {
-      quote {
-        usage [parse "(quote datum)"] $expr
-        car $args
+    error "unknown expression type"
+  }
+}
+\end{lstlisting}
+\subsection{eval-form procedure}
+\label{eval-form-procedure}
+\index{eval-form procedure}
+
+
+\texttt{eval} also does two kinds of rewriting of expressions: 1) \emph{macro expansion} on a non-atomic expression into a more concrete expression. See the part about macros (see page \pageref{macros}) below, and 2) resolving \emph{local defines}, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-form (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::eval-form {expr env} {
+  set op [car $expr]
+  set args [cdr $expr]
+  if {[T [symbol? $op]]} {
+    set bi [binding-info $op $env]
+    lassign $bi bt in
+    switch $bt {
+      UNBOUND {
+        error "unbound symbol" $op
       }
-      if {
-        if {[T [null? [cddr $args]]]} {
-          usage [p "(if cond cons)"] $expr
-          /if1 {[eval [car $args] $env]} \
-            {eval [cadr $args] $env}
-        } {
-          usage [p "(if cond cons altr)"] $expr
-          /if {[eval [car $args] $env]} \
-            {eval [cadr $args] $env} \
-            {eval [caddr $args] $env}
-        }
+      SPECIAL {
+        $in $expr $env
       }
-      begin {
-        /begin $args $env
+      VARIABLE {
+        invoke $in [eval-list $args $env]
       }
-      define {
-        usage [p "(define sym val)"] $expr
-        /define [car $args] [
-          eval [cadr $args] $env] $env
-      }
-      set! {
-        usage [p "(set! sym val)"] $expr
-        /set! [car $args] [
-          eval [cadr $args] $env] $env 
-      }
-      lambda {
-        # no point checking usage here
-        /lambda [car $args] [
-          cdr $args] $env
+      SYNTAX {
+        set expr [$in $expr $env]
+        eval $expr $env
       }
       default {
-        invoke [eval $op $env] [
-          eval-list $args $env]
+        error "unrecognized binding type" $bt
       }
     }
+  } else {
+    invoke [eval $op $env] [eval-list $args $env]
+  }
+}
+\end{lstlisting}
+
+
+\textbf{binding-info} procedure
+
+
+The \texttt{binding-info} procedure takes a symbol and returns a list of two items: 1) the binding type of the symbol, and 2) the handling info that \texttt{eval-form} uses to handle this symbol.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf binding-info (internal)} \\
+op & a symbol \\
+env & an environment \\
+\textit{Returns:} & binding info \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::binding-info {op env} {
+  set actual_env [$env find $op]
+  # parentless envs have #NIL
+  if {$actual_env ne "::constcl::null_env"} {
+    return [$actual_env get $op]
+  } else {
+    return [::list UNBOUND {}]
   }
 }
 \end{lstlisting}
@@ -2002,7 +2056,7 @@ env & an environment \\
 \index{lookup}
 \begin{lstlisting}
 proc ::constcl::lookup {sym env} {
-  [$env find $sym] get $sym
+  lindex [[$env find $sym] get $sym] 1
 }
 \end{lstlisting}
 \subsection{Constant literal}
@@ -2025,6 +2079,26 @@ Not just numbers\index{constant literal} but booleans, characters, strings, and 
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader.
 
+
+
+\textbf{quote} special form
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-quote (public)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\index{quote special form}
+\begin{lstlisting}
+regspecial quote
+
+proc ::constcl::special-quote {expr env} {
+  return [cadr $expr]
+}
+\end{lstlisting}
 \subsection{Conditional}
 \label{conditional}
 \index{conditional}
@@ -2036,7 +2110,36 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 The conditional\index{conditional} form \texttt{if} evaluates a Lisp list of three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
 
-The two procedures that handle the conditional form are \texttt{/if} and \texttt{/if1}. The former takes both a consequent and an alternate, the latter takes only a consequent.
+
+\textbf{if} special form
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-if (public)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\index{if special form}
+\begin{lstlisting}
+regspecial if
+
+proc ::constcl::special-if {expr env} {
+  set args [cdr $expr]
+  if {[T [null? [cddr $args]]]} {
+    /if1 {[eval [car $args] $env]} \
+      {eval [cadr $args] $env}
+  } else {
+    /if {[eval [car $args] $env]} \
+      {eval [cadr $args] $env} \
+      {eval [caddr $args] $env}
+  }
+}
+\end{lstlisting}
+
+
+The two procedures that help the if form out are \texttt{/if} and \texttt{/if1}. The former takes both a consequent and an alternate, the latter takes only a consequent.
 
 
 \textbf{/if} procedure \textbf{/if1} procedure
@@ -2068,7 +2171,7 @@ proc ::constcl::/if {cond conseq altern} {
     uplevel $altern
   }
 }
- 
+
 proc ::constcl::/if1 {cond conseq} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
@@ -2083,10 +2186,39 @@ proc ::constcl::/if1 {cond conseq} {
 \emph{Example: \texttt{(begin (define r 10) (* r r))} $\Rightarrow$ 100}
 
 
-When expressions are evaluated in sequence\index{sequence}, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline. The \texttt{/begin} helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
+When expressions are evaluated in sequence\index{sequence}, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
+
+
+
+\textbf{begin} special form
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-begin (public)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & a Lisp value \\
+\hline
+\end{tabular}
+\index{begin special form}
+\begin{lstlisting}
+regspecial begin
+
+proc ::constcl::special-begin {expr env} {
+  #      TODO
+  if {   0 &   $env ne "::constcl::global_env"} {
+    set expr [resolve-local-defines $expr]
+  }
+  set args [cdr $expr]
+  /begin $args $env
+}
+\end{lstlisting}
 
 
 \textbf{/begin} procedure
+
+
+The \texttt{/begin} helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2121,6 +2253,68 @@ proc ::constcl::/begin {exps env} {
 
 We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
 
+\subsection{define special form}
+\label{define-special-form}
+\index{define special form}
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-define (public)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+regspecial define
+proc ::constcl::special-define {expr env} {
+  set expr [rewrite-define $expr $env]
+  set sym [cadr $expr]
+  set val [eval [caddr $expr] $env]
+  /define $sym $val $env
+}
+\end{lstlisting}
+
+
+\textbf{rewrite-define} procedure
+
+
+\texttt{define} has two variants, one of which requires some rewriting. It's the one with an implied \texttt{lambda} call, the one that defines a procedure.
+
+
+(define (\emph{symbol} \emph{formals}) \emph{body})
+
+
+is transformed by \texttt{rewrite-define} into
+
+
+(define \emph{symbol} (lambda \emph{formals} \emph{body}))
+
+
+which conforms better to \texttt{eval}'s standard of (define \emph{symbol} \emph{value}). The other variant passes through \texttt{rewrite-define} unchanged.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-define (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::rewrite-define {expr env} {
+  if {[T [pair? [cadr $expr]]]} {
+    set tail [cdr $expr]
+    set _env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $_env
+    set qq "`(define ,(caar tail)
+               (lambda ,(cdar tail) ,@(cdr tail)))"
+    set expr [expand-quasiquote [parse $qq] $_env]
+    $_env destroy
+  } 
+  return $expr
+}
+\end{lstlisting}
+
 
 \textbf{/define} procedure
 
@@ -2137,7 +2331,7 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
-  $env set $sym $val
+  $env bind $sym VARIABLE $val
   return
 }
 \end{lstlisting}
@@ -2152,21 +2346,26 @@ proc ::constcl::/define {sym val env} {
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The \texttt{/set!} helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 
-\textbf{/set!} procedure
+
+\textbf{set!} special form
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /set! (internal)} \\
-var & a bound symbol \\
-val & a Lisp value \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-set! (public)} \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
-\index{/set"!}
+\index{set"! special form}
 \begin{lstlisting}
-proc ::constcl::/set! {var val env} {
-  [$env find $var] set $var $val
+regspecial set!
+
+proc ::constcl::special-set! {expr env} {
+  set args [cdr $expr]
+  set var [car $args]
+  set val [eval [cadr $args] $env]
+  [$env find $var] assign $var VARIABLE $val
   set val
 }
 \end{lstlisting}
@@ -2190,7 +2389,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure? \texttt{(define (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square root of the sum of two squares.
 
 
-Under the hood, the helper \texttt{/lambda} makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
+The lambda special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
 \subsubsection{Scheme formals lists: an aside}
 \label{scheme-formals-lists-an-aside}
@@ -2205,21 +2404,26 @@ A Scheme formals list\index{formals list} is either:
 \item  A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
 \end{itemize}
 
-\textbf{/lambda} procedure
+
+\textbf{lambda} special form
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /lambda (internal)} \\
-formals & a Scheme formals list \\
-body & a Lisp list of expressions \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-lambda (public)} \\
+expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a procedure \\
 \hline
 \end{tabular}
-\index{/lambda}
+\index{lambda special form}
 \begin{lstlisting}
-proc ::constcl::/lambda {formals body env} {
-  if {[[length $body] value] > 1} {
+regspecial lambda
+
+proc ::constcl::special-lambda {expr env} {
+  set args [cdr $expr]
+  set formals [car $args]
+  set body [cdr $args]
+  if {[[length $body] numval] > 1} {
     set body [cons [S begin] $body]
   } else {
     set body [car $body]
@@ -2368,7 +2572,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro and
- 
+
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
@@ -2447,12 +2651,12 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro case
- 
+
 proc ::constcl::expand-case {expr env} {
   set tail [cdr $expr]
   do-case [car $tail] [cdr $tail] $env
 }
- 
+
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -2502,7 +2706,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro cond
- 
+
 proc ::constcl::expand-cond {expr env} {
   return [do-cond [cdr $expr] $env]
 }
@@ -2559,47 +2763,6 @@ proc ::constcl::do-cond {tail env} {
   }
 }
 \end{lstlisting}
-\subsection{expand-define procedure}
-\label{expand-define-procedure}
-\index{expand-define procedure}
-
-
-\texttt{define} has two variants, one of which requires some rewriting. It's the one with an implied \texttt{lambda} call, the one that defines a procedure.
-
-
-(define (\emph{symbol} \emph{formals}) \emph{body})
-
-
-is transformed into
-
-
-(define \emph{symbol} (lambda \emph{formals} \emph{body}))
-
-
-which conforms better to \texttt{eval}'s standard of (define \emph{symbol} \emph{value}).
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-define (internal)} \\
-expr & an expression \\
-env & an environment \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-regmacro define
- 
-proc ::constcl::expand-define {expr env} {
-  set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
-  /define [S tail] $tail $env
-  set qq "`(define ,(caar tail)
-             (lambda ,(cdar tail) ,@(cdr tail)))"
-  set expr [expand-quasiquote [parse $qq] $env]
-  $env destroy
-  return $expr
-}
-\end{lstlisting}
 \subsection{expand-del! procedure}
 \label{expand-del"!-procedure}
 \index{expand-del"! procedure}
@@ -2617,7 +2780,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro del!
- 
+
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2653,7 +2816,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro for
- 
+
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -2771,7 +2934,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro for/and
- 
+
 proc ::constcl::expand-for/and {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -2798,7 +2961,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro for/list
- 
+
 proc ::constcl::expand-for/list {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -2825,7 +2988,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro for/or
- 
+
 proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
@@ -2855,7 +3018,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro let
- 
+
 proc ::constcl::expand-let {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -2947,7 +3110,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro or
- 
+
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[T [eq? [length $tail] #0]]} {
@@ -3007,7 +3170,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro pop!
- 
+
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -3041,7 +3204,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro push!
- 
+
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -3084,7 +3247,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro put!
- 
+
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
   set env [::constcl::Environment new #NIL {} $env]
@@ -3130,7 +3293,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro quasiquote
- 
+
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
   set qqlevel 0
@@ -3237,7 +3400,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro unless
- 
+
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -3267,7 +3430,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 regmacro when
- 
+
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
   set env [Environment new #NIL {} $env]
@@ -3293,12 +3456,13 @@ This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. \texttt{re
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf resolve-local-defines} \\
-exps & a Lisp list of expressions \\
+expr & an expression \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::constcl::resolve-local-defines {exps} {
+proc ::constcl::resolve-local-defines {expr} {
+  set exps [cdr $expr]
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
   if {[T $error]} {
@@ -3594,8 +3758,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg write ::constcl::write
- 
+reg write
+
 proc ::constcl::write {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
@@ -3630,8 +3794,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg display ::constcl::display
- 
+reg display
+
 proc ::constcl::display {val args} {
   if {$val ne ""} {
     if {[llength $args]} {
@@ -3710,7 +3874,7 @@ expr2 & an expression \\
 \end{tabular}
 \begin{lstlisting}
 reg eq?
- 
+
 proc ::constcl::eq? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
@@ -3792,7 +3956,7 @@ proc ::constcl::veq {expr1 expr2} {
 \index{eqv? procedure}
 \begin{lstlisting}
 reg eqv?
- 
+
 proc ::constcl::eqv? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
@@ -3832,7 +3996,7 @@ proc ::constcl::eqv? {expr1 expr2} {
 \index{equal? procedure}
 \begin{lstlisting}
 reg equal?
- 
+
 proc ::constcl::equal? {expr1 expr2} {
   if {[$expr1 show] eq [$expr2 show]} {
     return #t
@@ -3934,7 +4098,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg number?
- 
+
 proc ::constcl::number? {val} {
   return [typeof? $val Number]
 }
@@ -3967,12 +4131,13 @@ nums & some numbers \\
 \end{tabular}
 \begin{lstlisting}
 reg =
- 
+
 proc ::constcl::= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
-    ::error "NUMBER expected\n(= num ...)"
+    ::error "NUMBER expected\n(= [
+      [lindex $args 0] show] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
     return #t
@@ -3984,7 +4149,7 @@ proc ::constcl::= {args} {
 \index{<}
 \begin{lstlisting}
 reg <
- 
+
 proc ::constcl::< {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4001,7 +4166,7 @@ proc ::constcl::< {args} {
 \index{>}
 \begin{lstlisting}
 reg >
- 
+
 proc ::constcl::> {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4018,7 +4183,7 @@ proc ::constcl::> {args} {
 \index{<=}
 \begin{lstlisting}
 reg <=
- 
+
 proc ::constcl::<= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4035,7 +4200,7 @@ proc ::constcl::<= {args} {
 \index{>=}
 \begin{lstlisting}
 reg >=
- 
+
 proc ::constcl::>= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4065,7 +4230,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg zero?
- 
+
 proc ::constcl::zero? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4098,7 +4263,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg positive?
- 
+
 proc ::constcl::positive? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4109,7 +4274,7 @@ proc ::constcl::positive? {num} {
 \index{negative? procedure}
 \begin{lstlisting}
 reg negative?
- 
+
 proc ::constcl::negative? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4120,7 +4285,7 @@ proc ::constcl::negative? {num} {
 \index{even? procedure}
 \begin{lstlisting}
 reg even?
- 
+
 proc ::constcl::even? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4131,7 +4296,7 @@ proc ::constcl::even? {num} {
 \index{odd? procedure}
 \begin{lstlisting}
 reg odd?
- 
+
 proc ::constcl::odd? {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4166,7 +4331,7 @@ nums & some numbers \\
 \end{tabular}
 \begin{lstlisting}
 reg max
- 
+
 proc ::constcl::max {num args} {
   lappend args $num
   try {
@@ -4180,7 +4345,7 @@ proc ::constcl::max {num args} {
 \index{min procedure}
 \begin{lstlisting}
 reg min
- 
+
 proc ::constcl::min {num args} {
   lappend args $num
   try {
@@ -4236,7 +4401,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg +
- 
+
 proc ::constcl::+ {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4249,7 +4414,7 @@ proc ::constcl::+ {args} {
 \index{* procedure}
 \begin{lstlisting}
 reg *
- 
+
 proc ::constcl::* {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4262,7 +4427,7 @@ proc ::constcl::* {args} {
 \index{- procedure}
 \begin{lstlisting}
 reg -
- 
+
 proc ::constcl::- {num args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4275,7 +4440,7 @@ proc ::constcl::- {num args} {
 \index{/ procedure}
 \begin{lstlisting}
 reg /
- 
+
 proc ::constcl::/ {num args} {
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -4301,7 +4466,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg abs
- 
+
 proc ::constcl::abs {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4337,7 +4502,7 @@ num2 & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg quotient
- 
+
 proc ::constcl::quotient {num1 num2} {
   set q [::tcl::mathop::/ [$num1 numval] \
     [$num2 numval]]
@@ -4374,7 +4539,7 @@ num2 & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg remainder
- 
+
 proc ::constcl::remainder {num1 num2} {
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
@@ -4405,7 +4570,7 @@ num2 & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg modulo
- 
+
 proc ::constcl::modulo {num1 num2} {
   return [N [::tcl::mathop::% [$num1 numval] \
     [$num2 numval]]]
@@ -4446,7 +4611,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg floor
- 
+
 proc ::constcl::floor {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4457,7 +4622,7 @@ proc ::constcl::floor {num} {
 \index{ceiling procedure}
 \begin{lstlisting}
 reg ceiling
- 
+
 proc ::constcl::ceiling {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4468,7 +4633,7 @@ proc ::constcl::ceiling {num} {
 \index{truncate procedure}
 \begin{lstlisting}
 reg truncate
- 
+
 proc ::constcl::truncate {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4483,7 +4648,7 @@ proc ::constcl::truncate {num} {
 \index{round procedure}
 \begin{lstlisting}
 reg round
- 
+
 proc ::constcl::round {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4545,7 +4710,7 @@ num2 & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg exp
- 
+
 proc ::constcl::exp {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4556,7 +4721,7 @@ proc ::constcl::exp {num} {
 \index{log procedure}
 \begin{lstlisting}
 reg log
- 
+
 proc ::constcl::log {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4567,7 +4732,7 @@ proc ::constcl::log {num} {
 \index{sin procedure}
 \begin{lstlisting}
 reg sin
- 
+
 proc ::constcl::sin {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4578,7 +4743,7 @@ proc ::constcl::sin {num} {
 \index{cos procedure}
 \begin{lstlisting}
 reg cos
- 
+
 proc ::constcl::cos {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4589,7 +4754,7 @@ proc ::constcl::cos {num} {
 \index{tan procedure}
 \begin{lstlisting}
 reg tan
- 
+
 proc ::constcl::tan {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4600,7 +4765,7 @@ proc ::constcl::tan {num} {
 \index{asin procedure}
 \begin{lstlisting}
 reg asin
- 
+
 proc ::constcl::asin {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4611,7 +4776,7 @@ proc ::constcl::asin {num} {
 \index{acos procedure}
 \begin{lstlisting}
 reg acos
- 
+
 proc ::constcl::acos {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4622,7 +4787,7 @@ proc ::constcl::acos {num} {
 \index{atan procedure}
 \begin{lstlisting}
 reg atan
- 
+
 proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
@@ -4659,7 +4824,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg sqrt
- 
+
 proc ::constcl::sqrt {num} {
   check {number? $num} {
       NUMBER expected\n([pn] [$num show])
@@ -4684,7 +4849,7 @@ num2 & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg expt
- 
+
 proc ::constcl::expt {num1 num2} {
   check {number? $num1} {
       NUMBER expected\n([pn] [$num1 show] \
@@ -4725,7 +4890,7 @@ num & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg number->string
- 
+
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
     check {number? $num} {
@@ -4801,7 +4966,7 @@ str & a string \\
 \end{tabular}
 \begin{lstlisting}
 reg string->number
- 
+
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
     check {string? $str} {
@@ -4909,7 +5074,7 @@ proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
     if {[$instance boolval] eq $bool} {
-      return $instance
+dict set ::constcl::defreg       return $instance
     }
   }
   return [::constcl::Boolean new $bool]
@@ -4930,8 +5095,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg boolean? ::constcl::boolean?
- 
+reg boolean?
+
 proc ::constcl::boolean? {val} {
   return [typeof? $val Boolean]
 }
@@ -4959,8 +5124,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg not ::constcl::not
- 
+reg not
+
 proc ::constcl::not {val} {
   if {[$val boolval] eq "#f"} {
     return #t
@@ -5110,7 +5275,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg char?
- 
+
 proc ::constcl::char? {val} {
   return [typeof? $val Char]
 }
@@ -5144,7 +5309,7 @@ char2 & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg char=?
- 
+
 proc ::constcl::char=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5162,7 +5327,7 @@ proc ::constcl::char=? {char1 char2} {
 \index{char<? procedure}
 \begin{lstlisting}
 reg char<?
- 
+
 proc ::constcl::char<? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5180,7 +5345,7 @@ proc ::constcl::char<? {char1 char2} {
 \index{char>? procedure}
 \begin{lstlisting}
 reg char>?
- 
+
 proc ::constcl::char>? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5198,7 +5363,7 @@ proc ::constcl::char>? {char1 char2} {
 \index{char<=? procedure}
 \begin{lstlisting}
 reg char<=?
- 
+
 proc ::constcl::char<=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5216,7 +5381,7 @@ proc ::constcl::char<=? {char1 char2} {
 \index{char>=? procedure}
 \begin{lstlisting}
 reg char>=?
- 
+
 proc ::constcl::char>=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5260,7 +5425,7 @@ char2 & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg char-ci=?
- 
+
 proc ::constcl::char-ci=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5279,7 +5444,7 @@ proc ::constcl::char-ci=? {char1 char2} {
 \index{char-ci<? procedure}
 \begin{lstlisting}
 reg char-ci<?
- 
+
 proc ::constcl::char-ci<? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5298,7 +5463,7 @@ proc ::constcl::char-ci<? {char1 char2} {
 \index{char-ci>? procedure}
 \begin{lstlisting}
 reg char-ci>?
- 
+
 proc ::constcl::char-ci>? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5317,7 +5482,7 @@ proc ::constcl::char-ci>? {char1 char2} {
 \index{char-ci<=? procedure}
 \begin{lstlisting}
 reg char-ci<=?
- 
+
 proc ::constcl::char-ci<=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5336,7 +5501,7 @@ proc ::constcl::char-ci<=? {char1 char2} {
 \index{char-ci>=? procedure}
 \begin{lstlisting}
 reg char-ci>=?
- 
+
 proc ::constcl::char-ci>=? {char1 char2} {
   check {char? $char1} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
@@ -5391,7 +5556,7 @@ char & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg char-alphabetic?
- 
+
 proc ::constcl::char-alphabetic? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5402,7 +5567,7 @@ proc ::constcl::char-alphabetic? {char} {
 \index{char-numeric? procedure}
 \begin{lstlisting}
 reg char-numeric?
- 
+
 proc ::constcl::char-numeric? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5413,7 +5578,7 @@ proc ::constcl::char-numeric? {char} {
 \index{char-whitespace? procedure}
 \begin{lstlisting}
 reg char-whitespace?
- 
+
 proc ::constcl::char-whitespace? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5424,7 +5589,7 @@ proc ::constcl::char-whitespace? {char} {
 \index{char-upper-case? procedure}
 \begin{lstlisting}
 reg char-upper-case?
- 
+
 proc ::constcl::char-upper-case? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5435,7 +5600,7 @@ proc ::constcl::char-upper-case? {char} {
 \index{char-lower-case? procedure}
 \begin{lstlisting}
 reg char-lower-case?
- 
+
 proc ::constcl::char-lower-case? {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5466,7 +5631,7 @@ char & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg char->integer
- 
+
 proc ::constcl::char->integer {char} {
   return [MkNumber [scan [$char char] %c]]
 }
@@ -5490,7 +5655,7 @@ int & an integer \\
 \end{tabular}
 \begin{lstlisting}
 reg integer->char
- 
+
 proc ::constcl::integer->char {int} {
   if {$int == 10} {
     return [MkChar #\\newline]
@@ -5520,7 +5685,7 @@ char & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg char-upcase
- 
+
 proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5532,7 +5697,7 @@ proc ::constcl::char-upcase {char} {
 \index{char-downcase procedure}
 \begin{lstlisting}
 reg char-downcase
- 
+
 proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
@@ -5559,7 +5724,7 @@ When a \texttt{Procedure} object is called, the body is evaluated in a new envir
 \index{Procedure class}
 \begin{lstlisting}
 catch { ::constcl::Procedure destroy }
- 
+
 oo::class create ::constcl::Procedure {
   superclass ::constcl::NIL
   variable parms body env
@@ -5568,23 +5733,25 @@ oo::class create ::constcl::Procedure {
     set body $b
     set env $e
   }
-  method value {} {}
-  method write {handle} {
-    regexp {(\d+)} [self] -> num
-    puts -nonewline $handle "#<proc-$num>"
-  }
-  method display {handle} {
-    my write $handle
-  }
-  method show {} {
-    return [self]
-  }
-  method call {args} {
-    ::constcl::eval $body [
-      ::constcl::Environment new $parms $args $env]
-  }
- 
 }
+oo::define ::constcl::Procedure method call {args} {
+  set vals [lmap a $args {list VARIABLE $a}]
+  ::constcl::eval $body [
+    ::constcl::Environment new $parms $vals $env]
+}
+oo::define ::constcl::Procedure method value {} {}
+oo::define ::constcl::Procedure method write {handle} {
+  regexp {(\d+)} [self] -> num
+  puts -nonewline $handle "#<proc-$num>"
+}
+oo::define ::constcl::Procedure method display {handle} {
+  my write $handle
+}
+oo::define ::constcl::Procedure method show {} {
+  return [self]
+}
+\end{lstlisting}
+
 \end{lstlisting}
 \subsection{MkProcedure generator}
 \label{mkprocedure-generator}
@@ -5618,7 +5785,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg procedure?
- 
+
 proc ::constcl::procedure? {val} {
   if {[typeof? $val Procedure] eq "#t"} {
     return #t
@@ -5653,7 +5820,7 @@ vals & a Lisp list of Lisp values \\
 \end{tabular}
 \begin{lstlisting}
 reg apply
- 
+
 proc ::constcl::apply {pr vals} {
   check {procedure? $pr} {
     PROCEDURE expected\n([pn] [$pr show] ...)
@@ -5685,7 +5852,7 @@ args & some lists \\
 \end{tabular}
 \begin{lstlisting}
 reg map
- 
+
 proc ::constcl::map {pr args} {
   check {procedure? $pr} {
     PROCEDURE expected\n([pn] [$pr show] ...)
@@ -5741,7 +5908,7 @@ args & some lists \\
 \end{tabular}
 \begin{lstlisting}
 reg for-each
- 
+
 proc ::constcl::for-each {proc args} {
   check {procedure? $proc} {
     PROCEDURE expected\n([pn] [$proc show] ...)
@@ -5776,7 +5943,7 @@ proc ::constcl::for-each {proc args} {
 \index{Port class}
 \begin{lstlisting}
 catch { ::constcl::Port destroy }
- 
+
 oo::class create ::constcl::Port {
   superclass ::constcl::NIL
   variable handle
@@ -5971,7 +6138,7 @@ set ::constcl::Output_port [
 
 \begin{lstlisting}
 reg port?
- 
+
 proc ::constcl::port? {val} {
   typeof? $val Port
 }
@@ -5993,7 +6160,7 @@ proc & a procedure \\
 \end{tabular}
 \begin{lstlisting}
 reg call-with-input-file
- 
+
 proc ::constcl::call-with-input-file {filename proc} {
   set port [open-input-file $filename]
   set res [invoke $proc [list $port]]
@@ -6022,7 +6189,7 @@ proc & a procedure \\
 \end{tabular}
 \begin{lstlisting}
 reg call-with-output-file
- 
+
 proc ::constcl::call-with-output-file {filename proc} {
   ::error "remove this line to use"
   set port [open-output-file $filename]
@@ -6048,7 +6215,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg input-port?
- 
+
 proc ::constcl::input-port? {val} {
   typeof? $val InputPort
 }
@@ -6069,7 +6236,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg output-port?
- 
+
 proc ::constcl::output-port? {val} {
   typeof? $val OutputPort
 }
@@ -6089,7 +6256,7 @@ proc ::constcl::output-port? {val} {
 \end{tabular}
 \begin{lstlisting}
 reg current-input-port
- 
+
 proc ::constcl::current-input-port {} {
   return [$::constcl::Input_port copy]
 }
@@ -6109,7 +6276,7 @@ proc ::constcl::current-input-port {} {
 \end{tabular}
 \begin{lstlisting}
 reg current-output-port
- 
+
 proc ::constcl::current-output-port {} {
   return [$::constcl::Output_port copy]
 }
@@ -6131,7 +6298,7 @@ thunk & a procedure \\
 \end{tabular}
 \begin{lstlisting}
 reg with-input-from-file
- 
+
 proc ::constcl::with-input-from-file {filename thunk} {
   set newport [open-input-file $filename]
   if {[$newport handle] ne "#NIL"} {
@@ -6161,7 +6328,7 @@ thunk & a procedure \\
 \end{tabular}
 \begin{lstlisting}
 reg with-output-to-file
- 
+
 proc ::constcl::with-output-to-file {filename thunk} {
   ::error "remove this line to use"
   set newport [open-output-file $filename]
@@ -6191,10 +6358,10 @@ filename & a filename string \\
 \end{tabular}
 \begin{lstlisting}
 reg open-input-file
- 
+
 proc cnof {} {return "could not open file"}
 proc fae {} {return "file already exists"}
- 
+
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
@@ -6221,7 +6388,7 @@ filename & a filename string \\
 \end{tabular}
 \begin{lstlisting}
 reg open-output-file
- 
+
 proc ::constcl::open-output-file {filename} {
   ::error "remove this line to use"
   if {[file exists $filename]} {
@@ -6251,7 +6418,7 @@ port & an input port \\
 \end{tabular}
 \begin{lstlisting}
 reg close-input-port
- 
+
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
     error "don't close the standard input port"
@@ -6275,7 +6442,7 @@ port & an output port \\
 \end{tabular}
 \begin{lstlisting}
 reg close-output-port
- 
+
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
     error "don't close the standard output port"
@@ -6307,7 +6474,7 @@ proc ::constcl::close-output-port {port} {
 \end{tabular}
 \begin{lstlisting}
 reg newline
- 
+
 proc ::constcl::newline {args} {
   if {[llength $args]} {
     lassign $args port
@@ -6333,7 +6500,7 @@ filename & a filename string \\
 \end{tabular}
 \begin{lstlisting}
 reg load
- 
+
 proc ::constcl::load {filename} {
   set p [open-input-file $filename]
   if {[$p handle] ne "#NIL"} {
@@ -6359,7 +6526,7 @@ List processing is another of Lisp's great strengths.
 \index{Pair class}
 \begin{lstlisting}
 catch { ::constcl::Pair destroy }
- 
+
 oo::class create ::constcl::Pair {
   superclass ::constcl::NIL
   variable car cdr constant
@@ -6445,7 +6612,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg pair?
- 
+
 proc ::constcl::pair? {val} {
   typeof? $val Pair
 }
@@ -6515,7 +6682,7 @@ cdr & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg cons
- 
+
 proc ::constcl::cons {car cdr} {
   MkPair $car $cdr
 }
@@ -6543,7 +6710,7 @@ pair & a pair \\
 \end{tabular}
 \begin{lstlisting}
 reg car
- 
+
 proc ::constcl::car {pair} {
   $pair car
 }
@@ -6571,7 +6738,7 @@ pair & a pair \\
 \end{tabular}
 \begin{lstlisting}
 reg cdr
- 
+
 proc ::constcl::cdr {pair} {
   $pair cdr
 }
@@ -6616,7 +6783,7 @@ foreach ads {
   dddd
 } {
     reg c${ads}r
- 
+
     proc ::constcl::c${ads}r {pair} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
@@ -6627,7 +6794,7 @@ foreach ads {
         }
         return \$pair
     "
- 
+
 }
 \end{lstlisting}
 \subsection{set-car! procedure}
@@ -6655,7 +6822,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg set-car!
- 
+
 proc ::constcl::set-car! {pair val} {
   $pair set-car! $val
 }
@@ -6685,7 +6852,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg set-cdr!
- 
+
 proc ::constcl::set-cdr! {pair val} {
   $pair set-cdr! $val
 }
@@ -6706,7 +6873,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg list?
- 
+
 proc ::constcl::list? {val} {
   set visited {}
   if {[T [null? $val]]} {
@@ -6772,7 +6939,7 @@ args & some Lisp values \\
 \end{tabular}
 \begin{lstlisting}
 reg list
- 
+
 proc ::constcl::list {args} {
   if {[llength $args] == 0} {
     return #NIL
@@ -6808,7 +6975,7 @@ pair & a pair \\
 \end{tabular}
 \begin{lstlisting}
 reg length
- 
+
 proc ::constcl::length {pair} {
   check {list? $pair} {
     LIST expected\n([pn] lst)
@@ -6864,7 +7031,7 @@ args & some lists \\
 \end{tabular}
 \begin{lstlisting}
 reg append
- 
+
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
@@ -6927,7 +7094,7 @@ vals & a Lisp list of Lisp values \\
 \end{tabular}
 \begin{lstlisting}
 reg reverse
- 
+
 proc ::constcl::reverse {vals} {
   list {*}[lreverse [splitlist $vals]]
 }
@@ -6957,7 +7124,7 @@ k & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg list-tail
- 
+
 proc ::constcl::list-tail {vals k} {
   if {[T [zero? $k]]} {
     return $vals
@@ -6991,7 +7158,7 @@ k & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg list-ref
- 
+
 proc ::constcl::list-ref {vals k} {
   car [list-tail $vals $k]
 }
@@ -7027,7 +7194,7 @@ val2 & a Lisp list of Lisp values \\
 \end{tabular}
 \begin{lstlisting}
 reg memq
- 
+
 proc ::constcl::memq {val1 val2} {
   return [member-proc eq? $val1 $val2]
 }
@@ -7043,7 +7210,7 @@ val2 & a Lisp list of Lisp values \\
 \index{memv}
 \begin{lstlisting}
 reg memv
- 
+
 proc ::constcl::memv {val1 val2} {
   return [member-proc eqv? $val1 $val2]
 }
@@ -7059,7 +7226,7 @@ val2 & a Lisp list of Lisp values \\
 \index{member}
 \begin{lstlisting}
 reg member
- 
+
 proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
@@ -7132,7 +7299,7 @@ val2 & an association list \\
 \end{tabular}
 \begin{lstlisting}
 reg assq
- 
+
 proc ::constcl::assq {val1 val2} {
   return [assoc-proc eq? $val1 $val2]
 }
@@ -7148,7 +7315,7 @@ val2 & an association list \\
 \index{assv}
 \begin{lstlisting}
 reg assv
- 
+
 proc ::constcl::assv {val1 val2} {
   return [assoc-proc eqv? $val1 $val2]
 }
@@ -7164,7 +7331,7 @@ val2 & an association list \\
 \index{assoc}
 \begin{lstlisting}
 reg assoc
- 
+
 proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
@@ -7363,7 +7530,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg string?
- 
+
 proc ::constcl::string? {val} {
   typeof? $val String
 }
@@ -7395,7 +7562,7 @@ k & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg make-string
- 
+
 proc ::constcl::make-string {k args} {
   set i [$k numval]
   if {[llength $args] == 0} {
@@ -7430,7 +7597,7 @@ args & some characters \\
 \end{tabular}
 \begin{lstlisting}
 reg string
- 
+
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
@@ -7466,7 +7633,7 @@ str & a string \\
 \end{tabular}
 \begin{lstlisting}
 reg string-length
- 
+
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
     STRING expected\n([pn] [$str show])
@@ -7498,7 +7665,7 @@ k & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg string-ref
- 
+
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -7539,7 +7706,7 @@ char & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg string-set!
- 
+
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] [$k show] \
@@ -7611,7 +7778,7 @@ str2 & a string \\
 \index{string=?}
 \begin{lstlisting}
 reg string=?
- 
+
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7631,7 +7798,7 @@ proc ::constcl::string=? {str1 str2} {
 \index{string-ci=?}
 \begin{lstlisting}
 reg string-ci=?
- 
+
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7652,7 +7819,7 @@ proc ::constcl::string-ci=? {str1 str2} {
 \index{string<?}
 \begin{lstlisting}
 reg string<?
- 
+
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7672,7 +7839,7 @@ proc ::constcl::string<? {str1 str2} {
 \index{string-ci<?}
 \begin{lstlisting}
 reg string-ci<?
- 
+
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7693,7 +7860,7 @@ proc ::constcl::string-ci<? {str1 str2} {
 \index{string>?}
 \begin{lstlisting}
 reg string>?
- 
+
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7713,7 +7880,7 @@ proc ::constcl::string>? {str1 str2} {
 \index{string-ci>?}
 \begin{lstlisting}
 reg string-ci>?
- 
+
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7734,7 +7901,7 @@ proc ::constcl::string-ci>? {str1 str2} {
 \index{string<=?}
 \begin{lstlisting}
 reg string<=?
- 
+
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7754,7 +7921,7 @@ proc ::constcl::string<=? {str1 str2} {
 \index{string-ci<=?}
 \begin{lstlisting}
 reg string-ci<=?
- 
+
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7775,7 +7942,7 @@ proc ::constcl::string-ci<=? {str1 str2} {
 \index{string>=?}
 \begin{lstlisting}
 reg string>=?
- 
+
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7795,7 +7962,7 @@ proc ::constcl::string>=? {str1 str2} {
 \index{string-ci>=?}
 \begin{lstlisting}
 reg string-ci>=?
- 
+
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
     STRING expected\n([pn] [$str1 show] \
@@ -7838,7 +8005,7 @@ end & a number \\
 \end{tabular}
 \begin{lstlisting}
 reg substring
- 
+
 proc ::constcl::substring {str start end} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -7878,7 +8045,7 @@ args & some strings \\
 \end{tabular}
 \begin{lstlisting}
 reg string-append
- 
+
 proc ::constcl::string-append {args} {
     MkString [::append --> {*}[lmap arg $args {
       $arg value
@@ -7908,7 +8075,7 @@ str & a string \\
 \end{tabular}
 \begin{lstlisting}
 reg string->list
- 
+
 proc ::constcl::string->list {str} {
   list {*}[$str store]
 }
@@ -7936,7 +8103,7 @@ list & a Lisp list of characters \\
 \end{tabular}
 \begin{lstlisting}
 reg list->string
- 
+
 proc ::constcl::list->string {list} {
   MkString [::append --> {*}[
     lmap c [splitlist $list] {$c char}]]
@@ -7968,7 +8135,7 @@ str & a string \\
 \end{tabular}
 \begin{lstlisting}
 reg string-copy
- 
+
 proc ::constcl::string-copy {str} {
   check {string? $str} {
     STRING expected\n([pn] [$str show])
@@ -8002,7 +8169,7 @@ char & a character \\
 \end{tabular}
 \begin{lstlisting}
 reg string-fill!
- 
+
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
     STRING expected\n([pn] [$str show] \
@@ -8106,8 +8273,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg symbol? ::constcl::symbol?
- 
+reg symbol?
+
 proc ::constcl::symbol? {val} {
   typeof? $val Symbol
 }
@@ -8134,8 +8301,8 @@ sym & a symbol \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg symbol->string ::constcl::symbol->string
- 
+reg symbol->string
+
 proc ::constcl::symbol->string {sym} {
   check {symbol? $sym} {
     SYMBOL expected\n([pn] [$sym show])
@@ -8174,8 +8341,8 @@ str & a string \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg string->symbol ::constcl::string->symbol
- 
+reg string->symbol
+
 proc ::constcl::string->symbol {str} {
   check {string? $str} {
     STRING expected\n([pn] [$obj show])
@@ -8322,8 +8489,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector? ::constcl::vector?
- 
+reg vector?
+
 proc ::constcl::vector? {val} {
   typeof? $val Vector
 }
@@ -8354,8 +8521,8 @@ k & a number \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg make-vector ::constcl::make-vector
- 
+reg make-vector
+
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
     set val #NIL
@@ -8387,8 +8554,8 @@ args & some Lisp values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector ::constcl::vector
- 
+reg vector
+
 proc ::constcl::vector {args} {
   MkVector $args
 }
@@ -8416,7 +8583,7 @@ vec & a vector \\
 \end{tabular}
 \begin{lstlisting}
 reg vector-length
- 
+
 proc ::constcl::vector-length {vec} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show])
@@ -8448,8 +8615,8 @@ k & a number \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector-ref ::constcl::vector-ref
- 
+reg vector-ref
+
 proc ::constcl::vector-ref {vec k} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] [$k show])
@@ -8491,8 +8658,8 @@ val & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector-set! ::constcl::vector-set!
- 
+reg vector-set!
+
 proc ::constcl::vector-set! {vec k val} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] [$k show])
@@ -8525,8 +8692,8 @@ vec & a vector \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector->list ::constcl::vector->list
- 
+reg vector->list
+
 proc ::constcl::vector->list {vec} {
   list {*}[$vec value]
 }
@@ -8553,8 +8720,8 @@ list & a Lisp list of Lisp values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg list->vector ::constcl::list->vector
- 
+reg list->vector
+
 proc ::constcl::list->vector {list} {
   vector {*}[splitlist $list]
 }
@@ -8584,8 +8751,8 @@ fill & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-reg vector-fill! ::constcl::vector-fill!
- 
+reg vector-fill!
+
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
     VECTOR expected\n([pn] [$vec show] \
@@ -8712,16 +8879,16 @@ The long and complex constructor is to accommodate the variations of Scheme para
 \index{Environment class}
 \begin{lstlisting}
 catch { ::constcl::Environment destroy }
- 
+
 oo::class create ::constcl::Environment {
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
-    if {[::constcl::null? $syms] eq "#t"} {
+    if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
         error "too many arguments"
       }
-    } elseif {[::constcl::list? $syms] eq "#t"} {
+    } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
@@ -8731,23 +8898,29 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my set $sym $val
+        my assign $sym [lindex $val 0] [lindex $val 1]
       }
-    } elseif {[::constcl::symbol? $syms] eq "#t"} {
-      my set $syms [::constcl::list {*}$vals]
+    } elseif {[T [::constcl::symbol? $syms]]} {
+      my assign $syms VARIABLE [
+        ::constcl::list {*}[lmap v $vals {
+          lindex $v 1
+        }]]
     } else {
       while true {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my set [::constcl::car $syms] \
-          [lindex $vals 0]
+        my assign [::constcl::car $syms] \
+          [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
-        if {[
+        if {[T [
           ::constcl::symbol? [
-            ::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] \
-            [::constcl::list {*}$vals]
+            ::constcl::cdr $syms]]]} {
+          my assign [::constcl::cdr $syms] \
+            VARIABLE [
+              ::constcl::list {*}[lmap v $vals {
+                lindex $v 1
+              }]]
           set vals {}
           break
         } else {
@@ -8767,8 +8940,21 @@ oo::class create ::constcl::Environment {
   method get {sym} {
     dict get $bindings $sym
   }
-  method set {sym val} {
-    dict set bindings $sym $val
+  method unbind {sym} {
+    dict unset bindings $sym
+  }
+  method bind {sym type info} {
+    if {[dict exists $bindings $sym]} {
+      set bi [my get $sym]
+      lassign $bi bt in
+      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
+        error "[$sym name] is already bound"
+      }
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method assign {sym type info} {
+    dict set bindings $sym [::list $type $info]
   }
   method parent {} {
     set outer_env
@@ -8823,7 +9009,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-has-parent?
- 
+
 proc ::constcl::environment-has-parent? {env} {
   if {[$env parent] ne "#NIL"} {
     return #t
@@ -8848,7 +9034,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-parent
- 
+
 proc ::constcl::environment-parent {env} {
   set parent [$env parent]
   if {$parent ne "#NIL"} {
@@ -8874,7 +9060,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-bound-names
- 
+
 proc ::constcl::environment-bound-names {env} {
   list {*}[$env names]
 }
@@ -8895,9 +9081,14 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-bindings
- 
+
 proc ::constcl::environment-bindings {env} {
-  pairlis-tcl [list {*}[$env names]] [list {*}[$env values]]
+  set keys [list {*}[$env names]]
+  set vals [list {*}[lmap v [$env values] {
+    list [S quote] [list [S [lindex $v 0]] \
+      [MkString [lindex $v 1]]]
+  }]]
+  pairlis-tcl $keys $vals
 }
 \end{lstlisting}
 \subsection{environment-bound?}
@@ -8917,7 +9108,7 @@ sym & a symbol \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-bound?
- 
+
 proc ::constcl::environment-bound? {env sym} {
   # X
   set e [$env find $sym]
@@ -8945,7 +9136,7 @@ sym & a symbol \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-lookup
- 
+
 proc ::constcl::environment-lookup {env sym} {
   if {[T [environment-bound? $env $sym]]} {
     lookup $sym [$env find $sym]
@@ -8969,7 +9160,7 @@ sym & a symbol \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-assignable?
- 
+
 proc ::constcl::environment-assignable? {env sym} {
   if {[environment-bound? $env $sym]} {
     # all bound names are assignable in ConsTcl
@@ -8995,7 +9186,7 @@ obj & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg environment-assign!
- 
+
 proc ::constcl::environment-assign! {env sym obj} {
   /set! $sym $obj $env  
 }
@@ -9079,7 +9270,7 @@ exps & a Lisp list of expressions \\
 \end{tabular}
 \begin{lstlisting}
 reg make-environment
- 
+
 proc make-environment {exps} {
   set env [
     Environment new #NIL {} [the-environment]]
@@ -9126,7 +9317,7 @@ val & a Lisp value \\
 \end{tabular}
 \begin{lstlisting}
 reg interpreter-environment
- 
+
 proc interpreter-environment {val} {
   # TODO
 }
@@ -9167,9 +9358,9 @@ Initialize the memory space for vector contents.
 
 \begin{lstlisting}
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
- 
+
 set ::constcl::vectorAssign 0
- 
+
 proc ::constcl::vsAlloc {num} {
   # TODO calculate free space
   set va $::constcl::vectorAssign
@@ -9184,7 +9375,7 @@ Initialize the symbol table and gensym number.
 \begin{lstlisting}
 unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
- 
+
 set ::constcl::gensymnum 0
 \end{lstlisting}
 
@@ -9193,34 +9384,34 @@ Pre-make a set of constants (e.g. \#NIL, \#t, and \#f) and give them aliases for
 
 \begin{lstlisting}
 interp alias {} #NIL {} [::constcl::NIL new]
- 
+
 interp alias {} #t {} [::constcl::MkBoolean #t]
- 
+
 interp alias {} #f {} [::constcl::MkBoolean #f]
- 
+
 interp alias {} #-1 {} [N -1]
- 
+
 interp alias {} #0 {} [N 0]
- 
+
 interp alias {} #1 {} [N 1]
- 
+
 interp alias {} #+ {} [::constcl::MkSymbol +]
- 
+
 interp alias {} #- {} [::constcl::MkSymbol -]
- 
+
 interp alias {} #UNS {} [::constcl::Unspecified new]
- 
+
 interp alias {} #UND {} [::constcl::Undefined new]
- 
+
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 \end{lstlisting}
 
 
-Initialize the definition register with the queen of numbers (or at least a double-precision floating point approximation).
+Crown the definition register with the queen of numbers (or at least a double-precision floating point approximation).
 
 \index{pi}
 \begin{lstlisting}
-dict set ::constcl::defreg pi [N 3.1415926535897931]
+regvar pi [N 3.1415926535897931]
 \end{lstlisting}
 
 
@@ -9228,7 +9419,7 @@ In this interpreter, \texttt{nil} does refer to the empty list.
 
 \index{nil}
 \begin{lstlisting}
-reg nil #NIL
+regvar nil #NIL
 \end{lstlisting}
 \section{Environment startup}
 \label{environment-startup}
@@ -9244,7 +9435,7 @@ Make \texttt{null\_env} empty and judgemental: this is where searches for unboun
 \begin{lstlisting}
 ::constcl::Environment create \
   ::constcl::null_env #NIL {}
- 
+
 oo::objdefine ::constcl::null_env {
   method find {sym} {
     self
@@ -9252,7 +9443,7 @@ oo::objdefine ::constcl::null_env {
   method get {sym} {
     ::error "Unbound variable: [$sym name]"
   }
-  method set {sym val} {
+  method set {sym t_ i_} {
     ::error "Unbound variable: [$sym name]"
   }
 }
@@ -9264,12 +9455,13 @@ Meanwhile, \texttt{global\_env} is populated with all the definitions from the d
 \index{global\_env}
 \begin{lstlisting}
 namespace eval ::constcl {
-  set keys [list {*}[lmap key [dict keys $defreg] {
-    S $key
-  }]]
-  set vals [dict values $defreg]
-  Environment create global_env $keys $vals \
+  Environment create global_env #NIL {} \
     ::constcl::null_env
+  foreach v [dict values $defreg] {
+    lassign $v key val
+    lassign $val bt in
+    global_env bind [S $key] $bt $in
+  }
 }
 \end{lstlisting}
 
@@ -9346,9 +9538,6 @@ proc ::repl {{prompt "ConsTcl> "}} {
 \begin{lstlisting}
 ; An assortment of procedures to supplement the builtins.
 \end{lstlisting}
-\section{Lookup table procedures}
-\label{lookup-table-procedures}
-\index{Lookup table procedures}
 \subsection{get procedure}
 \label{get-procedure}
 \index{get procedure}
@@ -9552,9 +9741,6 @@ val & a Lisp value \\
       (begin (set-cdr! item val) lst)
       lst)))
 \end{lstlisting}
-\section{Other}
-\label{other}
-\index{Other}
 \subsection{fact procedure}
 \label{fact-procedure}
 \index{fact procedure}

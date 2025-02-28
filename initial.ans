@@ -23,27 +23,59 @@ registerI{definitions register}. That way I don't need to manually keep track of
 and list procedures. The definitions register's contents will eventually get
 dumped into the R{standard library}{environment-startup}.
 
-You can call K{reg} with two values: E{key} and E{val}. E{Key} is the string
-that will eventually become the lookup symbol in the standard library, and
-E{val} is the name of the Tcl command that will carry out the procedure. If you
-don't give a value for E{val}, K{reg} creates a value by prepending the
-K{::constcl::} namespace to the E{key} value, which is sufficient 99% of the
-time.
+You can call K{reg} with one parameter: E{name}. E{name} is the string
+that will eventually become the lookup symbol in the standard library. Following
+K{reg} are two similar procedures: K{regspecial} and K{regmacro}. The former
+registers special forms like K{if} and K{define}, and the latter registers
+macros like K{and} or K{when}. FInally there is K{regvar}, which registers
+variables.
 MD)
 
 PR(
-reg (internal);key tstr ?val? tstr -> none
+reg, regspecial, regmacro (internal);name tstr -> none
+PR)
+
+PR(
+regvar (internal);name tstr val val -> none
 PR)
 
 CB(
-proc ::reg {key args} {
-  if {[llength $args]} {
-    lassign $args val
-  } else {
-    set val ::constcl::$key
+proc reg {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
   }
-  dict set ::constcl::defreg $key $val
+  set val [::list VARIABLE ::constcl::$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
+}
+
+proc regspecial {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list SPECIAL ::constcl::special-$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
   return
+}
+
+proc regmacro {name} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list SYNTAX ::constcl::expand-$name]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
+  return
+}
+
+proc regvar {name value} {
+  if {![info exists ::constcl::defreg]} {
+    set ::constcl::defreg [dict create]
+  }
+  set val [::list VARIABLE $value]
+  set idx [llength [dict values $::constcl::defreg]]
+  dict set ::constcl::defreg $idx [::list $name $val]
 }
 CB)
 
@@ -96,7 +128,7 @@ atom? (public);val val -> bool
 PR)
 
 CB(
-reg atom? ::constcl::atom?
+reg atom?
 
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
@@ -172,7 +204,7 @@ pairlis-tcl (internal);lvals lvals -> lasss
 PR)
 
 CB(
-proc pairlis-tcl {a b} {
+proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
     parse {()}
   } else {
@@ -215,26 +247,6 @@ proc ::constcl::usage {usage expr} {
 }
 CB)
 
-H4 regmacro procedure
-
-MD(
-ConsTcl has macrosI{macro}, i.e. succinct syntactic forms that are rewritten to
-concrete--but more verbose--forms. The evaluator passes macro forms to a command
-for expansion before they are fully processed. K{regmacro} registers macro names
-in the macro list, so the evaluator knows what to expand.
-MD)
-
-PR(
-regmacro (internal);name tstr -> none
-PR)
-
-CB(
-proc ::regmacro {name} {
-  lappend ::constcl::macrolist $name
-  return
-}
-CB)
-
 H4 pn procedure
 
 MD(
@@ -250,6 +262,26 @@ PR)
 CB(
 proc ::pn {} {
   lindex [split [lindex [info level -1] 0] :] end
+}
+CB)
+
+H4 unbind procedure
+
+MD(
+K{unbind} removes one binding from the environment it is bound in.
+MD)
+
+PR(
+unbind (internal);sym sym -> none
+PR)
+
+CB(
+proc ::unbind {sym} {
+  # TODO go from current environment
+  set env [::constcl::global_env find $sym]
+  if {$env ne "::constcl::null_env"} {
+    $env unbind $sym
+  }
 }
 CB)
 

@@ -132,7 +132,7 @@ vector? (public);val val -> bool
 PR)
 
 CB(
-reg vector? ::constcl::vector?
+reg vector?
 
 proc ::constcl::vector? {val} {
   typeof? $val Vector
@@ -173,7 +173,7 @@ make-vector? (public);k num ?val? val -> vec
 PR)
 
 CB(
-reg make-vector ::constcl::make-vector
+reg make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
@@ -204,7 +204,7 @@ vector (public);args vals -> vec
 PR)
 
 CB(
-reg vector ::constcl::vector
+reg vector
 
 proc ::constcl::vector {args} {
   MkVector $args
@@ -277,7 +277,7 @@ vector-ref (public);vec vec k num -> val
 PR)
 
 CB(
-reg vector-ref ::constcl::vector-ref
+reg vector-ref
 
 proc ::constcl::vector-ref {vec k} {
   check {vector? $vec} {
@@ -329,7 +329,7 @@ vector-set! (public);vec vec k num val val -> vec
 PR)
 
 CB(
-reg vector-set! ::constcl::vector-set!
+reg vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
   check {vector? $vec} {
@@ -345,6 +345,7 @@ CB)
 TT(
 
 ::tcltest::test vectors-1.5 {try vector-set!} -body {
+  unbind [S x]
     pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
     pew {(vector-set! (x) 1 '(foo bar))}
 } -output "#(0 (foo bar) \"Anna\")\n"
@@ -370,7 +371,7 @@ vector->list (public);vec vec -> lvals
 PR)
 
 CB(
-reg vector->list ::constcl::vector->list
+reg vector->list
 
 proc ::constcl::vector->list {vec} {
   list {*}[$vec value]
@@ -404,7 +405,7 @@ list->vector (public);list lvals -> vec
 PR)
 
 CB(
-reg list->vector ::constcl::list->vector
+reg list->vector
 
 proc ::constcl::list->vector {list} {
   vector {*}[splitlist $list]
@@ -440,7 +441,7 @@ vector-fill! (public);vec vec fill val -> vec
 PR)
 
 CB(
-reg vector-fill! ::constcl::vector-fill!
+reg vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {

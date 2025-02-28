@@ -134,7 +134,8 @@ proc ::constcl::= {args} {
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
-    ::error "NUMBER expected\n(= num ...)"
+    ::error "NUMBER expected\n(= [
+      [lindex $args 0] show] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
     return #t

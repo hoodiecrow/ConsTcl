@@ -4,6 +4,7 @@ dc            -> -don't care-
 msg           -> a message string
 invoke        -> what pr returns
 formals       -> a Scheme formals list
+bindfo        -> binding info
 lisp          -> Lisp source text
 inpbuf        -> an input buffer
 tstrinpbuf    -> a Tcl string or an input buffer

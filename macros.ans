@@ -320,59 +320,6 @@ TT(
 
 TT)
 
-H4 expand-define procedure
-
-MD(
-K{define} has two variants, one of which requires some rewriting. It's the one
-with an implied K{lambda} call, the one that defines a procedure. 
-
-(define (E{symbol} E{formals}) E{body})
-
-is transformed into
-
-(define E{symbol} (lambda E{formals} E{body}))
-
-which conforms better to K{eval}'s standard of (define E{symbol} E{value}).
-MD)
-
-PR(
-expand-define (internal);expr expr env env -> expr
-PR)
-
-CB(
-regmacro define
-
-proc ::constcl::expand-define {expr env} {
-  set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
-  /define [S tail] $tail $env
-  set qq "`(define ,(caar tail)
-             (lambda ,(cdar tail) ,@(cdr tail)))"
-  set expr [expand-quasiquote [parse $qq] $env]
-  $env destroy
-  return $expr
-}
-CB)
-
-TT(
-::tcltest::test macros-5.0 {define} -body {
-    pxw {(define (foo a b) (+ a b) (* a b))}
-} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
-
-::tcltest::test macros-5.1 {define} -body {
-    pxw "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
-} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
-
-::tcltest::test macros-5.2 {define} -body {
-    pxw "(define (f) (define r 20) (* r r))"
-} -output "(define f (lambda () (define r 20) (* r r)))\n"
-
-::tcltest::test macros-5.3 {define} -body {
-    pxw "(define (list-find-key lst key)\n(lfk lst key 0))"
-} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
-
-TT)
-
 H4 expand-del"! procedure
 
 MD(
@@ -413,21 +360,25 @@ TT(
 } -output "(set! plist (delete! plist (quote a)))\n"
 
 ::tcltest::test macros-6.1 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'a)}
 } -output "(b 2 c 3)\n"
 
 ::tcltest::test macros-6.2 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'b)}
 } -output "(a 1 c 3)\n"
 
 ::tcltest::test macros-6.3 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'c)}
 } -output "(a 1 b 2)\n"
 
 ::tcltest::test macros-6.4 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'd)}
 } -output "(a 1 b 2 c 3)\n"

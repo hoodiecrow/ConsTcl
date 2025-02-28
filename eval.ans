@@ -10,24 +10,19 @@ MD)
 
 h3 The evaluator
 
+H4 eval procedure
+
 MD(
-B{eval} procedure
-
 The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
-it according to its syntactic form.
-
-K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
-on a non-atomic expression into a more concrete expression. See the part about
-R{macros}{macros} below, and 2) resolving E{local defines}, acting on expressions
-of the form K{(begin (define ...} when in a local environment. See the part
-about R{resolving local defines}{resolving-local-defines}.
+it according to its form. Symbols to the value they R{refer
+  to}{variable-reference}, numbers etc to their R{own value}{constant-literal},
+  and expressions that are lists to the value that K{eval-form} assigns to them.
 MD)
 
 PR(
 eval (public);expr expr env env -> val
 PR)
 
-IX eval
 CB(
 reg eval
 
@@ -38,61 +33,79 @@ proc ::constcl::eval \
   } elseif {[T [null? $expr]] ||
     [T [atom? $expr]]} {
     set expr
+  } elseif {[T [pair? $expr]]} {
+    eval-form $expr $env
   } else {
-    while {[[car $expr] name] in
-      $::constcl::macrolist} {
-      set expr [expand-macro $expr $env]
-    }
-    set op [car $expr]
-    set args [cdr $expr]
-    if {$env ne "::constcl::global_env" &&
-      [$op name] eq "begin" &&
-      ([T [pair? [car $args]]] &&
-      [[caar $args] name] eq "define")} {
-      set expr [resolve-local-defines $args]
-      set op [car $expr]
-      set args [cdr $expr]
-    }
-    switch [$op name] {
-      quote {
-        usage [parse "(quote datum)"] $expr
-        car $args
+    error "unknown expression type"
+  }
+}
+CB)
+
+H4 eval-form procedure
+
+MD(
+K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
+on a non-atomic expression into a more concrete expression. See the part about
+R{macros}{macros} below, and 2) resolving E{local defines}, acting on
+expressions of the form K{(begin (define ...} when in a local environment. See
+the part about R{resolving local defines}{resolving-local-defines}.
+MD)
+
+PR(
+eval-form (internal);expr expr env env -> val
+PR)
+
+CB(
+proc ::constcl::eval-form {expr env} {
+  set op [car $expr]
+  set args [cdr $expr]
+  if {[T [symbol? $op]]} {
+    set bi [binding-info $op $env]
+    lassign $bi bt in
+    switch $bt {
+      UNBOUND {
+        error "unbound symbol" $op
       }
-      if {
-        if {[T [null? [cddr $args]]]} {
-          usage [p "(if cond cons)"] $expr
-          /if1 {[eval [car $args] $env]} \
-            {eval [cadr $args] $env}
-        } {
-          usage [p "(if cond cons altr)"] $expr
-          /if {[eval [car $args] $env]} \
-            {eval [cadr $args] $env} \
-            {eval [caddr $args] $env}
-        }
+      SPECIAL {
+        $in $expr $env
       }
-      begin {
-        /begin $args $env
+      VARIABLE {
+        invoke $in [eval-list $args $env]
       }
-      define {
-        usage [p "(define sym val)"] $expr
-        /define [car $args] [
-          eval [cadr $args] $env] $env
-      }
-      set! {
-        usage [p "(set! sym val)"] $expr
-        /set! [car $args] [
-          eval [cadr $args] $env] $env 
-      }
-      lambda {
-        # no point checking usage here
-        /lambda [car $args] [
-          cdr $args] $env
+      SYNTAX {
+        set expr [$in $expr $env]
+        eval $expr $env
       }
       default {
-        invoke [eval $op $env] [
-          eval-list $args $env]
+        error "unrecognized binding type" $bt
       }
     }
+  } else {
+    invoke [eval $op $env] [eval-list $args $env]
+  }
+}
+CB)
+
+MD(
+B{binding-info} procedure
+
+The K{binding-info} procedure takes a symbol and returns a list of two items: 1)
+the binding type of the symbol, and 2) the handling info that K{eval-form} uses to
+handle this symbol.
+MD)
+
+PR(
+binding-info (internal);op sym env env -> bindfo
+PR)
+
+CB(
+proc ::constcl::binding-info {op env} {
+  set actual_env [$env find $op]
+  # parentless envs have #NIL
+  if {$actual_env ne "::constcl::null_env"} {
+    return [$actual_env get $op]
+  } else {
+    return [::list UNBOUND {}]
   }
 }
 CB)
@@ -142,7 +155,7 @@ PR)
 IX lookup
 CB(
 proc ::constcl::lookup {sym env} {
-  [$env find $sym] get $sym
+  lindex [[$env find $sym] get $sym] 1
 }
 CB)
 
@@ -185,6 +198,23 @@ that there is a shorthand notation for it: K{'x} is interpreted as K{(quote x)}
 by the Lisp reader.
 MD)
 
+MD(
+B{quote} special form
+MD)
+
+PR(
+special-quote (public);expr expr env env -> val
+PR)
+
+IX quote special form
+CB(
+regspecial quote
+
+proc ::constcl::special-quote {expr env} {
+  return [cadr $expr]
+}
+CB)
+
 TT(
 ::tcltest::test eval-3.0 {try eval-ing a quotation} -body {
   pew "'m"
@@ -211,7 +241,33 @@ evaluated and the value returned. Otherwise, the third expression (the
 E{alternate}) is evaluated and the value returned. One of the two latter
 expressions will be evaluated, and the other will remain unevaluated.
 
-The two procedures that handle the conditional form are K{/if} and K{/if1}. The
+MD(
+B{if} special form
+MD)
+
+PR(
+special-if (public);expr expr env env -> val
+PR)
+
+IX if special form
+CB(
+regspecial if
+
+proc ::constcl::special-if {expr env} {
+  set args [cdr $expr]
+  if {[T [null? [cddr $args]]]} {
+    /if1 {[eval [car $args] $env]} \
+      {eval [cadr $args] $env}
+  } else {
+    /if {[eval [car $args] $env]} \
+      {eval [cadr $args] $env} \
+      {eval [caddr $args] $env}
+  }
+}
+CB)
+
+MD(
+The two procedures that help the if form out are K{/if} and K{/if1}. The
 former takes both a consequent and an alternate, the latter takes only a
 consequent.
 
@@ -263,11 +319,37 @@ EM Example: K{(begin (define r 10) (* r r))} ==> 100
 When expressions are evaluated in sequenceI{sequence}, the order is important
 for two reasons. If the expressions have any side effects, they happen in the
 same order of sequence. Also, if expressions are part of a pipeline of
-calculations, then they need to be processed in the order of that pipeline. The
+calculations, then they need to be processed in the order of that pipeline.
+MD)
+
+MD(
+B{begin} special form
+MD)
+
+PR(
+special-begin (public);expr expr env env -> val
+PR)
+
+IX begin special form
+CB(
+regspecial begin
+
+proc ::constcl::special-begin {expr env} {
+  #      TODO
+  if {   0 &   $env ne "::constcl::global_env"} {
+    set expr [resolve-local-defines $expr]
+  }
+  set args [cdr $expr]
+  /begin $args $env
+}
+CB)
+
+MD(
+B{/begin} procedure
+
+The
 K{/begin} helper procedure takes a Lisp list of expressions and evaluates them
 in sequence, returning the value of the last one.
-
-B{/begin} procedure
 MD)
 
 PR(
@@ -307,7 +389,79 @@ value (or rather to the location the value is in), creating a variable. The
 K{/define} helper procedure adds a variable to the current environment. It first
 checks that the symbol name is a valid identifier, then it updates the
 environment with the new binding.
+MD)
 
+H4 define special form
+
+PR(
+special-define (public);expr expr env env -> none
+PR)
+
+CB(
+regspecial define
+proc ::constcl::special-define {expr env} {
+  set expr [rewrite-define $expr $env]
+  set sym [cadr $expr]
+  set val [eval [caddr $expr] $env]
+  /define $sym $val $env
+}
+CB)
+
+MD(
+B{rewrite-define} procedure
+
+K{define} has two variants, one of which requires some rewriting. It's the one
+with an implied K{lambda} call, the one that defines a procedure. 
+
+(define (E{symbol} E{formals}) E{body})
+
+is transformed by K{rewrite-define} into
+
+(define E{symbol} (lambda E{formals} E{body}))
+
+which conforms better to K{eval}'s standard of (define E{symbol} E{value}).
+The other variant passes through K{rewrite-define} unchanged.
+MD)
+
+PR(
+rewrite-define (internal);expr expr env env -> expr
+PR)
+
+CB(
+proc ::constcl::rewrite-define {expr env} {
+  if {[T [pair? [cadr $expr]]]} {
+    set tail [cdr $expr]
+    set _env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $_env
+    set qq "`(define ,(caar tail)
+               (lambda ,(cdar tail) ,@(cdr tail)))"
+    set expr [expand-quasiquote [parse $qq] $_env]
+    $_env destroy
+  } 
+  return $expr
+}
+CB)
+
+TT(
+::tcltest::test eval-5.0 {define} -body {
+    w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
+} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
+
+::tcltest::test eval-5.1 {define} -body {
+    w [::constcl::rewrite-define [p "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
+} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
+
+::tcltest::test eval-5.2 {define} -body {
+    w [::constcl::rewrite-define [p "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+::tcltest::test eval-5.3 {define} -body {
+    w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
+} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
+TT)
+
+MD(
 B{/define} procedure
 MD)
 
@@ -319,7 +473,7 @@ IX /define
 CB(
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
-  $env set $sym $val
+  $env bind $sym VARIABLE $val
   return
 }
 CB)
@@ -352,24 +506,32 @@ chain. It finds the variable's environment and updates the binding. It returns
 the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
 both variables to 99. By Scheme convention, procedures that modify variables
 have `!' at the end of their name.
+MD)
 
-B{/set!} procedure
+MD(
+B{set!} special form
 MD)
 
 PR(
-/set! (internal);var bsym val val env env -> val
+special-set! (public);expr expr env env -> val
 PR)
 
-IX /set"!
+IX set"! special form
 CB(
-proc ::constcl::/set! {var val env} {
-  [$env find $var] set $var $val
+regspecial set!
+
+proc ::constcl::special-set! {expr env} {
+  set args [cdr $expr]
+  set var [car $args]
+  set val [eval [cadr $args] $env]
+  [$env find $var] assign $var VARIABLE $val
   set val
 }
 CB)
 
 TT(
 ::tcltest::test eval-7.0 {try eval-ing an assignment} -body {
+  unbind [S r]
   pew "(define r 10)"
   pew "(set! r 20)"
   pew "r"
@@ -406,7 +568,7 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
   (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square
   root of the sum of two squares.
 
-Under the hood, the helper K{/lambda} makes a R{Procedure}{control} object. First
+The lambda special form makes a R{Procedure}{control} object. First
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
 has more than one expression (K{S begin} stands for `the symbol begin'.), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
@@ -419,18 +581,25 @@ IT An E{empty list}, K{()}, meaning that no arguments are accepted,
 IT A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each symbol,
 IT A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
 IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
+MD)
 
-B{/lambda} procedure
+MD(
+B{lambda} special form
 MD)
 
 PR(
-/lambda (internal);formals formals body lexprs env env -> proc
+special-lambda (public);expr expr env env -> proc
 PR)
 
-IX /lambda
+IX lambda special form
 CB(
-proc ::constcl::/lambda {formals body env} {
-  if {[[length $body] value] > 1} {
+regspecial lambda
+
+proc ::constcl::special-lambda {expr env} {
+  set args [cdr $expr]
+  set formals [car $args]
+  set body [cdr $args]
+  if {[[length $body] numval] > 1} {
     set body [cons [S begin] $body]
   } else {
     set body [car $body]
@@ -542,7 +711,7 @@ TT(
 
 ::tcltest::test eval-10.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
-    pew {((lambda x x) 3 4 5 6)}
+    pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
     pew {((lambda (x y . z) z) 3 4 5 6)}
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"

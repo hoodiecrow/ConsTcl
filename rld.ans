@@ -13,11 +13,12 @@ MD)
 H4 resolve-local-defines procedure
 
 PR(
-resolve-local-defines;exps lexprs -> expr
+resolve-local-defines;expr expr -> expr
 PR)
 
 CB(
-proc ::constcl::resolve-local-defines {exps} {
+proc ::constcl::resolve-local-defines {expr} {
+  set exps [cdr $expr]
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
   if {[T $error]} {
@@ -292,7 +293,7 @@ TT(
 ::tcltest::test rld-1.3 {expand local defines with begin} -body {
     set x [p "(begin (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
     set x [p "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]

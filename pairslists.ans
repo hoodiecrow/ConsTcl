@@ -426,6 +426,8 @@ CB)
 TT(
 
 ::tcltest::test pairslists-8.0 {try set-cdr!} -body {
+  unbind [S f]
+  unbind [S g]
     pew {(define (f) (list 'not-a-constant-list)))}
     pew {(define (g) '(constant-list)))}
     pew {(set-cdr! (f) 3)}

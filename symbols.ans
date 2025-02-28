@@ -89,7 +89,7 @@ symbol? (public);val val -> bool
 PR)
 
 CB(
-reg symbol? ::constcl::symbol?
+reg symbol?
 
 proc ::constcl::symbol? {val} {
   typeof? $val Symbol
@@ -129,7 +129,7 @@ symbol->string (public);sym sym -> str
 PR)
 
 CB(
-reg symbol->string ::constcl::symbol->string
+reg symbol->string
 
 proc ::constcl::symbol->string {sym} {
   check {symbol? $sym} {
@@ -184,7 +184,7 @@ string->symbol (public);str str -> sym
 PR)
 
 CB(
-reg string->symbol ::constcl::string->symbol
+reg string->symbol
 
 proc ::constcl::string->symbol {str} {
   check {string? $str} {

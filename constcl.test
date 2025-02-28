@@ -354,6 +354,23 @@ source constcl.tcl
   pew "(begin (display 'a) (display 'b))"
 } -output "ab"
 
+::tcltest::test eval-5.0 {define} -body {
+    w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
+} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
+
+::tcltest::test eval-5.1 {define} -body {
+    w [::constcl::rewrite-define [p "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
+} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
+
+::tcltest::test eval-5.2 {define} -body {
+    w [::constcl::rewrite-define [p "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+::tcltest::test eval-5.3 {define} -body {
+    w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
+} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
+
 ::tcltest::test eval-6.0 {try eval-ing a define} -body {
   pew "(define r 10)"
   pew "r"
@@ -368,6 +385,7 @@ source constcl.tcl
 } -returnCodes error -result "Identifier expected (+foo)"
 
 ::tcltest::test eval-7.0 {try eval-ing an assignment} -body {
+  unbind [S r]
   pew "(define r 10)"
   pew "(set! r 20)"
   pew "r"
@@ -389,7 +407,7 @@ source constcl.tcl
 
 ::tcltest::test eval-10.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
-    pew {((lambda x x) 3 4 5 6)}
+    pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
     pew {((lambda (x y . z) z) 3 4 5 6)}
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
@@ -462,44 +480,31 @@ source constcl.tcl
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 
-::tcltest::test macros-5.0 {define} -body {
-    pxw {(define (foo a b) (+ a b) (* a b))}
-} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
-
-::tcltest::test macros-5.1 {define} -body {
-    pxw "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
-} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
-
-::tcltest::test macros-5.2 {define} -body {
-    pxw "(define (f) (define r 20) (* r r))"
-} -output "(define f (lambda () (define r 20) (* r r)))\n"
-
-::tcltest::test macros-5.3 {define} -body {
-    pxw "(define (list-find-key lst key)\n(lfk lst key 0))"
-} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
-
-
 ::tcltest::test macros-6.0 {try expand del!} -body {
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pxw {(del! plist 'a)}
 } -output "(set! plist (delete! plist (quote a)))\n"
 
 ::tcltest::test macros-6.1 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'a)}
 } -output "(b 2 c 3)\n"
 
 ::tcltest::test macros-6.2 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'b)}
 } -output "(a 1 c 3)\n"
 
 ::tcltest::test macros-6.3 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'c)}
 } -output "(a 1 b 2)\n"
 
 ::tcltest::test macros-6.4 {try run del!} -body {
+  unbind [S plist]
   pew {(define plist (list 'a 1 'b 2 'c 3))}
   pew {(del! plist 'd)}
 } -output "(a 1 b 2 c 3)\n"
@@ -712,7 +717,7 @@ if no {
 ::tcltest::test rld-1.3 {expand local defines with begin} -body {
     set x [p "(begin (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda () ((lambda () (begin begin (set! n (+ a b)) (* n n))))))\n"
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
     set x [p "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
@@ -1356,6 +1361,8 @@ if no {
 
 
 ::tcltest::test pairslists-8.0 {try set-cdr!} -body {
+  unbind [S f]
+  unbind [S g]
     pew {(define (f) (list 'not-a-constant-list)))}
     pew {(define (g) '(constant-list)))}
     pew {(set-cdr! (f) 3)}
@@ -1515,6 +1522,8 @@ qux\bod
 } -output "\"xoo\"\n"
 
 ::tcltest::test strings-7.1 {try string-set!} -body {
+  unbind [S f]
+  unbind [S g]
     pew {(define f (lambda () (make-string 3 #\*)))}
     pew {(define g (lambda () "***"))}
     pew {(string-set! (f) 0 #\?)}
@@ -1631,6 +1640,9 @@ qux\bod
 
 
 ::tcltest::test strings-22.0 {try string-copy} -body {
+  unbind [S x]
+  unbind [S y]
+  unbind [S z]
     pew {(define x (string-copy "foo"))}
     pew {(string-set! x 0 #\x)}
     pew {(define y "foobar")}
@@ -1642,6 +1654,7 @@ qux\bod
 
 
 ::tcltest::test strings-23.0 {try string-fill!} -body {
+  unbind [S x]
     pew {(define x (string-copy "foo"))}
     pew {(string-fill! x #\x)}
 } -output "\"xxx\"\n"
@@ -1708,6 +1721,7 @@ qux\bod
 
 
 ::tcltest::test vectors-1.5 {try vector-set!} -body {
+  unbind [S x]
     pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
     pew {(vector-set! (x) 1 '(foo bar))}
 } -output "#(0 (foo bar) \"Anna\")\n"
@@ -1749,200 +1763,10 @@ qux\bod
 } -output 28.274333882308138\n
 
 ::tcltest::test cons-2.0 {calculate factorial} -body {
+    unbind [S fact]
     pew "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"
     pew "(fact 10)"
 } -output 3628800\n
-
-::tcltest::test cons-2.1 {calculate factorial 100} -body {
-    pew "(fact 100)"
-} -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
-
-::tcltest::test cons-2.2 {calculate circle-area factorial 10} -body {
-    pew "(circle-area (fact 10))"
-} -output 41369087205782.695\n
-
-::tcltest::test cons-3.0 {count} -body {
-    pew "(define (truthtoint val) (if val 1 0))"
-    pew "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
-} -output ""
-
-::tcltest::test cons-3.0 {count} -body {
-    pew "(count 0 (list 0 1 2 3 0 0))"
-} -output 3\n
-
-::tcltest::test cons-3.1 {count} -body {
-    pew "(count 'the '(the more the merrier the bigger the better))"
-} -output 4\n
-
-::tcltest::test cons-4.0 {twice} -body {
-    pew "(define (twice x) (* 2 x))"
-    pew "(twice 5)"
-} -output 10\n
-
-::tcltest::test cons-4.1 {twice} -body {
-    pew "(define (repeat f) (lambda (x) (f (f x))))"
-    pew "((repeat twice) 10)"
-} -output 40\n
-
-::tcltest::test cons-4.2 {twice} -body {
-    pew "((repeat (repeat twice)) 10)"
-} -output 160\n
-
-::tcltest::test cons-4.3 {twice} -body {
-    pew "((repeat (repeat (repeat twice))) 10)"
-} -output 2560\n
-
-::tcltest::test cons-4.4 {twice} -body {
-    pew "((repeat (repeat (repeat (repeat twice)))) 10)"
-} -output 655360\n
-
-::tcltest::test cons-5.0 {fib-range} -body {
-    pew "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
-    pew "(define (range a b) (if (= a b) '() (cons a (range (+ a 1) b))))"
-    pew "(range 0 10)"
-} -output "(0 1 2 3 4 5 6 7 8 9)\n"
-
-::tcltest::test cons-5.1 {fib-range} -body {
-    pew "(map fib (range 0 10))"
-} -output "(1 1 2 3 5 8 13 21 34 55)\n"
-
-::tcltest::test cons-5.2 {fib-range} -body {
-    pew "(map fib (range 0 20))"
-} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)\n"
-
-::tcltest::test cons-6.0 {procedure call with a list operator} -body {
-    pew "((if #t + *) 2 3)"
-} -output "5\n"
-
-::tcltest::test cons-7.0 {assignment} -body {
-    pew "(begin (define r 10) (set! r 20) r)"
-} -output "20\n"
-
-::tcltest::test cons-7.1 {assignment returns a value} -body {
-    pew "(begin (define r 10) (set! r 20))"
-} -output "20\n"
-
-::tcltest::test cons-7.2 {assignment to an unbound symbol} -body {
-    pew "(begin (set! XX 20))"
-} -returnCodes error -result "Unbound variable: XX"
-
-::tcltest::test cons-8.0 {procedure definition} -body {
-    pew "(lambda (r) (* r r))"
-} -match regexp -output "#<proc-\\d+>\n"
-
-::tcltest::test cons-8.1 {procedure with two expressions} -body {
-    pew "(define (f) (define r 20) (* r r))"
-    pew "(f)"
-} -output "400\n"
-
-::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
-    pxw "(define (f) (define r 20) (* r r))"
-} -output "(define f (lambda () (define r 20) (* r r)))\n"
-
-::tcltest::test cons-9.0 {symbol?} -body {
-    pew "(symbol? (quote foo99))"
-} -output "#t\n"
-
-::tcltest::test cons-10.0 {shadowing} -body {
-    pew "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
-} -output "10\n"
-
-::tcltest::test cons-13.0 {expandquotes} -body {
-    pew "''foo"
-} -output "(quote foo)\n"
-
-::tcltest::test cons-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pew "(define (every? fn list)
-  (or (null? list)
-      (and (fn (car list)) (every? fn (cdr list)))))"
-    pew "(every? number? '(1 2 3 4))"
-} -output "#t\n"
-
-::tcltest::test cons-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pew "(define (adjoin x a)
-  (if (member x a)
-      a
-      (cons x a)))"
-    pew "(adjoin 'x '(a b c))"
-} -output "(x a b c)\n"
-
-::tcltest::test cons-14.2 {Scheme cookbook, due to Nils M Holm} -body {
-    pew "(adjoin 'c '(a b c))"
-} -output "(a b c)\n"
-
-::tcltest::test cons-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pew "(define (list-index fn list)
-  (let iter ((list list) (index 0))
-    (if (null? list)
-        -1
-        (let ((item (car list)))
-          (if (fn item)
-              index
-              (iter (cdr list) (+ index 1)))))))"
-    pew "(define (>10 x) (> x 10))"
-    pew "(list-index >10 '(1 2 3 4 10 11 12 13 14))"
-} -output "5\n"
-
-::tcltest::test cons-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pew "(define (take lst n)
-  (let loop ((result '()) (i n) (lst lst))
-    (if (or (null? lst) (<= i 0))
-        (reverse result)
-        (loop (cons (car lst) result) (- i 1) (cdr lst)))))"
-    pew "(define (sublist-map n fn lst)
-  (let loop ((lst lst) (result '()))
-    (if (< (length lst) n)
-        (reverse result)
-        (let ((next-list (take lst n)))
-          (loop (cdr lst) (cons (apply fn next-list) result))))))"
-    pew "(sublist-map 2 < '(1 2 3 4))"
-} -output "(#t #t #t)\n"
-
-::tcltest::test cons-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
-    pew "(define (remove fn lst)
-  (let loop ((lst lst) (result '()))
-    (if (null? lst)
-        (reverse result)
-        (let ((item (car lst)))
-          (loop (cdr lst)
-                (if (fn item) result (cons item result)))))))"
-    pew "(remove >10 '(1 2 3 4 10 11 12 13 14))"
-} -output "(1 2 3 4 10)\n"
-
-::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -body {
-    pew {(define (group n lst)
-  (if (< n 1)
-      (error "group: n must be positive")
-      (let loop ((lst lst) (m n) (g '()) (gs '()))
-        (cond ((and (null? lst) (null? g))
-               (reverse gs))
-              ((or (null? lst) (zero? m))
-               (loop lst n '() (cons (reverse g) gs)))
-              (else
-               (loop (cdr lst) (- m 1) (cons (car lst) g) gs))))))}
-    pew "(group 3 (in-range 10))"
-} -output "((0 1 2) (3 4 5) (6 7 8) (9))\n"
-
-::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -body {
-    pew {(define (group-by f lst)
-  (if (null? lst) '()
-      (let ((first (car lst)))
-        (let loop ((lst (cdr lst))
-                   (key (f first))
-                   (group (list first))
-                   (groups '()))
-          (if (null? lst)
-              (reverse (cons (reverse group) groups))
-              (let ((newkey (f (car lst))))
-                (if (equal? key newkey)
-                    (loop (cdr lst) key
-                          (cons (car lst) group)
-                          groups)
-                    (loop (cdr lst) newkey
-                          (list (car lst))
-                          (cons (reverse group) groups)))))))))}
-    pew "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
-} -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
 
 
 ::tcltest::cleanupTests

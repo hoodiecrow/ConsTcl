@@ -20,11 +20,11 @@ oo::class create ::constcl::Environment {
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
-    if {[::constcl::null? $syms] eq "#t"} {
+    if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
         error "too many arguments"
       }
-    } elseif {[::constcl::list? $syms] eq "#t"} {
+    } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
@@ -34,23 +34,29 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my set $sym $val
+        my assign $sym [lindex $val 0] [lindex $val 1]
       }
-    } elseif {[::constcl::symbol? $syms] eq "#t"} {
-      my set $syms [::constcl::list {*}$vals]
+    } elseif {[T [::constcl::symbol? $syms]]} {
+      my assign $syms VARIABLE [
+        ::constcl::list {*}[lmap v $vals {
+          lindex $v 1
+        }]]
     } else {
       while true {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my set [::constcl::car $syms] \
-          [lindex $vals 0]
+        my assign [::constcl::car $syms] \
+          [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
-        if {[
+        if {[T [
           ::constcl::symbol? [
-            ::constcl::cdr $syms]] eq "#t"} {
-          my set [::constcl::cdr $syms] \
-            [::constcl::list {*}$vals]
+            ::constcl::cdr $syms]]]} {
+          my assign [::constcl::cdr $syms] \
+            VARIABLE [
+              ::constcl::list {*}[lmap v $vals {
+                lindex $v 1
+              }]]
           set vals {}
           break
         } else {
@@ -70,8 +76,21 @@ oo::class create ::constcl::Environment {
   method get {sym} {
     dict get $bindings $sym
   }
-  method set {sym val} {
-    dict set bindings $sym $val
+  method unbind {sym} {
+    dict unset bindings $sym
+  }
+  method bind {sym type info} {
+    if {[dict exists $bindings $sym]} {
+      set bi [my get $sym]
+      lassign $bi bt in
+      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
+        error "[$sym name] is already bound"
+      }
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method assign {sym type info} {
+    dict set bindings $sym [::list $type $info]
   }
   method parent {} {
     set outer_env
@@ -191,7 +210,12 @@ CB(
 reg environment-bindings
 
 proc ::constcl::environment-bindings {env} {
-  pairlis-tcl [list {*}[$env names]] [list {*}[$env values]]
+  set keys [list {*}[$env names]]
+  set vals [list {*}[lmap v [$env values] {
+    list [S quote] [list [S [lindex $v 0]] \
+      [MkString [lindex $v 1]]]
+  }]]
+  pairlis-tcl $keys $vals
 }
 CB)
 

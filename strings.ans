@@ -405,6 +405,8 @@ TT(
 } -output "\"xoo\"\n"
 
 ::tcltest::test strings-7.1 {try string-set!} -body {
+  unbind [S f]
+  unbind [S g]
     pew {(define f (lambda () (make-string 3 #\*)))}
     pew {(define g (lambda () "***"))}
     pew {(string-set! (f) 0 #\?)}
@@ -949,6 +951,9 @@ CB)
 TT(
 
 ::tcltest::test strings-22.0 {try string-copy} -body {
+  unbind [S x]
+  unbind [S y]
+  unbind [S z]
     pew {(define x (string-copy "foo"))}
     pew {(string-set! x 0 #\x)}
     pew {(define y "foobar")}
@@ -995,6 +1000,7 @@ CB)
 TT(
 
 ::tcltest::test strings-23.0 {try string-fill!} -body {
+  unbind [S x]
     pew {(define x (string-copy "foo"))}
     pew {(string-fill! x #\x)}
 } -output "\"xxx\"\n"
