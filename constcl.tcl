@@ -871,6 +871,85 @@ proc ::constcl::/if1 {cond conseq} {
   }
 }
 
+regspecial case
+
+proc ::constcl::special-case {expr env} {
+  set tail [cdr $expr]
+  set expr [do-case [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+
+proc ::constcl::do-case {keyexpr clauses env} {
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set keyl [caar $clauses]
+    set body [cdar $clauses]
+    set keyl [list [S memv] $keyexpr \
+        [list [S quote] $keyl]]
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the condition
+      if {[T [eq? [caar $clauses] [S else]]]} {
+        set keyl #t
+      }
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S keyl] $keyl $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-case $keyexpr [cdr $clauses] $env] $env
+    set qq "`(if ,keyl
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+
+regspecial cond
+
+proc ::constcl::special-cond {expr env} {
+  set expr [do-cond [cdr $expr] $env]
+  eval $expr $env
+}
+
+proc ::constcl::do-cond {tail env} {
+  set clauses $tail
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set pred [caar $clauses]
+    set body [cdar $clauses]
+    if {[T [symbol? [car $body]]] &&
+        [[car $body] name] eq "=>"} {
+      set body [cddar $clauses]
+    }
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the predicate
+      if {[T [eq? $pred [S else]]]} {
+        set pred #t
+      }
+    }
+    if {[T [null? $body]]} {
+        set body $pred
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S pred] $pred $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-cond [cdr $clauses] $env] $env
+    set qq "`(if ,pred
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+
 regspecial begin
 
 proc ::constcl::special-begin {expr env} {
@@ -1008,83 +1087,6 @@ proc ::constcl::do-and {tail prev env} {
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
     set qq "`(if ,first ,rest #f)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-
-regmacro case
-
-proc ::constcl::expand-case {expr env} {
-  set tail [cdr $expr]
-  do-case [car $tail] [cdr $tail] $env
-}
-
-proc ::constcl::do-case {keyexpr clauses env} {
-  if {[T [null? $clauses]]} {
-    return [parse "'()"]
-  } else {
-    set keyl [caar $clauses]
-    set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
-      # ...allow 'else' in the condition
-      if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl #t
-      }
-    }
-    set env [Environment new #NIL {} $env]
-    /define [S keyl] $keyl $env
-    /define [S body] $body $env
-    /define [S rest] [
-      do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
-               (begin ,@body)
-               ,rest)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-
-regmacro cond
-
-proc ::constcl::expand-cond {expr env} {
-  return [do-cond [cdr $expr] $env]
-}
-
-proc ::constcl::do-cond {tail env} {
-  set clauses $tail
-  if {[T [null? $clauses]]} {
-    return [parse "'()"]
-  } else {
-    set pred [caar $clauses]
-    set body [cdar $clauses]
-    if {[T [symbol? [car $body]]] &&
-        [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
-    }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred #t
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
-    set env [Environment new #NIL {} $env]
-    /define [S pred] $pred $env
-    /define [S body] $body $env
-    /define [S rest] [
-      do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
-               (begin ,@body)
-               ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
     return $expr

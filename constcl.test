@@ -350,6 +350,60 @@ source constcl.tcl
   pew "(if (= 2 3) (display 'a))"
 } -output ""
 
+::tcltest::test macros-3.0 {expand case macro} -body {
+    set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
+    set x [::constcl::do-and [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
+
+::tcltest::test macros-3.1 {run case macro} -body {
+    pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
+} -output "composite\n"
+
+::tcltest::test macros-3.2 {expand case macro} -body {
+    set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
+    set x [::constcl::do-and [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
+
+::tcltest::test macros-3.3 {run case macro} -body {
+    pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
+} -output "consonant\n"
+
+::tcltest::test macros-4.0 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+
+::tcltest::test macros-4.1 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
+} -output "3\n3\n"
+
+::tcltest::test macros-4.2 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test macros-4.3 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+} -output "()\n"
+
+::tcltest::test macros-4.4 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test macros-4.5 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+
 ::tcltest::test eval-5.0 {try eval-ing a sequence} -body {
   pew "(begin (display 'a) (display 'b))"
 } -output "ab"
@@ -436,48 +490,6 @@ source constcl.tcl
     pew "(and (> 3 2))"
     pew "(and (> 3 2) (= 7 8))"
 } -output "#t\n#t\n#t\n#f\n"
-
-
-::tcltest::test macros-3.0 {expand case macro} -body {
-    pxw "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
-} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
-
-::tcltest::test macros-3.1 {run case macro} -body {
-    pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
-} -output "composite\n"
-
-::tcltest::test macros-3.2 {expand case macro} -body {
-    pxw "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
-} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
-
-::tcltest::test macros-3.3 {run case macro} -body {
-    pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
-} -output "consonant\n"
-
-::tcltest::test macros-4.0 {expand cond macro} -body {
-    pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
-
-::tcltest::test macros-4.1 {run cond macro} -body {
-    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
-} -output "3\n3\n"
-
-::tcltest::test macros-4.2 {expand cond macro} -body {
-    pxw "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
-
-::tcltest::test macros-4.3 {run cond macro} -body {
-    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
-} -output "()\n"
-
-::tcltest::test macros-4.4 {expand cond macro} -body {
-    pxw "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
-
-::tcltest::test macros-4.5 {expand cond macro} -body {
-    pxw "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 
 ::tcltest::test macros-6.0 {try expand del!} -body {

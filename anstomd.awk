@@ -66,10 +66,11 @@ $1 == "H9" { next }
 $1 == "CB(debug" { in_debug_block = 1 ; print "" ; next }
 $1 == "CB("      { in_code_block = 1 ; print "```" ; next }
 $1 == "CB)"      {
-	if (in_code_block || in_debug_block) {
+	if (in_code_block) {
 		in_code_block = 0
-		in_debug_block = 0
 		print "```"
+	} else if (in_debug_block) {
+		in_debug_block = 0
 	}
 	next
 }

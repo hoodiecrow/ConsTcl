@@ -62,7 +62,7 @@ Next, some procedures that make my life as developer somewhat easier.
 `` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 
-You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. Following `` reg `` are two similar procedures: `` regspecial `` and `` regmacro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. FInally there is `` regvar ``, which registers variables.
+You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. Following `` reg `` are two similar procedures: `` regspecial `` and `` regmacro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. Finally there is `` regvar ``, which registers variables.
 
 <table border=1><thead><tr><th colspan=2 align="left">reg, regspecial, regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -1479,7 +1479,7 @@ There are nine diffent forms or classes of expressions in Lisp:
 
 The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
 
-#### Variable reference
+### Variable reference
 
 
 _Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to 10)_
@@ -1487,9 +1487,7 @@ _Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to 10)_
 
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
 
-
-__lookup__ procedure
-
+#### lookup procedure
 <table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1497,7 +1495,7 @@ proc ::constcl::lookup {sym env} {
   lindex [[$env find $sym] get $sym] 1
 }
 ```
-#### Constant literal
+### Constant literal
 
 
 _Example: `` 99 `` ==> 99 (a number evaluates to itself)_
@@ -1505,7 +1503,7 @@ _Example: `` 99 `` ==> 99 (a number evaluates to itself)_
 
 Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
 
-#### Quotation
+### Quotation
 
 
 _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
@@ -1513,10 +1511,7 @@ _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to it
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader.
 
-
-
-__quote__ special form
-
+#### quote special form
 <table border=1><thead><tr><th colspan=2 align="left">special-quote (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1526,7 +1521,7 @@ proc ::constcl::special-quote {expr env} {
   return [cadr $expr]
 }
 ```
-#### Conditional
+### Conditional
 
 
 _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
@@ -1534,10 +1529,7 @@ _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
 
 The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
-
-
-__if__ special form
-
+#### if special form
 <table border=1><thead><tr><th colspan=2 align="left">special-if (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1581,7 +1573,123 @@ proc ::constcl::/if1 {cond conseq} {
   }
 }
 ```
-#### Sequence
+
+
+Another conditional form is `` case ``. It implements a multi-choice where a single expression selects between alternatives. The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
+
+
+The `` case `` form is implemented by `` special-case ``, with help from `` do-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
+##### caar, cadr, cdar, and the rest: an aside
+
+
+The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+
+#### case special form
+<table border=1><thead><tr><th colspan=2 align="left">special-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+regspecial case
+
+proc ::constcl::special-case {expr env} {
+  set tail [cdr $expr]
+  set expr [do-case [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+
+proc ::constcl::do-case {keyexpr clauses env} {
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set keyl [caar $clauses]
+    set body [cdar $clauses]
+    set keyl [list [S memv] $keyexpr \
+        [list [S quote] $keyl]]
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the condition
+      if {[T [eq? [caar $clauses] [S else]]]} {
+        set keyl #t
+      }
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S keyl] $keyl $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-case $keyexpr [cdr $clauses] $env] $env
+    set qq "`(if ,keyl
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+```
+
+
+The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
+
+
+The `` cond `` form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
+#### cond special form
+<table border=1><thead><tr><th colspan=2 align="left">special-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+regspecial cond
+
+proc ::constcl::special-cond {expr env} {
+  set expr [do-cond [cdr $expr] $env]
+  eval $expr $env
+}
+```
+
+
+__do-cond__ procedure
+
+
+`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The form is expanded to a recursive `` if `` form.
+
+<table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::do-cond {tail env} {
+  set clauses $tail
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set pred [caar $clauses]
+    set body [cdar $clauses]
+    if {[T [symbol? [car $body]]] &&
+        [[car $body] name] eq "=>"} {
+      set body [cddar $clauses]
+    }
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the predicate
+      if {[T [eq? $pred [S else]]]} {
+        set pred #t
+      }
+    }
+    if {[T [null? $body]]} {
+        set body $pred
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S pred] $pred $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-cond [cdr $clauses] $env] $env
+    set qq "`(if ,pred
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+```
+### Sequence
 
 
 _Example: `` (begin (define r 10) (* r r)) `` ==> 100_
@@ -1589,10 +1697,7 @@ _Example: `` (begin (define r 10) (* r r)) `` ==> 100_
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
 
-
-
-__begin__ special form
-
+#### begin special form
 <table border=1><thead><tr><th colspan=2 align="left">special-begin (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1630,7 +1735,7 @@ proc ::constcl::/begin {exps env} {
   }
 }
 ```
-#### Definition
+### Definition
 
 
 _Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything)_
@@ -1698,7 +1803,7 @@ proc ::constcl::/define {sym val env} {
   return
 }
 ```
-#### Assignment
+### Assignment
 
 
 _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
@@ -1706,10 +1811,7 @@ _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed t
 
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
-
-
-__set!__ special form
-
+#### set! special form
 <table border=1><thead><tr><th colspan=2 align="left">special-set! (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1723,7 +1825,7 @@ proc ::constcl::special-set! {expr env} {
   set val
 }
 ```
-#### Procedure definition
+### Procedure definition
 
 
 _Example: `` (lambda (r) (* r r)) `` ==> `` ::oo::Obj3601 `` (it will be a different object each time)_
@@ -1751,10 +1853,7 @@ A Scheme formals list is either:
 *  A _proper list_, `` (a b c) ``, meaning it accepts three arguments, one in each symbol,
 *  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
 *  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
-
-
-__lambda__ special form
-
+#### lambda special form
 <table border=1><thead><tr><th colspan=2 align="left">special-lambda (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
@@ -1772,7 +1871,10 @@ proc ::constcl::special-lambda {expr env} {
   return [MkProcedure $formals $body $env]
 }
 ```
-#### Procedure call
+
+TT( ::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body { pew "(define (square x) (* x x))" pew "(square 20)" } -output "400\n" TT)
+
+### Procedure call
 
 
 _Example: `` (+ 1 6) `` ==> 7_
@@ -1783,9 +1885,7 @@ Once we have procedures, we can call them to have their calculations performed a
 
 `` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
 
-
-__invoke__ procedure
-
+#### invoke procedure
 <table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
 ```
@@ -1909,120 +2009,6 @@ proc ::constcl::do-and {tail prev env} {
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
     set qq "`(if ,first ,rest #f)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-```
-#### expand-case procedure
-
-
-The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
-
-
-The `` case `` macro is expanded by `` expand-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
-
-##### caar, cadr, cdar, and the rest: an aside
-
-
-The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
-
-<table border=1><thead><tr><th colspan=2 align="left">expand-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-regmacro case
-
-proc ::constcl::expand-case {expr env} {
-  set tail [cdr $expr]
-  do-case [car $tail] [cdr $tail] $env
-}
-
-proc ::constcl::do-case {keyexpr clauses env} {
-  if {[T [null? $clauses]]} {
-    return [parse "'()"]
-  } else {
-    set keyl [caar $clauses]
-    set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
-      # ...allow 'else' in the condition
-      if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl #t
-      }
-    }
-    set env [Environment new #NIL {} $env]
-    /define [S keyl] $keyl $env
-    /define [S body] $body $env
-    /define [S rest] [
-      do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
-               (begin ,@body)
-               ,rest)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-```
-#### expand-cond procedure
-
-
-The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
-
-
-The `` cond `` macro is expanded by `` expand-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
-
-<table border=1><thead><tr><th colspan=2 align="left">expand-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-regmacro cond
-
-proc ::constcl::expand-cond {expr env} {
-  return [do-cond [cdr $expr] $env]
-}
-```
-
-
-__do-cond__ procedure
-
-
-`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The macro is expanded to a recursive `` if `` form.
-
-<table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-proc ::constcl::do-cond {tail env} {
-  set clauses $tail
-  if {[T [null? $clauses]]} {
-    return [parse "'()"]
-  } else {
-    set pred [caar $clauses]
-    set body [cdar $clauses]
-    if {[T [symbol? [car $body]]] &&
-        [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
-    }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred #t
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
-    set env [Environment new #NIL {} $env]
-    /define [S pred] $pred $env
-    /define [S body] $body $env
-    /define [S rest] [
-      do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
-               (begin ,@body)
-               ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
     return $expr
@@ -4479,7 +4465,6 @@ oo::define ::constcl::Procedure method show {} {
 }
 ```
 
-```
 #### MkProcedure generator
 
 

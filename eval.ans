@@ -133,7 +133,7 @@ process to evaluate them. The nine forms will be described in the following
 sections.
 MD)
 
-h4 Variable reference
+h3 Variable reference
 
 MD(
 EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to 10)
@@ -144,15 +144,14 @@ evaluated to the value stored in that location. This is handled by the helper
 procedure K{lookup}. It searches the environment chain for the identifier, and
 returns the value stored in the location it is bound to.  It is an error to do
 lookup on an unbound symbol.
-
-B{lookup} procedure
 MD)
+
+H4 lookup procedure
 
 PR(
 lookup (internal);sym sym env env -> val
 PR)
 
-IX lookup
 CB(
 proc ::constcl::lookup {sym env} {
   lindex [[$env find $sym] get $sym] 1
@@ -169,7 +168,7 @@ TT(
 } -returnCodes error -result "Unbound variable: k"
 TT)
 
-h4 Constant literal
+h3 Constant literal
 
 MD(
 EM Example: K{99} ==> 99 (a number evaluates to itself)
@@ -185,7 +184,7 @@ TT(
 } -output "99\n"
 TT)
 
-h4 Quotation
+h3 Quotation
 
 MD(
 EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself, like a constant)
@@ -198,15 +197,12 @@ that there is a shorthand notation for it: K{'x} is interpreted as K{(quote x)}
 by the Lisp reader.
 MD)
 
-MD(
-B{quote} special form
-MD)
+H4 quote special form
 
 PR(
 special-quote (public);expr expr env env -> val
 PR)
 
-IX quote special form
 CB(
 regspecial quote
 
@@ -229,7 +225,7 @@ TT(
 } -returnCodes error -result "usage error\n(quote datum) not (quote foo bar)"
 TT)
 
-h4 Conditional
+h3 Conditional
 
 MD(
 EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} ==> 6
@@ -241,15 +237,12 @@ evaluated and the value returned. Otherwise, the third expression (the
 E{alternate}) is evaluated and the value returned. One of the two latter
 expressions will be evaluated, and the other will remain unevaluated.
 
-MD(
-B{if} special form
-MD)
+H4 if special form
 
 PR(
 special-if (public);expr expr env env -> val
 PR)
 
-IX if special form
 CB(
 regspecial if
 
@@ -311,7 +304,212 @@ TT(
 } -output ""
 TT)
 
-h4 Sequence
+MD(
+Another conditional form is K{case}. It implements a multi-choice where a single
+expression selects between alternatives. The body of the K{case} form consists
+of a key-expression and a number of clauses. Each clause has a list of values
+and a body. If the key-expression evaluates to a value that occurs in one of the
+value-lists (considered in order), that clause's body is evaluated and all other
+clauses are ignored.
+
+The K{case} form is implemented by K{special-case}, with help from K{do-case}.
+It expands to K{'()} if there are
+no clauses (left), and to nested K{if} constructs if there are some.
+MD)
+
+H5 caar, cadr, cdar, and the rest: an aside
+
+MD(
+The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
+and K{cdar}. K{car}/K{cdr} notation gets really powerful when combined to form
+operators from K{caar} to K{cddddr}. One can read K{caar L} as `the first element of
+the first element of L', implying that the first element of K{L} is a list.
+K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
+is `the first element of the rest of the elements of L' or in layman's terms,
+the second element of L.
+MD)
+
+H4 case special form
+
+PR(
+special-case (internal);expr expr env env -> expr
+PR)
+
+CB(
+regspecial case
+
+proc ::constcl::special-case {expr env} {
+  set tail [cdr $expr]
+  set expr [do-case [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+
+proc ::constcl::do-case {keyexpr clauses env} {
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set keyl [caar $clauses]
+    set body [cdar $clauses]
+    set keyl [list [S memv] $keyexpr \
+        [list [S quote] $keyl]]
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the condition
+      if {[T [eq? [caar $clauses] [S else]]]} {
+        set keyl #t
+      }
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S keyl] $keyl $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-case $keyexpr [cdr $clauses] $env] $env
+    set qq "`(if ,keyl
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+CB)
+
+TT(
+::tcltest::test macros-3.0 {expand case macro} -body {
+    set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
+    set x [::constcl::do-and [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
+
+::tcltest::test macros-3.1 {run case macro} -body {
+    pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
+} -output "composite\n"
+
+::tcltest::test macros-3.2 {expand case macro} -body {
+    set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
+    set x [::constcl::do-and [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
+
+::tcltest::test macros-3.3 {run case macro} -body {
+    pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
+} -output "consonant\n"
+TT)
+
+MD(
+The K{cond} form has a list of clauses, each with a predicate and a body. The
+clauses is considered in order, and if a predicate evaluates to something other
+than K{#f} the body is evaluated and the remaining clauses are ignored.
+
+The K{cond} form is expanded by K{special-cond}. It expands to K{'()} if there are no
+clauses (left), and to nested K{if} constructs if there are some.
+
+MD)
+
+H4 cond special form
+
+PR(
+special-cond (internal);expr expr env env -> expr
+PR)
+
+CB(
+regspecial cond
+
+proc ::constcl::special-cond {expr env} {
+  set expr [do-cond [cdr $expr] $env]
+  eval $expr $env
+}
+CB)
+
+MD(
+B{do-cond} procedure
+
+K{do-cond} is called recursively for every clause of the K{cond} form. It chops
+up the clause into predicate and body, stepping over any K{=>} symbols in
+between. In the last clause, the predicate is allowed to be K{else} (which gets
+translated to K{#t}). If there is no body, the body is set to the predicate. The
+form is expanded to a recursive K{if} form.
+MD)
+
+PR(
+do-cond (internal);tail lexprs env env -> expr
+PR)
+
+IX do-cond procedure
+CB(
+proc ::constcl::do-cond {tail env} {
+  set clauses $tail
+  if {[T [null? $clauses]]} {
+    return [parse "'()"]
+  } else {
+    set pred [caar $clauses]
+    set body [cdar $clauses]
+    if {[T [symbol? [car $body]]] &&
+        [[car $body] name] eq "=>"} {
+      set body [cddar $clauses]
+    }
+    # if this is the last clause...
+    if {[T [eq? [length $clauses] #1]]} {
+      # ...allow 'else' in the predicate
+      if {[T [eq? $pred [S else]]]} {
+        set pred #t
+      }
+    }
+    if {[T [null? $body]]} {
+        set body $pred
+    }
+    set env [Environment new #NIL {} $env]
+    /define [S pred] $pred $env
+    /define [S body] $body $env
+    /define [S rest] [
+      do-cond [cdr $clauses] $env] $env
+    set qq "`(if ,pred
+               (begin ,@body)
+               ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
+    return $expr
+  }
+}
+CB)
+
+TT(
+::tcltest::test macros-4.0 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+
+::tcltest::test macros-4.1 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
+} -output "3\n3\n"
+
+::tcltest::test macros-4.2 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test macros-4.3 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+} -output "()\n"
+
+::tcltest::test macros-4.4 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test macros-4.5 {expand cond macro} -body {
+    set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+TT)
+
+h3 Sequence
 
 MD(
 EM Example: K{(begin (define r 10) (* r r))} ==> 100
@@ -322,15 +520,12 @@ same order of sequence. Also, if expressions are part of a pipeline of
 calculations, then they need to be processed in the order of that pipeline.
 MD)
 
-MD(
-B{begin} special form
-MD)
+H4 begin special form
 
 PR(
 special-begin (public);expr expr env env -> val
 PR)
 
-IX begin special form
 CB(
 regspecial begin
 
@@ -378,7 +573,7 @@ TT(
 } -output "ab"
 TT)
 
-h4 Definition
+h3 Definition
 
 MD(
 EM Example: K{(define r 10)} ==> ... (a definition doesn't evaluate to anything)
@@ -427,6 +622,7 @@ PR(
 rewrite-define (internal);expr expr env env -> expr
 PR)
 
+IX rewrite-define
 CB(
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
@@ -493,7 +689,7 @@ TT(
 } -returnCodes error -result "Identifier expected (+foo)"
 TT)
 
-h4 Assignment
+h3 Assignment
 
 MD(
 EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to assign to it)
@@ -508,15 +704,12 @@ both variables to 99. By Scheme convention, procedures that modify variables
 have `!' at the end of their name.
 MD)
 
-MD(
-B{set!} special form
-MD)
+H4 set"! special form
 
 PR(
 special-set! (public);expr expr env env -> val
 PR)
 
-IX set"! special form
 CB(
 regspecial set!
 
@@ -538,7 +731,7 @@ TT(
 } -output "20\n20\n"
 TT)
 
-h4 Procedure definition
+h3 Procedure definition
 
 MD(
 EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different object each time)
@@ -583,15 +776,12 @@ IT A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
 IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
 MD)
 
-MD(
-B{lambda} special form
-MD)
+H4 lambda special form
 
 PR(
 special-lambda (public);expr expr env env -> proc
 PR)
 
-IX lambda special form
 CB(
 regspecial lambda
 
@@ -615,7 +805,7 @@ TT(
 } -output "400\n"
 TT)
 
-h4 Procedure call
+h3 Procedure call
 
 MD(
 EM Example: K{(+ 1 6)} ==> 7
@@ -629,15 +819,14 @@ K{(square 11)}, and it will return 121.
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
 procedure, and determines whether to call E{pr} as an object or as a Tcl command.
-
-B{invoke} procedure
 MD)
+
+H4 invoke procedure
 
 PR(
 invoke (internal);pr proc vals lvals -> invoke
 PR)
 
-IX invoke
 CB(
 proc ::constcl::invoke {pr vals} {
   check {procedure? $pr} {

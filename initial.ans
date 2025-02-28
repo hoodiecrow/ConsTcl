@@ -27,7 +27,7 @@ You can call K{reg} with one parameter: E{name}. E{name} is the string
 that will eventually become the lookup symbol in the standard library. Following
 K{reg} are two similar procedures: K{regspecial} and K{regmacro}. The former
 registers special forms like K{if} and K{define}, and the latter registers
-macros like K{and} or K{when}. FInally there is K{regvar}, which registers
+macros like K{and} or K{when}. Finally there is K{regvar}, which registers
 variables.
 MD)
 
@@ -39,6 +39,9 @@ PR(
 regvar (internal);name tstr val val -> none
 PR)
 
+IX regspecial procedure
+IX regmacro procedure
+IX regvar procedure
 CB(
 proc reg {name} {
   if {![info exists ::constcl::defreg]} {
