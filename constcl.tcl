@@ -984,12 +984,12 @@ proc ::constcl::special-define {expr env} {
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set _env [::constcl::Environment new #NIL {} $env]
-    /define [S tail] $tail $_env
+    set env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
-    set expr [expand-quasiquote [parse $qq] $_env]
-    $_env destroy
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
   } 
   return $expr
 }
@@ -1055,17 +1055,17 @@ proc ::constcl::rewrite-named-let {expr env} {
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
   /define [S decl] [list {*}[dict values [
-  dict map {k v} $vars {list $k $v}]]] $env
+    dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
   /define [S varlist] [list {*}[lrange [
-  dict keys $vars] 1 end]] $env
+    dict keys $vars] 1 end]] $env
   /define [S body] $body $env
   /define [S call] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   set qq "`(let ,decl
              (set!
                ,variable
-               (lambda ,varlist ,@body)) ,call)"
+                 (lambda ,varlist ,@body)) ,call)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1121,16 +1121,6 @@ proc ::constcl::eval-list {exps env} {
   } {
     return #NIL
   }
-}
-
-proc ::constcl::expand-macro {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[$op name] eq "define" &&
-      [pair? [car $args]] eq "#f"} {
-    return -code break
-  }
-  return [expand-[$op name] $expr $env]
 }
 
 regmacro and

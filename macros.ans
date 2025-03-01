@@ -1,49 +1,15 @@
 
 H3 Macros
 
-H4 expand-macro procedure
-
 MD(
 Macros that allow concise, abstract expressions that are automatically rewritten
 into other, more concrete but also more verbose expressions is one of Lisp's
 strong points. This interpreter does macro expansion, but the user can't define
 new macros--the ones available are hardcoded in the code below.
 
-K{expand-macro} takes an expression and an environment as a parameter. First, the
-operator (E{op}) and operands (E{args}) are extracted to check if expansion is
-necessary (the operator K{car}, for historical reasons, stands for the first
-element of a list, while K{cdr} stands for the rest of the elements after the
-first in a list). If the operator is the symbol K{define} and the first of the
-operands is something other than a Pair, then expansion is unnecessary and the
-procedure returns with a code to break the while loop in K{eval}.
-
-The operator's symbol name is then used to select the right expansion procedure,
-and the whole expression and the environment is passed to it. In the end, the
-expanded expression is passed back to K{eval}.
+A macro expander procedure takes an expression and an environment as a
+parameter.  In the end, the expanded expression is passed back to K{eval}.
 MD)
-
-PR(
-expand-macro (internal);expr expr env env -> expr
-PR)
-
-CB(
-proc ::constcl::expand-macro {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[$op name] eq "define" &&
-      [pair? [car $args]] eq "#f"} {
-    return -code break
-  }
-  return [expand-[$op name] $expr $env]
-}
-CB)
-
-TT(
-::tcltest::test macros-1.0 {try expand-macro with non-existent macro} -body {
-  pxw {(foo 1 'a)}
-} -returnCodes error -result {invalid command name "expand-foo"}
-
-TT)
 
 H4 expand-and procedure
 

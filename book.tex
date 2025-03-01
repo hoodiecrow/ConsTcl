@@ -2455,12 +2455,12 @@ env & an environment \\
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set _env [::constcl::Environment new #NIL {} $env]
-    /define [S tail] $tail $_env
+    set env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
-    set expr [expand-quasiquote [parse $qq] $_env]
-    $_env destroy
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
   } 
   return $expr
 }
@@ -2494,7 +2494,7 @@ proc ::constcl::/define {sym val env} {
 \emph{Example: \texttt{(set! r 20)} $\Rightarrow$ 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)}
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The \texttt{/set!} helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The \texttt{set!} special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 \subsection{set! special form}
 \label{set"!-special-form}
@@ -2526,10 +2526,10 @@ proc ::constcl::special-set! {expr env} {
 \emph{Example: \texttt{(lambda (r) (* r r))} $\Rightarrow$ \texttt{::oo::Obj3601} (it will be a different object each time)}
 
 
-In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
+In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, what, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
 
 
-As an example, imagine that we want to have a procedure that calculates the square (\texttt{x * x}) of a given number. In Lisp, expressions are written with the operator first and then the operands\index{operator operand order}: \texttt{(* x x)}. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable \texttt{x} will do. It's only a single variable, but by custom we need to put it in a list: \texttt{(x)}. The operator that defines procedures is called \texttt{lambda}\index{lambda}, and we define the function with \texttt{(lambda (x) (* x x))}.
+As an example, imagine that we want to have a procedure that calculates the square (\texttt{x * x}) of a given number. In Lisp, expressions are written with the operator first and then the operands\index{operator operand order}: \texttt{(* x x)}. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable \texttt{x} will do. It's only a single variable, but by custom we need to put it in a list: \texttt{(x)}. The operator that creates procedures is called \texttt{lambda}\index{lambda}, and we create the function with \texttt{(lambda (x) (* x x))}.
 
 
 One more step is needed before we can use the procedure. It must have a name. We could define it like this: \texttt{(define square (lambda (x) (* x x)))} but there is actually a shortcut notation for it: \texttt{(define (square x) (* x x))}.
@@ -2540,9 +2540,10 @@ Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure
 
 The lambda special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
-\subsubsection{Scheme formals lists: an aside}
-\label{scheme-formals-lists-an-aside}
-\index{Scheme formals lists: an aside}
+\subsubsection{Scheme formal parameters lists: an aside}
+\label{scheme-formal-parameters-lists-an-aside}
+\index{Scheme formal parameters lists: an aside}
+
 
 A Scheme formals list\index{formals list} is either:
 
@@ -2578,9 +2579,6 @@ proc ::constcl::special-lambda {expr env} {
   return [MkProcedure $formals $body $env]
 }
 \end{lstlisting}
-
-TT( ::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body { pew "(define (square x) (* x x))" pew "(square 20)" } -output "400\textbackslash n" TT)
-
 \section{Procedure call}
 \label{procedure-call}
 \index{procedure call}
@@ -2679,17 +2677,17 @@ proc ::constcl::rewrite-named-let {expr env} {
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
   /define [S decl] [list {*}[dict values [
-  dict map {k v} $vars {list $k $v}]]] $env
+    dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
   /define [S varlist] [list {*}[lrange [
-  dict keys $vars] 1 end]] $env
+    dict keys $vars] 1 end]] $env
   /define [S body] $body $env
   /define [S call] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   set qq "`(let ,decl
              (set!
                ,variable
-               (lambda ,varlist ,@body)) ,call)"
+                 (lambda ,varlist ,@body)) ,call)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -2697,7 +2695,7 @@ proc ::constcl::rewrite-named-let {expr env} {
 \end{lstlisting}
 
 
-\textbf{named-let} procedure
+\textbf{rewrite-let} procedure
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2814,38 +2812,13 @@ proc ::constcl::eval-list {exps env} {
 \section{Macros}
 \label{macros}
 \index{Macros}
-\subsection{expand-macro procedure}
-\label{expand-macro-procedure}
-\index{expand-macro procedure}
 
 
 Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
 
 
-\texttt{expand-macro} takes an expression and an environment as a parameter. First, the operator (\emph{op}) and operands (\emph{args}) are extracted to check if expansion is necessary (the operator \texttt{car}, for historical reasons, stands for the first element of a list, while \texttt{cdr} stands for the rest of the elements after the first in a list). If the operator is the symbol \texttt{define} and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in \texttt{eval}.
+A macro expander procedure takes an expression and an environment as a parameter. In the end, the expanded expression is passed back to \texttt{eval}.
 
-
-The operator's symbol name is then used to select the right expansion procedure, and the whole expression and the environment is passed to it. In the end, the expanded expression is passed back to \texttt{eval}.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-macro (internal)} \\
-expr & an expression \\
-env & an environment \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::expand-macro {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[$op name] eq "define" &&
-      [pair? [car $args]] eq "#f"} {
-    return -code break
-  }
-  return [expand-[$op name] $expr $env]
-}
-\end{lstlisting}
 \subsection{expand-and procedure}
 \label{expand-and-procedure}
 \index{expand-and procedure}

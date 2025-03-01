@@ -1793,12 +1793,12 @@ which conforms better to `` eval ``'s standard of (define _symbol_ _value_). The
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set _env [::constcl::Environment new #NIL {} $env]
-    /define [S tail] $tail $_env
+    set env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
-    set expr [expand-quasiquote [parse $qq] $_env]
-    $_env destroy
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
   } 
   return $expr
 }
@@ -1822,7 +1822,7 @@ proc ::constcl::/define {sym val env} {
 _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` /set! `` helper does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` set! `` special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 #### set! special form
 <table border=1><thead><tr><th colspan=2 align="left">special-set! (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
@@ -1844,10 +1844,10 @@ proc ::constcl::special-set! {expr env} {
 _Example: `` (lambda (r) (* r r)) `` ==> `` ::oo::Obj3601 `` (it will be a different object each time)_
 
 
-In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One diffence from most values is that procedures need to be defined. Two questions must answered: what is the procedure meant to do? The code that does that will form the body of the procedure. Also, what, if any, items of data will have to be provided to the procedure to make it possible to calculate its result?
+In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the _body_ of the procedure. Also, what, if any, items of data (_parameters_) will have to be provided to the procedure to make it possible to calculate its result?
 
 
-As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single variable, but by custom we need to put it in a list: `` (x) ``. The operator that defines procedures is called `` lambda ``, and we define the function with `` (lambda (x) (* x x)) ``.
+As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single variable, but by custom we need to put it in a list: `` (x) ``. The operator that creates procedures is called `` lambda ``, and we create the function with `` (lambda (x) (* x x)) ``.
 
 
 One more step is needed before we can use the procedure. It must have a name. We could define it like this: `` (define square (lambda (x) (* x x))) `` but there is actually a shortcut notation for it: `` (define (square x) (* x x)) ``.
@@ -1858,7 +1858,8 @@ Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (
 
 The lambda special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
-##### Scheme formals lists: an aside
+##### Scheme formal parameters lists: an aside
+
 
 A Scheme formals list is either:
 
@@ -1884,9 +1885,6 @@ proc ::constcl::special-lambda {expr env} {
   return [MkProcedure $formals $body $env]
 }
 ```
-
-TT( ::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body { pew "(define (square x) (* x x))" pew "(square 20)" } -output "400\n" TT)
-
 ### Procedure call
 
 
@@ -1958,17 +1956,17 @@ proc ::constcl::rewrite-named-let {expr env} {
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
   /define [S decl] [list {*}[dict values [
-  dict map {k v} $vars {list $k $v}]]] $env
+    dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
   /define [S varlist] [list {*}[lrange [
-  dict keys $vars] 1 end]] $env
+    dict keys $vars] 1 end]] $env
   /define [S body] $body $env
   /define [S call] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   set qq "`(let ,decl
              (set!
                ,variable
-               (lambda ,varlist ,@body)) ,call)"
+                 (lambda ,varlist ,@body)) ,call)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1976,7 +1974,7 @@ proc ::constcl::rewrite-named-let {expr env} {
 ```
 
 
-__named-let__ procedure
+__rewrite-let__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2064,30 +2062,13 @@ proc ::constcl::eval-list {exps env} {
 }
 ```
 ### Macros
-#### expand-macro procedure
 
 
 Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
 
 
-`` expand-macro `` takes an expression and an environment as a parameter. First, the operator (_op_) and operands (_args_) are extracted to check if expansion is necessary (the operator `` car ``, for historical reasons, stands for the first element of a list, while `` cdr `` stands for the rest of the elements after the first in a list). If the operator is the symbol `` define `` and the first of the operands is something other than a Pair, then expansion is unnecessary and the procedure returns with a code to break the while loop in `` eval ``.
+A macro expander procedure takes an expression and an environment as a parameter. In the end, the expanded expression is passed back to `` eval ``.
 
-
-The operator's symbol name is then used to select the right expansion procedure, and the whole expression and the environment is passed to it. In the end, the expanded expression is passed back to `` eval ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">expand-macro (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-proc ::constcl::expand-macro {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[$op name] eq "define" &&
-      [pair? [car $args]] eq "#f"} {
-    return -code break
-  }
-  return [expand-[$op name] $expr $env]
-}
-```
 #### expand-and procedure
 
 

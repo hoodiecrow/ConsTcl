@@ -640,12 +640,12 @@ CB(
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set _env [::constcl::Environment new #NIL {} $env]
-    /define [S tail] $tail $_env
+    set env [::constcl::Environment new #NIL {} $env]
+    /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
-    set expr [expand-quasiquote [parse $qq] $_env]
-    $_env destroy
+    set expr [expand-quasiquote [parse $qq] $env]
+    $env destroy
   } 
   return $expr
 }
@@ -709,7 +709,7 @@ EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to as
 
 Once a variable has been created, the value at the location it is bound to can
 be changed (hence the name `variable', something that can vary). The
-process is called assignment. The K{/set!} helper does assignment:
+process is called assignment. The K{set!} special form does assignment:
 it modifies an existing variable that is bound somewhere in the environment
 chain. It finds the variable's environment and updates the binding. It returns
 the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
@@ -751,11 +751,11 @@ EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different
 
 In Lisp, procedures are values just like numbers or characters. They can be
 definedI{procedure definition} as the value of a symbol, passed to other
-procedures, and returned from procedures. One diffence from most values is that
-procedures need to be defined.  Two questions must answered: what is the
-procedure meant to do? The code that does that will form the body of the
-procedure. Also, what, if any, items of data will have to be provided to the
-procedure to make it possible to calculate its result?
+procedures, and returned from procedures. One difference from most values is
+that procedures need to be specified.  Two questions must answered: what is the
+procedure meant to do? The code that does that will form the E{body} of the
+procedure. Also, what, if any, items of data (E{parameters}) will have to be
+provided to the procedure to make it possible to calculate its result?
 
 As an example, imagine that we want to have a procedure that calculates the
 square (K{x * x}) of a given number. In Lisp, expressions are written with
@@ -763,7 +763,7 @@ the operator first and then the operandsI{operator operand order}: K{(* x x)}.
 That is the body of the procedure. Now, what data will we have to provide to the
 procedure to make it work? A value stored in the variable K{x} will do. It's
 only a single variable, but by custom we need to put it in a list: K{(x)}. The
-operator that defines procedures is called K{lambda}I{lambda}, and we define the
+operator that creates procedures is called K{lambda}I{lambda}, and we create the
 function with K{(lambda (x) (* x x))}.
 
 One more step is needed before we can use the procedure. It must have a name. We
@@ -778,16 +778,18 @@ The lambda special form makes a R{Procedure}{control} object. First
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
 has more than one expression (K{S begin} stands for `the symbol begin'.), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
+MD)
 
-H5 Scheme formals lists: an aside
+H5 Scheme formal parameters lists: an aside
 
+MD(
 A Scheme formals listI{formals list} is either:
+MD)
 
 IT An E{empty list}, K{()}, meaning that no arguments are accepted,
 IT A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each symbol,
 IT A E{symbol}, K{a}, meaning that all arguments go into K{a}, or
 IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K{b}, and the rest into K{c}.
-MD)
 
 H4 lambda special form
 
@@ -928,17 +930,17 @@ proc ::constcl::rewrite-named-let {expr env} {
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
   /define [S decl] [list {*}[dict values [
-  dict map {k v} $vars {list $k $v}]]] $env
+    dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
   /define [S varlist] [list {*}[lrange [
-  dict keys $vars] 1 end]] $env
+    dict keys $vars] 1 end]] $env
   /define [S body] $body $env
   /define [S call] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   set qq "`(let ,decl
              (set!
                ,variable
-               (lambda ,varlist ,@body)) ,call)"
+                 (lambda ,varlist ,@body)) ,call)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -946,7 +948,7 @@ proc ::constcl::rewrite-named-let {expr env} {
 CB)
 
 MD(
-B{named-let} procedure
+B{rewrite-let} procedure
 MD)
 
 PR(

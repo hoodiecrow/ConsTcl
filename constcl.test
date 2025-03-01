@@ -512,11 +512,6 @@ source constcl.tcl
 } -output "16\n"
 
 
-::tcltest::test macros-1.0 {try expand-macro with non-existent macro} -body {
-  pxw {(foo 1 'a)}
-} -returnCodes error -result {invalid command name "expand-foo"}
-
-
 ::tcltest::test macros-2.0 {expand and macro} -body {
     pxw "(and)"
     pxw "(and #t)"
