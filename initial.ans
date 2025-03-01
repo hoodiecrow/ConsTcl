@@ -29,6 +29,13 @@ K{reg} are two similar procedures: K{regspecial} and K{regmacro}. The former
 registers special forms like K{if} and K{define}, and the latter registers
 macros like K{and} or K{when}. Finally there is K{regvar}, which registers
 variables.
+
+Each one of these starts out by checking if the definitions register (K{defreg})
+exists, and if not, creates it. Then they construct a E{val}(ue) by concatenating
+a keyword (K{VARIABLE}, K{SPECIAL}, or K{SYNTAX}) with a variation on E{name}
+(or, in K{regvar}'s case, E{value}).  Then they set an E{index number} based on
+the number of values in the K{defreg} so far. Finally they insert the
+concatenation of E{name} and E{val} under E{index}.
 MD)
 
 PR(
@@ -86,7 +93,7 @@ h5 Procedures, functions, and commands: an aside
 
 MD(
 I use all of these terms for the subroutines in ConsTcl. I try to stick to
-procedure, because that's the standard term in R5RSF{Revised5 Report on the
+procedure, because that's the standard term in R5RSF{Revised:5 Report on the
   Algorithmic Language Scheme, Scheme's standardization document}. Still, they
   usually pass useful values back to the caller, so technically they're
   functions. Lastly, I'm programming in Tcl here, and the usual term for these
@@ -96,19 +103,19 @@ procedure, because that's the standard term in R5RSF{Revised5 Report on the
   an aside, here). What it means is that `public' procedures can be called from
   Lisp code being interpreted, and the others cannot. They are for use in the
   infrastructure around the interpreter, including in implementing the `public'
-  procedures. Another way to put it is that procedures registered by K{reg} are
+  procedures. Another way to put it is that procedures registered by K{reg}* are
   `public' and those who aren't are `internal'.
 MD)
 
 H4 atom? procedure
 
 MD(
-THis one isn't just for my convenience: it's a standard procedure in Scheme.
+This one isn't just for my convenience: it's a standard procedure in Scheme.
 There are two kinds of data in Lisp: listsI{lists} and atomsI{atoms}. Lists are
 collections of lists and atoms. Atoms are instances of types such as booleans,
 characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
 an atom by checking for membership in any one of the atomic types. It returns
-K{#t} (truth) if it is an atom, and K{#f} (falsehood) if not.
+K{#t} (true) if it is an atom, and K{#f} (false) if not.
 
 h5 Predicates: an aside
 
@@ -151,7 +158,7 @@ The K{T} procedure is intended to reduce the hassle of trying to make Lisp
 booleans work with Tcl conditions. The idea is to line the Tcl condition with
 K{[T ...]} and have the Lisp expression inside K{T}. K{T} returns 0 if and only
 if the value passed to it is K{#f}, and 1 otherwise. The procedure's name stands
-for `truth'.
+for `truth of'.
 
 Example:
 MD)

@@ -1036,6 +1036,75 @@ proc ::constcl::invoke {pr vals} {
   }
 }
 
+regspecial let
+
+proc ::constcl::special-let {expr env} {
+  if {[T [symbol? [cadr $expr]]]} {
+    set expr [rewrite-named-let $expr $env]
+  }
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+
+proc ::constcl::rewrite-named-let {expr env} {
+  # named let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set variable [car $tail]
+  set bindings [cadr $tail]
+  set body [cddr $tail]
+  set vars [dict create $variable #f]
+  parse-bindings vars $bindings
+  /define [S decl] [list {*}[dict values [
+  dict map {k v} $vars {list $k $v}]]] $env
+  /define [S variable] $variable $env
+  /define [S varlist] [list {*}[lrange [
+  dict keys $vars] 1 end]] $env
+  /define [S body] $body $env
+  /define [S call] [list {*}[
+  dict keys $vars]] $env
+  set qq "`(let ,decl
+             (set!
+               ,variable
+               (lambda ,varlist ,@body)) ,call)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+
+proc ::constcl::rewrite-let {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  /define [S varlist] [list {*}[
+  dict keys $vars]] $env
+  /define [S body] $body $env
+  /define [S vallist] [list {*}[
+  dict values $vars]] $env
+  set qq "`((lambda ,varlist ,@body)
+  ,@vallist)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+
+proc ::constcl::parse-bindings {name bindings} {
+  upvar $name vars
+  foreach binding [splitlist $bindings] {
+    set var [car $binding]
+    set val [cadr $binding]
+    if {$var in [dict keys $vars]} {
+        ::error "'$var' occurs more than once"
+    }
+    dict set vars $var $val
+  }
+  return
+}
+
 proc ::constcl::splitlist {vals} {
   set result {}
   while {[T [pair? $vals]]} {
@@ -1194,65 +1263,6 @@ proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S or] {*}$res]
-}
-
-regmacro let
-
-proc ::constcl::expand-let {expr env} {
-  set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
-  if {[T [symbol? [car $tail]]]} {
-    # named let
-    set variable [car $tail]
-    set bindings [cadr $tail]
-    set body [cddr $tail]
-    set vars [dict create $variable #f]
-    parse-bindings vars $bindings
-    /define [S decl] [list {*}[dict values [
-      dict map {k v} $vars {list $k $v}]]] $env
-    /define [S variable] $variable $env
-    /define [S varlist] [list {*}[lrange [
-      dict keys $vars] 1 end]] $env
-    /define [S body] $body $env
-    /define [S call] [list {*}[
-      dict keys $vars]] $env
-    set qq "`(let ,decl
-               (set!
-                 ,variable
-                 (lambda ,varlist ,@body)) ,call)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  } else {
-    # regular let
-    set bindings [car $tail]
-    set body [cdr $tail]
-    set vars [dict create]
-    parse-bindings vars $bindings
-    /define [S varlist] [list {*}[
-      dict keys $vars]] $env
-    /define [S body] $body $env
-    /define [S vallist] [list {*}[
-      dict values $vars]] $env
-    set qq "`((lambda ,varlist ,@body)
-               ,@vallist)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-
-proc ::constcl::parse-bindings {name bindings} {
-  upvar $name vars
-  foreach binding [splitlist $bindings] {
-    set var [car $binding]
-    set val [cadr $binding]
-    if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
-    }
-    dict set vars $var $val
-  }
-  return
 }
 
 regmacro or
@@ -2873,6 +2883,9 @@ oo::class create ::constcl::InputPort {
   }
 }
 
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
   variable buffer read_eof
@@ -2936,9 +2949,6 @@ oo::class create ::constcl::OutputPort {
     my write $h
   }
 }
-
-interp alias {} ::constcl::MkInputPort \
-  {} ::constcl::InputPort new
 
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
@@ -4218,10 +4228,10 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my assign $sym [lindex $val 0] [lindex $val 1]
+        my bind $sym [lindex $val 0] [lindex $val 1]
       }
     } elseif {[T [::constcl::symbol? $syms]]} {
-      my assign $syms VARIABLE [
+      my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
@@ -4230,13 +4240,13 @@ oo::class create ::constcl::Environment {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my assign [::constcl::car $syms] \
+        my bind [::constcl::car $syms] \
           [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
         if {[T [
           ::constcl::symbol? [
             ::constcl::cdr $syms]]]} {
-          my assign [::constcl::cdr $syms] \
+          my bind [::constcl::cdr $syms] \
             VARIABLE [
               ::constcl::list {*}[lmap v $vals {
                 lindex $v 1
@@ -4274,6 +4284,14 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
     dict set bindings $sym [::list $type $info]
   }
   method parent {} {

@@ -34,10 +34,10 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my assign $sym [lindex $val 0] [lindex $val 1]
+        my bind $sym [lindex $val 0] [lindex $val 1]
       }
     } elseif {[T [::constcl::symbol? $syms]]} {
-      my assign $syms VARIABLE [
+      my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
@@ -46,13 +46,13 @@ oo::class create ::constcl::Environment {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my assign [::constcl::car $syms] \
+        my bind [::constcl::car $syms] \
           [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
         if {[T [
           ::constcl::symbol? [
             ::constcl::cdr $syms]]]} {
-          my assign [::constcl::cdr $syms] \
+          my bind [::constcl::cdr $syms] \
             VARIABLE [
               ::constcl::list {*}[lmap v $vals {
                 lindex $v 1
@@ -90,6 +90,14 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
     dict set bindings $sym [::list $type $info]
   }
   method parent {} {

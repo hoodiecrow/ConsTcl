@@ -115,7 +115,7 @@ operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
 the expression is a \emph{special form}. If not, like \texttt{+} or
 \texttt{write}, then it's a \emph{function call}.  A full description of Lisp
 is beyond the scope of this introduction, but Lisp will be explained from the
-inside out in the rest of this book. If you want to learn Scheme right away, there are good tutorials in different\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_8.html}} places\footnote{See \texttt{https://www.scheme.com/tspl4/start.html\#./start:h0}} on the web\footnote{See \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
+inside out in the rest of this book. If you want to learn Scheme right away, there are good tutorials in different\footnote{See \texttt{https://docs.scheme.org/schintro/}} places\footnote{See \texttt{https://www.scheme.com/tspl4/}} on the web\footnote{See \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
 
 \subsection{About ConsTcl}
 \label{about-constcl}
@@ -235,6 +235,9 @@ Next, some procedures that make my life as developer somewhat easier.
 
 You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is the string that will eventually become the lookup symbol in the standard library. Following \texttt{reg} are two similar procedures: \texttt{regspecial} and \texttt{regmacro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}. Finally there is \texttt{regvar}, which registers variables.
 
+
+Each one of these starts out by checking if the definitions register (\texttt{defreg}) exists, and if not, creates it. Then they construct a \emph{val}(ue) by concatenating a keyword (\texttt{VARIABLE}, \texttt{SPECIAL}, or \texttt{SYNTAX}) with a variation on \emph{name} (or, in \texttt{regvar}'s case, \emph{value}). Then they set an \emph{index number} based on the number of values in the \texttt{defreg} so far. Finally they insert the concatenation of \emph{name} and \emph{val} under \emph{index}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reg, regspecial, regmacro (internal)} \\
@@ -297,17 +300,17 @@ proc regvar {name value} {
 \index{procedures, functions, and commands: an aside}
 
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
 
 
-And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg} are `public' and those who aren't are `internal'.
+And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg}* are `public' and those who aren't are `internal'.
 
 \subsection{atom? procedure}
 \label{atom?-procedure}
 \index{atom? procedure}
 
 
-THis one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists\index{lists} and atoms\index{atoms}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (truth) if it is an atom, and \texttt{\#f} (falsehood) if not.
+This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists\index{lists} and atoms\index{atoms}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (true) if it is an atom, and \texttt{\#f} (false) if not.
 
 \subsubsection{Predicates: an aside}
 \label{predicates-an-aside}
@@ -352,7 +355,7 @@ proc ::constcl::atom? {val} {
 \index{T procedure}
 
 
-The \texttt{T} procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with \texttt{[T \ldots ]} and have the Lisp expression inside \texttt{T}. \texttt{T} returns 0 if and only if the value passed to it is \texttt{\#f}, and 1 otherwise. The procedure's name stands for `truth'.
+The \texttt{T} procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with \texttt{[T \ldots ]} and have the Lisp expression inside \texttt{T}. \texttt{T} returns 0 if and only if the value passed to it is \texttt{\#f}, and 1 otherwise. The procedure's name stands for `truth of'.
 
 
 Example:
@@ -2604,6 +2607,148 @@ proc ::constcl::invoke {pr vals} {
   }
 }
 \end{lstlisting}
+\section{Binding forms}
+\label{binding-forms}
+\index{Binding forms}
+
+
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of the procedure definition form. But their use is sufficiently distinguished to earn them their own heading.
+
+
+\texttt{special-let} expands the named \texttt{let} and `regular' \texttt{let} macros. They ultimately expand to \texttt{lambda} constructs.
+
+
+Named \texttt{let} chops up the expression into \emph{variable}, \emph{bindings}, and \emph{body}. It creates a dictionary with the \emph{variable} as key and \texttt{\#f} as value. Then it fills up the dictionary with variable/value pairs from the \emph{bindings}. It uses the dictionary to build a declaration list for a \texttt{let} form, a variable list for a \texttt{lambda} form, and a procedure call. Then it assembles a \texttt{let} form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a \texttt{lambda} form with the varlist and the original \emph{body}. The \texttt{let} form is returned, meaning that the primary expansion of the named \texttt{let} is a regular \texttt{let} form.
+
+
+Regular \texttt{let} chops up the original expression into \emph{bindings} and \emph{body}. It creates an empty dictionary and fills it up with variable/value pairs from the \emph{bindings}. Then it builds a \texttt{lambda} operator form with the variable list, the \emph{body}, and the value list. The \texttt{lambda} call is returned as the expansion of the regular \texttt{let} form.
+
+\subsection{let special form}
+\label{let-special-form}
+\index{let special form}
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+regspecial let
+
+proc ::constcl::special-let {expr env} {
+  if {[T [symbol? [cadr $expr]]]} {
+    set expr [rewrite-named-let $expr $env]
+  }
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+\end{lstlisting}
+
+
+\textbf{rewrite-named-let} procedure
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-named-let (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{rewrite-named-let procedure}
+\begin{lstlisting}
+proc ::constcl::rewrite-named-let {expr env} {
+  # named let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set variable [car $tail]
+  set bindings [cadr $tail]
+  set body [cddr $tail]
+  set vars [dict create $variable #f]
+  parse-bindings vars $bindings
+  /define [S decl] [list {*}[dict values [
+  dict map {k v} $vars {list $k $v}]]] $env
+  /define [S variable] $variable $env
+  /define [S varlist] [list {*}[lrange [
+  dict keys $vars] 1 end]] $env
+  /define [S body] $body $env
+  /define [S call] [list {*}[
+  dict keys $vars]] $env
+  set qq "`(let ,decl
+             (set!
+               ,variable
+               (lambda ,varlist ,@body)) ,call)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+\end{lstlisting}
+
+
+\textbf{named-let} procedure
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-let (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{rewrite-let}
+\begin{lstlisting}
+proc ::constcl::rewrite-let {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  /define [S varlist] [list {*}[
+  dict keys $vars]] $env
+  /define [S body] $body $env
+  /define [S vallist] [list {*}[
+  dict values $vars]] $env
+  set qq "`((lambda ,varlist ,@body)
+  ,@vallist)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+\end{lstlisting}
+
+
+\textbf{parse-bindings} procedure
+
+
+\texttt{parse-bindings} is a helper procedure that traverses a \texttt{let} bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse-bindings (internal)} \\
+name & a call-by-name name \\
+bindings & a Lisp list of Lisp values \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+\index{parse-bindings}
+\begin{lstlisting}
+proc ::constcl::parse-bindings {name bindings} {
+  upvar $name vars
+  foreach binding [splitlist $bindings] {
+    set var [car $binding]
+    set val [cadr $binding]
+    if {$var in [dict keys $vars]} {
+        ::error "'$var' occurs more than once"
+    }
+    dict set vars $var $val
+  }
+  return
+}
+\end{lstlisting}
 
 
 \textbf{splitlist} procedure
@@ -2990,104 +3135,6 @@ proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S or] {*}$res]
-}
-\end{lstlisting}
-\subsection{expand-let procedure}
-\label{expand-let-procedure}
-\index{expand-let procedure}
-
-
-\texttt{expand-let} expands the named \texttt{let} and `regular' \texttt{let} macros. They ultimately expand to \texttt{lambda} constructs.
-
-
-Named \texttt{let} chops up the expression into \emph{variable}, \emph{bindings}, and \emph{body}. It creates a dictionary with the \emph{variable} as key and \texttt{\#f} as value. Then it fills up the dictionary with variable/value pairs from the \emph{bindings}. It uses the dictionary to build a declaration list for a \texttt{let} form, a variable list for a \texttt{lambda} form, and a procedure call. Then it assembles a \texttt{let} form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a \texttt{lambda} form with the varlist and the original \emph{body}. The \texttt{let} form is returned, meaning that the primary expansion of the named \texttt{let} is a regular \texttt{let} form.
-
-
-Regular \texttt{let} chops up the original expression into \emph{bindings} and \emph{body}. It creates an empty dictionary and fills it up with variable/value pairs from the \emph{bindings}. Then it builds a \texttt{lambda} operator form with the variable list, the \emph{body}, and the value list. The \texttt{lambda} call is returned as the expansion of the regular \texttt{let} form.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-let (internal)} \\
-expr & an expression \\
-env & an environment \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-regmacro let
-
-proc ::constcl::expand-let {expr env} {
-  set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
-  if {[T [symbol? [car $tail]]]} {
-    # named let
-    set variable [car $tail]
-    set bindings [cadr $tail]
-    set body [cddr $tail]
-    set vars [dict create $variable #f]
-    parse-bindings vars $bindings
-    /define [S decl] [list {*}[dict values [
-      dict map {k v} $vars {list $k $v}]]] $env
-    /define [S variable] $variable $env
-    /define [S varlist] [list {*}[lrange [
-      dict keys $vars] 1 end]] $env
-    /define [S body] $body $env
-    /define [S call] [list {*}[
-      dict keys $vars]] $env
-    set qq "`(let ,decl
-               (set!
-                 ,variable
-                 (lambda ,varlist ,@body)) ,call)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  } else {
-    # regular let
-    set bindings [car $tail]
-    set body [cdr $tail]
-    set vars [dict create]
-    parse-bindings vars $bindings
-    /define [S varlist] [list {*}[
-      dict keys $vars]] $env
-    /define [S body] $body $env
-    /define [S vallist] [list {*}[
-      dict values $vars]] $env
-    set qq "`((lambda ,varlist ,@body)
-               ,@vallist)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-\end{lstlisting}
-
-
-\textbf{parse-bindings} procedure
-
-
-\texttt{parse-bindings} is a helper procedure that traverses a \texttt{let} bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse-bindings (internal)} \\
-name & a call-by-name name \\
-bindings & a Lisp list of Lisp values \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-\index{parse-bindings}
-\begin{lstlisting}
-proc ::constcl::parse-bindings {name bindings} {
-  upvar $name vars
-  foreach binding [splitlist $bindings] {
-    set var [car $binding]
-    set val [cadr $binding]
-    if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
-    }
-    dict set vars $var $val
-  }
-  return
 }
 \end{lstlisting}
 \subsection{expand-or procedure}
@@ -5960,6 +6007,20 @@ oo::class create ::constcl::InputPort {
   }
 }
 \end{lstlisting}
+\subsection{MkInputPort generator}
+\label{mkinputport-generator}
+\index{MkInputPort generator}
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
+filename & a filename string \\
+\textit{Returns:} & an input port \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+\end{lstlisting}
 \subsection{StringInputPort class}
 \label{stringinputport-class}
 \index{StringInputPort class}
@@ -6031,20 +6092,6 @@ oo::class create ::constcl::OutputPort {
     my write $h
   }
 }
-\end{lstlisting}
-\subsection{MkInputPort generator}
-\label{mkinputport-generator}
-\index{MkInputPort generator}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
-filename & a filename string \\
-\textit{Returns:} & an input port \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-interp alias {} ::constcl::MkInputPort \
-  {} ::constcl::InputPort new
 \end{lstlisting}
 \subsection{MkOutputPort generator}
 \label{mkoutputport-generator}
@@ -8167,10 +8214,10 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my assign $sym [lindex $val 0] [lindex $val 1]
+        my bind $sym [lindex $val 0] [lindex $val 1]
       }
     } elseif {[T [::constcl::symbol? $syms]]} {
-      my assign $syms VARIABLE [
+      my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
@@ -8179,13 +8226,13 @@ oo::class create ::constcl::Environment {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my assign [::constcl::car $syms] \
+        my bind [::constcl::car $syms] \
           [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
         if {[T [
           ::constcl::symbol? [
             ::constcl::cdr $syms]]]} {
-          my assign [::constcl::cdr $syms] \
+          my bind [::constcl::cdr $syms] \
             VARIABLE [
               ::constcl::list {*}[lmap v $vals {
                 lindex $v 1
@@ -8223,6 +8270,14 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
     dict set bindings $sym [::list $type $info]
   }
   method parent {} {

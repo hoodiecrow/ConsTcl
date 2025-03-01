@@ -64,6 +64,9 @@ Next, some procedures that make my life as developer somewhat easier.
 
 You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. Following `` reg `` are two similar procedures: `` regspecial `` and `` regmacro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. Finally there is `` regvar ``, which registers variables.
 
+
+Each one of these starts out by checking if the definitions register (`` defreg ``) exists, and if not, creates it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
+
 <table border=1><thead><tr><th colspan=2 align="left">reg, regspecial, regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
@@ -110,15 +113,15 @@ proc regvar {name value} {
 ##### Procedures, functions, and commands: an aside
 
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
 
 
-And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
+And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg ``* are `public' and those who aren't are `internal'.
 
 #### atom? procedure
 
 
-THis one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (truth) if it is an atom, and `` #f `` (falsehood) if not.
+This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (true) if it is an atom, and `` #f `` (false) if not.
 
 ##### Predicates: an aside
 
@@ -154,7 +157,7 @@ proc ::constcl::atom? {val} {
 #### T procedure
 
 
-The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only if the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for `truth'.
+The `` T `` procedure is intended to reduce the hassle of trying to make Lisp booleans work with Tcl conditions. The idea is to line the Tcl condition with `` [T ...] `` and have the Lisp expression inside `` T ``. `` T `` returns 0 if and only if the value passed to it is `` #f ``, and 1 otherwise. The procedure's name stands for `truth of'.
 
 
 Example:
@@ -1900,6 +1903,117 @@ proc ::constcl::invoke {pr vals} {
   }
 }
 ```
+### Binding forms
+
+
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of the procedure definition form. But their use is sufficiently distinguished to earn them their own heading.
+
+
+`` special-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
+
+
+Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+
+
+Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+
+#### let special form
+<table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+regspecial let
+
+proc ::constcl::special-let {expr env} {
+  if {[T [symbol? [cadr $expr]]]} {
+    set expr [rewrite-named-let $expr $env]
+  }
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+```
+
+
+__rewrite-named-let__ procedure
+
+<table border=1><thead><tr><th colspan=2 align="left">rewrite-named-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::rewrite-named-let {expr env} {
+  # named let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set variable [car $tail]
+  set bindings [cadr $tail]
+  set body [cddr $tail]
+  set vars [dict create $variable #f]
+  parse-bindings vars $bindings
+  /define [S decl] [list {*}[dict values [
+  dict map {k v} $vars {list $k $v}]]] $env
+  /define [S variable] $variable $env
+  /define [S varlist] [list {*}[lrange [
+  dict keys $vars] 1 end]] $env
+  /define [S body] $body $env
+  /define [S call] [list {*}[
+  dict keys $vars]] $env
+  set qq "`(let ,decl
+             (set!
+               ,variable
+               (lambda ,varlist ,@body)) ,call)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+```
+
+
+__named-let__ procedure
+
+<table border=1><thead><tr><th colspan=2 align="left">rewrite-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::rewrite-let {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set env [Environment new #NIL {} $env]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  /define [S varlist] [list {*}[
+  dict keys $vars]] $env
+  /define [S body] $body $env
+  /define [S vallist] [list {*}[
+  dict values $vars]] $env
+  set qq "`((lambda ,varlist ,@body)
+  ,@vallist)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+```
+
+
+__parse-bindings__ procedure
+
+
+`` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
+
+<table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::parse-bindings {name bindings} {
+  upvar $name vars
+  foreach binding [splitlist $bindings] {
+    set var [car $binding]
+    set val [cadr $binding]
+    if {$var in [dict keys $vars]} {
+        ::error "'$var' occurs more than once"
+    }
+    dict set vars $var $val
+  }
+  return
+}
+```
 
 
 __splitlist__ procedure
@@ -2191,89 +2305,6 @@ proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S or] {*}$res]
-}
-```
-#### expand-let procedure
-
-
-`` expand-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
-
-
-Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
-
-
-Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
-
-<table border=1><thead><tr><th colspan=2 align="left">expand-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-regmacro let
-
-proc ::constcl::expand-let {expr env} {
-  set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
-  if {[T [symbol? [car $tail]]]} {
-    # named let
-    set variable [car $tail]
-    set bindings [cadr $tail]
-    set body [cddr $tail]
-    set vars [dict create $variable #f]
-    parse-bindings vars $bindings
-    /define [S decl] [list {*}[dict values [
-      dict map {k v} $vars {list $k $v}]]] $env
-    /define [S variable] $variable $env
-    /define [S varlist] [list {*}[lrange [
-      dict keys $vars] 1 end]] $env
-    /define [S body] $body $env
-    /define [S call] [list {*}[
-      dict keys $vars]] $env
-    set qq "`(let ,decl
-               (set!
-                 ,variable
-                 (lambda ,varlist ,@body)) ,call)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  } else {
-    # regular let
-    set bindings [car $tail]
-    set body [cdr $tail]
-    set vars [dict create]
-    parse-bindings vars $bindings
-    /define [S varlist] [list {*}[
-      dict keys $vars]] $env
-    /define [S body] $body $env
-    /define [S vallist] [list {*}[
-      dict values $vars]] $env
-    set qq "`((lambda ,varlist ,@body)
-               ,@vallist)"
-    set expr [expand-quasiquote [parse $qq] $env]
-    $env destroy
-    return $expr
-  }
-}
-```
-
-
-__parse-bindings__ procedure
-
-
-`` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
-
-<table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::parse-bindings {name bindings} {
-  upvar $name vars
-  foreach binding [splitlist $bindings] {
-    set var [car $binding]
-    set val [cadr $binding]
-    if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
-    }
-    dict set vars $var $val
-  }
-  return
 }
 ```
 #### expand-or procedure
@@ -4671,6 +4702,17 @@ oo::class create ::constcl::InputPort {
   }
 }
 ```
+#### MkInputPort generator
+
+
+`` MkInputPort `` generates an InputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+
+```
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+```
 #### StringInputPort class
 ```
 oo::class create ::constcl::StringInputPort {
@@ -4738,17 +4780,6 @@ oo::class create ::constcl::OutputPort {
     my write $h
   }
 }
-```
-#### MkInputPort generator
-
-
-`` MkInputPort `` generates an InputPort object.
-
-<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
-
-```
-interp alias {} ::constcl::MkInputPort \
-  {} ::constcl::InputPort new
 ```
 #### MkOutputPort generator
 
@@ -6995,10 +7026,10 @@ oo::class create ::constcl::Environment {
             "$valsn instead of $symsn"]
       }
       foreach sym $syms val $vals {
-        my assign $sym [lindex $val 0] [lindex $val 1]
+        my bind $sym [lindex $val 0] [lindex $val 1]
       }
     } elseif {[T [::constcl::symbol? $syms]]} {
-      my assign $syms VARIABLE [
+      my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
@@ -7007,13 +7038,13 @@ oo::class create ::constcl::Environment {
         if {[llength $vals] < 1} {
           error "too few arguments"
         }
-        my assign [::constcl::car $syms] \
+        my bind [::constcl::car $syms] \
           [lindex $vals 0 0] [lindex $vals 0 1]
         set vals [lrange $vals 1 end]
         if {[T [
           ::constcl::symbol? [
             ::constcl::cdr $syms]]]} {
-          my assign [::constcl::cdr $syms] \
+          my bind [::constcl::cdr $syms] \
             VARIABLE [
               ::constcl::list {*}[lmap v $vals {
                 lindex $v 1
@@ -7051,6 +7082,14 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
     dict set bindings $sym [::list $type $info]
   }
   method parent {} {

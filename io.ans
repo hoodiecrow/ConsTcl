@@ -68,6 +68,21 @@ oo::class create ::constcl::InputPort {
 }
 CB)
 
+H4 MkInputPort generator
+
+MD(
+K{MkInputPort} generates an InputPort object.
+MD)
+
+PR(
+MkInputPort (internal);filename filename -> iport
+PR)
+
+CB(
+interp alias {} ::constcl::MkInputPort \
+  {} ::constcl::InputPort new
+CB)
+
 H4 StringInputPort class
 
 CB(
@@ -138,21 +153,6 @@ oo::class create ::constcl::OutputPort {
     my write $h
   }
 }
-CB)
-
-H4 MkInputPort generator
-
-MD(
-K{MkInputPort} generates an InputPort object.
-MD)
-
-PR(
-MkInputPort (internal);filename filename -> iport
-PR)
-
-CB(
-interp alias {} ::constcl::MkInputPort \
-  {} ::constcl::InputPort new
 CB)
 
 H4 MkOutputPort generator

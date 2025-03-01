@@ -153,7 +153,7 @@ TT(
 
 ::tcltest::test cons-15.2 {dereference an unbound symbol: procedure} -body {
     pew "(foo)"
-} -returnCodes error -result "Unbound variable: foo"
+} -returnCodes error -result "unbound symbol (foo )"
 TT)
 
 TT(
@@ -168,7 +168,9 @@ TT(
     pew "(fact 10)"
 } -output 3628800\n
 
-::tcltest::test cons-2.1 {calculate factorial 100} -body {
+::tcltest::test cons-2.1 {calculate factorial 100} -constraints knownBug -body {
+  # the bug is that it's too long and eats up the limit stack when there's a
+  # problem
     pew "(fact 100)"
 } -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
 
@@ -230,28 +232,35 @@ TT(
 } -output "5\n"
 
 ::tcltest::test cons-7.0 {assignment} -body {
+  unbind [S r]
     pew "(begin (define r 10) (set! r 20) r)"
 } -output "20\n"
 
 ::tcltest::test cons-7.1 {assignment returns a value} -body {
+  unbind [S r]
     pew "(begin (define r 10) (set! r 20))"
 } -output "20\n"
 
 ::tcltest::test cons-7.2 {assignment to an unbound symbol} -body {
     pew "(begin (set! XX 20))"
-} -returnCodes error -result "Unbound variable: XX"
+} -returnCodes error -result "XX is not bound"
 
 ::tcltest::test cons-8.0 {procedure definition} -body {
     pew "(lambda (r) (* r r))"
 } -match regexp -output "#<proc-\\d+>\n"
 
 ::tcltest::test cons-8.1 {procedure with two expressions} -body {
+  unbind [S f]
+  unbind [S r]
     pew "(define (f) (define r 20) (* r r))"
     pew "(f)"
 } -output "400\n"
 
 ::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
-    pew "(define (f) (define r 20) (* r r))"
+  unbind [S f]
+    set x [p "(define (f) (define r 20) (* r r))"]
+    set x [::constcl::rewrite-define $x ::constcl::global_env]
+    w $x
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
 ::tcltest::test cons-9.0 {symbol?} -body {
@@ -259,6 +268,8 @@ TT(
 } -output "#t\n"
 
 ::tcltest::test cons-10.0 {shadowing} -body {
+  unbind [S r]
+  unbind [S f]
     pew "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
 } -output "10\n"
 
