@@ -15,12 +15,13 @@ H4 eval procedure
 MD(
 The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
 it according to its form. Symbols to the value they R{refer
-  to}{variable-reference}, numbers etc to their R{own value}{constant-literal},
-  and expressions that are lists to the value that K{eval-form} assigns to them.
+  to}{variable-reference}, atoms and the empty list to their R{own
+    value}{constant-literal}, and expressions that are lists to the value that
+    K{eval-form} assigns to them.
 MD)
 
 PR(
-eval (public);expr expr env env -> val
+eval (public);expr expr ?env? env -> val
 PR)
 
 CB(
@@ -30,8 +31,7 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] ||
-    [T [atom? $expr]]} {
+  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
@@ -44,11 +44,13 @@ CB)
 H4 eval-form procedure
 
 MD(
-K{eval} also does two kinds of rewriting of expressions: 1) E{macro expansion}
-on a non-atomic expression into a more concrete expression. See the part about
-R{macros}{macros} below, and 2) resolving E{local defines}, acting on
-expressions of the form K{(begin (define ...} when in a local environment. See
-the part about R{resolving local defines}{resolving-local-defines}.
+If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
+at the E{binding information} (which the K{reg}* procedures put into the
+standard library and thereby the global environment) for the symbol. The
+E{binding type} tells in general how the expression should be treated: as a
+special form, a variable, or a R{macro}{macros}. The E{info} gives the exact
+procedure that will take care of the expression. If the operator isn't a symbol,
+it is evaluated and applied to the evaluated rest of the expression.
 MD)
 
 PR(
@@ -61,23 +63,23 @@ proc ::constcl::eval-form {expr env} {
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
     set bi [binding-info $op $env]
-    lassign $bi bt in
-    switch $bt {
+    lassign $bi btype info
+    switch $btype {
       UNBOUND {
         error "unbound symbol" $op
       }
       SPECIAL {
-        $in $expr $env
+        $info $expr $env
       }
       VARIABLE {
-        invoke $in [eval-list $args $env]
+        invoke $info [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$in $expr $env]
+        set expr [$info $expr $env]
         eval $expr $env
       }
       default {
-        error "unrecognized binding type" $bt
+        error "unrecognized binding type" $btype
       }
     }
   } else {
@@ -136,7 +138,7 @@ MD)
 h3 Variable reference
 
 MD(
-EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to 10)
+EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
 
 A variableI{variable}I{variable reference} is an identifier (symbol) bound to a
 location in the environment. If an expression consists of an identifier it is
@@ -304,6 +306,8 @@ TT(
 } -output ""
 TT)
 
+H4 case special form
+
 MD(
 Another conditional form is K{case}. It implements a multi-choice where a single
 expression selects between alternatives. The body of the K{case} form consists
@@ -317,19 +321,9 @@ It expands to K{'()} if there are
 no clauses (left), and to nested K{if} constructs if there are some.
 MD)
 
-H5 caar, cadr, cdar, and the rest: an aside
-
 MD(
-The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
-and K{cdar}. K{car}/K{cdr} notation gets really powerful when combined to form
-operators from K{caar} to K{cddddr}. One can read K{caar L} as `the first element of
-the first element of L', implying that the first element of K{L} is a list.
-K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
-is `the first element of the rest of the elements of L' or in layman's terms,
-the second element of L.
+B{special-case} procedure
 MD)
-
-H4 case special form
 
 PR(
 special-case (internal);expr expr env env -> expr
@@ -343,7 +337,21 @@ proc ::constcl::special-case {expr env} {
   set expr [do-case [car $tail] [cdr $tail] $env]
   eval $expr $env
 }
+CB)
 
+H5 caar, cadr, cdar, and the rest: an aside
+
+MD(
+The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
+and K{cdar}. K{car}/K{cdr} notation gets really powerful when combined to form
+operators from K{caar} to K{cddddr}. One can read K{caar L} as `the first element of
+the first element of L', implying that the first element of K{L} is a list.
+K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
+is `the first element of the rest of the elements of L' or in layman's terms,
+the second element of L.
+MD)
+
+CB(
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -396,6 +404,8 @@ TT(
 } -output "consonant\n"
 TT)
 
+H4 cond special form
+
 MD(
 The K{cond} form has a list of clauses, each with a predicate and a body. The
 clauses is considered in order, and if a predicate evaluates to something other
@@ -404,9 +414,8 @@ than K{#f} the body is evaluated and the remaining clauses are ignored.
 The K{cond} form is expanded by K{special-cond}. It expands to K{'()} if there are no
 clauses (left), and to nested K{if} constructs if there are some.
 
+B{special-cond} procedure
 MD)
-
-H4 cond special form
 
 PR(
 special-cond (internal);expr expr env env -> expr
@@ -518,6 +527,10 @@ When expressions are evaluated in sequenceI{sequence}, the order is important
 for two reasons. If the expressions have any side effects, they happen in the
 same order of sequence. Also, if expressions are part of a pipeline of
 calculations, then they need to be processed in the order of that pipeline.
+
+As part of the processing of sequences E{local defines} are resolved, acting on
+expressions of the form K{(begin (define ...} when in a local environment. See
+the part about R{resolving local defines}{resolving-local-defines}.
 MD)
 
 H4 begin special form

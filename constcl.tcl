@@ -784,8 +784,7 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] ||
-    [T [atom? $expr]]} {
+  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
@@ -799,23 +798,23 @@ proc ::constcl::eval-form {expr env} {
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
     set bi [binding-info $op $env]
-    lassign $bi bt in
-    switch $bt {
+    lassign $bi btype info
+    switch $btype {
       UNBOUND {
         error "unbound symbol" $op
       }
       SPECIAL {
-        $in $expr $env
+        $info $expr $env
       }
       VARIABLE {
-        invoke $in [eval-list $args $env]
+        invoke $info [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$in $expr $env]
+        set expr [$info $expr $env]
         eval $expr $env
       }
       default {
-        error "unrecognized binding type" $bt
+        error "unrecognized binding type" $btype
       }
     }
   } else {
@@ -1494,17 +1493,16 @@ proc ::constcl::extract-from-defines {exps part} {
   while {$exps ne "#NIL"} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
-        [eq? [caar $exps] [S define]] eq "#f"} {
+        ![T [eq? [caar $exps] [S define]]]} {
       break
     }
     set n [car $exps]
     set k [length $n]
-    if {[list? $n] eq "#f" ||
+    if {![T [list? $n]] ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
         ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])
-      eq "#f"} {
+        ![T [symbol? [cadr $n]]])} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {

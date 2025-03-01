@@ -56,17 +56,16 @@ proc ::constcl::extract-from-defines {exps part} {
   while {$exps ne "#NIL"} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
-        [eq? [caar $exps] [S define]] eq "#f"} {
+        ![T [eq? [caar $exps] [S define]]]} {
       break
     }
     set n [car $exps]
     set k [length $n]
-    if {[list? $n] eq "#f" ||
+    if {![T [list? $n]] ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
         ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])
-      eq "#f"} {
+        ![T [symbol? [cadr $n]]])} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {

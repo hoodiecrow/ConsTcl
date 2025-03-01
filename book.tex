@@ -1918,13 +1918,13 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 \index{eval procedure}
 
 
-The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form. Symbols to the value they refer to (see page \pageref{variable-reference}), numbers etc to their own value (see page \pageref{constant-literal}), and expressions that are lists to the value that \texttt{eval-form} assigns to them.
+The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form. Symbols to the value they refer to (see page \pageref{variable-reference}), atoms and the empty list to their own value (see page \pageref{constant-literal}), and expressions that are lists to the value that \texttt{eval-form} assigns to them.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval (public)} \\
 expr & an expression \\
-env & an environment \\
+?env? & an environment \\
 \textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
@@ -1935,8 +1935,7 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] ||
-    [T [atom? $expr]]} {
+  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
@@ -1950,7 +1949,7 @@ proc ::constcl::eval \
 \index{eval-form procedure}
 
 
-\texttt{eval} also does two kinds of rewriting of expressions: 1) \emph{macro expansion} on a non-atomic expression into a more concrete expression. See the part about macros (see page \pageref{macros}) below, and 2) resolving \emph{local defines}, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
+If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-form} looks at the \emph{binding information} (which the \texttt{reg}* procedures put into the standard library and thereby the global environment) for the symbol. The \emph{binding type} tells in general how the expression should be treated: as a special form, a variable, or a macro (see page \pageref{macros}). The \emph{info} gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1966,23 +1965,23 @@ proc ::constcl::eval-form {expr env} {
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
     set bi [binding-info $op $env]
-    lassign $bi bt in
-    switch $bt {
+    lassign $bi btype info
+    switch $btype {
       UNBOUND {
         error "unbound symbol" $op
       }
       SPECIAL {
-        $in $expr $env
+        $info $expr $env
       }
       VARIABLE {
-        invoke $in [eval-list $args $env]
+        invoke $info [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$in $expr $env]
+        set expr [$info $expr $env]
         eval $expr $env
       }
       default {
-        error "unrecognized binding type" $bt
+        error "unrecognized binding type" $btype
       }
     }
   } else {
@@ -2043,7 +2042,7 @@ The evaluator recognizes each one by its internal representation and chooses the
 \index{variable reference}
 
 
-\emph{Example: \texttt{r} $\Rightarrow$ 10 (a symbol \texttt{r} is evaluated to 10)}
+\emph{Example: \texttt{r} $\Rightarrow$ 10 (a symbol \texttt{r} is evaluated to what it's bound to)}
 
 
 A variable\index{variable}\index{variable reference} is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
@@ -2179,6 +2178,9 @@ proc ::constcl::/if1 {cond conseq} {
   }
 }
 \end{lstlisting}
+\subsection{case special form}
+\label{case-special-form}
+\index{case special form}
 
 
 Another conditional form is \texttt{case}. It implements a multi-choice where a single expression selects between alternatives. The body of the \texttt{case} form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
@@ -2186,16 +2188,10 @@ Another conditional form is \texttt{case}. It implements a multi-choice where a 
 
 The \texttt{case} form is implemented by \texttt{special-case}, with help from \texttt{do-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
-\subsubsection{caar, cadr, cdar, and the rest: an aside}
-\label{caar,-cadr,-cdar,-and-the-rest-an-aside}
-\index{caar, cadr, cdar, and the rest: an aside}
 
 
-The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} operators like \texttt{caar} and \texttt{cdar}. \texttt{car}/\texttt{cdr} notation gets really powerful when combined to form operators from \texttt{caar} to \texttt{cddddr}. One can read \texttt{caar L} as `the first element of the first element of L', implying that the first element of \texttt{L} is a list. \texttt{cdar L} is `the rest of the elements of the first element of L', and \texttt{cadr L} is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+\textbf{special-case} procedure
 
-\subsection{case special form}
-\label{case-special-form}
-\index{case special form}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-case (internal)} \\
@@ -2212,7 +2208,15 @@ proc ::constcl::special-case {expr env} {
   set expr [do-case [car $tail] [cdr $tail] $env]
   eval $expr $env
 }
+\end{lstlisting}
+\subsubsection{caar, cadr, cdar, and the rest: an aside}
+\label{caar,-cadr,-cdar,-and-the-rest-an-aside}
+\index{caar, cadr, cdar, and the rest: an aside}
 
+
+The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} operators like \texttt{caar} and \texttt{cdar}. \texttt{car}/\texttt{cdr} notation gets really powerful when combined to form operators from \texttt{caar} to \texttt{cddddr}. One can read \texttt{caar L} as `the first element of the first element of L', implying that the first element of \texttt{L} is a list. \texttt{cdar L} is `the rest of the elements of the first element of L', and \texttt{cadr L} is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+
+\begin{lstlisting}
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -2242,6 +2246,9 @@ proc ::constcl::do-case {keyexpr clauses env} {
   }
 }
 \end{lstlisting}
+\subsection{cond special form}
+\label{cond-special-form}
+\index{cond special form}
 
 
 The \texttt{cond} form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than \texttt{\#f} the body is evaluated and the remaining clauses are ignored.
@@ -2249,9 +2256,9 @@ The \texttt{cond} form has a list of clauses, each with a predicate and a body. 
 
 The \texttt{cond} form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
-\subsection{cond special form}
-\label{cond-special-form}
-\index{cond special form}
+
+\textbf{special-cond} procedure
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-cond (internal)} \\
@@ -2329,6 +2336,9 @@ proc ::constcl::do-cond {tail env} {
 
 
 When expressions are evaluated in sequence\index{sequence}, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
+
+
+As part of the processing of sequences \emph{local defines} are resolved, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
 
 \subsection{begin special form}
 \label{begin-special-form}
@@ -3544,17 +3554,16 @@ proc ::constcl::extract-from-defines {exps part} {
   while {$exps ne "#NIL"} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
-        [eq? [caar $exps] [S define]] eq "#f"} {
+        ![T [eq? [caar $exps] [S define]]]} {
       break
     }
     set n [car $exps]
     set k [length $n]
-    if {[list? $n] eq "#f" ||
+    if {![T [list? $n]] ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
         ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])
-      eq "#f"} {
+        ![T [symbol? [cadr $n]]])} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {

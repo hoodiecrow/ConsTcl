@@ -1386,9 +1386,9 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 #### eval procedure
 
 
-The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), numbers etc to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` assigns to them.
+The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), atoms and the empty list to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` assigns to them.
 
-<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg eval
@@ -1397,8 +1397,7 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] ||
-    [T [atom? $expr]]} {
+  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
@@ -1410,7 +1409,7 @@ proc ::constcl::eval \
 #### eval-form procedure
 
 
-`` eval `` also does two kinds of rewriting of expressions: 1) _macro expansion_ on a non-atomic expression into a more concrete expression. See the part about [macros](https://github.com/hoodiecrow/ConsTcl#macros) below, and 2) resolving _local defines_, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg ``* procedures put into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1420,23 +1419,23 @@ proc ::constcl::eval-form {expr env} {
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
     set bi [binding-info $op $env]
-    lassign $bi bt in
-    switch $bt {
+    lassign $bi btype info
+    switch $btype {
       UNBOUND {
         error "unbound symbol" $op
       }
       SPECIAL {
-        $in $expr $env
+        $info $expr $env
       }
       VARIABLE {
-        invoke $in [eval-list $args $env]
+        invoke $info [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$in $expr $env]
+        set expr [$info $expr $env]
         eval $expr $env
       }
       default {
-        error "unrecognized binding type" $bt
+        error "unrecognized binding type" $btype
       }
     }
   } else {
@@ -1485,7 +1484,7 @@ The evaluator recognizes each one by its internal representation and chooses the
 ### Variable reference
 
 
-_Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to 10)_
+_Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
@@ -1576,6 +1575,7 @@ proc ::constcl::/if1 {cond conseq} {
   }
 }
 ```
+#### case special form
 
 
 Another conditional form is `` case ``. It implements a multi-choice where a single expression selects between alternatives. The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
@@ -1583,12 +1583,10 @@ Another conditional form is `` case ``. It implements a multi-choice where a sin
 
 The `` case `` form is implemented by `` special-case ``, with help from `` do-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
-##### caar, cadr, cdar, and the rest: an aside
 
 
-The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+__special-case__ procedure
 
-#### case special form
 <table border=1><thead><tr><th colspan=2 align="left">special-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -1599,7 +1597,13 @@ proc ::constcl::special-case {expr env} {
   set expr [do-case [car $tail] [cdr $tail] $env]
   eval $expr $env
 }
+```
+##### caar, cadr, cdar, and the rest: an aside
 
+
+The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+
+```
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -1629,6 +1633,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
   }
 }
 ```
+#### cond special form
 
 
 The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
@@ -1636,7 +1641,9 @@ The `` cond `` form has a list of clauses, each with a predicate and a body. The
 
 The `` cond `` form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
-#### cond special form
+
+__special-cond__ procedure
+
 <table border=1><thead><tr><th colspan=2 align="left">special-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -1699,6 +1706,9 @@ _Example: `` (begin (define r 10) (* r r)) `` ==> 100_
 
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
+
+
+As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 #### begin special form
 <table border=1><thead><tr><th colspan=2 align="left">special-begin (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
@@ -2626,17 +2636,16 @@ proc ::constcl::extract-from-defines {exps part} {
   while {$exps ne "#NIL"} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
-        [eq? [caar $exps] [S define]] eq "#f"} {
+        ![T [eq? [caar $exps] [S define]]]} {
       break
     }
     set n [car $exps]
     set k [length $n]
-    if {[list? $n] eq "#f" ||
+    if {![T [list? $n]] ||
         [$k numval] < 3 ||
         [$k numval] > 3 ||
         ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])
-      eq "#f"} {
+        ![T [symbol? [cadr $n]]])} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {
