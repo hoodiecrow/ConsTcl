@@ -17,7 +17,7 @@ The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
 it according to its form. Symbols to the value they R{refer
   to}{variable-reference}, atoms and the empty list to their R{own
     value}{constant-literal}, and expressions that are lists to the value that
-    K{eval-form} assigns to them.
+    K{eval-form} gets out of them.
 MD)
 
 PR(
@@ -45,7 +45,7 @@ H4 eval-form procedure
 
 MD(
 If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
-at the E{binding information} (which the K{reg}* procedures put into the
+at the E{binding information} (which the K{reg} procedure puts into the
 standard library and thereby the global environment) for the symbol. The
 E{binding type} tells in general how the expression should be treated: as a
 special form, a variable, or a R{macro}{macros}. The E{info} gives the exact
@@ -206,7 +206,7 @@ special-quote (public);expr expr env env -> val
 PR)
 
 CB(
-regspecial quote
+reg special quote
 
 proc ::constcl::special-quote {expr env} {
   return [cadr $expr]
@@ -246,7 +246,7 @@ special-if (public);expr expr env env -> val
 PR)
 
 CB(
-regspecial if
+reg special if
 
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
@@ -330,7 +330,7 @@ special-case (internal);expr expr env env -> expr
 PR)
 
 CB(
-regspecial case
+reg special case
 
 proc ::constcl::special-case {expr env} {
   set tail [cdr $expr]
@@ -349,6 +349,22 @@ the first element of L', implying that the first element of K{L} is a list.
 K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
 is `the first element of the rest of the elements of L' or in layman's terms,
 the second element of L.
+MD)
+
+H5 Quasiquote: an aside
+
+MD(
+In this and many other special form and macro form expanders I use a
+quasiquoteI{quasiquote} construct to lay out how the form is to be expanded. A
+quasiquote starts with a backquote (K{`}) instead of the single quote that
+precedes regular quoted material. A quasiquote allows for `unquoting' of
+selected parts: this is notated with a comma (K{,}).  K{`(foo ,bar baz)} is very
+nearly the same as K{('foo bar 'baz)}.  In both cases K{foo} and K{baz} are
+constants while K{bar} is a variable which will be evaluated.  Like in
+K{do-case} here, a quasiquote serves well as a templating mechanism. The
+variables in the quasiquote need to be a part of the environment in which the
+quasiquote is expanded: I use K{/define} to bind them in a temporary
+environment.
 MD)
 
 CB(
@@ -383,23 +399,23 @@ proc ::constcl::do-case {keyexpr clauses env} {
 CB)
 
 TT(
-::tcltest::test eval-3.0 {expand case macro} -body {
+::tcltest::test eval-5.0 {expand case macro} -body {
     set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
 
-::tcltest::test eval-3.1 {run case macro} -body {
+::tcltest::test eval-5.1 {run case macro} -body {
     pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
 } -output "composite\n"
 
-::tcltest::test eval-3.2 {expand case macro} -body {
+::tcltest::test eval-5.2 {expand case macro} -body {
     set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
 
-::tcltest::test eval-3.3 {run case macro} -body {
+::tcltest::test eval-5.3 {run case macro} -body {
     pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
 } -output "consonant\n"
 TT)
@@ -422,7 +438,7 @@ special-cond (internal);expr expr env env -> expr
 PR)
 
 CB(
-regspecial cond
+reg special cond
 
 proc ::constcl::special-cond {expr env} {
   set expr [do-cond [cdr $expr] $env]
@@ -483,34 +499,34 @@ proc ::constcl::do-cond {tail env} {
 CB)
 
 TT(
-::tcltest::test eval-4.0 {expand cond macro} -body {
+::tcltest::test eval-6.0 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
 
-::tcltest::test eval-4.1 {run cond macro} -body {
+::tcltest::test eval-6.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
     pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
 } -output "3\n3\n"
 
-::tcltest::test eval-4.2 {expand cond macro} -body {
+::tcltest::test eval-6.2 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test eval-4.3 {run cond macro} -body {
+::tcltest::test eval-6.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "()\n"
 
-::tcltest::test eval-4.4 {expand cond macro} -body {
+::tcltest::test eval-6.4 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test eval-4.5 {expand cond macro} -body {
+::tcltest::test eval-6.5 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
@@ -540,7 +556,7 @@ special-begin (public);expr expr env env -> val
 PR)
 
 CB(
-regspecial begin
+reg special begin
 
 proc ::constcl::special-begin {expr env} {
   #      TODO
@@ -581,7 +597,7 @@ proc ::constcl::/begin {exps env} {
 CB)
 
 TT(
-::tcltest::test eval-5.0 {try eval-ing a sequence} -body {
+::tcltest::test eval-7.0 {try eval-ing a sequence} -body {
   pew "(begin (display 'a) (display 'b))"
 } -output "ab"
 TT)
@@ -606,7 +622,7 @@ special-define (public);expr expr env env -> none
 PR)
 
 CB(
-regspecial define
+reg special define
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -652,19 +668,19 @@ proc ::constcl::rewrite-define {expr env} {
 CB)
 
 TT(
-::tcltest::test eval-5.0 {define} -body {
+::tcltest::test eval-8.0 {define} -body {
     w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
 
-::tcltest::test eval-5.1 {define} -body {
+::tcltest::test eval-8.1 {define} -body {
     w [::constcl::rewrite-define [p "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
 } -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
 
-::tcltest::test eval-5.2 {define} -body {
+::tcltest::test eval-8.2 {define} -body {
     w [::constcl::rewrite-define [p "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
-::tcltest::test eval-5.3 {define} -body {
+::tcltest::test eval-8.3 {define} -body {
     w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
 
@@ -688,16 +704,16 @@ proc ::constcl::/define {sym val env} {
 CB)
 
 TT(
-::tcltest::test eval-6.0 {try eval-ing a define} -body {
+::tcltest::test eval-9.0 {try eval-ing a define} -body {
   pew "(define r 10)"
   pew "r"
 } -output "10\n"
 
-::tcltest::test eval-6.1 {try eval-ing a define, with an inappropriate symbol} -body {
+::tcltest::test eval-9.1 {try eval-ing a define, with an inappropriate symbol} -body {
   pew "(define let 10)"
 } -returnCodes error -result "Variable name is reserved: let"
 
-::tcltest::test eval-6.2 {try eval-ing a define, with an inappropriate symbol} -body {
+::tcltest::test eval-9.2 {try eval-ing a define, with an inappropriate symbol} -body {
   pew "(define +foo 10)"
 } -returnCodes error -result "Identifier expected (+foo)"
 TT)
@@ -724,7 +740,7 @@ special-set! (public);expr expr env env -> val
 PR)
 
 CB(
-regspecial set!
+reg special set!
 
 proc ::constcl::special-set! {expr env} {
   set args [cdr $expr]
@@ -736,7 +752,7 @@ proc ::constcl::special-set! {expr env} {
 CB)
 
 TT(
-::tcltest::test eval-7.0 {try eval-ing an assignment} -body {
+::tcltest::test eval-10.0 {try eval-ing an assignment} -body {
   unbind [S r]
   pew "(define r 10)"
   pew "(set! r 20)"
@@ -798,7 +814,7 @@ special-lambda (public);expr expr env env -> proc
 PR)
 
 CB(
-regspecial lambda
+reg special lambda
 
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
@@ -814,7 +830,7 @@ proc ::constcl::special-lambda {expr env} {
 CB)
 
 TT(
-::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body {
+::tcltest::test eval-11.0 {try eval-ing a procedure definition} -body {
   pew "(define (square x) (* x x))"
   pew "(square 20)"
 } -output "400\n"
@@ -856,11 +872,11 @@ proc ::constcl::invoke {pr vals} {
 CB)
 
 TT(
-::tcltest::test eval-9.0 {try eval-ing a procedure call} -body {
+::tcltest::test eval-12.0 {try eval-ing a procedure call} -body {
   pew "(* 5 20)"
 } -output "100\n"
 
-::tcltest::test eval-9.1 {try triggering a check} -body {
+::tcltest::test eval-12.1 {try triggering a check} -body {
     ::constcl::invoke #NIL [list #NIL #NIL]
 } -returnCodes error -result "PROCEDURE expected\n(() val ...)"
 TT)
@@ -899,7 +915,7 @@ special-let (internal);expr expr env env -> expr
 PR)
 
 CB(
-regspecial let
+reg special let
 
 proc ::constcl::special-let {expr env} {
   if {[T [symbol? [cadr $expr]]]} {
@@ -1007,7 +1023,7 @@ proc ::constcl::parse-bindings {name bindings} {
 CB)
 
 TT(
-::tcltest::test macros-11.3 {expand let macro} -body {
+::tcltest::test eval-13.3 {expand let macro} -body {
     set x [p "(let ((x 10)) (* x x))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
@@ -1019,30 +1035,30 @@ TT(
     w $x
 } -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
 
-::tcltest::test macros-11.4 {run let macro} -body {
+::tcltest::test eval-13.4 {run let macro} -body {
     pew "(let ((x 10)) (* x x))"
     pew "(let ((x 10) (y 5)) (* x y))"
     pew "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
-::tcltest::test macros-11.5 {expand named let macro} -body {
+::tcltest::test eval-13.5 {expand named let macro} -body {
     set x [p {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
         (let ((item (car lst)))
           (loop (cdr lst)
                 (if (fn item) result (cons item result))))))}]
-    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    set x [::constcl::rewrite-named-let $x ::constcl::global_env]
     w $x
 } -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
 
-::tcltest::test macros-11.7 {expand let macro} -body {
+::tcltest::test eval-13.7 {expand let macro} -body {
     set x [p "(let ((vec #(a b c)) (k 1)) (list vec k))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
 } -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
 
-::tcltest::test macros-11.8 {run let macro} -body {
+::tcltest::test eval-13.8 {run let macro} -body {
     pew "(let ((vec #(a b c)) (k 1)) (list vec k))"
 } -output "(#(a b c) 1)\n"
 
@@ -1096,7 +1112,7 @@ CB)
 
 TT(
 
-::tcltest::test eval-10.0 {lambda parameter lists} -body {
+::tcltest::test eval-14.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -1104,7 +1120,7 @@ TT(
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-10.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-14.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 

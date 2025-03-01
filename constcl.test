@@ -350,115 +350,115 @@ source constcl.tcl
   pew "(if (= 2 3) (display 'a))"
 } -output ""
 
-::tcltest::test eval-3.0 {expand case macro} -body {
+::tcltest::test eval-5.0 {expand case macro} -body {
     set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
 
-::tcltest::test eval-3.1 {run case macro} -body {
+::tcltest::test eval-5.1 {run case macro} -body {
     pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
 } -output "composite\n"
 
-::tcltest::test eval-3.2 {expand case macro} -body {
+::tcltest::test eval-5.2 {expand case macro} -body {
     set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
 
-::tcltest::test eval-3.3 {run case macro} -body {
+::tcltest::test eval-5.3 {run case macro} -body {
     pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
 } -output "consonant\n"
 
-::tcltest::test eval-4.0 {expand cond macro} -body {
+::tcltest::test eval-6.0 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
 
-::tcltest::test eval-4.1 {run cond macro} -body {
+::tcltest::test eval-6.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
     pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
 } -output "3\n3\n"
 
-::tcltest::test eval-4.2 {expand cond macro} -body {
+::tcltest::test eval-6.2 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test eval-4.3 {run cond macro} -body {
+::tcltest::test eval-6.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
 } -output "()\n"
 
-::tcltest::test eval-4.4 {expand cond macro} -body {
+::tcltest::test eval-6.4 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
-::tcltest::test eval-4.5 {expand cond macro} -body {
+::tcltest::test eval-6.5 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 
-::tcltest::test eval-5.0 {try eval-ing a sequence} -body {
+::tcltest::test eval-7.0 {try eval-ing a sequence} -body {
   pew "(begin (display 'a) (display 'b))"
 } -output "ab"
 
-::tcltest::test eval-5.0 {define} -body {
+::tcltest::test eval-8.0 {define} -body {
     w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
 
-::tcltest::test eval-5.1 {define} -body {
+::tcltest::test eval-8.1 {define} -body {
     w [::constcl::rewrite-define [p "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
 } -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
 
-::tcltest::test eval-5.2 {define} -body {
+::tcltest::test eval-8.2 {define} -body {
     w [::constcl::rewrite-define [p "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
-::tcltest::test eval-5.3 {define} -body {
+::tcltest::test eval-8.3 {define} -body {
     w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
 
 
-::tcltest::test eval-6.0 {try eval-ing a define} -body {
+::tcltest::test eval-9.0 {try eval-ing a define} -body {
   pew "(define r 10)"
   pew "r"
 } -output "10\n"
 
-::tcltest::test eval-6.1 {try eval-ing a define, with an inappropriate symbol} -body {
+::tcltest::test eval-9.1 {try eval-ing a define, with an inappropriate symbol} -body {
   pew "(define let 10)"
 } -returnCodes error -result "Variable name is reserved: let"
 
-::tcltest::test eval-6.2 {try eval-ing a define, with an inappropriate symbol} -body {
+::tcltest::test eval-9.2 {try eval-ing a define, with an inappropriate symbol} -body {
   pew "(define +foo 10)"
 } -returnCodes error -result "Identifier expected (+foo)"
 
-::tcltest::test eval-7.0 {try eval-ing an assignment} -body {
+::tcltest::test eval-10.0 {try eval-ing an assignment} -body {
   unbind [S r]
   pew "(define r 10)"
   pew "(set! r 20)"
   pew "r"
 } -output "20\n20\n"
 
-::tcltest::test eval-8.0 {try eval-ing a procedure definition} -body {
+::tcltest::test eval-11.0 {try eval-ing a procedure definition} -body {
   pew "(define (square x) (* x x))"
   pew "(square 20)"
 } -output "400\n"
 
-::tcltest::test eval-9.0 {try eval-ing a procedure call} -body {
+::tcltest::test eval-12.0 {try eval-ing a procedure call} -body {
   pew "(* 5 20)"
 } -output "100\n"
 
-::tcltest::test eval-9.1 {try triggering a check} -body {
+::tcltest::test eval-12.1 {try triggering a check} -body {
     ::constcl::invoke #NIL [list #NIL #NIL]
 } -returnCodes error -result "PROCEDURE expected\n(() val ...)"
 
-::tcltest::test macros-11.3 {expand let macro} -body {
+::tcltest::test eval-13.3 {expand let macro} -body {
     set x [p "(let ((x 10)) (* x x))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
@@ -470,36 +470,36 @@ source constcl.tcl
     w $x
 } -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
 
-::tcltest::test macros-11.4 {run let macro} -body {
+::tcltest::test eval-13.4 {run let macro} -body {
     pew "(let ((x 10)) (* x x))"
     pew "(let ((x 10) (y 5)) (* x y))"
     pew "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
 } -output "100\n50\n350\n"
 
-::tcltest::test macros-11.5 {expand named let macro} -body {
+::tcltest::test eval-13.5 {expand named let macro} -body {
     set x [p {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
         (let ((item (car lst)))
           (loop (cdr lst)
                 (if (fn item) result (cons item result))))))}]
-    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    set x [::constcl::rewrite-named-let $x ::constcl::global_env]
     w $x
 } -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
 
-::tcltest::test macros-11.7 {expand let macro} -body {
+::tcltest::test eval-13.7 {expand let macro} -body {
     set x [p "(let ((vec #(a b c)) (k 1)) (list vec k))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
 } -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
 
-::tcltest::test macros-11.8 {run let macro} -body {
+::tcltest::test eval-13.8 {run let macro} -body {
     pew "(let ((vec #(a b c)) (k 1)) (list vec k))"
 } -output "(#(a b c) 1)\n"
 
 
 
-::tcltest::test eval-10.0 {lambda parameter lists} -body {
+::tcltest::test eval-14.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -507,16 +507,24 @@ source constcl.tcl
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-10.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-14.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 
 
 ::tcltest::test macros-2.0 {expand and macro} -body {
-    pxw "(and)"
-    pxw "(and #t)"
-    pxw "(and (> 3 2))"
-    pxw "(and (> 3 2) (= 7 8))"
+    set x [p "(and)"]
+    set x [::constcl::expand-and $x ::constcl::global_env]
+    w $x
+    set x [p "(and #t)"]
+    set x [::constcl::expand-and $x ::constcl::global_env]
+    w $x
+    set x [p "(and (> 3 2))"]
+    set x [::constcl::expand-and $x ::constcl::global_env]
+    w $x
+    set x [p "(and (> 3 2) (= 7 8))"]
+    set x [::constcl::expand-and $x ::constcl::global_env]
+    w $x
 } -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
 
 ::tcltest::test macros-2.1 {run and macro} -body {
@@ -529,7 +537,9 @@ source constcl.tcl
 
 ::tcltest::test macros-6.0 {try expand del!} -body {
   pew {(define plist (list 'a 1 'b 2 'c 3))}
-  pxw {(del! plist 'a)}
+  set x [p {(del! plist 'a)}]
+    set x [::constcl::expand-del! $x ::constcl::global_env]
+    w $x
 } -output "(set! plist (delete! plist (quote a)))\n"
 
 ::tcltest::test macros-6.1 {try run del!} -body {
@@ -558,7 +568,9 @@ source constcl.tcl
 
 
 ::tcltest::test macros-7.0 {expand for macro} -body {
-    pxw "(for ((i '(1 2 3))) (display i))"
+    set x [p "(for ((i '(1 2 3))) (display i))"]
+    set x [::constcl::expand-for $x ::constcl::global_env]
+    w $x
 } -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test macros-7.1 {run for macro} -body {
@@ -566,7 +578,9 @@ source constcl.tcl
 } -result "" -output 123()\n
 
 ::tcltest::test macros-7.2 {expand for macro} -body {
-    pxw "(for ((i 4)) (display i))"
+    set x [p "(for ((i 4)) (display i))"]
+    set x [::constcl::expand-for $x ::constcl::global_env]
+    w $x
 } -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
 
 ::tcltest::test macros-7.3 {run for macro} -body {
@@ -575,12 +589,16 @@ source constcl.tcl
 
 
 ::tcltest::test macros-8.0 {expand for macro} -body {
-    pxw "(for/and ((i '(1 2 3))) (< 3 i))"
+    set x [p "(for/and ((i '(1 2 3))) (< 3 i))"]
+    set x [::constcl::expand-for/and $x ::constcl::global_env]
+    w $x
 } -output "(and (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
 
 
 ::tcltest::test macros-9.0 {expand for/list macro} -body {
-    pxw {(for/list ([i (quote (1 2 3))]) (* i i))}
+    set x [p {(for/list ([i (quote (1 2 3))]) (* i i))}]
+    set x [::constcl::expand-for/list $x ::constcl::global_env]
+    w $x
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
 ::tcltest::test macros-9.1 {run for/list macro} -body {
@@ -588,7 +606,9 @@ source constcl.tcl
 } -output "(1 4 9)\n"
 
 ::tcltest::test macros-9.2 {expand for/list macro} -body {
-    pxw {(for/list ([c "abc"]) (char-upcase c))}
+    set x [p {(for/list ([c "abc"]) (char-upcase c))}]
+    set x [::constcl::expand-for/list $x ::constcl::global_env]
+    w $x
 } -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
 
 ::tcltest::test macros-9.3 {run for/list macro} -body {
@@ -596,7 +616,9 @@ source constcl.tcl
 } -output "(#\\A #\\B #\\C)\n"
 
 ::tcltest::test macros-9.4 {expand for/list macro} -body {
-    pxw {(for/list ([i (in-range 1 4)]) (* i i))}
+    set x [p {(for/list ([i (in-range 1 4)]) (* i i))}]
+    set x [::constcl::expand-for/list $x ::constcl::global_env]
+    w $x
 } -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
 
 ::tcltest::test macros-9.5 {run for/list macro} -body {
@@ -604,7 +626,9 @@ source constcl.tcl
 } -output "(1 4 9)\n"
 
 ::tcltest::test macros-9.6 {expand for/list macro} -body {
-    pxw {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+    set x [p {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}]
+    set x [::constcl::expand-for/list $x ::constcl::global_env]
+    w $x
 } -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
 
 ::tcltest::test macros-9.7 {run for/list macro} -body {
@@ -613,15 +637,25 @@ source constcl.tcl
 
 
 ::tcltest::test macros-10.0 {expand for macro} -body {
-    pxw "(for/or ((i '(1 2 3))) (< 3 i))"
+    set x [p "(for/or ((i '(1 2 3))) (< 3 i))"]
+    set x [::constcl::expand-for/or $x ::constcl::global_env]
+    w $x
 } -output "(or (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
 
 
 ::tcltest::test macros-12.2 {expand or macro} -body {
-    pxw "(or)"
-    pxw "(or #f)"
-    pxw "(or (> 3 2))"
-    pxw "(or (> 3 2) (= 7 8))"
+    set x [p "(or)"]
+    set x [::constcl::expand-or $x ::constcl::global_env]
+    w $x
+    set x [p "(or #f)"]
+    set x [::constcl::expand-or $x ::constcl::global_env]
+    w $x
+    set x [p "(or (> 3 2))"]
+    set x [::constcl::expand-or $x ::constcl::global_env]
+    w $x
+    set x [p "(or (> 3 2) (= 7 8))"]
+    set x [::constcl::expand-or $x ::constcl::global_env]
+    w $x
 } -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
 
 
@@ -643,7 +677,9 @@ source constcl.tcl
 } -output "(d a b c)\n"
 
 ::tcltest::test macros-15.0 {expand put!} -body {
-    pxw "(put! plist 'c 7)"
+    set x [p "(put! plist 'c 7)"]
+    set x [::constcl::expand-put! $x ::constcl::global_env]
+    w $x
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 ::tcltest::test macros-15.1 {run put!} -body {
@@ -657,7 +693,9 @@ source constcl.tcl
     pew "(define listname 'plist)"
     pew "(define key ''c)"
     pew "(define val 7)"
-    pxw "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
+    set x [p "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"]
+    set x [::constcl::expand-quasiquote $x ::constcl::global_env]
+    w $x
 } -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
 
 
@@ -688,7 +726,9 @@ if no {
 
 
 ::tcltest::test macros-17.0 {conditional: expand unless macro} -body {
-    pxw "(unless (zero? 0) (* 4 4) (- 5 5))"
+    set x [p "(unless (zero? 0) (* 4 4) (- 5 5))"]
+    set x [::constcl::expand-unless $x ::constcl::global_env]
+    w $x
 } -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
 
 ::tcltest::test macros-17.1 {conditional: run unless macro} -body {
@@ -698,7 +738,9 @@ if no {
 
 
 ::tcltest::test macros-18.2 {conditional: expand when macro} -body {
-    pxw "(when (zero? 0) (* 4 4) (- 5 5))"
+    set x [p "(when (zero? 0) (* 4 4) (- 5 5))"]
+    set x [::constcl::expand-when $x ::constcl::global_env]
+    w $x
 } -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
 
 ::tcltest::test macros-18.3 {conditional: run when macro} -body {

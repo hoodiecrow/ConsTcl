@@ -1,11 +1,11 @@
 
 H2 Output
 
-H4 write procedure
-
 MD(
 The third thing an interpreter must be able to do is to present the resulting
 code and data so that the user can know what the outcome of the evaluation was.
+
+H4 write procedure
 
 As long as the object given to K{write} isn't the empty string, it calls the
 object's K{write} method and writes a newline.

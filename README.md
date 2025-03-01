@@ -59,46 +59,42 @@ Next, some procedures that make my life as developer somewhat easier.
 #### reg procedure
 
 
-`` reg `` registers selected built-in procedures in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
+`` reg `` registers built-in procedures, special forms, and macros in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 
-You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. Following `` reg `` are two similar procedures: `` regspecial `` and `` regmacro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. Finally there is `` regvar ``, which registers variables.
+You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. If you give two parameters the first one is the _binding type_, either `` special `` or `` macro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. There is also `` regvar ``, which registers variables.
 
 
-Each one of these starts out by checking if the definitions register (`` defreg ``) exists, and if not, creates it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
+`` reg `` and `` regvar `` start out by checking if the definitions register (`` defreg ``) exists, and if not, they create it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
 
-<table border=1><thead><tr><th colspan=2 align="left">reg, regspecial, regmacro (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>?btype?</td><td>either 'special' or 'macro'</td></tr><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc reg {name} {
+proc reg {args} {
+  if {[llength $args] == 2} {
+    lassign $args btype name
+  } else {
+    lassign $args name
+    set btype {}
+  }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
   }
-  set val [::list VARIABLE ::constcl::$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-}
-
-proc regspecial {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
+  switch $btype {
+    special {
+      set val [::list SPECIAL ::constcl::special-$name]
+    }
+    macro {
+      set val [::list SYNTAX ::constcl::expand-$name]
+    }
+    default {
+      set val [::list VARIABLE ::constcl::$name]
+    }
   }
-  set val [::list SPECIAL ::constcl::special-$name]
   set idx [llength [dict values $::constcl::defreg]]
   dict set ::constcl::defreg $idx [::list $name $val]
-  return
-}
-
-proc regmacro {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
-  }
-  set val [::list SYNTAX ::constcl::expand-$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-  return
 }
 
 proc regvar {name value} {
@@ -1386,7 +1382,7 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 #### eval procedure
 
 
-The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), atoms and the empty list to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` assigns to them.
+The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), atoms and the empty list to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` gets out of them.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1409,7 +1405,7 @@ proc ::constcl::eval \
 #### eval-form procedure
 
 
-If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg ``* procedures put into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
+If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` procedure puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1517,7 +1513,7 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 <table border=1><thead><tr><th colspan=2 align="left">special-quote (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-regspecial quote
+reg special quote
 
 proc ::constcl::special-quote {expr env} {
   return [cadr $expr]
@@ -1535,7 +1531,7 @@ The conditional form `` if `` evaluates a Lisp list of three expressions. The fi
 <table border=1><thead><tr><th colspan=2 align="left">special-if (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-regspecial if
+reg special if
 
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
@@ -1590,7 +1586,7 @@ __special-case__ procedure
 <table border=1><thead><tr><th colspan=2 align="left">special-case (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regspecial case
+reg special case
 
 proc ::constcl::special-case {expr env} {
   set tail [cdr $expr]
@@ -1602,6 +1598,11 @@ proc ::constcl::special-case {expr env} {
 
 
 The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+
+##### Quasiquote: an aside
+
+
+In this and many other special form and macro form expanders I use a quasiquote construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (`` ` ``) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (`` , ``). `` `(foo ,bar baz) `` is very nearly the same as `` ('foo bar 'baz) ``. In both cases `` foo `` and `` baz `` are constants while `` bar `` is a variable which will be evaluated. Like in `` do-case `` here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use `` /define `` to bind them in a temporary environment.
 
 ```
 proc ::constcl::do-case {keyexpr clauses env} {
@@ -1647,7 +1648,7 @@ __special-cond__ procedure
 <table border=1><thead><tr><th colspan=2 align="left">special-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regspecial cond
+reg special cond
 
 proc ::constcl::special-cond {expr env} {
   set expr [do-cond [cdr $expr] $env]
@@ -1714,7 +1715,7 @@ As part of the processing of sequences _local defines_ are resolved, acting on e
 <table border=1><thead><tr><th colspan=2 align="left">special-begin (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-regspecial begin
+reg special begin
 
 proc ::constcl::special-begin {expr env} {
   #      TODO
@@ -1760,7 +1761,7 @@ We've already seen the relationship between symbols and values. Through (variabl
 <table border=1><thead><tr><th colspan=2 align="left">special-define (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-regspecial define
+reg special define
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -1828,7 +1829,7 @@ Once a variable has been created, the value at the location it is bound to can b
 <table border=1><thead><tr><th colspan=2 align="left">special-set! (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-regspecial set!
+reg special set!
 
 proc ::constcl::special-set! {expr env} {
   set args [cdr $expr]
@@ -1871,7 +1872,7 @@ A Scheme formals list is either:
 <table border=1><thead><tr><th colspan=2 align="left">special-lambda (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
-regspecial lambda
+reg special lambda
 
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
@@ -1929,7 +1930,7 @@ Regular `` let `` chops up the original expression into _bindings_ and _body_. I
 <table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regspecial let
+reg special let
 
 proc ::constcl::special-let {expr env} {
   if {[T [symbol? [cadr $expr]]]} {
@@ -2077,7 +2078,7 @@ A macro expander procedure takes an expression and an environment as a parameter
 <table border=1><thead><tr><th colspan=2 align="left">expand-and (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro and
+reg macro and
 
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
@@ -2096,11 +2097,6 @@ __do-and__ procedure
 
 
 `` do-and `` is called recursively for every argument of `` expand-or `` if there are more than one.
-
-##### Quasiquote: an aside
-
-
-In this and many other macro expanders I use a quasiquote construct to lay out how the macro is to be expanded. A quasiquote starts with a backquote (`` ` ``) instead of the single quote that precedes regular quoted material. A quasiquote allows for "unquoting" of selected parts: this is notated with a comma (`` , ``). `` `(foo ,bar baz) `` is very nearly the same as `` ('foo bar 'baz) ``. In both cases `` foo `` and `` baz `` are constants while `` bar `` is a variable which will be evaluated. Like in `` do-and `` here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use `` /define `` to bind them in a temporary environment.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-and (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>prev</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2128,7 +2124,7 @@ The macro `` del! `` updates a property list. It removes a key-value pair if the
 <table border=1><thead><tr><th colspan=2 align="left">expand-del! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro del!
+reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
@@ -2156,7 +2152,7 @@ The `` expand-for `` procedure expands the `` for `` macro. It returns a `` begi
 <table border=1><thead><tr><th colspan=2 align="left">expand-for (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro for
+reg macro for
 
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
@@ -2186,7 +2182,13 @@ proc ::constcl::for-seq {seq env} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} { 
     set seq [lmap c [split [$seq value] {}] {
-      MkChar #\\$c
+      switch $c {
+        " "  { MkChar #\\space }
+        "\n" { MkChar #\\newline }
+        default {
+          MkChar #\\$c
+        }
+      }
     }]
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
@@ -2252,7 +2254,7 @@ The only differences from `` expand-for `` is that it doesn't add `` (quote ()) 
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/and (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro for/and
+reg macro for/and
 
 proc ::constcl::expand-for/and {expr env} {
   set tail [cdr $expr]
@@ -2271,7 +2273,7 @@ The only difference from `` expand-for/and `` is that it wraps the list of itera
 <table border=1><thead><tr><th colspan=2 align="left">expand for/list (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro for/list
+reg macro for/list
 
 proc ::constcl::expand-for/list {expr env} {
   set tail [cdr $expr]
@@ -2290,7 +2292,7 @@ The only difference from `` expand-for/list `` is that it wraps the list of iter
 <table border=1><thead><tr><th colspan=2 align="left">expand-for/or (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro for/or
+reg macro for/or
 
 proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
@@ -2306,7 +2308,7 @@ proc ::constcl::expand-for/or {expr env} {
 <table border=1><thead><tr><th colspan=2 align="left">expand-or (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro or
+reg macro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
@@ -2351,7 +2353,7 @@ The macro `` pop! `` updates a list. It removes the first element.
 <table border=1><thead><tr><th colspan=2 align="left">expand-pop! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro pop!
+reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
@@ -2377,7 +2379,7 @@ The macro `` push! `` updates a list. It adds a new element as the new first ele
 <table border=1><thead><tr><th colspan=2 align="left">expand-push! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro push!
+reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
@@ -2412,7 +2414,7 @@ The macro `` put! `` updates a property list. It adds a key-value pair if the ke
 <table border=1><thead><tr><th colspan=2 align="left">expand-put! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro put!
+reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
@@ -2450,7 +2452,7 @@ A quasi-quote isn't a macro, but we will deal with it in this section anyway. ``
 <table border=1><thead><tr><th colspan=2 align="left">expand-quasiquote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro quasiquote
+reg macro quasiquote
 
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
@@ -2541,7 +2543,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 <table border=1><thead><tr><th colspan=2 align="left">expand-unless (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro unless
+reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
@@ -2563,7 +2565,7 @@ proc ::constcl::expand-unless {expr env} {
 <table border=1><thead><tr><th colspan=2 align="left">expand-when (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-regmacro when
+reg macro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
@@ -2801,11 +2803,11 @@ proc ::constcl::make-undefineds {vals} {
 }
 ```
 ## Output
-#### write procedure
 
 
 The third thing an interpreter must be able to do is to present the resulting code and data so that the user can know what the outcome of the evaluation was.
 
+#### write procedure
 
 As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
 

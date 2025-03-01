@@ -18,20 +18,20 @@ MD)
 H4 reg procedure
 
 MD(
-K{reg} registers selected built-in procedures in the definitions
+K{reg} registers built-in procedures, special forms, and macros in the definitions
 registerI{definitions register}. That way I don't need to manually keep track of
 and list procedures. The definitions register's contents will eventually get
 dumped into the R{standard library}{environment-startup}.
 
 You can call K{reg} with one parameter: E{name}. E{name} is the string
-that will eventually become the lookup symbol in the standard library. Following
-K{reg} are two similar procedures: K{regspecial} and K{regmacro}. The former
+that will eventually become the lookup symbol in the standard library. If you
+give two parameters the first one is the E{binding type}, either K{special} or K{macro}. The former
 registers special forms like K{if} and K{define}, and the latter registers
-macros like K{and} or K{when}. Finally there is K{regvar}, which registers
+macros like K{and} or K{when}. There is also K{regvar}, which registers
 variables.
 
-Each one of these starts out by checking if the definitions register (K{defreg})
-exists, and if not, creates it. Then they construct a E{val}(ue) by concatenating
+K{reg} and K{regvar} start out by checking if the definitions register (K{defreg})
+exists, and if not, they create it. Then they construct a E{val}(ue) by concatenating
 a keyword (K{VARIABLE}, K{SPECIAL}, or K{SYNTAX}) with a variation on E{name}
 (or, in K{regvar}'s case, E{value}).  Then they set an E{index number} based on
 the number of values in the K{defreg} so far. Finally they insert the
@@ -39,44 +39,38 @@ concatenation of E{name} and E{val} under E{index}.
 MD)
 
 PR(
-reg, regspecial, regmacro (internal);name tstr -> none
+reg (internal);?btype? specmacro name tstr -> none
 PR)
 
 PR(
 regvar (internal);name tstr val val -> none
 PR)
 
-IX regspecial procedure
-IX regmacro procedure
 IX regvar procedure
 CB(
-proc reg {name} {
+proc reg {args} {
+  if {[llength $args] == 2} {
+    lassign $args btype name
+  } else {
+    lassign $args name
+    set btype {}
+  }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
   }
-  set val [::list VARIABLE ::constcl::$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-}
-
-proc regspecial {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
+  switch $btype {
+    special {
+      set val [::list SPECIAL ::constcl::special-$name]
+    }
+    macro {
+      set val [::list SYNTAX ::constcl::expand-$name]
+    }
+    default {
+      set val [::list VARIABLE ::constcl::$name]
+    }
   }
-  set val [::list SPECIAL ::constcl::special-$name]
   set idx [llength [dict values $::constcl::defreg]]
   dict set ::constcl::defreg $idx [::list $name $val]
-  return
-}
-
-proc regmacro {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
-  }
-  set val [::list SYNTAX ::constcl::expand-$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-  return
 }
 
 proc regvar {name value} {

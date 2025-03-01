@@ -1,33 +1,29 @@
 
 namespace eval ::constcl {}
 
-proc reg {name} {
+proc reg {args} {
+  if {[llength $args] == 2} {
+    lassign $args btype name
+  } else {
+    lassign $args name
+    set btype {}
+  }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
   }
-  set val [::list VARIABLE ::constcl::$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-}
-
-proc regspecial {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
+  switch $btype {
+    special {
+      set val [::list SPECIAL ::constcl::special-$name]
+    }
+    macro {
+      set val [::list SYNTAX ::constcl::expand-$name]
+    }
+    default {
+      set val [::list VARIABLE ::constcl::$name]
+    }
   }
-  set val [::list SPECIAL ::constcl::special-$name]
   set idx [llength [dict values $::constcl::defreg]]
   dict set ::constcl::defreg $idx [::list $name $val]
-  return
-}
-
-proc regmacro {name} {
-  if {![info exists ::constcl::defreg]} {
-    set ::constcl::defreg [dict create]
-  }
-  set val [::list SYNTAX ::constcl::expand-$name]
-  set idx [llength [dict values $::constcl::defreg]]
-  dict set ::constcl::defreg $idx [::list $name $val]
-  return
 }
 
 proc regvar {name value} {
@@ -836,13 +832,13 @@ proc ::constcl::lookup {sym env} {
   lindex [[$env find $sym] get $sym] 1
 }
 
-regspecial quote
+reg special quote
 
 proc ::constcl::special-quote {expr env} {
   return [cadr $expr]
 }
 
-regspecial if
+reg special if
 
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
@@ -870,7 +866,7 @@ proc ::constcl::/if1 {cond conseq} {
   }
 }
 
-regspecial case
+reg special case
 
 proc ::constcl::special-case {expr env} {
   set tail [cdr $expr]
@@ -907,7 +903,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
   }
 }
 
-regspecial cond
+reg special cond
 
 proc ::constcl::special-cond {expr env} {
   set expr [do-cond [cdr $expr] $env]
@@ -949,7 +945,7 @@ proc ::constcl::do-cond {tail env} {
   }
 }
 
-regspecial begin
+reg special begin
 
 proc ::constcl::special-begin {expr env} {
   #      TODO
@@ -973,7 +969,7 @@ proc ::constcl::/begin {exps env} {
   }
 }
 
-regspecial define
+reg special define
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -1000,7 +996,7 @@ proc ::constcl::/define {sym val env} {
   return
 }
 
-regspecial set!
+reg special set!
 
 proc ::constcl::special-set! {expr env} {
   set args [cdr $expr]
@@ -1010,7 +1006,7 @@ proc ::constcl::special-set! {expr env} {
   set val
 }
 
-regspecial lambda
+reg special lambda
 
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
@@ -1035,7 +1031,7 @@ proc ::constcl::invoke {pr vals} {
   }
 }
 
-regspecial let
+reg special let
 
 proc ::constcl::special-let {expr env} {
   if {[T [symbol? [cadr $expr]]]} {
@@ -1123,7 +1119,7 @@ proc ::constcl::eval-list {exps env} {
   }
 }
 
-regmacro and
+reg macro and
 
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
@@ -1151,7 +1147,7 @@ proc ::constcl::do-and {tail prev env} {
   }
 }
 
-regmacro del!
+reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
@@ -1171,7 +1167,7 @@ proc ::constcl::expand-del! {expr env} {
   return $expr
 }
 
-regmacro for
+reg macro for
 
 proc ::constcl::expand-for {expr env} {
   set tail [cdr $expr]
@@ -1191,7 +1187,13 @@ proc ::constcl::for-seq {seq env} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} { 
     set seq [lmap c [split [$seq value] {}] {
-      MkChar #\\$c
+      switch $c {
+        " "  { MkChar #\\space }
+        "\n" { MkChar #\\newline }
+        default {
+          MkChar #\\$c
+        }
+      }
     }]
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
@@ -1230,7 +1232,7 @@ proc ::constcl::do-for {tail env} {
   return $res
 }
 
-regmacro for/and
+reg macro for/and
 
 proc ::constcl::expand-for/and {expr env} {
   set tail [cdr $expr]
@@ -1238,7 +1240,7 @@ proc ::constcl::expand-for/and {expr env} {
   return [list [S and] {*}$res]
 }
 
-regmacro for/list
+reg macro for/list
 
 proc ::constcl::expand-for/list {expr env} {
   set tail [cdr $expr]
@@ -1246,7 +1248,7 @@ proc ::constcl::expand-for/list {expr env} {
   return [list [S list] {*}$res]
 }
 
-regmacro for/or
+reg macro for/or
 
 proc ::constcl::expand-for/or {expr env} {
   set tail [cdr $expr]
@@ -1254,7 +1256,7 @@ proc ::constcl::expand-for/or {expr env} {
   return [list [S or] {*}$res]
 }
 
-regmacro or
+reg macro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
@@ -1281,7 +1283,7 @@ proc ::constcl::do-or {tail env} {
   }
 }
 
-regmacro pop!
+reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
@@ -1299,7 +1301,7 @@ proc ::constcl::expand-pop! {expr env} {
   return $expr
 }
 
-regmacro push!
+reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
@@ -1326,7 +1328,7 @@ proc ::constcl::expand-push! {expr env} {
   return $expr
 }
 
-regmacro put!
+reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
@@ -1356,7 +1358,7 @@ proc ::constcl::expand-put! {expr env} {
   return $expr
 }
 
-regmacro quasiquote
+reg macro quasiquote
 
 proc ::constcl::expand-quasiquote {expr env} {
   set tail [cdr $expr]
@@ -1432,7 +1434,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   return [list {*}$res]
 }
 
-regmacro unless
+reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
@@ -1446,7 +1448,7 @@ proc ::constcl::expand-unless {expr env} {
   return $expr
 }
 
-regmacro when
+reg macro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]

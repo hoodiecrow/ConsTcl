@@ -1,5 +1,6 @@
 env           -> an environment
 envproc       -> an environment or procedure object
+specmacro     -> either 'special' or 'macro'
 dc            -> -don't care-
 msg           -> a message string
 invoke        -> what pr returns
