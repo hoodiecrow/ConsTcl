@@ -42,7 +42,7 @@ proc ::constcl::eval \
 CB)
 
 H4 eval-form procedure
-
+  
 MD(
 If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
 at the E{binding information} (which the K{reg} procedure puts into the
