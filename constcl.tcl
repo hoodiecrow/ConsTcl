@@ -4,9 +4,11 @@ namespace eval ::constcl {}
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name
-  } else {
+  } elseif {[llength $args] == 1} {
     lassign $args name
     set btype {}
+  } else {
+    error "wrong number of parameters\n([pn])"
   }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
@@ -226,9 +228,16 @@ proc ::prw {str} {
 
 proc ::pxw {str} {
   set expr [::constcl::parse $str]
-  set expr [::constcl::expand-macro $expr \
+  set op [::constcl::car $expr]
+  set bi [::constcl::binding-info $op \
     ::constcl::global_env]
-  ::constcl::write $expr
+  lassign $bi btype info
+  if {$btype eq "SYNTAX"} {
+    set expr [$info $expr ::constcl::global_env]
+    ::constcl::write $expr
+  } else {
+    puts "not a macro"
+  }
 }
 
 catch { ::constcl::Dot destroy }
@@ -1044,12 +1053,12 @@ proc ::constcl::special-let {expr env} {
 proc ::constcl::rewrite-named-let {expr env} {
   # named let
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
   set variable [car $tail]
   set bindings [cadr $tail]
   set body [cddr $tail]
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
+  set env [Environment new #NIL {} $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
@@ -1070,11 +1079,11 @@ proc ::constcl::rewrite-named-let {expr env} {
 proc ::constcl::rewrite-let {expr env} {
   # regular let
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
   set bindings [car $tail]
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
+  set env [Environment new #NIL {} $env]
   /define [S varlist] [list {*}[
   dict keys $vars]] $env
   /define [S body] $body $env

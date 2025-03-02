@@ -25,7 +25,7 @@ dumped into the R{standard library}{environment-startup}.
 
 You can call K{reg} with one parameter: E{name}. E{name} is the string
 that will eventually become the lookup symbol in the standard library. If you
-give two parameters the first one is the E{binding type}, either K{special} or K{macro}. The former
+give two parameters, the first one is the E{binding type}, either K{special} or K{macro}. The former
 registers special forms like K{if} and K{define}, and the latter registers
 macros like K{and} or K{when}. There is also K{regvar}, which registers
 variables.
@@ -51,9 +51,11 @@ CB(
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name
-  } else {
+  } elseif {[llength $args] == 1} {
     lassign $args name
     set btype {}
+  } else {
+    error "wrong number of parameters\n([pn])"
   }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
@@ -228,7 +230,7 @@ lengths.
 MD)
 
 PR(
-usage (internal);usage expr expr expr-> none
+usage (internal);usage expr expr expr -> none
 PR)
 
 CB(
@@ -625,9 +627,16 @@ PR)
 CB(
 proc ::pxw {str} {
   set expr [::constcl::parse $str]
-  set expr [::constcl::expand-macro $expr \
+  set op [::constcl::car $expr]
+  set bi [::constcl::binding-info $op \
     ::constcl::global_env]
-  ::constcl::write $expr
+  lassign $bi btype info
+  if {$btype eq "SYNTAX"} {
+    set expr [$info $expr ::constcl::global_env]
+    ::constcl::write $expr
+  } else {
+    puts "not a macro"
+  }
 }
 CB)
 

@@ -62,7 +62,7 @@ Next, some procedures that make my life as developer somewhat easier.
 `` reg `` registers built-in procedures, special forms, and macros in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 
-You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. If you give two parameters the first one is the _binding type_, either `` special `` or `` macro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. There is also `` regvar ``, which registers variables.
+You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the _binding type_, either `` special `` or `` macro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. There is also `` regvar ``, which registers variables.
 
 
 `` reg `` and `` regvar `` start out by checking if the definitions register (`` defreg ``) exists, and if not, they create it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
@@ -75,9 +75,11 @@ You can call `` reg `` with one parameter: _name_. _name_ is the string that wil
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name
-  } else {
+  } elseif {[llength $args] == 1} {
     lassign $args name
     set btype {}
+  } else {
+    error "wrong number of parameters\n([pn])"
   }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
@@ -213,7 +215,7 @@ proc ::constcl::pairlis-tcl {a b} {
 
 `` usage `` is a simple procedure to compare a Lisp list (to wit: a Lisp expression) with the expected format of the expression. Mostly it just compares lengths.
 
-<table border=1><thead><tr><th colspan=2 align="left">usage (internal)</th></tr></thead><tr><td>usage</td><td>an expression</td></tr><tr><td>expr</td><td></td></tr><tr><td>none</td><td></td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">usage (internal)</th></tr></thead><tr><td>usage</td><td>an expression</td></tr><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::usage {usage expr} {
@@ -505,9 +507,16 @@ proc ::prw {str} {
 ```
 proc ::pxw {str} {
   set expr [::constcl::parse $str]
-  set expr [::constcl::expand-macro $expr \
+  set op [::constcl::car $expr]
+  set bi [::constcl::binding-info $op \
     ::constcl::global_env]
-  ::constcl::write $expr
+  lassign $bi btype info
+  if {$btype eq "SYNTAX"} {
+    set expr [$info $expr ::constcl::global_env]
+    ::constcl::write $expr
+  } else {
+    puts "not a macro"
+  }
 }
 ```
 ### Some small classes
@@ -937,7 +946,7 @@ proc ::constcl::skip-ws {} {
 
 `` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::read-eof {args} {
@@ -1154,6 +1163,8 @@ __read-pair__ procedure
 
 `` read-pair `` is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning `` #NIL `` in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When `` read-pair `` has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list. Shares the variables `` c `` and `` unget `` with its caller.
 
+<table border=1><thead><tr><th colspan=2 align="left">read-pair (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
+
 ```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
@@ -1191,9 +1202,9 @@ proc ::constcl::read-pair {char} {
 #### read-plus-minus procedure
 
 
-`` read-plus-minus `` is called when a plus or minus is found in the input stream. If the next character is a digit, it delegates to the number reader. Otherwise, it returns a `` + `` or `` - `` symbol. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-plus-minus `` is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character, it returns a `` + `` or `` - `` symbol. Otherwide, it delegates to the identifier reader. Shares the variables `` c `` and `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number or end of file</td></tr></table>
 
 ```
 proc ::constcl::read-plus-minus {char} {
@@ -1377,6 +1388,20 @@ proc ::constcl::read-vector-expr {} {
 
 
 The second thing an interpreter must be able to do is to reduce expressions to their _normal form_, or _evaluate_ them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
+
+### Environments
+
+
+Before I can talk about evaluation, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
+
+
+There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure arguments and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
+
+
+Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the global bindings are once more visible.
+
+
+I will talk some more about environments in a later section.
 
 ### The evaluator
 #### eval procedure
@@ -1637,7 +1662,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
 #### cond special form
 
 
-The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
+`` cond `` is the third conditional form. The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
 
 
 The `` cond `` form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
@@ -1918,13 +1943,7 @@ proc ::constcl::invoke {pr vals} {
 The binding forms are not fundamental the way the earlier nine forms are. They are an application of the procedure definition form. But their use is sufficiently distinguished to earn them their own heading.
 
 
-`` special-let `` expands the named `` let `` and `regular' `` let `` macros. They ultimately expand to `` lambda `` constructs.
-
-
-Named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
-
-
-Regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+`` special-let `` rewrites the named `` let `` and `regular' `` let `` forms. They are ultimately rewritten to `` lambda `` constructs and evaluated as such.
 
 #### let special form
 <table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
@@ -1944,18 +1963,21 @@ proc ::constcl::special-let {expr env} {
 
 __rewrite-named-let__ procedure
 
+
+The rewriter for named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-named-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::rewrite-named-let {expr env} {
   # named let
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
   set variable [car $tail]
   set bindings [cadr $tail]
   set body [cddr $tail]
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
+  set env [Environment new #NIL {} $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
@@ -1977,17 +1999,20 @@ proc ::constcl::rewrite-named-let {expr env} {
 
 __rewrite-let__ procedure
 
+
+The rewriter for regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::rewrite-let {expr env} {
   # regular let
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
   set bindings [car $tail]
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
+  set env [Environment new #NIL {} $env]
   /define [S varlist] [list {*}[
   dict keys $vars]] $env
   /define [S body] $body $env

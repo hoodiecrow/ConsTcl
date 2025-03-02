@@ -406,7 +406,7 @@ objects. If it finds one, it returns E{from its caller} with the EOF value.
 MD)
 
 PR(
-read-eof (internal);chars chars
+read-eof (internal);chars chars -> none
 PR)
 
 CB(
@@ -790,6 +790,10 @@ of the list.
 Shares the variables K{c} and K{unget} with its caller.
 MD)
 
+PR(
+read-pair (internal);char pterm -> pstreof
+PR)
+
 IX read-pair
 CB(
 proc ::constcl::read-pair {char} {
@@ -892,13 +896,14 @@ H4 read-plus-minus procedure
 
 MD(
 K{read-plus-minus} is called when a plus or minus is found in the input stream.
-If the next character is a digit, it delegates to the number reader. Otherwise,
-it returns a K{+} or K{-} symbol.
-Shares the variables K{c} and K{unget} with its caller.
+The plus or minus character is passed to it.  If the next character is a digit,
+it delegates to the number reader. If it is a space character, it returns a K{+}
+or K{-} symbol. Otherwide, it delegates to the identifier reader.  Shares the
+variables K{c} and K{unget} with its caller.
 MD)
 
 PR(
-read-plus-minus (internal);-> pmeof
+read-plus-minus (internal);char tchr -> pmeof
 PR)
 
 CB(
