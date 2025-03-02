@@ -48,6 +48,8 @@ PR)
 
 IX regvar procedure
 CB(
+unset -nocomplain ::constcl::defreg
+
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name

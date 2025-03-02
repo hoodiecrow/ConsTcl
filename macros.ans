@@ -119,7 +119,7 @@ CB)
 TT(
 ::tcltest::test macros-6.0 {try expand del!} -body {
   pew {(define plist (list 'a 1 'b 2 'c 3))}
-  pww {(del! plist 'a)}
+  pxw {(del! plist 'a)}
 } -output "(set! plist (delete! plist (quote a)))\n"
 
 ::tcltest::test macros-6.1 {try run del!} -body {

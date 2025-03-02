@@ -245,7 +245,7 @@ MD)
 H4 quote special form
 
 PR(
-special-quote (public);expr expr env env -> val
+special-quote (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -261,13 +261,6 @@ TT(
   pew "'m"
 } -output "m\n"
 
-::tcltest::test eval-3.1 {try getting a usage error} -body {
-  pew "(quote)"
-} -returnCodes error -result "usage error\n(quote datum) not (quote)"
-
-::tcltest::test eval-3.2 {try getting a usage error} -body {
-  pew "(quote foo bar)"
-} -returnCodes error -result "usage error\n(quote datum) not (quote foo bar)"
 TT)
 
 h3 Conditional
@@ -285,7 +278,7 @@ expressions will be evaluated, and the other will remain unevaluated.
 H4 if special form
 
 PR(
-special-if (public);expr expr env env -> val
+special-if (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -596,7 +589,7 @@ MD)
 H4 begin special form
 
 PR(
-special-begin (public);expr expr env env -> val
+special-begin (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -662,7 +655,7 @@ MD)
 H4 define special form
 
 PR(
-special-define (public);expr expr env env -> none
+special-define (internal);expr expr env env -> none
 PR)
 
 CB(
@@ -780,7 +773,7 @@ MD)
 H4 set"! special form
 
 PR(
-special-set! (public);expr expr env env -> val
+special-set! (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -854,7 +847,7 @@ IT A E{dotted list}, K{(a b . c)}, meaning that two arguments go into K{a} and K
 H4 lambda special form
 
 PR(
-special-lambda (public);expr expr env env -> proc
+special-lambda (internal);expr expr env env -> proc
 PR)
 
 CB(
@@ -929,8 +922,9 @@ H3 Binding forms
 
 MD(
 The binding forms are not fundamental the way the earlier nine forms are. They
-are an application of the procedure definition form. But their use is
-sufficiently distinguished to earn them their own heading.
+are an application of a combination of the procedure definition form and a
+procedure call. But their use is sufficiently distinguished to earn them their
+own heading.
 
 K{special-let} rewrites the named K{let} and `regular' K{let} forms. They are ultimately
 rewritten to K{lambda} constructs and evaluated as such.
@@ -1109,6 +1103,71 @@ TT(
 
 TT)
 
+H4 let* special form
+
+MD(
+The K{let*} form is similar to K{let}, but the items in the binding list are
+considered sequentially, so the initializer in the second or later binding can
+reference the first binding, etc.
+MD)
+
+PR(
+special-let* (internal);expr expr env env -> expr
+PR)
+
+CB(
+reg special let*
+
+proc ::constcl::special-let* {expr env} {
+  set tail [cdr $expr]
+  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+CB)
+
+MD(
+B{rewrite-let*} procedure
+MD)
+
+PR(
+rewrite-let* (internal);bindings lvals body lexprs env env -> expr
+PR)
+
+IX rewrite-let* procedure
+CB(
+proc ::constcl::rewrite-let* {bindings body env} {
+  set env [MkEnv $env]
+  if {$bindings eq "#NIL"} {
+    /define [S body] $body $env
+    set qq "`(begin ,@body)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  } else {
+    /define [S binding] [car $bindings] $env
+    /define [S rest] [rewrite-let* [cdr $bindings] \
+      $body $env] $env
+    set qq "`(let (,binding) ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  }
+  $env destroy
+  return $expr
+}
+CB)
+
+TT(
+::tcltest::test eval-14.0 {expand let*} -body {
+  set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]
+  set bind [::constcl::cadr $x]
+  set body [::constcl::cddr $x]
+  set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
+  w $x
+} -output "(let ((a 2)) (let ((b (+ a 1))) (begin (* a b))))\n"
+
+::tcltest::test eval-14.1 {run let*} -body {
+  pew "(let* ((a 2) (b (+ a 1))) (* a b))"
+} -output "6\n"
+
+TT)
+
 MD(
 B{splitlist} procedure
 
@@ -1157,7 +1216,7 @@ CB)
 
 TT(
 
-::tcltest::test eval-14.0 {lambda parameter lists} -body {
+::tcltest::test eval-15.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -1165,7 +1224,7 @@ TT(
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-14.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-15.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 

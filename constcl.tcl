@@ -1,6 +1,8 @@
 
 namespace eval ::constcl {}
 
+unset -nocomplain ::constcl::defreg
+
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name
@@ -1109,6 +1111,31 @@ proc ::constcl::parse-bindings {name bindings} {
   return
 }
 
+reg special let*
+
+proc ::constcl::special-let* {expr env} {
+  set tail [cdr $expr]
+  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+
+proc ::constcl::rewrite-let* {bindings body env} {
+  set env [MkEnv $env]
+  if {$bindings eq "#NIL"} {
+    /define [S body] $body $env
+    set qq "`(begin ,@body)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  } else {
+    /define [S binding] [car $bindings] $env
+    /define [S rest] [rewrite-let* [cdr $bindings] \
+      $body $env] $env
+    set qq "`(let (,binding) ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  }
+  $env destroy
+  return $expr
+}
+
 proc ::constcl::splitlist {vals} {
   set result {}
   while {[T [pair? $vals]]} {
@@ -1501,9 +1528,9 @@ proc ::constcl::extract-from-defines {exps part} {
     set k [length $n]
     if {![T [list? $n]] ||
         [$k numval] < 3 ||
-        [$k numval] > 3 ||
-        ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])} {
+        ![T [argument-list? [cadr $n]]] ||
+        ([T [symbol? [cadr $n]]] &&
+        [$k numval] > 3)} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {
@@ -2333,7 +2360,7 @@ proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
     if {[$instance boolval] eq $bool} {
-dict set ::constcl::defreg       return $instance
+      return $instance
     }
   }
   return [::constcl::Boolean new $bool]
@@ -4441,6 +4468,8 @@ unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
+
+interp recursionlimit {} 2000
 
 interp alias {} #NIL {} [::constcl::NIL new]
 

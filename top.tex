@@ -115,7 +115,11 @@ operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
 the expression is a \emph{special form}. If not, like \texttt{+} or
 \texttt{write}, then it's a \emph{function call}.  A full description of Lisp
 is beyond the scope of this introduction, but Lisp will be explained from the
-inside out in the rest of this book. If you want to learn Scheme right away, there are good tutorials in different\footnote{See \texttt{https://docs.scheme.org/schintro/}} places\footnote{See \texttt{https://www.scheme.com/tspl4/}} on the web\footnote{See \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
+inside out in the rest of this book. If you want to learn Scheme right away,
+there are good tutorials in different\footnote{See
+\texttt{https://docs.scheme.org/schintro/}} places\footnote{See
+\texttt{https://www.scheme.com/tspl4/}} on the web\footnote{See
+\texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
 
 \subsection{About ConsTcl}
 \label{about-constcl}
@@ -129,9 +133,9 @@ number of missing primitive procedures is in the tens, not the 100s.
 
 The completeness comes with a price: due to the sheer number of calls for each
 action, ConsTcl is is fairly slow. On my cheap computer, the following code
-(which calculates the factorial of 100) takes 0.06 seconds to run. That is twenty
+(which calculates the factorial of 100) takes 0.04 seconds to run. That is thirteen
 times slower than Lispy assuming that Norvig's computer is as slow as mine,
-which is unlikely. So it's probably less than a factor of twenty.
+which is unlikely.
 
 \begin{verbatim}
 time {pe "(fact 100)"} 10
@@ -154,19 +158,21 @@ put together using tools like \texttt{awk}. It looks like this:
 
 In the middle are a bunch of \texttt{.ans} files (ANnotated Source). These are
 written with Vim. From the TT tags of those, I extract a \texttt{.test} file.
-From the CB tags I extract \texttt{.tcl} source (or Scheme or C source, as the case might
-be). From all the tags except TT I extract formatted documentation in Markdown
-and \LaTeX{} format. All these extractions are automated using \texttt{make}.
-Figures are made with Inkscape.  I create a PDF document from the \LaTeX{}
-source using TeXworks. On finishing up ConsTcl, it struck me that the
-documentation for this piece of software was fit for a book.
+From the CB tags I extract \texttt{.tcl} source (or Scheme or C source, as the
+case might be). From all the tags except TT I extract formatted documentation
+in Markdown and \LaTeX{} format. All these extractions are automated using
+\texttt{make}.  Figures are made with Inkscape.  I create a PDF document from
+the \LaTeX{} source using TeXworks. On finishing up ConsTcl, it struck me that
+the documentation for this piece of software was fit for a book.
 
 ConsTcl is at least 97\% my own work, but I have ported one part (see page
 \pageref{resolving-local-defines}) from ``Scheme 9 from Empty
 Space''\footnote{See \texttt{https://t3x.org/s9book/index.html}} by Nils M
-Holm\index{Holm, Nils M}, a Lisp interpreter written in C and commented in a similar manner to this
-book. Another source of guidance and inspiration was ``Lisp in Small Pieces'' by
-Christian Queinnec.
+Holm\index{Holm, Nils M}, a Lisp interpreter written in C and commented in a
+similar manner to this book. Another source of guidance and inspiration was
+``Lisp in Small Pieces'' by Christian Queinnec. Yet another source was ``An
+Introduction to Scheme and its Implementation''\footnote{See
+\texttt{https://docs.scheme.org/schintro/}}
 
 \subsection{About the program listings}
 \label{about-the-program-listings}
@@ -174,7 +180,7 @@ Christian Queinnec.
 I have tried to write clear, readable code, but the page format forces me to
 shorten lines. I have used two-space indents instead of four-space, a smaller
 font, and broken off long lines with a \textbackslash\  at the end of the first
-line (a so-called 'tucked-in tail'). Neither of these measures improve
+line (a so-called `tucked-in tail'). Neither of these measures improve
 readability, but the alternative is overwriting the margins. Not all broken
 lines have the \textbackslash: some are broken inside a
 \texttt{\{}\ldots\texttt{\}} block, and some right after a \texttt{^^5b}.
@@ -205,9 +211,9 @@ I'd like to thank
 \begin{itemize}
 \item my children and their lifemates for being awesome.
 
-\item my ex-wife for supporting the printing of the book financially, and, well, for being awesome too.
+\item my ex-wife for supporting the printing of the book financially.
 
-\item all the wonderful people in my life for being there.
+\item my mother, sister and brother-in-law for being supportive.
 \end{itemize}
 
 And now let's journey into the Interpreter.

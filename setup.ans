@@ -29,6 +29,14 @@ set ::constcl::gensymnum 0
 CB)
 
 MD(
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+MD)
+
+CB(
+interp recursionlimit {} 2000
+CB)
+
+MD(
 Pre-make a set of constants (e.g. #NIL, #t, and #f)
 and give them aliases for use in source text.
 MD)
@@ -168,7 +176,7 @@ TT(
     pew "(fact 10)"
 } -output 3628800\n
 
-::tcltest::test cons-2.1 {calculate factorial 100} -constraints knownBug -body {
+::tcltest::test cons-2.1 {calculate factorial 100} -body {
   # the bug is that it's too long and eats up the limit stack when there's a
   # problem
     pew "(fact 100)"

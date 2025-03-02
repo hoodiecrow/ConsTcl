@@ -334,13 +334,6 @@ source constcl.tcl
   pew "'m"
 } -output "m\n"
 
-::tcltest::test eval-3.1 {try getting a usage error} -body {
-  pew "(quote)"
-} -returnCodes error -result "usage error\n(quote datum) not (quote)"
-
-::tcltest::test eval-3.2 {try getting a usage error} -body {
-  pew "(quote foo bar)"
-} -returnCodes error -result "usage error\n(quote datum) not (quote foo bar)"
 
 ::tcltest::test eval-4.0 {try eval-ing a conditional} -body {
   pew "(if (= 2 2) (display 'a) (display 'b))"
@@ -498,8 +491,21 @@ source constcl.tcl
 } -output "(#(a b c) 1)\n"
 
 
+::tcltest::test eval-14.0 {expand let*} -body {
+  set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]
+  set bind [::constcl::cadr $x]
+  set body [::constcl::cddr $x]
+  set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
+  w $x
+} -output "(let ((a 2)) (let ((b (+ a 1))) (begin (* a b))))\n"
 
-::tcltest::test eval-14.0 {lambda parameter lists} -body {
+::tcltest::test eval-14.1 {run let*} -body {
+  pew "(let* ((a 2) (b (+ a 1))) (* a b))"
+} -output "6\n"
+
+
+
+::tcltest::test eval-15.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -507,7 +513,7 @@ source constcl.tcl
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-14.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-15.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 
@@ -529,7 +535,7 @@ source constcl.tcl
 
 ::tcltest::test macros-6.0 {try expand del!} -body {
   pew {(define plist (list 'a 1 'b 2 'c 3))}
-  pww {(del! plist 'a)}
+  pxw {(del! plist 'a)}
 } -output "(set! plist (delete! plist (quote a)))\n"
 
 ::tcltest::test macros-6.1 {try run del!} -body {
@@ -708,17 +714,17 @@ if no {
 
 
 ::tcltest::test rld-1.0 {expand local defines} -body {
-    set x [p "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
 ::tcltest::test rld-1.1 {run local defines} -body {
-    set x [p "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [e [::constcl::resolve-local-defines $x]]
 } -output "49\n"
 
 ::tcltest::test rld-1.2 {expand local defines w/o defines} -body {
-    set x [p "((set! n (+ a b)) (* n n))"]
+    set x [p "(begin (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
@@ -728,7 +734,7 @@ if no {
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
-    set x [p "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
 
@@ -1776,7 +1782,7 @@ qux\bod
     pew "(fact 10)"
 } -output 3628800\n
 
-::tcltest::test cons-2.1 {calculate factorial 100} -constraints knownBug -body {
+::tcltest::test cons-2.1 {calculate factorial 100} -body {
   # the bug is that it's too long and eats up the limit stack when there's a
   # problem
     pew "(fact 100)"

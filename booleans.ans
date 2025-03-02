@@ -60,7 +60,7 @@ proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
     if {[$instance boolval] eq $bool} {
-dict set ::constcl::defreg       return $instance
+      return $instance
     }
   }
   return [::constcl::Boolean new $bool]

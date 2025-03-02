@@ -63,9 +63,9 @@ proc ::constcl::extract-from-defines {exps part} {
     set k [length $n]
     if {![T [list? $n]] ||
         [$k numval] < 3 ||
-        [$k numval] > 3 ||
-        ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])} {
+        ![T [argument-list? [cadr $n]]] ||
+        ([T [symbol? [cadr $n]]] &&
+        [$k numval] > 3)} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {
@@ -275,17 +275,17 @@ CB)
 TT(
 
 ::tcltest::test rld-1.0 {expand local defines} -body {
-    set x [p "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
 
 ::tcltest::test rld-1.1 {run local defines} -body {
-    set x [p "((define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [e [::constcl::resolve-local-defines $x]]
 } -output "49\n"
 
 ::tcltest::test rld-1.2 {expand local defines w/o defines} -body {
-    set x [p "((set! n (+ a b)) (* n n))"]
+    set x [p "(begin (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
@@ -295,7 +295,7 @@ TT(
 } -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
 
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
-    set x [p "((define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    set x [p "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
 } -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
 

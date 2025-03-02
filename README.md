@@ -72,6 +72,8 @@ You can call `` reg `` with one parameter: _name_. _name_ is the string that wil
 <table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
+unset -nocomplain ::constcl::defreg
+
 proc reg {args} {
   if {[llength $args] == 2} {
     lassign $args btype name
@@ -1540,7 +1542,7 @@ _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to it
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader.
 
 #### quote special form
-<table border=1><thead><tr><th colspan=2 align="left">special-quote (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-quote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg special quote
@@ -1558,7 +1560,7 @@ _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
 The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
 #### if special form
-<table border=1><thead><tr><th colspan=2 align="left">special-if (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-if (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg special if
@@ -1742,7 +1744,7 @@ When expressions are evaluated in sequence, the order is important for two reaso
 As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 #### begin special form
-<table border=1><thead><tr><th colspan=2 align="left">special-begin (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-begin (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg special begin
@@ -1788,7 +1790,7 @@ _Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything
 We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
 
 #### define special form
-<table border=1><thead><tr><th colspan=2 align="left">special-define (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-define (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg special define
@@ -1856,7 +1858,7 @@ _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed t
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` set! `` special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 #### set! special form
-<table border=1><thead><tr><th colspan=2 align="left">special-set! (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-set! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 reg special set!
@@ -1899,7 +1901,7 @@ A Scheme formals list is either:
 *  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
 *  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
 #### lambda special form
-<table border=1><thead><tr><th colspan=2 align="left">special-lambda (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-lambda (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
 reg special lambda
@@ -1945,7 +1947,7 @@ proc ::constcl::invoke {pr vals} {
 ### Binding forms
 
 
-The binding forms are not fundamental the way the earlier nine forms are. They are an application of the procedure definition form. But their use is sufficiently distinguished to earn them their own heading.
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of the procedure definition form and a procedure call. But their use is sufficiently distinguished to earn them their own heading.
 
 
 `` special-let `` rewrites the named `` let `` and `regular' `` let `` forms. They are ultimately rewritten to `` lambda `` constructs and evaluated as such.
@@ -2051,6 +2053,46 @@ proc ::constcl::parse-bindings {name bindings} {
     dict set vars $var $val
   }
   return
+}
+```
+#### let* special form
+
+
+The `` let* `` form is similar to `` let ``, but the items in the binding list are considered sequentially, so the initializer in the second or later binding can reference the first binding, etc.
+
+<table border=1><thead><tr><th colspan=2 align="left">special-let* (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+reg special let*
+
+proc ::constcl::special-let* {expr env} {
+  set tail [cdr $expr]
+  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  eval $expr $env
+}
+```
+
+
+__rewrite-let*__ procedure
+
+<table border=1><thead><tr><th colspan=2 align="left">rewrite-let* (internal)</th></tr></thead><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::rewrite-let* {bindings body env} {
+  set env [MkEnv $env]
+  if {$bindings eq "#NIL"} {
+    /define [S body] $body $env
+    set qq "`(begin ,@body)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  } else {
+    /define [S binding] [car $bindings] $env
+    /define [S rest] [rewrite-let* [cdr $bindings] \
+      $body $env] $env
+    set qq "`(let (,binding) ,rest)"
+    set expr [expand-quasiquote [parse $qq] $env]
+  }
+  $env destroy
+  return $expr
 }
 ```
 
@@ -2656,9 +2698,9 @@ proc ::constcl::extract-from-defines {exps part} {
     set k [length $n]
     if {![T [list? $n]] ||
         [$k numval] < 3 ||
-        [$k numval] > 3 ||
-        ([T [argument-list? [cadr $n]]] ||
-        ![T [symbol? [cadr $n]]])} {
+        ![T [argument-list? [cadr $n]]] ||
+        ([T [symbol? [cadr $n]]] &&
+        [$k numval] > 3)} {
         return [::list #NIL "#t" #NIL]
       }
       if {[T [pair? [cadr $n]]]} {
@@ -3938,7 +3980,7 @@ proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
     if {[$instance boolval] eq $bool} {
-dict set ::constcl::defreg       return $instance
+      return $instance
     }
   }
   return [::constcl::Boolean new $bool]
@@ -7443,6 +7485,13 @@ unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
+```
+
+
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+
+```
+interp recursionlimit {} 2000
 ```
 
 
