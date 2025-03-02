@@ -32,7 +32,7 @@ oo::class create ::constcl::Procedure {
 oo::define ::constcl::Procedure method call {args} {
   set vals [lmap a $args {list VARIABLE $a}]
   ::constcl::eval $body [
-    ::constcl::Environment new $parms $vals $env]
+    ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {handle} {

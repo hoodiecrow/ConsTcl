@@ -54,7 +54,7 @@ proc ::constcl::do-and {tail prev env} {
   if {[T [null? $tail]]} {
     return $prev
   } else {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
@@ -99,7 +99,7 @@ reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
@@ -460,7 +460,7 @@ proc ::constcl::do-or {tail env} {
   /if {[null? $tail]} {
     return #f
   } {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
@@ -486,7 +486,7 @@ reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
@@ -531,7 +531,7 @@ reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
@@ -577,7 +577,7 @@ reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [::constcl::MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
@@ -771,7 +771,7 @@ reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              '()
@@ -809,7 +809,7 @@ reg macro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))

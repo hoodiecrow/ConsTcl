@@ -898,7 +898,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
         set keyl #t
       }
     }
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S keyl] $keyl $env
     /define [S body] $body $env
     /define [S rest] [
@@ -940,7 +940,7 @@ proc ::constcl::do-cond {tail env} {
     if {[T [null? $body]]} {
         set body $pred
     }
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S pred] $pred $env
     /define [S body] $body $env
     /define [S rest] [
@@ -989,7 +989,7 @@ proc ::constcl::special-define {expr env} {
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set env [::constcl::Environment new #NIL {} $env]
+    set env [::constcl::MkEnv $env]
     /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
@@ -1058,7 +1058,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set body [cddr $tail]
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
@@ -1083,7 +1083,7 @@ proc ::constcl::rewrite-let {expr env} {
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S varlist] [list {*}[
   dict keys $vars]] $env
   /define [S body] $body $env
@@ -1145,7 +1145,7 @@ proc ::constcl::do-and {tail prev env} {
   if {[T [null? $tail]]} {
     return $prev
   } else {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
@@ -1160,7 +1160,7 @@ reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
@@ -1282,7 +1282,7 @@ proc ::constcl::do-or {tail env} {
   /if {[null? $tail]} {
     return #f
   } {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
@@ -1296,7 +1296,7 @@ reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
@@ -1314,7 +1314,7 @@ reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
@@ -1341,7 +1341,7 @@ reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [::constcl::MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
@@ -1447,7 +1447,7 @@ reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              '()
@@ -1461,7 +1461,7 @@ reg macro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))
@@ -2722,7 +2722,7 @@ oo::class create ::constcl::Procedure {
 oo::define ::constcl::Procedure method call {args} {
   set vals [lmap a $args {list VARIABLE $a}]
   ::constcl::eval $body [
-    ::constcl::Environment new $parms $vals $env]
+    ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {handle} {
@@ -4304,6 +4304,19 @@ oo::class create ::constcl::Environment {
   }
 }
 
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
+}
+
 proc ::constcl::environment? {val} {
   typeof? $val Environment
 }
@@ -4391,9 +4404,9 @@ proc ::constcl::ge {env} {
 
 reg make-environment
 
-proc make-environment {exps} {
+proc ::constcl::make-environment {exps} {
   set env [
-    Environment new #NIL {} [the-environment]]
+    MkEnv [the-environment]]
   set body $exps
   /define [S body] $body $env
   set qq "`(let ()
@@ -4403,13 +4416,13 @@ proc make-environment {exps} {
   return [eval $expr $env]
 }
 
-proc the-environment {} {
+proc ::constcl::the-environment {} {
   # TODO
 }
 
 reg interpreter-environment
 
-proc interpreter-environment {val} {
+proc ::constcl::interpreter-environment {val} {
   # TODO
 }
 
@@ -4502,9 +4515,7 @@ proc ::constcl::input {prompt} {
 }
 
 proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [
-    ::constcl::Environment new #NIL {} \
-      ::constcl::global_env]
+  set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
     set expr [::constcl::parse $str]

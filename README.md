@@ -1398,7 +1398,7 @@ Before I can talk about evaluation, I need to spend some time on environments. T
 There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure arguments and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
 
 
-Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the global bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
+Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
 
 
 Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
@@ -1406,7 +1406,7 @@ Environments make up the world the evaluator lives in and are the source of its 
 ![#](images/environments.png)
 
 
-I will talk some more about environments in a later section.
+I will talk some more about the implementation of environments in a later section.
 
 ### The evaluator
 #### eval procedure
@@ -1650,7 +1650,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
         set keyl #t
       }
     }
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S keyl] $keyl $env
     /define [S body] $body $env
     /define [S rest] [
@@ -1716,7 +1716,7 @@ proc ::constcl::do-cond {tail env} {
     if {[T [null? $body]]} {
         set body $pred
     }
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S pred] $pred $env
     /define [S body] $body $env
     /define [S rest] [
@@ -1824,7 +1824,7 @@ which conforms better to `` eval ``'s standard of (define _symbol_ _value_). The
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
-    set env [::constcl::Environment new #NIL {} $env]
+    set env [::constcl::MkEnv $env]
     /define [S tail] $tail $env
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
@@ -1982,7 +1982,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set body [cddr $tail]
   set vars [dict create $variable #f]
   parse-bindings vars $bindings
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
   /define [S variable] $variable $env
@@ -2017,7 +2017,7 @@ proc ::constcl::rewrite-let {expr env} {
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S varlist] [list {*}[
   dict keys $vars]] $env
   /define [S body] $body $env
@@ -2135,7 +2135,7 @@ proc ::constcl::do-and {tail prev env} {
   if {[T [null? $tail]]} {
     return $prev
   } else {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-and [cdr $tail] \
         [car $tail] $env] $env
@@ -2158,7 +2158,7 @@ reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error "too few arguments, 0 of 2"
   }
@@ -2365,7 +2365,7 @@ proc ::constcl::do-or {tail env} {
   /if {[null? $tail]} {
     return #f
   } {
-    set env [Environment new #NIL {} $env]
+    set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
     set qq "`(let ((x ,first)) (if x x ,rest))"
@@ -2387,7 +2387,7 @@ reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
@@ -2413,7 +2413,7 @@ reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   if {[T [null? $tail]]} {
     ::error \
       "too few arguments:\n(push! obj listname)"
@@ -2448,7 +2448,7 @@ reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
   set tail [cdr $expr]
-  set env [::constcl::Environment new #NIL {} $env]
+  set env [::constcl::MkEnv $env]
   if {[T [null? $tail]]} {
       ::error "too few arguments, 0 of 3"
   }
@@ -2577,7 +2577,7 @@ reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              '()
@@ -2599,7 +2599,7 @@ reg macro when
 
 proc ::constcl::expand-when {expr env} {
   set tail [cdr $expr]
-  set env [Environment new #NIL {} $env]
+  set env [MkEnv $env]
   /define [S tail] $tail $env
   set qq "`(if ,(car tail)
              (begin ,@(cdr tail))
@@ -4503,7 +4503,7 @@ oo::class create ::constcl::Procedure {
 oo::define ::constcl::Procedure method call {args} {
   set vals [lmap a $args {list VARIABLE $a}]
   ::constcl::eval $body [
-    ::constcl::Environment new $parms $vals $env]
+    ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {handle} {
@@ -7125,6 +7125,24 @@ oo::class create ::constcl::Environment {
   }
 }
 ```
+#### MkEnv generator
+
+<table border=1><thead><tr><th colspan=2 align="left">MkEnv (internal)</th></tr></thead><tr><td>?parms?</td><td>a Scheme formals list</td></tr><tr><td>?vals?</td><td>a Tcl list of Lisp values</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
+}
+```
 ### MIT Scheme environment library
 
 
@@ -7335,9 +7353,9 @@ is equivalent to:
 ```
 reg make-environment
 
-proc make-environment {exps} {
+proc ::constcl::make-environment {exps} {
   set env [
-    Environment new #NIL {} [the-environment]]
+    MkEnv [the-environment]]
   set body $exps
   /define [S body] $body $env
   set qq "`(let ()
@@ -7355,7 +7373,7 @@ Returns the current environment.
 <table border=1><thead><tr><th colspan=2 align="left">the-environment (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
 
 ```
-proc the-environment {} {
+proc ::constcl::the-environment {} {
   # TODO
 }
 ```
@@ -7369,7 +7387,7 @@ Returns `` #t `` if _val_ is an interpreter environment; otherwise returns `` #f
 ```
 reg interpreter-environment
 
-proc interpreter-environment {val} {
+proc ::constcl::interpreter-environment {val} {
   # TODO
 }
 ```
@@ -7558,9 +7576,7 @@ __repl__
 
 ```
 proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [
-    ::constcl::Environment new #NIL {} \
-      ::constcl::global_env]
+  set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
     set expr [::constcl::parse $str]

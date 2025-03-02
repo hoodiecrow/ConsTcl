@@ -2,13 +2,14 @@
 H2 Environment class and objects
 
 MD(
-The class for environments is called K{Environment}. It is mostly a wrapper around a dictionary,
-with the added finesse of keeping a link to the outer environment (starting a chain that goes all
-the way to the global environment and then stops at the null environment) which can be traversed
-by the find method to find which innermost environment a given symbol is bound in.
+The class for environments is called K{Environment}. It is mostly a wrapper
+around a dictionary, with the added finesse of keeping a link to the outer
+environment (starting a chain that goes all the way to the global environment
+and then stops at the null environment) which can be traversed by the find
+method to find which innermost environment a given symbol is bound in.
 
-The long and complex constructor is to accommodate the variations of Scheme parameter lists, which 
-can be empty, a proper list, a symbol, or a dotted list.
+The long and complex constructor is to accommodate the variations of Scheme
+parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
 MD)
 
 H4 Environment class
@@ -109,6 +110,30 @@ oo::class create ::constcl::Environment {
   method values {} {
     dict values $bindings
   }
+}
+CB)
+
+H4 MkEnv generator
+
+MD(
+MD)
+
+PR(
+MkEnv (internal);?parms? formals ?vals? tvals env env -> env
+PR)
+
+CB(
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
 }
 CB)
 
@@ -393,9 +418,9 @@ PR)
 CB(
 reg make-environment
 
-proc make-environment {exps} {
+proc ::constcl::make-environment {exps} {
   set env [
-    Environment new #NIL {} [the-environment]]
+    MkEnv [the-environment]]
   set body $exps
   /define [S body] $body $env
   set qq "`(let ()
@@ -417,7 +442,7 @@ the-environment (public);-> env
 PR)
 
 CB(
-proc the-environment {} {
+proc ::constcl::the-environment {} {
   # TODO
 }
 CB)
@@ -435,7 +460,7 @@ PR)
 CB(
 reg interpreter-environment
 
-proc interpreter-environment {val} {
+proc ::constcl::interpreter-environment {val} {
   # TODO
 }
 CB)
