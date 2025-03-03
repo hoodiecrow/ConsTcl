@@ -110,6 +110,10 @@ proc regvar {name value} {
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 ```
+
+
+---
+
 ##### Procedures, functions, and commands
 
 
@@ -118,10 +122,18 @@ I use all of these terms for the subroutines in ConsTcl. I try to stick to proce
 
 And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg ``* are `public' and those who aren't are `internal'.
 
+
+
+---
+
 #### atom? procedure
 
 
 This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (true) if it is an atom, and `` #f `` (false) if not.
+
+
+
+---
 
 ##### Predicates
 
@@ -139,6 +151,10 @@ will not do, but
 
 
 (``[atom? $x] not equal to false'') works. Or see the `` T `` procedure.
+
+
+
+---
 
 <table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -741,10 +757,18 @@ Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was ju
 
 ![#](images/intreplist.png)
 ### Input procedures
+
+
+---
+
 ##### Ports
 
 
 Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+
+
+
+---
 
 #### parse procedure
 
@@ -1657,15 +1681,31 @@ proc ::constcl::special-case {expr env} {
   eval $expr $env
 }
 ```
+
+
+---
+
 ##### caar, cadr, cdar, and the rest
 
 
 The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
 
+
+
+---
+
+
+
+---
+
 ##### Quasiquote
 
 
 In this and many other special form and macro form expanders I use a quasiquote construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (`` ` ``) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (`` , ``). `` `(foo ,bar baz) `` is very nearly the same as `` ('foo bar 'baz) ``. In both cases `` foo `` and `` baz `` are constants while `` bar `` is a variable which will be evaluated. Like in `` do-case `` here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use `` /define `` to bind them in a temporary environment.
+
+
+
+---
 
 
 
@@ -1992,6 +2032,10 @@ Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (
 
 The lambda special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
+
+
+---
+
 ##### Scheme formal parameters lists
 
 
@@ -2001,6 +2045,10 @@ A Scheme formals list is either:
 *  A _proper list_, `` (a b c) ``, meaning it accepts three arguments, one in each symbol,
 *  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
 *  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
+
+
+---
+
 #### lambda special form
 
 
@@ -2201,16 +2249,12 @@ reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 ```
 
 
 __rewrite-letrec__ procedure
-
-
-[Definition of letrec](https://docs.scheme.org/schintro/schintro_126.html#SEC162).
 
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2222,17 +2266,23 @@ proc ::constcl::rewrite-letrec {expr env} {
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
+  foreach {key val} $vars {
+    dict set outer $key [list [S quote] #UND]
+    dict set inner [set g [gensym "g"]] $val
+    dict set assigns $key $g
+  }
   set env [MkEnv $env]
-  /define [S decl] [list {*}[lmap k [
-    dict keys $vars] {
-      list $k [list [S quote] #UND]
-    }]] $env
-  /define [S sets] [list {*}[lmap k [
-    dict keys $vars] {
-      list [S set!] $k [dict get $vars $k]
+  /define [S outervars] [list {*}[dict keys $outer]] $env
+  /define [S outervals] [list {*}[dict values $outer]] $env
+  /define [S innervars] [list {*}[dict keys $inner]] $env
+  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S assigns] [list {*}[lmap {k v} $assigns {
+      list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`(let ,decl ,@sets ,@body)"
+  set qq "`((lambda ,outervars
+             ((lambda ,innervars ,@assigns) ,@innervals)
+             ,@body) ,@outervals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -2999,7 +3049,7 @@ proc ::constcl::gensym {prefix} {
     dict keys $::constcl::symbolTable]
   set s $prefix<[incr ::constcl::gensymnum]>
   while {$s in $symbolnames} {
-    set s $prefix[incr ::constcl::gensymnum]
+    set s $prefix<[incr ::constcl::gensymnum]>
   }
   return [S $s]
 }
@@ -7673,8 +7723,14 @@ proc ::constcl::vsAlloc {num} {
 Initialize the symbol table and gensym number.
 
 ```
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
+proc ::constcl::resetSymbolTable {} {
+  unset -nocomplain ::constcl::symbolTable
+  set ::constcl::symbolTable [dict create]
+  foreach s {
+    define
+  } {S $s}
+}
+::constcl::resetSymbolTable
 
 set ::constcl::gensymnum 0
 ```

@@ -1118,7 +1118,6 @@ reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 
@@ -1129,17 +1128,23 @@ proc ::constcl::rewrite-letrec {expr env} {
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
+  foreach {key val} $vars {
+    dict set outer $key [list [S quote] #UND]
+    dict set inner [set g [gensym "g"]] $val
+    dict set assigns $key $g
+  }
   set env [MkEnv $env]
-  /define [S decl] [list {*}[lmap k [
-    dict keys $vars] {
-      list $k [list [S quote] #UND]
-    }]] $env
-  /define [S sets] [list {*}[lmap k [
-    dict keys $vars] {
-      list [S set!] $k [dict get $vars $k]
+  /define [S outervars] [list {*}[dict keys $outer]] $env
+  /define [S outervals] [list {*}[dict values $outer]] $env
+  /define [S innervars] [list {*}[dict keys $inner]] $env
+  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S assigns] [list {*}[lmap {k v} $assigns {
+      list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`(let ,decl ,@sets ,@body)"
+  set qq "`((lambda ,outervars
+             ((lambda ,innervars ,@assigns) ,@innervals)
+             ,@body) ,@outervals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1638,7 +1643,7 @@ proc ::constcl::gensym {prefix} {
     dict keys $::constcl::symbolTable]
   set s $prefix<[incr ::constcl::gensymnum]>
   while {$s in $symbolnames} {
-    set s $prefix[incr ::constcl::gensymnum]
+    set s $prefix<[incr ::constcl::gensymnum]>
   }
   return [S $s]
 }
@@ -4497,8 +4502,14 @@ proc ::constcl::vsAlloc {num} {
   return $va
 }
 
-unset -nocomplain ::constcl::symbolTable
-set ::constcl::symbolTable [dict create]
+proc ::constcl::resetSymbolTable {} {
+  unset -nocomplain ::constcl::symbolTable
+  set ::constcl::symbolTable [dict create]
+  foreach s {
+    define
+  } {S $s}
+}
+::constcl::resetSymbolTable
 
 set ::constcl::gensymnum 0
 

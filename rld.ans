@@ -189,7 +189,7 @@ proc ::constcl::gensym {prefix} {
     dict keys $::constcl::symbolTable]
   set s $prefix<[incr ::constcl::gensymnum]>
   while {$s in $symbolnames} {
-    set s $prefix[incr ::constcl::gensymnum]
+    set s $prefix<[incr ::constcl::gensymnum]>
   }
   return [S $s]
 }
@@ -275,7 +275,7 @@ TT(
 ::tcltest::test rld-1.0 {expand local defines} -body {
     set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) (quote #<undefined>) (quote #<undefined>) (quote #<undefined>))\n"
+} -match glob -output {((lambda (b a n) ((lambda (g<[0-9]*> g<[0-9]*> g<[0-9]*>) (begin (set! n g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>) (set! n (+ a b)) (* n n))) 4 3 0)) (quote #<undefined>) (quote #<undefined>) (quote #<undefined>))?}
 
 ::tcltest::test rld-1.1 {run local defines} -body {
     set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
@@ -295,7 +295,7 @@ TT(
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
     set x [p "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) (quote #<undefined>))\n"
+} -match glob -output {((lambda (foo) ((lambda (g<[0-9]*>) (begin (set! foo g<[0-9]*>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) (quote #<undefined>))?}
 
 TT)
 

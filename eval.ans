@@ -404,13 +404,13 @@ PT(
 H5 caar, cadr, cdar, and the rest
 
 MD(
-The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like K{caar}
-and K{cdar}I{caar}. K{car}/K{cdr} notation gets really powerful when combined to form
-operators from K{caar} to K{cddddr}. One can read K{caar L} as `the first element of
-the first element of L', implying that the first element of K{L} is a list.
-K{cdar L} is `the rest of the elements of the first element of L', and K{cadr L}
-is `the first element of the rest of the elements of L' or in layman's terms,
-the second element of L.
+The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like
+K{caar} and K{cdar}I{car/cdr operators}. K{car}/K{cdr} notation gets really
+powerful when combined to form operators from K{caar} to K{cddddr}. One can read
+K{caar L} as `the first element of the first element of L', implying that the
+first element of K{L} is a list.  K{cdar L} is `the rest of the elements of the
+first element of L', and K{cadr L} is `the first element of the rest of the
+elements of L' or in layman's terms, the second element of L.
 MD)
 PT)
 
@@ -1254,15 +1254,12 @@ reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 CB)
 
 MD(
 B{rewrite-letrec} procedure
-
-L{Definition of letrec}{https://docs.scheme.org/schintro/schintro_126.html#SEC162}.
 MD)
 
 PR(
@@ -1278,17 +1275,23 @@ proc ::constcl::rewrite-letrec {expr env} {
   set body [cdr $tail]
   set vars [dict create]
   parse-bindings vars $bindings
+  foreach {key val} $vars {
+    dict set outer $key [list [S quote] #UND]
+    dict set inner [set g [gensym "g"]] $val
+    dict set assigns $key $g
+  }
   set env [MkEnv $env]
-  /define [S decl] [list {*}[lmap k [
-    dict keys $vars] {
-      list $k [list [S quote] #UND]
-    }]] $env
-  /define [S sets] [list {*}[lmap k [
-    dict keys $vars] {
-      list [S set!] $k [dict get $vars $k]
+  /define [S outervars] [list {*}[dict keys $outer]] $env
+  /define [S outervals] [list {*}[dict values $outer]] $env
+  /define [S innervars] [list {*}[dict keys $inner]] $env
+  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S assigns] [list {*}[lmap {k v} $assigns {
+      list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`(let ,decl ,@sets ,@body)"
+  set qq "`((lambda ,outervars
+             ((lambda ,innervars ,@assigns) ,@innervals)
+             ,@body) ,@outervals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1297,14 +1300,14 @@ CB)
 
 TT(
 ::tcltest::test eval-14.0 {expand letrec} -body {
-  set x [p "(letrec ((a 0) (b 1)) (+ a b))"]
+  set x [p "(letrec ((a 0) (b 1)) (- a b))"]
   set x [::constcl::rewrite-letrec $x ::constcl::global_env]
   w $x
-} -output "(let ((a (quote #<undefined>)) (b (quote #<undefined>))) (set! a 0) (set! b 1) (+ a b))\n"
+} -match glob -output {((lambda (a b) ((lambda (g<[0-9]*> g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>)) 0 1) (- a b)) (quote #<undefined>) (quote #<undefined>))*}
 
 ::tcltest::test eval-14.1 {run letrec} -body {
-  pew "(letrec ((a 0) (b 1)) (+ a b))"
-} -output "1\n"
+  pew "(letrec ((a 0) (b 1)) (- a b))"
+} -output "-1\n"
 
 ::tcltest::test eval-14.2 {run letrec} -body {
   pew {(letrec ((even?
