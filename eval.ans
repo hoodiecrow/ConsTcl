@@ -239,7 +239,8 @@ value. Well, sometimes one wishes to use the symbol itself as a value. That is
 what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol K{x}
 itself and not to any value that might be stored under it. This is so common
 that there is a shorthand notation for it: K{'x} is interpreted as K{(quote x)}
-by the Lisp reader.
+by the Lisp reader. The argument of K{quote} may be any external representation
+of a Lisp object.
 MD)
 
 H4 quote special form
@@ -510,6 +511,13 @@ Where each E{clause} has the form
 
 (E{test} ?B{=>}? E{expression} ...)
 
+or
+
+(E{test} B{=>} E{recipient})
+
+where E{recipient} is a procedure that accepts one argument, which is evaluated
+with the result of the predicate as argument.
+
 The last clause may have the form
 
 ((B{else} E{expression} ...)
@@ -636,6 +644,11 @@ calculations, then they need to be processed in the order of that pipeline.
 As part of the processing of sequences E{local defines} are resolved, acting on
 expressions of the form K{(begin (define ...} when in a local environment. See
 the part about R{resolving local defines}{resolving-local-defines}.
+
+THe following forms have an implicit K{begin} in their bodies and the use of
+K{begin} is therefore unnecessary with them:
+
+K{case}, K{cond}, K{define} (“procedure define” only), K{lambda}, K{let}, K{let*}, K{letrec}.
 MD)
 
 H4 begin special form

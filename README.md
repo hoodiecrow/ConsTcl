@@ -863,6 +863,20 @@ proc ::constcl::interspace? {c} {
     }
 }
 ```
+#### delimiter? procedure
+
+
+The `` delimiter? `` helper procedure recognizes delimiter characters between value representations.
+
+```
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+      return #t
+    } else {
+      return #f
+    }
+}
+```
 #### valid-char? procedure
 
 
@@ -931,7 +945,9 @@ proc ::constcl::find-char? {char} {
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readc]
-  if {[T [interspace? $c]] || $c in {) ]} || $c eq "#EOF"} {
+  if {[T [interspace? $c]] ||
+      [T [delimiter? $c]] ||
+      $c eq "#EOF"} {
     set unget $c
     return #t
   } else {
@@ -1047,7 +1063,9 @@ proc ::constcl::read-character-expr {} {
   set name "#\\"
   set c [readc]
   read-eof $c
-  while {$c ni {) ]} && [::string is graph $c] && $c ne "#EOF"} {
+  while {![T [delimiter? $c]] &&
+      [::string is graph $c] &&
+      $c ne "#EOF"} {
     ::append name $c
     set c [readc]
   }
@@ -1078,7 +1096,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || $c in {) \]}} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
@@ -1112,7 +1130,7 @@ proc ::constcl::read-number-expr {args} {
   }
   read-eof $c
   while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) ]}} {
+      ![T [delimiter? $c]]} {
     ::append num $c
     set c [readc]
   }
@@ -1247,7 +1265,7 @@ proc ::constcl::read-plus-minus {char} {
     }
     return $n
   } elseif {[::string is space -strict $c] ||
-      $c in {) ]}} {
+      [T [delimiter? $c]]} {
     if {$char eq "+"} {
       return [S "+"]
     } else {
@@ -1564,7 +1582,7 @@ Not just numbers but booleans, characters, strings, and vectors evaluate to them
 _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader.
+According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader. The argument of `` quote `` may be any external representation of a Lisp object.
 
 #### quote special form
 
@@ -1759,6 +1777,15 @@ Where each _clause_ has the form
 (_test_ ?__=>__? _expression_ ...)
 
 
+or
+
+
+(_test_ __=>__ _recipient_)
+
+
+where _recipient_ is a procedure that accepts one argument, which is evaluated with the result of the predicate as argument.
+
+
 The last clause may have the form
 
 
@@ -1832,6 +1859,12 @@ When expressions are evaluated in sequence, the order is important for two reaso
 
 
 As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+
+
+THe following forms have an implicit `` begin `` in their bodies and the use of `` begin `` is therefore unnecessary with them:
+
+
+`` case ``, `` cond ``, `` define `` (“procedure define” only), `` lambda ``, `` let ``, `` let* ``, `` letrec ``.
 
 #### begin special form
 

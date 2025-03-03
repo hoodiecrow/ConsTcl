@@ -405,6 +405,14 @@ proc ::constcl::interspace? {c} {
     }
 }
 
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+      return #t
+    } else {
+      return #f
+    }
+}
+
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
@@ -441,7 +449,9 @@ proc ::constcl::find-char? {char} {
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readc]
-  if {[T [interspace? $c]] || $c in {) ]} || $c eq "#EOF"} {
+  if {[T [interspace? $c]] ||
+      [T [delimiter? $c]] ||
+      $c eq "#EOF"} {
     set unget $c
     return #t
   } else {
@@ -520,7 +530,9 @@ proc ::constcl::read-character-expr {} {
   set name "#\\"
   set c [readc]
   read-eof $c
-  while {$c ni {) ]} && [::string is graph $c] && $c ne "#EOF"} {
+  while {![T [delimiter? $c]] &&
+      [::string is graph $c] &&
+      $c ne "#EOF"} {
     ::append name $c
     set c [readc]
   }
@@ -543,7 +555,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || $c in {) \]}} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
@@ -569,7 +581,7 @@ proc ::constcl::read-number-expr {args} {
   }
   read-eof $c
   while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
-      $c ni {) ]}} {
+      ![T [delimiter? $c]]} {
     ::append num $c
     set c [readc]
   }
@@ -669,7 +681,7 @@ proc ::constcl::read-plus-minus {char} {
     }
     return $n
   } elseif {[::string is space -strict $c] ||
-      $c in {) ]}} {
+      [T [delimiter? $c]]} {
     if {$char eq "+"} {
       return [S "+"]
     } else {
