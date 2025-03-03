@@ -11,6 +11,9 @@
 \usepackage[table]{xcolor}
 \usepackage{caption}
 \usepackage{etoc}
+\usepackage{float}
+  \floatstyle{boxed}
+  \newfloat{pulledtext}{tbp}{pulledtext}
 \lstset{
   showstringspaces=false,
   language=tcl,
@@ -300,15 +303,19 @@ proc regvar {name value} {
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 \end{lstlisting}
-\subsubsection{Procedures, functions, and commands: an aside}
-\label{procedures,-functions,-and-commands-an-aside}
-\index{procedures, functions, and commands: an aside}
+
+\begin{pulledtext}
+\subsubsection{Procedures, functions, and commands}
+\label{procedures,-functions,-and-commands}
+\index{procedures, functions, and commands}
 
 
 I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
 
 
 And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg}* are `public' and those who aren't are `internal'.
+
+\end{pulledtext}
 
 \subsection{atom? procedure}
 \label{atom?-procedure}
@@ -317,9 +324,12 @@ And the `internal/public' distinction is probably a misnomer (an aside within an
 
 This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists\index{lists} and atoms\index{atoms}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (true) if it is an atom, and \texttt{\#f} (false) if not.
 
-\subsubsection{Predicates: an aside}
-\label{predicates-an-aside}
-\index{predicates: an aside}
+
+\begin{pulledtext}
+\subsubsection{Predicates}
+\label{predicates}
+\index{predicates}
+
 
 By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
 
@@ -333,7 +343,9 @@ will not do, but
 \texttt{if \{[atom? \$x] ne "\#f"\} \ldots }
 
 
-(``[atom? \$x] not equal to false'') works. Or see next procedure.
+(``[atom? \$x] not equal to false'') works. Or see the \texttt{T} procedure.
+
+\end{pulledtext}
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1127,12 +1139,16 @@ Anyway, the figure shows is what it really looks like. \texttt{::oo::Obj491} was
 \section{Input procedures}
 \label{input-procedures}
 \index{input procedures}
-\subsubsection{Ports: an aside}
-\label{ports-an-aside}
-\index{Ports: an aside}
+
+\begin{pulledtext}
+\subsubsection{Ports}
+\label{ports}
+\index{Ports}
 
 
 Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard\footnote{which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.}) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+
+\end{pulledtext}
 
 \subsection{parse procedure}
 \label{parse-procedure}
@@ -2128,19 +2144,26 @@ According to the rules of variable reference, a symbol evaluates to its stored v
 \subsection{quote special form}
 \label{quote-special-form}
 \index{quote special form}
+
+
+Syntax: (\textbf{quote} \emph{datum})
+
+
+The \texttt{quote} special form is expanded by \texttt{special-quote}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-quote (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & an expression \\
 \hline
 \end{tabular}
 \begin{lstlisting}
 reg special quote
 
 proc ::constcl::special-quote {expr env} {
-  return [cadr $expr]
+  cadr $expr
 }
 \end{lstlisting}
 \section{Conditional}
@@ -2156,6 +2179,13 @@ The conditional\index{conditional} form \texttt{if} evaluates a Lisp list of thr
 \subsection{if special form}
 \label{if-special-form}
 \index{if special form}
+
+
+Syntax: (\textbf{if} \emph{cond} \emph{consequent} ?\emph{alternate}?)
+
+
+The \texttt{if} special form is expanded by \texttt{special-if}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-if (internal)} \\
@@ -2228,7 +2258,23 @@ proc ::constcl::/if1 {cond conseq} {
 Another conditional form is \texttt{case}. It implements a multi-choice where a single expression selects between alternatives. The body of the \texttt{case} form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
 
 
-The \texttt{case} form is implemented by \texttt{special-case}, with help from \texttt{do-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
+
+Syntax: (\textbf{case} \emph{key} \emph{clause} \ldots )
+
+
+Where each \emph{clause} has the form
+
+
+((\emph{datum} \ldots ) \emph{expression} \ldots )
+
+
+The last clause may have the form
+
+
+((\textbf{else} \emph{expression} \ldots )
+
+
+The \texttt{case} special form is expanded by \texttt{special-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
 
 
@@ -2251,20 +2297,42 @@ proc ::constcl::special-case {expr env} {
   eval $expr $env
 }
 \end{lstlisting}
-\subsubsection{caar, cadr, cdar, and the rest: an aside}
-\label{caar,-cadr,-cdar,-and-the-rest-an-aside}
-\index{caar, cadr, cdar, and the rest: an aside}
+
+\begin{pulledtext}
+\subsubsection{caar, cadr, cdar, and the rest}
+\label{caar,-cadr,-cdar,-and-the-rest}
+\index{caar, cadr, cdar, and the rest}
 
 
-The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} operators like \texttt{caar} and \texttt{cdar}. \texttt{car}/\texttt{cdr} notation gets really powerful when combined to form operators from \texttt{caar} to \texttt{cddddr}. One can read \texttt{caar L} as `the first element of the first element of L', implying that the first element of \texttt{L} is a list. \texttt{cdar L} is `the rest of the elements of the first element of L', and \texttt{cadr L} is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} operators like \texttt{caar} and \texttt{cdar}\index{caar}. \texttt{car}/\texttt{cdr} notation gets really powerful when combined to form operators from \texttt{caar} to \texttt{cddddr}. One can read \texttt{caar L} as `the first element of the first element of L', implying that the first element of \texttt{L} is a list. \texttt{cdar L} is `the rest of the elements of the first element of L', and \texttt{cadr L} is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
 
-\subsubsection{Quasiquote: an aside}
-\label{quasiquote-an-aside}
-\index{Quasiquote: an aside}
+\end{pulledtext}
+
+
+\begin{pulledtext}
+\subsubsection{Quasiquote}
+\label{quasiquote}
+\index{Quasiquote}
 
 
 In this and many other special form and macro form expanders I use a quasiquote\index{quasiquote} construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (\texttt{`}) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (\texttt{,}). \texttt{`(foo ,bar baz)} is very nearly the same as \texttt{('foo bar 'baz)}. In both cases \texttt{foo} and \texttt{baz} are constants while \texttt{bar} is a variable which will be evaluated. Like in \texttt{do-case} here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use \texttt{/define} to bind them in a temporary environment.
 
+\end{pulledtext}
+
+
+
+\textbf{do-case} procedure
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-case (internal)} \\
+keyexpr & an expression \\
+clauses & a Lisp list of expressions \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{do-case procedure}
 \begin{lstlisting}
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
@@ -2303,10 +2371,23 @@ proc ::constcl::do-case {keyexpr clauses env} {
 \texttt{cond} is the third conditional form. The \texttt{cond} form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than \texttt{\#f} the body is evaluated and the remaining clauses are ignored.
 
 
-The \texttt{cond} form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
+
+Syntax: (\textbf{cond} \emph{clause} \ldots )
 
 
-\textbf{special-cond} procedure
+Where each \emph{clause} has the form
+
+
+(\emph{test} ?\textbf{=>}? \emph{expression} \ldots )
+
+
+The last clause may have the form
+
+
+((\textbf{else} \emph{expression} \ldots )
+
+
+The \texttt{cond} special form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2392,6 +2473,13 @@ As part of the processing of sequences \emph{local defines} are resolved, acting
 \subsection{begin special form}
 \label{begin-special-form}
 \index{begin special form}
+
+
+Syntax: (\textbf{begin} \emph{expression} \ldots )
+
+
+The \texttt{begin} special form is expanded by \texttt{special-begin}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-begin (internal)} \\
@@ -2458,6 +2546,40 @@ We've already seen the relationship between symbols and values. Through (variabl
 \subsection{define special form}
 \label{define-special-form}
 \index{define special form}
+
+
+Syntax: either
+
+
+(\textbf{define} \emph{variable} \emph{expression})
+
+
+(\textbf{define} (\emph{variable} \emph{formals}) \emph{body})
+
+
+(where \emph{formals} is a proper or dotted list of identifiers; equivalent form:)
+
+
+(\textbf{define} \emph{variable} (\textbf{lambda} (\emph{formals}) \emph{body})).
+
+
+or
+
+
+(\textbf{define} (\emph{variable} . \emph{formal}) \emph{body})
+
+
+(where \emph{formal} is a single identifier; equivalent form:)
+
+
+(\textbf{define} \emph{variable} (\textbf{lambda} \emph{formal} \emph{body}))
+
+
+\emph{body} should be one or more expressions.
+
+
+The \texttt{define} special form is expanded by \texttt{special-define}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-define (internal)} \\
@@ -2551,6 +2673,13 @@ Once a variable has been created, the value at the location it is bound to can b
 \subsection{set! special form}
 \label{set"!-special-form}
 \index{set"! special form}
+
+
+Syntax: (\textbf{set!} \emph{variable} \emph{expression})
+
+
+The \texttt{set!} special form is expanded by \texttt{special-set!}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-set! (internal)} \\
@@ -2592,9 +2721,11 @@ Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure
 
 The lambda special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
-\subsubsection{Scheme formal parameters lists: an aside}
-\label{scheme-formal-parameters-lists-an-aside}
-\index{Scheme formal parameters lists: an aside}
+
+\begin{pulledtext}
+\subsubsection{Scheme formal parameters lists}
+\label{scheme-formal-parameters-lists}
+\index{Scheme formal parameters lists}
 
 
 A Scheme formals list\index{formals list} is either:
@@ -2605,9 +2736,21 @@ A Scheme formals list\index{formals list} is either:
 \item  A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or
 \item  A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
 \end{itemize}
+\end{pulledtext}
+
 \subsection{lambda special form}
 \label{lambda-special-form}
 \index{lambda special form}
+
+
+Syntax: (\textbf{lambda} \emph{formals} \emph{body})
+
+
+where \emph{body} is one or more expressions.
+
+
+The \texttt{lambda} special form is expanded by \texttt{special-lambda}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-lambda (internal)} \\
@@ -2674,12 +2817,25 @@ proc ::constcl::invoke {pr vals} {
 
 The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of the procedure definition form and a procedure call. But their use is sufficiently distinguished to earn them their own heading.
 
-
-\texttt{special-let} rewrites the named \texttt{let} and `regular' \texttt{let} forms. They are ultimately rewritten to \texttt{lambda} constructs and evaluated as such.
-
 \subsection{let special form}
 \label{let-special-form}
 \index{let special form}
+
+
+Syntax: (\textbf{let} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
+
+
+or
+
+
+(\textbf{let} \emph{variable} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
+
+
+where \emph{body} is one or more expressions.
+
+
+The \texttt{let} special form (both forms) is expanded by \texttt{special-let}. They are ultimately rewritten to \texttt{lambda} constructs and evaluated as such.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let (internal)} \\
@@ -2814,7 +2970,17 @@ proc ::constcl::parse-bindings {name bindings} {
 \index{letrec special form}
 
 
-The \texttt{letrec} form is similar to \texttt{let}, but the bindings are created before the values for them are calculated. This means that the values can be mutually recursive.
+The \texttt{letrec} form is similar to \texttt{let}, but the bindings are created before the values for them are calculated. This means that one can define mutually recursive procedures.
+
+
+
+Syntax: (\textbf{letrec} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
+
+
+where \emph{body} is one or more expressions.
+
+
+The \texttt{letrec} special form is expanded by \texttt{special-letrec}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2838,7 +3004,7 @@ proc ::constcl::special-letrec {expr env} {
 \textbf{rewrite-letrec} procedure
 
 
-Definition of letrec\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_126.html\#SEC161}}.
+Definition of letrec\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_126.html\#SEC162}}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2879,6 +3045,16 @@ proc ::constcl::rewrite-letrec {expr env} {
 
 
 The \texttt{let*} form is similar to \texttt{let}, but the items in the binding list are considered sequentially, so the initializer in the second or later binding can reference the first binding, etc.
+
+
+
+Syntax: (\textbf{let*} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
+
+
+where \emph{body} is one or more expressions.
+
+
+The \texttt{let*} special form is expanded by \texttt{special-let*}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3914,7 +4090,7 @@ proc ::constcl::make-assignments {vars tmps} {
 \index{make-undefineds procedure}
 
 
-Due to a mysterious bug, \texttt{make-undefineds} actually creates a list of NIL values instead of undefined values.
+\texttt{make-undefineds} creates a list of quoted undefined values.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3925,7 +4101,6 @@ vals & a Lisp list of Lisp values \\
 \end{tabular}
 \begin{lstlisting}
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons [list [S quote] #UND] $res]

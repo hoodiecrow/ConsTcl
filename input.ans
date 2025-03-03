@@ -90,7 +90,8 @@ IF /images/intreplist.png The internal structure of the expression
 
 h3 Input procedures
 
-H5 Ports: an aside
+PT(
+H5 Ports
 
 MD(
 Ports are an abstraction of the input or output mechanism. An input port can be
@@ -102,6 +103,7 @@ connected to standard input (the keyboardF{which doesn't work in a Windows
   Likewise, an output port, regardless of whether it's the standard output--the
   screen--or a file opened for output, will receive characters sent to it.
 MD)
+PT)
 
 H4 parse procedure
 

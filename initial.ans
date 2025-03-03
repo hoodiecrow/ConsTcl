@@ -87,7 +87,8 @@ proc regvar {name value} {
 }
 CB)
 
-h5 Procedures, functions, and commands: an aside
+PT(
+h5 Procedures, functions, and commands
 
 MD(
 I use all of these terms for the subroutines in ConsTcl. I try to stick to
@@ -104,6 +105,7 @@ procedure, because that's the standard term in R5RSF{Revised:5 Report on the
   procedures. Another way to put it is that procedures registered by K{reg}* are
   `public' and those who aren't are `internal'.
 MD)
+PT)
 
 H4 atom? procedure
 
@@ -114,9 +116,12 @@ collections of lists and atoms. Atoms are instances of types such as booleans,
 characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
 an atom by checking for membership in any one of the atomic types. It returns
 K{#t} (true) if it is an atom, and K{#f} (false) if not.
+MD)
 
-h5 Predicates: an aside
+PT(
+h5 Predicates
 
+MD(
 By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
 (procedures that return either K{#t} or K{#f}) have '?' at the end of their
 name. Some care is necessary when calling Scheme predicates from Tcl code (the
@@ -128,8 +133,9 @@ will not do, but
 
 KB if \{[atom? $x] ne "#f"\} D{}
 
-(``[atom? $x] not equal to false'') works. Or see next procedure.
+(``[atom? $x] not equal to false'') works. Or see the K{T} procedure.
 MD)
+PT)
 
 PR(
 atom? (public);val val -> bool

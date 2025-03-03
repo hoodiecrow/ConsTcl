@@ -252,8 +252,7 @@ CB)
 H4 make-undefineds procedure
 
 MD(
-Due to a mysterious bug, K{make-undefineds} actually creates a list of NIL
-values instead of undefined values.
+K{make-undefineds} creates a list of quoted undefined values.
 MD)
 
 PR(
@@ -262,7 +261,6 @@ PR)
 
 CB(
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons [list [S quote] #UND] $res]

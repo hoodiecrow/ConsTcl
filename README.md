@@ -110,7 +110,7 @@ proc regvar {name value} {
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 ```
-##### Procedures, functions, and commands: an aside
+##### Procedures, functions, and commands
 
 
 I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
@@ -123,7 +123,8 @@ And the `internal/public' distinction is probably a misnomer (an aside within an
 
 This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists and atoms. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. `` Atom? `` recognizes an atom by checking for membership in any one of the atomic types. It returns `` #t `` (true) if it is an atom, and `` #f `` (false) if not.
 
-##### Predicates: an aside
+##### Predicates
+
 
 By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
 
@@ -137,7 +138,7 @@ will not do, but
 ``if {[atom? $x] ne "#f"} ...``
 
 
-(``[atom? $x] not equal to false'') works. Or see next procedure.
+(``[atom? $x] not equal to false'') works. Or see the `` T `` procedure.
 
 <table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -740,7 +741,7 @@ Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was ju
 
 ![#](images/intreplist.png)
 ### Input procedures
-##### Ports: an aside
+##### Ports
 
 
 Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
@@ -1542,13 +1543,20 @@ _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to it
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader.
 
 #### quote special form
-<table border=1><thead><tr><th colspan=2 align="left">special-quote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+
+Syntax: (__quote__ _datum_)
+
+
+The `` quote `` special form is expanded by `` special-quote ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">special-quote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg special quote
 
 proc ::constcl::special-quote {expr env} {
-  return [cadr $expr]
+  cadr $expr
 }
 ```
 ### Conditional
@@ -1560,6 +1568,13 @@ _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
 The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
 
 #### if special form
+
+
+Syntax: (__if__ _cond_ _consequent_ ?_alternate_?)
+
+
+The `` if `` special form is expanded by `` special-if ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-if (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1609,7 +1624,23 @@ proc ::constcl::/if1 {cond conseq} {
 Another conditional form is `` case ``. It implements a multi-choice where a single expression selects between alternatives. The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
 
 
-The `` case `` form is implemented by `` special-case ``, with help from `` do-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
+Syntax: (__case__ _key_ _clause_ ...)
+
+
+Where each _clause_ has the form
+
+
+((_datum_ ...) _expression_ ...)
+
+
+The last clause may have the form
+
+
+((__else__ _expression_ ...)
+
+
+The `` case `` special form is expanded by `` special-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
 
 
@@ -1626,15 +1657,21 @@ proc ::constcl::special-case {expr env} {
   eval $expr $env
 }
 ```
-##### caar, cadr, cdar, and the rest: an aside
+##### caar, cadr, cdar, and the rest
 
 
 The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
 
-##### Quasiquote: an aside
+##### Quasiquote
 
 
 In this and many other special form and macro form expanders I use a quasiquote construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (`` ` ``) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (`` , ``). `` `(foo ,bar baz) `` is very nearly the same as `` ('foo bar 'baz) ``. In both cases `` foo `` and `` baz `` are constants while `` bar `` is a variable which will be evaluated. Like in `` do-case `` here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use `` /define `` to bind them in a temporary environment.
+
+
+
+__do-case__ procedure
+
+<table border=1><thead><tr><th colspan=2 align="left">do-case (internal)</th></tr></thead><tr><td>keyexpr</td><td>an expression</td></tr><tr><td>clauses</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::do-case {keyexpr clauses env} {
@@ -1672,10 +1709,23 @@ proc ::constcl::do-case {keyexpr clauses env} {
 `` cond `` is the third conditional form. The `` cond `` form has a list of clauses, each with a predicate and a body. The clauses is considered in order, and if a predicate evaluates to something other than `` #f `` the body is evaluated and the remaining clauses are ignored.
 
 
-The `` cond `` form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
+Syntax: (__cond__ _clause_ ...)
 
 
-__special-cond__ procedure
+Where each _clause_ has the form
+
+
+(_test_ ?__=>__? _expression_ ...)
+
+
+The last clause may have the form
+
+
+((__else__ _expression_ ...)
+
+
+The `` cond `` special form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
 <table border=1><thead><tr><th colspan=2 align="left">special-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1744,6 +1794,13 @@ When expressions are evaluated in sequence, the order is important for two reaso
 As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 #### begin special form
+
+
+Syntax: (__begin__ _expression_ ...)
+
+
+The `` begin `` special form is expanded by `` special-begin ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-begin (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1793,6 +1850,40 @@ _Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything
 We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
 
 #### define special form
+
+
+Syntax: either
+
+
+(__define__ _variable_ _expression_)
+
+
+(__define__ (_variable_ _formals_) _body_)
+
+
+(where _formals_ is a proper or dotted list of identifiers; equivalent form:)
+
+
+(__define__ _variable_ (__lambda__ (_formals_) _body_)).
+
+
+or
+
+
+(__define__ (_variable_ . _formal_) _body_)
+
+
+(where _formal_ is a single identifier; equivalent form:)
+
+
+(__define__ _variable_ (__lambda__ _formal_ _body_))
+
+
+_body_ should be one or more expressions.
+
+
+The `` define `` special form is expanded by `` special-define ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-define (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
@@ -1861,6 +1952,13 @@ _Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed t
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` set! `` special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 #### set! special form
+
+
+Syntax: (__set!__ _variable_ _expression_)
+
+
+The `` set! `` special form is expanded by `` special-set! ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-set! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
@@ -1894,7 +1992,7 @@ Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (
 
 The lambda special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
-##### Scheme formal parameters lists: an aside
+##### Scheme formal parameters lists
 
 
 A Scheme formals list is either:
@@ -1904,6 +2002,16 @@ A Scheme formals list is either:
 *  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
 *  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
 #### lambda special form
+
+
+Syntax: (__lambda__ _formals_ _body_)
+
+
+where _body_ is one or more expressions.
+
+
+The `` lambda `` special form is expanded by `` special-lambda ``.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-lambda (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
@@ -1952,10 +2060,23 @@ proc ::constcl::invoke {pr vals} {
 
 The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of the procedure definition form and a procedure call. But their use is sufficiently distinguished to earn them their own heading.
 
-
-`` special-let `` rewrites the named `` let `` and `regular' `` let `` forms. They are ultimately rewritten to `` lambda `` constructs and evaluated as such.
-
 #### let special form
+
+
+Syntax: (__let__ ((_variable_ _init_) ...) _body_)
+
+
+or
+
+
+(__let__ _variable_ ((_variable_ _init_) ...) _body_)
+
+
+where _body_ is one or more expressions.
+
+
+The `` let `` special form (both forms) is expanded by `` special-let ``. They are ultimately rewritten to `` lambda `` constructs and evaluated as such.
+
 <table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
@@ -2061,7 +2182,17 @@ proc ::constcl::parse-bindings {name bindings} {
 #### letrec special form
 
 
-The `` letrec `` form is similar to `` let ``, but the bindings are created before the values for them are calculated. This means that the values can be mutually recursive.
+The `` letrec `` form is similar to `` let ``, but the bindings are created before the values for them are calculated. This means that one can define mutually recursive procedures.
+
+
+
+Syntax: (__letrec__ ((_variable_ _init_) ...) _body_)
+
+
+where _body_ is one or more expressions.
+
+
+The `` letrec `` special form is expanded by `` special-letrec ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">special-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2079,7 +2210,7 @@ proc ::constcl::special-letrec {expr env} {
 __rewrite-letrec__ procedure
 
 
-[Definition of letrec](https://docs.scheme.org/schintro/schintro_126.html#SEC161).
+[Definition of letrec](https://docs.scheme.org/schintro/schintro_126.html#SEC162).
 
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2111,6 +2242,16 @@ proc ::constcl::rewrite-letrec {expr env} {
 
 
 The `` let* `` form is similar to `` let ``, but the items in the binding list are considered sequentially, so the initializer in the second or later binding can reference the first binding, etc.
+
+
+
+Syntax: (__let*__ ((_variable_ _init_) ...) _body_)
+
+
+where _body_ is one or more expressions.
+
+
+The `` let* `` special form is expanded by `` special-let* ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">special-let* (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2911,13 +3052,12 @@ proc ::constcl::make-assignments {vars tmps} {
 #### make-undefineds procedure
 
 
-Due to a mysterious bug, `` make-undefineds `` actually creates a list of NIL values instead of undefined values.
+`` make-undefineds `` creates a list of quoted undefined values.
 
 <table border=1><thead><tr><th colspan=2 align="left">make-undefineds (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of nil values</td></tr></table>
 
 ```
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons [list [S quote] #UND] $res]

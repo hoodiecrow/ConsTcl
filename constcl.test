@@ -401,6 +401,11 @@ source constcl.tcl
   pew "(begin (display 'a) (display 'b))"
 } -output "ab"
 
+::tcltest::test eval-7.1 {try eval-ing a sequence} -body {
+  set x [p "(begin (define a 3) (define b 4) (display a) (display b))"]
+  set v [::constcl::eval $x [::constcl::MkEnv ::constcl::global_env]]
+} -output "34"
+
 ::tcltest::test eval-8.0 {define} -body {
     w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
@@ -416,6 +421,10 @@ source constcl.tcl
 ::tcltest::test eval-8.3 {define} -body {
     w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
+::tcltest::test eval-8.4 {define} -body {
+    w [::constcl::rewrite-define [p "(define (f . r) (* r r))"] ::constcl::global_env]
+} -output "(define f (lambda r (* r r)))\n"
 
 
 ::tcltest::test eval-9.0 {try eval-ing a define} -body {
@@ -504,6 +513,20 @@ source constcl.tcl
 ::tcltest::test eval-14.1 {run letrec} -body {
   pew "(letrec ((a 0) (b 1)) (+ a b))"
 } -output "1\n"
+
+::tcltest::test eval-14.2 {run letrec} -body {
+  pew {(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+  (even? 88))}
+} -output "#t\n"
 
 ::tcltest::test eval-15.0 {expand let*} -body {
   set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]

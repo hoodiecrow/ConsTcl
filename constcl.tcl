@@ -846,7 +846,7 @@ proc ::constcl::lookup {sym env} {
 reg special quote
 
 proc ::constcl::special-quote {expr env} {
-  return [cadr $expr]
+  cadr $expr
 }
 
 reg special if
@@ -1673,7 +1673,6 @@ proc ::constcl::make-assignments {vars tmps} {
 }
 
 proc ::constcl::make-undefineds {vals} {
-  # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
     set res [cons [list [S quote] #UND] $res]
