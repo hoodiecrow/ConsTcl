@@ -596,12 +596,15 @@ CB(
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  #      TODO
-  if {   0 &   $env ne "::constcl::global_env"} {
+  if {$env ne "::constcl::global_env" && 
+    [T [pair? [cadr $expr]]] &&
+    [T [eq? [caadr $expr] [S define]]]
+  } {
     set expr [resolve-local-defines $expr]
+    eval $expr $env
+  } else {
+    /begin [cdr $expr] $env
   }
-  set args [cdr $expr]
-  /begin $args $env
 }
 CB)
 
@@ -1010,7 +1013,7 @@ PR(
 rewrite-let (internal);expr expr env env -> expr
 PR)
 
-IX rewrite-let
+IX rewrite-let procedure
 CB(
 proc ::constcl::rewrite-let {expr env} {
   # regular let
@@ -1045,7 +1048,7 @@ PR(
 parse-bindings (internal);name name bindings lvals -> none
 PR)
 
-IX parse-bindings
+IX parse-bindings procedure
 CB(
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
@@ -1053,7 +1056,7 @@ proc ::constcl::parse-bindings {name bindings} {
     set var [car $binding]
     set val [cadr $binding]
     if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
+        ::error "'[$var name]' occurs more than once"
     }
     dict set vars $var $val
   }
@@ -1101,6 +1104,80 @@ TT(
     pew "(let ((vec #(a b c)) (k 1)) (list vec k))"
 } -output "(#(a b c) 1)\n"
 
+::tcltest::test eval-13.9 {trigger error in let macro} -body {
+    pew "(let ((a 0) (a 1)) (* a a))"
+} -returnCodes error -result "'a' occurs more than once"
+
+TT)
+
+H4 letrec special form
+
+MD(
+The K{letrec} form is similar to K{let}, but the bindings are created before the
+values for them are calculated. This means that the values can be mutually
+recursive.
+MD)
+
+PR(
+special-letrec (internal);expr expr env env -> expr
+PR)
+
+CB(
+reg special letrec
+
+proc ::constcl::special-letrec {expr env} {
+  set expr [rewrite-letrec $expr $env]
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+CB)
+
+MD(
+B{rewrite-letrec} procedure
+
+L{Definition of letrec}{https://docs.scheme.org/schintro/schintro_126.html#SEC161}.
+MD)
+
+PR(
+rewrite-letrec (internal);expr expr env env -> expr
+PR)
+
+IX rewrite-letrec procedure
+CB(
+proc ::constcl::rewrite-letrec {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  set env [MkEnv $env]
+  /define [S decl] [list {*}[lmap k [
+    dict keys $vars] {
+      list $k [list [S quote] #UND]
+    }]] $env
+  /define [S sets] [list {*}[lmap k [
+    dict keys $vars] {
+      list [S set!] $k [dict get $vars $k]
+    }]] $env
+  /define [S body] $body $env
+  set qq "`(let ,decl ,@sets ,@body)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
+}
+CB)
+
+TT(
+::tcltest::test eval-14.0 {expand letrec} -body {
+  set x [p "(letrec ((a 0) (b 1)) (+ a b))"]
+  set x [::constcl::rewrite-letrec $x ::constcl::global_env]
+  w $x
+} -output "(let ((a (quote #<undefined>)) (b (quote #<undefined>))) (set! a 0) (set! b 1) (+ a b))\n"
+
+::tcltest::test eval-14.1 {run letrec} -body {
+  pew "(letrec ((a 0) (b 1)) (+ a b))"
+} -output "1\n"
 TT)
 
 H4 let* special form
@@ -1154,7 +1231,7 @@ proc ::constcl::rewrite-let* {bindings body env} {
 CB)
 
 TT(
-::tcltest::test eval-14.0 {expand let*} -body {
+::tcltest::test eval-15.0 {expand let*} -body {
   set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]
   set bind [::constcl::cadr $x]
   set body [::constcl::cddr $x]
@@ -1162,7 +1239,7 @@ TT(
   w $x
 } -output "(let ((a 2)) (let ((b (+ a 1))) (begin (* a b))))\n"
 
-::tcltest::test eval-14.1 {run let*} -body {
+::tcltest::test eval-15.1 {run let*} -body {
   pew "(let* ((a 2) (b (+ a 1))) (* a b))"
 } -output "6\n"
 
@@ -1216,7 +1293,7 @@ CB)
 
 TT(
 
-::tcltest::test eval-15.0 {lambda parameter lists} -body {
+::tcltest::test eval-16.0 {lambda parameter lists} -body {
     pew {((lambda (x y z) (list x y z)) 3 4 5)}
     pew {((lambda x                  x) 3 4 5 6)}
     pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
@@ -1224,7 +1301,7 @@ TT(
 } -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
 
 
-::tcltest::test eval-15.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+::tcltest::test eval-16.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
     pew "(if (zero? 0) (* 4 4) (- 5 5))"
 } -output "16\n"
 

@@ -793,7 +793,7 @@ MD)
 CB(
 catch { ::constcl::Undefined destroy }
 
-oo::class create ::constcl::Undefined {
+oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<undefined>"
@@ -813,7 +813,7 @@ MD)
 CB(
 catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecified {
+oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<unspecified>"

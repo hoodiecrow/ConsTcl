@@ -322,7 +322,7 @@ proc ::constcl::null? {val} {
 
 catch { ::constcl::Undefined destroy }
 
-oo::class create ::constcl::Undefined {
+oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<undefined>"
@@ -334,7 +334,7 @@ oo::class create ::constcl::Undefined {
 
 catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecified {
+oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<unspecified>"
@@ -959,12 +959,15 @@ proc ::constcl::do-cond {tail env} {
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  #      TODO
-  if {   0 &   $env ne "::constcl::global_env"} {
+  if {$env ne "::constcl::global_env" && 
+    [T [pair? [cadr $expr]]] &&
+    [T [eq? [caadr $expr] [S define]]]
+  } {
     set expr [resolve-local-defines $expr]
+    eval $expr $env
+  } else {
+    /begin [cdr $expr] $env
   }
-  set args [cdr $expr]
-  /begin $args $env
 }
 
 proc ::constcl::/begin {exps env} {
@@ -1104,11 +1107,42 @@ proc ::constcl::parse-bindings {name bindings} {
     set var [car $binding]
     set val [cadr $binding]
     if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
+        ::error "'[$var name]' occurs more than once"
     }
     dict set vars $var $val
   }
   return
+}
+
+reg special letrec
+
+proc ::constcl::special-letrec {expr env} {
+  set expr [rewrite-letrec $expr $env]
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+
+proc ::constcl::rewrite-letrec {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  set env [MkEnv $env]
+  /define [S decl] [list {*}[lmap k [
+    dict keys $vars] {
+      list $k [list [S quote] #UND]
+    }]] $env
+  /define [S sets] [list {*}[lmap k [
+    dict keys $vars] {
+      list [S set!] $k [dict get $vars $k]
+    }]] $env
+  /define [S body] $body $env
+  set qq "`(let ,decl ,@sets ,@body)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 
 reg special let*
@@ -1642,7 +1676,7 @@ proc ::constcl::make-undefineds {vals} {
   # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
-    set res [cons #NIL $res]
+    set res [cons [list [S quote] #UND] $res]
     set vals [cdr $vals]
   }
   return $res

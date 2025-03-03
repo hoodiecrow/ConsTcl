@@ -1030,7 +1030,7 @@ The \texttt{Undefined} class is for undefined things. It was created to facilita
 \begin{lstlisting}
 catch { ::constcl::Undefined destroy }
 
-oo::class create ::constcl::Undefined {
+oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<undefined>"
@@ -1050,7 +1050,7 @@ The \texttt{Unspecified} class is for unspecified things. Also a S9fES support c
 \begin{lstlisting}
 catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecified {
+oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<unspecified>"
@@ -2404,12 +2404,15 @@ env & an environment \\
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  #      TODO
-  if {   0 &   $env ne "::constcl::global_env"} {
+  if {$env ne "::constcl::global_env" && 
+    [T [pair? [cadr $expr]]] &&
+    [T [eq? [caadr $expr] [S define]]]
+  } {
     set expr [resolve-local-defines $expr]
+    eval $expr $env
+  } else {
+    /begin [cdr $expr] $env
   }
-  set args [cdr $expr]
-  /begin $args $env
 }
 \end{lstlisting}
 
@@ -2754,7 +2757,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
-\index{rewrite-let}
+\index{rewrite-let procedure}
 \begin{lstlisting}
 proc ::constcl::rewrite-let {expr env} {
   # regular let
@@ -2791,7 +2794,7 @@ bindings & a Lisp list of Lisp values \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
-\index{parse-bindings}
+\index{parse-bindings procedure}
 \begin{lstlisting}
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
@@ -2799,11 +2802,75 @@ proc ::constcl::parse-bindings {name bindings} {
     set var [car $binding]
     set val [cadr $binding]
     if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
+        ::error "'[$var name]' occurs more than once"
     }
     dict set vars $var $val
   }
   return
+}
+\end{lstlisting}
+\subsection{letrec special form}
+\label{letrec-special-form}
+\index{letrec special form}
+
+
+The \texttt{letrec} form is similar to \texttt{let}, but the bindings are created before the values for them are calculated. This means that the values can be mutually recursive.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-letrec (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+reg special letrec
+
+proc ::constcl::special-letrec {expr env} {
+  set expr [rewrite-letrec $expr $env]
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+\end{lstlisting}
+
+
+\textbf{rewrite-letrec} procedure
+
+
+Definition of letrec\footnote{See \texttt{https://docs.scheme.org/schintro/schintro\_126.html\#SEC161}}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-letrec (internal)} \\
+expr & an expression \\
+env & an environment \\
+\textit{Returns:} & an expression \\
+\hline
+\end{tabular}
+\index{rewrite-letrec procedure}
+\begin{lstlisting}
+proc ::constcl::rewrite-letrec {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  set env [MkEnv $env]
+  /define [S decl] [list {*}[lmap k [
+    dict keys $vars] {
+      list $k [list [S quote] #UND]
+    }]] $env
+  /define [S sets] [list {*}[lmap k [
+    dict keys $vars] {
+      list [S set!] $k [dict get $vars $k]
+    }]] $env
+  /define [S body] $body $env
+  set qq "`(let ,decl ,@sets ,@body)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 \end{lstlisting}
 \subsection{let* special form}
@@ -3861,7 +3928,7 @@ proc ::constcl::make-undefineds {vals} {
   # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
-    set res [cons #NIL $res]
+    set res [cons [list [S quote] #UND] $res]
     set vals [cdr $vals]
   }
   return $res

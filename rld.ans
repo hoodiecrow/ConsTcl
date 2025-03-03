@@ -265,7 +265,7 @@ proc ::constcl::make-undefineds {vals} {
   # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
-    set res [cons #NIL $res]
+    set res [cons [list [S quote] #UND] $res]
     set vals [cdr $vals]
   }
   return $res
@@ -277,7 +277,7 @@ TT(
 ::tcltest::test rld-1.0 {expand local defines} -body {
     set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) () () ())\n"
+} -output "((lambda (b a n) ((lambda (g<3> g<2> g<1>) (begin (set! n g<1>) (set! a g<2>) (set! b g<3>) (set! n (+ a b)) (* n n))) 4 3 0)) (quote #<undefined>) (quote #<undefined>) (quote #<undefined>))\n"
 
 ::tcltest::test rld-1.1 {run local defines} -body {
     set x [p "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
@@ -297,7 +297,7 @@ TT(
 ::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
     set x [p "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
     w [::constcl::resolve-local-defines $x]
-} -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) ())\n"
+} -output "((lambda (foo) ((lambda (g<7>) (begin (set! foo g<7>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) (quote #<undefined>))\n"
 
 TT)
 

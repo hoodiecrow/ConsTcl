@@ -650,7 +650,7 @@ The `` Undefined `` class is for undefined things. It was created to facilitate 
 ```
 catch { ::constcl::Undefined destroy }
 
-oo::class create ::constcl::Undefined {
+oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<undefined>"
@@ -668,7 +668,7 @@ The `` Unspecified `` class is for unspecified things. Also a S9fES support clas
 ```
 catch { ::constcl::Unspecified destroy }
 
-oo::class create ::constcl::Unspecified {
+oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {handle} {
     puts -nonewline $handle "#<unspecified>"
@@ -1750,12 +1750,15 @@ As part of the processing of sequences _local defines_ are resolved, acting on e
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  #      TODO
-  if {   0 &   $env ne "::constcl::global_env"} {
+  if {$env ne "::constcl::global_env" && 
+    [T [pair? [cadr $expr]]] &&
+    [T [eq? [caadr $expr] [S define]]]
+  } {
     set expr [resolve-local-defines $expr]
+    eval $expr $env
+  } else {
+    /begin [cdr $expr] $env
   }
-  set args [cdr $expr]
-  /begin $args $env
 }
 ```
 
@@ -2048,11 +2051,60 @@ proc ::constcl::parse-bindings {name bindings} {
     set var [car $binding]
     set val [cadr $binding]
     if {$var in [dict keys $vars]} {
-        ::error "'$var' occurs more than once"
+        ::error "'[$var name]' occurs more than once"
     }
     dict set vars $var $val
   }
   return
+}
+```
+#### letrec special form
+
+
+The `` letrec `` form is similar to `` let ``, but the bindings are created before the values for them are calculated. This means that the values can be mutually recursive.
+
+<table border=1><thead><tr><th colspan=2 align="left">special-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+reg special letrec
+
+proc ::constcl::special-letrec {expr env} {
+  set expr [rewrite-letrec $expr $env]
+  set expr [rewrite-let $expr $env]
+  eval $expr $env
+}
+```
+
+
+__rewrite-letrec__ procedure
+
+
+[Definition of letrec](https://docs.scheme.org/schintro/schintro_126.html#SEC161).
+
+<table border=1><thead><tr><th colspan=2 align="left">rewrite-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+
+```
+proc ::constcl::rewrite-letrec {expr env} {
+  # regular let
+  set tail [cdr $expr]
+  set bindings [car $tail]
+  set body [cdr $tail]
+  set vars [dict create]
+  parse-bindings vars $bindings
+  set env [MkEnv $env]
+  /define [S decl] [list {*}[lmap k [
+    dict keys $vars] {
+      list $k [list [S quote] #UND]
+    }]] $env
+  /define [S sets] [list {*}[lmap k [
+    dict keys $vars] {
+      list [S set!] $k [dict get $vars $k]
+    }]] $env
+  /define [S body] $body $env
+  set qq "`(let ,decl ,@sets ,@body)"
+  set expr [expand-quasiquote [parse $qq] $env]
+  $env destroy
+  return $expr
 }
 ```
 #### let* special form
@@ -2868,7 +2920,7 @@ proc ::constcl::make-undefineds {vals} {
   # TODO find bug, substitute #UND
   set res #NIL
   while {$vals ne "#NIL"} {
-    set res [cons #NIL $res]
+    set res [cons [list [S quote] #UND] $res]
     set vals [cdr $vals]
   }
   return $res
