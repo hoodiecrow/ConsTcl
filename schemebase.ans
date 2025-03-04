@@ -205,7 +205,11 @@ PR)
 CB(
 (define (list-copy list)
   (if (null? list)
-      '()
-      (cons (car list)
-            (list-copy (cdr list)))))
+    '()
+    (cons (car list)
+      (list-copy (cdr list)))))
 CB)
+
+MD(
+And that's all. Thank you for joining me on this voyage of exploration.
+MD)

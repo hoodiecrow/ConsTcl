@@ -4433,14 +4433,8 @@ proc ::constcl::vsAlloc {num} {
   return $va
 }
 
-proc ::constcl::resetSymbolTable {} {
-  unset -nocomplain ::constcl::symbolTable
-  set ::constcl::symbolTable [dict create]
-  foreach s {
-    define
-  } {S $s}
-}
-::constcl::resetSymbolTable
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 

@@ -199,9 +199,9 @@ MD)
 
 VB(
 (let ((k 5))
-  (make-string k))        =>  "     "
+  (make-string k))        ==>  "     "
 (let ((k 5) (char #\A))
-  (make-string k char))   =>  "AAAAA"
+  (make-string k char))   ==>  "AAAAA"
 VB)
 
 PR(
@@ -242,7 +242,7 @@ Example:
 MD)
 
 VB(
-(string #\f #\o #\o)   =>  "foo"
+(string #\f #\o #\o)   ==>  "foo"
 VB)
 
 PR(
@@ -288,7 +288,7 @@ Example:
 MD)
 
 VB(
-(string-length "foobar")   => 6
+(string-length "foobar")   ==> 6
 VB)
 
 PR(
@@ -325,7 +325,7 @@ Example:
 MD)
 
 VB(
-(string-ref "foobar" 3)   => #\b
+(string-ref "foobar" 3)   ==> #\b
 VB)
 
 PR(
@@ -370,7 +370,7 @@ VB(
 (let ((str (string #\f #\o #\o))
       (k 2)
       (char #\x))
-  (string-set! str k char))         =>  "fox"
+  (string-set! str k char))         ==>  "fox"
 VB)
 
 PR(
@@ -776,7 +776,7 @@ Example:
 MD)
 
 VB(
-(substring "foobar" 2 4)   => "oba"
+(substring "foobar" 2 4)   ==> "oba"
 VB)
 
 PR(
@@ -822,7 +822,7 @@ Example:
 MD)
 
 VB(
-(string-append "foo" "bar")   =>  "foobar"
+(string-append "foo" "bar")   ==>  "foobar"
 VB)
 
 PR(
@@ -858,7 +858,7 @@ Example:
 MD)
 
 VB(
-(string->list "foo")   =>  (#\f #\o #\o)
+(string->list "foo")   ==>  (#\f #\o #\o)
 VB)
 
 PR(
@@ -892,7 +892,7 @@ Example:
 MD)
 
 VB(
-(list->string '(#\1 #\2 #\3))   => "123"
+(list->string '(#\1 #\2 #\3))   ==> "123"
 VB)
 
 PR(
@@ -930,7 +930,7 @@ VB(
 (let ((str (string-copy "abc"))
       (k 0)
       (char #\x))
-  (string-set! str k char))       =>  "xbc"
+  (string-set! str k char))       ==>  "xbc"
 VB)
 
 PR(
@@ -977,7 +977,7 @@ MD)
 VB(
 (let ((str (string-copy "foobar"))
       (char #\X))
-  (string-fill! str char))           =>  "XXXXXX"
+  (string-fill! str char))           ==>  "XXXXXX"
 VB)
 
 PR(

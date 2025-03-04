@@ -8312,9 +8312,9 @@ Example:
 
 \begin{verbatim}
 (let ((k 5))
-  (make-string k))        =>  "     "
+  (make-string k))        ==>  "     "
 (let ((k 5) (char #\A))
-  (make-string k char))   =>  "AAAAA"
+  (make-string k char))   ==>  "AAAAA"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8350,7 +8350,7 @@ proc ::constcl::make-string {k args} {
 Example:
 
 \begin{verbatim}
-(string #\f #\o #\o)   =>  "foo"
+(string #\f #\o #\o)   ==>  "foo"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8386,7 +8386,7 @@ proc ::constcl::string {args} {
 Example:
 
 \begin{verbatim}
-(string-length "foobar")   => 6
+(string-length "foobar")   ==> 6
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8417,7 +8417,7 @@ proc ::constcl::string-length {str} {
 Example:
 
 \begin{verbatim}
-(string-ref "foobar" 3)   => #\b
+(string-ref "foobar" 3)   ==> #\b
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8457,7 +8457,7 @@ Example:
 (let ((str (string #\f #\o #\o))
       (k 2)
       (char #\x))
-  (string-set! str k char))         =>  "fox"
+  (string-set! str k char))         ==>  "fox"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8756,7 +8756,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 Example:
 
 \begin{verbatim}
-(substring "foobar" 2 4)   => "oba"
+(substring "foobar" 2 4)   ==> "oba"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8798,7 +8798,7 @@ proc ::constcl::substring {str start end} {
 Example:
 
 \begin{verbatim}
-(string-append "foo" "bar")   =>  "foobar"
+(string-append "foo" "bar")   ==>  "foobar"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8828,7 +8828,7 @@ proc ::constcl::string-append {args} {
 Example:
 
 \begin{verbatim}
-(string->list "foo")   =>  (#\f #\o #\o)
+(string->list "foo")   ==>  (#\f #\o #\o)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8856,7 +8856,7 @@ proc ::constcl::string->list {str} {
 Example:
 
 \begin{verbatim}
-(list->string '(#\1 #\2 #\3))   => "123"
+(list->string '(#\1 #\2 #\3))   ==> "123"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8888,7 +8888,7 @@ Example:
 (let ((str (string-copy "abc"))
       (k 0)
       (char #\x))
-  (string-set! str k char))       =>  "xbc"
+  (string-set! str k char))       ==>  "xbc"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8921,7 +8921,7 @@ Example:
 \begin{verbatim}
 (let ((str (string-copy "foobar"))
       (char #\X))
-  (string-fill! str char))           =>  "XXXXXX"
+  (string-fill! str char))           ==>  "XXXXXX"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9055,7 +9055,7 @@ Example:
 
 \begin{verbatim}
 (let ((sym 'Foobar))
-  (symbol->string sym))   =>  "foobar"
+  (symbol->string sym))   ==>  "foobar"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9094,8 +9094,8 @@ Example:
 \begin{verbatim}
 (define sym (let ((str "Foobar"))
               (string->symbol str)))
-sym                                    =>  Foobar
-(symbol->string sym)                   =>  "Foobar"
+sym                                    ==>  Foobar
+(symbol->string sym)                   ==>  "Foobar"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9121,7 +9121,7 @@ proc ::constcl::string->symbol {str} {
 \index{Vectors}
 
 
-Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length minus one.
 
 \subsection{Vector class}
 \label{vector-class}
@@ -9230,7 +9230,7 @@ oo::class create ::constcl::Vector {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkVector (internal)} \\
-vals & a Tcl list of Lisp values \\
+vals & a Lisp or Tcl list of Lisp values \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9272,9 +9272,9 @@ Example:
 
 \begin{verbatim}
 (let ((k 3))
-  (make-vector k))        =>  #(() () ())
+  (make-vector k))        ==>  #(() () ())
 (let ((k 3) (val #\A))
-  (make-vector k val))    =>  #(#\A #\A #\A)
+  (make-vector k val))    ==>  #(#\A #\A #\A)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9308,7 +9308,7 @@ Given a number of Lisp values, \texttt{vector} creates a vector containing them.
 Example:
 
 \begin{verbatim}
-(vector 'a "foo" 99)   =>  #(a "foo" 99)
+(vector 'a "foo" 99)   ==>  #(a "foo" 99)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9336,7 +9336,7 @@ proc ::constcl::vector {args} {
 Example:
 
 \begin{verbatim}
-(vector-length #(a "foo" 99))   =>  3
+(vector-length #(a "foo" 99))   ==>  3
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9368,7 +9368,7 @@ Example:
 
 \begin{verbatim}
 (let ((vec #(a "foo" 99)) (k 1))
-  (vector-ref vec k))              =>  "foo"
+  (vector-ref vec k))              ==>  "foo"
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9406,11 +9406,11 @@ Example:
 (let ((vec #(a b c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  *error*
+  (vector-set! vec k val))      ==>  *error*
 (let ((vec (vector 'a 'b 'c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  #(a x c)
+  (vector-set! vec k val))      ==>  #(a x c)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9446,7 +9446,7 @@ proc ::constcl::vector-set! {vec k val} {
 Example:
 
 \begin{verbatim}
-(vector->list #(a b c))   =>  (a b c)
+(vector->list #(a b c))   ==>  (a b c)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9474,7 +9474,7 @@ proc ::constcl::vector->list {vec} {
 Example:
 
 \begin{verbatim}
-(list->vector '(1 2 3))   =>  #(1 2 3)
+(list->vector '(1 2 3))   ==>  #(1 2 3)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9503,8 +9503,8 @@ Example:
 
 \begin{verbatim}
 (define vec (vector 'a 'b 'c))
-(vector-fill! vec 'x)             =>  #(x x x)
-vec                               =>  #(x x x)
+(vector-fill! vec 'x)             ==>  #(x x x)
+vec                               ==>  #(x x x)
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -9548,14 +9548,8 @@ proc ::constcl::vsAlloc {num} {
 Initialize the symbol table and gensym number.
 
 \begin{lstlisting}
-proc ::constcl::resetSymbolTable {} {
-  unset -nocomplain ::constcl::symbolTable
-  set ::constcl::symbolTable [dict create]
-  foreach s {
-    define
-  } {S $s}
-}
-::constcl::resetSymbolTable
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 \end{lstlisting}
@@ -9909,10 +9903,14 @@ list & a Lisp list of Lisp values \\
 \begin{lstlisting}
 (define (list-copy list)
   (if (null? list)
-      '()
-      (cons (car list)
-            (list-copy (cdr list)))))
+    '()
+    (cons (car list)
+      (list-copy (cdr list)))))
 \end{lstlisting}
+
+
+And that's all. Thank you for joining me on this voyage of exploration.
+
 
 \printindex
 \end{document}

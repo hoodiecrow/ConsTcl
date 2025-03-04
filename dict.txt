@@ -42,6 +42,7 @@ val           -> a Lisp value
 vals          -> some Lisp values
 lvals         -> a Lisp list of Lisp values
 tvals         -> a Tcl list of Lisp values
+xvals         -> a Lisp or Tcl list of Lisp values
 tlvals        -> a Tcl list of Lisp lists of Lisp values
 valorf        -> a Lisp value OR #f
 ass           -> an association pair

@@ -22,14 +22,8 @@ Initialize the symbol table and gensym number.
 MD)
 
 CB(
-proc ::constcl::resetSymbolTable {} {
-  unset -nocomplain ::constcl::symbolTable
-  set ::constcl::symbolTable [dict create]
-  foreach s {
-    define
-  } {S $s}
-}
-::constcl::resetSymbolTable
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 CB)

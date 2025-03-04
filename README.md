@@ -6571,9 +6571,9 @@ Example:
 
 ```
 (let ((k 5))
-  (make-string k))        =>  "     "
+  (make-string k))        ==>  "     "
 (let ((k 5) (char #\A))
-  (make-string k char))   =>  "AAAAA"
+  (make-string k char))   ==>  "AAAAA"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">make-string (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?char?</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -6601,7 +6601,7 @@ proc ::constcl::make-string {k args} {
 Example:
 
 ```
-(string #\f #\o #\o)   =>  "foo"
+(string #\f #\o #\o)   ==>  "foo"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string (public)</th></tr></thead><tr><td>args</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -6630,7 +6630,7 @@ proc ::constcl::string {args} {
 Example:
 
 ```
-(string-length "foobar")   => 6
+(string-length "foobar")   ==> 6
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-length (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -6654,7 +6654,7 @@ proc ::constcl::string-length {str} {
 Example:
 
 ```
-(string-ref "foobar" 3)   => #\b
+(string-ref "foobar" 3)   ==> #\b
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-ref (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
@@ -6686,7 +6686,7 @@ Example:
 (let ((str (string #\f #\o #\o))
       (k 2)
       (char #\x))
-  (string-set! str k char))         =>  "fox"
+  (string-set! str k char))         ==>  "fox"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-set! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -6942,7 +6942,7 @@ proc ::constcl::string-ci>=? {str1 str2} {
 Example:
 
 ```
-(substring "foobar" 2 4)   => "oba"
+(substring "foobar" 2 4)   ==> "oba"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -6975,7 +6975,7 @@ proc ::constcl::substring {str start end} {
 Example:
 
 ```
-(string-append "foo" "bar")   =>  "foobar"
+(string-append "foo" "bar")   ==>  "foobar"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-append (public)</th></tr></thead><tr><td>args</td><td>some strings</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -6998,7 +6998,7 @@ proc ::constcl::string-append {args} {
 Example:
 
 ```
-(string->list "foo")   =>  (#\f #\o #\o)
+(string->list "foo")   ==>  (#\f #\o #\o)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-&gt;list (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of characters</td></tr></table>
 
@@ -7019,7 +7019,7 @@ proc ::constcl::string->list {str} {
 Example:
 
 ```
-(list->string '(#\1 #\2 #\3))   => "123"
+(list->string '(#\1 #\2 #\3))   ==> "123"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">list-&gt;string (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of characters</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -7044,7 +7044,7 @@ Example:
 (let ((str (string-copy "abc"))
       (k 0)
       (char #\x))
-  (string-set! str k char))       =>  "xbc"
+  (string-set! str k char))       ==>  "xbc"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-copy (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -7070,7 +7070,7 @@ Example:
 ```
 (let ((str (string-copy "foobar"))
       (char #\X))
-  (string-fill! str char))           =>  "XXXXXX"
+  (string-fill! str char))           ==>  "XXXXXX"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-fill! (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -7178,7 +7178,7 @@ Example:
 
 ```
 (let ((sym 'Foobar))
-  (symbol->string sym))   =>  "foobar"
+  (symbol->string sym))   ==>  "foobar"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">symbol-&gt;string (public)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
@@ -7210,8 +7210,8 @@ Example:
 ```
 (define sym (let ((str "Foobar"))
               (string->symbol str)))
-sym                                    =>  Foobar
-(symbol->string sym)                   =>  "Foobar"
+sym                                    ==>  Foobar
+(symbol->string sym)                   ==>  "Foobar"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">string-&gt;symbol (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a symbol</td></tr></table>
 
@@ -7230,7 +7230,7 @@ proc ::constcl::string->symbol {str} {
 ### Vectors
 
 
-Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the _length_) is set when the vector is created. Elements can be indexed by integers from zero to length (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the _length_) is set when the vector is created. Elements can be indexed by integers from zero to length minus one.
 
 #### Vector class
 ```
@@ -7332,7 +7332,7 @@ oo::class create ::constcl::Vector {
 
 `` MkVector `` generates a Vector object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkVector (internal)</th></tr></thead><tr><td>vals</td><td>a Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkVector (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp or Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkVector \
@@ -7363,9 +7363,9 @@ Example:
 
 ```
 (let ((k 3))
-  (make-vector k))        =>  #(() () ())
+  (make-vector k))        ==>  #(() () ())
 (let ((k 3) (val #\A))
-  (make-vector k val))    =>  #(#\A #\A #\A)
+  (make-vector k val))    ==>  #(#\A #\A #\A)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?val?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -7391,7 +7391,7 @@ Given a number of Lisp values, `` vector `` creates a vector containing them.
 Example:
 
 ```
-(vector 'a "foo" 99)   =>  #(a "foo" 99)
+(vector 'a "foo" 99)   ==>  #(a "foo" 99)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -7412,7 +7412,7 @@ proc ::constcl::vector {args} {
 Example:
 
 ```
-(vector-length #(a "foo" 99))   =>  3
+(vector-length #(a "foo" 99))   ==>  3
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -7437,7 +7437,7 @@ Example:
 
 ```
 (let ((vec #(a "foo" 99)) (k 1))
-  (vector-ref vec k))              =>  "foo"
+  (vector-ref vec k))              ==>  "foo"
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -7467,11 +7467,11 @@ Example:
 (let ((vec #(a b c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  *error*
+  (vector-set! vec k val))      ==>  *error*
 (let ((vec (vector 'a 'b 'c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  #(a x c)
+  (vector-set! vec k val))      ==>  #(a x c)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -7498,7 +7498,7 @@ proc ::constcl::vector-set! {vec k val} {
 Example:
 
 ```
-(vector->list #(a b c))   =>  (a b c)
+(vector->list #(a b c))   ==>  (a b c)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -7519,7 +7519,7 @@ proc ::constcl::vector->list {vec} {
 Example:
 
 ```
-(list->vector '(1 2 3))   =>  #(1 2 3)
+(list->vector '(1 2 3))   ==>  #(1 2 3)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -7541,8 +7541,8 @@ Example:
 
 ```
 (define vec (vector 'a 'b 'c))
-(vector-fill! vec 'x)             =>  #(x x x)
-vec                               =>  #(x x x)
+(vector-fill! vec 'x)             ==>  #(x x x)
+vec                               ==>  #(x x x)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
@@ -7579,14 +7579,8 @@ proc ::constcl::vsAlloc {num} {
 Initialize the symbol table and gensym number.
 
 ```
-proc ::constcl::resetSymbolTable {} {
-  unset -nocomplain ::constcl::symbolTable
-  set ::constcl::symbolTable [dict create]
-  foreach s {
-    define
-  } {S $s}
-}
-::constcl::resetSymbolTable
+unset -nocomplain ::constcl::symbolTable
+set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 ```
@@ -7843,9 +7837,13 @@ Returns a newly allocated copy of _list_. This copies each of the pairs comprisi
 ```
 (define (list-copy list)
   (if (null? list)
-      '()
-      (cons (car list)
-            (list-copy (cdr list)))))
+    '()
+    (cons (car list)
+      (list-copy (cdr list)))))
 ```
+
+
+And that's all. Thank you for joining me on this voyage of exploration.
+
 
 

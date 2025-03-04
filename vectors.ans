@@ -6,7 +6,7 @@ Vectors are heterogenous structures of fixed length whose elements are indexed
 by integers.
 The number of elements that a vector contains (the E{length}) is set when the
 vector is created.  Elements can be indexed by integers from zero to length
-(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
+minus one.
 MD)
 
 H4 Vector class
@@ -113,7 +113,7 @@ K{MkVector} generates a Vector object.
 MD)
 
 PR(
-MkVector (internal);vals tvals -> vec
+MkVector (internal);vals xvals -> vec
 PR)
 
 CB(
@@ -163,9 +163,9 @@ MD)
 
 VB(
 (let ((k 3))
-  (make-vector k))        =>  #(() () ())
+  (make-vector k))        ==>  #(() () ())
 (let ((k 3) (val #\A))
-  (make-vector k val))    =>  #(#\A #\A #\A)
+  (make-vector k val))    ==>  #(#\A #\A #\A)
 VB)
 
 PR(
@@ -196,7 +196,7 @@ Example:
 MD)
 
 VB(
-(vector 'a "foo" 99)   =>  #(a "foo" 99)
+(vector 'a "foo" 99)   ==>  #(a "foo" 99)
 VB)
 
 PR(
@@ -231,7 +231,7 @@ Example:
 MD)
 
 VB(
-(vector-length #(a "foo" 99))   =>  3
+(vector-length #(a "foo" 99))   ==>  3
 VB)
 
 PR(
@@ -269,7 +269,7 @@ MD)
 
 VB(
 (let ((vec #(a "foo" 99)) (k 1))
-  (vector-ref vec k))              =>  "foo"
+  (vector-ref vec k))              ==>  "foo"
 VB)
 
 PR(
@@ -317,11 +317,11 @@ VB(
 (let ((vec #(a b c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  *error*
+  (vector-set! vec k val))      ==>  *error*
 (let ((vec (vector 'a 'b 'c))
       (k 1)
       (val 'x))
-  (vector-set! vec k val))      =>  #(a x c)
+  (vector-set! vec k val))      ==>  #(a x c)
 VB)
 
 PR(
@@ -363,7 +363,7 @@ Example:
 MD)
 
 VB(
-(vector->list #(a b c))   =>  (a b c)
+(vector->list #(a b c))   ==>  (a b c)
 VB)
 
 PR(
@@ -397,7 +397,7 @@ Example:
 MD)
 
 VB(
-(list->vector '(1 2 3))   =>  #(1 2 3)
+(list->vector '(1 2 3))   ==>  #(1 2 3)
 VB)
 
 PR(
@@ -432,8 +432,8 @@ MD)
 
 VB(
 (define vec (vector 'a 'b 'c))
-(vector-fill! vec 'x)             =>  #(x x x)
-vec                               =>  #(x x x)
+(vector-fill! vec 'x)             ==>  #(x x x)
+vec                               ==>  #(x x x)
 VB)
 
 PR(

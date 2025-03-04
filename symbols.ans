@@ -121,7 +121,7 @@ MD)
 
 VB(
 (let ((sym 'Foobar))
-  (symbol->string sym))   =>  "foobar"
+  (symbol->string sym))   ==>  "foobar"
 VB)
 
 PR(
@@ -175,8 +175,8 @@ MD)
 VB(
 (define sym (let ((str "Foobar"))
               (string->symbol str)))
-sym                                    =>  Foobar
-(symbol->string sym)                   =>  "Foobar"
+sym                                    ==>  Foobar
+(symbol->string sym)                   ==>  "Foobar"
 VB)
 
 PR(
