@@ -1774,7 +1774,7 @@ Syntax: (__cond__ _clause_ ...)
 Where each _clause_ has the form
 
 
-(_test_ ?__=>__? _expression_ ...)
+(_test_ _expression_ ...)
 
 
 or
@@ -1809,7 +1809,7 @@ proc ::constcl::special-cond {expr env} {
 __do-cond__ procedure
 
 
-`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body, stepping over any `` => `` symbols in between. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The form is expanded to a recursive `` if `` form.
+`` do-cond `` is called recursively for every clause of the `` cond `` form. It chops up the clause into predicate and body. In the last clause, the predicate is allowed to be `` else `` (which gets translated to `` #t ``). If there is no body, the body is set to the predicate. The form is expanded to a recursive `` if `` form.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-cond (internal)</th></tr></thead><tr><td>tail</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1823,7 +1823,13 @@ proc ::constcl::do-cond {tail env} {
     set body [cdar $clauses]
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
+      set body [list [caddar $clauses] $pred]
+    } else {
+      if {[[length $body] numval] == 1} {
+        set body [car $body]
+      } elseif {[[length $body] numval] > 1} {
+        set body [cons [S begin] $body]
+      }
     }
     # if this is the last clause...
     if {[T [eq? [length $clauses] #1]]} {
@@ -1841,7 +1847,7 @@ proc ::constcl::do-cond {tail env} {
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
     set qq "`(if ,pred
-               (begin ,@body)
+               ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy

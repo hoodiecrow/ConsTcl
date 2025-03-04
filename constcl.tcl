@@ -942,7 +942,13 @@ proc ::constcl::do-cond {tail env} {
     set body [cdar $clauses]
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
+      set body [list [caddar $clauses] $pred]
+    } else {
+      if {[[length $body] numval] == 1} {
+        set body [car $body]
+      } elseif {[[length $body] numval] > 1} {
+        set body [cons [S begin] $body]
+      }
     }
     # if this is the last clause...
     if {[T [eq? [length $clauses] #1]]} {
@@ -960,7 +966,7 @@ proc ::constcl::do-cond {tail env} {
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
     set qq "`(if ,pred
-               (begin ,@body)
+               ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy

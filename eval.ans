@@ -509,7 +509,7 @@ Syntax: (B{cond} E{clause} ...)
 
 Where each E{clause} has the form
 
-(E{test} ?B{=>}? E{expression} ...)
+(E{test} E{expression} ...)
 
 or
 
@@ -547,8 +547,7 @@ MD(
 B{do-cond} procedure
 
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
-up the clause into predicate and body, stepping over any K{=>} symbols in
-between. In the last clause, the predicate is allowed to be K{else} (which gets
+up the clause into predicate and body. In the last clause, the predicate is allowed to be K{else} (which gets
 translated to K{#t}). If there is no body, the body is set to the predicate. The
 form is expanded to a recursive K{if} form.
 MD)
@@ -568,7 +567,13 @@ proc ::constcl::do-cond {tail env} {
     set body [cdar $clauses]
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
+      set body [list [caddar $clauses] $pred]
+    } else {
+      if {[[length $body] numval] == 1} {
+        set body [car $body]
+      } elseif {[[length $body] numval] > 1} {
+        set body [cons [S begin] $body]
+      }
     }
     # if this is the last clause...
     if {[T [eq? [length $clauses] #1]]} {
@@ -586,7 +591,7 @@ proc ::constcl::do-cond {tail env} {
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
     set qq "`(if ,pred
-               (begin ,@body)
+               ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
@@ -600,18 +605,17 @@ TT(
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (if #t (- 8 5) (quote ()))))\n"
 
 ::tcltest::test eval-6.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
-} -output "3\n3\n"
+} -output "3\n"
 
 ::tcltest::test eval-6.2 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (quote ())))\n"
 
 ::tcltest::test eval-6.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
@@ -621,13 +625,18 @@ TT(
     set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (+ 5 5) (quote ())))\n"
 
 ::tcltest::test eval-6.5 {expand cond macro} -body {
-    set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
+  p {(define alist '((a . 1) (b . 2)))}
+    set x [p "(cond ((assv 'b alist) => cdr) (else #f))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t #f (quote ())))\n"
+
+::tcltest::test eval-6.6 {run cond macro} -body {
+    pew "(cond ((assv 'b '((a . 1) (b . 2))) => cdr) (else #f))"
+} -output "2\n"
 
 TT)
 

@@ -2398,7 +2398,7 @@ Syntax: (\textbf{cond} \emph{clause} \ldots )
 Where each \emph{clause} has the form
 
 
-(\emph{test} ?\textbf{=>}? \emph{expression} \ldots )
+(\emph{test} \emph{expression} \ldots )
 
 
 or
@@ -2439,7 +2439,7 @@ proc ::constcl::special-cond {expr env} {
 \textbf{do-cond} procedure
 
 
-\texttt{do-cond} is called recursively for every clause of the \texttt{cond} form. It chops up the clause into predicate and body, stepping over any \texttt{=>} symbols in between. In the last clause, the predicate is allowed to be \texttt{else} (which gets translated to \texttt{\#t}). If there is no body, the body is set to the predicate. The form is expanded to a recursive \texttt{if} form.
+\texttt{do-cond} is called recursively for every clause of the \texttt{cond} form. It chops up the clause into predicate and body. In the last clause, the predicate is allowed to be \texttt{else} (which gets translated to \texttt{\#t}). If there is no body, the body is set to the predicate. The form is expanded to a recursive \texttt{if} form.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2460,7 +2460,13 @@ proc ::constcl::do-cond {tail env} {
     set body [cdar $clauses]
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [cddar $clauses]
+      set body [list [caddar $clauses] $pred]
+    } else {
+      if {[[length $body] numval] == 1} {
+        set body [car $body]
+      } elseif {[[length $body] numval] > 1} {
+        set body [cons [S begin] $body]
+      }
     }
     # if this is the last clause...
     if {[T [eq? [length $clauses] #1]]} {
@@ -2478,7 +2484,7 @@ proc ::constcl::do-cond {tail env} {
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
     set qq "`(if ,pred
-               (begin ,@body)
+               ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy

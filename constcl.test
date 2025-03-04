@@ -369,18 +369,17 @@ source constcl.tcl
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (if #t (- 8 5) (quote ()))))\n"
 
 ::tcltest::test eval-6.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
-    pew "(cond ((> 3 4) => (+ 4 2)) ((> 1 2) => (+ 5 5)) (else (- 8 5)))"
-} -output "3\n3\n"
+} -output "3\n"
 
 ::tcltest::test eval-6.2 {expand cond macro} -body {
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (quote ())))\n"
 
 ::tcltest::test eval-6.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
@@ -390,13 +389,18 @@ source constcl.tcl
     set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (+ 5 5) (quote ())))\n"
 
 ::tcltest::test eval-6.5 {expand cond macro} -body {
-    set x [p "(cond ((> 3 4) => (+ 4 2) (+ 3 5)) ((> 1 2) => (+ 5 5)))"]
+  p {(define alist '((a . 1) (b . 2)))}
+    set x [p "(cond ((assv 'b alist) => cdr) (else #f))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t #f (quote ())))\n"
+
+::tcltest::test eval-6.6 {run cond macro} -body {
+    pew "(cond ((assv 'b '((a . 1) (b . 2))) => cdr) (else #f))"
+} -output "2\n"
 
 
 ::tcltest::test eval-7.0 {try eval-ing a sequence} -body {
