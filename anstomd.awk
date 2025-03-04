@@ -91,8 +91,8 @@ inen && $1 != "EN" { inen = 0; next }
 $1 == "MD(" { in_md_block = 1 ; print "" ; next }
 $1 == "MD)" { in_md_block = 0 ; flushp() ; next }
 
-$1 == "PT(" { next }
-$1 == "PT)" { next }
+$1 == "PT(" { print "\n\n---\n" ; next }
+$1 == "PT)" { print "\n\n---\n" ; next }
 
 in_md_block && /./  { for (i=1; i<=NF; i++) collect($i) }
 in_md_block && /^$/ { flushp() }
@@ -139,8 +139,8 @@ function render(line) {
         sub(/K{([^{}]+)}/, sprintf("`` %s ``", substr(line, RSTART+2, RLENGTH-3)), line)
     }
 
-    while (match(line, /I{([^{}]+)}/)) {
-        sub(/I{([^{}]+)}/, "", line)
+    if (match(line, /I{([^{}]+)}/)) {
+        gsub(/I{([^{}]+)}/, "", line)
     }
 
     while (match(line, /F{([^{}]+)}/)) {

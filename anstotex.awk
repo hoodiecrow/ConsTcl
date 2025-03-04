@@ -122,19 +122,9 @@ $0 ~ modeline { next; }
 
 $1 == "H9" { print "\\section{Unfinished code in file " FILENAME " line " (FNR+2) "}" ; next }
 
-$1 == "CB(debug" { in_debug_block = 1 ; print "" ; next }
 $1 == "CB("      { in_code_block = 1 ; print "\\begin{lstlisting}" ; next }
-$1 == "CB)"      {
-	if (in_code_block) {
-		in_code_block = 0
-		print "\\end{lstlisting}"
-	} else if (in_debug_block) {
-		in_code_block = 0
-	}
-	next
-}
+$1 == "CB)"      { in_code_block = 0 ; print "\\end{lstlisting}" ; next }
 in_code_block   { print ; next }
-in_debug_block  { next }
 
 
 $1 == "IX" { printf("\\index{%s}\n", substr($0, 4)) ; next }
@@ -180,11 +170,11 @@ inen && $1 != "EN" { print "\\end{enumerate}"; inen = 0; next }
 $1 == "MD(" { in_md_block = 1 ; print "" ; next }
 $1 == "MD)" { in_md_block = 0 ; flushp() ; next }
 
-$1 == "PT(" { print "\n\\begin{pulledtext}" ; next }
-$1 == "PT)" { print "\\end{pulledtext}\n" ; next }
-
 in_md_block && /./  { for (i=1; i<=NF; i++) collect($i) }
 in_md_block && /^$/ { flushp() }
+
+$1 == "PT(" { print "\n\\begin{pulledtext}" ; next }
+$1 == "PT)" { print "\\end{pulledtext}\n" ; next }
 
 $1 == "VB(" { in_vb_block = 1 ; print "\\begin{verbatim}" ; next }
 $1 == "VB)" { in_vb_block = 0 ; print "\\end{verbatim}"   ; next }
@@ -280,9 +270,9 @@ function render(line) {
         sub(/P{([^{}]+)}{([^{}]+)}/, sprintf("${%s}^{%s}$", pow[1], pow[2]), line)
     }
 
-    if (match(line, /===>/)) { gsub(/===>/, sprintf("$\\Longrightarrow$"), line) }
+    if (match(line, /===>/)) { gsub(/===>/, "$\\Longrightarrow$", line) }
 
-    if (match(line, /==>/)) { gsub(/==>/, sprintf("$\\Rightarrow$"), line) }
+    if (match(line, /==>/)) { gsub(/==>/, "$\\Rightarrow$", line) }
 
     if (match(line, /#/)) { gsub(/#/, "\\#", line) }
 

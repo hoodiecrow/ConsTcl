@@ -1013,6 +1013,7 @@ proc ::constcl::/begin {exps env} {
 }
 
 reg special define
+
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -1119,12 +1120,12 @@ proc ::constcl::rewrite-let {expr env} {
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   /define [S body] $body $env
   /define [S vallist] [list {*}[
-  dict values $vars]] $env
+    dict values $vars]] $env
   set qq "`((lambda ,varlist ,@body)
-  ,@vallist)"
+             ,@vallist)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1163,10 +1164,14 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [list {*}[dict keys $outer]] $env
-  /define [S outervals] [list {*}[dict values $outer]] $env
-  /define [S innervars] [list {*}[dict keys $inner]] $env
-  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S outervars] [
+    list {*}[dict keys $outer]] $env
+  /define [S outervals] [
+    list {*}[dict values $outer]] $env
+  /define [S innervars] [
+    list {*}[dict keys $inner]] $env
+  /define [S innervals] [
+    list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
@@ -1184,6 +1189,7 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 
@@ -1775,6 +1781,191 @@ proc ::constcl::write-pair {handle pair} {
     $d write $handle
   }
   return
+}
+
+proc ::constcl::idcheckinit {init} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    return true
+  } else {
+    return false
+  }
+}
+
+proc ::constcl::idchecksubs {subs} {
+  foreach c [split $subs {}] {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+      return false
+    }
+  }
+  return true
+}
+
+proc ::constcl::idcheck {sym} {
+  if {$sym eq {}} {return $sym}
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
+    ::error "Identifier expected ($sym)"
+  }
+  set sym
+}
+
+proc ::constcl::varcheck {sym} {
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
+  }
+  return $sym
+}
+
+catch { ::constcl::Environment destroy }
+
+oo::class create ::constcl::Environment {
+  variable bindings outer_env
+  constructor {syms vals {outer {}}} {
+    set bindings [dict create]
+    if {[T [::constcl::null? $syms]]} {
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
+    } elseif {[T [::constcl::list? $syms]]} {
+      set syms [::constcl::splitlist $syms]
+      set symsn [llength $syms]
+      set valsn [llength $vals]
+      if {$symsn != $valsn} {
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"]
+      }
+      foreach sym $syms val $vals {
+        my bind $sym [lindex $val 0] [lindex $val 1]
+      }
+    } elseif {[T [::constcl::symbol? $syms]]} {
+      my bind $syms VARIABLE [
+        ::constcl::list {*}[lmap v $vals {
+          lindex $v 1
+        }]]
+    } else {
+      while true {
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my bind [::constcl::car $syms] \
+          [lindex $vals 0 0] [lindex $vals 0 1]
+        set vals [lrange $vals 1 end]
+        if {[T [
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]]]} {
+          my bind [::constcl::cdr $syms] \
+            VARIABLE [
+              ::constcl::list {*}[lmap v $vals {
+                lindex $v 1
+              }]]
+          set vals {}
+          break
+        } else {
+          set syms [::constcl::cdr $syms]
+        }
+      }
+    }
+    set outer_env $outer
+  }
+  method find {sym} {
+    if {$sym in [dict keys $bindings]} {
+      self
+    } else {
+      $outer_env find $sym
+    }
+  }
+  method get {sym} {
+    dict get $bindings $sym
+  }
+  method unbind {sym} {
+    dict unset bindings $sym
+  }
+  method bind {sym type info} {
+    if {[dict exists $bindings $sym]} {
+      set bi [my get $sym]
+      lassign $bi bt in
+      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
+        error "[$sym name] is already bound"
+      }
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
+}
+
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
+}
+
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
+}
+
+proc ::constcl::input {prompt} {
+  puts -nonewline $prompt
+  flush stdout
+  set buf [gets stdin]
+  set openpars [regexp -all -inline {\(} $buf]
+  set clsepars [regexp -all -inline {\)} $buf]
+  set openbrak [regexp -all -inline {\[} $buf]
+  set clsebrak [regexp -all -inline {\]} $buf]
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
+    ::append buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    set openbrak [regexp -all -inline {\[} $buf]
+    set clsebrak [regexp -all -inline {\]} $buf]
+  }
+  return $buf
+}
+
+proc ::repl {{prompt "ConsTcl> "}} {
+  set cur_env [::constcl::MkEnv ::constcl::global_env]
+  set str [::constcl::input $prompt]
+  while {$str ne ""} {
+    set expr [::constcl::parse $str]
+    set val [::constcl::eval $expr $cur_env]
+    ::constcl::write $val
+    set str [::constcl::input $prompt]
+  }
+  $cur_env destroy
 }
 
 reg eq?
@@ -2828,12 +3019,6 @@ oo::define ::constcl::Procedure method display {handle} {
 }
 oo::define ::constcl::Procedure method show {} {
   return [self]
-}
-
-oo::define ::constcl::Procedure method debug {} {
-  ::constcl::write $parms
-  ::constcl::write $body
-  puts $env
 }
 
 interp alias {} ::constcl::MkProcedure \
@@ -4237,265 +4422,6 @@ proc ::constcl::vector-fill! {vec fill} {
   $vec fill! $fill
 }
 
-proc ::constcl::idcheckinit {init} {
-  if {[::string is alpha -strict $init] ||
-    $init in {! $ % & * / : < = > ? ^ _ ~}} {
-    return true
-  } else {
-    return false
-  }
-}
-
-proc ::constcl::idchecksubs {subs} {
-  foreach c [split $subs {}] {
-    if {!([::string is alnum -strict $c] ||
-      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
-      return false
-    }
-  }
-  return true
-}
-
-proc ::constcl::idcheck {sym} {
-  if {$sym eq {}} {return $sym}
-  if {(![idcheckinit [::string index $sym 0]] ||
-    ![idchecksubs [::string range $sym 1 end]]) &&
-    $sym ni {+ - ...}} {
-    ::error "Identifier expected ($sym)"
-  }
-  set sym
-}
-
-proc ::constcl::varcheck {sym} {
-  if {$sym in {
-    else => define unquote unquote-splicing
-    quote lambda if set! begin cond and or
-    case let let* letrec do delay quasiquote
-  }} {
-    ::error "Variable name is reserved: $sym"
-  }
-  return $sym
-}
-
-catch { ::constcl::Environment destroy }
-
-oo::class create ::constcl::Environment {
-  variable bindings outer_env
-  constructor {syms vals {outer {}}} {
-    set bindings [dict create]
-    if {[T [::constcl::null? $syms]]} {
-      if {[llength $vals]} {
-        error "too many arguments"
-      }
-    } elseif {[T [::constcl::list? $syms]]} {
-      set syms [::constcl::splitlist $syms]
-      set symsn [llength $syms]
-      set valsn [llength $vals]
-      if {$symsn != $valsn} {
-        error [
-          ::append --> "wrong # of arguments, " \
-            "$valsn instead of $symsn"]
-      }
-      foreach sym $syms val $vals {
-        my bind $sym [lindex $val 0] [lindex $val 1]
-      }
-    } elseif {[T [::constcl::symbol? $syms]]} {
-      my bind $syms VARIABLE [
-        ::constcl::list {*}[lmap v $vals {
-          lindex $v 1
-        }]]
-    } else {
-      while true {
-        if {[llength $vals] < 1} {
-          error "too few arguments"
-        }
-        my bind [::constcl::car $syms] \
-          [lindex $vals 0 0] [lindex $vals 0 1]
-        set vals [lrange $vals 1 end]
-        if {[T [
-          ::constcl::symbol? [
-            ::constcl::cdr $syms]]]} {
-          my bind [::constcl::cdr $syms] \
-            VARIABLE [
-              ::constcl::list {*}[lmap v $vals {
-                lindex $v 1
-              }]]
-          set vals {}
-          break
-        } else {
-          set syms [::constcl::cdr $syms]
-        }
-      }
-    }
-    set outer_env $outer
-  }
-  method find {sym} {
-    if {$sym in [dict keys $bindings]} {
-      self
-    } else {
-      $outer_env find $sym
-    }
-  }
-  method get {sym} {
-    dict get $bindings $sym
-  }
-  method unbind {sym} {
-    dict unset bindings $sym
-  }
-  method bind {sym type info} {
-    if {[dict exists $bindings $sym]} {
-      set bi [my get $sym]
-      lassign $bi bt in
-      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
-        error "[$sym name] is already bound"
-      }
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method assign {sym type info} {
-    if {![dict exists $bindings $sym]} {
-      error "[$sym name] is not bound"
-    }
-    set bi [my get $sym]
-    lassign $bi bt in
-    if {$bt ne "VARIABLE"} {
-      error "[$sym name] is not assignable"
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method parent {} {
-    set outer_env
-  }
-  method names {} {
-    dict keys $bindings
-  }
-  method values {} {
-    dict values $bindings
-  }
-}
-
-proc ::constcl::MkEnv {args} {
-  if {[llength $args] == 1} {
-    set parms #NIL
-    set vals {}
-    lassign $args env
-  } elseif {[llength $args] == 3} {
-    lassign $args parms vals env
-  } else {
-    error "wrong number of arguments"
-  }
-  Environment new $parms $vals $env
-}
-
-proc ::constcl::environment? {val} {
-  typeof? $val Environment
-}
-
-reg environment-has-parent?
-
-proc ::constcl::environment-has-parent? {env} {
-  if {[$env parent] ne "#NIL"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-
-reg environment-parent
-
-proc ::constcl::environment-parent {env} {
-  set parent [$env parent]
-  if {$parent ne "#NIL"} {
-    return $parent
-  } else {
-    error "[$env show] has no parent"
-  }
-}
-
-reg environment-bound-names
-
-proc ::constcl::environment-bound-names {env} {
-  list {*}[$env names]
-}
-
-reg environment-bindings
-
-proc ::constcl::environment-bindings {env} {
-  set keys [list {*}[$env names]]
-  set vals [list {*}[lmap v [$env values] {
-    list [S quote] [list [S [lindex $v 0]] \
-      [MkString [lindex $v 1]]]
-  }]]
-  pairlis-tcl $keys $vals
-}
-
-reg environment-bound?
-
-proc ::constcl::environment-bound? {env sym} {
-  # X
-  set e [$env find $sym]
-  if {$e eq "::constcl::null_env"} {
-    return #f
-  } else {
-    return #t
-  }
-}
-
-reg environment-lookup
-
-proc ::constcl::environment-lookup {env sym} {
-  if {[T [environment-bound? $env $sym]]} {
-    lookup $sym [$env find $sym]
-  }
-}
-
-reg environment-assignable?
-
-proc ::constcl::environment-assignable? {env sym} {
-  if {[environment-bound? $env $sym]} {
-    # all bound names are assignable in ConsTcl
-    return #t
-  }
-}
-
-reg environment-assign!
-
-proc ::constcl::environment-assign! {env sym obj} {
-  /set! $sym $obj $env  
-}
-
-proc ::constcl::nearest-repl/environment {} {
-  # TODO
-}
-
-proc ::constcl::ge {env} {
-  # TODO
-}
-
-reg make-environment
-
-proc ::constcl::make-environment {exps} {
-  set env [
-    MkEnv [the-environment]]
-  set body $exps
-  /define [S body] $body $env
-  set qq "`(let ()
-             ,@body
-             (the-environment))"
-  set expr [expand-quasiquote [parse $qq] $env]
-  return [eval $expr $env]
-}
-
-proc ::constcl::the-environment {} {
-  # TODO
-}
-
-reg interpreter-environment
-
-proc ::constcl::interpreter-environment {val} {
-  # TODO
-}
-
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
 set ::constcl::vectorAssign 0
@@ -4572,34 +4498,3 @@ namespace eval ::constcl {
 }
 
 pe {(load "schemebase.scm")}
-
-proc ::constcl::input {prompt} {
-  puts -nonewline $prompt
-  flush stdout
-  set buf [gets stdin]
-  set openpars [regexp -all -inline {\(} $buf]
-  set clsepars [regexp -all -inline {\)} $buf]
-  set openbrak [regexp -all -inline {\[} $buf]
-  set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] ||
-         [llength $openbrak] > [llength $clsebrak]} {
-    ::append buf [gets stdin]
-    set openpars [regexp -all -inline {\(} $buf]
-    set clsepars [regexp -all -inline {\)} $buf]
-    set openbrak [regexp -all -inline {\[} $buf]
-    set clsebrak [regexp -all -inline {\]} $buf]
-  }
-  return $buf
-}
-
-proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [::constcl::MkEnv ::constcl::global_env]
-  set str [::constcl::input $prompt]
-  while {$str ne ""} {
-    set expr [::constcl::parse $str]
-    set val [::constcl::eval $expr $cur_env]
-    ::constcl::write $val
-    set str [::constcl::input $prompt]
-  }
-  $cur_env destroy
-}

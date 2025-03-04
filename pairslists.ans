@@ -190,9 +190,9 @@ Example:
 MD)
 
 VB(
-(cons 'a 'b)              =>  (a . b)
-(cons 'a nil)             =>  (a)
-(cons 'a (cons 'b nil))   =>  (a b)
+(cons 'a 'b)              ==>  (a . b)
+(cons 'a nil)             ==>  (a)
+(cons 'a (cons 'b nil))   ==>  (a b)
 VB)
 
 IF /images/consing.png Examples of consing
@@ -232,7 +232,7 @@ Example:
 MD)
 
 VB(
-(car '(a b))   =>  a
+(car '(a b))   ==>  a
 VB)
 
 PR(
@@ -272,7 +272,7 @@ Example:
 MD)
 
 VB(
-(cdr '(a b))   =>  (b)
+(cdr '(a b))   ==>  (b)
 VB)
 
 PR(
@@ -367,7 +367,7 @@ MD)
 
 VB(
 (let ((pair (cons 'a 'b)) (val 'x))
-  (set-car! pair val))                =>  (x . b)
+  (set-car! pair val))                ==>  (x . b)
 VB)
 
 PR(
@@ -408,7 +408,7 @@ MD)
 
 VB(
 (let ((pair (cons 'a 'b)) (val 'x))
-  (set-cdr! pair val))                =>  (a . x)
+  (set-cdr! pair val))                ==>  (a . x)
 VB)
 
 PR(
@@ -525,7 +525,7 @@ Example:
 MD)
 
 VB(
-(list 1 2 3)   =>  (1 2 3)
+(list 1 2 3)   ==>  (1 2 3)
 VB)
 
 PR(
@@ -568,7 +568,7 @@ Example:
 MD)
 
 VB(
-(length '(a b c d))   =>  4
+(length '(a b c d))   ==>  4
 VB)
 
 PR(
@@ -629,7 +629,7 @@ Example:
 MD)
 
 VB(
-(append '(a b) '(c d))   =>  (a b c d)
+(append '(a b) '(c d))   ==>  (a b c d)
 VB)
 
 PR(
@@ -703,7 +703,7 @@ Example:
 MD)
 
 VB(
-(reverse '(a b c))   =>  (c b a)
+(reverse '(a b c))   ==>  (c b a)
 VB)
 
 PR(
@@ -739,7 +739,7 @@ MD)
 
 VB(
 (let ((lst '(a b c d e f)) (k 3))
-  (list-tail lst k))                =>  (d e f)
+  (list-tail lst k))                ==>  (d e f)
 VB)
 
 PR(
@@ -778,7 +778,7 @@ MD)
 
 VB(
 (let ((lst '(a b c d e f)) (k 3))
-  (list-ref lst k))                 =>  d
+  (list-ref lst k))                 ==>  d
 VB)
 
 PR(
@@ -819,7 +819,7 @@ MD)
 
 VB(
 (let ((lst '(a b c d e f)) (val 'd))
-  (memq val lst))                      =>  (d e f)
+  (memq val lst))                      ==>  (d e f)
 VB)
 
 PR(
@@ -928,8 +928,9 @@ Example:
 MD)
 
 VB(
-(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
-  (assq key e))                                  => (a . 1)
+(let ((e '((a . 1) (b . 2) (c . 3)))
+      (key 'a))
+  (assq key e))                        ==> (a . 1)
 VB)
 
 PR(

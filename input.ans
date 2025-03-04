@@ -82,7 +82,7 @@ MD(
 Then, parsing and evaluation and writing goes on in the background and the
 internal representations of expressions and values are hidden.
 
-Anyway, the figure shows is what it really looks like. K{::oo::Obj491} was just
+Anyway, the figure shows what it really looks like. K{::oo::Obj491} was just
 the head of the list.
 MD)
 
@@ -95,8 +95,7 @@ H5 Ports
 
 MD(
 Ports are an abstraction of the input or output mechanism. An input port can be
-connected to standard input (the keyboardF{which doesn't work in a Windows
-  windowing environment, i.e. wish or tkcon. repl does work, though.}) or a file
+connected to standard input (the keyboard) or a file
   opened for input or a string input buffer where the complete available input
   is laid out before reading starts. Regardless of what kind of input port it
   is, one can read characters from it until it runs out and signals end-of-file.
@@ -166,12 +165,13 @@ input and produce ConsTcl objects.
 
 One can pass a port to K{read} (including a string input port) in which case
 K{read} sets the standard input port temporarily to the provided port. If not,
-K{read} uses the default standard input port (usually the keyboardF{which,
-  again, doesn't work in a Windows windowing application.}).
+K{read} uses the default standard input port (usually the keyboardF{which doesn't work in a Windows
+  windowing environment, e.g. wish or tkcon. repl does work in those, though.
+  Input works in tclsh on Windows.}).
 MD)
 
 PR(
-read (public);?port? port -> expr
+read (public);?port? iport -> expr
 PR)
 
 CB(
@@ -357,7 +357,7 @@ H4 read-end? procedure
 
 MD(
 K{read-end?} reads one character and returns K{#t} if it is an interspace
-character or an ending parenthesis or bracket, or end of file. Otherwise it
+character or a delimiter character, or end of file. Otherwise it
 returns K{#f}. It ungets the character before returning.
 Shares the variables K{c} and  K{unget} with its caller.
 MD)
@@ -590,7 +590,7 @@ H4 read-identifier-expr procedure
 
 MD(
 K{read-identifier-expr} is activated for 'anything else', and takes in
-characters until it finds whitespace or an ending parenthesis or bracket. If it
+characters until it finds whitespace or a delimiter character. If it
 is passed one or more characters it will use them before consuming any from
 input. It checks the input against the rules for identifiers, accepting or
 rejecting it with an error message. It returns a R{Symbol}{symbols} object.
@@ -661,7 +661,7 @@ MD(
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
 digits, and it actually takes in anything that starts out like a number and
-stops at whitespace or an ending parenthesis or bracket, and then it accepts or
+stops at whitespace or a delimiter character, and then it accepts or
 rejects the input by comparing it to a Tcl double. It returns a
 R{Number}{numbers} object.
 Shares the variables K{c} and K{unget} with its caller.
@@ -924,9 +924,9 @@ H4 read-plus-minus procedure
 MD(
 K{read-plus-minus} is called when a plus or minus is found in the input stream.
 The plus or minus character is passed to it.  If the next character is a digit,
-it delegates to the number reader. If it is a space character, it returns a K{+}
-or K{-} symbol. Otherwide, it delegates to the identifier reader.  Shares the
-variables K{c} and K{unget} with its caller.
+it delegates to the number reader. If it is a space character or a delimiter, it
+returns a K{+} or K{-} symbol. Otherwise, it delegates to the identifier reader.
+Shares the variables K{c} and K{unget} with its caller.
 MD)
 
 PR(

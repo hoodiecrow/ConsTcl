@@ -46,13 +46,6 @@ oo::define ::constcl::Procedure method show {} {
   return [self]
 }
 CB)
-CB(debug
-oo::define ::constcl::Procedure method debug {} {
-  ::constcl::write $parms
-  ::constcl::write $body
-  puts $env
-}
-CB)
 
 H4 MkProcedure generator
 

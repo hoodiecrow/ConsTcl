@@ -124,7 +124,7 @@ PT(
 h5 Predicates
 
 MD(
-By Scheme convention, W{predicates}{Boolean-valued_function}I{predicate}
+By Scheme convention, predicates
 (procedures that return either K{#t} or K{#f}) have '?' at the end of their
 name. Some care is necessary when calling Scheme predicates from Tcl code (the
 Tcl K{if} command expects 1 or 0 as truth values). Example:
@@ -526,7 +526,7 @@ port. It evaluates what is read.
 MD)
 
 PR(
-re (internal);?port? -> val
+re (internal);?port? iport -> val
 PR)
 
 CB(

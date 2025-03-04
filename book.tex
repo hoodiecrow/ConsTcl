@@ -335,7 +335,7 @@ This one isn't just for my convenience: it's a standard procedure in Scheme. The
 \index{predicates}
 
 
-By Scheme convention, predicates\footnote{See \texttt{https://en.wikipedia.org/wiki/Boolean-valued\_function}}\index{predicate} (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
+By Scheme convention, predicates (procedures that return either \texttt{\#t} or \texttt{\#f}) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl \texttt{if} command expects 1 or 0 as truth values). Example:
 
 
 \texttt{if \{[atom? \$x]\} \ldots }
@@ -749,8 +749,8 @@ proc ::pe {str} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf re (internal)} \\
-?port? &  \\
-val &  \\
+?port? & an input port \\
+\textit{Returns:} & a Lisp value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -1137,7 +1137,7 @@ ConsTcl> (+ 2 3)
 Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
 
 
-Anyway, the figure shows is what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
+Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
 
 \begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{ The internal structure of the expression}\label{fig:-the-internal-structure-of-the-expression}\end{figure}
 \section{Input procedures}
@@ -1150,7 +1150,7 @@ Anyway, the figure shows is what it really looks like. \texttt{::oo::Obj491} was
 \index{Ports}
 
 
-Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard\footnote{which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.}) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 
 \end{pulledtext}
 
@@ -1201,12 +1201,12 @@ proc ::constcl::parse {inp} {
 The standard builtin \texttt{read} reads an input port the same way that \texttt{parse} does, but one can't pass a string to it. The \texttt{read-} procedures parse their input and produce ConsTcl objects.
 
 
-One can pass a port to \texttt{read} (including a string input port) in which case \texttt{read} sets the standard input port temporarily to the provided port. If not, \texttt{read} uses the default standard input port (usually the keyboard\footnote{which, again, doesn't work in a Windows windowing application.}).
+One can pass a port to \texttt{read} (including a string input port) in which case \texttt{read} sets the standard input port temporarily to the provided port. If not, \texttt{read} uses the default standard input port (usually the keyboard\footnote{which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.}).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read (public)} \\
-?port? & a port \\
+?port? & an input port \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
@@ -1365,7 +1365,7 @@ proc ::constcl::find-char? {char} {
 \index{read-end? procedure}
 
 
-\texttt{read-end?} reads one character and returns \texttt{\#t} if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns \texttt{\#f}. It ungets the character before returning. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-end?} reads one character and returns \texttt{\#t} if it is an interspace character or a delimiter character, or end of file. Otherwise it returns \texttt{\#f}. It ungets the character before returning. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1542,7 +1542,7 @@ proc ::constcl::read-character-expr {} {
 \index{read-identifier-expr procedure}
 
 
-\texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or a delimiter character. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1584,7 +1584,7 @@ proc ::constcl::read-identifier-expr {args} {
 \index{read-number-expr procedure}
 
 
-\texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It is activated by \texttt{read-expr} or \texttt{read-plus-minus} if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It is activated by \texttt{read-expr} or \texttt{read-plus-minus} if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or a delimiter character, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1742,7 +1742,7 @@ proc ::constcl::read-pair {char} {
 \index{read-plus-minus procedure}
 
 
-\texttt{read-plus-minus} is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character, it returns a \texttt{+} or \texttt{-} symbol. Otherwide, it delegates to the identifier reader. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-plus-minus} is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character or a delimiter, it returns a \texttt{+} or \texttt{-} symbol. Otherwise, it delegates to the identifier reader. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2058,7 +2058,7 @@ proc ::constcl::self-evaluating? {val} {
 \index{eval-form procedure}
 
 
-If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-form} looks at the \emph{binding information} (which the \texttt{reg} procedure puts into the standard library and thereby the global environment) for the symbol. The \emph{binding type} tells in general how the expression should be treated: as a special form, a variable, or a macro (see page \pageref{macros}). The \emph{info} gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
+If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-form} looks at the \emph{binding information} (which the \texttt{reg} procedure (see page \pageref{reg-procedure}) puts into the standard library and thereby the global environment) for the symbol. The \emph{binding type} tells in general how the expression should be treated: as a special form, a variable, or a macro (see page \pageref{macros}). The \emph{info} gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2322,7 +2322,7 @@ Where each \emph{clause} has the form
 The last clause may have the form
 
 
-((\textbf{else} \emph{expression} \ldots )
+(\textbf{else} \emph{expression} \ldots )
 
 
 The \texttt{case} special form is expanded by \texttt{special-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
@@ -2444,7 +2444,7 @@ where \emph{recipient} is a procedure that accepts one argument, which is evalua
 The last clause may have the form
 
 
-((\textbf{else} \emph{expression} \ldots )
+(\textbf{else} \emph{expression} \ldots )
 
 
 The \texttt{cond} special form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
@@ -2662,6 +2662,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 reg special define
+
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -2996,12 +2997,12 @@ proc ::constcl::rewrite-let {expr env} {
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   /define [S body] $body $env
   /define [S vallist] [list {*}[
-  dict values $vars]] $env
+    dict values $vars]] $env
   set qq "`((lambda ,varlist ,@body)
-  ,@vallist)"
+             ,@vallist)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -3097,10 +3098,14 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [list {*}[dict keys $outer]] $env
-  /define [S outervals] [list {*}[dict values $outer]] $env
-  /define [S innervars] [list {*}[dict keys $inner]] $env
-  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S outervars] [
+    list {*}[dict keys $outer]] $env
+  /define [S outervals] [
+    list {*}[dict values $outer]] $env
+  /define [S innervars] [
+    list {*}[dict keys $inner]] $env
+  /define [S innervals] [
+    list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
@@ -3144,6 +3149,7 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 \end{lstlisting}
@@ -4298,6 +4304,318 @@ proc ::constcl::write-pair {handle pair} {
   return
 }
 \end{lstlisting}
+\chapter{Identifier validation}
+\label{identifier-validation}
+
+
+\textbf{idcheckinit}
+
+
+\textbf{idchecksubs}
+
+
+\textbf{idcheck}
+
+
+\textbf{varcheck}
+
+
+Some routines for checking if a string is a valid identifier. \texttt{idcheckinit} checks the first character, \texttt{idchecksubs} checks the rest. \texttt{idcheck} calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which \texttt{varcheck} checks, for a set of keywords given in the standard.
+
+\index{idcheckinit}
+\begin{lstlisting}
+proc ::constcl::idcheckinit {init} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    return true
+  } else {
+    return false
+  }
+}
+\end{lstlisting}
+\index{idchecksubs}
+\begin{lstlisting}
+proc ::constcl::idchecksubs {subs} {
+  foreach c [split $subs {}] {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+      return false
+    }
+  }
+  return true
+}
+\end{lstlisting}
+\index{idcheck}
+\begin{lstlisting}
+proc ::constcl::idcheck {sym} {
+  if {$sym eq {}} {return $sym}
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
+    ::error "Identifier expected ($sym)"
+  }
+  set sym
+}
+\end{lstlisting}
+\index{varcheck}
+\begin{lstlisting}
+proc ::constcl::varcheck {sym} {
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
+  }
+  return $sym
+}
+\end{lstlisting}
+\chapter{Environment class and objects}
+\label{environment-class-and-objects}
+
+
+The class for environments is called \texttt{Environment}. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+
+
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+
+\subsection{Environment class}
+\label{environment-class}
+\index{Environment class}
+\begin{lstlisting}
+catch { ::constcl::Environment destroy }
+
+oo::class create ::constcl::Environment {
+  variable bindings outer_env
+  constructor {syms vals {outer {}}} {
+    set bindings [dict create]
+    if {[T [::constcl::null? $syms]]} {
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
+    } elseif {[T [::constcl::list? $syms]]} {
+      set syms [::constcl::splitlist $syms]
+      set symsn [llength $syms]
+      set valsn [llength $vals]
+      if {$symsn != $valsn} {
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"]
+      }
+      foreach sym $syms val $vals {
+        my bind $sym [lindex $val 0] [lindex $val 1]
+      }
+    } elseif {[T [::constcl::symbol? $syms]]} {
+      my bind $syms VARIABLE [
+        ::constcl::list {*}[lmap v $vals {
+          lindex $v 1
+        }]]
+    } else {
+      while true {
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my bind [::constcl::car $syms] \
+          [lindex $vals 0 0] [lindex $vals 0 1]
+        set vals [lrange $vals 1 end]
+        if {[T [
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]]]} {
+          my bind [::constcl::cdr $syms] \
+            VARIABLE [
+              ::constcl::list {*}[lmap v $vals {
+                lindex $v 1
+              }]]
+          set vals {}
+          break
+        } else {
+          set syms [::constcl::cdr $syms]
+        }
+      }
+    }
+    set outer_env $outer
+  }
+  method find {sym} {
+    if {$sym in [dict keys $bindings]} {
+      self
+    } else {
+      $outer_env find $sym
+    }
+  }
+  method get {sym} {
+    dict get $bindings $sym
+  }
+  method unbind {sym} {
+    dict unset bindings $sym
+  }
+  method bind {sym type info} {
+    if {[dict exists $bindings $sym]} {
+      set bi [my get $sym]
+      lassign $bi bt in
+      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
+        error "[$sym name] is already bound"
+      }
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
+}
+\end{lstlisting}
+\subsection{MkEnv generator}
+\label{mkenv-generator}
+\index{MkEnv generator}
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkEnv (internal)} \\
+?parms? & a Scheme formals list \\
+?vals? & a Tcl list of Lisp values \\
+env & an environment \\
+\textit{Returns:} & an environment \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
+}
+\end{lstlisting}
+\subsection{environment? procedure}
+\label{environment?-procedure}
+\index{environment? procedure}
+
+
+Recognizes an environment by type.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment? (public)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
+}
+\end{lstlisting}
+\section{Lexical scoping}
+\label{lexical-scoping}
+\index{Lexical scoping}
+
+
+Example:
+
+\begin{verbatim}
+ConsTcl> (define (circle-area r) (* pi (* r r)))
+ConsTcl> (circle-area 10)
+314.1592653589793
+\end{verbatim}
+
+
+During a call to the procedure \texttt{circle-area}, the symbol \texttt{r} is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of \texttt{r}. The solution is to use separate (but linked) environments, making \texttt{r}'s binding a local variable\footnote{See \texttt{https://en.wikipedia.org/wiki/Local\_variable}}\index{local variable} in its own environment, which the procedure will be evaluated in. The symbols \texttt{*} and \texttt{pi} will still be available through the local environment's link to the outer global environment. This is all part of lexical scoping\footnote{See \texttt{https://en.wikipedia.org/wiki/Scope\_(computer\_science)\#Lexical\_scope}}\index{lexical scope}.
+
+
+In the first image, we see the global environment before we call \texttt{circle-area} (and also the empty null environment which the global environment links to):
+
+\includegraphics{images/env1.png}
+
+During the call. Note how the global \texttt{r} is shadowed by the local one, and how the local environment links to the global one to find \texttt{*} and \texttt{pi}.
+
+\includegraphics{images/env2.png}
+
+After the call, we are back to the first state again.
+
+\includegraphics{images/env1.png}
+\chapter{The REPL}
+\label{the-repl}
+
+
+The REPL (read-eval-print loop) is a loop that repeatedly \emph{reads} a Scheme source string from the user through the command \texttt{::constcl::input} (breaking the loop if given an empty line) and \texttt{::constcl::parse}, \emph{evaluates} it using \texttt{::constcl::eval}, and \emph{prints} using \texttt{::constcl::write}.
+
+
+
+\textbf{input}
+
+
+\texttt{input} is modelled after the Python 3 function. It displays a prompt and reads a string.
+
+\index{input}
+\begin{lstlisting}
+proc ::constcl::input {prompt} {
+  puts -nonewline $prompt
+  flush stdout
+  set buf [gets stdin]
+  set openpars [regexp -all -inline {\(} $buf]
+  set clsepars [regexp -all -inline {\)} $buf]
+  set openbrak [regexp -all -inline {\[} $buf]
+  set clsebrak [regexp -all -inline {\]} $buf]
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
+    ::append buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    set openbrak [regexp -all -inline {\[} $buf]
+    set clsebrak [regexp -all -inline {\]} $buf]
+  }
+  return $buf
+}
+\end{lstlisting}
+
+
+\textbf{repl}
+
+
+\texttt{repl} puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+
+\index{repl}
+\begin{lstlisting}
+proc ::repl {{prompt "ConsTcl> "}} {
+  set cur_env [::constcl::MkEnv ::constcl::global_env]
+  set str [::constcl::input $prompt]
+  while {$str ne ""} {
+    set expr [::constcl::parse $str]
+    set val [::constcl::eval $expr $cur_env]
+    ::constcl::write $val
+    set str [::constcl::input $prompt]
+  }
+  $cur_env destroy
+}
+\end{lstlisting}
+
+
+Well!
+
+
+After 1843 lines of code, the interpreter is done. Now for the built-in procedures.
+
 \chapter{Built-in procedures}
 \label{built-in-procedures}
 \section{Equivalence predicates}
@@ -6197,10 +6515,13 @@ oo::define ::constcl::Procedure method show {} {
   return [self]
 }
 \end{lstlisting}
-
 \subsection{MkProcedure generator}
 \label{mkprocedure-generator}
 \index{MkProcedure generator}
+
+
+\texttt{MkProcedure} generates a Procedure object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkProcedure (internal)} \\
@@ -6240,6 +6561,17 @@ proc ::constcl::procedure? {val} {
 \subsection{apply procedure}
 \label{apply-procedure}
 \index{apply procedure}
+
+
+\texttt{apply} applies a procedure to a Lisp list of Lisp arguments.
+
+
+
+Example:
+
+\begin{verbatim}
+(apply + (list 2 3))   =>  5
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf apply (public)} \\
@@ -6261,6 +6593,17 @@ proc ::constcl::apply {pr vals} {
 \subsection{map procedure}
 \label{map-procedure}
 \index{map procedure}
+
+
+\texttt{map} iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The Lisp list of the results of the invocations is returned.
+
+
+
+Example:
+
+\begin{verbatim}
+(map + '(1 2 3) '(5 6 7))   => (6 8 10)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf map (public)} \\
@@ -6302,6 +6645,21 @@ proc ::constcl::map {pr args} {
 \subsection{for-each procedure}
 \label{for-each-procedure}
 \index{for-each procedure}
+
+
+\texttt{for-each} iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
+
+
+
+Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach it.)
+
+\begin{verbatim}
+(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)                        =>  #(0 1 4 9 16)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf for-each (public)} \\
@@ -6413,6 +6771,10 @@ oo::class create ::constcl::InputPort {
 \subsection{MkInputPort generator}
 \label{mkinputport-generator}
 \index{MkInputPort generator}
+
+
+\texttt{MkInputPort} generates an InputPort object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
@@ -6499,6 +6861,10 @@ oo::class create ::constcl::OutputPort {
 \subsection{MkOutputPort generator}
 \label{mkoutputport-generator}
 \index{MkOutputPort generator}
+
+
+\texttt{MkOutputPort} generates an OutputPort object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkOutputPort (internal)} \\
@@ -6510,6 +6876,16 @@ filename & a filename string \\
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
 \end{lstlisting}
+
+
+\textbf{Input\_Port} variable
+
+
+\textbf{Output\_port} variable
+
+
+These two variables store globally the current configuration of the shared input and output ports. They are initially set to standard input and output respectively.
+
 \begin{lstlisting}
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
@@ -6519,6 +6895,10 @@ set ::constcl::Output_port [
 \subsection{port? procedure}
 \label{port?-procedure}
 \index{port? procedure}
+
+
+\texttt{port?} recognizes Port objects.
+
 \begin{lstlisting}
 reg port?
 
@@ -6529,6 +6909,10 @@ proc ::constcl::port? {val} {
 \subsection{call-with-input-file procedure}
 \label{call-with-input-file-procedure}
 \index{call-with-input-file procedure}
+
+
+\texttt{call-with-input-file} opens a file for input and passes the port to \texttt{proc}. The file is closed again once \texttt{proc} returns. The result of the call is returned.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-input-file (public)} \\
@@ -6551,6 +6935,13 @@ proc ::constcl::call-with-input-file {filename proc} {
 \subsection{call-with-output-file procedure}
 \label{call-with-output-file-procedure}
 \index{call-with-output-file procedure}
+
+
+\texttt{call-with-output-file} opens a file for output and passes the port to \texttt{proc}. The file is closed again once \texttt{proc} returns. The result of the call is returned.
+
+
+You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-output-file (public)} \\
@@ -6574,6 +6965,10 @@ proc ::constcl::call-with-output-file {filename proc} {
 \subsection{input-port? procedure}
 \label{input-port?-procedure}
 \index{input-port? procedure}
+
+
+\texttt{input-port?} recognizes an InputPort object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf input-port? (public)} \\
@@ -6591,6 +6986,10 @@ proc ::constcl::input-port? {val} {
 \subsection{output-port? procedure}
 \label{output-port?-procedure}
 \index{output-port? procedure}
+
+
+\texttt{output-port?} recognizes an OutputPort object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf output-port? (public)} \\
@@ -6608,6 +7007,10 @@ proc ::constcl::output-port? {val} {
 \subsection{current-input-port procedure}
 \label{current-input-port-procedure}
 \index{current-input-port procedure}
+
+
+\texttt{current-input-port} makes a copy of the current shared input port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf current-input-port (public)} \\
@@ -6624,6 +7027,10 @@ proc ::constcl::current-input-port {} {
 \subsection{current-output-port procedure}
 \label{current-output-port-procedure}
 \index{current-output-port procedure}
+
+
+\texttt{current-output-port} makes a copy of the current shared output port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf current-output-port (public)} \\
@@ -6640,6 +7047,10 @@ proc ::constcl::current-output-port {} {
 \subsection{with-input-from-file procedure}
 \label{with-input-from-file-procedure}
 \index{with-input-from-file procedure}
+
+
+\texttt{with-input-from-file} opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf with-input-from-file (public)} \\
@@ -6666,6 +7077,10 @@ proc ::constcl::with-input-from-file {filename thunk} {
 \subsection{with-output-to-file procedure}
 \label{with-output-to-file-procedure}
 \index{with-output-to-file procedure}
+
+
+\texttt{with-output-to-file} opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf with-output-to-file (public)} \\
@@ -6693,6 +7108,10 @@ proc ::constcl::with-output-to-file {filename thunk} {
 \subsection{open-input-file procedure}
 \label{open-input-file-procedure}
 \index{open-input-file procedure}
+
+
+\texttt{open-input-file} opens a file for input and returns the port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf open-input-file (public)} \\
@@ -6719,6 +7138,10 @@ proc ::constcl::open-input-file {filename} {
 \subsection{open-output-file procedure}
 \label{open-output-file-procedure}
 \index{open-output-file procedure}
+
+
+\texttt{open-output-file} opens a file for output and returns the port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf open-output-file (public)} \\
@@ -6745,6 +7168,10 @@ proc ::constcl::open-output-file {filename} {
 \subsection{close-input-port procedure}
 \label{close-input-port-procedure}
 \index{close-input-port procedure}
+
+
+\texttt{close-input-port} closes an input port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf close-input-port (public)} \\
@@ -6765,6 +7192,10 @@ proc ::constcl::close-input-port {port} {
 \subsection{close-output-port procedure}
 \label{close-output-port-procedure}
 \index{close-output-port procedure}
+
+
+\texttt{close-output-port} closes an output port.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf close-output-port (public)} \\
@@ -6782,9 +7213,21 @@ proc ::constcl::close-output-port {port} {
   $port close
 }
 \end{lstlisting}
+
+
+\texttt{write} is implemented in the output (see page \pageref{output}) chapter.
+
+
+
+\texttt{display} is implemented in the output chapter.
+
 \subsection{newline procedure}
 \label{newline-procedure}
 \index{newline procedure}
+
+
+\texttt{newline} outputs a newline character. Especially helpful when using \texttt{display} for output, since it doesn't end lines with newline.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf newline (public)} \\
@@ -6804,6 +7247,13 @@ proc ::constcl::newline {args} {
   pe "(display #\\newline '$port)"
 }
 \end{lstlisting}
+
+
+\textbf{load}
+
+
+\texttt{load} reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf load (public)} \\
@@ -6830,6 +7280,10 @@ proc ::constcl::load {filename} {
 \section{Pairs and lists}
 \label{pairs-and-lists}
 \index{Pairs and lists}
+
+
+List processing is another of Lisp's great strengths.
+
 \subsection{Pair class}
 \label{pair-class}
 \index{Pair class}
@@ -6893,6 +7347,10 @@ oo::class create ::constcl::Pair {
 \subsection{MkPair generator}
 \label{mkpair-generator}
 \index{MkPair generator}
+
+
+\texttt{MkPair} generates a Pair object. Shorter form: \texttt{cons}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkPair (internal)} \\
@@ -6925,6 +7383,10 @@ proc ::constcl::pair? {val} {
 \subsection{show-pair procedure}
 \label{show-pair-procedure}
 \index{show-pair procedure}
+
+
+Helper procedure to make a string representation of a list.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf show-pair (internal)} \\
@@ -6959,6 +7421,20 @@ proc ::constcl::show-pair {pair} {
 \subsection{cons procedure}
 \label{cons-procedure}
 \index{cons procedure}
+
+
+\texttt{cons} joins two values in a pair; useful in many operations such as pushing a new value onto a list.
+
+
+
+Example:
+
+\begin{verbatim}
+(cons 'a 'b)              ==>  (a . b)
+(cons 'a nil)             ==>  (a)
+(cons 'a (cons 'b nil))   ==>  (a b)
+\end{verbatim}
+\begin{figure}[h!]\includegraphics{images/consing.png}\captionsetup{labelformat=empty}\caption{ Examples of consing}\label{fig:-examples-of-consing}\end{figure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cons (public)} \\
@@ -6977,6 +7453,17 @@ proc ::constcl::cons {car cdr} {
 \subsection{car procedure}
 \label{car-procedure}
 \index{car procedure}
+
+
+\texttt{car} gets the contents of the first cell in a pair.
+
+
+
+Example:
+
+\begin{verbatim}
+(car '(a b))   ==>  a
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf car (public)} \\
@@ -6994,6 +7481,17 @@ proc ::constcl::car {pair} {
 \subsection{cdr procedure}
 \label{cdr-procedure}
 \index{cdr procedure}
+
+
+\texttt{cdr} gets the contents of the second cell in a pair.
+
+
+
+Example:
+
+\begin{verbatim}
+(cdr '(a b))   ==>  (b)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cdr (public)} \\
@@ -7008,6 +7506,14 @@ proc ::constcl::cdr {pair} {
   $pair cdr
 }
 \end{lstlisting}
+
+
+\textbf{caar} to \textbf{cddddr}
+
+
+\texttt{car} and \texttt{cdr} can be combined to form 28 composite access operations.
+
+\index{caar}
 \begin{lstlisting}
 foreach ads {
   aa
@@ -7057,6 +7563,18 @@ foreach ads {
 \subsection{set-car! procedure}
 \label{set-car"!-procedure}
 \index{set-car"! procedure}
+
+
+\texttt{set-car!} sets the contents of the first cell in a pair.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-car! pair val))                ==>  (x . b)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-car! (public)} \\
@@ -7075,6 +7593,18 @@ proc ::constcl::set-car! {pair val} {
 \subsection{set-cdr! procedure}
 \label{set-cdr"!-procedure}
 \index{set-cdr"! procedure}
+
+
+\texttt{set-cdr!} sets the contents of the second cell in a pair.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-cdr! pair val))                ==>  (a . x)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-cdr! (public)} \\
@@ -7093,6 +7623,10 @@ proc ::constcl::set-cdr! {pair val} {
 \subsection{list? procedure}
 \label{list?-procedure}
 \index{list? procedure}
+
+
+The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:-a-proper-list-and-two-improper-ones}).
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list? (public)} \\
@@ -7114,6 +7648,13 @@ proc ::constcl::list? {val} {
   }
 }
 \end{lstlisting}
+
+
+\textbf{listp} procedure
+
+
+\texttt{listp} is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in \texttt{\#NIL}, which means that it returns true.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf listp (internal)} \\
@@ -7121,6 +7662,7 @@ pair & a pair \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
+\index{listp}
 \begin{lstlisting}
 proc ::constcl::listp {pair} {
   upvar visited visited
@@ -7140,6 +7682,17 @@ proc ::constcl::listp {pair} {
 \subsection{list procedure}
 \label{list-procedure}
 \index{list procedure}
+
+
+\texttt{list} constructs a Lisp list from a number of values.
+
+
+
+Example:
+
+\begin{verbatim}
+(list 1 2 3)   ==>  (1 2 3)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list (public)} \\
@@ -7165,6 +7718,17 @@ proc ::constcl::list {args} {
 \subsection{length procedure}
 \label{length-procedure}
 \index{length procedure}
+
+
+\texttt{length} reports the length of a Lisp list.
+
+
+
+Example:
+
+\begin{verbatim}
+(length '(a b c d))   ==>  4
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf length (public)} \\
@@ -7182,6 +7746,13 @@ proc ::constcl::length {pair} {
   MkNumber [length-helper $pair]
 }
 \end{lstlisting}
+
+
+\textbf{length-helper} procedure
+
+
+\texttt{length-helper} is a helper procedure which measures a list recursively.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf length-helper (internal)} \\
@@ -7189,6 +7760,7 @@ pair & a pair \\
 \textit{Returns:} & a Tcl number \\
 \hline
 \end{tabular}
+\index{length-helper}
 \begin{lstlisting}
 proc ::constcl::length-helper {pair} {
   if {[T [null? $pair]]} {
@@ -7202,6 +7774,17 @@ proc ::constcl::length-helper {pair} {
 \subsection{append procedure}
 \label{append-procedure}
 \index{append procedure}
+
+
+\texttt{append} joins lists together.
+
+
+
+Example:
+
+\begin{verbatim}
+(append '(a b) '(c d))   ==>  (a b c d)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf append (public)} \\
@@ -7223,6 +7806,13 @@ proc ::constcl::append {args} {
   set prev
 }
 \end{lstlisting}
+
+
+\textbf{copy-list} procedure
+
+
+\texttt{copy-list} joins together two lists by recursively consing items from the first list towards the second.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf copy-list (internal)} \\
@@ -7231,6 +7821,7 @@ next & a Lisp list of Lisp values \\
 \textit{Returns:} & a Lisp list of Lisp values \\
 \hline
 \end{tabular}
+\index{copy-list}
 \begin{lstlisting}
 proc ::constcl::copy-list {pair next} {
   # TODO only fresh conses in the direct chain to NIL
@@ -7246,6 +7837,17 @@ proc ::constcl::copy-list {pair next} {
 \subsection{reverse procedure}
 \label{reverse-procedure}
 \index{reverse procedure}
+
+
+\texttt{reverse} produces a reversed copy of a Lisp list.
+
+
+
+Example:
+
+\begin{verbatim}
+(reverse '(a b c))   ==>  (c b a)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reverse (public)} \\
@@ -7263,6 +7865,18 @@ proc ::constcl::reverse {vals} {
 \subsection{list-tail procedure}
 \label{list-tail-procedure}
 \index{list-tail procedure}
+
+
+Given a list index, \texttt{list-tail} yields the sublist starting from that index.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (k 3))
+  (list-tail lst k))                ==>  (d e f)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-tail (public)} \\
@@ -7285,6 +7899,18 @@ proc ::constcl::list-tail {vals k} {
 \subsection{list-ref procedure}
 \label{list-ref-procedure}
 \index{list-ref procedure}
+
+
+\texttt{list-ref} yields the list item at a given index.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (k 3))
+  (list-ref lst k))                 ==>  d
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-ref (public)} \\
@@ -7303,6 +7929,24 @@ proc ::constcl::list-ref {vals k} {
 \subsection{memq procedure}
 \label{memq-procedure}
 \index{memq procedure}
+
+\noindent \textbf{memv} procedure
+
+
+\noindent \textbf{member} procedure
+
+
+
+\texttt{memq}, \texttt{memv}, and \texttt{member} return the sublist starting with a given item, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((lst '(a b c d e f)) (val 'd))
+  (memq val lst))                      ==>  (d e f)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf memq (public)} \\
@@ -7326,6 +7970,7 @@ val2 & a Lisp list of Lisp values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
+\index{memv}
 \begin{lstlisting}
 reg memv
 
@@ -7341,6 +7986,7 @@ val2 & a Lisp list of Lisp values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
+\index{member}
 \begin{lstlisting}
 reg member
 
@@ -7348,6 +7994,13 @@ proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
 \end{lstlisting}
+
+
+\textbf{member-proc} procedure
+
+
+The \texttt{member-proc} helper procedure does the work for the \texttt{memq}, \texttt{memv}, and \texttt{member} procedures. It works by comparing against the \texttt{car} of the list, then recursively taking the \texttt{cdr} of the list.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf member-proc (internal)} \\
@@ -7357,6 +8010,7 @@ val2 & a Lisp list of Lisp values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
+\index{member-proc}
 \begin{lstlisting}
 proc ::constcl::member-proc {epred val1 val2} {
   switch $epred {
@@ -7381,6 +8035,24 @@ proc ::constcl::member-proc {epred val1 val2} {
 \subsection{assq procedure}
 \label{assq-procedure}
 \index{assq procedure}
+
+\noindent \textbf{assv} procedure
+
+
+\noindent \textbf{assoc} procedure
+
+
+
+\texttt{assq}, \texttt{assv}, and \texttt{assoc} scan an association list and return the association pair with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or \emph{alist}.
+
+
+Example:
+
+\begin{verbatim}
+(let ((e '((a . 1) (b . 2) (c . 3)))
+      (key 'a))
+  (assq key e))                        ==> (a . 1)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assq (public)} \\
@@ -7404,6 +8076,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
+\index{assv}
 \begin{lstlisting}
 reg assv
 
@@ -7419,6 +8092,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
+\index{assoc}
 \begin{lstlisting}
 reg assoc
 
@@ -7426,6 +8100,13 @@ proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
 \end{lstlisting}
+
+
+\textbf{assoc-proc} procedure
+
+
+\texttt{assoc-proc} is a helper procedure which does the work for \texttt{assq}, \texttt{assv}, and \texttt{assoc}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc-proc (internal)} \\
@@ -7435,6 +8116,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
+\index{assoc-proc}
 \begin{lstlisting}
 proc ::constcl::assoc-proc {epred val1 val2} {
   switch $epred {
@@ -7460,9 +8142,20 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 \section{Strings}
 \label{strings}
 \index{Strings}
+
+
+Procedures for dealing with strings of characters.
+
 \subsection{String class}
 \label{string-class}
 \index{String class}
+
+
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+
+
+As a ConsTcl extension, a \texttt{\textbackslash n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash n} if the string is printed using \texttt{write}, but remains a newline character if the string is printed with \texttt{display}.
+
 \begin{lstlisting}
 oo::class create ::constcl::String {
   superclass ::constcl::NIL
@@ -7570,6 +8263,10 @@ oo::class create ::constcl::String {
 \subsection{MkString generator}
 \label{mkstring-generator}
 \index{MkString generator}
+
+
+\texttt{MkString} generates a String object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkString (internal)} \\
@@ -7584,6 +8281,10 @@ interp alias {} ::constcl::MkString \
 \subsection{string? procedure}
 \label{string?-procedure}
 \index{string? procedure}
+
+
+\texttt{string?} recognizes a string by type.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string? (public)} \\
@@ -7601,6 +8302,20 @@ proc ::constcl::string? {val} {
 \subsection{make-string procedure}
 \label{make-string-procedure}
 \index{make-string procedure}
+
+
+\texttt{make-string} creates a string of \emph{k} characters, optionally filled with \emph{char} characters. If \emph{char} is omitted, the string will be filled with space characters.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((k 5))
+  (make-string k))        =>  "     "
+(let ((k 5) (char #\A))
+  (make-string k char))   =>  "AAAAA"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-string (public)} \\
@@ -7626,6 +8341,17 @@ proc ::constcl::make-string {k args} {
 \subsection{string procedure}
 \label{string-procedure}
 \index{string procedure}
+
+
+\texttt{string} constructs a string from a number of Lisp characters.
+
+
+
+Example:
+
+\begin{verbatim}
+(string #\f #\o #\o)   =>  "foo"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string (public)} \\
@@ -7651,6 +8377,17 @@ proc ::constcl::string {args} {
 \subsection{string-length procedure}
 \label{string-length-procedure}
 \index{string-length procedure}
+
+
+\texttt{string-length} reports a string's length.
+
+
+
+Example:
+
+\begin{verbatim}
+(string-length "foobar")   => 6
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-length (public)} \\
@@ -7671,6 +8408,17 @@ proc ::constcl::string-length {str} {
 \subsection{string-ref procedure}
 \label{string-ref-procedure}
 \index{string-ref procedure}
+
+
+\texttt{string-ref} yields the \emph{k}-th character (0-based) in \emph{str}.
+
+
+
+Example:
+
+\begin{verbatim}
+(string-ref "foobar" 3)   => #\b
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-ref (public)} \\
@@ -7697,6 +8445,20 @@ proc ::constcl::string-ref {str k} {
 \subsection{string-set! procedure}
 \label{string-set"!-procedure}
 \index{string-set"! procedure}
+
+
+\texttt{string-set!} replaces the character at \emph{k} with \emph{char} in a non-constant string.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string #\f #\o #\o))
+      (k 2)
+      (char #\x))
+  (string-set! str k char))         =>  "fox"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-set! (public)} \\
@@ -7726,6 +8488,25 @@ proc ::constcl::string-set! {str k char} {
   return $str
 }
 \end{lstlisting}
+
+
+\textbf{string=?}, \textbf{string-ci=?}
+
+
+\textbf{string<?}, \textbf{string-ci<?}
+
+
+\textbf{string>?}, \textbf{string-ci>?}
+
+
+\textbf{string<=?}, \textbf{string-ci<=?}
+
+
+\textbf{string>=?}, \textbf{string-ci>=?}
+
+
+\texttt{string=?}, \texttt{string<?}, \texttt{string>?}, \texttt{string<=?}, \texttt{string>=?} and their case insensitive variants \texttt{string-ci=?}, \texttt{string-ci<?}, \texttt{string-ci>?}, \texttt{string-ci<=?}, \texttt{string-ci>=?} compare strings.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string=?, string<?, string>? (public)} \\
@@ -7758,6 +8539,7 @@ str2 & a string \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
+\index{string=?}
 \begin{lstlisting}
 reg string=?
 
@@ -7777,6 +8559,7 @@ proc ::constcl::string=? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string-ci=?}
 \begin{lstlisting}
 reg string-ci=?
 
@@ -7797,6 +8580,7 @@ proc ::constcl::string-ci=? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string<?}
 \begin{lstlisting}
 reg string<?
 
@@ -7816,6 +8600,7 @@ proc ::constcl::string<? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string-ci<?}
 \begin{lstlisting}
 reg string-ci<?
 
@@ -7836,6 +8621,7 @@ proc ::constcl::string-ci<? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string>?}
 \begin{lstlisting}
 reg string>?
 
@@ -7855,6 +8641,7 @@ proc ::constcl::string>? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string-ci>?}
 \begin{lstlisting}
 reg string-ci>?
 
@@ -7875,6 +8662,7 @@ proc ::constcl::string-ci>? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string<=?}
 \begin{lstlisting}
 reg string<=?
 
@@ -7894,6 +8682,7 @@ proc ::constcl::string<=? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string-ci<=?}
 \begin{lstlisting}
 reg string-ci<=?
 
@@ -7914,6 +8703,7 @@ proc ::constcl::string-ci<=? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string>=?}
 \begin{lstlisting}
 reg string>=?
 
@@ -7933,6 +8723,7 @@ proc ::constcl::string>=? {str1 str2} {
   }
 }
 \end{lstlisting}
+\index{string-ci>=?}
 \begin{lstlisting}
 reg string-ci>=?
 
@@ -7956,6 +8747,17 @@ proc ::constcl::string-ci>=? {str1 str2} {
 \subsection{substring procedure}
 \label{substring-procedure}
 \index{substring procedure}
+
+
+\texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends at \emph{end}.
+
+
+
+Example:
+
+\begin{verbatim}
+(substring "foobar" 2 4)   => "oba"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf substring (public)} \\
@@ -7987,6 +8789,17 @@ proc ::constcl::substring {str start end} {
 \subsection{string-append procedure}
 \label{string-append-procedure}
 \index{string-append procedure}
+
+
+\texttt{string-append} joins strings together.
+
+
+
+Example:
+
+\begin{verbatim}
+(string-append "foo" "bar")   =>  "foobar"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-append (public)} \\
@@ -8006,6 +8819,17 @@ proc ::constcl::string-append {args} {
 \subsection{string->list procedure}
 \label{string->list-procedure}
 \index{string->list procedure}
+
+
+\texttt{string->list} converts a string to a Lisp list of characters.
+
+
+
+Example:
+
+\begin{verbatim}
+(string->list "foo")   =>  (#\f #\o #\o)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string->list (public)} \\
@@ -8023,6 +8847,17 @@ proc ::constcl::string->list {str} {
 \subsection{list->string procedure}
 \label{list->string-procedure}
 \index{list->string procedure}
+
+
+\texttt{list->string} converts a Lisp list of characters to a string.
+
+
+
+Example:
+
+\begin{verbatim}
+(list->string '(#\1 #\2 #\3))   => "123"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list->string (public)} \\
@@ -8041,6 +8876,20 @@ proc ::constcl::list->string {list} {
 \subsection{string-copy procedure}
 \label{string-copy-procedure}
 \index{string-copy procedure}
+
+
+\texttt{string-copy} makes a copy of a string.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string-copy "abc"))
+      (k 0)
+      (char #\x))
+  (string-set! str k char))       =>  "xbc"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-copy (public)} \\
@@ -8061,6 +8910,19 @@ proc ::constcl::string-copy {str} {
 \subsection{string-fill! procedure}
 \label{string-fill"!-procedure}
 \index{string-fill"! procedure}
+
+
+\texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((str (string-copy "foobar"))
+      (char #\X))
+  (string-fill! str char))           =>  "XXXXXX"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-fill! (public)} \\
@@ -8084,6 +8946,10 @@ proc ::constcl::string-fill! {str char} {
 \section{Symbols}
 \label{symbols}
 \index{Symbols}
+
+
+Symbols are like little immutable strings that are used to refer to things (variables, category labels, collection keys, etc) or for equality comparison against each other.
+
 \subsection{Symbol class}
 \label{symbol-class}
 \index{Symbol class}
@@ -8133,6 +8999,10 @@ oo::class create ::constcl::Symbol {
 \subsection{MkSymbol generator}
 \label{mksymbol-generator}
 \index{MkSymbol generator}
+
+
+\texttt{MkSymbol} generates a symbol with a given name. If a symbol with that name already exists, it is returned. Otherwise, a fresh symbol is created. Short form: \texttt{S}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkSymbol (internal)} \\
@@ -8155,6 +9025,10 @@ interp alias {} S {} ::constcl::MkSymbol
 \subsection{symbol? procedure}
 \label{symbol?-procedure}
 \index{symbol? procedure}
+
+
+\texttt{symbol?} recognizes a symbol by type.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf symbol? (public)} \\
@@ -8172,6 +9046,17 @@ proc ::constcl::symbol? {val} {
 \subsection{symbol->string procedure}
 \label{symbol->string-procedure}
 \index{symbol->string procedure}
+
+
+\texttt{symbol->string} yields a string consisting of the symbol name, usually lower-cased.
+
+
+Example:
+
+\begin{verbatim}
+(let ((sym 'Foobar))
+  (symbol->string sym))   =>  "foobar"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf symbol->string (public)} \\
@@ -8199,6 +9084,19 @@ proc ::constcl::symbol->string {sym} {
 \subsection{string->symbol procedure}
 \label{string->symbol-procedure}
 \index{string->symbol procedure}
+
+
+\texttt{string->symbol} creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased.
+
+
+Example:
+
+\begin{verbatim}
+(define sym (let ((str "Foobar"))
+              (string->symbol str)))
+sym                                    =>  Foobar
+(symbol->string sym)                   =>  "Foobar"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string->symbol (public)} \\
@@ -8221,6 +9119,10 @@ proc ::constcl::string->symbol {str} {
 \section{Vectors}
 \label{vectors}
 \index{Vectors}
+
+
+Vectors are heterogenous structures of fixed length whose elements are indexed by integers. The number of elements that a vector contains (the \emph{length}) is set when the vector is created. Elements can be indexed by integers from zero to length (let ((e '((a . 1) (b . 2) (c . 3))) (key 'a)) (assq key e))minus one.
+
 \subsection{Vector class}
 \label{vector-class}
 \index{Vector class}
@@ -8321,6 +9223,10 @@ oo::class create ::constcl::Vector {
 \subsection{MkVector generator}
 \label{mkvector-generator}
 \index{MkVector generator}
+
+
+\texttt{MkVector} generates a Vector object.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkVector (internal)} \\
@@ -8335,6 +9241,10 @@ interp alias {} ::constcl::MkVector \
 \subsection{vector? procedure}
 \label{vector?-procedure}
 \index{vector? procedure}
+
+
+\texttt{vector?} recognizes vectors by type.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector? (public)} \\
@@ -8352,6 +9262,20 @@ proc ::constcl::vector? {val} {
 \subsection{make-vector procedure}
 \label{make-vector-procedure}
 \index{make-vector procedure}
+
+
+\texttt{make-vector} creates a vector with a given length and optionally a fill value. If a fill value isn't given, the empty list will be used.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((k 3))
+  (make-vector k))        =>  #(() () ())
+(let ((k 3) (val #\A))
+  (make-vector k val))    =>  #(#\A #\A #\A)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-vector? (public)} \\
@@ -8375,6 +9299,17 @@ proc ::constcl::make-vector {k args} {
 \subsection{vector procedure}
 \label{vector-procedure}
 \index{vector procedure}
+
+
+Given a number of Lisp values, \texttt{vector} creates a vector containing them.
+
+
+
+Example:
+
+\begin{verbatim}
+(vector 'a "foo" 99)   =>  #(a "foo" 99)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector (public)} \\
@@ -8392,6 +9327,17 @@ proc ::constcl::vector {args} {
 \subsection{vector-length procedure}
 \label{vector-length-procedure}
 \index{vector-length procedure}
+
+
+\texttt{vector-length} returns the length of a vector.
+
+
+
+Example:
+
+\begin{verbatim}
+(vector-length #(a "foo" 99))   =>  3
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-length (public)} \\
@@ -8412,6 +9358,18 @@ proc ::constcl::vector-length {vec} {
 \subsection{vector-ref procedure}
 \label{vector-ref-procedure}
 \index{vector-ref procedure}
+
+
+\texttt{vector-ref} returns the element of \emph{vec} at index \emph{k} (0-based).
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((vec #(a "foo" 99)) (k 1))
+  (vector-ref vec k))              =>  "foo"
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-ref (public)} \\
@@ -8436,6 +9394,24 @@ proc ::constcl::vector-ref {vec k} {
 \subsection{vector-set! procedure}
 \label{vector-set"!-procedure}
 \index{vector-set"! procedure}
+
+
+\texttt{vector-set!} sets the element at index \emph{k} to \emph{val} on a vector that isn't constant.
+
+
+
+Example:
+
+\begin{verbatim}
+(let ((vec #(a b c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  *error*
+(let ((vec (vector 'a 'b 'c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      =>  #(a x c)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-set! (public)} \\
@@ -8461,6 +9437,17 @@ proc ::constcl::vector-set! {vec k val} {
 \subsection{vector->list procedure}
 \label{vector->list-procedure}
 \index{vector->list procedure}
+
+
+\texttt{vector->list} converts a vector value to a Lisp list.
+
+
+
+Example:
+
+\begin{verbatim}
+(vector->list #(a b c))   =>  (a b c)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector->list (public)} \\
@@ -8478,6 +9465,17 @@ proc ::constcl::vector->list {vec} {
 \subsection{list->vector procedure}
 \label{list->vector-procedure}
 \index{list->vector procedure}
+
+
+\texttt{list->vector} converts a Lisp list value to a vector.
+
+
+
+Example:
+
+\begin{verbatim}
+(list->vector '(1 2 3))   =>  #(1 2 3)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list->vector (public)} \\
@@ -8495,6 +9493,19 @@ proc ::constcl::list->vector {list} {
 \subsection{vector-fill! procedure}
 \label{vector-fill"!-procedure}
 \index{vector-fill"! procedure}
+
+
+\texttt{vector-fill!} fills a non-constant vector with a given value.
+
+
+
+Example:
+
+\begin{verbatim}
+(define vec (vector 'a 'b 'c))
+(vector-fill! vec 'x)             =>  #(x x x)
+vec                               =>  #(x x x)
+\end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-fill! (public)} \\
@@ -8514,461 +9525,12 @@ proc ::constcl::vector-fill! {vec fill} {
   $vec fill! $fill
 }
 \end{lstlisting}
-\chapter{Identifier validation}
-\label{identifier-validation}
-\begin{lstlisting}
-proc ::constcl::idcheckinit {init} {
-  if {[::string is alpha -strict $init] ||
-    $init in {! $ % & * / : < = > ? ^ _ ~}} {
-    return true
-  } else {
-    return false
-  }
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::idchecksubs {subs} {
-  foreach c [split $subs {}] {
-    if {!([::string is alnum -strict $c] ||
-      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
-      return false
-    }
-  }
-  return true
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::idcheck {sym} {
-  if {$sym eq {}} {return $sym}
-  if {(![idcheckinit [::string index $sym 0]] ||
-    ![idchecksubs [::string range $sym 1 end]]) &&
-    $sym ni {+ - ...}} {
-    ::error "Identifier expected ($sym)"
-  }
-  set sym
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::varcheck {sym} {
-  if {$sym in {
-    else => define unquote unquote-splicing
-    quote lambda if set! begin cond and or
-    case let let* letrec do delay quasiquote
-  }} {
-    ::error "Variable name is reserved: $sym"
-  }
-  return $sym
-}
-\end{lstlisting}
-\chapter{Environment class and objects}
-\label{environment-class-and-objects}
-\subsection{Environment class}
-\label{environment-class}
-\index{Environment class}
-\begin{lstlisting}
-catch { ::constcl::Environment destroy }
-
-oo::class create ::constcl::Environment {
-  variable bindings outer_env
-  constructor {syms vals {outer {}}} {
-    set bindings [dict create]
-    if {[T [::constcl::null? $syms]]} {
-      if {[llength $vals]} {
-        error "too many arguments"
-      }
-    } elseif {[T [::constcl::list? $syms]]} {
-      set syms [::constcl::splitlist $syms]
-      set symsn [llength $syms]
-      set valsn [llength $vals]
-      if {$symsn != $valsn} {
-        error [
-          ::append --> "wrong # of arguments, " \
-            "$valsn instead of $symsn"]
-      }
-      foreach sym $syms val $vals {
-        my bind $sym [lindex $val 0] [lindex $val 1]
-      }
-    } elseif {[T [::constcl::symbol? $syms]]} {
-      my bind $syms VARIABLE [
-        ::constcl::list {*}[lmap v $vals {
-          lindex $v 1
-        }]]
-    } else {
-      while true {
-        if {[llength $vals] < 1} {
-          error "too few arguments"
-        }
-        my bind [::constcl::car $syms] \
-          [lindex $vals 0 0] [lindex $vals 0 1]
-        set vals [lrange $vals 1 end]
-        if {[T [
-          ::constcl::symbol? [
-            ::constcl::cdr $syms]]]} {
-          my bind [::constcl::cdr $syms] \
-            VARIABLE [
-              ::constcl::list {*}[lmap v $vals {
-                lindex $v 1
-              }]]
-          set vals {}
-          break
-        } else {
-          set syms [::constcl::cdr $syms]
-        }
-      }
-    }
-    set outer_env $outer
-  }
-  method find {sym} {
-    if {$sym in [dict keys $bindings]} {
-      self
-    } else {
-      $outer_env find $sym
-    }
-  }
-  method get {sym} {
-    dict get $bindings $sym
-  }
-  method unbind {sym} {
-    dict unset bindings $sym
-  }
-  method bind {sym type info} {
-    if {[dict exists $bindings $sym]} {
-      set bi [my get $sym]
-      lassign $bi bt in
-      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
-        error "[$sym name] is already bound"
-      }
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method assign {sym type info} {
-    if {![dict exists $bindings $sym]} {
-      error "[$sym name] is not bound"
-    }
-    set bi [my get $sym]
-    lassign $bi bt in
-    if {$bt ne "VARIABLE"} {
-      error "[$sym name] is not assignable"
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method parent {} {
-    set outer_env
-  }
-  method names {} {
-    dict keys $bindings
-  }
-  method values {} {
-    dict values $bindings
-  }
-}
-\end{lstlisting}
-\subsection{MkEnv generator}
-\label{mkenv-generator}
-\index{MkEnv generator}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkEnv (internal)} \\
-?parms? & a Scheme formals list \\
-?vals? & a Tcl list of Lisp values \\
-env & an environment \\
-\textit{Returns:} & an environment \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::MkEnv {args} {
-  if {[llength $args] == 1} {
-    set parms #NIL
-    set vals {}
-    lassign $args env
-  } elseif {[llength $args] == 3} {
-    lassign $args parms vals env
-  } else {
-    error "wrong number of arguments"
-  }
-  Environment new $parms $vals $env
-}
-\end{lstlisting}
-\section{MIT Scheme environment library}
-\label{mit-scheme-environment-library}
-\index{MIT Scheme environment library}
-\subsection{environment? procedure}
-\label{environment?-procedure}
-\index{environment? procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment? (public)} \\
-val & a Lisp value \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::environment? {val} {
-  typeof? $val Environment
-}
-\end{lstlisting}
-\subsection{environment-has-parent? procedure}
-\label{environment-has-parent?-procedure}
-\index{environment-has-parent? procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-has-parent? (public)} \\
-env & an environment \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-has-parent?
-
-proc ::constcl::environment-has-parent? {env} {
-  if {[$env parent] ne "#NIL"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-\end{lstlisting}
-\subsection{environment-parent procedure}
-\label{environment-parent-procedure}
-\index{environment-parent procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-parent (public)} \\
-env & an environment \\
-\textit{Returns:} & an environment \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-parent
-
-proc ::constcl::environment-parent {env} {
-  set parent [$env parent]
-  if {$parent ne "#NIL"} {
-    return $parent
-  } else {
-    error "[$env show] has no parent"
-  }
-}
-\end{lstlisting}
-\subsection{environment-bound-names procedure}
-\label{environment-bound-names-procedure}
-\index{environment-bound-names procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-bound-names (public)} \\
-env & an environment \\
-\textit{Returns:} & a Lisp list of symbols \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-bound-names
-
-proc ::constcl::environment-bound-names {env} {
-  list {*}[$env names]
-}
-\end{lstlisting}
-\subsection{environment-bindings procedure}
-\label{environment-bindings-procedure}
-\index{environment-bindings procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-bindings (public)} \\
-env & an environment \\
-\textit{Returns:} & a Lisp list of association pairs \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-bindings
-
-proc ::constcl::environment-bindings {env} {
-  set keys [list {*}[$env names]]
-  set vals [list {*}[lmap v [$env values] {
-    list [S quote] [list [S [lindex $v 0]] \
-      [MkString [lindex $v 1]]]
-  }]]
-  pairlis-tcl $keys $vals
-}
-\end{lstlisting}
-\subsection{environment-bound?}
-\label{environment-bound?}
-\index{environment-bound?}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-bound? (public)} \\
-env & an environment \\
-sym & a symbol \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-bound?
-
-proc ::constcl::environment-bound? {env sym} {
-  # X
-  set e [$env find $sym]
-  if {$e eq "::constcl::null_env"} {
-    return #f
-  } else {
-    return #t
-  }
-}
-\end{lstlisting}
-\subsection{environment-lookup procedure}
-\label{environment-lookup-procedure}
-\index{environment-lookup procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-lookup (public)} \\
-env & an environment \\
-sym & a symbol \\
-\textit{Returns:} & a Lisp value \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-lookup
-
-proc ::constcl::environment-lookup {env sym} {
-  if {[T [environment-bound? $env $sym]]} {
-    lookup $sym [$env find $sym]
-  }
-}
-\end{lstlisting}
-\subsection{environment-assignable? procedure}
-\label{environment-assignable?-procedure}
-\index{environment-assignable? procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-assignable? (public)} \\
-env & an environment \\
-sym & a symbol \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-assignable?
-
-proc ::constcl::environment-assignable? {env sym} {
-  if {[environment-bound? $env $sym]} {
-    # all bound names are assignable in ConsTcl
-    return #t
-  }
-}
-\end{lstlisting}
-\subsection{environment-assign! procedure}
-\label{environment-assign!-procedure}
-\index{environment-assign! procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment-assign! (public)} \\
-env & an environment \\
-sym & a symbol \\
-obj & a Lisp value \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg environment-assign!
-
-proc ::constcl::environment-assign! {env sym obj} {
-  /set! $sym $obj $env  
-}
-\end{lstlisting}
-\subsection{system-global-environment variable}
-\label{system-global-environment-variable}
-\index{system-global-environment variable}
-\subsection{user-initial-environment variable}
-\label{user-initial-environment-variable}
-\index{user-initial-environment variable}
-\subsection{nearest-repl/environment procedure}
-\label{nearest-repl/environment-procedure}
-\index{nearest-repl/environment procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf nearest-repl/environment (public)} \\
-\textit{Returns:} & an environment \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::nearest-repl/environment {} {
-  # TODO
-}
-\end{lstlisting}
-\subsection{ge procedure}
-\label{ge-procedure}
-\index{ge procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf ge (public)} \\
-env & an environment or procedure object \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::ge {env} {
-  # TODO
-}
-\end{lstlisting}
-\subsection{make-environment special form}
-\label{make-environment-special-form}
-\index{make-environment special form}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-environment (public)} \\
-exps & a Lisp list of expressions \\
-\textit{Returns:} & an environment \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg make-environment
-
-proc ::constcl::make-environment {exps} {
-  set env [
-    MkEnv [the-environment]]
-  set body $exps
-  /define [S body] $body $env
-  set qq "`(let ()
-             ,@body
-             (the-environment))"
-  set expr [expand-quasiquote [parse $qq] $env]
-  return [eval $expr $env]
-}
-\end{lstlisting}
-\subsection{the-environment special form}
-\label{the-environment-special-form}
-\index{the-environment special form}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf the-environment (public)} \\
-\textit{Returns:} & an environment \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-proc ::constcl::the-environment {} {
-  # TODO
-}
-\end{lstlisting}
-\subsection{interpreter-environment? procedure}
-\label{interpreter-environment?-procedure}
-\index{interpreter-environment? procedure}
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf interpreter-environment? (public)} \\
-val & a Lisp value \\
-\textit{Returns:} & a boolean \\
-\hline
-\end{tabular}
-\begin{lstlisting}
-reg interpreter-environment
-
-proc ::constcl::interpreter-environment {val} {
-  # TODO
-}
-\end{lstlisting}
-\section{Lexical scoping}
-\label{lexical-scoping}
-\index{Lexical scoping}
 \chapter{Initialization}
 \label{initialization}
+
+
+Initialize the memory space for vector contents.
+
 \begin{lstlisting}
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
@@ -8981,6 +9543,10 @@ proc ::constcl::vsAlloc {num} {
   return $va
 }
 \end{lstlisting}
+
+
+Initialize the symbol table and gensym number.
+
 \begin{lstlisting}
 proc ::constcl::resetSymbolTable {} {
   unset -nocomplain ::constcl::symbolTable
@@ -8993,9 +9559,17 @@ proc ::constcl::resetSymbolTable {} {
 
 set ::constcl::gensymnum 0
 \end{lstlisting}
+
+
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+
 \begin{lstlisting}
 interp recursionlimit {} 2000
 \end{lstlisting}
+
+
+Pre-make a set of constants (e.g. \#NIL, \#t, and \#f) and give them aliases for use in source text.
+
 \begin{lstlisting}
 interp alias {} #NIL {} [::constcl::NIL new]
 
@@ -9019,15 +9593,33 @@ interp alias {} #UND {} [::constcl::Undefined new]
 
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 \end{lstlisting}
+
+
+Crown the definition register with the queen of numbers (or at least a double-precision floating point approximation).
+
+\index{pi}
 \begin{lstlisting}
 regvar pi [N 3.1415926535897931]
 \end{lstlisting}
+
+
+In this interpreter, \texttt{nil} does refer to the empty list.
+
+\index{nil}
 \begin{lstlisting}
 regvar nil #NIL
 \end{lstlisting}
 \section{Environment startup}
 \label{environment-startup}
 \index{Environment startup}
+
+
+On startup, two \texttt{Environment} objects called \texttt{null\_env} (the null environment, not the same as \texttt{null-environment} in Scheme) and \texttt{global\_env} (the global environment) are created.
+
+
+Make \texttt{null\_env} empty and judgemental: this is where searches for unbound symbols end up.
+
+\index{null\_env}
 \begin{lstlisting}
 ::constcl::Environment create \
   ::constcl::null_env #NIL {}
@@ -9044,6 +9636,11 @@ oo::objdefine ::constcl::null_env {
   }
 }
 \end{lstlisting}
+
+
+Meanwhile, \texttt{global\_env} is populated with all the definitions from the definitions register, \texttt{defreg}. This is where top level evaluation happens.
+
+\index{global\_env}
 \begin{lstlisting}
 namespace eval ::constcl {
   Environment create global_env #NIL {} \
@@ -9055,44 +9652,18 @@ namespace eval ::constcl {
   }
 }
 \end{lstlisting}
+
+
+Load the Scheme base to add more definitions to the global environment.
+
+\index{schemebase}
 \begin{lstlisting}
 pe {(load "schemebase.scm")}
 \end{lstlisting}
-\chapter{The REPL}
-\label{the-repl}
-\begin{lstlisting}
-proc ::constcl::input {prompt} {
-  puts -nonewline $prompt
-  flush stdout
-  set buf [gets stdin]
-  set openpars [regexp -all -inline {\(} $buf]
-  set clsepars [regexp -all -inline {\)} $buf]
-  set openbrak [regexp -all -inline {\[} $buf]
-  set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] ||
-         [llength $openbrak] > [llength $clsebrak]} {
-    ::append buf [gets stdin]
-    set openpars [regexp -all -inline {\(} $buf]
-    set clsepars [regexp -all -inline {\)} $buf]
-    set openbrak [regexp -all -inline {\[} $buf]
-    set clsebrak [regexp -all -inline {\]} $buf]
-  }
-  return $buf
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [::constcl::MkEnv ::constcl::global_env]
-  set str [::constcl::input $prompt]
-  while {$str ne ""} {
-    set expr [::constcl::parse $str]
-    set val [::constcl::eval $expr $cur_env]
-    ::constcl::write $val
-    set str [::constcl::input $prompt]
-  }
-  $cur_env destroy
-}
-\end{lstlisting}
+
+
+Thereafter, each time a user-defined procedure is called, a new \texttt{Environment} object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
+
 \chapter{A Scheme base}
 \label{a-scheme-base}
 \begin{lstlisting}
@@ -9101,6 +9672,10 @@ proc ::repl {{prompt "ConsTcl> "}} {
 \subsection{get procedure}
 \label{get-procedure}
 \index{get procedure}
+
+
+\texttt{get} is a procedure for picking out values out of property lists. It returns either the value or \texttt{\#f} if the key isn't found.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get (public)} \\
@@ -9119,6 +9694,10 @@ key & a symbol \\
 \subsection{list-find-key procedure}
 \label{list-find-key-procedure}
 \index{list-find-key procedure}
+
+
+\texttt{list-find-key} searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-find-key (public)} \\
@@ -9134,6 +9713,10 @@ key & a symbol \\
 \subsection{lfk procedure}
 \label{lfk-procedure}
 \index{lfk procedure}
+
+
+\texttt{lfk} does the work for \texttt{list-find-key}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lfk (public)} \\
@@ -9154,6 +9737,10 @@ count & a number \\
 \subsection{list-set! procedure}
 \label{list-set"!-procedure}
 \index{list-set"! procedure}
+
+
+\texttt{list-set!} works in analogy with \texttt{string-set!}. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-set! (public)} \\
@@ -9172,6 +9759,10 @@ val & a Lisp value \\
 \subsection{delete! procedure}
 \label{delete"!-procedure}
 \index{delete"! procedure}
+
+
+\texttt{delete!} removes a key-value pair from a property list. Returns the list.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delete! (public)} \\
@@ -9195,6 +9786,10 @@ key & a symbol \\
 \subsection{del-seek procedure}
 \label{del-seek-procedure}
 \index{del-seek procedure}
+
+
+\texttt{del-seek} does the searching for \texttt{delete!}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf del-seek (public)} \\
@@ -9212,6 +9807,10 @@ idx & a number \\
 \subsection{get-alist procedure}
 \label{get-alist-procedure}
 \index{get-alist procedure}
+
+
+\texttt{get-alist} is like \texttt{get} but for association lists.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get-alist (public)} \\
@@ -9230,6 +9829,10 @@ key & a symbol \\
 \subsection{pairlis procedure}
 \label{pairlis-procedure}
 \index{pairlis procedure}
+
+
+\texttt{pairlis} takes two lists like \texttt{'(a b c)} and \texttt{'(1 2 3)} and produces a list of association pairs \texttt{'((a . 1) (b . 2) (c . 3))}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis (public)} \\
@@ -9249,6 +9852,10 @@ b & a Lisp list of Lisp values \\
 \subsection{set-alist! procedure}
 \label{set-alist"!-procedure}
 \index{set-alist"! procedure}
+
+
+\texttt{set-alist!} updates a value in an association list, given a key.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-alist! (public)} \\
@@ -9268,6 +9875,10 @@ val & a Lisp value \\
 \subsection{fact procedure}
 \label{fact-procedure}
 \index{fact procedure}
+
+
+\texttt{fact} calculates the factorial of \emph{n}.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf fact (public)} \\
@@ -9284,6 +9895,10 @@ n & a number \\
 \subsection{list-copy procedure}
 \label{list-copy-procedure}
 \index{list-copy procedure}
+
+
+Returns a newly allocated copy of \emph{list}. This copies each of the pairs comprising \emph{list}. From MIT Scheme.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-copy (public)} \\

@@ -141,7 +141,7 @@ This one isn't just for my convenience: it's a standard procedure in Scheme. The
 ##### Predicates
 
 
-By Scheme convention, [predicates](https://en.wikipedia.org/wiki/Boolean-valued_function) (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
+By Scheme convention, predicates (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
 
 
 ``if {[atom? $x]} ...``
@@ -448,7 +448,7 @@ proc ::pe {str} {
 
 `` re `` is like `` pe ``, but it reads from a regular port instead of an string input port. It evaluates what is read.
 
-<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>?port?</td><td></td></tr><tr><td>val</td><td></td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::re {args} {
@@ -756,7 +756,7 @@ ConsTcl> (+ 2 3)
 Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
 
 
-Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
+Anyway, the figure shows what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
 
 ![#](images/intreplist.png)
 ### Input procedures
@@ -767,7 +767,7 @@ Anyway, the figure shows is what it really looks like. `` ::oo::Obj491 `` was ju
 ##### Ports
 
 
-Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard (which doesn't work in a Windows windowing environment, i.e. wish or tkcon. repl does work, though.)) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 
 
 
@@ -811,9 +811,9 @@ proc ::constcl::parse {inp} {
 The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it. The `` read- `` procedures parse their input and produce ConsTcl objects.
 
 
-One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which, again, doesn't work in a Windows windowing application.)).
+One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.)).
 
-<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 reg read
@@ -940,7 +940,7 @@ proc ::constcl::find-char? {char} {
 #### read-end? procedure
 
 
-`` read-end? `` reads one character and returns `` #t `` if it is an interspace character or an ending parenthesis or bracket, or end of file. Otherwise it returns `` #f ``. It ungets the character before returning. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-end? `` reads one character and returns `` #t `` if it is an interspace character or a delimiter character, or end of file. Otherwise it returns `` #f ``. It ungets the character before returning. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-end? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
 
@@ -1083,7 +1083,7 @@ proc ::constcl::read-character-expr {} {
 #### read-identifier-expr procedure
 
 
-`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or an ending parenthesis or bracket. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or a delimiter character. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
@@ -1118,7 +1118,7 @@ proc ::constcl::read-identifier-expr {args} {
 #### read-number-expr procedure
 
 
-`` read-number-expr `` reads numerical input, both integers and floating point numbers. It is activated by `` read-expr `` or `` read-plus-minus `` if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or an ending parenthesis or bracket, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-number-expr `` reads numerical input, both integers and floating point numbers. It is activated by `` read-expr `` or `` read-plus-minus `` if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or a delimiter character, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
@@ -1250,7 +1250,7 @@ proc ::constcl::read-pair {char} {
 #### read-plus-minus procedure
 
 
-`` read-plus-minus `` is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character, it returns a `` + `` or `` - `` symbol. Otherwide, it delegates to the identifier reader. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-plus-minus `` is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character or a delimiter, it returns a `` + `` or `` - `` symbol. Otherwise, it delegates to the identifier reader. Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-plus-minus (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>either the symbols + or - or a number or end of file</td></tr></table>
 
@@ -1504,7 +1504,7 @@ proc ::constcl::self-evaluating? {val} {
 #### eval-form procedure
 
 
-If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` procedure puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
+If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` [procedure](https://github.com/hoodiecrow/ConsTcl#reg-procedure) puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1703,7 +1703,7 @@ Where each _clause_ has the form
 The last clause may have the form
 
 
-((__else__ _expression_ ...)
+(__else__ _expression_ ...)
 
 
 The `` case `` special form is expanded by `` special-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
@@ -1813,7 +1813,7 @@ where _recipient_ is a procedure that accepts one argument, which is evaluated w
 The last clause may have the form
 
 
-((__else__ _expression_ ...)
+(__else__ _expression_ ...)
 
 
 The `` cond `` special form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
@@ -1991,6 +1991,7 @@ The `` define `` special form is expanded by `` special-define ``.
 
 ```
 reg special define
+
 proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
@@ -2256,12 +2257,12 @@ proc ::constcl::rewrite-let {expr env} {
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
-  dict keys $vars]] $env
+    dict keys $vars]] $env
   /define [S body] $body $env
   /define [S vallist] [list {*}[
-  dict values $vars]] $env
+    dict values $vars]] $env
   set qq "`((lambda ,varlist ,@body)
-  ,@vallist)"
+             ,@vallist)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -2335,10 +2336,14 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [list {*}[dict keys $outer]] $env
-  /define [S outervals] [list {*}[dict values $outer]] $env
-  /define [S innervars] [list {*}[dict keys $inner]] $env
-  /define [S innervals] [list {*}[dict values $inner]] $env
+  /define [S outervars] [
+    list {*}[dict keys $outer]] $env
+  /define [S outervals] [
+    list {*}[dict values $outer]] $env
+  /define [S innervars] [
+    list {*}[dict keys $inner]] $env
+  /define [S innervals] [
+    list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
@@ -2374,6 +2379,7 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 ```
@@ -3269,6 +3275,289 @@ proc ::constcl::write-pair {handle pair} {
   return
 }
 ```
+## Identifier validation
+
+
+__idcheckinit__
+
+
+__idchecksubs__
+
+
+__idcheck__
+
+
+__varcheck__
+
+
+Some routines for checking if a string is a valid identifier. `` idcheckinit `` checks the first character, `` idchecksubs `` checks the rest. `` idcheck `` calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which `` varcheck `` checks, for a set of keywords given in the standard.
+
+```
+proc ::constcl::idcheckinit {init} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    return true
+  } else {
+    return false
+  }
+}
+```
+```
+proc ::constcl::idchecksubs {subs} {
+  foreach c [split $subs {}] {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+      return false
+    }
+  }
+  return true
+}
+```
+```
+proc ::constcl::idcheck {sym} {
+  if {$sym eq {}} {return $sym}
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
+    ::error "Identifier expected ($sym)"
+  }
+  set sym
+}
+```
+```
+proc ::constcl::varcheck {sym} {
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
+  }
+  return $sym
+}
+```
+## Environment class and objects
+
+
+The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+
+
+The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+
+#### Environment class
+```
+catch { ::constcl::Environment destroy }
+
+oo::class create ::constcl::Environment {
+  variable bindings outer_env
+  constructor {syms vals {outer {}}} {
+    set bindings [dict create]
+    if {[T [::constcl::null? $syms]]} {
+      if {[llength $vals]} {
+        error "too many arguments"
+      }
+    } elseif {[T [::constcl::list? $syms]]} {
+      set syms [::constcl::splitlist $syms]
+      set symsn [llength $syms]
+      set valsn [llength $vals]
+      if {$symsn != $valsn} {
+        error [
+          ::append --> "wrong # of arguments, " \
+            "$valsn instead of $symsn"]
+      }
+      foreach sym $syms val $vals {
+        my bind $sym [lindex $val 0] [lindex $val 1]
+      }
+    } elseif {[T [::constcl::symbol? $syms]]} {
+      my bind $syms VARIABLE [
+        ::constcl::list {*}[lmap v $vals {
+          lindex $v 1
+        }]]
+    } else {
+      while true {
+        if {[llength $vals] < 1} {
+          error "too few arguments"
+        }
+        my bind [::constcl::car $syms] \
+          [lindex $vals 0 0] [lindex $vals 0 1]
+        set vals [lrange $vals 1 end]
+        if {[T [
+          ::constcl::symbol? [
+            ::constcl::cdr $syms]]]} {
+          my bind [::constcl::cdr $syms] \
+            VARIABLE [
+              ::constcl::list {*}[lmap v $vals {
+                lindex $v 1
+              }]]
+          set vals {}
+          break
+        } else {
+          set syms [::constcl::cdr $syms]
+        }
+      }
+    }
+    set outer_env $outer
+  }
+  method find {sym} {
+    if {$sym in [dict keys $bindings]} {
+      self
+    } else {
+      $outer_env find $sym
+    }
+  }
+  method get {sym} {
+    dict get $bindings $sym
+  }
+  method unbind {sym} {
+    dict unset bindings $sym
+  }
+  method bind {sym type info} {
+    if {[dict exists $bindings $sym]} {
+      set bi [my get $sym]
+      lassign $bi bt in
+      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
+        error "[$sym name] is already bound"
+      }
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method assign {sym type info} {
+    if {![dict exists $bindings $sym]} {
+      error "[$sym name] is not bound"
+    }
+    set bi [my get $sym]
+    lassign $bi bt in
+    if {$bt ne "VARIABLE"} {
+      error "[$sym name] is not assignable"
+    }
+    dict set bindings $sym [::list $type $info]
+  }
+  method parent {} {
+    set outer_env
+  }
+  method names {} {
+    dict keys $bindings
+  }
+  method values {} {
+    dict values $bindings
+  }
+}
+```
+#### MkEnv generator
+
+<table border=1><thead><tr><th colspan=2 align="left">MkEnv (internal)</th></tr></thead><tr><td>?parms?</td><td>a Scheme formals list</td></tr><tr><td>?vals?</td><td>a Tcl list of Lisp values</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
+proc ::constcl::MkEnv {args} {
+  if {[llength $args] == 1} {
+    set parms #NIL
+    set vals {}
+    lassign $args env
+  } elseif {[llength $args] == 3} {
+    lassign $args parms vals env
+  } else {
+    error "wrong number of arguments"
+  }
+  Environment new $parms $vals $env
+}
+```
+#### environment? procedure
+
+
+Recognizes an environment by type.
+
+<table border=1><thead><tr><th colspan=2 align="left">environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::environment? {val} {
+  typeof? $val Environment
+}
+```
+### Lexical scoping
+
+
+Example:
+
+```
+ConsTcl> (define (circle-area r) (* pi (* r r)))
+ConsTcl> (circle-area 10)
+314.1592653589793
+```
+
+
+During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a [local variable](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of [lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope).
+
+
+In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to):
+
+![#](images/env1.png)
+
+During the call. Note how the global `` r `` is shadowed by the local one, and how the local environment links to the global one to find `` * `` and `` pi ``.
+
+![#](images/env2.png)
+
+After the call, we are back to the first state again.
+
+![#](images/env1.png)
+## The REPL
+
+
+The REPL (read-eval-print loop) is a loop that repeatedly _reads_ a Scheme source string from the user through the command `` ::constcl::input `` (breaking the loop if given an empty line) and `` ::constcl::parse ``, _evaluates_ it using `` ::constcl::eval ``, and _prints_ using `` ::constcl::write ``.
+
+
+
+__input__
+
+
+`` input `` is modelled after the Python 3 function. It displays a prompt and reads a string.
+
+```
+proc ::constcl::input {prompt} {
+  puts -nonewline $prompt
+  flush stdout
+  set buf [gets stdin]
+  set openpars [regexp -all -inline {\(} $buf]
+  set clsepars [regexp -all -inline {\)} $buf]
+  set openbrak [regexp -all -inline {\[} $buf]
+  set clsebrak [regexp -all -inline {\]} $buf]
+  while {[llength $openpars] > [llength $clsepars] ||
+         [llength $openbrak] > [llength $clsebrak]} {
+    ::append buf [gets stdin]
+    set openpars [regexp -all -inline {\(} $buf]
+    set clsepars [regexp -all -inline {\)} $buf]
+    set openbrak [regexp -all -inline {\[} $buf]
+    set clsebrak [regexp -all -inline {\]} $buf]
+  }
+  return $buf
+}
+```
+
+
+__repl__
+
+
+`` repl `` puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+
+```
+proc ::repl {{prompt "ConsTcl> "}} {
+  set cur_env [::constcl::MkEnv ::constcl::global_env]
+  set str [::constcl::input $prompt]
+  while {$str ne ""} {
+    set expr [::constcl::parse $str]
+    set val [::constcl::eval $expr $cur_env]
+    ::constcl::write $val
+    set str [::constcl::input $prompt]
+  }
+  $cur_env destroy
+}
+```
+
+
+Well!
+
+
+After 1843 lines of code, the interpreter is done. Now for the built-in procedures.
+
 ## Built-in procedures
 ### Equivalence predicates
 
@@ -4864,7 +5153,6 @@ oo::define ::constcl::Procedure method show {} {
   return [self]
 }
 ```
-
 #### MkProcedure generator
 
 
@@ -5588,9 +5876,9 @@ proc ::constcl::show-pair {pair} {
 Example:
 
 ```
-(cons 'a 'b)              =>  (a . b)
-(cons 'a nil)             =>  (a)
-(cons 'a (cons 'b nil))   =>  (a b)
+(cons 'a 'b)              ==>  (a . b)
+(cons 'a nil)             ==>  (a)
+(cons 'a (cons 'b nil))   ==>  (a b)
 ```
 ![#](images/consing.png)
 <table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
@@ -5612,7 +5900,7 @@ proc ::constcl::cons {car cdr} {
 Example:
 
 ```
-(car '(a b))   =>  a
+(car '(a b))   ==>  a
 ```
 <table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -5633,7 +5921,7 @@ proc ::constcl::car {pair} {
 Example:
 
 ```
-(cdr '(a b))   =>  (b)
+(cdr '(a b))   ==>  (b)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -5708,7 +5996,7 @@ Example:
 
 ```
 (let ((pair (cons 'a 'b)) (val 'x))
-  (set-car! pair val))                =>  (x . b)
+  (set-car! pair val))                ==>  (x . b)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
@@ -5730,7 +6018,7 @@ Example:
 
 ```
 (let ((pair (cons 'a 'b)) (val 'x))
-  (set-cdr! pair val))                =>  (a . x)
+  (set-cdr! pair val))                ==>  (a . x)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
@@ -5797,7 +6085,7 @@ proc ::constcl::listp {pair} {
 Example:
 
 ```
-(list 1 2 3)   =>  (1 2 3)
+(list 1 2 3)   ==>  (1 2 3)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -5826,7 +6114,7 @@ proc ::constcl::list {args} {
 Example:
 
 ```
-(length '(a b c d))   =>  4
+(length '(a b c d))   ==>  4
 ```
 <table border=1><thead><tr><th colspan=2 align="left">length (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -5869,7 +6157,7 @@ proc ::constcl::length-helper {pair} {
 Example:
 
 ```
-(append '(a b) '(c d))   =>  (a b c d)
+(append '(a b) '(c d))   ==>  (a b c d)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -5918,7 +6206,7 @@ proc ::constcl::copy-list {pair next} {
 Example:
 
 ```
-(reverse '(a b c))   =>  (c b a)
+(reverse '(a b c))   ==>  (c b a)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -5940,7 +6228,7 @@ Example:
 
 ```
 (let ((lst '(a b c d e f)) (k 3))
-  (list-tail lst k))                =>  (d e f)
+  (list-tail lst k))                ==>  (d e f)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
 
@@ -5966,7 +6254,7 @@ Example:
 
 ```
 (let ((lst '(a b c d e f)) (k 3))
-  (list-ref lst k))                 =>  d
+  (list-ref lst k))                 ==>  d
 ```
 <table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -5994,7 +6282,7 @@ Example:
 
 ```
 (let ((lst '(a b c d e f)) (val 'd))
-  (memq val lst))                      =>  (d e f)
+  (memq val lst))                      ==>  (d e f)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
@@ -6068,8 +6356,9 @@ proc ::constcl::member-proc {epred val1 val2} {
 Example:
 
 ```
-(let ((e '((a . 1) (b . 2) (c . 3))) (key 'a))
-  (assq key e))                                  => (a . 1)
+(let ((e '((a . 1) (b . 2) (c . 3)))
+      (key 'a))
+  (assq key e))                        ==> (a . 1)
 ```
 <table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
@@ -7268,466 +7557,6 @@ proc ::constcl::vector-fill! {vec fill} {
   $vec fill! $fill
 }
 ```
-## Identifier validation
-
-
-__idcheckinit__
-
-
-__idchecksubs__
-
-
-__idcheck__
-
-
-__varcheck__
-
-
-Some routines for checking if a string is a valid identifier. `` idcheckinit `` checks the first character, `` idchecksubs `` checks the rest. `` idcheck `` calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which `` varcheck `` checks, for a set of keywords given in the standard.
-
-```
-proc ::constcl::idcheckinit {init} {
-  if {[::string is alpha -strict $init] ||
-    $init in {! $ % & * / : < = > ? ^ _ ~}} {
-    return true
-  } else {
-    return false
-  }
-}
-```
-```
-proc ::constcl::idchecksubs {subs} {
-  foreach c [split $subs {}] {
-    if {!([::string is alnum -strict $c] ||
-      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
-      return false
-    }
-  }
-  return true
-}
-```
-```
-proc ::constcl::idcheck {sym} {
-  if {$sym eq {}} {return $sym}
-  if {(![idcheckinit [::string index $sym 0]] ||
-    ![idchecksubs [::string range $sym 1 end]]) &&
-    $sym ni {+ - ...}} {
-    ::error "Identifier expected ($sym)"
-  }
-  set sym
-}
-```
-```
-proc ::constcl::varcheck {sym} {
-  if {$sym in {
-    else => define unquote unquote-splicing
-    quote lambda if set! begin cond and or
-    case let let* letrec do delay quasiquote
-  }} {
-    ::error "Variable name is reserved: $sym"
-  }
-  return $sym
-}
-```
-## Environment class and objects
-
-
-The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
-
-
-The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
-
-#### Environment class
-```
-catch { ::constcl::Environment destroy }
-
-oo::class create ::constcl::Environment {
-  variable bindings outer_env
-  constructor {syms vals {outer {}}} {
-    set bindings [dict create]
-    if {[T [::constcl::null? $syms]]} {
-      if {[llength $vals]} {
-        error "too many arguments"
-      }
-    } elseif {[T [::constcl::list? $syms]]} {
-      set syms [::constcl::splitlist $syms]
-      set symsn [llength $syms]
-      set valsn [llength $vals]
-      if {$symsn != $valsn} {
-        error [
-          ::append --> "wrong # of arguments, " \
-            "$valsn instead of $symsn"]
-      }
-      foreach sym $syms val $vals {
-        my bind $sym [lindex $val 0] [lindex $val 1]
-      }
-    } elseif {[T [::constcl::symbol? $syms]]} {
-      my bind $syms VARIABLE [
-        ::constcl::list {*}[lmap v $vals {
-          lindex $v 1
-        }]]
-    } else {
-      while true {
-        if {[llength $vals] < 1} {
-          error "too few arguments"
-        }
-        my bind [::constcl::car $syms] \
-          [lindex $vals 0 0] [lindex $vals 0 1]
-        set vals [lrange $vals 1 end]
-        if {[T [
-          ::constcl::symbol? [
-            ::constcl::cdr $syms]]]} {
-          my bind [::constcl::cdr $syms] \
-            VARIABLE [
-              ::constcl::list {*}[lmap v $vals {
-                lindex $v 1
-              }]]
-          set vals {}
-          break
-        } else {
-          set syms [::constcl::cdr $syms]
-        }
-      }
-    }
-    set outer_env $outer
-  }
-  method find {sym} {
-    if {$sym in [dict keys $bindings]} {
-      self
-    } else {
-      $outer_env find $sym
-    }
-  }
-  method get {sym} {
-    dict get $bindings $sym
-  }
-  method unbind {sym} {
-    dict unset bindings $sym
-  }
-  method bind {sym type info} {
-    if {[dict exists $bindings $sym]} {
-      set bi [my get $sym]
-      lassign $bi bt in
-      if {$bt in {SPECIAL VARIABLE SYNTAX}} {
-        error "[$sym name] is already bound"
-      }
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method assign {sym type info} {
-    if {![dict exists $bindings $sym]} {
-      error "[$sym name] is not bound"
-    }
-    set bi [my get $sym]
-    lassign $bi bt in
-    if {$bt ne "VARIABLE"} {
-      error "[$sym name] is not assignable"
-    }
-    dict set bindings $sym [::list $type $info]
-  }
-  method parent {} {
-    set outer_env
-  }
-  method names {} {
-    dict keys $bindings
-  }
-  method values {} {
-    dict values $bindings
-  }
-}
-```
-#### MkEnv generator
-
-<table border=1><thead><tr><th colspan=2 align="left">MkEnv (internal)</th></tr></thead><tr><td>?parms?</td><td>a Scheme formals list</td></tr><tr><td>?vals?</td><td>a Tcl list of Lisp values</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
-
-```
-proc ::constcl::MkEnv {args} {
-  if {[llength $args] == 1} {
-    set parms #NIL
-    set vals {}
-    lassign $args env
-  } elseif {[llength $args] == 3} {
-    lassign $args parms vals env
-  } else {
-    error "wrong number of arguments"
-  }
-  Environment new $parms $vals $env
-}
-```
-### MIT Scheme environment library
-
-
-Definition by MIT, implementation by me.
-
-#### environment? procedure
-
-
-Recognizes an environment by type.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::environment? {val} {
-  typeof? $val Environment
-}
-```
-#### environment-has-parent? procedure
-
-
-Returns `` #t `` if _env_ has a parent environment; otherwise returns `` #f ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-has-parent? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg environment-has-parent?
-
-proc ::constcl::environment-has-parent? {env} {
-  if {[$env parent] ne "#NIL"} {
-    return #t
-  } else {
-    return #f
-  }
-}
-```
-#### environment-parent procedure
-
-
-Returns the parent environment of _env_. It is an error if _env_ has no parent.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-parent (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
-
-```
-reg environment-parent
-
-proc ::constcl::environment-parent {env} {
-  set parent [$env parent]
-  if {$parent ne "#NIL"} {
-    return $parent
-  } else {
-    error "[$env show] has no parent"
-  }
-}
-```
-#### environment-bound-names procedure
-
-
-Returns a newly allocated list of the names (symbols) that are bound by _env_. This does not include the names that are bound by the parent environment of _env_.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-bound-names (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of symbols</td></tr></table>
-
-```
-reg environment-bound-names
-
-proc ::constcl::environment-bound-names {env} {
-  list {*}[$env names]
-}
-```
-#### environment-bindings procedure
-
-
-Returns a newly allocated list of the bindings of _env_; does not include the bindings of the parent environment. Each element of this list takes one of two forms: `` (name) `` indicates that name is bound but unassigned, while `` (name . object) `` indicates that _name_ is bound, and its value is _object_.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-bindings (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
-
-```
-reg environment-bindings
-
-proc ::constcl::environment-bindings {env} {
-  set keys [list {*}[$env names]]
-  set vals [list {*}[lmap v [$env values] {
-    list [S quote] [list [S [lindex $v 0]] \
-      [MkString [lindex $v 1]]]
-  }]]
-  pairlis-tcl $keys $vals
-}
-```
-#### environment-bound?
-
-
-Returns `` #t `` if _sym_ is bound in _env_ or one of its ancestor environments; otherwise returns `` #f ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-bound? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg environment-bound?
-
-proc ::constcl::environment-bound? {env sym} {
-  # X
-  set e [$env find $sym]
-  if {$e eq "::constcl::null_env"} {
-    return #f
-  } else {
-    return #t
-  }
-}
-```
-#### environment-lookup procedure
-
-
-_Sym_ must be bound in _env_ or one of its ancestor environments. Returns the value to which it is bound.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-lookup (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
-```
-reg environment-lookup
-
-proc ::constcl::environment-lookup {env sym} {
-  if {[T [environment-bound? $env $sym]]} {
-    lookup $sym [$env find $sym]
-  }
-}
-```
-#### environment-assignable? procedure
-
-
-Symbol must be bound in environment or one of its ancestor environments. Returns `` #t `` if the binding may be modified by side effect.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-assignable? (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg environment-assignable?
-
-proc ::constcl::environment-assignable? {env sym} {
-  if {[environment-bound? $env $sym]} {
-    # all bound names are assignable in ConsTcl
-    return #t
-  }
-}
-```
-#### environment-assign! procedure
-
-
-_Sym_ must be bound in _env_ or one of its ancestor environments, and must be assignable. Modifies the binding to have _obj_ as its value, and returns an unspecified result.
-
-<table border=1><thead><tr><th colspan=2 align="left">environment-assign! (public)</th></tr></thead><tr><td>env</td><td>an environment</td></tr><tr><td>sym</td><td>a symbol</td></tr><tr><td>obj</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-reg environment-assign!
-
-proc ::constcl::environment-assign! {env sym obj} {
-  /set! $sym $obj $env  
-}
-```
-#### system-global-environment variable
-
-
-The variable `` system-global-environment `` is bound to the environment that's the parent of the `` user-initial-environment ``. Primitives and system procedures are bound (and sometimes closed) in this environment.
-
-#### user-initial-environment variable
-
-
-The variable `` user-initial-environment `` is bound to the default environment in which typed expressions are evaluated by the top-level REP loop.
-
-#### nearest-repl/environment procedure
-
-
-Returns the current REP loop environment (i.e. the current environment of the closest enclosing REP loop). When Scheme first starts up, this is the same as `` user-initial-environment ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">nearest-repl/environment (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
-
-```
-proc ::constcl::nearest-repl/environment {} {
-  # TODO
-}
-```
-#### ge procedure
-
-
-Changes the current REP loop environment to `` env ``. `` env `` can be either an environment or a procedure object. If it's a procedure, the environment in which that procedure was closed is the new environment.
-
-<table border=1><thead><tr><th colspan=2 align="left">ge (public)</th></tr></thead><tr><td>env</td><td>an environment or procedure object</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::ge {env} {
-  # TODO
-}
-```
-#### make-environment special form
-
-
-Produces a new environment that is a child of the environment in which it is executed, evaluates the expressions sequentially in the new environment, and returns the new environment. Note that
-
-
-``(make-environment expression ...)``
-
-
-
-is equivalent to:
-
-```
-(let ()
-  expression ...
-  (the-environment))
-```
-<table border=1><thead><tr><th colspan=2 align="left">make-environment (public)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
-
-```
-reg make-environment
-
-proc ::constcl::make-environment {exps} {
-  set env [
-    MkEnv [the-environment]]
-  set body $exps
-  /define [S body] $body $env
-  set qq "`(let ()
-             ,@body
-             (the-environment))"
-  set expr [expand-quasiquote [parse $qq] $env]
-  return [eval $expr $env]
-}
-```
-#### the-environment special form
-
-
-Returns the current environment.
-
-<table border=1><thead><tr><th colspan=2 align="left">the-environment (public)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
-
-```
-proc ::constcl::the-environment {} {
-  # TODO
-}
-```
-#### interpreter-environment? procedure
-
-
-Returns `` #t `` if _val_ is an interpreter environment; otherwise returns `` #f ``.
-
-<table border=1><thead><tr><th colspan=2 align="left">interpreter-environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-reg interpreter-environment
-
-proc ::constcl::interpreter-environment {val} {
-  # TODO
-}
-```
-### Lexical scoping
-
-
-Example:
-
-```
-ConsTcl> (define (circle-area r) (* pi (* r r)))
-ConsTcl> (circle-area 10)
-314.1592653589793
-```
-
-
-During a call to the procedure `` circle-area ``, the symbol `` r `` is bound to the value 10. But we don't want the binding to go into the global environment, possibly clobbering an earlier definition of `` r ``. The solution is to use separate (but linked) environments, making `` r ``'s binding a [local variable](https://en.wikipedia.org/wiki/Local_variable) in its own environment, which the procedure will be evaluated in. The symbols `` * `` and `` pi `` will still be available through the local environment's link to the outer global environment. This is all part of [lexical scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope).
-
-
-In the first image, we see the global environment before we call `` circle-area `` (and also the empty null environment which the global environment links to):
-
-![#](images/env1.png)
-
-During the call. Note how the global `` r `` is shadowed by the local one, and how the local environment links to the global one to find `` * `` and `` pi ``.
-
-![#](images/env2.png)
-
-After the call, we are back to the first state again.
-
-![#](images/env1.png)
 ## Initialization
 
 
@@ -7859,58 +7688,6 @@ pe {(load "schemebase.scm")}
 
 Thereafter, each time a user-defined procedure is called, a new `` Environment `` object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
 
-## The REPL
-
-
-The REPL (read-eval-print loop) is a loop that repeatedly _reads_ a Scheme source string from the user through the command `` ::constcl::input `` (breaking the loop if given an empty line) and `` ::constcl::parse ``, _evaluates_ it using `` ::constcl::eval ``, and _prints_ using `` ::constcl::write ``.
-
-
-
-__input__
-
-
-`` input `` is modelled after the Python 3 function. It displays a prompt and reads a string.
-
-```
-proc ::constcl::input {prompt} {
-  puts -nonewline $prompt
-  flush stdout
-  set buf [gets stdin]
-  set openpars [regexp -all -inline {\(} $buf]
-  set clsepars [regexp -all -inline {\)} $buf]
-  set openbrak [regexp -all -inline {\[} $buf]
-  set clsebrak [regexp -all -inline {\]} $buf]
-  while {[llength $openpars] > [llength $clsepars] ||
-         [llength $openbrak] > [llength $clsebrak]} {
-    ::append buf [gets stdin]
-    set openpars [regexp -all -inline {\(} $buf]
-    set clsepars [regexp -all -inline {\)} $buf]
-    set openbrak [regexp -all -inline {\[} $buf]
-    set clsebrak [regexp -all -inline {\]} $buf]
-  }
-  return $buf
-}
-```
-
-
-__repl__
-
-
-`` repl `` puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
-
-```
-proc ::repl {{prompt "ConsTcl> "}} {
-  set cur_env [::constcl::MkEnv ::constcl::global_env]
-  set str [::constcl::input $prompt]
-  while {$str ne ""} {
-    set expr [::constcl::parse $str]
-    set val [::constcl::eval $expr $cur_env]
-    ::constcl::write $val
-    set str [::constcl::input $prompt]
-  }
-  $cur_env destroy
-}
-```
 ## A Scheme base
 ```
 ; An assortment of procedures to supplement the builtins.

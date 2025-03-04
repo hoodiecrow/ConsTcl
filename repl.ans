@@ -60,4 +60,11 @@ proc ::repl {{prompt "ConsTcl> "}} {
 }
 CB)
 
+MD(
+Well! 
+
+After 1843 lines of code, the interpreter is done. Now for the built-in
+procedures.
+MD)
+
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
