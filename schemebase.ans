@@ -191,3 +191,21 @@ CB(
     1
     (* n (fact (- n 1)))))
 CB)
+
+H4 list-copy procedure
+
+MD(
+Returns a newly allocated copy of E{list}. This copies each of the pairs comprising E{list}. From MIT Scheme.
+MD)
+
+PR(
+list-copy (public);list lvals -> lvals
+PR)
+
+CB(
+(define (list-copy list)
+  (if (null? list)
+      '()
+      (cons (car list)
+            (list-copy (cdr list)))))
+CB)

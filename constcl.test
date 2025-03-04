@@ -301,11 +301,11 @@ source constcl.tcl
 
 
 ::tcltest::test read-22.0 {try reading a vector} -body {
-    pew "#(1 2 3)"
+    pew "'#(1 2 3)"
 } -output "#(1 2 3)\n"
 
 ::tcltest::test read-22.1 {try reading a vector, with non-normal expression} -body {
-    pew "#(1 2 (+ 1 2))"
+    pew "'#(1 2 (+ 1 2))"
 } -output "#(1 2 (+ 1 2))\n"
 
 ::tcltest::test read-22.2 {try read-expr on a couple of vectors} -setup {
@@ -502,7 +502,7 @@ source constcl.tcl
 } -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
 
 ::tcltest::test eval-13.8 {run let macro} -body {
-    pew "(let ((vec #(a b c)) (k 1)) (list vec k))"
+    pew "(let ((vec '#(a b c)) (k 1)) (list vec k))"
 } -output "(#(a b c) 1)\n"
 
 ::tcltest::test eval-13.9 {trigger error in let macro} -body {
@@ -1746,10 +1746,10 @@ qux\bod
 
 
 ::tcltest::test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
-    pew {(vector? #(0 (2 2 2 2) "Anna"))}
+    pew {(vector? '#(0 (2 2 2 2) "Anna"))}
     pew {(vector? (make-vector 3 #\X))}
     pew {(vector? (vector 'a 'b 'c))}
-    pew {(vector? #(a b c))}
+    pew {(vector? '#(a b c))}
 } -output "#t\n#t\n#t\n#t\n"
 
 
@@ -1772,7 +1772,7 @@ qux\bod
 } -output "b\n"
 
 ::tcltest::test vectors-1.4 {try vector-ref} -body {
-    pew {(let ((vec #(a b c)) (k 1)) (vector-ref vec k))}
+    pew {(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))}
 } -output "b\n"
 
 

@@ -62,7 +62,10 @@ Next, some procedures that make my life as developer somewhat easier.
 `` reg `` registers built-in procedures, special forms, and macros in the definitions register. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the [standard library](https://github.com/hoodiecrow/ConsTcl#environment-startup).
 
 
-You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the _binding type_, either `` special `` or `` macro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``. There is also `` regvar ``, which registers variables.
+You can call `` reg `` with one parameter: _name_. _name_ is the string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the _binding type_, either `` special `` or `` macro ``. The former registers special forms like `` if `` and `` define ``, and the latter registers macros like `` and `` or `` when ``.
+
+
+There is also `` regvar ``, which registers variables. You pass the _name_ and _value_ to it. There are only a couple of variables registered this way.
 
 
 `` reg `` and `` regvar `` start out by checking if the definitions register (`` defreg ``) exists, and if not, they create it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
@@ -1457,7 +1460,7 @@ I will talk some more about the implementation of environments in a later sectio
 #### eval procedure
 
 
-The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), atoms and the empty list to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` gets out of them.
+The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), self-evaluating types to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` gets out of them.
 
 <table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
@@ -1468,12 +1471,33 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
+  } elseif {[T [self-evaluating? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
     error "unknown expression type"
+  }
+}
+```
+
+
+__self-evaluating?__ procedure
+
+
+Only numeric, string, character, and boolean constants evaluate to themselves.
+
+<table border=1><thead><tr><th colspan=2 align="left">self-evaluating? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::self-evaluating? {val} {
+  if {[T [number? $val]] || 
+    [T [string? $val]] || 
+    [T [char? $val]] || 
+    [T [boolean? $val]]} {
+    return #t
+  } else {
+    return #f
   }
 }
 ```
@@ -1574,7 +1598,7 @@ proc ::constcl::lookup {sym env} {
 _Example: `` 99 `` ==> 99 (a number evaluates to itself)_
 
 
-Not just numbers but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
+Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
 
 ### Quotation
 
@@ -1582,7 +1606,7 @@ Not just numbers but booleans, characters, strings, and vectors evaluate to them
 _Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader. The argument of `` quote `` may be any external representation of a Lisp object.
+According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader. The argument of `` quote `` may be any external representation of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 #### quote special form
 
@@ -1867,7 +1891,7 @@ When expressions are evaluated in sequence, the order is important for two reaso
 As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
 
 
-THe following forms have an implicit `` begin `` in their bodies and the use of `` begin `` is therefore unnecessary with them:
+The following forms have an implicit `` begin `` in their bodies and the use of `` begin `` is therefore unnecessary with them:
 
 
 `` case ``, `` cond ``, `` define `` (“procedure define” only), `` lambda ``, `` let ``, `` let* ``, `` letrec ``.
@@ -5006,6 +5030,7 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
+  method mkconstant {} {}
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<port-$num>"
@@ -5410,7 +5435,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline $port)"
+  pe "(display #\\newline '$port)"
 }
 ```
 
@@ -7304,43 +7329,6 @@ proc ::constcl::varcheck {sym} {
   return $sym
 }
 ```
-## S9fES
-
-
-I've begun porting parts of S9fES (_Scheme 9 from Empty Space_, by Nils M Holm) to fill out the blanks in e.g. I/O. It remains to be seen if it is successful.
-
-
-I've already mixed this up with my own stuff.
-
-```
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-```
-```
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-```
-```
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
-```
-```
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
-}
-```
 ## Environment class and objects
 
 
@@ -8067,6 +8055,20 @@ proc ::repl {{prompt "ConsTcl> "}} {
   (if (<= n 1)
     1
     (* n (fact (- n 1)))))
+```
+#### list-copy procedure
+
+
+Returns a newly allocated copy of _list_. This copies each of the pairs comprising _list_. From MIT Scheme.
+
+<table border=1><thead><tr><th colspan=2 align="left">list-copy (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+
+```
+(define (list-copy list)
+  (if (null? list)
+      '()
+      (cons (car list)
+            (list-copy (cdr list)))))
 ```
 
 

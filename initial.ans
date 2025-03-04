@@ -27,8 +27,10 @@ You can call K{reg} with one parameter: E{name}. E{name} is the string
 that will eventually become the lookup symbol in the standard library. If you
 give two parameters, the first one is the E{binding type}, either K{special} or K{macro}. The former
 registers special forms like K{if} and K{define}, and the latter registers
-macros like K{and} or K{when}. There is also K{regvar}, which registers
-variables.
+macros like K{and} or K{when}.
+
+There is also K{regvar}, which registers variables. You pass the E{name} and
+E{value} to it. There are only a couple of variables registered this way.
 
 K{reg} and K{regvar} start out by checking if the definitions register (K{defreg})
 exists, and if not, they create it. Then they construct a E{val}(ue) by concatenating

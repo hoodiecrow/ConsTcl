@@ -142,10 +142,10 @@ CB)
 TT(
 
 ::tcltest::test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
-    pew {(vector? #(0 (2 2 2 2) "Anna"))}
+    pew {(vector? '#(0 (2 2 2 2) "Anna"))}
     pew {(vector? (make-vector 3 #\X))}
     pew {(vector? (vector 'a 'b 'c))}
-    pew {(vector? #(a b c))}
+    pew {(vector? '#(a b c))}
 } -output "#t\n#t\n#t\n#t\n"
 
 TT)
@@ -297,7 +297,7 @@ TT(
 } -output "b\n"
 
 ::tcltest::test vectors-1.4 {try vector-ref} -body {
-    pew {(let ((vec #(a b c)) (k 1)) (vector-ref vec k))}
+    pew {(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))}
 } -output "b\n"
 
 TT)

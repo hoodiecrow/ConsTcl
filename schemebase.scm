@@ -61,3 +61,9 @@
   (if (<= n 1)
     1
     (* n (fact (- n 1)))))
+
+(define (list-copy list)
+  (if (null? list)
+      '()
+      (cons (car list)
+            (list-copy (cdr list)))))

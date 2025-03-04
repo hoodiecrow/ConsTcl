@@ -24,6 +24,7 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
+  method mkconstant {} {}
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<port-$num>"
@@ -533,7 +534,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline $port)"
+  pe "(display #\\newline '$port)"
 }
 CB)
 

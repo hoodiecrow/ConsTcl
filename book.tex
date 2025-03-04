@@ -83,9 +83,10 @@ It all started with Peter Norvig's Lisp emulator
 Lispy\footnote{See \texttt{https://norvig.com/lispy.html}}. In January 2025 I
 was inspired to port it to Tcl. The result was Thtcl\footnote{See
 \texttt{https://github.com/hoodiecrow/thtcl}}. It had the same features and
-limitations as Lispy, plus a couple that were due to shortcomings of Tcl, and I
-came out of the experience feeling a bit dissatisfied. In the latter part of
-January I embarked on a new project, ConsTcl, a true Lisp interpreter. In Tcl.
+limitations as Lispy, plus a couple of limitations that were due to
+shortcomings of Tcl, and I came out of the experience feeling a bit
+dissatisfied. In the latter part of January I embarked on a new project,
+ConsTcl, a true Lisp interpreter. In Tcl.
 
 \subsection{About Lisp}
 \label{about-lisp}
@@ -202,7 +203,7 @@ a CAD subsystem for designing drilling boxes).
 
 In addition to my terms as programmer and system manager, I have worked as a
 teacher (teaching C/C++ in upper secondary school) and for a short while I
-produced textbooks for the department for information technology at
+wrote textbooks for the department for information technology at
 the University of Skövde. I've also been active writing answers at
 question-and-answer sites on the web, mainly Stack Overflow.
 
@@ -242,7 +243,10 @@ Next, some procedures that make my life as developer somewhat easier.
 \texttt{reg} registers built-in procedures, special forms, and macros in the definitions register\index{definitions register}. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get dumped into the standard library (see page \pageref{environment-startup}).
 
 
-You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is the string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the \emph{binding type}, either \texttt{special} or \texttt{macro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}. There is also \texttt{regvar}, which registers variables.
+You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is the string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the \emph{binding type}, either \texttt{special} or \texttt{macro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}.
+
+
+There is also \texttt{regvar}, which registers variables. You pass the \emph{name} and \emph{value} to it. There are only a couple of variables registered this way.
 
 
 \texttt{reg} and \texttt{regvar} start out by checking if the definitions register (\texttt{defreg}) exists, and if not, they create it. Then they construct a \emph{val}(ue) by concatenating a keyword (\texttt{VARIABLE}, \texttt{SPECIAL}, or \texttt{SYNTAX}) with a variation on \emph{name} (or, in \texttt{regvar}'s case, \emph{value}). Then they set an \emph{index number} based on the number of values in the \texttt{defreg} so far. Finally they insert the concatenation of \emph{name} and \emph{val} under \emph{index}.
@@ -1996,7 +2000,7 @@ I will talk some more about the implementation of environments in a later sectio
 \index{eval procedure}
 
 
-The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form. Symbols to the value they refer to (see page \pageref{variable-reference}), atoms and the empty list to their own value (see page \pageref{constant-literal}), and expressions that are lists to the value that \texttt{eval-form} gets out of them.
+The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and processes it according to its form. Symbols to the value they refer to (see page \pageref{variable-reference}), self-evaluating types to their own value (see page \pageref{constant-literal}), and expressions that are lists to the value that \texttt{eval-form} gets out of them.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2013,12 +2017,39 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
+  } elseif {[T [self-evaluating? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
     error "unknown expression type"
+  }
+}
+\end{lstlisting}
+
+
+\textbf{self-evaluating?} procedure
+
+
+Only numeric, string, character, and boolean constants evaluate to themselves.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf self-evaluating? (internal)} \\
+val & a Lisp value \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+\index{self-evaluating? procedure}
+\begin{lstlisting}
+proc ::constcl::self-evaluating? {val} {
+  if {[T [number? $val]] || 
+    [T [string? $val]] || 
+    [T [char? $val]] || 
+    [T [boolean? $val]]} {
+    return #t
+  } else {
+    return #f
   }
 }
 \end{lstlisting}
@@ -2149,7 +2180,7 @@ proc ::constcl::lookup {sym env} {
 \emph{Example: \texttt{99} $\Rightarrow$ 99 (a number evaluates to itself)}
 
 
-Not just numbers\index{constant literal} but booleans, characters, strings, and vectors evaluate to themselves, to their innate value. Because of this, they are called autoquoting types (see next paragraph).
+Not just numbers\index{constant literal} but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
 
 \section{Quotation}
 \label{quotation}
@@ -2159,7 +2190,7 @@ Not just numbers\index{constant literal} but booleans, characters, strings, and 
 \emph{Example: \texttt{(quote r)} $\Rightarrow$ \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader. The argument of \texttt{quote} may be any external representation of a Lisp object.
+According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader. The argument of \texttt{quote} may be any external representation of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 \subsection{quote special form}
 \label{quote-special-form}
@@ -2506,7 +2537,7 @@ When expressions are evaluated in sequence\index{sequence}, the order is importa
 As part of the processing of sequences \emph{local defines} are resolved, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
 
 
-THe following forms have an implicit \texttt{begin} in their bodies and the use of \texttt{begin} is therefore unnecessary with them:
+The following forms have an implicit \texttt{begin} in their bodies and the use of \texttt{begin} is therefore unnecessary with them:
 
 
 \texttt{case}, \texttt{cond}, \texttt{define} (“procedure define” only), \texttt{lambda}, \texttt{let}, \texttt{let*}, \texttt{letrec}.
@@ -6335,6 +6366,7 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
+  method mkconstant {} {}
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<port-$num>"
@@ -6769,7 +6801,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline $port)"
+  pe "(display #\\newline '$port)"
 }
 \end{lstlisting}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
@@ -8528,37 +8560,6 @@ proc ::constcl::varcheck {sym} {
   return $sym
 }
 \end{lstlisting}
-\chapter{S9fES}
-\label{s9fes}
-\begin{lstlisting}
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
-\end{lstlisting}
-\begin{lstlisting}
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
-}
-\end{lstlisting}
 \chapter{Environment class and objects}
 \label{environment-class-and-objects}
 \subsection{Environment class}
@@ -9279,6 +9280,23 @@ n & a number \\
   (if (<= n 1)
     1
     (* n (fact (- n 1)))))
+\end{lstlisting}
+\subsection{list-copy procedure}
+\label{list-copy-procedure}
+\index{list-copy procedure}
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-copy (public)} \\
+list & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of Lisp values \\
+\hline
+\end{tabular}
+\begin{lstlisting}
+(define (list-copy list)
+  (if (null? list)
+      '()
+      (cons (car list)
+            (list-copy (cdr list)))))
 \end{lstlisting}
 
 \printindex

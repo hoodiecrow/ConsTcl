@@ -1300,11 +1300,11 @@ CB)
 TT(
 
 ::tcltest::test read-22.0 {try reading a vector} -body {
-    pew "#(1 2 3)"
+    pew "'#(1 2 3)"
 } -output "#(1 2 3)\n"
 
 ::tcltest::test read-22.1 {try reading a vector, with non-normal expression} -body {
-    pew "#(1 2 (+ 1 2))"
+    pew "'#(1 2 (+ 1 2))"
 } -output "#(1 2 (+ 1 2))\n"
 
 ::tcltest::test read-22.2 {try read-expr on a couple of vectors} -setup {

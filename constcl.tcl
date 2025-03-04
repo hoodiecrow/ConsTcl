@@ -803,12 +803,23 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
+  } elseif {[T [self-evaluating? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
     error "unknown expression type"
+  }
+}
+
+proc ::constcl::self-evaluating? {val} {
+  if {[T [number? $val]] || 
+    [T [string? $val]] || 
+    [T [char? $val]] || 
+    [T [boolean? $val]]} {
+    return #t
+  } else {
+    return #f
   }
 }
 
@@ -2926,6 +2937,7 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
+  method mkconstant {} {}
   method write {h} {
     regexp {(\d+)} [self] -> num
     puts -nonewline $h "#<port-$num>"
@@ -3176,7 +3188,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline $port)"
+  pe "(display #\\newline '$port)"
 }
 
 reg load
@@ -4263,31 +4275,6 @@ proc ::constcl::varcheck {sym} {
     ::error "Variable name is reserved: $sym"
   }
   return $sym
-}
-
-proc ::constcl::new-atom {pa pd} {
-  cons3 $pa $pd $::constcl::ATOM_TAG
-}
-
-proc cons3 {pcar pcdr ptag} {
-  # TODO counters
-  set n [MkPair $pcar $pcdr]
-  $n settag $ptag
-  return $n
-}
-
-proc ::constcl::xread {} {
-  if {[$::constcl::InputPort handle] eq "#NIL"} {
-    error "input port is not open"
-  }
-  set ::constcl::Level 0
-  return [read-form 0]
-}
-
-proc ::constcl::read_c_ci {} {
-  tolower [
-    ::read [
-      $::constcl::Input_port handle] 1]]
 }
 
 catch { ::constcl::Environment destroy }

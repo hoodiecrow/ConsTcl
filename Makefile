@@ -17,7 +17,7 @@ EXE      =
 .PHONY: all
 all: book.tex README.md constcl.tcl constcl.test schemebase.scm #wiki/type.md wiki/read.md $(PROGRAM)
 
-source_files = initial.ans input.ans eval.ans macros.ans rld.ans output.ans equipred.ans numbers.ans booleans.ans characters.ans control.ans io.ans pairslists.ans strings.ans symbols.ans vectors.ans idcheck.ans s9fes.ans environment.ans setup.ans repl.ans
+source_files = initial.ans input.ans eval.ans macros.ans rld.ans output.ans equipred.ans numbers.ans booleans.ans characters.ans control.ans io.ans pairslists.ans strings.ans symbols.ans vectors.ans idcheck.ans environment.ans setup.ans repl.ans
 
 constcl.pdf: README.md
 	pandoc -f gfm -t html5 --pdf-engine-opt=--enable-local-file-access --metadata pagetitle="ConsTcl" --css github.css README.md -o constcl.pdf

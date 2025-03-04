@@ -58,7 +58,7 @@ H4 eval procedure
 MD(
 The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
 it according to its form. Symbols to the value they R{refer
-  to}{variable-reference}, atoms and the empty list to their R{own
+  to}{variable-reference}, self-evaluating types to their R{own
     value}{constant-literal}, and expressions that are lists to the value that
     K{eval-form} gets out of them.
 MD)
@@ -74,12 +74,36 @@ proc ::constcl::eval \
   {expr {env ::constcl::global_env}} {
   if {[T [symbol? $expr]]} {
     lookup $expr $env
-  } elseif {[T [null? $expr]] || [T [atom? $expr]]} {
+  } elseif {[T [self-evaluating? $expr]]} {
     set expr
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
     error "unknown expression type"
+  }
+}
+CB)
+
+MD(
+B{self-evaluating?} procedure
+
+Only numeric, string, character, and boolean constants evaluate to themselves.
+MD)
+
+PR(
+self-evaluating? (internal);val val -> bool
+PR)
+
+IX self-evaluating? procedure
+CB(
+proc ::constcl::self-evaluating? {val} {
+  if {[T [number? $val]] || 
+    [T [string? $val]] || 
+    [T [char? $val]] || 
+    [T [boolean? $val]]} {
+    return #t
+  } else {
+    return #f
   }
 }
 CB)
@@ -218,9 +242,9 @@ h3 Constant literal
 MD(
 EM Example: K{99} ==> 99 (a number evaluates to itself)
 
-Not just numbersI{constant literal} but booleans, characters, strings, and
-vectors evaluate to themselves, to their innate value. Because of this, they are
-called autoquoting types (see next paragraph).
+Not just numbersI{constant literal} but booleans, characters, and strings
+evaluate to themselves, to their innate value. Because of this, they are called
+self-evaluating or autoquoting types (see next section).
 MD)
 
 TT(
@@ -236,11 +260,12 @@ EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself
 
 According to the rules of variable reference, a symbol evaluates to its stored
 value. Well, sometimes one wishes to use the symbol itself as a value. That is
-what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol K{x}
-itself and not to any value that might be stored under it. This is so common
-that there is a shorthand notation for it: K{'x} is interpreted as K{(quote x)}
-by the Lisp reader. The argument of K{quote} may be any external representation
-of a Lisp object.
+partly what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol
+K{x} itself and not to any value that might be stored under it. This is so
+common that there is a shorthand notation for it: K{'x} is interpreted as
+K{(quote x)} by the Lisp reader. The argument of K{quote} may be any external
+representation of a Lisp object. In this way, for instance a vector or list
+constant can be introduced in the program text.
 MD)
 
 H4 quote special form
@@ -654,7 +679,7 @@ As part of the processing of sequences E{local defines} are resolved, acting on
 expressions of the form K{(begin (define ...} when in a local environment. See
 the part about R{resolving local defines}{resolving-local-defines}.
 
-THe following forms have an implicit K{begin} in their bodies and the use of
+The following forms have an implicit K{begin} in their bodies and the use of
 K{begin} is therefore unnecessary with them:
 
 K{case}, K{cond}, K{define} (“procedure define” only), K{lambda}, K{let}, K{let*}, K{letrec}.
@@ -1242,7 +1267,7 @@ TT(
 } -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
 
 ::tcltest::test eval-13.8 {run let macro} -body {
-    pew "(let ((vec #(a b c)) (k 1)) (list vec k))"
+    pew "(let ((vec '#(a b c)) (k 1)) (list vec k))"
 } -output "(#(a b c) 1)\n"
 
 ::tcltest::test eval-13.9 {trigger error in let macro} -body {
