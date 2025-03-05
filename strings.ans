@@ -112,11 +112,11 @@ oo::class create ::constcl::String {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
-  method write {handle} {
-    puts -nonewline $handle [my external]
+  method write {port} {
+    $port put [my external]
   }
-  method display {handle} {
-    puts -nonewline $handle [my value]
+  method display {port} {
+    $port put [my value]
   }
   method show {} {
     my external

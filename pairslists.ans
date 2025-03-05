@@ -2,8 +2,35 @@
 H3 Pairs and lists
 
 MD(
-List processing is another of Lisp's great strengths.
+List processing is another of Lisp's great strengths. In Lisp, lists (which are
+actually tree structures) are composed of E{pairs}, which in the most elementary
+case are constructed using calls to the K{cons} function. Example:
+MD)
 
+VB(
+(cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
+VB)
+
+MD(
+A E{pair} consists of a pair of pointers, named the E{car} and the E{cdr} (there
+are historical, not very interesting, reasons for this naming).
+MD)
+
+IG /images/pair.png
+
+MD(
+The example above would look like this (we'll name it L). K{car L} is the symbol
+K{a}, and K{cdr L} is the list K{(b (c))}. K{cadr L} (the K{car} of K{cdr L}) is
+K{b}.
+MD)
+
+IG /images/tree.png
+
+MD(
+All program source code has a tree structure, even though this is usually mostly
+hidden by the language. Lisp, on the other hand, makes the tree structure fully
+explicit by using the same notation for source code as for list data (hence all
+the parentheses).
 MD)
 
 H4 Pair class
@@ -52,13 +79,13 @@ oo::class create ::constcl::Pair {
   method mutable? {} {
     expr {$constant ? "#f" : "#t"}
   }
-  method write {handle} {
-    puts -nonewline $handle "("
-    ::constcl::write-pair $handle [self]
-    puts -nonewline $handle ")"
+  method write {port} {
+    $port put "("
+    ::constcl::write-pair $port [self]
+    $port put ")"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "(%s)" [::constcl::show-pair [self]]

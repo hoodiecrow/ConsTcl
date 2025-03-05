@@ -35,12 +35,12 @@ oo::define ::constcl::Procedure method call {args} {
     ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
-oo::define ::constcl::Procedure method write {handle} {
+oo::define ::constcl::Procedure method write {port} {
   regexp {(\d+)} [self] -> num
-  puts -nonewline $handle "#<proc-$num>"
+  $port put "#<proc-$num>"
 }
-oo::define ::constcl::Procedure method display {handle} {
-  my write $handle
+oo::define ::constcl::Procedure method display {port} {
+  my write $port
 }
 oo::define ::constcl::Procedure method show {} {
   return [self]

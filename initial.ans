@@ -663,11 +663,11 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "."
+  method write {port} {
+    $port put "."
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 CB)
@@ -699,11 +699,11 @@ catch { ::constcl::EndOfFile destroy }
 
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<end-of-file>"
+  method write {port} {
+    $port put "#<end-of-file>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 CB)
@@ -757,11 +757,12 @@ oo::singleton create ::constcl::NIL {
   method numval {} {
     ::error "NUMBER expected"
   }
-  method write {handle} {
-    puts -nonewline $handle "()"
+  method mkconstant {} {}
+  method write {port} {
+    $port put "()"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "()"
@@ -803,11 +804,11 @@ catch { ::constcl::Undefined destroy }
 
 oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<undefined>"
+  method write {port} {
+    $port put "#<undefined>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 CB)
@@ -823,11 +824,11 @@ catch { ::constcl::Unspecified destroy }
 
 oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<unspecified>"
+  method write {port} {
+    $port put "#<unspecified>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 CB)

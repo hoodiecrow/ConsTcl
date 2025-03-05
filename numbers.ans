@@ -42,15 +42,14 @@ oo::class create ::constcl::Number {
   method numval {} {
     set value
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
-  method write {handle} {
-    puts -nonewline $handle [my value]
+  method write {port} {
+    $port put [my value]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     set value

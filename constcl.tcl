@@ -246,11 +246,11 @@ catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "."
+  method write {port} {
+    $port put "."
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 
@@ -262,11 +262,11 @@ catch { ::constcl::EndOfFile destroy }
 
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<end-of-file>"
+  method write {port} {
+    $port put "#<end-of-file>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 
@@ -299,11 +299,12 @@ oo::singleton create ::constcl::NIL {
   method numval {} {
     ::error "NUMBER expected"
   }
-  method write {handle} {
-    puts -nonewline $handle "()"
+  method mkconstant {} {}
+  method write {port} {
+    $port put "()"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "()"
@@ -324,11 +325,11 @@ catch { ::constcl::Undefined destroy }
 
 oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<undefined>"
+  method write {port} {
+    $port put "#<undefined>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 
@@ -336,11 +337,11 @@ catch { ::constcl::Unspecified destroy }
 
 oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
-  method write {handle} {
-    puts -nonewline $handle "#<unspecified>"
+  method write {port} {
+    $port put "#<unspecified>"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
 }
 
@@ -1725,18 +1726,14 @@ reg write
 
 proc ::constcl::write {val args} {
   if {$val ne ""} {
+    set oldport $::constcl::Output_port
     if {[llength $args]} {
       lassign $args port
-      set dealloc 0
-    } else {
-      set port [MkOutputPort stdout]
-      set dealloc 1
+      set ::constcl::Output_port $port
     }
-    set ::constcl::Output_port $port
-    $val write [$::constcl::Output_port handle]
-    puts [$::constcl::Output_port handle] {}
-    set ::constcl::Output_port [MkOutputPort stdout]
-    if {$dealloc} {$port destroy}
+    $val write $::constcl::Output_port
+    $::constcl::Output_port newline
+    set ::constcl::Output_port $oldport
   }
   return
 }
@@ -1745,40 +1742,36 @@ reg display
 
 proc ::constcl::display {val args} {
   if {$val ne ""} {
+    set oldport $::constcl::Output_port
     if {[llength $args]} {
       lassign $args port
-      set dealloc 0
-    } else {
-      set port [MkOutputPort stdout]
-      set dealloc 1
+      set ::constcl::Output_port $port
     }
-    set ::constcl::Output_port $port
-    $val display [$::constcl::Output_port handle]
-    flush [$::constcl::Output_port handle]
-    set ::constcl::Output_port [MkOutputPort stdout]
-    if {$dealloc} {$port destroy}
+    $val display $::constcl::Output_port
+    $::constcl::Output_port flush
+    set ::constcl::Output_port $oldport
   }
   return
 }
 
-proc ::constcl::write-pair {handle pair} {
+proc ::constcl::write-pair {port pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  $a write $handle
+  $a write $port
   if {[T [pair? $d]]} {
     # cdr is a cons pair
-    puts -nonewline $handle " "
-    write-pair $handle $d
+    $port put " "
+    write-pair $port $d
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return
   } else {
     # it is an atom
-    puts -nonewline $handle " . "
-    $d write $handle
+    $port put " . "
+    $d write $port
   }
   return
 }
@@ -1917,6 +1910,13 @@ oo::class create ::constcl::Environment {
   }
   method values {} {
     dict values $bindings
+  }
+  method write {port} {
+    regexp {(\d+)} [self] -> num
+    $port put "#<env-$num>"
+  }
+  method display {port} {
+    my write $port
   }
 }
 
@@ -2089,15 +2089,14 @@ oo::class create ::constcl::Number {
   method numval {} {
     set value
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
-  method write {handle} {
-    puts -nonewline $handle [my value]
+  method write {port} {
+    $port put [my value]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     set value
@@ -2593,7 +2592,6 @@ oo::class create ::constcl::Boolean {
     }
     set boolval $v
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -2603,11 +2601,11 @@ oo::class create ::constcl::Boolean {
   method value {} {
     set boolval
   }
-  method write {handle} {
-    puts -nonewline $handle [my boolval]
+  method write {port} {
+    $port put [my boolval]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    $port put [my boolval]
   }
   method show {} {
     set boolval
@@ -2695,7 +2693,6 @@ oo::class create ::constcl::Char {
       return #f
     }
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -2715,11 +2712,11 @@ oo::class create ::constcl::Char {
       }
     }
   }
-  method write {handle} {
-    puts -nonewline $handle [my external]
+  method write {port} {
+    $port put [my external]
   }
-  method display {handle} {
-    puts -nonewline $handle [my char]
+  method display {port} {
+    $port put [my char]
   }
   method show {} {
     my external
@@ -3010,12 +3007,12 @@ oo::define ::constcl::Procedure method call {args} {
     ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
-oo::define ::constcl::Procedure method write {handle} {
+oo::define ::constcl::Procedure method write {port} {
   regexp {(\d+)} [self] -> num
-  puts -nonewline $handle "#<proc-$num>"
+  $port put "#<proc-$num>"
 }
-oo::define ::constcl::Procedure method display {handle} {
-  my write $handle
+oo::define ::constcl::Procedure method display {port} {
+  my write $port
 }
 oo::define ::constcl::Procedure method show {} {
   return [self]
@@ -3122,13 +3119,12 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
-  method mkconstant {} {}
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<port-$num>"
+    $p put "#<port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 
@@ -3153,12 +3149,12 @@ oo::class create ::constcl::InputPort {
   method copy {} {
     ::constcl::InputPort new $handle
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<input-port-$num>"
+    $p put "#<input-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 
@@ -3193,12 +3189,12 @@ oo::class create ::constcl::StringInputPort {
   method copy {} {
     ::constcl::StringInputPort new $buffer
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<string-input-port-$num>"
+    $p put "#<string-input-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 
@@ -3217,20 +3213,56 @@ oo::class create ::constcl::OutputPort {
   method put {c} {
     puts -nonewline $handle $c
   }
+  method newline {} {
+    puts $handle {}
+  }
+  method flush {} {
+    flush $handle
+  }
   method copy {} {
     ::constcl::OutputPort new $handle
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<output-port-$num>"
+    $p put "#<output-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
+
+oo::class create ::constcl::StringOutputPort {
+  superclass ::constcl::Port
+  variable buffer
+  constructor {} {
+    set buffer {}
+  }
+  method open {name} {}
+  method close {} {}
+  method put {s} {
+    append buffer $s
+  }
+  method newline {} {
+    append buffer \n
+  }
+  method flush {} {}
+  method tostring {} {
+    set buffer
+  }
+  method copy {} {
+    ::constcl::StringOutputPort new $buffer
+  }
+  method write {p} {
+    regexp {(\d+)} [self] -> num
+    $p put "#<string-output-port-$num>"
+  }
+  method display {p} {
+    my write $p
+  }
+}
 
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
@@ -3434,13 +3466,13 @@ oo::class create ::constcl::Pair {
   method mutable? {} {
     expr {$constant ? "#f" : "#t"}
   }
-  method write {handle} {
-    puts -nonewline $handle "("
-    ::constcl::write-pair $handle [self]
-    puts -nonewline $handle ")"
+  method write {port} {
+    $port put "("
+    ::constcl::write-pair $port [self]
+    $port put ")"
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "(%s)" [::constcl::show-pair [self]]
@@ -3829,11 +3861,11 @@ oo::class create ::constcl::String {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
-  method write {handle} {
-    puts -nonewline $handle [my external]
+  method write {port} {
+    $port put [my external]
   }
-  method display {handle} {
-    puts -nonewline $handle [my value]
+  method display {port} {
+    $port put [my value]
   }
   method show {} {
     my external
@@ -4183,7 +4215,6 @@ oo::class create ::constcl::Symbol {
       return #f
     }
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -4193,11 +4224,11 @@ oo::class create ::constcl::Symbol {
   method case-constant {} {
     set caseconstant
   }
-  method write {handle} {
-    puts -nonewline $handle [my name]
+  method write {port} {
+    $port put [my name]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     my name
@@ -4329,11 +4360,11 @@ oo::class create ::constcl::Vector {
   method constant {} {
     set constant
   }
-  method write {handle} {
-    puts -nonewline $handle [my show]
+  method write {port} {
+    $port put [my show]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "#(%s)" [

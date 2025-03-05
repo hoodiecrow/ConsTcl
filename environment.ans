@@ -110,6 +110,13 @@ oo::class create ::constcl::Environment {
   method values {} {
     dict values $bindings
   }
+  method write {port} {
+    regexp {(\d+)} [self] -> num
+    $port put "#<env-$num>"
+  }
+  method display {port} {
+    my write $port
+  }
 }
 CB)
 

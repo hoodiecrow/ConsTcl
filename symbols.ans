@@ -31,7 +31,6 @@ oo::class create ::constcl::Symbol {
       return #f
     }
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -41,11 +40,11 @@ oo::class create ::constcl::Symbol {
   method case-constant {} {
     set caseconstant
   }
-  method write {handle} {
-    puts -nonewline $handle [my name]
+  method write {port} {
+    $port put [my name]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     my name

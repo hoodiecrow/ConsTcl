@@ -65,7 +65,6 @@ oo::class create ::constcl::Char {
       return #f
     }
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -85,11 +84,11 @@ oo::class create ::constcl::Char {
       }
     }
   }
-  method write {handle} {
-    puts -nonewline $handle [my external]
+  method write {port} {
+    $port put [my external]
   }
-  method display {handle} {
-    puts -nonewline $handle [my char]
+  method display {port} {
+    $port put [my char]
   }
   method show {} {
     my external

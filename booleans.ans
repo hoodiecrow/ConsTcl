@@ -20,7 +20,6 @@ oo::class create ::constcl::Boolean {
     }
     set boolval $v
   }
-  method mkconstant {} {}
   method constant {} {
     return 1
   }
@@ -30,11 +29,11 @@ oo::class create ::constcl::Boolean {
   method value {} {
     set boolval
   }
-  method write {handle} {
-    puts -nonewline $handle [my boolval]
+  method write {port} {
+    $port put [my boolval]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    $port put [my boolval]
   }
   method show {} {
     set boolval

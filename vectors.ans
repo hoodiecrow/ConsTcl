@@ -93,11 +93,11 @@ oo::class create ::constcl::Vector {
   method constant {} {
     set constant
   }
-  method write {handle} {
-    puts -nonewline $handle [my show]
+  method write {port} {
+    $port put [my show]
   }
-  method display {handle} {
-    my write $handle
+  method display {port} {
+    my write $port
   }
   method show {} {
     format "#(%s)" [

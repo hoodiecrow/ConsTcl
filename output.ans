@@ -20,18 +20,14 @@ reg write
 
 proc ::constcl::write {val args} {
   if {$val ne ""} {
+    set oldport $::constcl::Output_port
     if {[llength $args]} {
       lassign $args port
-      set dealloc 0
-    } else {
-      set port [MkOutputPort stdout]
-      set dealloc 1
+      set ::constcl::Output_port $port
     }
-    set ::constcl::Output_port $port
-    $val write [$::constcl::Output_port handle]
-    puts [$::constcl::Output_port handle] {}
-    set ::constcl::Output_port [MkOutputPort stdout]
-    if {$dealloc} {$port destroy}
+    $val write $::constcl::Output_port
+    $::constcl::Output_port newline
+    set ::constcl::Output_port $oldport
   }
   return
 }
@@ -53,18 +49,14 @@ reg display
 
 proc ::constcl::display {val args} {
   if {$val ne ""} {
+    set oldport $::constcl::Output_port
     if {[llength $args]} {
       lassign $args port
-      set dealloc 0
-    } else {
-      set port [MkOutputPort stdout]
-      set dealloc 1
+      set ::constcl::Output_port $port
     }
-    set ::constcl::Output_port $port
-    $val display [$::constcl::Output_port handle]
-    flush [$::constcl::Output_port handle]
-    set ::constcl::Output_port [MkOutputPort stdout]
-    if {$dealloc} {$port destroy}
+    $val display $::constcl::Output_port
+    $::constcl::Output_port flush
+    set ::constcl::Output_port $oldport
   }
   return
 }
@@ -81,24 +73,24 @@ write-pair (internal);handle handle pair pair -> none
 PR)
 
 CB(
-proc ::constcl::write-pair {handle pair} {
+proc ::constcl::write-pair {port pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  $a write $handle
+  $a write $port
   if {[T [pair? $d]]} {
     # cdr is a cons pair
-    puts -nonewline $handle " "
-    write-pair $handle $d
+    $port put " "
+    write-pair $port $d
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return
   } else {
     # it is an atom
-    puts -nonewline $handle " . "
-    $d write $handle
+    $port put " . "
+    $d write $port
   }
   return
 }

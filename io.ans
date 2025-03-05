@@ -1,6 +1,21 @@
 
 H3 Input and output
 
+MD(
+Like most programming languages, Scheme has input and output facilities beyond
+direct K{read} and K{write}.  I/O is based on the E{port} abstraction of a
+character supplying or receiving device. There are four kinds of ports:
+MD)
+
+EN file input (InputPort)
+EN file output (OutputPort)
+EN string input (StringInputPort)
+EN string output (StringOutputPort)
+
+MD(
+and also the K{Port} type, which isn't used.
+MD)
+
 H4 Port class
 
 CB(
@@ -24,13 +39,12 @@ oo::class create ::constcl::Port {
     set handle #NIL
     return
   }
-  method mkconstant {} {}
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<port-$num>"
+    $p put "#<port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 CB)
@@ -59,12 +73,12 @@ oo::class create ::constcl::InputPort {
   method copy {} {
     ::constcl::InputPort new $handle
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<input-port-$num>"
+    $p put "#<input-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 CB)
@@ -115,12 +129,12 @@ oo::class create ::constcl::StringInputPort {
   method copy {} {
     ::constcl::StringInputPort new $buffer
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<string-input-port-$num>"
+    $p put "#<string-input-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 CB)
@@ -143,15 +157,21 @@ oo::class create ::constcl::OutputPort {
   method put {c} {
     puts -nonewline $handle $c
   }
+  method newline {} {
+    puts $handle {}
+  }
+  method flush {} {
+    flush $handle
+  }
   method copy {} {
     ::constcl::OutputPort new $handle
   }
-  method write {h} {
+  method write {p} {
     regexp {(\d+)} [self] -> num
-    puts -nonewline $h "#<output-port-$num>"
+    $p put "#<output-port-$num>"
   }
-  method display {h} {
-    my write $h
+  method display {p} {
+    my write $p
   }
 }
 CB)
@@ -169,6 +189,40 @@ PR)
 CB(
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
+CB)
+
+H4 StringOutputPort class
+
+CB(
+oo::class create ::constcl::StringOutputPort {
+  superclass ::constcl::Port
+  variable buffer
+  constructor {} {
+    set buffer {}
+  }
+  method open {name} {}
+  method close {} {}
+  method put {s} {
+    append buffer $s
+  }
+  method newline {} {
+    append buffer \n
+  }
+  method flush {} {}
+  method tostring {} {
+    set buffer
+  }
+  method copy {} {
+    ::constcl::StringOutputPort new $buffer
+  }
+  method write {p} {
+    regexp {(\d+)} [self] -> num
+    $p put "#<string-output-port-$num>"
+  }
+  method display {p} {
+    my write $p
+  }
+}
 CB)
 
 MD(
