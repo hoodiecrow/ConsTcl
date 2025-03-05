@@ -3215,7 +3215,7 @@ proc ::constcl::write {val args} {
 #### display procedure
 
 
-The `` display `` procedure is like `` write `` but it calls the method's `` display `` method and doesn't print a newline.
+The `` display `` procedure is like `` write `` but it calls the object's `` display `` method and doesn't print a newline afterwards.
 
 <table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -3239,9 +3239,9 @@ proc ::constcl::display {val args} {
 #### write-pair procedure
 
 
-The `` write-pair `` procedure prints a Pair object.
+The `` write-pair `` procedure prints a Pair object except for the beginning and ending parentheses.
 
-<table border=1><thead><tr><th colspan=2 align="left">write-pair (internal)</th></tr></thead><tr><td>handle</td><td>a channel handle</td></tr><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">write-pair (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::write-pair {port pair} {
@@ -3330,10 +3330,16 @@ proc ::constcl::varcheck {sym} {
 ## Environment class and objects
 
 
-The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment. In this way, there is a chain connecting the latest environment all the way to the global environment and then stopping at the null environment, which can be traversed by the `` find `` method to find which innermost environment a given symbol is bound in.
+The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment. In this way, there is a chain connecting the latest environment all the way to the global environment and then stopping at the null environment. This chain can be traversed by the `` find `` method to find which innermost environment a given symbol is bound in.
+
+
+Using a dictionary means that name lookup is by hash table lookup. In a typical Lisp implementation, large environments are served by hash lookup, while small ones have name lookup by linear search.
 
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+
+
+Names are stored as Lisp symbols, while values are stored as they are, as Lisp or Tcl values. This means that a name might have to be converted to a symbol before lookup, and the result of lookup may have to be converted afterwards. Note that in the two cases where a number of values are stored under one name (a formals list of a single symbol or a dotted list), then the values are stored as a Lisp list of values.
 
 #### Environment class
 ```
@@ -3390,6 +3396,9 @@ oo::class create ::constcl::Environment {
     set outer_env $outer
   }
   method find {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment find"
+    }
     if {$sym in [dict keys $bindings]} {
       self
     } else {
@@ -3397,12 +3406,21 @@ oo::class create ::constcl::Environment {
     }
   }
   method get {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment get"
+    }
     dict get $bindings $sym
   }
   method unbind {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment unbind"
+    }
     dict unset bindings $sym
   }
   method bind {sym type info} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment bind"
+    }
     if {[dict exists $bindings $sym]} {
       set bi [my get $sym]
       lassign $bi bt in
@@ -3413,6 +3431,9 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment assign"
+    }
     if {![dict exists $bindings $sym]} {
       error "[$sym name] is not bound"
     }
@@ -3554,7 +3575,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1841 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1856 lines of code, the interpreter is done. Now for the built-in procedures.
 
 ## Built-in procedures
 ### Equivalence predicates

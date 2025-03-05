@@ -1867,6 +1867,9 @@ oo::class create ::constcl::Environment {
     set outer_env $outer
   }
   method find {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment find"
+    }
     if {$sym in [dict keys $bindings]} {
       self
     } else {
@@ -1874,12 +1877,21 @@ oo::class create ::constcl::Environment {
     }
   }
   method get {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment get"
+    }
     dict get $bindings $sym
   }
   method unbind {sym} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment unbind"
+    }
     dict unset bindings $sym
   }
   method bind {sym type info} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment bind"
+    }
     if {[dict exists $bindings $sym]} {
       set bi [my get $sym]
       lassign $bi bt in
@@ -1890,6 +1902,9 @@ oo::class create ::constcl::Environment {
     dict set bindings $sym [::list $type $info]
   }
   method assign {sym type info} {
+    ::constcl::check {::constcl::symbol? $sym} {
+      "SYMBOL expected\nEnvironment assign"
+    }
     if {![dict exists $bindings $sym]} {
       error "[$sym name] is not bound"
     }
