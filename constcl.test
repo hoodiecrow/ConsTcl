@@ -1314,16 +1314,49 @@ if no {
 } -output "123()\n"
 
 
-::tcltest::test io-1.0 {try with-input-from-file} -constraints knownBug -setup {
-  # the bug is that (write (read)) isn't a thunk
+::tcltest::test io-1.0 {try call-with-input-file} -setup {
+  ::tcltest::makeFile {99 foo "bar"} iofile.txt
+} -body {
+  pe {(let ((f (lambda (port)  (let ((n 0) (s 0))
+       (set! n (read port))
+       (set! s (read port))
+       (display s)
+       (display n)))))
+         (call-with-input-file "iofile.txt" f))}
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -output "foo99"
+
+::tcltest::test io-2.0 {try call-with-output-file} -setup {
+} -body {
+  pe {(let ((f (lambda (port)
+       (display 'foo port)
+       (display 99 port))))
+         (call-with-output-file "iofile.txt" f))}
+    puts [::tcltest::viewFile iofile.txt]
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -returnCodes error -result "remove this line to use" 
+#-output "foo99\n"
+
+::tcltest::test io-3.0 {try with-input-from-file} -setup {
   ::tcltest::makeFile {42} foo.txt
 } -body {
-  pew "(with-input-from-file \"foo.txt\" '(write (read)))"
+  pew "(with-input-from-file \"foo.txt\" (lambda () (write (read))))"
 } -cleanup {
   ::tcltest::removeFile foo.txt
-} -output "42\n()\n"
+} -output "42\n"
 
-::tcltest::test io-2.0 {try newline} -body {
+::tcltest::test io-4.0 {try with-output-to-file} -setup {
+} -body {
+  pew "(with-output-to-file \"foo.txt\" (lambda () (write 42)))"
+  puts [::tcltest::viewFile foo.txt]
+} -cleanup {
+  ::tcltest::removeFile foo.txt
+} -returnCodes error -result "remove this line to use"
+#-output "42\n"
+
+::tcltest::test io-5.0 {try newline} -body {
   pe "(display \"foo\")"
   pe "(newline)"
   pe "(display \"bar\")"

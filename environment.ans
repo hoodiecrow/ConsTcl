@@ -4,9 +4,10 @@ H2 Environment class and objects
 MD(
 The class for environments is called K{Environment}. It is mostly a wrapper
 around a dictionary, with the added finesse of keeping a link to the outer
-environment (starting a chain that goes all the way to the global environment
-and then stops at the null environment) which can be traversed by the find
-method to find which innermost environment a given symbol is bound in.
+environment. In this way, there is a chain connecting the latest environment all
+the way to the global environment and then stopping at the null environment,
+which can be traversed by the K{find} method to find which innermost environment
+a given symbol is bound in.
 
 The long and complex constructor is to accommodate the variations of Scheme
 parameter lists, which can be empty, a proper list, a symbol, or a dotted list.

@@ -249,7 +249,7 @@ You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is the st
 There is also \texttt{regvar}, which registers variables. You pass the \emph{name} and \emph{value} to it. There are only a couple of variables registered this way.
 
 
-\texttt{reg} and \texttt{regvar} start out by checking if the definitions register (\texttt{defreg}) exists, and if not, they create it. Then they construct a \emph{val}(ue) by concatenating a keyword (\texttt{VARIABLE}, \texttt{SPECIAL}, or \texttt{SYNTAX}) with a variation on \emph{name} (or, in \texttt{regvar}'s case, \emph{value}). Then they set an \emph{index number} based on the number of values in the \texttt{defreg} so far. Finally they insert the concatenation of \emph{name} and \emph{val} under \emph{index}.
+\texttt{reg} and \texttt{regvar} start out by checking if the definitions register (\texttt{defreg}) exists, and if not, they create it. Then they construct a \emph{val}(ue) by concatenating a keyword (\texttt{VARIABLE}, \texttt{SPECIAL}, or \texttt{SYNTAX}) with a variation on \emph{name} (or, in \texttt{regvar}'s case, \emph{value}). Then they set an \emph{index number} based on the current size of the \texttt{defreg}. Finally they insert the concatenation of \emph{name} and \emph{val} under \emph{index}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -294,7 +294,7 @@ proc reg {args} {
       set val [::list VARIABLE ::constcl::$name]
     }
   }
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 
@@ -303,7 +303,7 @@ proc regvar {name value} {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 \end{lstlisting}
@@ -1217,13 +1217,11 @@ reg read
 proc ::constcl::read {args} {
   set c {}
   set unget {}
+  set oldport $::constcl::Input_port
   if {[llength $args]} {
     lassign $args port
-  } else {
-    set port $::constcl::Input_port
+    set ::constcl::Input_port $port
   }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
   return $expr
@@ -4367,7 +4365,7 @@ proc ::constcl::varcheck {sym} {
 \label{environment-class-and-objects}
 
 
-The class for environments is called \texttt{Environment}. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+The class for environments is called \texttt{Environment}. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment. In this way, there is a chain connecting the latest environment all the way to the global environment and then stopping at the null environment, which can be traversed by the \texttt{find} method to find which innermost environment a given symbol is bound in.
 
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
@@ -4614,7 +4612,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1843 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1841 lines of code, the interpreter is done. Now for the built-in procedures.
 
 \chapter{Built-in procedures}
 \label{built-in-procedures}
@@ -6709,7 +6707,7 @@ Like most programming languages, Scheme has input and output facilities beyond d
 \end{enumerate}
 
 
-and also the \texttt{Port} type, which isn't used.
+and there is also the \texttt{Port} type, which isn't used other than as a base class.
 
 \subsection{Port class}
 \label{port-class}
@@ -6788,7 +6786,6 @@ oo::class create ::constcl::InputPort {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
-filename & a filename string \\
 \textit{Returns:} & an input port \\
 \hline
 \end{tabular}
@@ -6884,7 +6881,6 @@ oo::class create ::constcl::OutputPort {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkOutputPort (internal)} \\
-filename & a filename string \\
 \textit{Returns:} & an output port \\
 \hline
 \end{tabular}
@@ -6947,7 +6943,7 @@ set ::constcl::Output_port [
 \index{port? procedure}
 
 
-\texttt{port?} recognizes Port objects.
+\texttt{port?} recognizes Port objects, i.e. all kinds of ports.
 
 \begin{lstlisting}
 reg port?
@@ -7030,7 +7026,13 @@ val & a Lisp value \\
 reg input-port?
 
 proc ::constcl::input-port? {val} {
-  typeof? $val InputPort
+  if {[T typeof? $val InputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringInputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 \end{lstlisting}
 \subsection{output-port? procedure}
@@ -7051,7 +7053,13 @@ val & a Lisp value \\
 reg output-port?
 
 proc ::constcl::output-port? {val} {
-  typeof? $val OutputPort
+  if {[T typeof? $val OutputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringOutputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 \end{lstlisting}
 \subsection{current-input-port procedure}

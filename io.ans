@@ -13,7 +13,7 @@ EN string input (StringInputPort)
 EN string output (StringOutputPort)
 
 MD(
-and also the K{Port} type, which isn't used.
+and there is also the K{Port} type, which isn't used other than as a base class.
 MD)
 
 H4 Port class
@@ -90,7 +90,7 @@ K{MkInputPort} generates an InputPort object.
 MD)
 
 PR(
-MkInputPort (internal);filename filename -> iport
+MkInputPort (internal);-> iport
 PR)
 
 CB(
@@ -183,7 +183,7 @@ K{MkOutputPort} generates an OutputPort object.
 MD)
 
 PR(
-MkOutputPort (internal);filename filename -> oport
+MkOutputPort (internal);-> oport
 PR)
 
 CB(
@@ -245,7 +245,7 @@ CB)
 H4 port? procedure
 
 MD(
-K{port?} recognizes Port objects.
+K{port?} recognizes Port objects, i.e. all kinds of ports.
 MD)
 
 CB(
@@ -280,6 +280,21 @@ proc ::constcl::call-with-input-file {filename proc} {
 }
 CB)
 
+TT(
+::tcltest::test io-1.0 {try call-with-input-file} -setup {
+  ::tcltest::makeFile {99 foo "bar"} iofile.txt
+} -body {
+  pe {(let ((f (lambda (port)  (let ((n 0) (s 0))
+       (set! n (read port))
+       (set! s (read port))
+       (display s)
+       (display n)))))
+         (call-with-input-file "iofile.txt" f))}
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -output "foo99"
+TT)
+
 H4 call-with-output-file procedure
 
 MD(
@@ -308,6 +323,20 @@ proc ::constcl::call-with-output-file {filename proc} {
 }
 CB)
 
+TT(
+::tcltest::test io-2.0 {try call-with-output-file} -setup {
+} -body {
+  pe {(let ((f (lambda (port)
+       (display 'foo port)
+       (display 99 port))))
+         (call-with-output-file "iofile.txt" f))}
+    puts [::tcltest::viewFile iofile.txt]
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -returnCodes error -result "remove this line to use" 
+#-output "foo99\n"
+TT)
+
 H4 input-port? procedure
 
 MD(
@@ -322,7 +351,13 @@ CB(
 reg input-port?
 
 proc ::constcl::input-port? {val} {
-  typeof? $val InputPort
+  if {[T typeof? $val InputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringInputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB)
 
@@ -340,7 +375,13 @@ CB(
 reg output-port?
 
 proc ::constcl::output-port? {val} {
-  typeof? $val OutputPort
+  if {[T typeof? $val OutputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringOutputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 CB)
 
@@ -408,14 +449,13 @@ proc ::constcl::with-input-from-file {filename thunk} {
 CB)
 
 TT(
-::tcltest::test io-1.0 {try with-input-from-file} -constraints knownBug -setup {
-  # the bug is that (write (read)) isn't a thunk
+::tcltest::test io-3.0 {try with-input-from-file} -setup {
   ::tcltest::makeFile {42} foo.txt
 } -body {
-  pew "(with-input-from-file \"foo.txt\" '(write (read)))"
+  pew "(with-input-from-file \"foo.txt\" (lambda () (write (read))))"
 } -cleanup {
   ::tcltest::removeFile foo.txt
-} -output "42\n()\n"
+} -output "42\n"
 TT)
 
 H4 with-output-to-file procedure
@@ -445,6 +485,17 @@ proc ::constcl::with-output-to-file {filename thunk} {
   $newport destroy
 }
 CB)
+
+TT(
+::tcltest::test io-4.0 {try with-output-to-file} -setup {
+} -body {
+  pew "(with-output-to-file \"foo.txt\" (lambda () (write 42)))"
+  puts [::tcltest::viewFile foo.txt]
+} -cleanup {
+  ::tcltest::removeFile foo.txt
+} -returnCodes error -result "remove this line to use"
+#-output "42\n"
+TT)
 
 H4 open-input-file procedure
 
@@ -593,7 +644,7 @@ proc ::constcl::newline {args} {
 CB)
 
 TT(
-::tcltest::test io-2.0 {try newline} -body {
+::tcltest::test io-5.0 {try newline} -body {
   pe "(display \"foo\")"
   pe "(newline)"
   pe "(display \"bar\")"

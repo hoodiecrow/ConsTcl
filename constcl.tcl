@@ -26,7 +26,7 @@ proc reg {args} {
       set val [::list VARIABLE ::constcl::$name]
     }
   }
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 
@@ -35,7 +35,7 @@ proc regvar {name value} {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 
@@ -374,13 +374,11 @@ reg read
 proc ::constcl::read {args} {
   set c {}
   set unget {}
+  set oldport $::constcl::Input_port
   if {[llength $args]} {
     lassign $args port
-  } else {
-    set port $::constcl::Input_port
+    set ::constcl::Input_port $port
   }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
   return $expr
@@ -3299,13 +3297,25 @@ proc ::constcl::call-with-output-file {filename proc} {
 reg input-port?
 
 proc ::constcl::input-port? {val} {
-  typeof? $val InputPort
+  if {[T typeof? $val InputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringInputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 
 reg output-port?
 
 proc ::constcl::output-port? {val} {
-  typeof? $val OutputPort
+  if {[T typeof? $val OutputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringOutputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 
 reg current-input-port

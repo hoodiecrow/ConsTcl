@@ -180,13 +180,11 @@ reg read
 proc ::constcl::read {args} {
   set c {}
   set unget {}
+  set oldport $::constcl::Input_port
   if {[llength $args]} {
     lassign $args port
-  } else {
-    set port $::constcl::Input_port
+    set ::constcl::Input_port $port
   }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
   return $expr

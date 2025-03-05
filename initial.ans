@@ -36,7 +36,7 @@ K{reg} and K{regvar} start out by checking if the definitions register (K{defreg
 exists, and if not, they create it. Then they construct a E{val}(ue) by concatenating
 a keyword (K{VARIABLE}, K{SPECIAL}, or K{SYNTAX}) with a variation on E{name}
 (or, in K{regvar}'s case, E{value}).  Then they set an E{index number} based on
-the number of values in the K{defreg} so far. Finally they insert the
+the current size of the K{defreg}. Finally they insert the
 concatenation of E{name} and E{val} under E{index}.
 MD)
 
@@ -75,7 +75,7 @@ proc reg {args} {
       set val [::list VARIABLE ::constcl::$name]
     }
   }
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 
@@ -84,7 +84,7 @@ proc regvar {name value} {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 CB)

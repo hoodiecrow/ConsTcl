@@ -68,7 +68,7 @@ You can call `` reg `` with one parameter: _name_. _name_ is the string that wil
 There is also `` regvar ``, which registers variables. You pass the _name_ and _value_ to it. There are only a couple of variables registered this way.
 
 
-`` reg `` and `` regvar `` start out by checking if the definitions register (`` defreg ``) exists, and if not, they create it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the number of values in the `` defreg `` so far. Finally they insert the concatenation of _name_ and _val_ under _index_.
+`` reg `` and `` regvar `` start out by checking if the definitions register (`` defreg ``) exists, and if not, they create it. Then they construct a _val_(ue) by concatenating a keyword (`` VARIABLE ``, `` SPECIAL ``, or `` SYNTAX ``) with a variation on _name_ (or, in `` regvar ``'s case, _value_). Then they set an _index number_ based on the current size of the `` defreg ``. Finally they insert the concatenation of _name_ and _val_ under _index_.
 
 <table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>?btype?</td><td>either 'special' or 'macro'</td></tr><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -100,7 +100,7 @@ proc reg {args} {
       set val [::list VARIABLE ::constcl::$name]
     }
   }
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 
@@ -109,7 +109,7 @@ proc regvar {name value} {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
-  set idx [llength [dict values $::constcl::defreg]]
+  set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
 ```
@@ -822,13 +822,11 @@ reg read
 proc ::constcl::read {args} {
   set c {}
   set unget {}
+  set oldport $::constcl::Input_port
   if {[llength $args]} {
     lassign $args port
-  } else {
-    set port $::constcl::Input_port
+    set ::constcl::Input_port $port
   }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
   set expr [read-expr]
   set ::constcl::Input_port $oldport
   return $expr
@@ -3332,7 +3330,7 @@ proc ::constcl::varcheck {sym} {
 ## Environment class and objects
 
 
-The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment (starting a chain that goes all the way to the global environment and then stops at the null environment) which can be traversed by the find method to find which innermost environment a given symbol is bound in.
+The class for environments is called `` Environment ``. It is mostly a wrapper around a dictionary, with the added finesse of keeping a link to the outer environment. In this way, there is a chain connecting the latest environment all the way to the global environment and then stopping at the null environment, which can be traversed by the `` find `` method to find which innermost environment a given symbol is bound in.
 
 
 The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
@@ -3556,7 +3554,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1843 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1841 lines of code, the interpreter is done. Now for the built-in procedures.
 
 ## Built-in procedures
 ### Equivalence predicates
@@ -5303,7 +5301,7 @@ Like most programming languages, Scheme has input and output facilities beyond d
 1.  string output (StringOutputPort)
 
 
-and also the `` Port `` type, which isn't used.
+and there is also the `` Port `` type, which isn't used other than as a base class.
 
 #### Port class
 ```
@@ -5373,7 +5371,7 @@ oo::class create ::constcl::InputPort {
 
 `` MkInputPort `` generates an InputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkInputPort \
@@ -5458,7 +5456,7 @@ oo::class create ::constcl::OutputPort {
 
 `` MkOutputPort `` generates an OutputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkOutputPort \
@@ -5515,7 +5513,7 @@ set ::constcl::Output_port [
 #### port? procedure
 
 
-`` port? `` recognizes Port objects.
+`` port? `` recognizes Port objects, i.e. all kinds of ports.
 
 ```
 reg port?
@@ -5575,7 +5573,13 @@ proc ::constcl::call-with-output-file {filename proc} {
 reg input-port?
 
 proc ::constcl::input-port? {val} {
-  typeof? $val InputPort
+  if {[T typeof? $val InputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringInputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 #### output-port? procedure
@@ -5589,7 +5593,13 @@ proc ::constcl::input-port? {val} {
 reg output-port?
 
 proc ::constcl::output-port? {val} {
-  typeof? $val OutputPort
+  if {[T typeof? $val OutputPort]} {
+    return #t
+  } elseif {[T typeof? $val StringOutputPort]} {
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 #### current-input-port procedure
