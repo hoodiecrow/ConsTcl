@@ -400,16 +400,10 @@ reg error
 
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
-    lappend msg "("
-    set times 0
-    foreach arg $args {
-      if {$times} {
-        ::append msg " "
-      }
-      ::append msg [$arg show]
-      incr times
-    }
-    lappend msg ")"
+    set res [lmap arg $args {
+      $arg show
+    }]
+    ::append msg " (" [join $res] ")"
   }
   ::error $msg
 }

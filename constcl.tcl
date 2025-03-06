@@ -156,16 +156,10 @@ reg error
 
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
-    lappend msg "("
-    set times 0
-    foreach arg $args {
-      if {$times} {
-        ::append msg " "
-      }
-      ::append msg [$arg show]
-      incr times
-    }
-    lappend msg ")"
+    set res [lmap arg $args {
+      $arg show
+    }]
+    ::append msg " (" [join $res] ")"
   }
   ::error $msg
 }
@@ -826,20 +820,20 @@ proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
-    set bi [binding-info $op $env]
-    lassign $bi btype info
+    set btype [get-binding-type $op $env]
+    set hinfo [get-handling-info $op $env]
     switch $btype {
       UNBOUND {
         error "unbound symbol" $op
       }
       SPECIAL {
-        $info $expr $env
+        $hinfo $expr $env
       }
       VARIABLE {
-        invoke $info [eval-list $args $env]
+        invoke $hinfo [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$info $expr $env]
+        set expr [$hinfo $expr $env]
         eval $expr $env
       }
       default {
@@ -861,27 +855,21 @@ proc ::constcl::binding-info {op env} {
   }
 }
 
+proc ::constcl::get-binding-type {sym env} {
+  lindex [binding-info $sym $env] 0
+}
+
+proc ::constcl::get-handling-info {sym env} {
+  lindex [binding-info $sym $env] 1
+}
+
 proc ::constcl::lookup {sym env} {
-  set binfo [[$env find $sym] get $sym]
-  set binfo [binding-info $sym $env]
-  switch [lindex $binfo 0] {
-    UNBOUND {
-      error "unbound symbol " [$sym name]
-    }
-    SYNTAX -
-    SPECIAL {
-      error "not a variable name" [$sym name]
-    }
-    VARIABLE {
-      set val [lindex $binfo 1]
-      if {[info object isa object $val]} {
-        return $val
-      } elseif {$val in [info commands $val]} {
-        return "#<proc-[namespace tail $val]>"
-      } else {
-        return $val
-      }
-    }
+  set btype [get-binding-type $sym $env]
+  set hinfo [get-handling-info $sym $env]
+  if {$btype eq "VARIABLE"} {
+    return $hinfo
+  } else {
+    error "not a variable name" $sym
   }
 }
 

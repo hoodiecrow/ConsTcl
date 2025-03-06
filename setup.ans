@@ -157,11 +157,11 @@ TT)
 TT(
 ::tcltest::test cons-15.1 {dereference an unbound symbol} -body {
     pew "foo"
-} -returnCodes error -result "Unbound variable: foo"
+} -returnCodes error -result "not a variable name (foo)"
 
 ::tcltest::test cons-15.2 {dereference an unbound symbol: procedure} -body {
     pew "(foo)"
-} -returnCodes error -result "unbound symbol (foo )"
+} -returnCodes error -result "unbound symbol (foo)"
 TT)
 
 TT(

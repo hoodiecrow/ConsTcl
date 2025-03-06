@@ -326,7 +326,7 @@ source constcl.tcl
 
 ::tcltest::test eval-1.2 {try eval-ing an unbound symbol} -body {
   pew "k"
-} -returnCodes error -result "Unbound variable: k"
+} -returnCodes error -result "not a variable name (k)"
 
 ::tcltest::test eval-2.0 {try eval-ing a constant} -body {
   pew "99"
@@ -1845,11 +1845,11 @@ qux\bod
 
 ::tcltest::test cons-15.1 {dereference an unbound symbol} -body {
     pew "foo"
-} -returnCodes error -result "Unbound variable: foo"
+} -returnCodes error -result "not a variable name (foo)"
 
 ::tcltest::test cons-15.2 {dereference an unbound symbol: procedure} -body {
     pew "(foo)"
-} -returnCodes error -result "unbound symbol (foo )"
+} -returnCodes error -result "unbound symbol (foo)"
 
 ::tcltest::test cons-1.0 {calculate circle area} -body {
     pew "(define (circle-area r) (* pi (* r r)))"
