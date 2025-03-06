@@ -3,10 +3,16 @@ H2 Built-in procedures
 h3 Equivalence predicates
 
 MD(
-Of the three equivalence predicates, K{eq} generally tests for identity (with
-exception for numbers), K{eqv} tests for value equality (except for booleans and
-procedures, where it tests for identity), and K{equal} tests for whether the
-output strings are equal.
+One of the fundamental questions in programming is ``is A equal to B?'' Whether
+the algorithm is about searching, sorting, or almost anything else, an equality
+test comes up sooner rather than later. Lisp takes the question and adds ``what
+does it mean to be equal?''
+
+Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three.
+Of the three, K{eq} generally tests for identity (with exception for numbers),
+K{eqv} tests for value equality (except for booleans and procedures, where it
+tests for identity), and K{equal} tests for whether the output strings are
+equal.
 
 MD)
 H4 eq? procedure

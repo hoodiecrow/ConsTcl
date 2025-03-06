@@ -129,8 +129,7 @@ proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
-    set btype [get-binding-type $op $env]
-    set hinfo [get-handling-info $op $env]
+    lassign [binding-info $op $env] btype hinfo
     switch $btype {
       UNBOUND {
         error "unbound symbol" $op
@@ -176,14 +175,6 @@ proc ::constcl::binding-info {op env} {
   } else {
     return [::list UNBOUND {}]
   }
-}
-
-proc ::constcl::get-binding-type {sym env} {
-  lindex [binding-info $sym $env] 0
-}
-
-proc ::constcl::get-handling-info {sym env} {
-  lindex [binding-info $sym $env] 1
 }
 CB)
 
@@ -231,8 +222,7 @@ PR)
 
 CB(
 proc ::constcl::lookup {sym env} {
-  set btype [get-binding-type $sym $env]
-  set hinfo [get-handling-info $sym $env]
+  lassign [binding-info $sym $env] btype hinfo
   if {$btype eq "VARIABLE"} {
     return $hinfo
   } else {

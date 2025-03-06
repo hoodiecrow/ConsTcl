@@ -2,10 +2,10 @@
 H3 Booleans
 
 MD(
-Booleans are logic values, either true (K{#t}) or false (K{#f}).
-All predicates (procedures whose name end with -?) return
-boolean values. Scheme's conditional K{if} operator considers all
-values except for K{#f} to be true.
+Booleans are logic values, either true (K{#t}) or false (K{#f}).  All predicates
+(procedures whose name end with -?) return boolean values. It's not just the
+boolean values that have truth value, though.  Scheme's conditional K{if}
+operator considers all values except for K{#f} to be true.
 MD)
 
 H4 Boolean class

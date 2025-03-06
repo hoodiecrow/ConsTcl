@@ -221,6 +221,8 @@ I'd like to thank
 \end{itemize}
 
 And now let's journey into the Interpreter.
+\chapter{Initial declarations}
+\label{initial-declarations}
 
 
 First, I need to create the namespace that will be used for most identifiers:
@@ -499,7 +501,7 @@ proc ::constcl::usage {usage expr} {
 \end{tabular}
 \begin{lstlisting}
 proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
+  namespace tail [lindex [info level -1] 0]
 }
 \end{lstlisting}
 \subsection{unbind procedure}
@@ -512,16 +514,19 @@ proc ::pn {} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf unbind (internal)} \\
-sym & a symbol \\
+syms & some symbols \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 \begin{lstlisting}
-proc ::unbind {sym} {
+proc ::unbind {args} {
   # TODO go from current environment
-  set env [::constcl::global_env find $sym]
-  if {$env ne "::constcl::null_env"} {
-    $env unbind $sym
+  set syms $args
+  foreach sym $syms {
+    set env [::constcl::global_env find $sym]
+    if {$env ne "::constcl::null_env"} {
+      $env unbind $sym
+    }
   }
 }
 \end{lstlisting}
@@ -1253,7 +1258,7 @@ The \texttt{interspace?} helper procedure recognizes whitespace between value re
 
 \begin{lstlisting}
 proc ::constcl::interspace? {c} {
-  if {[::string is space $c] || $c eq ";"} {
+  if {[::string is space $c]} {
       return #t
     } else {
       return #f
@@ -1882,7 +1887,7 @@ proc ::constcl::read-string-expr {} {
   set c [readc]
   set expr [MkString $str]
   read-eof $expr
-  $expr mkconstant
+  make-constant $expr
   return $expr
 }
 \end{lstlisting}
@@ -2066,8 +2071,7 @@ proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
-    set btype [get-binding-type $op $env]
-    set hinfo [get-handling-info $op $env]
+    lassign [binding-info $op $env] btype hinfo
     switch $btype {
       UNBOUND {
         error "unbound symbol" $op
@@ -2116,14 +2120,6 @@ proc ::constcl::binding-info {op env} {
     return [::list UNBOUND {}]
   }
 }
-
-proc ::constcl::get-binding-type {sym env} {
-  lindex [binding-info $sym $env] 0
-}
-
-proc ::constcl::get-handling-info {sym env} {
-  lindex [binding-info $sym $env] 1
-}
 \end{lstlisting}
 \section{Syntactic forms}
 \label{syntactic-forms}
@@ -2170,8 +2166,7 @@ env & an environment \\
 \end{tabular}
 \begin{lstlisting}
 proc ::constcl::lookup {sym env} {
-  set btype [get-binding-type $sym $env]
-  set hinfo [get-handling-info $sym $env]
+  lassign [binding-info $sym $env] btype hinfo
   if {$btype eq "VARIABLE"} {
     return $hinfo
   } else {
@@ -4444,7 +4439,7 @@ oo::class create ::constcl::Environment {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
     }
-    if {$sym in [dict keys $bindings]} {
+    if {[dict exists $bindings $sym]} {
       self
     } else {
       $outer_env find $sym
@@ -4620,7 +4615,7 @@ proc ::constcl::input {prompt} {
 \textbf{repl}
 
 
-\texttt{repl} puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+\texttt{repl} puts the `loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
 
 \index{repl}
 \begin{lstlisting}
@@ -4641,7 +4636,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1856 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1854 lines of code, the interpreter is done. Now for the built-in procedures.
 
 \chapter{Built-in procedures}
 \label{built-in-procedures}
@@ -4650,7 +4645,10 @@ After 1856 lines of code, the interpreter is done. Now for the built-in procedur
 \index{equivalence predicates}
 
 
-Of the three equivalence predicates, \texttt{eq} generally tests for identity (with exception for numbers), \texttt{eqv} tests for value equality (except for booleans and procedures, where it tests for identity), and \texttt{equal} tests for whether the output strings are equal.
+One of the fundamental questions in programming is ``is A equal to B?'' Whether the algorithm is about searching, sorting, or almost anything else, an equality test comes up sooner rather than later. Lisp takes the question and adds ``what does it mean to be equal?''
+
+
+Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three. Of the three, \texttt{eq} generally tests for identity (with exception for numbers), \texttt{eqv} tests for value equality (except for booleans and procedures, where it tests for identity), and \texttt{equal} tests for whether the output strings are equal.
 
 \subsection{eq? procedure}
 \label{eq?-procedure}
@@ -4802,7 +4800,10 @@ proc ::constcl::equal? {expr1 expr2} {
 \index{numbers}
 
 
-I have only implemented a bare-bones version of Scheme's numerical library. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
+The word `computer' suggests to numerical calculations. A programming language is almost no use if it doesn't support arithmetic. Scheme has a rich numerical library and many number types that support advanced calculations.
+
+
+I have only implemented a bare-bones version of Scheme's numerical library, though. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
 
 \subsection{Number class}
 \label{number-class}
@@ -5809,7 +5810,7 @@ proc frombase {base number} {
 \index{Booleans}
 
 
-Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. Scheme's conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
+Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
 
 \subsection{Boolean class}
 \label{boolean-class}
@@ -8248,7 +8249,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 \index{Strings}
 
 
-Procedures for dealing with strings of characters.
+Procedures for dealing with strings of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 \subsection{String class}
 \label{string-class}

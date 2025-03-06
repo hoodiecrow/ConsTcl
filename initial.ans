@@ -89,6 +89,28 @@ proc regvar {name value} {
 }
 CB)
 
+TT(
+::tcltest::test initial-1.0 {try reg} -setup {
+  set dr $::constcl::defreg
+} -body {
+  reg foo
+  reg special bar
+  reg macro baz
+  puts [lrange $::constcl::defreg end-5 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE ::constcl::foo}} 198 {bar {SPECIAL ::constcl::special-bar}} 199 {baz {SYNTAX ::constcl::expand-baz}}\n"
+
+::tcltest::test initial-1.1 {try regvar} -setup {
+  set dr $::constcl::defreg
+} -body {
+  regvar foo bar
+  puts [lrange $::constcl::defreg end-1 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE bar}}\n"
+TT)
+
 PT(
 h5 Procedures, functions, and commands
 
@@ -277,7 +299,7 @@ PR)
 
 CB(
 proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
+  namespace tail [lindex [info level -1] 0]
 }
 CB)
 
@@ -288,15 +310,18 @@ K{unbind} removes one binding from the environment it is bound in.
 MD)
 
 PR(
-unbind (internal);sym sym -> none
+unbind (internal);syms syms -> none
 PR)
 
 CB(
-proc ::unbind {sym} {
+proc ::unbind {args} {
   # TODO go from current environment
-  set env [::constcl::global_env find $sym]
-  if {$env ne "::constcl::null_env"} {
-    $env unbind $sym
+  set syms $args
+  foreach sym $syms {
+    set env [::constcl::global_env find $sym]
+    if {$env ne "::constcl::null_env"} {
+      $env unbind $sym
+    }
   }
 }
 CB)

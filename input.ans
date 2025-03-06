@@ -192,7 +192,17 @@ proc ::constcl::read {args} {
 CB)
 
 TT(
-# 2
+::tcltest::test input-2.0 {try read} -setup {
+  ::tcltest::makeFile {99 foo} input.txt
+  set p [pe "(open-input-file \"input.txt\")"]
+} -body {
+  ::constcl::display [::constcl::read $p]
+  ::constcl::display [::constcl::read $p]
+} -cleanup {
+  ::constcl::close-input-port $p
+  ::tcltest::removeFile input.txt
+} -output "99foo"
+
 TT)
 
 h3 Input helper procedures
@@ -219,7 +229,17 @@ proc ::constcl::make-constant {val} {
 CB)
 
 TT(
-# 3
+::tcltest::test input-4.0 {try make-constant} -setup {
+} -body {
+  set a [p {'(a b c)}]
+  set b [p {'#(a b c)}]
+  set c [p {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [$c constant]
+} -cleanup {
+} -output "1\n1\n1\n"
+
 TT)
 
 H4 interspace? procedure
@@ -231,7 +251,7 @@ MD)
 
 CB(
 proc ::constcl::interspace? {c} {
-  if {[::string is space $c] || $c eq ";"} {
+  if {[::string is space $c]} {
       return #t
     } else {
       return #f
@@ -1156,7 +1176,7 @@ proc ::constcl::read-string-expr {} {
   set c [readc]
   set expr [MkString $str]
   read-eof $expr
-  $expr mkconstant
+  make-constant $expr
   return $expr
 }
 CB)

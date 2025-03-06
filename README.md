@@ -267,7 +267,7 @@ proc ::constcl::usage {usage expr} {
 
 ```
 proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
+  namespace tail [lindex [info level -1] 0]
 }
 ```
 #### unbind procedure
@@ -275,14 +275,17 @@ proc ::pn {} {
 
 `` unbind `` removes one binding from the environment it is bound in.
 
-<table border=1><thead><tr><th colspan=2 align="left">unbind (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">unbind (internal)</th></tr></thead><tr><td>syms</td><td>some symbols</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::unbind {sym} {
+proc ::unbind {args} {
   # TODO go from current environment
-  set env [::constcl::global_env find $sym]
-  if {$env ne "::constcl::null_env"} {
-    $env unbind $sym
+  set syms $args
+  foreach sym $syms {
+    set env [::constcl::global_env find $sym]
+    if {$env ne "::constcl::null_env"} {
+      $env unbind $sym
+    }
   }
 }
 ```
@@ -852,7 +855,7 @@ The `` interspace? `` helper procedure recognizes whitespace between value repre
 
 ```
 proc ::constcl::interspace? {c} {
-  if {[::string is space $c] || $c eq ";"} {
+  if {[::string is space $c]} {
       return #t
     } else {
       return #f
@@ -1361,7 +1364,7 @@ proc ::constcl::read-string-expr {} {
   set c [readc]
   set expr [MkString $str]
   read-eof $expr
-  $expr mkconstant
+  make-constant $expr
   return $expr
 }
 ```
@@ -1506,8 +1509,7 @@ proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
-    set btype [get-binding-type $op $env]
-    set hinfo [get-handling-info $op $env]
+    lassign [binding-info $op $env] btype hinfo
     switch $btype {
       UNBOUND {
         error "unbound symbol" $op
@@ -1550,14 +1552,6 @@ proc ::constcl::binding-info {op env} {
     return [::list UNBOUND {}]
   }
 }
-
-proc ::constcl::get-binding-type {sym env} {
-  lindex [binding-info $sym $env] 0
-}
-
-proc ::constcl::get-handling-info {sym env} {
-  lindex [binding-info $sym $env] 1
-}
 ```
 ### Syntactic forms
 
@@ -1590,8 +1584,7 @@ A variable is an identifier (symbol) bound to a location in the environment. If 
 
 ```
 proc ::constcl::lookup {sym env} {
-  set btype [get-binding-type $sym $env]
-  set hinfo [get-handling-info $sym $env]
+  lassign [binding-info $sym $env] btype hinfo
   if {$btype eq "VARIABLE"} {
     return $hinfo
   } else {
@@ -3407,7 +3400,7 @@ oo::class create ::constcl::Environment {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
     }
-    if {$sym in [dict keys $bindings]} {
+    if {[dict exists $bindings $sym]} {
       self
     } else {
       $outer_env find $sym
@@ -3563,7 +3556,7 @@ proc ::constcl::input {prompt} {
 __repl__
 
 
-`` repl `` puts the 'loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
+`` repl `` puts the `loop' in the read-eval-print loop. It repeats prompting for a string until given a blank input. Given non-blank input, it parses and evaluates the string, printing the resulting value.
 
 ```
 proc ::repl {{prompt "ConsTcl> "}} {
@@ -3583,13 +3576,16 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1856 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1854 lines of code, the interpreter is done. Now for the built-in procedures.
 
 ## Built-in procedures
 ### Equivalence predicates
 
 
-Of the three equivalence predicates, `` eq `` generally tests for identity (with exception for numbers), `` eqv `` tests for value equality (except for booleans and procedures, where it tests for identity), and `` equal `` tests for whether the output strings are equal.
+One of the fundamental questions in programming is ``is A equal to B?'' Whether the algorithm is about searching, sorting, or almost anything else, an equality test comes up sooner rather than later. Lisp takes the question and adds ``what does it mean to be equal?''
+
+
+Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three. Of the three, `` eq `` generally tests for identity (with exception for numbers), `` eqv `` tests for value equality (except for booleans and procedures, where it tests for identity), and `` equal `` tests for whether the output strings are equal.
 
 #### eq? procedure
 <table border=1><thead><tr><th colspan=2 align="left">eq?, eqv?, equal? (public)</th></tr></thead><tr><td>expr1</td><td>an expression</td></tr><tr><td>expr2</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
@@ -3712,7 +3708,10 @@ proc ::constcl::equal? {expr1 expr2} {
 ### Numbers
 
 
-I have only implemented a bare-bones version of Scheme's numerical library. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
+The word `computer' suggests to numerical calculations. A programming language is almost no use if it doesn't support arithmetic. Scheme has a rich numerical library and many number types that support advanced calculations.
+
+
+I have only implemented a bare-bones version of Scheme's numerical library, though. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.
 
 #### Number class
 ```
@@ -4554,7 +4553,7 @@ proc frombase {base number} {
 ### Booleans
 
 
-Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. Scheme's conditional `` if `` operator considers all values except for `` #f `` to be true.
+Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional `` if `` operator considers all values except for `` #f `` to be true.
 
 #### Boolean class
 ```
@@ -6523,7 +6522,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 ### Strings
 
 
-Procedures for dealing with strings of characters.
+Procedures for dealing with strings of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 #### String class
 

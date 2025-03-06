@@ -83,7 +83,7 @@ oo::class create ::constcl::Environment {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
     }
-    if {$sym in [dict keys $bindings]} {
+    if {[dict exists $bindings $sym]} {
       self
     } else {
       $outer_env find $sym

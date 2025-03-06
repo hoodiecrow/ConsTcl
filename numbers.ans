@@ -2,10 +2,14 @@
 h3 Numbers
 
 MD(
-I have only implemented a bare-bones version of Scheme's numerical
-library. The following is a reasonably complete framework for operations
-on integers and floating-point numbers. No rationals, no complex numbers,
-no gcd or lcm.
+The word `computer' suggests to numerical calculations. A programming language
+is almost no use if it doesn't support arithmetic. Scheme has a rich numerical
+library and many number types that support advanced calculations.
+
+I have only implemented a bare-bones version of Scheme's numerical library,
+though. The following is a reasonably complete framework for operations on
+integers and floating-point numbers. No rationals, no complex numbers, no gcd or
+lcm.
 
 H4 Number class
 

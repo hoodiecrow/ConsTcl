@@ -44,13 +44,14 @@ function latexify (s) {
 # skip any modeline
 $0 ~ modeline { next; }
 
-/^H1 / {
+/^[Hh]1 / {
     sub(/\n$/, "", $0)
     printf "\\part{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
     next 
 }
-/^H2 / {
+
+/^[Hh]2 / {
     sub(/\n$/, "", $0)
     printf "\\chapter{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))
@@ -113,7 +114,7 @@ $0 ~ modeline { next; }
     next
 }
 
-/^H6 / {
+/^[Hh]6 / {
     sub(/\n$/, "", $0)
     printf "\\paragraph{%s}\n", substr($0, 4)
     printf "\\label{%s}\n", makelabel(substr($0, 4))

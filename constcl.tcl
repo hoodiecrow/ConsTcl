@@ -98,14 +98,17 @@ proc ::constcl::usage {usage expr} {
 }
 
 proc ::pn {} {
-  lindex [split [lindex [info level -1] 0] :] end
+  namespace tail [lindex [info level -1] 0]
 }
 
-proc ::unbind {sym} {
+proc ::unbind {args} {
   # TODO go from current environment
-  set env [::constcl::global_env find $sym]
-  if {$env ne "::constcl::null_env"} {
-    $env unbind $sym
+  set syms $args
+  foreach sym $syms {
+    set env [::constcl::global_env find $sym]
+    if {$env ne "::constcl::null_env"} {
+      $env unbind $sym
+    }
   }
 }
 
@@ -391,7 +394,7 @@ proc ::constcl::make-constant {val} {
 }
 
 proc ::constcl::interspace? {c} {
-  if {[::string is space $c] || $c eq ";"} {
+  if {[::string is space $c]} {
       return #t
     } else {
       return #f
@@ -742,7 +745,7 @@ proc ::constcl::read-string-expr {} {
   set c [readc]
   set expr [MkString $str]
   read-eof $expr
-  $expr mkconstant
+  make-constant $expr
   return $expr
 }
 
@@ -820,8 +823,7 @@ proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
   if {[T [symbol? $op]]} {
-    set btype [get-binding-type $op $env]
-    set hinfo [get-handling-info $op $env]
+    lassign [binding-info $op $env] btype hinfo
     switch $btype {
       UNBOUND {
         error "unbound symbol" $op
@@ -855,17 +857,8 @@ proc ::constcl::binding-info {op env} {
   }
 }
 
-proc ::constcl::get-binding-type {sym env} {
-  lindex [binding-info $sym $env] 0
-}
-
-proc ::constcl::get-handling-info {sym env} {
-  lindex [binding-info $sym $env] 1
-}
-
 proc ::constcl::lookup {sym env} {
-  set btype [get-binding-type $sym $env]
-  set hinfo [get-handling-info $sym $env]
+  lassign [binding-info $sym $env] btype hinfo
   if {$btype eq "VARIABLE"} {
     return $hinfo
   } else {
@@ -1878,7 +1871,7 @@ oo::class create ::constcl::Environment {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
     }
-    if {$sym in [dict keys $bindings]} {
+    if {[dict exists $bindings $sym]} {
       self
     } else {
       $outer_env find $sym

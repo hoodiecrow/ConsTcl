@@ -2,6 +2,26 @@ package require tcltest
 source constcl.tcl
 
 
+::tcltest::test initial-1.0 {try reg} -setup {
+  set dr $::constcl::defreg
+} -body {
+  reg foo
+  reg special bar
+  reg macro baz
+  puts [lrange $::constcl::defreg end-5 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE ::constcl::foo}} 198 {bar {SPECIAL ::constcl::special-bar}} 199 {baz {SYNTAX ::constcl::expand-baz}}\n"
+
+::tcltest::test initial-1.1 {try regvar} -setup {
+  set dr $::constcl::defreg
+} -body {
+  regvar foo bar
+  puts [lrange $::constcl::defreg end-1 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE bar}}\n"
+
 ::tcltest::test read-1.0 {try parse in ConsTcl} -body {
   pew {(parse "42")}
 } -output "42\n"
@@ -14,9 +34,29 @@ source constcl.tcl
   pw "42"
 } -output "42\n"
 
-# 2
+::tcltest::test input-2.0 {try read} -setup {
+  ::tcltest::makeFile {99 foo} input.txt
+  set p [pe "(open-input-file \"input.txt\")"]
+} -body {
+  ::constcl::display [::constcl::read $p]
+  ::constcl::display [::constcl::read $p]
+} -cleanup {
+  ::constcl::close-input-port $p
+  ::tcltest::removeFile input.txt
+} -output "99foo"
 
-# 3
+
+::tcltest::test input-4.0 {try make-constant} -setup {
+} -body {
+  set a [p {'(a b c)}]
+  set b [p {'#(a b c)}]
+  set c [p {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [$c constant]
+} -cleanup {
+} -output "1\n1\n1\n"
+
 
 # 4
 

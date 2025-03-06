@@ -2,7 +2,10 @@
 H3 Strings
 
 MD(
-Procedures for dealing with strings of characters.
+Procedures for dealing with strings of characters. After numbers, strings are
+the most common form of real-world data in computing. Lisp has strings, both
+constant and mutable, but some of the uses for strings in other languages are
+instead taken up by symbols.
 MD)
 
 H4 String class
