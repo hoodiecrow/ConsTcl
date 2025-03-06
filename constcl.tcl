@@ -862,7 +862,27 @@ proc ::constcl::binding-info {op env} {
 }
 
 proc ::constcl::lookup {sym env} {
-  lindex [[$env find $sym] get $sym] 1
+  set binfo [[$env find $sym] get $sym]
+  set binfo [binding-info $sym $env]
+  switch [lindex $binfo 0] {
+    UNBOUND {
+      error "unbound symbol " [$sym name]
+    }
+    SYNTAX -
+    SPECIAL {
+      error "not a variable name" [$sym name]
+    }
+    VARIABLE {
+      set val [lindex $binfo 1]
+      if {[info object isa object $val]} {
+        return $val
+      } elseif {$val in [info commands $val]} {
+        return "#<proc-[namespace tail $val]>"
+      } else {
+        return $val
+      }
+    }
+  }
 }
 
 reg special quote
