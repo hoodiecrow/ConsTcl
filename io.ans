@@ -424,7 +424,7 @@ CB)
 H4 with-input-from-file procedure
 
 MD(
-K{with-input-from-file} opens a file for input and calls a 'thunk' while the
+K{with-input-from-file} opens a file for input and calls a `thunk' while the
 file is open.  The file is closed again when the call is done.
 MD)
 
@@ -461,7 +461,7 @@ TT)
 H4 with-output-to-file procedure
 
 MD(
-K{with-output-to-file} opens a file for output and calls a 'thunk' while the
+K{with-output-to-file} opens a file for output and calls a `thunk' while the
 file is open.  The file is closed again when the call is done.
 MD)
 

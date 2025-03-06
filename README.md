@@ -5654,7 +5654,7 @@ proc ::constcl::current-output-port {} {
 #### with-input-from-file procedure
 
 
-`` with-input-from-file `` opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+`` with-input-from-file `` opens a file for input and calls a `thunk' while the file is open. The file is closed again when the call is done.
 
 <table border=1><thead><tr><th colspan=2 align="left">with-input-from-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -5676,7 +5676,7 @@ proc ::constcl::with-input-from-file {filename thunk} {
 #### with-output-to-file procedure
 
 
-`` with-output-to-file `` opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+`` with-output-to-file `` opens a file for output and calls a `thunk' while the file is open. The file is closed again when the call is done.
 
 <table border=1><thead><tr><th colspan=2 align="left">with-output-to-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>thunk</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -6523,7 +6523,7 @@ Procedures for dealing with strings of characters.
 Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 
-As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed with `` display ``.
+As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed using `` display ``.
 
 ```
 oo::class create ::constcl::String {

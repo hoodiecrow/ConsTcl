@@ -15,7 +15,7 @@ with double quotes and backslashes within the string escaped with a backslash.
 
 As a ConsTcl extension, a K{\n} pair in the external representation is
 stored as a newline character. It is restored to K{\n} if the string is printed
-using K{write}, but remains a newline character if the string is printed with
+using K{write}, but remains a newline character if the string is printed using
 K{display}.
 MD)
 

@@ -7128,7 +7128,7 @@ proc ::constcl::current-output-port {} {
 \index{with-input-from-file procedure}
 
 
-\texttt{with-input-from-file} opens a file for input and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+\texttt{with-input-from-file} opens a file for input and calls a `thunk' while the file is open. The file is closed again when the call is done.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7158,7 +7158,7 @@ proc ::constcl::with-input-from-file {filename thunk} {
 \index{with-output-to-file procedure}
 
 
-\texttt{with-output-to-file} opens a file for output and calls a 'thunk' while the file is open. The file is closed again when the call is done.
+\texttt{with-output-to-file} opens a file for output and calls a `thunk' while the file is open. The file is closed again when the call is done.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8250,7 +8250,7 @@ Procedures for dealing with strings of characters.
 Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 
-As a ConsTcl extension, a \texttt{\textbackslash n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash n} if the string is printed using \texttt{write}, but remains a newline character if the string is printed with \texttt{display}.
+As a ConsTcl extension, a \texttt{\textbackslash n} pair in the external representation is stored as a newline character. It is restored to \texttt{\textbackslash n} if the string is printed using \texttt{write}, but remains a newline character if the string is printed using \texttt{display}.
 
 \begin{lstlisting}
 oo::class create ::constcl::String {
