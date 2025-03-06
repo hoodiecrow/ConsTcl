@@ -2,10 +2,10 @@
 H3 Strings
 
 MD(
-Procedures for dealing with strings of characters. After numbers, strings are
-the most common form of real-world data in computing. Lisp has strings, both
-constant and mutable, but some of the uses for strings in other languages are
-instead taken up by symbols.
+Procedures for dealing with strings of characters. Strings are sequences of
+characters. After numbers, strings are the most common form of real-world data
+in computing. Lisp has strings, both constant and mutable, but some of the uses
+for strings in other languages are instead taken up by symbols.
 MD)
 
 H4 String class
@@ -13,7 +13,7 @@ H4 String class
 MD(
 Strings have the internal representation of a vector of character objects, with
 the data elements of 1) the vector address of the first element, and 2) the
-length of the vector. External representation is surrounded by double quotes,
+length of the vector. External representation is enclosed within double quotes,
 with double quotes and backslashes within the string escaped with a backslash.
 
 As a ConsTcl extension, a K{\n} pair in the external representation is

@@ -856,10 +856,10 @@ The `` interspace? `` helper procedure recognizes whitespace between value repre
 ```
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-      return #t
-    } else {
-      return #f
-    }
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 #### delimiter? procedure
@@ -870,10 +870,10 @@ The `` delimiter? `` helper procedure recognizes delimiter characters between va
 ```
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-      return #t
-    } else {
-      return #f
-    }
+    return #t
+  } else {
+    return #f
+  }
 }
 ```
 #### valid-char? procedure
@@ -6522,12 +6522,12 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 ### Strings
 
 
-Procedures for dealing with strings of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
+Procedures for dealing with strings of characters. Strings are sequences of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 #### String class
 
 
-Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is surrounded by double quotes, with double quotes and backslashes within the string escaped with a backslash.
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is enclosed within double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 
 As a ConsTcl extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed using `` display ``.

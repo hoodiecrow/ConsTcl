@@ -395,18 +395,18 @@ proc ::constcl::make-constant {val} {
 
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-      return #t
-    } else {
-      return #f
-    }
+    return #t
+  } else {
+    return #f
+  }
 }
 
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-      return #t
-    } else {
-      return #f
-    }
+    return #t
+  } else {
+    return #f
+  }
 }
 
 proc ::constcl::valid-char? {name} {

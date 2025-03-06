@@ -46,23 +46,30 @@ source constcl.tcl
 } -output "99foo"
 
 
-::tcltest::test input-4.0 {try make-constant} -setup {
+::tcltest::test input-3.0 {try make-constant} -setup {
 } -body {
   set a [p {'(a b c)}]
-  set b [p {'#(a b c)}]
-  set c [p {"a b c"}]
+  set b [p {`(a b c)}]
+  set c [p {'#(a b c)}]
+  set d [p {"a b c"}]
     puts [[::constcl::cadr $a] constant]
     puts [[::constcl::cadr $b] constant]
-    puts [$c constant]
+    puts [[::constcl::cadr $c] constant]
+    puts [$d constant]
 } -cleanup {
-} -output "1\n1\n1\n"
+} -output "1\n1\n1\n1\n"
 
 
 # 4
 
-# 4
+::tcltest::test input-5.0 {try delimiter?} -setup {
+} -body {
+  pew {(let ((name "Max")) (list"Hi"name(+ 1 2)))}
+} -cleanup {
+} -output "(\"Hi\" \"Max\" 3)\n"
 
-# 5
+#"
+
 
 # 6
 
@@ -74,7 +81,9 @@ source constcl.tcl
 
 # 10
 
-::tcltest::test read-11.0 {try read-expr on dot expr} -setup {
+# 11
+
+::tcltest::test read-12.0 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -88,18 +97,18 @@ source constcl.tcl
 
 
 
-::tcltest::test read-12.0 {try reading a character} -body {
+::tcltest::test read-13.0 {try reading a character} -body {
     ::constcl::display [p {#\A}]
     ::constcl::display [p "#\\space"]
     ::constcl::display [p "#\\newline"]
 } -output "A \n"
 
-::tcltest::test read-12.3 {try reading a character} -body {
+::tcltest::test read-13.3 {try reading a character} -body {
     set expr [p "#\\foobar"]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
-::tcltest::test read-12.4 {try read-expr on characters} -setup {
+::tcltest::test read-13.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -112,17 +121,17 @@ source constcl.tcl
 
 
 
-::tcltest::test read-13.0 {try reading an identifier} {
+::tcltest::test read-14.0 {try reading an identifier} {
     set expr [p "foo"]
     $expr name
 } "foo"
 
-::tcltest::test read-13.1 {try reading an identifier} -body {
+::tcltest::test read-14.1 {try reading an identifier} -body {
     set expr [p "let"]
     ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Variable name is reserved: let"
 
-::tcltest::test read-13.2 {try read-expr on identifiers} -setup {
+::tcltest::test read-14.2 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -134,27 +143,27 @@ source constcl.tcl
 } -output "foo\nbar\n"
 
 
-::tcltest::test read-14.0 {try reading a number} {
+::tcltest::test read-15.0 {try reading a number} {
     [p "99.99"] numval
 } "99.99"
 
-::tcltest::test read-14.1 {try reading a number} {
+::tcltest::test read-15.1 {try reading a number} {
     [p "     99.99"] numval
 } "99.99"
 
-::tcltest::test read-14.2 {try reading a number} {
+::tcltest::test read-15.2 {try reading a number} {
     [p "     9"] numval
 } "9"
 
-::tcltest::test read-14.3 {try reading a number} {
+::tcltest::test read-15.3 {try reading a number} {
     [p "     +9"] numval
 } "9"
 
-::tcltest::test read-14.4 {try reading a number} {
+::tcltest::test read-15.4 {try reading a number} {
     [p "     -9"] numval
 } "-9"
 
-::tcltest::test read-14.5 {try read-expr on numeric expr} -setup {
+::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
     ::tcltest::makeFile {  99 } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -165,36 +174,36 @@ source constcl.tcl
 } -output "99\n"
 
 
-::tcltest::test read-15.0 {try reading an improper list} -body {
+::tcltest::test read-16.0 {try reading an improper list} -body {
     pw "(a . b)"
 } -output "(a . b)\n"
 
-::tcltest::test read-15.1 {try reading an improper list} -body {
+::tcltest::test read-16.1 {try reading an improper list} -body {
     pw "(a b . c)"
 } -output "(a b . c)\n"
 
-::tcltest::test read-15.2 {try reading a list} -body {
+::tcltest::test read-16.2 {try reading a list} -body {
     set expr [p "(a (b))"]
     [::constcl::caadr $expr] name
 } -result "b"
 
-::tcltest::test read-15.3 {try reading a list} -body {
+::tcltest::test read-16.3 {try reading a list} -body {
     pw "(a)"
 } -output "(a)\n"
 
-::tcltest::test read-15.4 {try reading a list} -body {
+::tcltest::test read-16.4 {try reading a list} -body {
     pw "(a b)"
 } -output "(a b)\n"
 
-::tcltest::test read-15.5 {try reading a list} -body {
+::tcltest::test read-16.5 {try reading a list} -body {
     pw "(a (b) )"
 } -output "(a (b))\n"
 
-::tcltest::test read-15.6 {try reading a list} -body {
+::tcltest::test read-16.6 {try reading a list} -body {
     pw "(a (b))"
 } -output "(a (b))\n"
 
-::tcltest::test read-15.7 {try read-expr on pair expr} -setup {
+::tcltest::test read-16.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -204,7 +213,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "(a b c)\n"
 
-::tcltest::test read-15.8 {try read-expr on pair expr} -setup {
+::tcltest::test read-16.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -214,7 +223,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "((d e) f)\n"
 
-::tcltest::test read-15.9 {try read-expr on pair expr} -setup {
+::tcltest::test read-16.9 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -225,18 +234,18 @@ source constcl.tcl
 } -output "(def ghi (jkl mno))\n"
 
 
-::tcltest::test read-16.0 {try reading a number} {
+::tcltest::test read-17.0 {try reading a number} {
     set obj [::constcl::parse "     - "]
     $obj name
 } "-"
 
-::tcltest::test read-16.1 {try reading a number} {
+::tcltest::test read-17.1 {try reading a number} {
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
 
 
-::tcltest::test read-19.0 {try read-expr on booleans} -setup {
+::tcltest::test read-18.0 {try read-expr on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -249,11 +258,11 @@ source constcl.tcl
 
 
 
-::tcltest::test read-17.0 {try reading quasiquoted expression} -body {
+::tcltest::test read-19.0 {try reading quasiquoted expression} -body {
     pw "`(list 1 2 ,@foo)"
 } -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
 
-::tcltest::test read-17.1 {try read-expr on quasiquoted expr} -setup {
+::tcltest::test read-19.1 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -265,16 +274,16 @@ source constcl.tcl
 
 
 
-::tcltest::test read-18.0 {try reading quoted symbol} -body {
+::tcltest::test read-20.0 {try reading quoted symbol} -body {
     pw "'foo"
 } -output "(quote foo)\n"
 
-::tcltest::test read-18.1 {try modifying quoted list} -body {
+::tcltest::test read-20.1 {try modifying quoted list} -body {
     pew "(define a '(a b c))"
     pew "(list-set! a 1 'x)"
 } -returnCodes error -result "Can't modify a constant pair"
 
-::tcltest::test read-18.2 {try read-expr on quoted expr} -setup {
+::tcltest::test read-20.2 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -286,22 +295,22 @@ source constcl.tcl
 
 
 
-::tcltest::test read-20.0 {try reading a string} {
+::tcltest::test read-21.0 {try reading a string} {
     set expr [p {"foo bar"}]
     $expr value
 } "foo bar"
 
-::tcltest::test read-20.1 {try reading a string} {
+::tcltest::test read-21.1 {try reading a string} {
     set expr [p {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
 
-::tcltest::test read-20.2 {try reading a string} {
+::tcltest::test read-21.2 {try reading a string} {
     set expr [p {"\"foo\" \\ bar"}]
     $expr external
 } {"\"foo\" \\ bar"}
 
-::tcltest::test read-20.3 {try read-expr on a string} -setup {
+::tcltest::test read-21.3 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -311,7 +320,7 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "\"foo bar\"\n"
 
-::tcltest::test read-20.4 {try read-expr on a string/eof} -setup {
+::tcltest::test read-21.4 {try read-expr on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -323,11 +332,11 @@ source constcl.tcl
 
 
 
-::tcltest::test read-21.0 {try reading unquoted symbol} -body {
+::tcltest::test read-22.0 {try reading unquoted symbol} -body {
     pw ",foo"
 } -output "(unquote foo)\n"
 
-::tcltest::test read-21.2 {try read-expr on unquoted expr} -setup {
+::tcltest::test read-22.2 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
@@ -340,15 +349,15 @@ source constcl.tcl
 
 
 
-::tcltest::test read-22.0 {try reading a vector} -body {
+::tcltest::test read-23.0 {try reading a vector} -body {
     pew "'#(1 2 3)"
 } -output "#(1 2 3)\n"
 
-::tcltest::test read-22.1 {try reading a vector, with non-normal expression} -body {
+::tcltest::test read-23.1 {try reading a vector, with non-normal expression} -body {
     pew "'#(1 2 (+ 1 2))"
 } -output "#(1 2 (+ 1 2))\n"
 
-::tcltest::test read-22.2 {try read-expr on a couple of vectors} -setup {
+::tcltest::test read-23.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
 } -body {
