@@ -2463,7 +2463,7 @@ proc ::constcl::eval-list {exps env} {
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
-  } {
+  } else {
     return #NIL
   }
 }
@@ -3730,7 +3730,7 @@ proc ::constcl::equal? {expr1 expr2} {
 ### Numbers
 
 
-The word `computer' suggests to numerical calculations. A programming language is almost no use if it doesn't support arithmetic. Scheme has a rich numerical library and many number types that support advanced calculations.
+The word `computer' suggests numerical calculations. A programming language is almost no use if it doesn't support arithmetic. Scheme has a rich numerical library and many number types that support advanced calculations.
 
 
 I have only implemented a bare-bones version of Scheme's numerical library, though. The following is a reasonably complete framework for operations on integers and floating-point numbers. No rationals, no complex numbers, no gcd or lcm.

@@ -1228,7 +1228,7 @@ proc ::constcl::eval-list {exps env} {
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
-  } {
+  } else {
     return #NIL
   }
 }

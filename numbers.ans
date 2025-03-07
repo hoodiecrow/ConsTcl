@@ -2,7 +2,7 @@
 h3 Numbers
 
 MD(
-The word `computer' suggests to numerical calculations. A programming language
+The word `computer' suggests numerical calculations. A programming language
 is almost no use if it doesn't support arithmetic. Scheme has a rich numerical
 library and many number types that support advanced calculations.
 
