@@ -735,30 +735,6 @@ TT(
 
 TT)
 
-CB
-proc ::constcl::gcd {args} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::lcm {args} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::numerator {q} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::denominator {q} {
-    # TODO
-}
-CB
-
 H4 floor procedure
 
 NI B{ceiling} procedure
@@ -878,12 +854,6 @@ TT(
 } -output "3.0\n4.0\n3.0\n4\n"
 
 TT)
-
-CB
-proc ::constcl::rationalize {x y} {
-    # TODO
-}
-CB
 
 H4 exp procedure
 
@@ -1138,54 +1108,6 @@ TT(
 } -output "16.0\n"
 
 TT)
-
-CB
-proc ::constcl::make-rectangular {x1 x2} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::make-polar {x3 x4} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::real-part {z} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::imag-part {z} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::magnitude {z} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::angle {z} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::exact->inexact {z} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::inexact->exact {z} {
-    # TODO
-}
-CB
 
 H4 number->string procedure
 

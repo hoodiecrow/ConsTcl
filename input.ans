@@ -998,7 +998,6 @@ TT(
     set obj [::constcl::parse "     + "]
     $obj name
 } "+"
-TT)
 
 ::tcltest::test read-17.2 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
@@ -1011,6 +1010,7 @@ TT)
     ::constcl::close-input-port $p
     ::tcltest::removeFile testrr.lsp
 } -output "+\n-\n-99\n"
+TT)
 
 H4 read-pound procedure
 

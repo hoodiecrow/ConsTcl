@@ -349,11 +349,11 @@ B{/if1} procedure
 MD)
 
 PR(
-/if (internal);condition expr consequent expr alternate expr -> val
+/if (internal);cond expr consequent expr alternate expr -> val
 PR)
 
 PR(
-/if1 (internal);condition expr consequent expr -> val
+/if1 (internal);cond expr consequent expr -> val
 PR)
 
 IX /if
@@ -1515,23 +1515,5 @@ TT(
 } -output "16\n"
 
 TT)
-
-CB
-proc ::constcl::scheme-report-environment {version} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::null-environment {version} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::interaction-environment {} {
-    # TODO
-}
-CB
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

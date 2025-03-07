@@ -593,24 +593,6 @@ proc ::constcl::close-output-port {port} {
 }
 CB)
 
-CB
-proc ::constcl::read-char {args} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::peek-char {args} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::char-ready? {args} {
-    # TODO
-}
-CB
-
 MD(
 K{write} is implemented in the R{output}{output} chapter.
 MD)
@@ -651,12 +633,6 @@ TT(
 } -output "foo\nbar"
 TT)
 
-CB
-proc ::constcl::write-char {args} {
-    # TODO
-}
-CB
-
 MD(
 B{load}
 
@@ -684,17 +660,5 @@ proc ::constcl::load {filename} {
   $p destroy
 }
 CB)
-
-CB
-proc ::constcl::transcript-on {filename} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::transcript-off {} {
-    # TODO
-}
-CB
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

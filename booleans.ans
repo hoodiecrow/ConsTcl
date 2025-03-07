@@ -127,8 +127,8 @@ Example:
 MD)
 
 VB(
-(not #f)    ⇒  #t   ; #f yields #t, all others #f
-(not nil)   ⇒  #f   ; see?
+(not #f)    ==>  #t   ; #f yields #t, all others #f
+(not nil)   ==>  #f   ; see?
 VB)
 
 PR(

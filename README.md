@@ -46,6 +46,9 @@ error recovery.
 
 ## Initial declarations
 
+In this chapter, mostly things I need to start working on the interpreter. Feel free to skim this chapter, maybe coming back later to check up on things here.
+
+
 
 First, I need to create the namespace that will be used for most identifiers:
 
@@ -388,6 +391,9 @@ proc ::constcl::check {cond msg} {
 }
 ```
 ### Testing commands
+
+Testing gets easier if you have the software tools to manipulate and pick apart the testing data and actions. Short names reduce clutter in the test cases, at the cost of some readability.
+
 #### pew procedure
 
 
@@ -1678,9 +1684,9 @@ The two procedures that help the if form out are `` /if `` and `` /if1 ``. The f
 
 __/if__ procedure __/if1__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
-<table border=1><thead><tr><th colspan=2 align="left">/if1 (internal)</th></tr></thead><tr><td>condition</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/if1 (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
 proc ::constcl::/if {cond conseq altern} {
@@ -1830,6 +1836,9 @@ The last clause may have the form
 
 
 The `` cond `` special form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
+
+__special-cond__ procedure
 
 <table border=1><thead><tr><th colspan=2 align="left">special-cond (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -4641,8 +4650,8 @@ The only operation on booleans: `` not ``, or logical negation.
 Example:
 
 ```
-(not #f)    ⇒  #t   ; #f yields #t, all others #f
-(not nil)   ⇒  #f   ; see?
+(not #f)    ==>  #t   ; #f yields #t, all others #f
+(not nil)   ==>  #f   ; see?
 ```
 <table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 

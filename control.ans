@@ -265,34 +265,4 @@ TT(
 
 TT)
 
-CB
-proc ::constcl::force {promise} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::call-with-current-continuation {proc} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::values {args} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::call-with-values {producer consumer} {
-    # TODO
-}
-CB
-
-CB
-proc ::constcl::dynamic-wind {before thunk after} {
-    # TODO
-}
-CB
-
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

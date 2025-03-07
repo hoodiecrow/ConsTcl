@@ -224,6 +224,9 @@ And now let's journey into the Interpreter.
 \chapter{Initial declarations}
 \label{initial-declarations}
 
+In this chapter, mostly things I need to start working on the interpreter. Feel free to skim this chapter, maybe coming back later to check up on things here.
+
+
 
 First, I need to create the namespace that will be used for most identifiers:
 
@@ -657,6 +660,9 @@ proc ::constcl::check {cond msg} {
 \section{Testing commands}
 \label{testing-commands}
 \index{Testing commands}
+
+Testing gets easier if you have the software tools to manipulate and pick apart the testing data and actions. Short names reduce clutter in the test cases, at the cost of some readability.
+
 \subsection{pew procedure}
 \label{pew-procedure}
 \index{pew procedure}
@@ -2297,7 +2303,7 @@ The two procedures that help the if form out are \texttt{/if} and \texttt{/if1}.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if (internal)} \\
-condition & an expression \\
+cond & an expression \\
 consequent & an expression \\
 alternate & an expression \\
 \textit{Returns:} & a Lisp value \\
@@ -2306,7 +2312,7 @@ alternate & an expression \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if1 (internal)} \\
-condition & an expression \\
+cond & an expression \\
 consequent & an expression \\
 \textit{Returns:} & a Lisp value \\
 \hline
@@ -2475,6 +2481,9 @@ The last clause may have the form
 
 
 The \texttt{cond} special form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
+
+
+\textbf{special-cond} procedure
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -5928,8 +5937,8 @@ The only operation on booleans: \texttt{not}, or logical negation.
 Example:
 
 \begin{verbatim}
-(not #f)    ⇒  #t   ; #f yields #t, all others #f
-(not nil)   ⇒  #f   ; see?
+(not #f)    ==>  #t   ; #f yields #t, all others #f
+(not nil)   ==>  #f   ; see?
 \end{verbatim}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
