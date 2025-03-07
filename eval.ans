@@ -362,7 +362,7 @@ CB(
 proc ::constcl::/if {cond conseq altern} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
-  } {
+  } else {
     uplevel $altern
   }
 }

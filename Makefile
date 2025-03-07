@@ -1,18 +1,23 @@
 
-PROGRAM  = proto
-O        = o
-HDRS     = 
-OBJS     = proto.$(O)
+PROGRAM   = proto
+O         = o
+HDRS      = 
+OBJS      = proto.$(O)
 
-CC       = clang
-FEATURES =
-CFLAGS   = -g -W -Wall -Wextra -pedantic
-LDFLAGS  =
-LIBS     = 
-RM       = rm -f
-LD       = $(CC)
-LDOUT    = -o 
-EXE      = 
+CC        = clang
+FEATURES  =
+CFLAGS    = -g -W -Wall -Wextra -pedantic
+LDFLAGS   =
+LIBS      = 
+RM        = rm -f
+LD        = $(CC)
+LDOUT     = -o 
+EXE       = 
+ANSTOTEX  = ../anstox/anstotex.awk
+ANSTOMD   = ../anstox/anstomd.awk
+ANSTOCODE = ../anstox/anstocode.awk
+ANSTOTEST = ../anstox/anstotest.awk
+ANSTOSCM  = ../anstox/anstoscm.awk
 
 .PHONY: all
 all: book.tex README.md constcl.tcl constcl.test schemebase.scm #wiki/type.md wiki/read.md $(PROGRAM)
@@ -26,7 +31,7 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files) schemebase.ans
-	gawk -f anstotex.awk dict.txt $^ >$@
+	gawk -f $(ANSTOTEX) dict.txt $^ >$@
 
 #constcl.tex: book.md
 #	gawk -f latex.awk $< >$@
@@ -41,19 +46,19 @@ README.md: top.md constcl.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files) schemebase.ans
-	gawk -f anstomd.awk dict.txt $^ >$@
+	gawk -f $(ANSTOMD) dict.txt $^ >$@
 
 #constcl.md: $(tcl_source_files)
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	gawk -f anstocode.awk $^ >$@
+	gawk -f $(ANSTOCODE) $^ >$@
 
 #constcl.tcl: $(tcl_source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
-	gawk -f anstotest.awk $^ >$@
+	gawk -f $(ANSTOTEST) $^ >$@
 
 #constcl.test: $(tcl_source_files)
 #	echo 'package require tcltest' >$@
@@ -65,7 +70,7 @@ lutables.md: lutables.tcl
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 schemebase.scm: schemebase.ans
-	gawk -f anstoscm.awk $< >$@
+	gawk -f $(ANSTOSCM) $< >$@
 
 #schemebase.md: schemebase.scm
 #	gawk -f scmtomd.awk $< >$@

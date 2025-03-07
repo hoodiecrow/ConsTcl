@@ -1,6 +1,9 @@
 
 h2 Initial declarations
 
+In this chapter, mostly things I need to start working on the interpreter. Feel
+free to skim this chapter, maybe coming back later to check up on things here.
+
 MD(
 First, I need to create the namespace that will be used for most identifiers:
 MD)
@@ -151,11 +154,11 @@ By Scheme convention, predicates
 name. Some care is necessary when calling Scheme predicates from Tcl code (the
 Tcl K{if} command expects 1 or 0 as truth values). Example:
 
-KB if \{[atom? $x]\} D{}
+KB if \{[atom? $x]\} ...
 
 will not do, but 
 
-KB if \{[atom? $x] ne "#f"\} D{}
+KB if \{[atom? $x] ne "#f"\} ...
 
 (``[atom? $x] not equal to false'') works. Or see the K{T} procedure.
 MD)
@@ -469,14 +472,34 @@ from it.
 MD)
 
 PR(
-pew (internal);str tstrstrinpbuf -> none
+pew (internal);str tstrstrinpbuf ?env? env -> none
 PR)
 
 CB(
-proc ::pew {str} {
+proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
     ::constcl::eval [
-      ::constcl::parse $str]]
+      ::constcl::parse $str] $env]
+}
+CB)
+
+H4 rew procedure
+
+MD(
+K{rew} is the reading variant of K{pew}. Instead of taking string input it takes
+a regular input port. It mattered more while the input library was being
+written.
+MD)
+
+PR(
+rew (internal);port iport ?env? env -> none
+PR)
+
+CB(
+proc ::rew {port {env ::constcl::global_env}} {
+  ::constcl::write [
+    ::constcl::eval [
+      ::constcl::read $port] $env]
 }
 CB)
 
@@ -503,8 +526,7 @@ H4 rw procedure
 
 MD(
 K{rw} is the reading variant of K{pw}. Instead of taking string input it takes a
-regular input port. The distinction mattered more while the input library
-was being written. The procedure just writes what is read.
+regular input port. The procedure just writes what is read.
 MD)
 
 PR(
@@ -527,13 +549,13 @@ pick apart in different ways.
 MD)
 
 PR(
-pe (internal);str tstrstrinpbuf -> val
+pe (internal);str tstrstrinpbuf ?env? env -> val
 PR)
 
 CB(
-proc ::pe {str} {
+proc ::pe {str {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::parse $str]
+    ::constcl::parse $str] $env
 }
 CB)
 
@@ -545,13 +567,13 @@ port. It evaluates what is read.
 MD)
 
 PR(
-re (internal);?port? iport -> val
+re (internal);port iport ?env? env -> val
 PR)
 
 CB(
-proc ::re {args} {
+proc ::re {port {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::read {*}$args]
+    ::constcl::read $port] $env
 }
 CB)
 
@@ -579,12 +601,12 @@ value.
 MD)
 
 PR(
-e (internal);expr expr -> val
+e (internal);expr expr ?env? env -> val
 PR)
 
 CB(
-proc ::e {expr} {
-  ::constcl::eval $expr
+proc ::e {expr {env ::constcl::global_env}} {
+  ::constcl::eval $expr $env
 }
 CB)
 
@@ -644,24 +666,22 @@ CB)
 H4 pxw procedure
 
 MD(
-K{pxw} attempts to macro-expand whatever it reads, and writes the result. I know
-that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I
-was developing the macro facility.
+K{pxw} attempts to macro-expand whatever it reads, and writes the result. (I do
+know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was
+when I was developing the macro facility.
 MD)
 
 PR(
-pxw (internal);str tstrstrinpbuf -> none
+pxw (internal);str tstrstrinpbuf ?env? env -> none
 PR)
 
 CB(
-proc ::pxw {str} {
+proc ::pxw {str {env ::constcl::global_env}} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
-  set bi [::constcl::binding-info $op \
-    ::constcl::global_env]
-  lassign $bi btype info
+  lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
-    set expr [$info $expr ::constcl::global_env]
+    set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
     puts "not a macro"

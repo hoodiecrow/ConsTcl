@@ -176,10 +176,16 @@ proc ::constcl::check {cond msg} {
   }
 }
 
-proc ::pew {str} {
+proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
     ::constcl::eval [
-      ::constcl::parse $str]]
+      ::constcl::parse $str] $env]
+}
+
+proc ::rew {port {env ::constcl::global_env}} {
+  ::constcl::write [
+    ::constcl::eval [
+      ::constcl::read $port] $env]
 }
 
 proc ::pw {str} {
@@ -192,22 +198,22 @@ proc ::rw {args} {
     ::constcl::read {*}$args]
 }
 
-proc ::pe {str} {
+proc ::pe {str {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::parse $str]
+    ::constcl::parse $str] $env
 }
 
-proc ::re {args} {
+proc ::re {port {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::read {*}$args]
+    ::constcl::read $port] $env
 }
 
 proc ::p {str} {
   ::constcl::parse $str
 }
 
-proc ::e {expr} {
-  ::constcl::eval $expr
+proc ::e {expr {env ::constcl::global_env}} {
+  ::constcl::eval $expr $env
 }
 
 proc ::w {val} {
@@ -225,14 +231,12 @@ proc ::prw {str} {
   ::constcl::write $expr
 }
 
-proc ::pxw {str} {
+proc ::pxw {str {env ::constcl::global_env}} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
-  set bi [::constcl::binding-info $op \
-    ::constcl::global_env]
-  lassign $bi btype info
+  lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
-    set expr [$info $expr ::constcl::global_env]
+    set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
     puts "not a macro"
@@ -889,7 +893,7 @@ proc ::constcl::special-if {expr env} {
 proc ::constcl::/if {cond conseq altern} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
-  } {
+  } else {
     uplevel $altern
   }
 }

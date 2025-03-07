@@ -44,6 +44,7 @@ tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
 tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
 
+## Initial declarations
 
 
 First, I need to create the namespace that will be used for most identifiers:
@@ -144,13 +145,13 @@ This one isn't just for my convenience: it's a standard procedure in Scheme. The
 By Scheme convention, predicates (procedures that return either `` #t `` or `` #f ``) have '?' at the end of their name. Some care is necessary when calling Scheme predicates from Tcl code (the Tcl `` if `` command expects 1 or 0 as truth values). Example:
 
 
-``if {[atom? $x]} ...``
+ ``if {[atom? $x]} ...``
 
 
 will not do, but
 
 
-``if {[atom? $x] ne "#f"} ...``
+ ``if {[atom? $x] ne "#f"} ...``
 
 
 (``[atom? $x] not equal to false'') works. Or see the `` T `` procedure.
@@ -392,13 +393,27 @@ proc ::constcl::check {cond msg} {
 
 `` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled and get to see proper Lisp output from it.
 
-<table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::pew {str} {
+proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
     ::constcl::eval [
-      ::constcl::parse $str]]
+      ::constcl::parse $str] $env]
+}
+```
+#### rew procedure
+
+
+`` rew `` is the reading variant of `` pew ``. Instead of taking string input it takes a regular input port. It mattered more while the input library was being written.
+
+<table border=1><thead><tr><th colspan=2 align="left">rew (internal)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::rew {port {env ::constcl::global_env}} {
+  ::constcl::write [
+    ::constcl::eval [
+      ::constcl::read $port] $env]
 }
 ```
 #### pw procedure
@@ -417,7 +432,7 @@ proc ::pw {str} {
 #### rw procedure
 
 
-`` rw `` is the reading variant of `` pw ``. Instead of taking string input it takes a regular input port. The distinction mattered more while the input library was being written. The procedure just writes what is read.
+`` rw `` is the reading variant of `` pw ``. Instead of taking string input it takes a regular input port. The procedure just writes what is read.
 
 <table border=1><thead><tr><th colspan=2 align="left">rw (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -432,12 +447,12 @@ proc ::rw {args} {
 
 `` pe `` is also similar, but it doesn't write the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
 
-<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::pe {str} {
+proc ::pe {str {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::parse $str]
+    ::constcl::parse $str] $env
 }
 ```
 #### re procedure
@@ -445,12 +460,12 @@ proc ::pe {str} {
 
 `` re `` is like `` pe ``, but it reads from a regular port instead of an string input port. It evaluates what is read.
 
-<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::re {args} {
+proc ::re {port {env ::constcl::global_env}} {
   ::constcl::eval [
-    ::constcl::read {*}$args]
+    ::constcl::read $port] $env
 }
 ```
 #### p procedure
@@ -470,11 +485,11 @@ proc ::p {str} {
 
 `` e `` is another single-action procedure, evaluating an expression and returning a value.
 
-<table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-proc ::e {expr} {
-  ::constcl::eval $expr
+proc ::e {expr {env ::constcl::global_env}} {
+  ::constcl::eval $expr $env
 }
 ```
 #### w procedure
@@ -519,19 +534,17 @@ proc ::prw {str} {
 #### pxw procedure
 
 
-`` pxw `` attempts to macro-expand whatever it reads, and writes the result. I know that 'expand' doesn't start with an 'x'. Again, this command's heyday was when I was developing the macro facility.
+`` pxw `` attempts to macro-expand whatever it reads, and writes the result. (I do know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was when I was developing the macro facility.
 
-<table border=1><thead><tr><th colspan=2 align="left">pxw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pxw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-proc ::pxw {str} {
+proc ::pxw {str {env ::constcl::global_env}} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
-  set bi [::constcl::binding-info $op \
-    ::constcl::global_env]
-  lassign $bi btype info
+  lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
-    set expr [$info $expr ::constcl::global_env]
+    set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
     puts "not a macro"
@@ -1558,15 +1571,15 @@ proc ::constcl::binding-info {op env} {
 
 There are nine diffent forms or classes of expressions in Lisp:
 
-1.  variable reference
-1.  constant literal
-1.  quotation
-1.  conditional
-1.  sequence
-1.  definition
-1.  assignment
-1.  procedure definition
-1.  procedure call
+1. variable reference
+1. constant literal
+1. quotation
+1. conditional
+1. sequence
+1. definition
+1. assignment
+1. procedure definition
+1. procedure call
 
 
 The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
@@ -1574,7 +1587,7 @@ The evaluator recognizes each one by its internal representation and chooses the
 ### Variable reference
 
 
-_Example: `` r `` ==> 10 (a symbol `` r `` is evaluated to what it's bound to)_
+ _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 
 A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
@@ -1595,7 +1608,7 @@ proc ::constcl::lookup {sym env} {
 ### Constant literal
 
 
-_Example: `` 99 `` ==> 99 (a number evaluates to itself)_
+ _Example: `` 99 `` ⇒ 99 (a number evaluates to itself)_
 
 
 Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
@@ -1603,7 +1616,7 @@ Not just numbers but booleans, characters, and strings evaluate to themselves, t
 ### Quotation
 
 
-_Example: `` (quote r) `` ==> `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
+ _Example: `` (quote r) `` ⇒ `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader. The argument of `` quote `` may be any external representation of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
@@ -1628,7 +1641,7 @@ proc ::constcl::special-quote {expr env} {
 ### Conditional
 
 
-_Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ==> 6_
+ _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ⇒ 6_
 
 
 The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
@@ -1673,7 +1686,7 @@ __/if__ procedure __/if1__ procedure
 proc ::constcl::/if {cond conseq altern} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
-  } {
+  } else {
     uplevel $altern
   }
 }
@@ -1882,7 +1895,7 @@ proc ::constcl::do-cond {tail env} {
 ### Sequence
 
 
-_Example: `` (begin (define r 10) (* r r)) `` ==> 100_
+ _Example: `` (begin (define r 10) (* r r)) `` ⇒ 100_
 
 
 When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
@@ -1947,7 +1960,7 @@ proc ::constcl::/begin {exps env} {
 ### Definition
 
 
-_Example: `` (define r 10) `` ==> ... (a definition doesn't evaluate to anything)_
+ _Example: `` (define r 10) `` ⇒ ... (a definition doesn't evaluate to anything)_
 
 
 We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
@@ -2050,7 +2063,7 @@ proc ::constcl::/define {sym val env} {
 ### Assignment
 
 
-_Example: `` (set! r 20) `` ==> 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
+ _Example: `` (set! r 20) `` ⇒ 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
 
 
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` set! `` special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
@@ -2079,7 +2092,7 @@ proc ::constcl::special-set! {expr env} {
 ### Procedure definition
 
 
-_Example: `` (lambda (r) (* r r)) `` ==> `` ::oo::Obj3601 `` (it will be a different object each time)_
+ _Example: `` (lambda (r) (* r r)) `` ⇒ `` ::oo::Obj3601 `` (it will be a different object each time)_
 
 
 In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the _body_ of the procedure. Also, what, if any, items of data (_parameters_) will have to be provided to the procedure to make it possible to calculate its result?
@@ -2105,10 +2118,10 @@ The lambda special form makes a [Procedure](https://github.com/hoodiecrow/ConsTc
 
 A Scheme formals list is either:
 
-*  An _empty list_, `` () ``, meaning that no arguments are accepted,
-*  A _proper list_, `` (a b c) ``, meaning it accepts three arguments, one in each symbol,
-*  A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
-*  A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
+* An _empty list_, `` () ``, meaning that no arguments are accepted,
+* A _proper list_, `` (a b c) ``, meaning it accepts three arguments, one in each symbol,
+* A _symbol_, `` a ``, meaning that all arguments go into `` a ``, or
+* A _dotted list_, `` (a b . c) ``, meaning that two arguments go into `` a `` and `` b ``, and the rest into `` c ``.
 
 
 ---
@@ -2144,7 +2157,7 @@ proc ::constcl::special-lambda {expr env} {
 ### Procedure call
 
 
-_Example: `` (+ 1 6) `` ==> 7_
+ _Example: `` (+ 1 6) `` ⇒ 7_
 
 
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121.
@@ -3788,16 +3801,16 @@ proc ::constcl::number? {val} {
 ```
 #### = procedure
 
-``__<__ procedure``
+ __<__ procedure
 
 
-``__>__ procedure``
+ __>__ procedure
 
 
-``__<=__ procedure``
+ __<=__ procedure
 
 
-``__>=__ procedure``
+ __>=__ procedure
 
 
 
@@ -3905,13 +3918,13 @@ proc ::constcl::zero? {num} {
 ```
 #### positive? procedure
 
-``__negative?__ procedure``
+ __negative?__ procedure
 
 
-``__even?__ procedure``
+ __even?__ procedure
 
 
-``__odd?__ procedure``
+ __odd?__ procedure
 
 
 
@@ -4004,13 +4017,13 @@ proc ::constcl::min {num args} {
 ```
 #### + procedure
 
-``__*__ procedure``
+ __*__ procedure
 
 
-``__-__ procedure``
+ __-__ procedure
 
 
-``__/__ procedure``
+ __/__ procedure
 
 
 
@@ -4177,13 +4190,13 @@ proc ::constcl::modulo {num1 num2} {
 ```
 #### floor procedure
 
-``__ceiling__ procedure``
+ __ceiling__ procedure
 
 
-``__truncate__ procedure``
+ __truncate__ procedure
 
 
-``__round__ procedure``
+ __round__ procedure
 
 
 
@@ -4247,25 +4260,25 @@ proc ::constcl::round {num} {
 ```
 #### exp procedure
 
-``__log__ procedure``
+ __log__ procedure
 
 
-``__sin__ procedure``
+ __sin__ procedure
 
 
-``__cos__ procedure``
+ __cos__ procedure
 
 
-``__tan__ procedure``
+ __tan__ procedure
 
 
-``__asin__ procedure``
+ __asin__ procedure
 
 
-``__acos__ procedure``
+ __acos__ procedure
 
 
-``__atan__ procedure``
+ __atan__ procedure
 
 
 
@@ -4773,16 +4786,16 @@ proc ::constcl::char? {val} {
 ```
 #### char=? procedure
 
-``__char<?__ procedure``
+ __char<?__ procedure
 
 
-``__char>?__ procedure``
+ __char>?__ procedure
 
 
-``__char<=?__ procedure``
+ __char<=?__ procedure
 
 
-``__char>=?__ procedure``
+ __char>=?__ procedure
 
 
 
@@ -4877,16 +4890,16 @@ proc ::constcl::char>=? {char1 char2} {
 ```
 #### char-ci=? procedure
 
-``__char-ci<?__ procedure``
+ __char-ci<?__ procedure
 
 
-``__char-ci>?__ procedure``
+ __char-ci>?__ procedure
 
 
-``__char-ci<=?__ procedure``
+ __char-ci<=?__ procedure
 
 
-``__char-ci>=?__ procedure``
+ __char-ci>=?__ procedure
 
 
 
@@ -4986,16 +4999,16 @@ proc ::constcl::char-ci>=? {char1 char2} {
 ```
 #### char-alphabetic? procedure
 
-``__char-numeric?__ procedure``
+ __char-numeric?__ procedure
 
 
-``__char-whitespace?__ procedure``
+ __char-whitespace?__ procedure
 
 
-``__char-upper-case?__ procedure``
+ __char-upper-case?__ procedure
 
 
-``__char-lower-case?__ procedure``
+ __char-lower-case?__ procedure
 
 
 
@@ -5323,10 +5336,10 @@ proc ::constcl::for-each {proc args} {
 
 Like most programming languages, Scheme has input and output facilities beyond direct `` read `` and `` write ``. I/O is based on the _port_ abstraction of a character supplying or receiving device. There are four kinds of ports:
 
-1.  file input (InputPort)
-1.  file output (OutputPort)
-1.  string input (StringInputPort)
-1.  string output (StringOutputPort)
+1. file input (InputPort)
+1. file output (OutputPort)
+1. string input (StringInputPort)
+1. string output (StringOutputPort)
 
 
 and there is also the `` Port `` type, which isn't used other than as a base class.
@@ -6368,10 +6381,10 @@ proc ::constcl::list-ref {vals k} {
 ```
 #### memq procedure
 
-``__memv__ procedure``
+ __memv__ procedure
 
 
-``__member__ procedure``
+ __member__ procedure
 
 
 
@@ -6444,10 +6457,10 @@ proc ::constcl::member-proc {epred val1 val2} {
 ```
 #### assq procedure
 
-``__assv__ procedure``
+ __assv__ procedure
 
 
-``__assoc__ procedure``
+ __assoc__ procedure
 
 
 
