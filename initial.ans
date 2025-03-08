@@ -647,10 +647,13 @@ catch { ::constcl::Dot destroy }
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
   method write {port} {
-    $port put "."
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "."
   }
 }
 CB)
@@ -679,10 +682,13 @@ catch { ::constcl::EndOfFile destroy }
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<end-of-file>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<end-of-file>"
   }
 }
 CB)
@@ -734,7 +740,7 @@ oo::singleton create ::constcl::NIL {
   }
   method mkconstant {} {}
   method write {port} {
-    $port put "()"
+    $port put [my show]
   }
   method display {port} {
     my write $port
@@ -776,10 +782,13 @@ catch { ::constcl::Undefined destroy }
 oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<undefined>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<undefined>"
   }
 }
 CB)
@@ -794,10 +803,13 @@ catch { ::constcl::Unspecified destroy }
 oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<unspecified>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<unspecified>"
   }
 }
 CB)

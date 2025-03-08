@@ -248,10 +248,13 @@ catch { ::constcl::Dot destroy }
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
   method write {port} {
-    $port put "."
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "."
   }
 }
 
@@ -264,10 +267,13 @@ catch { ::constcl::EndOfFile destroy }
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<end-of-file>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<end-of-file>"
   }
 }
 
@@ -302,7 +308,7 @@ oo::singleton create ::constcl::NIL {
   }
   method mkconstant {} {}
   method write {port} {
-    $port put "()"
+    $port put [my show]
   }
   method display {port} {
     my write $port
@@ -327,10 +333,13 @@ catch { ::constcl::Undefined destroy }
 oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<undefined>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<undefined>"
   }
 }
 
@@ -339,10 +348,13 @@ catch { ::constcl::Unspecified destroy }
 oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<unspecified>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<unspecified>"
   }
 }
 
@@ -422,7 +434,7 @@ proc ::constcl::valid-char? {name} {
   }
 }
 
-proc ::constcl::readc {} {
+proc ::constcl::readchar {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -439,7 +451,7 @@ proc ::constcl::readc {} {
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     set unget $c
   }
@@ -448,7 +460,7 @@ proc ::constcl::find-char? {char} {
 
 proc ::constcl::read-end? {} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   if {[T [interspace? $c]] ||
       [T [delimiter? $c]] ||
       $c eq "#EOF"} {
@@ -465,11 +477,11 @@ proc ::constcl::skip-ws {} {
   while true {
     switch -regexp $c {
       {[[:space:]]} {
-        set c [readc]
+        set c [readchar]
       }
       {;} {
         while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readc]
+          set c [readchar]
         }
       }
       default {
@@ -494,7 +506,7 @@ proc ::constcl::read-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   set unget {}
   read-eof $c
@@ -510,7 +522,7 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { read-plus-minus $c }
     {\,}          { read-unquoted-expr }
     {\.} {
-        set x [Dot new]; set c [readc]; set x
+        set x [Dot new]; set c [readchar]; set x
     }
     {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
@@ -528,13 +540,13 @@ proc ::constcl::read-expr {args} {
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {![T [delimiter? $c]] &&
       [::string is graph $c] &&
       $c ne "#EOF"} {
     ::append name $c
-    set c [readc]
+    set c [readchar]
   }
   check {valid-char? $name} {
       Invalid character constant $name
@@ -550,16 +562,17 @@ proc ::constcl::read-identifier-expr {args} {
   if {[llength $args]} {
     set c [join $args {}]
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [interspace? $c]] ||
+      [T [delimiter? $c]]} {
       break
     }
     ::append name $c
-    set c [readc]
+    set c [readchar]
     # do not check for EOF here
   }
   if {$c ne "#EOF"} {
@@ -577,13 +590,13 @@ proc ::constcl::read-number-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
-    set c [readc]
+    set c [readchar]
   }
   set unget $c
   check {::string is double -strict $num} {
@@ -597,18 +610,18 @@ proc ::constcl::read-object-expr {} {
   upvar c c unget unget
   # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     if {$c ne $ch} {
       error "bad object name"
     }
   }
   set res "::oo::Obj"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {[::string is digit $c]} {
     ::append res $c
-    set c [readc]
+    set c [readchar]
     read-eof $c
   }
   set unget $c
@@ -630,18 +643,18 @@ proc ::constcl::read-pair-expr {char} {
     }
   } else {
     set unget {}
-    set c [readc]
+    set c [readchar]
   }
   return $expr
 }
 
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     # read right paren/brack
-    #set c [readc]
+    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
@@ -671,7 +684,7 @@ proc ::constcl::read-pair {char} {
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
@@ -697,7 +710,7 @@ proc ::constcl::read-plus-minus {char} {
 proc ::constcl::read-pound {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
@@ -715,7 +728,6 @@ proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
   set expr [read-expr]
-  skip-ws
   read-eof $expr
   make-constant $expr
   return [list [S quasiquote] $expr]
@@ -733,20 +745,20 @@ proc ::constcl::read-quoted-expr {} {
 proc ::constcl::read-string-expr {} {
   upvar c c unget unget
   set str {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
       ::append str $c
-      set c [readc]
+      set c [readchar]
     }
     ::append str $c
-    set c [readc]
+    set c [readchar]
   }
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
+  set c [readchar]
   set expr [MkString $str]
   read-eof $expr
   make-constant $expr
@@ -756,7 +768,7 @@ proc ::constcl::read-string-expr {} {
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {$c eq "@"} {
     set symbol "unquote-splicing"
@@ -773,7 +785,7 @@ proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
   set last {}
-  set c [readc]
+  set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
     set e [cons [read-expr $c] #NIL]
     if {$res eq {}} {
@@ -790,25 +802,19 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
-  set c [readc]
+  set c [readchar]
   set expr [MkVector $res]
   read-eof $expr
   $expr mkconstant
   return $expr
 }
 
-reg eval
-
-proc ::constcl::eval \
-  {expr {env ::constcl::global_env}} {
-  if {[T [symbol? $expr]]} {
-    lookup $expr $env
-  } elseif {[T [self-evaluating? $expr]]} {
-    set expr
-  } elseif {[T [pair? $expr]]} {
-    eval-form $expr $env
+proc ::constcl::lookup {sym env} {
+  lassign [binding-info $sym $env] type value
+  if {$type eq "VARIABLE"} {
+    return $value
   } else {
-    error "unknown expression type"
+    error "not a variable name" $sym
   }
 }
 
@@ -820,53 +826,6 @@ proc ::constcl::self-evaluating? {val} {
     return #t
   } else {
     return #f
-  }
-}
-
-proc ::constcl::eval-form {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[T [symbol? $op]]} {
-    lassign [binding-info $op $env] btype hinfo
-    switch $btype {
-      UNBOUND {
-        error "unbound symbol" $op
-      }
-      SPECIAL {
-        $hinfo $expr $env
-      }
-      VARIABLE {
-        invoke $hinfo [eval-list $args $env]
-      }
-      SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
-      }
-      default {
-        error "unrecognized binding type" $btype
-      }
-    }
-  } else {
-    invoke [eval $op $env] [eval-list $args $env]
-  }
-}
-
-proc ::constcl::binding-info {op env} {
-  set actual_env [$env find $op]
-  # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
-    return [::list UNBOUND {}]
-  }
-}
-
-proc ::constcl::lookup {sym env} {
-  lassign [binding-info $sym $env] btype hinfo
-  if {$btype eq "VARIABLE"} {
-    return $hinfo
-  } else {
-    error "not a variable name" $sym
   }
 }
 
@@ -1193,7 +1152,6 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 
@@ -1204,14 +1162,69 @@ proc ::constcl::rewrite-let* {bindings body env} {
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
-    /define [S binding] [car $bindings] $env
+    /define [S var] [caar $bindings] $env
+    /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
       $body $env] $env
-    set qq "`(let (,binding) ,rest)"
+    set qq "`((lambda (,var)
+               ,rest) ,val)"
     set expr [expand-quasiquote [parse $qq] $env]
   }
   $env destroy
   return $expr
+}
+
+reg eval
+
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
+  if {[T [symbol? $expr]]} {
+    lookup $expr $env
+  } elseif {[T [self-evaluating? $expr]]} {
+    set expr
+  } elseif {[T [pair? $expr]]} {
+    eval-form $expr $env
+  } else {
+    error "unknown expression type [$expr show]"
+  }
+}
+
+proc ::constcl::eval-form {expr env} {
+  set op [car $expr]
+  set args [cdr $expr]
+  if {[T [symbol? $op]]} {
+    lassign [binding-info $op $env] btype hinfo
+    switch $btype {
+      UNBOUND {
+        error "unbound symbol" $op
+      }
+      SPECIAL {
+        $hinfo $expr $env
+      }
+      VARIABLE {
+        invoke $hinfo [eval-list $args $env]
+      }
+      SYNTAX {
+        set expr [$hinfo $expr $env]
+        eval $expr $env
+      }
+      default {
+        error "unrecognized binding type" $btype
+      }
+    }
+  } else {
+    invoke [eval $op $env] [eval-list $args $env]
+  }
+}
+
+proc ::constcl::binding-info {op env} {
+  set actual_env [$env find $op]
+  # parentless envs have #NIL
+  if {$actual_env ne "::constcl::null_env"} {
+    return [$actual_env get $op]
+  } else {
+    return [::list UNBOUND {}]
+  }
 }
 
 proc ::constcl::splitlist {vals} {

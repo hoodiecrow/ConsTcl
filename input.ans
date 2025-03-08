@@ -296,18 +296,18 @@ TT(
 # 6
 TT)
 
-H4 readc procedure
+H4 readchar procedure
 
-K{readc} reads one character from the unget store if it isn't empty or else from
-the input port. If the input is at end-of-file, an eof object is returned.
-Shares the variable K{unget} with its caller.
+K{readchar} reads one character from the K{unget} store if it isn't empty or else
+from the input port. If the input is at end-of-file, an K{#EOF} object is
+returned.  Shares the variable K{unget} with its caller.
 
 PR(
-readc (internal);-> tchreof
+readchar (internal);-> tchreof
 PR)
 
 CB(
-proc ::constcl::readc {} {
+proc ::constcl::readchar {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -330,8 +330,8 @@ H4 find-char? procedure
 
 K{find-char?} reads ahead through whitespace to find a given character. It
 returns K{#t} if it has found the character, and K{#f} if it has stopped at some
-other character.  Returns end of file if eof is encountered.
-Shares the variables K{c} and  K{unget} with its caller.
+other character.  Returns end of file if eof is encountered.  Shares the
+variables K{c} and  K{unget} with its caller.
 
 PR(
 find-char? (internal);char tchr -> booleof
@@ -341,7 +341,7 @@ CB(
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     set unget $c
   }
@@ -356,9 +356,9 @@ TT)
 H4 read-end? procedure
 
 K{read-end?} reads one character and returns K{#t} if it is an interspace
-character or a delimiter character, or end of file. Otherwise it
-returns K{#f}. It ungets the character before returning.
-Shares the variables K{c} and  K{unget} with its caller.
+character or a delimiter character, or end of file. Otherwise it returns K{#f}.
+It ungets the character before returning.  Shares the variables K{c} and
+K{unget} with its caller.
 
 PR(
 read-end? (internal);-> booleof
@@ -367,7 +367,7 @@ PR)
 CB(
 proc ::constcl::read-end? {} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   if {[T [interspace? $c]] ||
       [T [delimiter? $c]] ||
       $c eq "#EOF"} {
@@ -386,8 +386,9 @@ TT)
 
 H4 skip-ws procedure
 
-K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It leaves the first character not to be skipped in K{c} and also ungets it.
-Shares the variables K{c} and K{unget} with its caller.
+K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It
+leaves the first character not to be skipped in K{c} and also ungets it.  Shares
+the variables K{c} and K{unget} with its caller.
 
 PR(
 skip-ws (internal);-> none
@@ -399,11 +400,11 @@ proc ::constcl::skip-ws {} {
   while true {
     switch -regexp $c {
       {[[:space:]]} {
-        set c [readc]
+        set c [readchar]
       }
       {;} {
         while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readc]
+          set c [readchar]
         }
       }
       default {
@@ -451,12 +452,12 @@ K{read-expr} which reads them all (with a little help).
 H4 read-expr procedure
 
 The K{read-expr} procedure reads the first available character from the input
-port. Based on that it delegates to one of the more detailed
-readers, producing an expression of any kind.  A Tcl character value
-can be passed to it: that character will be used first before reading from the
-input.  If end of file is encountered before an expression can be read in
-full, the procedure returns end of file (K{#EOF})I{end of file}.
-Shares the variables K{c} and K{unget} with its caller.
+port. Based on that it delegates to one of the more detailed readers, producing
+an expression of any kind.  A Tcl character value can be passed to it: that
+character will be used first before reading from the input.  If end of file is
+encountered before an expression can be read in full, the procedure returns end
+of file (K{#EOF})I{end of file}.  Shares the variables K{c} and K{unget} with
+its caller.
 
 PR(
 read-expr (internal);?char? tchr -> expreof
@@ -468,7 +469,7 @@ proc ::constcl::read-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   set unget {}
   read-eof $c
@@ -484,7 +485,7 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { read-plus-minus $c }
     {\,}          { read-unquoted-expr }
     {\.} {
-        set x [Dot new]; set c [readc]; set x
+        set x [Dot new]; set c [readchar]; set x
     }
     {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
@@ -513,6 +514,21 @@ TT(
     ::tcltest::removeFile testrr.lsp
 } -output "a\n.\nb\n"
 
+::tcltest::test read-12.1 {try read-expr} -setup {
+    ::tcltest::makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
+      [a b] `foo 93 foo} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+  set x [r $p]
+  while {$x ne "#EOF"} {
+    w $x
+    set x [r $p]
+  }
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo\"\n#(a b)\n#t\n#f\n#\\A\n(quote foo)\n(a b)\n-99\n+\n-\n(unquote foo)\n(a b)\n(quasiquote foo)\n93\nfoo\n"
+
 TT)
 
 H4 read-character-expr procedure
@@ -520,8 +536,8 @@ H4 read-character-expr procedure
 K{read-character-expr} is activated by K{read-pound} when that procedure finds a
 backslash in the input stream (pound-backslash is the external representation
 prefix for characters). It reads one or more characters to produce a character
-expression and return a R{Char}{characters} object.
-Shares the variables K{c} and K{unget} with its caller.
+expression and return a R{Char}{characters} object.  Shares the variables K{c}
+and K{unget} with its caller.
 
 PR(
 read-character-expr (internal);-> chareof
@@ -531,13 +547,13 @@ CB(
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {![T [delimiter? $c]] &&
       [::string is graph $c] &&
       $c ne "#EOF"} {
     ::append name $c
-    set c [readc]
+    set c [readchar]
   }
   check {valid-char? $name} {
       Invalid character constant $name
@@ -594,16 +610,17 @@ proc ::constcl::read-identifier-expr {args} {
   if {[llength $args]} {
     set c [join $args {}]
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [interspace? $c]] ||
+      [T [delimiter? $c]]} {
       break
     }
     ::append name $c
-    set c [readc]
+    set c [readchar]
     # do not check for EOF here
   }
   if {$c ne "#EOF"} {
@@ -646,9 +663,8 @@ H4 read-number-expr procedure
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
 digits, and it actually takes in anything that starts out like a number and
-stops at whitespace or a delimiter character, and then it accepts or
-rejects the input by comparing it to a Tcl double. It returns a
-R{Number}{numbers} object.
+stops at whitespace or a delimiter character, and then it accepts or rejects the
+input by comparing it to a Tcl double. It returns a R{Number}{numbers} object.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
@@ -662,13 +678,13 @@ proc ::constcl::read-number-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
-    set c [readc]
+    set c [readchar]
   }
   set unget $c
   check {::string is double -strict $num} {
@@ -728,18 +744,18 @@ proc ::constcl::read-object-expr {} {
   upvar c c unget unget
   # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     if {$c ne $ch} {
       error "bad object name"
     }
   }
   set res "::oo::Obj"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {[::string is digit $c]} {
     ::append res $c
-    set c [readc]
+    set c [readchar]
     read-eof $c
   }
   set unget $c
@@ -778,7 +794,7 @@ proc ::constcl::read-pair-expr {char} {
     }
   } else {
     set unget {}
-    set c [readc]
+    set c [readchar]
   }
   return $expr
 }
@@ -803,11 +819,11 @@ IX read-pair
 CB(
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     # read right paren/brack
-    #set c [readc]
+    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
@@ -913,7 +929,7 @@ CB(
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
@@ -976,7 +992,7 @@ CB(
 proc ::constcl::read-pound {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
@@ -1010,8 +1026,7 @@ H4 read-quasiquoted-expr procedure
 
 K{read-quasiquoted-expr} is activated when there is a backquote (K{`}) in the
 input stream. It reads an entire expression and returns it wrapped in
-K{quasiquote}.
-Shares the variables K{c} and K{unget} with its caller.
+K{quasiquote}.  Shares the variables K{c} and K{unget} with its caller.
 
 PR(
 read-quasiquoted-expr (internal);-> qquoteeof
@@ -1022,7 +1037,6 @@ proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
   set expr [read-expr]
-  skip-ws
   read-eof $expr
   make-constant $expr
   return [list [S quasiquote] $expr]
@@ -1110,20 +1124,20 @@ CB(
 proc ::constcl::read-string-expr {} {
   upvar c c unget unget
   set str {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
       ::append str $c
-      set c [readc]
+      set c [readchar]
     }
     ::append str $c
-    set c [readc]
+    set c [readchar]
   }
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
+  set c [readchar]
   set expr [MkString $str]
   read-eof $expr
   make-constant $expr
@@ -1187,7 +1201,7 @@ CB(
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {$c eq "@"} {
     set symbol "unquote-splicing"
@@ -1236,7 +1250,7 @@ proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
   set last {}
-  set c [readc]
+  set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
     set e [cons [read-expr $c] #NIL]
     if {$res eq {}} {
@@ -1253,7 +1267,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
-  set c [readc]
+  set c [readchar]
   set expr [MkVector $res]
   read-eof $expr
   $expr mkconstant

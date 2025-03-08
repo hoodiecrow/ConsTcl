@@ -148,9 +148,9 @@ TT(
 "Malvina"
 }
 
-::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
-    pew {(string-set! (symbol->string 'flying-fish) 3 #\A}
-} -returnCodes error -result ""
+::tcltest::test symbols-1.2 {try symbol->string} -body {
+    pew {(string-set! (symbol->string 'flying-fish) 3 #\A)}
+} -returnCodes error -result "string is constant"
 
 TT)
 

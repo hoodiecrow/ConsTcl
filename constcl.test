@@ -95,6 +95,21 @@ source constcl.tcl
     ::tcltest::removeFile testrr.lsp
 } -output "a\n.\nb\n"
 
+::tcltest::test read-12.1 {try read-expr} -setup {
+    ::tcltest::makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
+      [a b] `foo 93 foo} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+  set x [r $p]
+  while {$x ne "#EOF"} {
+    w $x
+    set x [r $p]
+  }
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo\"\n#(a b)\n#t\n#f\n#\\A\n(quote foo)\n(a b)\n-99\n+\n-\n(unquote foo)\n(a b)\n(quasiquote foo)\n93\nfoo\n"
+
 
 
 ::tcltest::test read-13.0 {try reading a character} -body {
@@ -601,7 +616,7 @@ source constcl.tcl
   set body [::constcl::cddr $x]
   set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
   w $x
-} -output "(let ((a 2)) (let ((b (+ a 1))) (begin (* a b))))\n"
+} -output "((lambda (a) ((lambda (b) (begin (* a b))) (+ a 1))) 2)\n"
 
 ::tcltest::test eval-15.1 {run let*} -body {
   pew "(let* ((a 2) (b (+ a 1))) (* a b))"
@@ -1837,9 +1852,9 @@ qux\bod
 "Malvina"
 }
 
-::tcltest::test symbols-1.2 {try symbol->string} -constraints knownBug -body { ;# bug: don't know, hangs tkcon
-    pew {(string-set! (symbol->string 'flying-fish) 3 #\A}
-} -returnCodes error -result ""
+::tcltest::test symbols-1.2 {try symbol->string} -body {
+    pew {(string-set! (symbol->string 'flying-fish) 3 #\A)}
+} -returnCodes error -result "string is constant"
 
 
 

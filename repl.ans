@@ -56,7 +56,8 @@ CB)
 
 Well! 
 
-After 1854 lines of code, the interpreter is done. Now for the built-in
-procedures.
+After 1860 lines of code, the interpreter is done.
+
+Now for the built-in procedures!
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

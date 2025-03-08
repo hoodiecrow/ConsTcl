@@ -6,75 +6,74 @@ their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
 6 and 8 are two expressions that have the same value, but the latter is in
 normal form (can't be reduced further) and the former is not.
 
-h3 Environments
+To be able to evaluate every kind of expression, a structured approach is
+needed. Lisp has nine syntactic forms, each with its own
+syntax, and each with its own process of evaluation.
 
-Before I can talk about evaluation, I need to spend some time on environments.
-To simplify, an environment can be seen as a table--or spreadsheet, if you
-will--that connects (binds) names to cells, which contain values. The evaluator
-looks up values in the environment that way. But there's more to an environment
-than just a name-value coupling. The environment also contains references to the
-very procedures that make up the Lisp library. And their bindings aren't just a
-simple connection: there are several kinds of bindings, from variable binding,
-the most common one, to special-form bindings for the fundamental operations of
-the interpreter, and syntax bindings for the macros that get expanded to
-`normal' code.
+DL variable reference LD Syntax: a symbol. Process: R{variable lookup}{variable-reference}.
+DL constant literal LD Syntax: a number, string, character, or boolean. Process: R{take the value}{constant-literal}.
+DL quotation LD Syntax: K{(quote datum)}. Process: R{take the datum}{quotation}.
+DL conditional LD Syntax: K{if}, K{case}, or K{cond}. Process: R{depends on which syntax}{conditional}.
+DL sequence LD Syntax: K{(begin expression ...)}. Process: R{evaluate all expressions, take value of last}{sequence}.
+DL definition LD Syntax: K{(define var val)}. Process: take a variable and a value and R{bind the variable}{definition} to the value.
+DL assignment LD Syntax: K{(set! var val)}. Process: take a variable and a value and R{set the variable}{assignment} to the value.
+DL procedure definition LD Syntax: K{(lambda formals body)}. Process: R{see form}{procedure-definition}.
+DL procedure call LD Syntax: K{(operator operand ...)}. Process: R{see form}{procedure-call}.
 
-There isn't just one environment, either. Every time a non-primitive procedure
-is called, a new environment is created which has bindings for the procedure
-arguments and which links to the environment that was current when the procedure
-was defined (which in turn links backwards all the way to the original global
-environment). The evaluator follows into the new environment to evaluate the
-body of the procedure there, and then as the evaluator goes back along its call
-stack, it sheds environment references.
+The evaluator
+recognizes the syntax of the expression and chooses the appropriate
+process to evaluate it. How this happens for the nine syntactic forms will be described in the following
+sections.
 
-Not only procedures but binding forms (such as K{let}) create new environments
-for the evaluator to work in. As they do that, they also bind variables to
-values. Just like with procedures, the added local bindings can shadow bindings
-in underlying environments but does not affect them: once the local environment
-has been forgotten by the evaluator, the underlying bindings are once more visible.
-The other side of the coin is that temporary environments don't have to be
-complete: every binding that the evaluator can't find in a temporary environment
-it looks for in the parent environment, or its parent and so on.
+h3 Variable reference
 
-Environments make up the world the evaluator lives in and are the source of its
-values and procedures. The ability of procedure calls and execution of binding
-forms to temporarily change the current environment is a powerful one. But still
-the evaluator eventually backtracks into the previous environments. 
+EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
 
-IF /images/environments.png Two sample environments
+A variableI{variable} is an identifier (symbol) bound to a
+location in the environment. If an expression consists of an identifier it is
+evaluated to the value stored in that location. This is handled by the helper
+procedure K{lookup}. It searches the environment chain for the identifier, and
+returns the value stored in the location it is bound to.  It is an error to do
+lookup on an unbound symbol.
 
-I will talk some more about the implementation of environments in a later section.
+Syntax: E{symbol}
 
-h3 The evaluator
-
-H4 eval procedure
-
-The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
-it according to its form. Symbols to the value they R{refer
-  to}{variable-reference}, self-evaluating types to their R{own
-    value}{constant-literal}, and expressions that are lists to the value that
-    K{eval-form} gets out of them.
+H4 lookup procedure
 
 PR(
-eval (public);expr expr ?env? env -> val
+lookup (internal);sym sym env env -> val
 PR)
 
 CB(
-reg eval
-
-proc ::constcl::eval \
-  {expr {env ::constcl::global_env}} {
-  if {[T [symbol? $expr]]} {
-    lookup $expr $env
-  } elseif {[T [self-evaluating? $expr]]} {
-    set expr
-  } elseif {[T [pair? $expr]]} {
-    eval-form $expr $env
+proc ::constcl::lookup {sym env} {
+  lassign [binding-info $sym $env] type value
+  if {$type eq "VARIABLE"} {
+    return $value
   } else {
-    error "unknown expression type"
+    error "not a variable name" $sym
   }
 }
 CB)
+
+TT(
+::tcltest::test eval-1.0 {try eval-ing a symbol} -body {
+  pew "(let ((r 10)) r)"
+} -output "10\n"
+
+::tcltest::test eval-1.2 {try eval-ing an unbound symbol} -body {
+  pew "k"
+} -returnCodes error -result "not a variable name (k)"
+TT)
+
+h3 Constant literal
+
+EM Example: K{99} ==> 99 (a number evaluates to itself)
+
+Not just numbers but booleans, characters, and strings
+evaluate to themselves, to their innate value. Because of this, they are called
+self-evaluating or autoquoting types (see next section).
+
+Syntax: E{number}|E{string}|E{character}|E{boolean}
 
 B{self-evaluating?} procedure
 
@@ -97,137 +96,6 @@ proc ::constcl::self-evaluating? {val} {
   }
 }
 CB)
-
-H4 eval-form procedure
-  
-If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
-at the E{binding information} (which the K{reg} R{procedure}{reg-procedure} puts
-into the standard library and thereby the global environment) for the symbol.
-The E{binding type} tells in general how the expression should be treated: as a
-special form, a variable, or a R{macro}{macros}. The E{handling info} gives the
-exact procedure that will take care of the expression. If the operator isn't a
-symbol, it is evaluated and applied to the evaluated rest of the expression.
-
-PR(
-eval-form (internal);expr expr env env -> val
-PR)
-
-CB(
-proc ::constcl::eval-form {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[T [symbol? $op]]} {
-    lassign [binding-info $op $env] btype hinfo
-    switch $btype {
-      UNBOUND {
-        error "unbound symbol" $op
-      }
-      SPECIAL {
-        $hinfo $expr $env
-      }
-      VARIABLE {
-        invoke $hinfo [eval-list $args $env]
-      }
-      SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
-      }
-      default {
-        error "unrecognized binding type" $btype
-      }
-    }
-  } else {
-    invoke [eval $op $env] [eval-list $args $env]
-  }
-}
-CB)
-
-B{binding-info} procedure
-
-The K{binding-info} procedure takes a symbol and returns a list of two items: 1)
-the binding type of the symbol, and 2) the handling info that K{eval-form} uses to
-handle this symbol.
-
-PR(
-binding-info (internal);op sym env env -> bindfo
-PR)
-
-CB(
-proc ::constcl::binding-info {op env} {
-  set actual_env [$env find $op]
-  # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
-    return [::list UNBOUND {}]
-  }
-}
-CB)
-
-h3 Syntactic forms
-
-There are nine diffent forms or classes of expressions in Lisp:
-
-EN variable reference
-EN constant literal
-EN quotation
-EN conditional
-EN sequence
-EN definition
-EN assignment
-EN procedure definition
-EN procedure call
-
-The evaluator
-recognizes each one by its internal representation and chooses the appropriate
-process to evaluate them. The nine forms will be described in the following
-sections.
-
-h3 Variable reference
-
-EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
-
-A variableI{variable}I{variable reference} is an identifier (symbol) bound to a
-location in the environment. If an expression consists of an identifier it is
-evaluated to the value stored in that location. This is handled by the helper
-procedure K{lookup}. It searches the environment chain for the identifier, and
-returns the value stored in the location it is bound to.  It is an error to do
-lookup on an unbound symbol.
-
-H4 lookup procedure
-
-PR(
-lookup (internal);sym sym env env -> val
-PR)
-
-CB(
-proc ::constcl::lookup {sym env} {
-  lassign [binding-info $sym $env] btype hinfo
-  if {$btype eq "VARIABLE"} {
-    return $hinfo
-  } else {
-    error "not a variable name" $sym
-  }
-}
-CB)
-
-TT(
-::tcltest::test eval-1.0 {try eval-ing a symbol} -body {
-  pew "(let ((r 10)) r)"
-} -output "10\n"
-
-::tcltest::test eval-1.2 {try eval-ing an unbound symbol} -body {
-  pew "k"
-} -returnCodes error -result "not a variable name (k)"
-TT)
-
-h3 Constant literal
-
-EM Example: K{99} ==> 99 (a number evaluates to itself)
-
-Not just numbersI{constant literal} but booleans, characters, and strings
-evaluate to themselves, to their innate value. Because of this, they are called
-self-evaluating or autoquoting types (see next section).
 
 TT(
 ::tcltest::test eval-2.0 {try eval-ing a constant} -body {
@@ -968,7 +836,7 @@ h3 Procedure call
 
 EM Example: K{(+ 1 6)} ==> 7
 
-Once we have procedures, we can callI{procedure call} them to have their
+Once we have procedures, we can call them to have their
 calculations performed and yield results. The procedure name is put in the
 operator position at the front of a list, and the operands follow in the rest of
 the list. Our K{square} procedure would be called for instance like this:
@@ -976,7 +844,9 @@ K{(square 11)}, and it will return 121.
 
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
-procedure, and determines whether to call E{pr} as an object or as a Tcl command.
+procedure, and determines whether to call E{pr} as an object or as a Tcl
+command. Before K{invoke} is called, the argument list should be evaluated with
+K{eval-list} (see below).
 
 H4 invoke procedure
 
@@ -1312,7 +1182,6 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 CB)
@@ -1332,10 +1201,12 @@ proc ::constcl::rewrite-let* {bindings body env} {
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
-    /define [S binding] [car $bindings] $env
+    /define [S var] [caar $bindings] $env
+    /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
       $body $env] $env
-    set qq "`(let (,binding) ,rest)"
+    set qq "`((lambda (,var)
+               ,rest) ,val)"
     set expr [expand-quasiquote [parse $qq] $env]
   }
   $env destroy
@@ -1350,13 +1221,148 @@ TT(
   set body [::constcl::cddr $x]
   set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
   w $x
-} -output "(let ((a 2)) (let ((b (+ a 1))) (begin (* a b))))\n"
+} -output "((lambda (a) ((lambda (b) (begin (* a b))) (+ a 1))) 2)\n"
 
 ::tcltest::test eval-15.1 {run let*} -body {
   pew "(let* ((a 2) (b (+ a 1))) (* a b))"
 } -output "6\n"
 
 TT)
+
+
+h3 Environments
+
+Before I can talk about the evaluator, I need to spend some time on environments.
+To simplify, an environment can be seen as a table--or spreadsheet, if you
+will--that connects (binds) names to cells, which contain values. The evaluator
+looks up values in the environment that way. But there's more to an environment
+than just a name-value coupling. The environment also contains references to the
+very procedures that make up the Lisp library. And their bindings aren't just a
+simple connection: there are several kinds of bindings, from variable binding,
+the most common one, to special-form bindings for the fundamental operations of
+the interpreter, and syntax bindings for the macros that get expanded to
+`normal' code.
+
+There isn't just one environment, either. Every time a non-primitive procedure
+is called, a new environment is created which has bindings for the procedure
+arguments and which links to the environment that was current when the procedure
+was defined (which in turn links backwards all the way to the original global
+environment). The evaluator follows into the new environment to evaluate the
+body of the procedure there, and then as the evaluator goes back along its call
+stack, it sheds environment references.
+
+Not only procedures but binding forms (such as K{let}) create new environments
+for the evaluator to work in. As they do that, they also bind variables to
+values. Just like with procedures, the added local bindings can shadow bindings
+in underlying environments but does not affect them: once the local environment
+has been forgotten by the evaluator, the underlying bindings are once more visible.
+The other side of the coin is that temporary environments don't have to be
+complete: every binding that the evaluator can't find in a temporary environment
+it looks for in the parent environment, or its parent and so on.
+
+Environments make up the world the evaluator lives in and are the source of its
+values and procedures. The ability of procedure calls and execution of binding
+forms to temporarily change the current environment is a powerful one. But still
+the evaluator eventually backtracks into the previous environments. 
+
+IF /images/environments.png Two sample environments
+
+I will talk some more about the implementation of environments in a later section.
+
+h3 The evaluator
+
+H4 eval procedure
+
+The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
+it according to its form. Variable reference and constant literals are handled
+here, but the other seven syntactic forms are delegated to K{eval-form}.
+
+PR(
+eval (public);expr expr ?env? env -> val
+PR)
+
+CB(
+reg eval
+
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
+  if {[T [symbol? $expr]]} {
+    lookup $expr $env
+  } elseif {[T [self-evaluating? $expr]]} {
+    set expr
+  } elseif {[T [pair? $expr]]} {
+    eval-form $expr $env
+  } else {
+    error "unknown expression type [$expr show]"
+  }
+}
+CB)
+
+H4 eval-form procedure
+  
+If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
+at the E{binding information} (which the K{reg} R{procedure}{reg-procedure} puts
+into the standard library and thereby the global environment) for the symbol.
+The E{binding type} tells in general how the expression should be treated: as a
+special form, a variable, or a R{macro}{macros}. The E{handling info} gives the
+exact procedure that will take care of the expression. If the operator isn't a
+symbol, it is evaluated and applied to the evaluated rest of the expression.
+
+PR(
+eval-form (internal);expr expr env env -> val
+PR)
+
+CB(
+proc ::constcl::eval-form {expr env} {
+  set op [car $expr]
+  set args [cdr $expr]
+  if {[T [symbol? $op]]} {
+    lassign [binding-info $op $env] btype hinfo
+    switch $btype {
+      UNBOUND {
+        error "unbound symbol" $op
+      }
+      SPECIAL {
+        $hinfo $expr $env
+      }
+      VARIABLE {
+        invoke $hinfo [eval-list $args $env]
+      }
+      SYNTAX {
+        set expr [$hinfo $expr $env]
+        eval $expr $env
+      }
+      default {
+        error "unrecognized binding type" $btype
+      }
+    }
+  } else {
+    invoke [eval $op $env] [eval-list $args $env]
+  }
+}
+CB)
+
+B{binding-info} procedure
+
+The K{binding-info} procedure takes a symbol and returns a list of two items: 1)
+the binding type of the symbol, and 2) the handling info that K{eval-form} uses to
+handle this symbol.
+
+PR(
+binding-info (internal);op sym env env -> bindfo
+PR)
+
+CB(
+proc ::constcl::binding-info {op env} {
+  set actual_env [$env find $op]
+  # parentless envs have #NIL
+  if {$actual_env ne "::constcl::null_env"} {
+    return [$actual_env get $op]
+  } else {
+    return [::list UNBOUND {}]
+  }
+}
+CB)
 
 B{splitlist} procedure
 

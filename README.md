@@ -540,10 +540,13 @@ catch { ::constcl::Dot destroy }
 oo::class create ::constcl::Dot {
   method mkconstant {} {}
   method write {port} {
-    $port put "."
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "."
   }
 }
 ```
@@ -568,10 +571,13 @@ catch { ::constcl::EndOfFile destroy }
 oo::singleton create ::constcl::EndOfFile {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<end-of-file>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<end-of-file>"
   }
 }
 ```
@@ -618,7 +624,7 @@ oo::singleton create ::constcl::NIL {
   }
   method mkconstant {} {}
   method write {port} {
-    $port put "()"
+    $port put [my show]
   }
   method display {port} {
     my write $port
@@ -655,10 +661,13 @@ catch { ::constcl::Undefined destroy }
 oo::singleton create ::constcl::Undefined {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<undefined>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<undefined>"
   }
 }
 ```
@@ -672,10 +681,13 @@ catch { ::constcl::Unspecified destroy }
 oo::singleton create ::constcl::Unspecified {
   method mkconstant {} {}
   method write {port} {
-    $port put "#<unspecified>"
+    $port put [my show]
   }
   method display {port} {
     my write $port
+  }
+  method show {} {
+    format "#<unspecified>"
   }
 }
 ```
@@ -864,14 +876,14 @@ proc ::constcl::valid-char? {name} {
   }
 }
 ```
-#### readc procedure
+#### readchar procedure
 
-`` readc `` reads one character from the unget store if it isn't empty or else from the input port. If the input is at end-of-file, an eof object is returned. Shares the variable `` unget `` with its caller.
+`` readchar `` reads one character from the `` unget `` store if it isn't empty or else from the input port. If the input is at end-of-file, an `` #EOF `` object is returned. Shares the variable `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">readc (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">readchar (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
 
 ```
-proc ::constcl::readc {} {
+proc ::constcl::readchar {} {
   upvar unget unget
   if {$unget ne {}} {
     set c $unget
@@ -895,7 +907,7 @@ proc ::constcl::readc {} {
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     set unget $c
   }
@@ -911,7 +923,7 @@ proc ::constcl::find-char? {char} {
 ```
 proc ::constcl::read-end? {} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   if {[T [interspace? $c]] ||
       [T [delimiter? $c]] ||
       $c eq "#EOF"} {
@@ -935,11 +947,11 @@ proc ::constcl::skip-ws {} {
   while true {
     switch -regexp $c {
       {[[:space:]]} {
-        set c [readc]
+        set c [readchar]
       }
       {;} {
         while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readc]
+          set c [readchar]
         }
       }
       default {
@@ -982,7 +994,7 @@ proc ::constcl::read-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   set unget {}
   read-eof $c
@@ -998,7 +1010,7 @@ proc ::constcl::read-expr {args} {
     {\+} - {\-}   { read-plus-minus $c }
     {\,}          { read-unquoted-expr }
     {\.} {
-        set x [Dot new]; set c [readc]; set x
+        set x [Dot new]; set c [readchar]; set x
     }
     {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
@@ -1023,13 +1035,13 @@ proc ::constcl::read-expr {args} {
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {![T [delimiter? $c]] &&
       [::string is graph $c] &&
       $c ne "#EOF"} {
     ::append name $c
-    set c [readc]
+    set c [readchar]
   }
   check {valid-char? $name} {
       Invalid character constant $name
@@ -1052,16 +1064,17 @@ proc ::constcl::read-identifier-expr {args} {
   if {[llength $args]} {
     set c [join $args {}]
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [interspace? $c]] ||
+      [T [delimiter? $c]]} {
       break
     }
     ::append name $c
-    set c [readc]
+    set c [readchar]
     # do not check for EOF here
   }
   if {$c ne "#EOF"} {
@@ -1086,13 +1099,13 @@ proc ::constcl::read-number-expr {args} {
   if {[llength $args]} {
     lassign $args c
   } else {
-    set c [readc]
+    set c [readchar]
   }
   read-eof $c
   while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
-    set c [readc]
+    set c [readchar]
   }
   set unget $c
   check {::string is double -strict $num} {
@@ -1113,18 +1126,18 @@ proc ::constcl::read-object-expr {} {
   upvar c c unget unget
   # first colon has already been read
   foreach ch [split ":oo::Obj" {}] {
-    set c [readc]
+    set c [readchar]
     read-eof $c
     if {$c ne $ch} {
       error "bad object name"
     }
   }
   set res "::oo::Obj"
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {[::string is digit $c]} {
     ::append res $c
-    set c [readc]
+    set c [readchar]
     read-eof $c
   }
   set unget $c
@@ -1154,7 +1167,7 @@ proc ::constcl::read-pair-expr {char} {
     }
   } else {
     set unget {}
-    set c [readc]
+    set c [readchar]
   }
   return $expr
 }
@@ -1170,11 +1183,11 @@ __read-pair__ procedure
 ```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     # read right paren/brack
-    #set c [readc]
+    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
@@ -1211,7 +1224,7 @@ proc ::constcl::read-pair {char} {
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
     set n [read-number-expr $c]
@@ -1244,7 +1257,7 @@ proc ::constcl::read-plus-minus {char} {
 proc ::constcl::read-pound {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   switch $c {
     (    { set n [read-vector-expr] }
@@ -1269,7 +1282,6 @@ proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
   set expr [read-expr]
-  skip-ws
   read-eof $expr
   make-constant $expr
   return [list [S quasiquote] $expr]
@@ -1301,20 +1313,20 @@ proc ::constcl::read-quoted-expr {} {
 proc ::constcl::read-string-expr {} {
   upvar c c unget unget
   set str {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   while {$c ne "\"" && $c ne "#EOF"} {
     if {$c eq "\\"} {
       ::append str $c
-      set c [readc]
+      set c [readchar]
     }
     ::append str $c
-    set c [readc]
+    set c [readchar]
   }
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
-  set c [readc]
+  set c [readchar]
   set expr [MkString $str]
   read-eof $expr
   make-constant $expr
@@ -1331,7 +1343,7 @@ When a comma is found in the input stream, `` read-unquoted-expr `` is activated
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
   set unget {}
-  set c [readc]
+  set c [readchar]
   read-eof $c
   if {$c eq "@"} {
     set symbol "unquote-splicing"
@@ -1355,7 +1367,7 @@ proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
   set last {}
-  set c [readc]
+  set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
     set e [cons [read-expr $c] #NIL]
     if {$res eq {}} {
@@ -1372,7 +1384,7 @@ proc ::constcl::read-vector-expr {} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
-  set c [readc]
+  set c [readchar]
   set expr [MkVector $res]
   read-eof $expr
   $expr mkconstant
@@ -1383,46 +1395,63 @@ proc ::constcl::read-vector-expr {} {
 
 The second thing an interpreter must be able to do is to reduce expressions to their _normal form_, or _evaluate_ them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
 
-### Environments
 
-Before I can talk about evaluation, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
+To be able to evaluate every kind of expression, a structured approach is needed. Lisp has nine syntactic forms, each with its own syntax, and each with its own process of evaluation.
+
+1. __ variable reference__  
+Syntax: a symbol. Process: [variable lookup](https://github.com/hoodiecrow/ConsTcl#variable-reference).
+1. __ constant literal__  
+Syntax: a number, string, character, or boolean. Process: [take the value](https://github.com/hoodiecrow/ConsTcl#constant-literal).
+1. __ quotation__  
+Syntax: `` (quote datum) ``. Process: [take the datum](https://github.com/hoodiecrow/ConsTcl#quotation).
+1. __ conditional__  
+Syntax: `` if ``, `` case ``, or `` cond ``. Process: [depends on which syntax](https://github.com/hoodiecrow/ConsTcl#conditional).
+1. __ sequence__  
+Syntax: `` (begin expression ...) ``. Process: [evaluate all expressions, take value of last](https://github.com/hoodiecrow/ConsTcl#sequence).
+1. __ definition__  
+Syntax: `` (define var val) ``. Process: take a variable and a value and [bind the variable](https://github.com/hoodiecrow/ConsTcl#definition) to the value.
+1. __ assignment__  
+Syntax: `` (set! var val) ``. Process: take a variable and a value and [set the variable](https://github.com/hoodiecrow/ConsTcl#assignment) to the value.
+1. __ procedure definition__  
+Syntax: `` (lambda formals body) ``. Process: [see form](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
+1. __ procedure call__  
+Syntax: `` (operator operand ...) ``. Process: [see form](https://github.com/hoodiecrow/ConsTcl#procedure-call).
+
+The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
+
+### Variable reference
+
+ _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 
-There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure arguments and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
+A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
 
 
-Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
+Syntax: _symbol_
 
-
-Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
-
-![#](images/environments.png)
-
-I will talk some more about the implementation of environments in a later section.
-
-### The evaluator
-#### eval procedure
-
-The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Symbols to the value they [refer to](https://github.com/hoodiecrow/ConsTcl#variable-reference), self-evaluating types to their [own value](https://github.com/hoodiecrow/ConsTcl#constant-literal), and expressions that are lists to the value that `` eval-form `` gets out of them.
-
-<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+#### lookup procedure
+<table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
 
 ```
-reg eval
-
-proc ::constcl::eval \
-  {expr {env ::constcl::global_env}} {
-  if {[T [symbol? $expr]]} {
-    lookup $expr $env
-  } elseif {[T [self-evaluating? $expr]]} {
-    set expr
-  } elseif {[T [pair? $expr]]} {
-    eval-form $expr $env
+proc ::constcl::lookup {sym env} {
+  lassign [binding-info $sym $env] type value
+  if {$type eq "VARIABLE"} {
+    return $value
   } else {
-    error "unknown expression type"
+    error "not a variable name" $sym
   }
 }
 ```
+### Constant literal
+
+ _Example: `` 99 `` ⇒ 99 (a number evaluates to itself)_
+
+
+Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
+
+
+Syntax: _number_|_string_|_character_|_boolean_
+
 
 __self-evaluating?__ procedure
 
@@ -1443,103 +1472,6 @@ proc ::constcl::self-evaluating? {val} {
   }
 }
 ```
-#### eval-form procedure
-
-If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` [procedure](https://github.com/hoodiecrow/ConsTcl#reg-procedure) puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _handling info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
-
-<table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
-```
-proc ::constcl::eval-form {expr env} {
-  set op [car $expr]
-  set args [cdr $expr]
-  if {[T [symbol? $op]]} {
-    lassign [binding-info $op $env] btype hinfo
-    switch $btype {
-      UNBOUND {
-        error "unbound symbol" $op
-      }
-      SPECIAL {
-        $hinfo $expr $env
-      }
-      VARIABLE {
-        invoke $hinfo [eval-list $args $env]
-      }
-      SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
-      }
-      default {
-        error "unrecognized binding type" $btype
-      }
-    }
-  } else {
-    invoke [eval $op $env] [eval-list $args $env]
-  }
-}
-```
-
-__binding-info__ procedure
-
-
-The `` binding-info `` procedure takes a symbol and returns a list of two items: 1) the binding type of the symbol, and 2) the handling info that `` eval-form `` uses to handle this symbol.
-
-<table border=1><thead><tr><th colspan=2 align="left">binding-info (internal)</th></tr></thead><tr><td>op</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>binding info</td></tr></table>
-
-```
-proc ::constcl::binding-info {op env} {
-  set actual_env [$env find $op]
-  # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
-    return [::list UNBOUND {}]
-  }
-}
-```
-### Syntactic forms
-
-There are nine diffent forms or classes of expressions in Lisp:
-
-1. variable reference
-1. constant literal
-1. quotation
-1. conditional
-1. sequence
-1. definition
-1. assignment
-1. procedure definition
-1. procedure call
-
-The evaluator recognizes each one by its internal representation and chooses the appropriate process to evaluate them. The nine forms will be described in the following sections.
-
-### Variable reference
-
- _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
-
-
-A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
-
-#### lookup procedure
-<table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
-
-```
-proc ::constcl::lookup {sym env} {
-  lassign [binding-info $sym $env] btype hinfo
-  if {$btype eq "VARIABLE"} {
-    return $hinfo
-  } else {
-    error "not a variable name" $sym
-  }
-}
-```
-### Constant literal
-
- _Example: `` 99 `` ⇒ 99 (a number evaluates to itself)_
-
-
-Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
-
 ### Quotation
 
  _Example: `` (quote r) `` ⇒ `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
@@ -2066,7 +1998,7 @@ proc ::constcl::special-lambda {expr env} {
 Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121.
 
 
-`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command.
+`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with `` eval-list `` (see below).
 
 #### invoke procedure
 <table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
@@ -2285,7 +2217,6 @@ reg special let*
 proc ::constcl::special-let* {expr env} {
   set tail [cdr $expr]
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
-  set expr [rewrite-let $expr $env]
   eval $expr $env
 }
 ```
@@ -2302,14 +2233,110 @@ proc ::constcl::rewrite-let* {bindings body env} {
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
-    /define [S binding] [car $bindings] $env
+    /define [S var] [caar $bindings] $env
+    /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
       $body $env] $env
-    set qq "`(let (,binding) ,rest)"
+    set qq "`((lambda (,var)
+               ,rest) ,val)"
     set expr [expand-quasiquote [parse $qq] $env]
   }
   $env destroy
   return $expr
+}
+```
+### Environments
+
+Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
+
+
+There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure arguments and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
+
+
+Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
+
+
+Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
+
+![#](images/environments.png)
+
+I will talk some more about the implementation of environments in a later section.
+
+### The evaluator
+#### eval procedure
+
+The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Variable reference and constant literals are handled here, but the other seven syntactic forms are delegated to `` eval-form ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+```
+reg eval
+
+proc ::constcl::eval \
+  {expr {env ::constcl::global_env}} {
+  if {[T [symbol? $expr]]} {
+    lookup $expr $env
+  } elseif {[T [self-evaluating? $expr]]} {
+    set expr
+  } elseif {[T [pair? $expr]]} {
+    eval-form $expr $env
+  } else {
+    error "unknown expression type [$expr show]"
+  }
+}
+```
+#### eval-form procedure
+
+If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` [procedure](https://github.com/hoodiecrow/ConsTcl#reg-procedure) puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _handling info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
+
+<table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+
+```
+proc ::constcl::eval-form {expr env} {
+  set op [car $expr]
+  set args [cdr $expr]
+  if {[T [symbol? $op]]} {
+    lassign [binding-info $op $env] btype hinfo
+    switch $btype {
+      UNBOUND {
+        error "unbound symbol" $op
+      }
+      SPECIAL {
+        $hinfo $expr $env
+      }
+      VARIABLE {
+        invoke $hinfo [eval-list $args $env]
+      }
+      SYNTAX {
+        set expr [$hinfo $expr $env]
+        eval $expr $env
+      }
+      default {
+        error "unrecognized binding type" $btype
+      }
+    }
+  } else {
+    invoke [eval $op $env] [eval-list $args $env]
+  }
+}
+```
+
+__binding-info__ procedure
+
+
+The `` binding-info `` procedure takes a symbol and returns a list of two items: 1) the binding type of the symbol, and 2) the handling info that `` eval-form `` uses to handle this symbol.
+
+<table border=1><thead><tr><th colspan=2 align="left">binding-info (internal)</th></tr></thead><tr><td>op</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>binding info</td></tr></table>
+
+```
+proc ::constcl::binding-info {op env} {
+  set actual_env [$env find $op]
+  # parentless envs have #NIL
+  if {$actual_env ne "::constcl::null_env"} {
+    return [$actual_env get $op]
+  } else {
+    return [::list UNBOUND {}]
+  }
 }
 ```
 
@@ -3438,7 +3465,10 @@ proc ::repl {{prompt "ConsTcl> "}} {
 Well!
 
 
-After 1854 lines of code, the interpreter is done. Now for the built-in procedures.
+After 1860 lines of code, the interpreter is done.
+
+
+Now for the built-in procedures!
 
 ## Built-in procedures
 ### Equivalence predicates
