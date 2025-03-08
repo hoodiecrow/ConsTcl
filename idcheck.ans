@@ -1,7 +1,6 @@
 
 H2 Identifier validation
 
-MD(
 B{idcheckinit}
 
 B{idchecksubs}
@@ -16,7 +15,6 @@ others and raises an error if they fail. A valid symbol is still an invalid
 identifier if has the name of some keyword, which K{varcheck} checks, for a set
 of keywords given in the standard.
 
-MD)
 
 IX idcheckinit
 CB(

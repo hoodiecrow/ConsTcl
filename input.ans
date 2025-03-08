@@ -1,7 +1,6 @@
 
 H2 Input
 
-MD(
 The first thing an interpreter must be able to do is to take in the user's code
 and data inputI{input}, whether from the keyboard or from a source file.  K{read}
 represents the interpreter's main input facility. The K{read-} procedures read
@@ -10,11 +9,9 @@ from standard input, or--if a port is provided--from the port's channel.
 The main input procedures, K{read} and the non-standard K{parse}, do more than
 just read in the text of code and data: they also E{parse} the input into an
 E{internal representation} that the evaluator can use.
-MD)
 
 h3 The parsing process
 
-MD(
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
 letters, digits, and other characters, conforming to the rules of E{external
   representation}I{external representation}. The result of parsing is an
@@ -43,21 +40,18 @@ Given a string, K{parse} creates a string input port for itself to read from. It
 then parses the input and produces the internal representation of an expression.
 
 Example:
-MD)
 
 VB(
 % ::constcl::parse "(+ 2 3)"
 ::oo::Obj491
 VB)
 
-MD(
 Here, K{parse} parsed the external representation of a list with three elements,
 +, 2, and 3. It produced the expression that has an internal representation
 labeled K{::oo::Obj491}. I will now reach briefly into the following chapters
 and present procedures like K{eval}, which transforms an expression into a
 value, and K{write}, which writes a printed external representation of
 expressions and values. Putting them together we can see
-MD)
 
 VB(
 % ::constcl::write ::oo::Obj491
@@ -68,23 +62,19 @@ VB(
 5
 VB)
 
-MD(
 Fortunately, we don't E{have} to work at such a low level. We can use the
 K{repl}I{repl} instead:
-MD)
 
 VB(
 ConsTcl> (+ 2 3)
 5
 VB)
 
-MD(
 Then, parsing and evaluation and writing goes on in the background and the
 internal representations of expressions and values are hidden.
 
 Anyway, the figure shows what it really looks like. K{::oo::Obj491} was just
 the head of the list.
-MD)
 
 IF /images/intreplist.png The internal structure of the expression
 
@@ -93,7 +83,6 @@ h3 Input procedures
 PT(
 H5 Ports
 
-MD(
 Ports are an abstraction of the input or output mechanism. An input port can be
 connected to standard input (the keyboard) or a file
   opened for input or a string input buffer where the complete available input
@@ -101,16 +90,14 @@ connected to standard input (the keyboard) or a file
   is, one can read characters from it until it runs out and signals end-of-file.
   Likewise, an output port, regardless of whether it's the standard output--the
   screen--or a file opened for output, will receive characters sent to it.
-MD)
+
 PT)
 
 H4 parse procedure
 
-MD(
 K{parse} can be called with either a string input port or a Tcl or ConsTcl
 string (which it uses to open a string input port). Once the input port is
 established, K{parse} leaves control to S{read-expr}{read-expr-procedure}.
-MD)
 
 PR(
 parse (internal);inp tstrstrinpbuf -> expr
@@ -158,7 +145,6 @@ TT)
 
 H4 read procedure
 
-MD(
 The standard builtin K{read} reads an input port the same way that K{parse}
 does, but one can't pass a string to it. The K{read-} procedures parse their
 input and produce ConsTcl objects.
@@ -168,7 +154,6 @@ K{read} sets the standard input port temporarily to the provided port. If not,
 K{read} uses the default standard input port (usually the keyboardF{which doesn't work in a Windows
   windowing environment, e.g. wish or tkcon. repl does work in those, though.
   Input works in tclsh on Windows.}).
-MD)
 
 PR(
 read (public);?port? iport -> expr
@@ -209,10 +194,8 @@ h3 Input helper procedures
 
 H4 make-constant procedure
 
-MD(
 The K{make-constant} helper procedure is called to set expressions to constants
 when read as a literal.
-MD)
 
 CB(
 proc ::constcl::make-constant {val} {
@@ -246,10 +229,8 @@ TT)
 
 H4 interspace? procedure
 
-MD(
 The K{interspace?} helper procedure recognizes whitespace between value
 representations.
-MD)
 
 CB(
 proc ::constcl::interspace? {c} {
@@ -267,10 +248,8 @@ TT)
 
 H4 delimiter? procedure
 
-MD(
 The K{delimiter?} helper procedure recognizes delimiter characters between value
 representations.
-MD)
 
 CB(
 proc ::constcl::delimiter? {c} {
@@ -295,10 +274,8 @@ TT)
 
 H4 valid-char? procedure
 
-MD(
 The K{valid-char?} helper procedure compares a potential
 character constant to the valid kinds.
-MD)
 
 PR(
 valid-char? (internal);name tstr -> bool
@@ -321,11 +298,9 @@ TT)
 
 H4 readc procedure
 
-MD(
 K{readc} reads one character from the unget store if it isn't empty or else from
 the input port. If the input is at end-of-file, an eof object is returned.
 Shares the variable K{unget} with its caller.
-MD)
 
 PR(
 readc (internal);-> tchreof
@@ -353,12 +328,10 @@ TT)
 
 H4 find-char? procedure
 
-MD(
 K{find-char?} reads ahead through whitespace to find a given character. It
 returns K{#t} if it has found the character, and K{#f} if it has stopped at some
 other character.  Returns end of file if eof is encountered.
 Shares the variables K{c} and  K{unget} with its caller.
-MD)
 
 PR(
 find-char? (internal);char tchr -> booleof
@@ -382,12 +355,10 @@ TT)
 
 H4 read-end? procedure
 
-MD(
 K{read-end?} reads one character and returns K{#t} if it is an interspace
 character or a delimiter character, or end of file. Otherwise it
 returns K{#f}. It ungets the character before returning.
 Shares the variables K{c} and  K{unget} with its caller.
-MD)
 
 PR(
 read-end? (internal);-> booleof
@@ -415,10 +386,8 @@ TT)
 
 H4 skip-ws procedure
 
-MD(
 K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It leaves the first character not to be skipped in K{c} and also ungets it.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 skip-ws (internal);-> none
@@ -452,10 +421,8 @@ TT)
 
 H4 read-eof procedure
 
-MD(
 K{read-eof} checks a number of presumed characters for possible end-of-file
 objects. If it finds one, it returns E{from its caller} with the EOF value.
-MD)
 
 PR(
 read-eof (internal);chars chars -> none
@@ -478,14 +445,11 @@ TT)
 
 h3 Reader procedures
 
-MD(
 Reader procedures specialize in reading a certain kind of input, except for
 K{read-expr} which reads them all (with a little help).
-MD)
 
 H4 read-expr procedure
 
-MD(
 The K{read-expr} procedure reads the first available character from the input
 port. Based on that it delegates to one of the more detailed
 readers, producing an expression of any kind.  A Tcl character value
@@ -493,7 +457,6 @@ can be passed to it: that character will be used first before reading from the
 input.  If end of file is encountered before an expression can be read in
 full, the procedure returns end of file (K{#EOF})I{end of file}.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-expr (internal);?char? tchr -> expreof
@@ -554,13 +517,11 @@ TT)
 
 H4 read-character-expr procedure
 
-MD(
 K{read-character-expr} is activated by K{read-pound} when that procedure finds a
 backslash in the input stream (pound-backslash is the external representation
 prefix for characters). It reads one or more characters to produce a character
 expression and return a R{Char}{characters} object.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-character-expr (internal);-> chareof
@@ -615,14 +576,12 @@ TT)
 
 H4 read-identifier-expr procedure
 
-MD(
 K{read-identifier-expr} is activated for 'anything else', and takes in
 characters until it finds whitespace or a delimiter character. If it
 is passed one or more characters it will use them before consuming any from
 input. It checks the input against the rules for identifiers, accepting or
 rejecting it with an error message. It returns a R{Symbol}{symbols} object.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-identifier-expr (internal);?chars? tchrs -> symeof
@@ -684,7 +643,6 @@ TT)
 
 H4 read-number-expr procedure
 
-MD(
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
 digits, and it actually takes in anything that starts out like a number and
@@ -692,7 +650,6 @@ stops at whitespace or a delimiter character, and then it accepts or
 rejects the input by comparing it to a Tcl double. It returns a
 R{Number}{numbers} object.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-number-expr (internal);?char? tchr -> numeof
@@ -757,12 +714,10 @@ TT)
 
 H4 read-object-expr procedure
 
-MD(
 A non-standard extension, K{read-object-expr} reads a ConsTcl object of any kind
 and passes its name along. It is activated when K{read-expr} finds a colon in
 the input.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-object-expr (internal);-> objeof
@@ -794,14 +749,12 @@ CB)
 
 H4 read-pair-expr procedure
 
-MD(
 The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
 list, or a possibly recursive structure of R{Pair}{pairs-and-lists} objects,
 either a proper list (one that ends in K{#NIL}), or an improper one (one that
 has an atom as its last member).
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 IF /images/prop-improp.png A proper list and two improper ones.
 
@@ -831,7 +784,6 @@ proc ::constcl::read-pair-expr {char} {
 }
 CB)
 
-MD(
 B{read-pair} procedure
 
 K{read-pair} is a helper procedure that does the heavy lifting in reading a pair
@@ -842,7 +794,6 @@ end of an improper list. When K{read-pair} has reached the ending parenthesis or
 bracket, it conses up the elements starting from the last, and returns the head
 of the list.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-pair (internal);char pterm -> pstreof
@@ -948,13 +899,11 @@ TT)
 
 H4 read-plus-minus procedure
 
-MD(
 K{read-plus-minus} is called when a plus or minus is found in the input stream.
 The plus or minus character is passed to it.  If the next character is a digit,
 it delegates to the number reader. If it is a space character or a delimiter, it
 returns a K{+} or K{-} symbol. Otherwise, it delegates to the identifier reader.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-plus-minus (internal);char tchr -> pmeof
@@ -1014,12 +963,10 @@ TT)
 
 H4 read-pound procedure
 
-MD(
 K{read-pound} is activated by K{read-expr} when it reads a pound sign (K{#}). It
 in turn either delegates to the vector reader or the character reader, or
 returns boolean literals.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-pound (internal);-> poundeof
@@ -1061,12 +1008,10 @@ TT)
 
 H4 read-quasiquoted-expr procedure
 
-MD(
 K{read-quasiquoted-expr} is activated when there is a backquote (K{`}) in the
 input stream. It reads an entire expression and returns it wrapped in
 K{quasiquote}.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-quasiquoted-expr (internal);-> qquoteeof
@@ -1104,12 +1049,10 @@ TT)
 
 H4 read-quoted-expr procedure
 
-MD(
 K{read-quoted-expr} is activated by K{read-expr} when reading a single quote (').
 It then reads an entire expression beyond that, returning it wrapped in a list
 with K{quote}. The quoted expression is made constant.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-quoted-expr (internal);-> quoteeof
@@ -1151,7 +1094,6 @@ TT)
 
 H4 read-string-expr procedure
 
-MD(
 K{read-string-expr} is activated by K{read-expr} when it reads a double quote.
 It collects characters until it reaches another (unescaped) double quote. To
 have double quotes in the string, escape them with backslash (which also means
@@ -1159,7 +1101,6 @@ that backslashes have to be escaped with backslash). A backslash+n pair of
 characters denotes a newline (this is a ConsTcl extension). It then returns a
 string expression--an immutable R{String}{strings} object.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-string-expr (internal);-> streof
@@ -1231,14 +1172,12 @@ TT)
 
 H4 read-unquoted-expr procedure
 
-MD(
 When a comma is found in the input stream, K{read-unquoted-expr} is activated.
 If it reads an at-sign (K{@}) it selects the symbol K{unquote-splicing}, otherwise
 it selects the symbol K{unquote}. Then it reads an entire expression and returns
 it wrapped in the selected symbol. Both of these expressions are only supposed
 to occur inside a quasiquoted expression.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-unquoted-expr (internal);-> unquoteeof
@@ -1283,12 +1222,10 @@ TT)
 
 H4 read-vector-expr procedure
 
-MD(
 K{read-vector-expr} is activated by K{read-pound} and reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
 expression and returns a R{Vector}{vectors} object.
 Shares the variables K{c} and K{unget} with its caller.
-MD)
 
 PR(
 read-vector-expr (internal);-> veceof

@@ -1,11 +1,9 @@
 
 H3 Characters
 
-MD(
 Characters are any Unicode printing character, and also space and newline space
 characters. External representation is K{#\A} (A stands for any character) or
 K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
-MD)
 
 H4 Char class
 
@@ -98,11 +96,9 @@ CB)
 
 H4 MkChar generator
 
-MD(
 K{MkChar} generates a character object. If a character object with the same name
 already exists, that character will be returned, otherwise a fresh character
 will be created.
-MD)
 
 PR(
 MkChar (internal);char echar -> char
@@ -125,9 +121,7 @@ CB)
 
 H4 char? procedure
 
-MD(
 K{char?} recognizes Char values by type.
-MD)
 
 PR(
 char? (public);val val -> bool
@@ -159,10 +153,8 @@ NI B{char<=?} procedure
 
 NI B{char>=?} procedure
 
-MD(
 K{char=?}, K{char<?}, K{char>?}, K{char<=?}, and K{char>=?} compare character
 values. They only compare two characters at a time.
-MD)
 
 PR(
 char=?, char<?, char>?, char<=?, char>=? (public);char1 char char2 char -> bool
@@ -326,10 +318,8 @@ NI B{char-ci<=?} procedure
 
 NI B{char-ci>=?} procedure
 
-MD(
 K{char-ci=?}, K{char-ci<?}, K{char-ci>?}, K{char-ci<=?}, and K{char-ci>=?} compare character
 values in a case insensitive manner. They only compare two characters at a time.
-MD)
 
 PR(
 char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public);char1 char char2 char -> bool
@@ -495,19 +485,15 @@ NI B{char-upper-case?} procedure
 
 NI B{char-lower-case?} procedure
 
-MD(
 The predicates K{char-alphabetic?}, K{char-numeric?}, and K{char-whitespace?}
  test a character for these
 conditions.
-MD)
 
 PR(
 char-alphabetic?, char-numeric?, char-whitespace? (public);char char -> bool
 PR)
 
-MD(
 K{char-upper-case?} and K{char-lower-case?} too.
-MD)
 
 PR(
 char-upper-case?, char-lower-case? (public);char char -> bool
@@ -639,14 +625,10 @@ TT)
 
 H4 char->integer procedure
 
-MD(
 K{char->integer} and K{integer->char} convert between characters and their
 16-bit numeric codes.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (char->integer #\A)   =>  65
@@ -666,9 +648,7 @@ CB)
 
 H4 integer->char procedure
 
-MD(
 Example:
-MD)
 
 VB(
 (integer->char 97)   =>  #\a
@@ -703,11 +683,9 @@ TT)
 
 H4 char-upcase procedure
 
-MD(
 B{char-downcase} procedure
 
 K{char-upcase} and K{char-downcase} alter the case of a character.
-MD)
 
 PR(
 char-upcase, char-downcase (public);char char -> char

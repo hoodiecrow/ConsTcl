@@ -1,12 +1,10 @@
 
 H3 Booleans
 
-MD(
 Booleans are logic values, either true (K{#t}) or false (K{#f}).  All predicates
 (procedures whose name end with -?) return boolean values. It's not just the
 boolean values that have truth value, though.  Scheme's conditional K{if}
 operator considers all values except for K{#f} to be true.
-MD)
 
 H4 Boolean class
 
@@ -43,12 +41,10 @@ CB)
 
 H4 MkBoolean generator
 
-MD(
 K{MkBoolean} generates a boolean. If a boolean with the same name already exists
 (which is the case at run time, because there are only two valid boolean values,
 and they're both pre-generated) that boolean will be returned, otherwise a fresh
 boolean will be created.
-MD)
 
 PR(
 MkBoolean (internal);bool ebool -> bool
@@ -84,9 +80,7 @@ TT)
 
 H4 boolean? procedure
 
-MD(
 The K{boolean?} predicate recognizes a Boolean by type.
-MD)
 
 PR(
 boolean? (public);val val -> bool
@@ -118,13 +112,9 @@ TT)
 
 H4 not procedure
 
-MD(
 The only operation on booleans: K{not}, or logical negation.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (not #f)    ==>  #t   ; #f yields #t, all others #f

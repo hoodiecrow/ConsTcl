@@ -1,16 +1,13 @@
 
 H3 Strings
 
-MD(
 Procedures for dealing with strings of characters. Strings are sequences of
 characters. After numbers, strings are the most common form of real-world data
 in computing. Lisp has strings, both constant and mutable, but some of the uses
 for strings in other languages are instead taken up by symbols.
-MD)
 
 H4 String class
 
-MD(
 Strings have the internal representation of a vector of character objects, with
 the data elements of 1) the vector address of the first element, and 2) the
 length of the vector. External representation is enclosed within double quotes,
@@ -20,7 +17,6 @@ As a ConsTcl extension, a K{\n} pair in the external representation is
 stored as a newline character. It is restored to K{\n} if the string is printed
 using K{write}, but remains a newline character if the string is printed using
 K{display}.
-MD)
 
 CB(
 oo::class create ::constcl::String {
@@ -129,9 +125,7 @@ CB)
 
 H4 MkString generator
 
-MD(
 K{MkString} generates a String object.
-MD)
 
 PR(
 MkString (internal);str estr -> str
@@ -164,9 +158,7 @@ TT)
 
 H4 string? procedure
 
-MD(
 K{string?} recognizes a string by type.
-MD)
 
 PR(
 string? (public);val val -> bool
@@ -191,14 +183,10 @@ TT)
 
 H4 make-string procedure
 
-MD(
 K{make-string} creates a string of E{k} characters, optionally filled with E{char}
 characters. If E{char} is omitted, the string will be filled with space characters.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (let ((k 5))
@@ -236,13 +224,9 @@ TT)
 
 H4 string procedure
 
-MD(
 K{string} constructs a string from a number of Lisp characters.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string #\f #\o #\o)   ==>  "foo"
@@ -282,13 +266,9 @@ TT)
 
 H4 string-length procedure
 
-MD(
 K{string-length} reports a string's length.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string-length "foobar")   ==> 6
@@ -319,13 +299,9 @@ TT)
 
 H4 string-ref procedure
 
-MD(
 K{string-ref} yields the E{k}-th character (0-based) in E{str}.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string-ref "foobar" 3)   ==> #\b
@@ -361,13 +337,9 @@ TT)
 
 H4 string-set"! procedure
 
-MD(
 K{string-set!} replaces the character at E{k} with E{char} in a non-constant string.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (let ((str (string #\f #\o #\o))
@@ -421,7 +393,6 @@ TT(
 
 TT)
 
-MD(
 B{string=?}, B{string-ci=?}
 
 B{string<?}, B{string-ci<?}
@@ -435,7 +406,6 @@ B{string>=?}, B{string-ci>=?}
 K{string=?}, K{string<?}, K{string>?}, K{string<=?}, K{string>=?} and
 their case insensitive variants K{string-ci=?}, K{string-ci<?},
 K{string-ci>?}, K{string-ci<=?}, K{string-ci>=?} compare strings.
-MD)
 
 PR(
 string=?, string<?, string>? (public);str1 str str2 str -> bool
@@ -770,13 +740,9 @@ TT)
 
 H4 substring procedure
 
-MD(
 K{substring} yields the substring of E{str} that starts at E{start} and ends at E{end}.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (substring "foobar" 2 4)   ==> "oba"
@@ -816,13 +782,9 @@ TT)
 
 H4 string-append procedure
 
-MD(
 K{string-append} joins strings together.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string-append "foo" "bar")   ==>  "foobar"
@@ -852,13 +814,9 @@ TT)
 
 H4 string->list procedure
 
-MD(
 K{string->list} converts a string to a Lisp list of characters.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string->list "foo")   ==>  (#\f #\o #\o)
@@ -886,13 +844,9 @@ TT)
 
 H4 list->string procedure
 
-MD(
 K{list->string} converts a Lisp list of characters to a string.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (list->string '(#\1 #\2 #\3))   ==> "123"
@@ -921,13 +875,9 @@ TT)
 
 H4 string-copy procedure
 
-MD(
 K{string-copy} makes a copy of a string.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (let ((str (string-copy "abc"))
@@ -969,13 +919,9 @@ TT)
 
 H4 string-fill"! procedure
 
-MD(
 K{string-fill!} E{str} E{char} fills a non-constant string with E{char}.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (let ((str (string-copy "foobar"))

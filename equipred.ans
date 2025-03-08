@@ -2,7 +2,6 @@ H2 Built-in procedures
 
 h3 Equivalence predicates
 
-MD(
 One of the fundamental questions in programming is ``is A equal to B?'' Whether
 the algorithm is about searching, sorting, or almost anything else, an equality
 test comes up sooner rather than later. Lisp takes the question and adds ``what
@@ -14,7 +13,6 @@ K{eqv} tests for value equality (except for booleans and procedures, where it
 tests for identity), and K{equal} tests for whether the output strings are
 equal.
 
-MD)
 H4 eq? procedure
 
 PR(
@@ -57,11 +55,9 @@ proc ::constcl::eq? {expr1 expr2} {
 }
 CB)
 
-MD(
 B{teq} procedure
 
 K{teq} tests for type equality, i.e. that the expressions have the same type.
-MD)
 
 PR(
 teq (internal);typep proc expr1 expr expr2 expr -> tbool
@@ -75,11 +71,9 @@ proc ::constcl::teq {typep expr1 expr2} {
 }
 CB)
 
-MD(
 B{veq} procedure
 
 K{veq} tests for value equality, i.e. that the expressions have the same value.
-MD)
 
 PR(
 veq (internal);expr1 expr expr2 expr -> tbool

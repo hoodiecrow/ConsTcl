@@ -1,8 +1,6 @@
 H2 Initialization
 
-MD(
 Initialize the memory space for vector contents.
-MD)
 
 CB(
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
@@ -17,9 +15,7 @@ proc ::constcl::vsAlloc {num} {
 }
 CB)
 
-MD(
 Initialize the symbol table and gensym number.
-MD)
 
 CB(
 unset -nocomplain ::constcl::symbolTable
@@ -28,18 +24,14 @@ set ::constcl::symbolTable [dict create]
 set ::constcl::gensymnum 0
 CB)
 
-MD(
 Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
-MD)
 
 CB(
 interp recursionlimit {} 2000
 CB)
 
-MD(
 Pre-make a set of constants (e.g. #NIL, #t, and #f)
 and give them aliases for use in source text.
-MD)
 
 CB(
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -65,19 +57,15 @@ interp alias {} #UND {} [::constcl::Undefined new]
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 CB)
 
-MD(
 Crown the definition register with the queen of numbers (or at least
 a double-precision floating point approximation).
-MD)
 
 IX pi
 CB(
 regvar pi [N 3.1415926535897931]
 CB)
 
-MD(
 In this interpreter, K{nil} does refer to the empty list.
-MD)
 
 IX nil
 CB(
@@ -87,14 +75,12 @@ CB)
 
 H3 Environment startup
 
-MD(
 On startup, two K{Environment} objects called K{null_env} (the null environment,
 not the same as K{null-environment} in Scheme) and K{global_env} (the global
 environment) are created. 
 
 Make K{null_env} empty and judgemental: this is where searches for unbound
 symbols end up.
-MD)
 
 IX null\_env
 CB(
@@ -114,10 +100,8 @@ oo::objdefine ::constcl::null_env {
 }
 CB)
 
-MD(
 Meanwhile, K{global_env} is populated with all the definitions from the
 definitions register, K{defreg}. This is where top level evaluation happens.
-MD)
 
 IX global\_env
 CB(
@@ -132,20 +116,16 @@ namespace eval ::constcl {
 }
 CB)
 
-MD(
 Load the Scheme base to add more definitions to the global environment.
-MD)
 
 IX schemebase
 CB(
 pe {(load "schemebase.scm")}
 CB)
 
-MD(
 Thereafter, each time a user-defined procedure is called, a new K{Environment}
 object is created to hold the bindings introduced by the call, and also a link
 to the outer environment (the one closed over when the procedure was defined).
-MD)
 
 
 TT(

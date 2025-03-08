@@ -1,7 +1,6 @@
 
 H2 Environment class and objects
 
-MD(
 The class for environments is called K{Environment}. It is mostly a wrapper
 around a dictionary, with the added finesse of keeping a link to the outer
 environment. In this way, there is a chain connecting the latest environment all
@@ -22,7 +21,6 @@ symbol before lookup, and the result of lookup may have to be converted
 afterwards. Note that in the two cases where a number of values are stored under
 one name (a formals list of a single symbol or a dotted list), then the values
 are stored as a Lisp list of values.
-MD)
 
 H4 Environment class
 
@@ -149,8 +147,6 @@ CB)
 
 H4 MkEnv generator
 
-MD(
-MD)
 
 PR(
 MkEnv (internal);?parms? formals ?vals? tvals env env -> env
@@ -173,9 +169,7 @@ CB)
 
 H4 environment? procedure
 
-MD(
 Recognizes an environment by type.
-MD)
 
 PR(
 reg environment?
@@ -191,9 +185,7 @@ CB)
 
 H3 Lexical scoping
 
-MD(
 Example:
-MD)
 
 VB(
 ConsTcl> (define (circle-area r) (* pi (* r r)))
@@ -201,7 +193,6 @@ ConsTcl> (circle-area 10)
 314.1592653589793
 VB)
 
-MD(
 During a call to the procedure K{circle-area}, the symbol K{r} is bound to the
 value 10. But we don't want the binding to go into the global environment,
 possibly clobbering an earlier definition of K{r}. The solution is to use
@@ -225,6 +216,5 @@ IG /images/env2.png
 After the call, we are back to the first state again.
 
 IG /images/env1.png
-MD)
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

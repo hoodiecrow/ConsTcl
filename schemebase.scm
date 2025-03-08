@@ -64,6 +64,6 @@
 
 (define (list-copy list)
   (if (null? list)
-      '()
-      (cons (car list)
-            (list-copy (cdr list)))))
+    '()
+    (cons (car list)
+      (list-copy (cdr list)))))

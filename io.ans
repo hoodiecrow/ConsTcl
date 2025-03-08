@@ -1,20 +1,16 @@
 
 H3 Input and output
 
-MD(
 Like most programming languages, Scheme has input and output facilities beyond
 direct K{read} and K{write}.  I/O is based on the E{port} abstraction of a
 character supplying or receiving device. There are four kinds of ports:
-MD)
 
 EN file input (InputPort)
 EN file output (OutputPort)
 EN string input (StringInputPort)
 EN string output (StringOutputPort)
 
-MD(
 and there is also the K{Port} type, which isn't used other than as a base class.
-MD)
 
 H4 Port class
 
@@ -85,9 +81,7 @@ CB)
 
 H4 MkInputPort generator
 
-MD(
 K{MkInputPort} generates an InputPort object.
-MD)
 
 PR(
 MkInputPort (internal);-> iport
@@ -178,9 +172,7 @@ CB)
 
 H4 MkOutputPort generator
 
-MD(
 K{MkOutputPort} generates an OutputPort object.
-MD)
 
 PR(
 MkOutputPort (internal);-> oport
@@ -225,7 +217,6 @@ oo::class create ::constcl::StringOutputPort {
 }
 CB)
 
-MD(
 B{Input_Port} variable
 
 B{Output_port} variable
@@ -233,7 +224,6 @@ B{Output_port} variable
 These two variables store globally the current configuration of the shared
 input and output ports. They are initially set to standard input and output
 respectively.
-MD)
 
 CB(
 set ::constcl::Input_port [
@@ -244,9 +234,7 @@ CB)
 
 H4 port? procedure
 
-MD(
 K{port?} recognizes Port objects, i.e. all kinds of ports.
-MD)
 
 CB(
 reg port?
@@ -258,11 +246,9 @@ CB)
 
 H4 call-with-input-file procedure
 
-MD(
 K{call-with-input-file} opens a file for input and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
-MD)
 
 PR(
 call-with-input-file (public);filename filename proc proc -> val
@@ -297,14 +283,12 @@ TT)
 
 H4 call-with-output-file procedure
 
-MD(
 K{call-with-output-file} opens a file for output and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
 
 You can't use this procedure without deleting the first line. I take no
 responsibility for damage to your files due to overwriting the contents.
-MD)
 
 PR(
 call-with-output-file (public);filename filename proc proc -> val
@@ -339,9 +323,7 @@ TT)
 
 H4 input-port? procedure
 
-MD(
 K{input-port?} recognizes an InputPort object.
-MD)
 
 PR(
 input-port? (public);val val -> bool
@@ -363,9 +345,7 @@ CB)
 
 H4 output-port? procedure
 
-MD(
 K{output-port?} recognizes an OutputPort object.
-MD)
 
 PR(
 output-port? (public);val val -> bool
@@ -387,9 +367,7 @@ CB)
 
 H4 current-input-port procedure
 
-MD(
 K{current-input-port} makes a copy of the current shared input port.
-MD)
 
 PR(
 current-input-port (public);-> port
@@ -405,9 +383,7 @@ CB)
 
 H4 current-output-port procedure
 
-MD(
 K{current-output-port} makes a copy of the current shared output port.
-MD)
 
 PR(
 current-output-port (public);-> port
@@ -423,10 +399,8 @@ CB)
 
 H4 with-input-from-file procedure
 
-MD(
 K{with-input-from-file} opens a file for input and calls a `thunk' while the
 file is open.  The file is closed again when the call is done.
-MD)
 
 PR(
 with-input-from-file (public);filename filename thunk proc -> none
@@ -460,10 +434,8 @@ TT)
 
 H4 with-output-to-file procedure
 
-MD(
 K{with-output-to-file} opens a file for output and calls a `thunk' while the
 file is open.  The file is closed again when the call is done.
-MD)
 
 PR(
 with-output-to-file (public);filename filename thunk proc -> none
@@ -499,9 +471,7 @@ TT)
 
 H4 open-input-file procedure
 
-MD(
 K{open-input-file} opens a file for input and returns the port.
-MD)
 
 PR(
 open-input-file (public);filename filename -> iport
@@ -526,9 +496,7 @@ CB)
 
 H4 open-output-file procedure
 
-MD(
 K{open-output-file} opens a file for output and returns the port.
-MD)
 
 PR(
 open-output-file (public);filename filename -> oport
@@ -553,9 +521,7 @@ CB)
 
 H4 close-input-port procedure
 
-MD(
 K{close-input-port} closes an input port.
-MD)
 
 PR(
 close-input-port (public);port iport -> none
@@ -574,9 +540,7 @@ CB)
 
 H4 close-output-port procedure
 
-MD(
 K{close-output-port} closes an output port.
-MD)
 
 PR(
 close-output-port (public);port oport -> none
@@ -593,20 +557,14 @@ proc ::constcl::close-output-port {port} {
 }
 CB)
 
-MD(
 K{write} is implemented in the R{output}{output} chapter.
-MD)
 
-MD(
 K{display} is implemented in the output chapter.
-MD)
 
 H4 newline procedure
 
-MD(
 K{newline} outputs a newline character. Especially helpful when using K{display}
 for output, since it doesn't end lines with newline.
-MD)
 
 PR(
 newline (public);?port? oport -> none
@@ -633,12 +591,10 @@ TT(
 } -output "foo\nbar"
 TT)
 
-MD(
 B{load}
 
 K{load} reads a Lisp source file and evals the expressions in it in the global
 environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
-MD)
 
 PR(
 load (public);filename filename -> none

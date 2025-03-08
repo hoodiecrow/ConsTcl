@@ -1,7 +1,6 @@
 
 H3 Macros
 
-MD(
 Macros that allow concise, abstract expressions that are automatically rewritten
 into other, more concrete but also more verbose expressions is one of Lisp's
 strong points. This interpreter does macro expansion, but the user can't define
@@ -9,14 +8,11 @@ new macros--the ones available are hardcoded in the code below.
 
 A macro expander procedure takes an expression and an environment as a
 parameter.  In the end, the expanded expression is passed back to K{eval}.
-MD)
 
 H4 expand-and procedure
 
-MD(
 K{expand-and} expands the K{and} macro. It returns a K{begin}-expression if the
 macro has 0 or 1 elements, and a nested K{if} construct otherwise.
-MD)
 
 PR(
 expand-and (internal);expr expr env env -> expr
@@ -37,12 +33,10 @@ proc ::constcl::expand-and {expr env} {
 }
 CB)
 
-MD(
 B{do-and} procedure
 
 K{do-and} is called recursively for every argument of K{expand-or} if there are
 more than one.
-MD)
 
 PR(
 do-and (internal);tail exprtail prev expr env env -> expr
@@ -85,10 +79,8 @@ TT)
 
 H4 expand-del"! procedure
 
-MD(
 The macro K{del!} updates a property list. It removes a key-value pair if the key
 is present, or leaves the list untouched if it isn't.
-MD)
 
 PR(
 expand-del! (internal);expr expr env env -> expr
@@ -150,12 +142,10 @@ TT)
 
 H4 expand-for procedure
 
-MD(
 The K{expand-for} procedure expands the K{for} macro. It returns a K{begin}
 construct containing the iterations of each clause (multiple clauses
 weren't implemented for the longest time, but I brought up my strongest brain
 cells and they did it).
-MD)
 
 PR(
 expand-for (internal);expr expr env env -> expr
@@ -172,13 +162,11 @@ proc ::constcl::expand-for {expr env} {
 }
 CB)
 
-MD(
 B{for-seq} procedure
 
 K{for-seq} is a helper procedure that sets up the sequence of values that the
 iteration is based on. First it evaluates the code that generates the sequence,
 and then it converts it to a Tcl list.
-MD)
 
 PR(
 for-seq (internal);seq expr env env -> tvals
@@ -211,7 +199,6 @@ proc ::constcl::for-seq {seq env} {
 }
 CB)
 
-MD(
 B{do-for} procedure
 
 K{do-for} is another helper procedure which does most of the work in the
@@ -226,7 +213,6 @@ returned.
 Each clause's sequence is supposed to be the same length as the others. One
 weakness of this implementation is that it doesn't ensure this, just hopes that
 the user does the right thing.
-MD)
 
 PR(
 do-for (internal);tail exprtail env env -> texprs
@@ -288,13 +274,11 @@ TT)
 
 H4 expand-for/and procedure
 
-MD(
 The K{expand-for/and} procedure expands the K{for/and} macro. It returns an K{and}
 construct containing the iterations of the clauses.
 
 The only differences from K{expand-for} is that it doesn't add K{(quote ())} and
 that it wraps the list of iterations in K{and} instead of K{begin}.
-MD)
 
 PR(
 expand-for/and (internal);expr expr env env -> expr
@@ -319,13 +303,11 @@ TT)
 
 H4 expand-for/list procedure
 
-MD(
 The K{expand-for/list} procedure expands the K{for/list} macro. It returns a K{list}
 construct containing the iterations of each clause.
 
 The only difference from K{expand-for/and} is that it wraps the list of iterations
 in K{list} instead of K{and}.
-MD)
 
 PR(
 expand for/list (internal);expr expr env env -> expr
@@ -378,13 +360,11 @@ TT)
 
 H4 expand-for/or procedure
 
-MD(
 The K{expand-for/or} procedure expands the K{for/or} macro. It returns an K{or}
 construct containing the iterations of each clause.
 
 The only difference from K{expand-for/list} is that it wraps the list of iterations
 in K{or} instead of K{list}.
-MD)
 
 PR(
 expand-for/or (internal);expr expr env env -> expr
@@ -409,10 +389,8 @@ TT)
 
 H4 expand-or procedure
 
-MD(
 K{expand-or} expands the K{or} macro. It returns a K{begin}-expression if the macro
 has 0 or 1 elements, and a nested K{if} construct otherwise.
-MD)
 
 PR(
 expand-or (internal);expr expr env env -> expr
@@ -443,12 +421,10 @@ TT(
 
 TT)
 
-MD(
 B{do-or} procedure
 
 K{do-or} is called recursively for each argument to K{expand-or} if there are more than
 one argument. 
-MD)
 
 PR(
 do-or (internal);tail exprtail env env -> expr
@@ -473,9 +449,7 @@ CB)
 
 H4 expand-pop"! procedure
 
-MD(
 The macro K{pop!} updates a list. It removes the first element.
-MD)
 
 PR(
 expand-pop! (internal);expr expr env env -> expr
@@ -518,9 +492,7 @@ TT)
 
 H4 expand-push"! procedure
 
-MD(
 The macro K{push!} updates a list. It adds a new element as the new first element.
-MD)
 
 PR(
 expand-push! (internal);expr expr env env -> expr
@@ -563,10 +535,8 @@ TT)
 
 H4 expand-put"! procedure
 
-MD(
 The macro K{put!} updates a property list. It adds a key-value pair if the key
 isn't present, or changes the value in place if it is.
-MD)
 
 PR(
 expand-put! (internal);expr expr env env -> expr
@@ -627,12 +597,10 @@ TT)
 
 H4 expand-quasiquote procedure
 
-MD(
 A quasi-quote isn't a macro, but we will deal with it in this section anyway.
 K{expand-quasiquote} traverses the quasi-quoted structure searching for K{unquote}
 and K{unquote-splicing}. This code is brittle and sprawling and I barely
 understand it myself.
-MD)
 
 PR(
 expand-quasiquote (internal);expr expr env env -> expr
@@ -677,9 +645,7 @@ proc ::constcl::expand-quasiquote {expr env} {
 }
 CB)
 
-MD(
 B{qq-visit-child} procedure
-MD)
 
 PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
@@ -757,10 +723,8 @@ TT)
 
 H4 expand-unless procedure
 
-MD(
 K{unless} is a conditional like K{if}, but it takes a number
 of expressions. It executes them on a false outcome of K{car $tail}.
-MD)
 
 PR(
 expand-unless (internal);expr expr env env -> expr
@@ -795,10 +759,8 @@ TT)
 
 H4 expand-when procedure
 
-MD(
 K{when} is a conditional like K{if}, but it takes a number
 of expressions. It executes them on a true outcome of K{car $tail}.
-MD)
 
 PR(
 expand-when (internal);expr expr env env -> expr

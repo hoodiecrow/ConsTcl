@@ -4,9 +4,7 @@ h2 Initial declarations
 In this chapter, mostly things I need to start working on the interpreter. Feel
 free to skim this chapter, maybe coming back later to check up on things here.
 
-MD(
 First, I need to create the namespace that will be used for most identifiers:
-MD)
 
 CB(
 namespace eval ::constcl {}
@@ -14,13 +12,10 @@ CB)
 
 h3 Utility commands
 
-MD(
 Next, some procedures that make my life as developer somewhat easier.
-MD)
 
 H4 reg procedure
 
-MD(
 K{reg} registers built-in procedures, special forms, and macros in the definitions
 registerI{definitions register}. That way I don't need to manually keep track of
 and list procedures. The definitions register's contents will eventually get
@@ -41,7 +36,6 @@ a keyword (K{VARIABLE}, K{SPECIAL}, or K{SYNTAX}) with a variation on E{name}
 (or, in K{regvar}'s case, E{value}).  Then they set an E{index number} based on
 the current size of the K{defreg}. Finally they insert the
 concatenation of E{name} and E{val} under E{index}.
-MD)
 
 PR(
 reg (internal);?btype? specmacro name tstr -> none
@@ -117,7 +111,6 @@ TT)
 PT(
 h5 Procedures, functions, and commands
 
-MD(
 I use all of these terms for the subroutines in ConsTcl. I try to stick to
 procedure, because that's the standard term in R5RSF{Revised:5 Report on the
   Algorithmic Language Scheme, Scheme's standardization document}. Still, they
@@ -131,24 +124,21 @@ procedure, because that's the standard term in R5RSF{Revised:5 Report on the
   infrastructure around the interpreter, including in implementing the `public'
   procedures. Another way to put it is that procedures registered by K{reg}* are
   `public' and those who aren't are `internal'.
-MD)
+
 PT)
 
 H4 atom? procedure
 
-MD(
 This one isn't just for my convenience: it's a standard procedure in Scheme.
 There are two kinds of data in Lisp: listsI{lists} and atomsI{atoms}. Lists are
 collections of lists and atoms. Atoms are instances of types such as booleans,
 characters, numbers, ports, strings, symbols, and vectors. K{Atom?} recognizes
 an atom by checking for membership in any one of the atomic types. It returns
 K{#t} (true) if it is an atom, and K{#f} (false) if not.
-MD)
 
 PT(
 h5 Predicates
 
-MD(
 By Scheme convention, predicates
 (procedures that return either K{#t} or K{#f}) have '?' at the end of their
 name. Some care is necessary when calling Scheme predicates from Tcl code (the
@@ -161,7 +151,7 @@ will not do, but
 KB if \{[atom? $x] ne "#f"\} ...
 
 (``[atom? $x] not equal to false'') works. Or see the K{T} procedure.
-MD)
+
 PT)
 
 PR(
@@ -184,7 +174,6 @@ CB)
 
 H4 T procedure
 
-MD(
 The K{T} procedure is intended to reduce the hassle of trying to make Lisp
 booleans work with Tcl conditions. The idea is to line the Tcl condition with
 K{[T ...]} and have the Lisp expression inside K{T}. K{T} returns 0 if and only
@@ -192,7 +181,6 @@ if the value passed to it is K{#f}, and 1 otherwise. The procedure's name stands
 for `truth of'.
 
 Example:
-MD)
 
 VB(
 if {[T [atom? $x]]} ...
@@ -217,9 +205,7 @@ CB)
 
 H4 assert procedure
 
-MD(
 K{assert} signals an error if an assertion fails.
-MD)
 
 PR(
 assert (internal);expr texpr -> none
@@ -236,9 +222,7 @@ CB)
 
 H4 pairlis-tcl procedure
 
-MD(
 A Tcl version of the procedure in the Scheme base.
-MD)
 
 PR(
 pairlis-tcl (internal);lvals lvals -> lasss
@@ -258,11 +242,9 @@ CB)
 
 H4 usage procedure
 
-MD(
 K{usage} is a simple procedure to compare a Lisp list (to wit: a Lisp
 expression) with the expected format of the expression. Mostly it just compares
 lengths.
-MD)
 
 PR(
 usage (internal);usage expr expr expr -> none
@@ -290,11 +272,9 @@ CB)
 
 H4 pn procedure
 
-MD(
 K{pn} stands for 'procedure name'. When called, tells the caller the name of its
 command. I use it for error messages so the error message can automagically tell
 the user which command failed.
-MD)
 
 PR(
 pn (internal);-> tstr
@@ -308,9 +288,7 @@ CB)
 
 H4 unbind procedure
 
-MD(
 K{unbind} removes one binding from the environment it is bound in.
-MD)
 
 PR(
 unbind (internal);syms syms -> none
@@ -331,14 +309,12 @@ CB)
 
 H4 typeof? procedure
 
-MD(
 K{typeof?} looks at a value's type and reports if it is the same as the given
 type. To be certain, it looks at the value in two ways: once assuming that the value
 is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
 interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
 the type, the procedure returns K{#t}.
 
-MD)
 
 PR(
 typeof? (internal);val val type tstr -> bool
@@ -359,7 +335,6 @@ CB)
 
 H4 in-range procedure
 
-MD(
 This one is a little bit of both, a utility function that is also among the
 builtins in the library (it's not standard, though). It started out as a
 one-liner by Donal K. FellowsI{Fellows, Donal}, but has grown a bit since then
@@ -372,7 +347,6 @@ first one becomes the start of the sequence: the first number in it. The second
 number will become the end of the sequence. If three numbers are passed, they
 become start, end, and step, i.e. how much is added to the current number to
 find next number in the sequence.
-MD)
 
 PR(
 in-range (public);x num ?e? num ?t? num -> lnums
@@ -414,10 +388,8 @@ CB)
 
 H4 error procedure
 
-MD(
 K{error} is used to signal an error, with E{msg} being a message string and the
 optional arguments being values to show after the message.
-MD)
 
 PR(
 error (public);msg msg ?exprs? exprs -> dc
@@ -439,10 +411,8 @@ CB)
 
 H4 check procedure
 
-MD(
 K{check} does a check (typically a type check) on something and throws an error if
 it fails.
-MD)
 
 CB(
 proc ::constcl::check {cond msg} {
@@ -463,13 +433,11 @@ the cost of some readability.
 
 H4 pew procedure
 
-MD(
 K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
 named for parse-eval-write. It reads and evals an expression, and writes the
 result.  It's the most common command in the test cases, since it allows me to
 write code directly in Scheme, get it evaled and get to see proper Lisp output
 from it.
-MD)
 
 PR(
 pew (internal);str tstrstrinpbuf ?env? env -> none
@@ -485,11 +453,9 @@ CB)
 
 H4 rew procedure
 
-MD(
 K{rew} is the reading variant of K{pew}. Instead of taking string input it takes
 a regular input port. It mattered more while the input library was being
 written.
-MD)
 
 PR(
 rew (internal);port iport ?env? env -> none
@@ -505,11 +471,9 @@ CB)
 
 H4 pw procedure
 
-MD(
 K{pw} is a similar command, except it doesn't eval the expression. It just
 writes what is parsed. It is useful for tests when the evaluator can't (yet)
 evaluate the form, but I can still check if it gets read and written correctly.
-MD)
 
 PR(
 pw (internal);str tstrstrinpbuf -> none
@@ -524,10 +488,8 @@ CB)
 
 H4 rw procedure
 
-MD(
 K{rw} is the reading variant of K{pw}. Instead of taking string input it takes a
 regular input port. The procedure just writes what is read.
-MD)
 
 PR(
 rw (internal);?port? iport -> none
@@ -542,11 +504,9 @@ CB)
 
 H4 pe procedure
 
-MD(
 K{pe} is also similar, but it doesn't write the expression. It just evaluates what
 is read. That way I get a value object which I can pass to another command, or
 pick apart in different ways.
-MD)
 
 PR(
 pe (internal);str tstrstrinpbuf ?env? env -> val
@@ -561,10 +521,8 @@ CB)
 
 H4 re procedure
 
-MD(
 K{re} is like K{pe}, but it reads from a regular port instead of an string input
 port. It evaluates what is read.
-MD)
 
 PR(
 re (internal);port iport ?env? env -> val
@@ -579,9 +537,7 @@ CB)
 
 H4 p procedure
 
-MD(
 K{p} only parses the input, returning an expression object.
-MD)
 
 PR(
 p (internal);str tstrstrinpbuf -> expr
@@ -595,10 +551,8 @@ CB)
 
 H4 e procedure
 
-MD(
 K{e} is another single-action procedure, evaluating an expression and returning a
 value.
-MD)
 
 PR(
 e (internal);expr expr ?env? env -> val
@@ -612,9 +566,7 @@ CB)
 
 H4 w procedure
 
-MD(
 K{w} is the third single-action procedure, printing a value and that's all.
-MD)
 
 PR(
 w (internal);val val -> none
@@ -628,10 +580,8 @@ CB)
 
 H4 r procedure
 
-MD(
 K{r} is an extra single-action procedure, reading from default input or from a
 port and returning an expression object.
-MD)
 
 PR(
 r (internal);?port? iport -> expr
@@ -645,10 +595,8 @@ CB)
 
 H4 prw procedure
 
-MD(
 K{prw}  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the `resolve local defines' section.
-MD)
 
 PR(
 prw (internal);str tstrstrinpbuf -> none
@@ -665,11 +613,9 @@ CB)
 
 H4 pxw procedure
 
-MD(
 K{pxw} attempts to macro-expand whatever it reads, and writes the result. (I do
 know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was
 when I was developing the macro facility.
-MD)
 
 PR(
 pxw (internal);str tstrstrinpbuf ?env? env -> none
@@ -693,9 +639,7 @@ h3 Some small classes
 
 H4 Dot class
 
-MD(
 The K{Dot} class is a helper class for the parser.
-MD)
 
 CB(
 catch { ::constcl::Dot destroy }
@@ -713,9 +657,7 @@ CB)
 
 H4 dot? procedure
 
-MD(
 K{dot?} is a type predicate that checks for membership in the type K{Dot}.
-MD)
 
 PR(
 dot? (internal);val val -> bool
@@ -729,9 +671,7 @@ CB)
 
 H4 EndOfFile class
 
-MD(
 The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
-MD)
 
 CB(
 catch { ::constcl::EndOfFile destroy }
@@ -749,9 +689,7 @@ CB)
 
 H4 eof? procedure
 
-MD(
 K{eof?} is a type predicate that recognizes the end-of-file object.
-MD)
 
 PR(
 eof? (internal);val val -> bool
@@ -769,10 +707,8 @@ CB)
 
 H4 NIL class
 
-MD(
 The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
 class for many other type classes.
-MD)
 
 CB(
 catch { ::constcl::NIL destroy }
@@ -811,9 +747,7 @@ CB)
 
 H4 null? procedure
 
-MD(
 The K{null?} standard predicate recognizes the empty list.
-MD)
 
 PR(
 null? (public);val val -> bool
@@ -833,10 +767,8 @@ CB)
 
 H4 Undefined class
 
-MD(
 The K{Undefined} class is for undefined things. It was created to facilitate
 porting of code from `Scheme 9 from Empty Space'I{S9fES}.
-MD)
 
 CB(
 catch { ::constcl::Undefined destroy }
@@ -854,9 +786,7 @@ CB)
 
 H4 Unspecified class
 
-MD(
 The K{Unspecified} class is for unspecified things. Also a S9fES support class.
-MD)
 
 CB(
 catch { ::constcl::Unspecified destroy }

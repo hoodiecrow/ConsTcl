@@ -1,7 +1,6 @@
 
 H2 Output
 
-MD(
 The third thing an interpreter must be able to do is to present the resulting
 code and data so that the user can know what the outcome of the evaluation was.
 
@@ -9,7 +8,6 @@ H4 write procedure
 
 As long as the object given to K{write} isn't the empty string, it calls the
 object's K{write} method and writes a newline.
-MD)
 
 PR(
 write (public);val val ?port? port -> none
@@ -35,10 +33,8 @@ CB)
 
 H4 display procedure
 
-MD(
 The K{display} procedure is like K{write} but it calls the object's K{display}
 method and doesn't print a newline afterwards.
-MD)
 
 PR(
 display (public);val val ?port? port -> none
@@ -64,10 +60,8 @@ CB)
 
 H4 write-pair procedure
 
-MD(
 The K{write-pair} procedure prints a Pair object except for the beginning and
 ending parentheses.
-MD)
 
 PR(
 write-pair (internal);port oport pair pair -> none

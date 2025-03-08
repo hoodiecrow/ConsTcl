@@ -1,7 +1,6 @@
 
 h3 Numbers
 
-MD(
 The word `computer' suggests numerical calculations. A programming language
 is almost no use if it doesn't support arithmetic. Scheme has a rich numerical
 library and many number types that support advanced calculations.
@@ -13,7 +12,6 @@ lcm.
 
 H4 Number class
 
-MD)
 CB(
 oo::class create ::constcl::Number {
   superclass ::constcl::NIL
@@ -63,9 +61,7 @@ CB)
 
 H4 MkNumber generator
 
-MD(
 K{MkNumber} generates a Number object. Short form: K{N}.
-MD)
 
 PR(
 MkNumber (internal);str str -> num
@@ -79,9 +75,7 @@ CB)
 
 H4 number? procedure
 
-MD(
 K{number?} recognizes a number by object type, not by content.
-MD)
 
 PR(
 number? (public);val val -> bool
@@ -121,10 +115,8 @@ NI B{<=} procedure
 
 NI B{>=} procedure
 
-MD(
 The predicates K{=}, K{<}, K{>}, K{<=}, and K{>=} are implemented.
 
-MD)
 
 PR(
 =, <, >, <=, >= (public);nums nums -> bool
@@ -266,9 +258,7 @@ TT)
 
 H4 zero? procedure
 
-MD(
 The K{zero?} predicate tests if a given number is equal to zero.
-MD)
 
 PR(
 zero? (public);num num -> bool
@@ -305,10 +295,8 @@ NI B{even?} procedure
 
 NI B{odd?} procedure
 
-MD(
 The K{positive?}/K{negative?}/K{even?}/K{odd?} predicates test a number
 for those traits.
-MD)
 
 PR(
 positive?, negative?, even?, odd? (public);num num -> bool
@@ -395,14 +383,12 @@ TT)
 
 H4 max procedure
 
-MD(
 B{min} procedure
 
 The K{max} function selects the largest number, and the K{min} function
 selects the smallest number.
 
 Example:
-MD)
 
 VB(
 (max 7 1 10 3)   =>  10
@@ -466,12 +452,10 @@ NI B{-} procedure
 
 NI B{/} procedure
 
-MD(
 The operators K{+}, K{*}, K{-}, and K{/} stand for the respective mathematical
 operations.  They take a number of operands, but at least one for K{-} and K{/}.
 
 Example:
-MD)
 
 VB(
 (list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))   =>  (4 4 4 4)
@@ -594,9 +578,7 @@ TT)
 
 H4 abs procedure
 
-MD(
 The K{abs} function yields the absolute value of a number.
-MD)
 
 PR(
 abs (public);num num -> num
@@ -630,13 +612,9 @@ TT)
 
 H4 quotient procedure
 
-MD(
 K{quotient} calculates the quotient between two numbers.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (quotient 7 3)   =>  2.0
@@ -664,14 +642,10 @@ CB)
 
 H4 remainder procedure
 
-MD(
 K{remainder} is a variant of the modulus function. (I'm a programmer, not
 a mathematician!)
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (remainder 7 3)   =>  1
@@ -695,12 +669,8 @@ proc ::constcl::remainder {num1 num2} {
 CB)
 
 H4 modulo procedure
-MD)
-MD(
 
-MD(
 Example:
-MD)
 
 VB(
 (modulo 7 3)   =>  1
@@ -743,14 +713,10 @@ NI B{truncate} procedure
 
 NI B{round} procedure
 
-MD(
 K{floor}, K{ceiling}, K{truncate}, and K{round} are different methods for
 converting a real number to an integer.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (floor 7.5)      =>  7.0
@@ -871,18 +837,14 @@ NI B{acos} procedure
 
 NI B{atan} procedure
 
-MD(
 The mathematical functions P{e}{x}, natural logarithm,
 sine, cosine, tangent, arcsine, arccosine, and arctangent are
 calculated by K{exp}, K{log}, K{sin}, K{cos}, K{tan}, K{asin}, K{acos},
 and K{atan}, respectively.
 K{atan} can be called both as a unary (one argument) function and a binary (two
 arguments) one.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (let ((x (log 2))) (= 2 (exp x)))        =>  #t
@@ -1047,9 +1009,7 @@ TT)
 
 H4 sqrt procedure
 
-MD(
 K{sqrt} calculates the square root.
-MD)
 
 PR(
 sqrt (public);num num -> num
@@ -1076,9 +1036,7 @@ TT)
 
 H4 expt procedure
 
-MD(
 K{expt} calculates the x to the power of y, or P{x}{y}.
-MD)
 
 PR(
 expt (public);num1 num num2 num -> num
@@ -1111,14 +1069,10 @@ TT)
 
 H4 number->string procedure
 
-MD(
 The procedures K{number->string} and K{string->number} convert between
 number and string with optional radix conversion.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (number->string 23)      =>  "23"
@@ -1164,9 +1118,7 @@ proc ::constcl::number->string {num args} {
 }
 CB)
 
-MD(
 K{base} is due to L{Richard Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth, Richard}.
-MD)
 
 IX base
 CB(
@@ -1201,13 +1153,9 @@ TT)
 
 H4 string->number procedure
 
-MD(
 As with K{number->string}, above.
-MD)
 
-MD(
 Example:
-MD)
 
 VB(
 (string->number "23")        =>  23
@@ -1249,11 +1197,9 @@ proc ::constcl::string->number {str args} {
 }
 CB)
 
-MD(
 K{frombase} is due to L{Richard
   Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth,
     Richard}.
-MD)
 
 IX frombase
 CB(

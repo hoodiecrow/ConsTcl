@@ -7,10 +7,8 @@ CB)
 
 H4 get procedure
 
-MD(
 K{get} is a procedure for picking out values out of property lists. It returns
 either the value or K{#f} if the key isn't found.
-MD)
 
 PR(
 get (public);plist lvals key sym -> valorf    
@@ -26,11 +24,9 @@ CB)
 
 H4 list-find-key procedure
 
-MD(
 K{list-find-key} searches for a key in a property list. If it finds it, it
 returns the (0-based) index of it. If it doesn't find it, it returns -1. It
 doesn't look at the values.
-MD)
 
 PR(
 list-find-key (public);lst lvals key sym -> num
@@ -43,9 +39,7 @@ CB)
 
 H4 lfk procedure
 
-MD(
 K{lfk} does the work for K{list-find-key}.
-MD)
 
 PR(
 lfk (public);lst lvals key sym count num -> num
@@ -62,11 +56,9 @@ CB)
 
 H4 list-set"! procedure
 
-MD(
 K{list-set!} works in analogy with K{string-set!}. Given a list and an index, it
 finds the place to insert a value. Is in real trouble if the index value is out
 of range.
-MD)
 
 PR(
 list-set! (public);lst lvals idx num val val -> val
@@ -81,9 +73,7 @@ CB)
 
 H4 delete"! procedure
 
-MD(
 K{delete!} removes a key-value pair from a property list. Returns the list.
-MD)
 
 PR(
 delete! (public);lst lvals key sym -> lvals
@@ -104,9 +94,7 @@ CB)
 
 H4 del-seek procedure
 
-MD(
 K{del-seek} does the searching for K{delete!}.
-MD)
 
 PR(
 del-seek (public);lst lvals idx num -> lvals
@@ -121,9 +109,7 @@ CB)
 
 H4 get-alist procedure
 
-MD(
 K{get-alist} is like K{get} but for association lists.
-MD)
 
 PR(
 get-alist (public);lst lasss key sym -> val
@@ -139,10 +125,8 @@ CB)
 
 H4 pairlis procedure
 
-MD(
 K{pairlis} takes two lists like K{'(a b c)} and K{'(1 2 3)} and produces a list
 of association pairs K{'((a . 1) (b . 2) (c . 3))}.
-MD)
 
 PR(
 pairlis (public);a lvals b lvals -> lasss
@@ -159,9 +143,7 @@ CB)
 
 H4 set-alist"! procedure
 
-MD(
 K{set-alist!} updates a value in an association list, given a key.
-MD)
 
 PR(
 set-alist! (public);lst lasss key sym val val -> lasss
@@ -177,9 +159,7 @@ CB)
 
 H4 fact procedure
 
-MD(
 K{fact} calculates the factorial of E{n}.
-MD)
 
 PR(
 fact (public);n num -> num
@@ -194,9 +174,7 @@ CB)
 
 H4 list-copy procedure
 
-MD(
 Returns a newly allocated copy of E{list}. This copies each of the pairs comprising E{list}. From MIT Scheme.
-MD)
 
 PR(
 list-copy (public);list lvals -> lvals
@@ -210,6 +188,5 @@ CB(
       (list-copy (cdr list)))))
 CB)
 
-MD(
 And that's all. Thank you for joining me on this voyage of exploration.
-MD)
+

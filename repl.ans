@@ -1,19 +1,15 @@
 
 H2 The REPL
 
-MD(
 The REPL (read-eval-print loop) is a
 loop that repeatedly E{reads} a Scheme source string from the user through the
 command K{::constcl::input} (breaking the loop if given an empty line) and
 K{::constcl::parse}, E{evaluates} it using K{::constcl::eval}, and E{prints} using
 K{::constcl::write}.
-MD)
 
-MD(
 B{input}
 
 K{input} is modelled after the Python 3 function. It displays a prompt and reads a string.
-MD)
 
 IX input
 CB(
@@ -37,13 +33,11 @@ proc ::constcl::input {prompt} {
 }
 CB)
 
-MD(
 B{repl}
 
 K{repl} puts the `loop' in the read-eval-print loop. It repeats prompting for a
 string until given a blank input. Given non-blank input, it parses and evaluates
 the string, printing the resulting value.
-MD)
 
 IX repl
 CB(
@@ -60,11 +54,9 @@ proc ::repl {{prompt "ConsTcl> "}} {
 }
 CB)
 
-MD(
 Well! 
 
 After 1854 lines of code, the interpreter is done. Now for the built-in
 procedures.
-MD)
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

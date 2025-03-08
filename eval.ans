@@ -1,16 +1,13 @@
 
 H2 Evaluation
 
-MD(
 The second thing an interpreter must be able to do is to reduce expressions to
 their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
 6 and 8 are two expressions that have the same value, but the latter is in
 normal form (can't be reduced further) and the former is not.
-MD)
 
 h3 Environments
 
-MD(
 Before I can talk about evaluation, I need to spend some time on environments.
 To simplify, an environment can be seen as a table--or spreadsheet, if you
 will--that connects (binds) names to cells, which contain values. The evaluator
@@ -43,25 +40,20 @@ Environments make up the world the evaluator lives in and are the source of its
 values and procedures. The ability of procedure calls and execution of binding
 forms to temporarily change the current environment is a powerful one. But still
 the evaluator eventually backtracks into the previous environments. 
-MD)
 
 IF /images/environments.png Two sample environments
 
-MD(
 I will talk some more about the implementation of environments in a later section.
-MD)
 
 h3 The evaluator
 
 H4 eval procedure
 
-MD(
 The heart of the Lisp interpreter, K{eval} takes a Lisp expression and processes
 it according to its form. Symbols to the value they R{refer
   to}{variable-reference}, self-evaluating types to their R{own
     value}{constant-literal}, and expressions that are lists to the value that
     K{eval-form} gets out of them.
-MD)
 
 PR(
 eval (public);expr expr ?env? env -> val
@@ -84,11 +76,9 @@ proc ::constcl::eval \
 }
 CB)
 
-MD(
 B{self-evaluating?} procedure
 
 Only numeric, string, character, and boolean constants evaluate to themselves.
-MD)
 
 PR(
 self-evaluating? (internal);val val -> bool
@@ -110,7 +100,6 @@ CB)
 
 H4 eval-form procedure
   
-MD(
 If the K{car} of the expression (the operator) is a symbol, K{eval-form} looks
 at the E{binding information} (which the K{reg} R{procedure}{reg-procedure} puts
 into the standard library and thereby the global environment) for the symbol.
@@ -118,7 +107,6 @@ The E{binding type} tells in general how the expression should be treated: as a
 special form, a variable, or a R{macro}{macros}. The E{handling info} gives the
 exact procedure that will take care of the expression. If the operator isn't a
 symbol, it is evaluated and applied to the evaluated rest of the expression.
-MD)
 
 PR(
 eval-form (internal);expr expr env env -> val
@@ -154,13 +142,11 @@ proc ::constcl::eval-form {expr env} {
 }
 CB)
 
-MD(
 B{binding-info} procedure
 
 The K{binding-info} procedure takes a symbol and returns a list of two items: 1)
 the binding type of the symbol, and 2) the handling info that K{eval-form} uses to
 handle this symbol.
-MD)
 
 PR(
 binding-info (internal);op sym env env -> bindfo
@@ -180,9 +166,7 @@ CB)
 
 h3 Syntactic forms
 
-MD(
 There are nine diffent forms or classes of expressions in Lisp:
-MD)
 
 EN variable reference
 EN constant literal
@@ -194,16 +178,13 @@ EN assignment
 EN procedure definition
 EN procedure call
 
-MD(
 The evaluator
 recognizes each one by its internal representation and chooses the appropriate
 process to evaluate them. The nine forms will be described in the following
 sections.
-MD)
 
 h3 Variable reference
 
-MD(
 EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
 
 A variableI{variable}I{variable reference} is an identifier (symbol) bound to a
@@ -212,7 +193,6 @@ evaluated to the value stored in that location. This is handled by the helper
 procedure K{lookup}. It searches the environment chain for the identifier, and
 returns the value stored in the location it is bound to.  It is an error to do
 lookup on an unbound symbol.
-MD)
 
 H4 lookup procedure
 
@@ -243,13 +223,11 @@ TT)
 
 h3 Constant literal
 
-MD(
 EM Example: K{99} ==> 99 (a number evaluates to itself)
 
 Not just numbersI{constant literal} but booleans, characters, and strings
 evaluate to themselves, to their innate value. Because of this, they are called
 self-evaluating or autoquoting types (see next section).
-MD)
 
 TT(
 ::tcltest::test eval-2.0 {try eval-ing a constant} -body {
@@ -259,7 +237,6 @@ TT)
 
 h3 Quotation
 
-MD(
 EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself, like a constant)
 
 According to the rules of variable reference, a symbol evaluates to its stored
@@ -270,15 +247,12 @@ common that there is a shorthand notation for it: K{'x} is interpreted as
 K{(quote x)} by the Lisp reader. The argument of K{quote} may be any external
 representation of a Lisp object. In this way, for instance a vector or list
 constant can be introduced in the program text.
-MD)
 
 H4 quote special form
 
-MD(
 Syntax: (B{quote} E{datum})
 
 The K{quote} special form is expanded by K{special-quote}.
-MD)
 
 PR(
 special-quote (internal);expr expr env env -> expr
@@ -301,7 +275,6 @@ TT)
 
 h3 Conditional
 
-MD(
 EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} ==> 6
 
 The conditionalI{conditional} form K{if} evaluates a Lisp list of three
@@ -313,11 +286,9 @@ expressions will be evaluated, and the other will remain unevaluated.
 
 H4 if special form
 
-MD(
 Syntax: (B{if} E{cond} E{consequent} ?E{alternate}?)
 
 The K{if} special form is expanded by K{special-if}.
-MD)
 
 PR(
 special-if (internal);expr expr env env -> val
@@ -339,14 +310,12 @@ proc ::constcl::special-if {expr env} {
 }
 CB)
 
-MD(
 The two procedures that help the if form out are K{/if} and K{/if1}. The
 former takes both a consequent and an alternate, the latter takes only a
 consequent.
 
 B{/if} procedure
 B{/if1} procedure
-MD)
 
 PR(
 /if (internal);cond expr consequent expr alternate expr -> val
@@ -386,7 +355,6 @@ TT)
 
 H4 case special form
 
-MD(
 Another conditional form is K{case}. It implements a multi-choice where a single
 expression selects between alternatives. The body of the K{case} form consists
 of a key-expression and a number of clauses. Each clause has a list of values
@@ -394,9 +362,7 @@ and a body. If the key-expression evaluates to a value that occurs in one of the
 value-lists (considered in order), that clause's body is evaluated and all other
 clauses are ignored.
 
-MD)
 
-MD(
 Syntax: (B{case} E{key} E{clause} ...)
 
 Where each E{clause} has the form
@@ -410,11 +376,8 @@ The last clause may have the form
 The K{case} special form is expanded by K{special-case}.
 It expands to K{'()} if there are
 no clauses (left), and to nested K{if} constructs if there are some.
-MD)
 
-MD(
 B{special-case} procedure
-MD)
 
 PR(
 special-case (internal);expr expr env env -> expr
@@ -433,7 +396,6 @@ CB)
 PT(
 H5 caar, cadr, cdar, and the rest
 
-MD(
 The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like
 K{caar} and K{cdar}I{car/cdr operators}. K{car}/K{cdr} notation gets really
 powerful when combined to form operators from K{caar} to K{cddddr}. One can read
@@ -441,13 +403,12 @@ K{caar L} as `the first element of the first element of L', implying that the
 first element of K{L} is a list.  K{cdar L} is `the rest of the elements of the
 first element of L', and K{cadr L} is `the first element of the rest of the
 elements of L' or in layman's terms, the second element of L.
-MD)
+
 PT)
 
 PT(
 H5 Quasiquote
 
-MD(
 In this and many other special form and macro form expanders I use a
 quasiquoteI{quasiquote} construct to lay out how the form is to be expanded. A
 quasiquote starts with a backquote (K{`}) instead of the single quote that
@@ -459,12 +420,10 @@ K{do-case} here, a quasiquote serves well as a templating mechanism. The
 variables in the quasiquote need to be a part of the environment in which the
 quasiquote is expanded: I use K{/define} to bind them in a temporary
 environment.
-MD)
+
 PT)
 
-MD(
 B{do-case} procedure
-MD)
 
 PR(
 do-case (internal);keyexpr expr clauses lexprs env env -> expr
@@ -526,14 +485,11 @@ TT)
 
 H4 cond special form
 
-MD(
 K{cond} is the third conditional form.
 The K{cond} form has a list of clauses, each with a predicate and a body. The
 clauses is considered in order, and if a predicate evaluates to something other
 than K{#f} the body is evaluated and the remaining clauses are ignored.
-MD)
 
-MD(
 Syntax: (B{cond} E{clause} ...)
 
 Where each E{clause} has the form
@@ -554,10 +510,8 @@ The last clause may have the form
 The K{cond} special form is expanded by K{special-cond}.
 It expands to K{'()} if there are
 no clauses (left), and to nested K{if} constructs if there are some.
-MD)
 
 B{special-cond} procedure
-MD)
 
 PR(
 special-cond (internal);expr expr env env -> expr
@@ -572,14 +526,12 @@ proc ::constcl::special-cond {expr env} {
 }
 CB)
 
-MD(
 B{do-cond} procedure
 
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
 up the clause into predicate and body. In the last clause, the predicate is allowed to be K{else} (which gets
 translated to K{#t}). If there is no body, the body is set to the predicate. The
 form is expanded to a recursive K{if} form.
-MD)
 
 PR(
 do-cond (internal);tail lexprs env env -> expr
@@ -671,7 +623,6 @@ TT)
 
 h3 Sequence
 
-MD(
 EM Example: K{(begin (define r 10) (* r r))} ==> 100
 
 When expressions are evaluated in sequenceI{sequence}, the order is important
@@ -687,15 +638,12 @@ The following forms have an implicit K{begin} in their bodies and the use of
 K{begin} is therefore unnecessary with them:
 
 K{case}, K{cond}, K{define} (“procedure define” only), K{lambda}, K{let}, K{let*}, K{letrec}.
-MD)
 
 H4 begin special form
 
-MD(
 Syntax: (B{begin} E{expression} ...)
 
 The K{begin} special form is expanded by K{special-begin}.
-MD)
 
 PR(
 special-begin (internal);expr expr env env -> val
@@ -717,13 +665,11 @@ proc ::constcl::special-begin {expr env} {
 }
 CB)
 
-MD(
 B{/begin} procedure
 
 The
 K{/begin} helper procedure takes a Lisp list of expressions and evaluates them
 in sequence, returning the value of the last one.
-MD)
 
 PR(
 /begin (internal);exps lexprs env env -> val
@@ -758,7 +704,6 @@ TT)
 
 h3 Definition
 
-MD(
 EM Example: K{(define r 10)} ==> ... (a definition doesn't evaluate to anything)
 
 We've already seen the relationship between symbols and values. Through
@@ -767,11 +712,9 @@ value (or rather to the location the value is in), creating a variable. The
 K{/define} helper procedure adds a variable to the current environment. It first
 checks that the symbol name is a valid identifier, then it updates the
 environment with the new binding.
-MD)
 
 H4 define special form
 
-MD(
 Syntax: either
 
 (B{define} E{variable} E{expression})
@@ -793,7 +736,6 @@ or
 E{body} should be one or more expressions.
 
 The K{define} special form is expanded by K{special-define}.
-MD)
 
 PR(
 special-define (internal);expr expr env env -> none
@@ -810,7 +752,6 @@ proc ::constcl::special-define {expr env} {
 }
 CB)
 
-MD(
 B{rewrite-define} procedure
 
 K{define} has two variants, one of which requires some rewriting. It's the one
@@ -824,7 +765,6 @@ is transformed by K{rewrite-define} into
 
 which conforms better to K{eval}'s standard of (define E{symbol} E{value}).
 The other variant passes through K{rewrite-define} unchanged.
-MD)
 
 PR(
 rewrite-define (internal);expr expr env env -> expr
@@ -869,9 +809,7 @@ TT(
 
 TT)
 
-MD(
 B{/define} procedure
-MD)
 
 PR(
 /define (internal);sym sym val val env env -> none
@@ -903,7 +841,6 @@ TT)
 
 h3 Assignment
 
-MD(
 EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to assign to it)
 
 Once a variable has been created, the value at the location it is bound to can
@@ -914,15 +851,12 @@ chain. It finds the variable's environment and updates the binding. It returns
 the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
 both variables to 99. By Scheme convention, procedures that modify variables
 have `!' at the end of their name.
-MD)
 
 H4 set"! special form
 
-MD(
 Syntax: (B{set!} E{variable} E{expression})
 
 The K{set!} special form is expanded by K{special-set!}.
-MD)
 
 PR(
 special-set! (internal);expr expr env env -> val
@@ -951,7 +885,6 @@ TT)
 
 h3 Procedure definition
 
-MD(
 EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different object each time)
 
 In Lisp, procedures are values just like numbers or characters. They can be
@@ -983,14 +916,11 @@ The lambda special form makes a R{Procedure}{control} object. First
 it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
 has more than one expression (K{S begin} stands for `the symbol begin'.), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
-MD)
 
 PT(
 H5 Scheme formal parameters lists
 
-MD(
 A Scheme formals listI{formals list} is either:
-MD)
 
 IT An E{empty list}, K{()}, meaning that no arguments are accepted,
 IT A E{proper list}, K{(a b c)}, meaning it accepts three arguments, one in each symbol,
@@ -1001,13 +931,11 @@ PT)
 
 H4 lambda special form
 
-MD(
 Syntax: (B{lambda} E{formals} E{body})
 
 where E{body} is one or more expressions.
 
 The K{lambda} special form is expanded by K{special-lambda}.
-MD)
 
 PR(
 special-lambda (internal);expr expr env env -> proc
@@ -1038,7 +966,6 @@ TT)
 
 h3 Procedure call
 
-MD(
 EM Example: K{(+ 1 6)} ==> 7
 
 Once we have procedures, we can callI{procedure call} them to have their
@@ -1050,7 +977,6 @@ K{(square 11)}, and it will return 121.
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
 procedure, and determines whether to call E{pr} as an object or as a Tcl command.
-MD)
 
 H4 invoke procedure
 
@@ -1083,17 +1009,14 @@ TT)
 
 H3 Binding forms
 
-MD(
 The binding forms are not fundamental the way the earlier nine forms are. They
 are an application of a combination of the procedure definition form and a
 procedure call. But their use is sufficiently distinguished to earn them their
 own heading.
 
-MD)
 
 H4 let special form
 
-MD(
 Syntax: (B{let} ((E{variable} E{init}) ...) E{body})
 
 or
@@ -1104,7 +1027,6 @@ where E{body} is one or more expressions.
 
 The K{let} special form (both forms) is expanded by K{special-let}.
 They are ultimately rewritten to K{lambda} constructs and evaluated as such.
-MD)
 
 PR(
 special-let (internal);expr expr env env -> expr
@@ -1122,7 +1044,6 @@ proc ::constcl::special-let {expr env} {
 }
 CB)
 
-MD(
 B{rewrite-named-let} procedure
 
 The rewriter for named K{let} chops up the expression into E{variable},
@@ -1135,7 +1056,6 @@ assignment and the procedure call.  The assignment binds the variable to a
 K{lambda} form with the varlist and the original E{body}. The K{let} form is
 returned, meaning that the primary expansion of the named K{let} is a regular
 K{let} form.
-MD)
 
 PR(
 rewrite-named-let (internal);expr expr env env -> expr
@@ -1170,7 +1090,6 @@ proc ::constcl::rewrite-named-let {expr env} {
 }
 CB)
 
-MD(
 B{rewrite-let} procedure
 
 The rewriter for regular K{let} chops up the original expression into
@@ -1178,7 +1097,6 @@ E{bindings} and E{body}. It creates an empty dictionary and fills it up with
 variable/value pairs from the E{bindings}. Then it builds a K{lambda} operator
 form with the variable list, the E{body}, and the value list. The K{lambda} call
 is returned as the expansion of the regular K{let} form.
-MD)
 
 PR(
 rewrite-let (internal);expr expr env env -> expr
@@ -1207,13 +1125,11 @@ proc ::constcl::rewrite-let {expr env} {
 }
 CB)
 
-MD(
 B{parse-bindings} procedure
 
 K{parse-bindings} is a helper procedure that traverses a K{let} bindings list
 and extracts variables and values, which it puts in a dictionary. It throws an
 error if a variable occurs more than once.
-MD)
 
 PR(
 parse-bindings (internal);name name bindings lvals -> none
@@ -1283,19 +1199,15 @@ TT)
 
 H4 letrec special form
 
-MD(
 The K{letrec} form is similar to K{let}, but the bindings are created before the
 values for them are calculated. This means that one can define mutually
 recursive procedures.
-MD)
 
-MD(
 Syntax: (B{letrec} ((E{variable} E{init}) ...) E{body})
 
 where E{body} is one or more expressions.
 
 The K{letrec} special form is expanded by K{special-letrec}.
-MD)
 
 PR(
 special-letrec (internal);expr expr env env -> expr
@@ -1310,9 +1222,7 @@ proc ::constcl::special-letrec {expr env} {
 }
 CB)
 
-MD(
 B{rewrite-letrec} procedure
-MD)
 
 PR(
 rewrite-letrec (internal);expr expr env env -> expr
@@ -1382,19 +1292,15 @@ TT)
 
 H4 let* special form
 
-MD(
 The K{let*} form is similar to K{let}, but the items in the binding list are
 considered sequentially, so the initializer in the second or later binding can
 reference the first binding, etc.
-MD)
 
-MD(
 Syntax: (B{let*} ((E{variable} E{init}) ...) E{body})
 
 where E{body} is one or more expressions.
 
 The K{let*} special form is expanded by K{special-let*}.
-MD)
 
 PR(
 special-let* (internal);expr expr env env -> expr
@@ -1411,9 +1317,7 @@ proc ::constcl::special-let* {expr env} {
 }
 CB)
 
-MD(
 B{rewrite-let*} procedure
-MD)
 
 PR(
 rewrite-let* (internal);bindings lvals body lexprs env env -> expr
@@ -1454,11 +1358,9 @@ TT(
 
 TT)
 
-MD(
 B{splitlist} procedure
 
 K{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
-MD)
 
 PR(
 splitlist (internal);vals lvals -> tvals
@@ -1476,12 +1378,10 @@ proc ::constcl::splitlist {vals} {
 }
 CB)
 
-MD(
 B{eval-list} procedure
 
 K{eval-list} successively evaluates the elements of a Lisp list and returns the
 collected results as a Lisp list.
-MD)
 
 PR(
 eval-list (internal);exps lexprs env env -> lvals
