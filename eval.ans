@@ -613,6 +613,9 @@ K{/define} helper procedure adds a variable to the current environment. It first
 checks that the symbol name is a valid identifier and that it isn't already
 bound. Then it updates the environment with the new binding.
 
+The syntaxes with K{lambda} in them refer to the eight syntactic form,
+R{procedure definition}{procedure-definition}.
+
 H4 define special form
 
 Syntax: either
@@ -621,7 +624,7 @@ Syntax: either
 
 (B{define} (E{variable} E{formals}) E{body})
 
-(where E{formals} is a proper or dotted list of identifiers; equivalent form:)
+where E{formals} is a proper or dotted list of identifiers; equivalent form:
 
 (B{define} E{variable} (B{lambda} (E{formals}) E{body})).
 
@@ -629,7 +632,7 @@ or
 
 (B{define} (E{variable} . E{formal}) E{body})
 
-(where E{formal} is a single identifier; equivalent form:)
+where E{formal} is a single identifier; equivalent form:
 
 (B{define} E{variable} (B{lambda} E{formal} E{body}))
 
@@ -655,8 +658,8 @@ CB)
 B{rewrite-define} procedure
 
 K{rewrite-define} rewrites ``procedural define'' syntaxes to their equivalent
-forms with K{lambda}, which unifies the syntaxes to (define E{symbol} E{value}).
-That syntax passes through K{rewrite-define} unchanged.
+forms with K{lambda}, which unifies the syntaxes with (B{define} E{variable}
+E{expression}).  That syntax passes through K{rewrite-define} unchanged.
 
 PR(
 rewrite-define (internal);expr expr env env -> expr
@@ -792,7 +795,7 @@ definedI{procedure definition} as the value of a symbol, passed to other
 procedures, and returned from procedures. One difference from most values is
 that procedures need to be specified.  Two questions must answered: what is the
 procedure meant to do? The code that does that will form the E{body} of the
-procedure. Also, what, if any, items of data (E{parameters}) will have to be
+procedure. Also, which, if any, items of data (E{parameters}) will have to be
 provided to the procedure to make it possible to calculate its result?
 
 As an example, imagine that we want to have a procedure that calculates the

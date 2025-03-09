@@ -2479,6 +2479,9 @@ proc ::constcl::/begin {exps env} {
 
 We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
 
+
+The syntaxes with \texttt{lambda} in them refer to the eight syntactic form, procedure definition (see page \pageref{procedure-definition}).
+
 \subsection{define special form}
 \label{define-special-form}
 \index{define special form}
@@ -2492,7 +2495,7 @@ Syntax: either
 (\textbf{define} (\emph{variable} \emph{formals}) \emph{body})
 
 
-(where \emph{formals} is a proper or dotted list of identifiers; equivalent form:)
+where \emph{formals} is a proper or dotted list of identifiers; equivalent form:
 
 
 (\textbf{define} \emph{variable} (\textbf{lambda} (\emph{formals}) \emph{body})).
@@ -2504,7 +2507,7 @@ or
 (\textbf{define} (\emph{variable} . \emph{formal}) \emph{body})
 
 
-(where \emph{formal} is a single identifier; equivalent form:)
+where \emph{formal} is a single identifier; equivalent form:
 
 
 (\textbf{define} \emph{variable} (\textbf{lambda} \emph{formal} \emph{body}))
@@ -2537,7 +2540,7 @@ proc ::constcl::special-define {expr env} {
 \textbf{rewrite-define} procedure
 
 
-\texttt{rewrite-define} rewrites ``procedural define'' syntaxes to their equivalent forms with \texttt{lambda}, which unifies the syntaxes to (define \emph{symbol} \emph{value}). That syntax passes through \texttt{rewrite-define} unchanged.
+\texttt{rewrite-define} rewrites ``procedural define'' syntaxes to their equivalent forms with \texttt{lambda}, which unifies the syntaxes with (\textbf{define} \emph{variable} \emph{expression}). That syntax passes through \texttt{rewrite-define} unchanged.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2636,7 +2639,7 @@ proc ::constcl::special-set! {expr env} {
 \emph{Example: \texttt{(lambda (r) (* r r))} $\Rightarrow$ \texttt{::oo::Obj3601} (it will be a different object each time)}
 
 
-In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, what, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
+In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, which, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
 
 
 As an example, imagine that we want to have a procedure that calculates the square (\texttt{x * x}) of a given number. In Lisp, expressions are written with the operator first and then the operands\index{operator operand order}: \texttt{(* x x)}. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable \texttt{x} will do. It's only a single variable, but by custom we need to put it in a list: \texttt{(x)}. The operator that creates procedures is called \texttt{lambda}\index{lambda}, and we create the function with \texttt{(lambda (x) (* x x))}.
