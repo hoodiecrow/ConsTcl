@@ -242,10 +242,6 @@ The last clause may have the form
 
 (B{else} E{expression} ...)
 
-The K{case} special form is expanded by K{special-case}.
-It expands to K{'()} if there are
-no clauses (left), and to nested K{if} constructs if there are some.
-
 Example:
 
 VB(
@@ -254,6 +250,10 @@ VB(
   ((w y) 'semivowel)
   (else 'consonant))     ==> consonant
 VB)
+
+The K{case} special form is expanded by K{special-case}.
+It expands to K{'()} if there are
+no clauses (left), and to nested K{if} constructs if there are some.
 
 B{special-case} procedure
 
@@ -384,6 +384,15 @@ with the result of the predicate as argument.
 The last clause may have the form
 
 (B{else} E{expression} ...)
+
+Example:
+
+VB(
+(let ((a 3))
+  (cond ((> a 3) 'greater)
+        ((< a 3) 'less)
+        (else 'equal)))      ==> equal
+VB)
 
 The K{cond} special form is expanded by K{special-cond}.
 It expands to K{'()} if there are

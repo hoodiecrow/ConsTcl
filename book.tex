@@ -312,7 +312,7 @@ proc regvar {name value} {
 
 \begin{pulledtext}
 \subsubsection{Procedures, functions, and commands}
-\label{procedures,-functions,-and-commands}
+\label{procedures-functions-and-commands}
 \index{procedures, functions, and commands}
 
 I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
@@ -323,7 +323,7 @@ And the `internal/public' distinction is probably a misnomer (an aside within an
 \end{pulledtext}
 
 \subsection{atom? procedure}
-\label{atom?-procedure}
+\label{atom-procedure}
 \index{atom? procedure}
 
 This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists\index{lists} and atoms\index{atoms}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (true) if it is an atom, and \texttt{\#f} (false) if not.
@@ -423,7 +423,7 @@ proc assert {expr} {
 }
 \end{lstlisting}
 \subsection{pairlis-tcl procedure}
-\label{pairlis-tcl-procedure}
+\label{pairlistcl-procedure}
 \index{pairlis-tcl procedure}
 
 A Tcl version of the procedure in the Scheme base.
@@ -522,7 +522,7 @@ proc ::unbind {args} {
 }
 \end{lstlisting}
 \subsection{typeof? procedure}
-\label{typeof?-procedure}
+\label{typeof-procedure}
 \index{typeof? procedure}
 
 \texttt{typeof?} looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter\footnote{the Tcl interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms the type, the procedure returns \texttt{\#t}.
@@ -548,7 +548,7 @@ proc ::constcl::typeof? {val type} {
 }
 \end{lstlisting}
 \subsection{in-range procedure}
-\label{in-range-procedure}
+\label{inrange-procedure}
 \index{in-range procedure}
 
 This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K. Fellows\index{Fellows, Donal}, but has grown a bit since then to suit my needs.
@@ -914,7 +914,7 @@ oo::class create ::constcl::Dot {
 }
 \end{lstlisting}
 \subsection{dot? procedure}
-\label{dot?-procedure}
+\label{dot-procedure}
 \index{dot? procedure}
 
 \texttt{dot?} is a type predicate that checks for membership in the type \texttt{Dot}.
@@ -954,7 +954,7 @@ oo::singleton create ::constcl::EndOfFile {
 }
 \end{lstlisting}
 \subsection{eof? procedure}
-\label{eof?-procedure}
+\label{eof-procedure}
 \index{eof? procedure}
 
 \texttt{eof?} is a type predicate that recognizes the end-of-file object.
@@ -1016,7 +1016,7 @@ oo::singleton create ::constcl::NIL {
 }
 \end{lstlisting}
 \subsection{null? procedure}
-\label{null?-procedure}
+\label{null-procedure}
 \index{null? procedure}
 
 The \texttt{null?} standard predicate recognizes the empty list.
@@ -1235,7 +1235,7 @@ proc ::constcl::read {args} {
 \label{input-helper-procedures}
 \index{input helper procedures}
 \subsection{make-constant procedure}
-\label{make-constant-procedure}
+\label{makeconstant-procedure}
 \index{make-constant procedure}
 
 The \texttt{make-constant} helper procedure is called to set expressions to constants when read as a literal.
@@ -1254,7 +1254,7 @@ proc ::constcl::make-constant {val} {
 }
 \end{lstlisting}
 \subsection{interspace? procedure}
-\label{interspace?-procedure}
+\label{interspace-procedure}
 \index{interspace? procedure}
 
 The \texttt{interspace?} helper procedure recognizes whitespace between value representations.
@@ -1269,7 +1269,7 @@ proc ::constcl::interspace? {c} {
 }
 \end{lstlisting}
 \subsection{delimiter? procedure}
-\label{delimiter?-procedure}
+\label{delimiter-procedure}
 \index{delimiter? procedure}
 
 The \texttt{delimiter?} helper procedure recognizes delimiter characters between value representations.
@@ -1284,7 +1284,7 @@ proc ::constcl::delimiter? {c} {
 }
 \end{lstlisting}
 \subsection{valid-char? procedure}
-\label{valid-char?-procedure}
+\label{validchar-procedure}
 \index{valid-char? procedure}
 
 The \texttt{valid-char?} helper procedure compares a potential character constant to the valid kinds.
@@ -1334,7 +1334,7 @@ proc ::constcl::readchar {} {
 }
 \end{lstlisting}
 \subsection{find-char? procedure}
-\label{find-char?-procedure}
+\label{findchar-procedure}
 \index{find-char? procedure}
 
 \texttt{find-char?} reads ahead through whitespace to find a given character. It returns \texttt{\#t} if it has found the character, and \texttt{\#f} if it has stopped at some other character. Returns end of file if eof is encountered. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1358,7 +1358,7 @@ proc ::constcl::find-char? {char} {
 }
 \end{lstlisting}
 \subsection{read-end? procedure}
-\label{read-end?-procedure}
+\label{readend-procedure}
 \index{read-end? procedure}
 
 \texttt{read-end?} reads one character and returns \texttt{\#t} if it is an interspace character or a delimiter character, or end of file. Otherwise it returns \texttt{\#f}. It ungets the character before returning. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1385,7 +1385,7 @@ proc ::constcl::read-end? {} {
 }
 \end{lstlisting}
 \subsection{skip-ws procedure}
-\label{skip-ws-procedure}
+\label{skipws-procedure}
 \index{skip-ws procedure}
 
 \texttt{skip-ws} skips whitespace and comments (the \texttt{;} to end of line kind). It leaves the first character not to be skipped in \texttt{c} and also ungets it. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1418,7 +1418,7 @@ proc ::constcl::skip-ws {} {
 }
 \end{lstlisting}
 \subsection{read-eof procedure}
-\label{read-eof-procedure}
+\label{readeof-procedure}
 \index{read-eof procedure}
 
 \texttt{read-eof} checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns \emph{from its caller} with the EOF value.
@@ -1447,7 +1447,7 @@ proc ::constcl::read-eof {args} {
 Reader procedures specialize in reading a certain kind of input, except for \texttt{read-expr} which reads them all (with a little help).
 
 \subsection{read-expr procedure}
-\label{read-expr-procedure}
+\label{readexpr-procedure}
 \index{read-expr procedure}
 
 The \texttt{read-expr} procedure reads the first available character from the input port. Based on that it delegates to one of the more detailed readers, producing an expression of any kind. A Tcl character value can be passed to it: that character will be used first before reading from the input. If end of file is encountered before an expression can be read in full, the procedure returns end of file (\texttt{\#EOF})\index{end of file}. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1497,7 +1497,7 @@ proc ::constcl::read-expr {args} {
 }
 \end{lstlisting}
 \subsection{read-character-expr procedure}
-\label{read-character-expr-procedure}
+\label{readcharacterexpr-procedure}
 \index{read-character-expr procedure}
 
 \texttt{read-character-expr} is activated by \texttt{read-pound} when that procedure finds a backslash in the input stream (pound-backslash is the external representation prefix for characters). It reads one or more characters to produce a character expression and return a Char (see page \pageref{characters}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1529,7 +1529,7 @@ proc ::constcl::read-character-expr {} {
 }
 \end{lstlisting}
 \subsection{read-identifier-expr procedure}
-\label{read-identifier-expr-procedure}
+\label{readidentifierexpr-procedure}
 \index{read-identifier-expr procedure}
 
 \texttt{read-identifier-expr} is activated for 'anything else', and takes in characters until it finds whitespace or a delimiter character. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a Symbol (see page \pageref{symbols}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1571,7 +1571,7 @@ proc ::constcl::read-identifier-expr {args} {
 }
 \end{lstlisting}
 \subsection{read-number-expr procedure}
-\label{read-number-expr-procedure}
+\label{readnumberexpr-procedure}
 \index{read-number-expr procedure}
 
 \texttt{read-number-expr} reads numerical input, both integers and floating point numbers. It is activated by \texttt{read-expr} or \texttt{read-plus-minus} if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or a delimiter character, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a Number (see page \pageref{numbers}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1607,7 +1607,7 @@ proc ::constcl::read-number-expr {args} {
 }
 \end{lstlisting}
 \subsection{read-object-expr procedure}
-\label{read-object-expr-procedure}
+\label{readobjectexpr-procedure}
 \index{read-object-expr procedure}
 
 A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of any kind and passes its name along. It is activated when \texttt{read-expr} finds a colon in the input. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1642,7 +1642,7 @@ proc ::constcl::read-object-expr {} {
 }
 \end{lstlisting}
 \subsection{read-pair-expr procedure}
-\label{read-pair-expr-procedure}
+\label{readpairexpr-procedure}
 \index{read-pair-expr procedure}
 
 The \texttt{read-pair-expr} procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of Pair (see page \pageref{pairs-and-lists}) objects, either a proper list (one that ends in \texttt{\#NIL}), or an improper one (one that has an atom as its last member). Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1725,7 +1725,7 @@ proc ::constcl::read-pair {char} {
 }
 \end{lstlisting}
 \subsection{read-plus-minus procedure}
-\label{read-plus-minus-procedure}
+\label{readplusminus-procedure}
 \index{read-plus-minus procedure}
 
 \texttt{read-plus-minus} is called when a plus or minus is found in the input stream. The plus or minus character is passed to it. If the next character is a digit, it delegates to the number reader. If it is a space character or a delimiter, it returns a \texttt{+} or \texttt{-} symbol. Otherwise, it delegates to the identifier reader. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1765,7 +1765,7 @@ proc ::constcl::read-plus-minus {char} {
 }
 \end{lstlisting}
 \subsection{read-pound procedure}
-\label{read-pound-procedure}
+\label{readpound-procedure}
 \index{read-pound procedure}
 
 \texttt{read-pound} is activated by \texttt{read-expr} when it reads a pound sign (\texttt{\#}). It in turn either delegates to the vector reader or the character reader, or returns boolean literals. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1795,7 +1795,7 @@ proc ::constcl::read-pound {} {
 }
 \end{lstlisting}
 \subsection{read-quasiquoted-expr procedure}
-\label{read-quasiquoted-expr-procedure}
+\label{readquasiquotedexpr-procedure}
 \index{read-quasiquoted-expr procedure}
 
 \texttt{read-quasiquoted-expr} is activated when there is a backquote (\texttt{`}) in the input stream. It reads an entire expression and returns it wrapped in \texttt{quasiquote}. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1817,7 +1817,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 }
 \end{lstlisting}
 \subsection{read-quoted-expr procedure}
-\label{read-quoted-expr-procedure}
+\label{readquotedexpr-procedure}
 \index{read-quoted-expr procedure}
 
 \texttt{read-quoted-expr} is activated by \texttt{read-expr} when reading a single quote ('). It then reads an entire expression beyond that, returning it wrapped in a list with \texttt{quote}. The quoted expression is made constant. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1839,7 +1839,7 @@ proc ::constcl::read-quoted-expr {} {
 }
 \end{lstlisting}
 \subsection{read-string-expr procedure}
-\label{read-string-expr-procedure}
+\label{readstringexpr-procedure}
 \index{read-string-expr procedure}
 
 \texttt{read-string-expr} is activated by \texttt{read-expr} when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable String (see page \pageref{strings}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1875,7 +1875,7 @@ proc ::constcl::read-string-expr {} {
 }
 \end{lstlisting}
 \subsection{read-unquoted-expr procedure}
-\label{read-unquoted-expr-procedure}
+\label{readunquotedexpr-procedure}
 \index{read-unquoted-expr procedure}
 
 When a comma is found in the input stream, \texttt{read-unquoted-expr} is activated. If it reads an at-sign (\texttt{@}) it selects the symbol \texttt{unquote-splicing}, otherwise it selects the symbol \texttt{unquote}. Then it reads an entire expression and returns it wrapped in the selected symbol. Both of these expressions are only supposed to occur inside a quasiquoted expression. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1904,7 +1904,7 @@ proc ::constcl::read-unquoted-expr {} {
 }
 \end{lstlisting}
 \subsection{read-vector-expr procedure}
-\label{read-vector-expr-procedure}
+\label{readvectorexpr-procedure}
 \index{read-vector-expr procedure}
 
 \texttt{read-vector-expr} is activated by \texttt{read-pound} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector (see page \pageref{vectors}) object. Shares the variables \texttt{c} and \texttt{unget} with its caller.
@@ -1953,31 +1953,15 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 To be able to evaluate every kind of expression, a structured approach is needed. Lisp has nine syntactic forms, each with its own syntax, and each with its own process of evaluation.
 
 \begin{description}
-\item[ variable reference] Syntax: a symbol. Process: variable lookup (see page \pageref{variable-reference}).
-\end{description}
-\begin{description}
-\item[ constant literal] Syntax: a number, string, character, or boolean. Process: take the value (see page \pageref{constant-literal}).
-\end{description}
-\begin{description}
-\item[ quotation] Syntax: \texttt{(quote datum)}. Process: take the datum (see page \pageref{quotation}).
-\end{description}
-\begin{description}
-\item[ conditional] Syntax: \texttt{if}, \texttt{case}, or \texttt{cond}. Process: depends on which syntax (see page \pageref{conditional}).
-\end{description}
-\begin{description}
-\item[ sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of last (see page \pageref{sequence}).
-\end{description}
-\begin{description}
-\item[ definition] Syntax: \texttt{(define var val)}. Process: bind a variable to a location, store the value there (see page \pageref{definition}).
-\end{description}
-\begin{description}
-\item[ assignment] Syntax: \texttt{(set! var val)}. Process: take a bound variable, store the value to its location (see page \pageref{assignment}).
-\end{description}
-\begin{description}
-\item[ procedure definition] Syntax: \texttt{(lambda formals body)}. Process: take formals and body and apply lambda to get a procedure value (see page \pageref{procedure-definition}).
-\end{description}
-\begin{description}
-\item[ procedure call] Syntax: \texttt{(operator operand \ldots )}. Process: invoke operator on operands (see page \pageref{procedure-call}).
+\item[variable reference] Syntax: a symbol. Process: variable lookup (see page \pageref{variable-reference}).
+\item[constant literal] Syntax: a number, string, character, or boolean. Process: take the value (see page \pageref{constant-literal}).
+\item[quotation] Syntax: \texttt{(quote datum)}. Process: take the datum (see page \pageref{quotation}).
+\item[conditional] Syntax: \texttt{if}, \texttt{case}, or \texttt{cond}. Process: depends on which syntax (see page \pageref{conditional}).
+\item[sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of last (see page \pageref{sequence}).
+\item[definition] Syntax: \texttt{(define var val)}. Process: bind a variable to a location, store the value there (see page \pageref{definition}).
+\item[assignment] Syntax: \texttt{(set! var val)}. Process: take a bound variable, store the value to its location (see page \pageref{assignment}).
+\item[procedure definition] Syntax: \texttt{(lambda formals body)}. Process: take formals and body and apply lambda to get a procedure value (see page \pageref{procedure-definition}).
+\item[procedure call] Syntax: \texttt{(operator operand \ldots )}. Process: invoke operator on operands (see page \pageref{procedure-call}).
 \end{description}
 
 The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
@@ -2189,9 +2173,6 @@ The last clause may have the form
 (\textbf{else} \emph{expression} \ldots )
 
 
-The \texttt{case} special form is expanded by \texttt{special-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
-
-
 Example:
 
 \begin{verbatim}
@@ -2200,6 +2181,9 @@ Example:
   ((w y) 'semivowel)
   (else 'consonant))     ==> consonant
 \end{verbatim}
+
+The \texttt{case} special form is expanded by \texttt{special-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
+
 
 \textbf{special-case} procedure
 
@@ -2223,7 +2207,7 @@ proc ::constcl::special-case {expr env} {
 
 \begin{pulledtext}
 \subsubsection{caar, cadr, cdar, and the rest}
-\label{caar,-cadr,-cdar,-and-the-rest}
+\label{caar-cadr-cdar-and-the-rest}
 \index{caar, cadr, cdar, and the rest}
 
 The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} operators like \texttt{caar} and \texttt{cdar}\index{car/cdr operators}. \texttt{car}/\texttt{cdr} notation gets really powerful when combined to form operators from \texttt{caar} to \texttt{cddddr}. One can read \texttt{caar L} as `the first element of the first element of L', implying that the first element of \texttt{L} is a list. \texttt{cdar L} is `the rest of the elements of the first element of L', and \texttt{cadr L} is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
@@ -2313,6 +2297,15 @@ The last clause may have the form
 
 (\textbf{else} \emph{expression} \ldots )
 
+
+Example:
+
+\begin{verbatim}
+(let ((a 3))
+  (cond ((> a 3) 'greater)
+        ((< a 3) 'less)
+        (else 'equal)))      ==> equal
+\end{verbatim}
 
 The \texttt{cond} special form is expanded by \texttt{special-cond}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
@@ -2605,7 +2598,7 @@ proc ::constcl::/define {sym val env} {
 Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The \texttt{set!} special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
 
 \subsection{set! special form}
-\label{set"!-special-form}
+\label{set-special-form}
 \index{set"! special form}
 
 Syntax: (\textbf{set!} \emph{variable} \emph{expression})
@@ -2967,7 +2960,7 @@ proc ::constcl::rewrite-letrec {expr env} {
 }
 \end{lstlisting}
 \subsection{let* special form}
-\label{let*-special-form}
+\label{let-special-form1}
 \index{let* special form}
 
 The \texttt{let*} form is similar to \texttt{let}, but the items in the binding list are considered sequentially, so the initializer in the second or later binding can reference the first binding, etc.
@@ -3084,7 +3077,7 @@ proc ::constcl::eval \
 }
 \end{lstlisting}
 \subsection{eval-form procedure}
-\label{eval-form-procedure}
+\label{evalform-procedure}
 \index{eval-form procedure}
 
 If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-form} looks at the \emph{binding information} (which the \texttt{reg} procedure (see page \pageref{reg-procedure}) puts into the standard library and thereby the global environment) for the symbol. The \emph{binding type} tells in general how the expression should be treated: as a special form, a variable, or a macro (see page \pageref{macros}). The \emph{handling info} gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
@@ -3211,7 +3204,7 @@ Macros that allow concise, abstract expressions that are automatically rewritten
 A macro expander procedure takes an expression and an environment as a parameter. In the end, the expanded expression is passed back to \texttt{eval}.
 
 \subsection{expand-and procedure}
-\label{expand-and-procedure}
+\label{expandand-procedure}
 \index{expand-and procedure}
 
 \texttt{expand-and} expands the \texttt{and} macro. It returns a \texttt{begin}-expression if the macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
@@ -3271,7 +3264,7 @@ proc ::constcl::do-and {tail prev env} {
 }
 \end{lstlisting}
 \subsection{expand-del! procedure}
-\label{expand-del"!-procedure}
+\label{expanddel-procedure}
 \index{expand-del"! procedure}
 
 The macro \texttt{del!} updates a property list. It removes a key-value pair if the key is present, or leaves the list untouched if it isn't.
@@ -3306,7 +3299,7 @@ proc ::constcl::expand-del! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-for procedure}
-\label{expand-for-procedure}
+\label{expandfor-procedure}
 \index{expand-for procedure}
 
 The \texttt{expand-for} procedure expands the \texttt{for} macro. It returns a \texttt{begin} construct containing the iterations of each clause (multiple clauses weren't implemented for the longest time, but I brought up my strongest brain cells and they did it).
@@ -3424,7 +3417,7 @@ proc ::constcl::do-for {tail env} {
 }
 \end{lstlisting}
 \subsection{expand-for/and procedure}
-\label{expand-for/and-procedure}
+\label{expandforand-procedure}
 \index{expand-for/and procedure}
 
 The \texttt{expand-for/and} procedure expands the \texttt{for/and} macro. It returns an \texttt{and} construct containing the iterations of the clauses.
@@ -3450,7 +3443,7 @@ proc ::constcl::expand-for/and {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-for/list procedure}
-\label{expand-for/list-procedure}
+\label{expandforlist-procedure}
 \index{expand-for/list procedure}
 
 The \texttt{expand-for/list} procedure expands the \texttt{for/list} macro. It returns a \texttt{list} construct containing the iterations of each clause.
@@ -3476,7 +3469,7 @@ proc ::constcl::expand-for/list {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-for/or procedure}
-\label{expand-for/or-procedure}
+\label{expandforor-procedure}
 \index{expand-for/or procedure}
 
 The \texttt{expand-for/or} procedure expands the \texttt{for/or} macro. It returns an \texttt{or} construct containing the iterations of each clause.
@@ -3502,7 +3495,7 @@ proc ::constcl::expand-for/or {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-or procedure}
-\label{expand-or-procedure}
+\label{expandor-procedure}
 \index{expand-or procedure}
 
 \texttt{expand-or} expands the \texttt{or} macro. It returns a \texttt{begin}-expression if the macro has 0 or 1 elements, and a nested \texttt{if} construct otherwise.
@@ -3560,7 +3553,7 @@ proc ::constcl::do-or {tail env} {
 }
 \end{lstlisting}
 \subsection{expand-pop! procedure}
-\label{expand-pop"!-procedure}
+\label{expandpop-procedure}
 \index{expand-pop"! procedure}
 
 The macro \texttt{pop!} updates a list. It removes the first element.
@@ -3593,7 +3586,7 @@ proc ::constcl::expand-pop! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-push! procedure}
-\label{expand-push"!-procedure}
+\label{expandpush-procedure}
 \index{expand-push"! procedure}
 
 The macro \texttt{push!} updates a list. It adds a new element as the new first element.
@@ -3635,7 +3628,7 @@ proc ::constcl::expand-push! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-put! procedure}
-\label{expand-put"!-procedure}
+\label{expandput-procedure}
 \index{expand-put"! procedure}
 
 The macro \texttt{put!} updates a property list. It adds a key-value pair if the key isn't present, or changes the value in place if it is.
@@ -3680,7 +3673,7 @@ proc ::constcl::expand-put! {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-quasiquote procedure}
-\label{expand-quasiquote-procedure}
+\label{expandquasiquote-procedure}
 \index{expand-quasiquote procedure}
 
 A quasi-quote isn't a macro, but we will deal with it in this section anyway. \texttt{expand-quasiquote} traverses the quasi-quoted structure searching for \texttt{unquote} and \texttt{unquote-splicing}. This code is brittle and sprawling and I barely understand it myself.
@@ -3785,7 +3778,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 }
 \end{lstlisting}
 \subsection{expand-unless procedure}
-\label{expand-unless-procedure}
+\label{expandunless-procedure}
 \index{expand-unless procedure}
 
 \texttt{unless} is a conditional like \texttt{if}, but it takes a number of expressions. It executes them on a false outcome of \texttt{car \$tail}.
@@ -3814,7 +3807,7 @@ proc ::constcl::expand-unless {expr env} {
 }
 \end{lstlisting}
 \subsection{expand-when procedure}
-\label{expand-when-procedure}
+\label{expandwhen-procedure}
 \index{expand-when procedure}
 
 \texttt{when} is a conditional like \texttt{if}, but it takes a number of expressions. It executes them on a true outcome of \texttt{car \$tail}.
@@ -3849,7 +3842,7 @@ proc ::constcl::expand-when {expr env} {
 This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. \texttt{resolve-local-defines} is the topmost procedure in rewriting local defines as essentially a \texttt{letrec} form. It takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
 
 \subsection{resolve-local-defines procedure}
-\label{resolve-local-defines-procedure}
+\label{resolvelocaldefines-procedure}
 \index{resolve-local-defines procedure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3878,7 +3871,7 @@ proc ::constcl::resolve-local-defines {expr} {
 }
 \end{lstlisting}
 \subsection{extract-from-defines procedure}
-\label{extract-from-defines-procedure}
+\label{extractfromdefines-procedure}
 \index{extract-from-defines procedure}
 
 \texttt{extract-from-defines} visits every define in the given list of expressions and extracts either a variable name or a value, depending on the state of the \emph{part} flag, from each one of them. A Tcl list of 1) the resulting list of names or values, 2) error state, and 3) the rest of the expressions in the original list is returned.
@@ -3931,7 +3924,7 @@ proc ::constcl::extract-from-defines {exps part} {
 }
 \end{lstlisting}
 \subsection{argument-list? procedure}
-\label{argument-list?-procedure}
+\label{argumentlist-procedure}
 \index{argument-list? procedure}
 
 \texttt{argument-list?} accepts a Scheme formals list and rejects other values.
@@ -3966,7 +3959,7 @@ proc ::constcl::argument-list? {val} {
 }
 \end{lstlisting}
 \subsection{make-lambdas procedure}
-\label{make-lambdas-procedure}
+\label{makelambdas-procedure}
 \index{make-lambdas procedure}
 
 \texttt{make-lambdas} builds the \texttt{letrec} structure.
@@ -3997,7 +3990,7 @@ proc ::constcl::make-lambdas {vars args body} {
 }
 \end{lstlisting}
 \subsection{make-temporaries procedure}
-\label{make-temporaries-procedure}
+\label{maketemporaries-procedure}
 \index{make-temporaries procedure}
 
 \texttt{make-temporaries} creates the symbols that will act as middlemen in transferring the values to the variables.
@@ -4044,7 +4037,7 @@ proc ::constcl::gensym {prefix} {
 }
 \end{lstlisting}
 \subsection{append-b procedure}
-\label{append-b-procedure}
+\label{appendb-procedure}
 \index{append-b procedure}
 
 \texttt{append-b} joins two lists together.
@@ -4075,7 +4068,7 @@ proc ::constcl::append-b {a b} {
 }
 \end{lstlisting}
 \subsection{make-assignments procedure}
-\label{make-assignments-procedure}
+\label{makeassignments-procedure}
 \index{make-assignments procedure}
 
 \texttt{make-assignments} creates the structure that holds the assignment statements. Later on, it will be joined to the body of the finished expression.
@@ -4103,7 +4096,7 @@ proc ::constcl::make-assignments {vars tmps} {
 }
 \end{lstlisting}
 \subsection{make-undefineds procedure}
-\label{make-undefineds-procedure}
+\label{makeundefineds-procedure}
 \index{make-undefineds procedure}
 
 \texttt{make-undefineds} creates a list of quoted undefined values.
@@ -4193,7 +4186,7 @@ proc ::constcl::display {val args} {
 }
 \end{lstlisting}
 \subsection{write-pair procedure}
-\label{write-pair-procedure}
+\label{writepair-procedure}
 \index{write-pair procedure}
 
 The \texttt{write-pair} procedure prints a Pair object except for the beginning and ending parentheses.
@@ -4458,7 +4451,7 @@ proc ::constcl::MkEnv {args} {
 }
 \end{lstlisting}
 \subsection{environment? procedure}
-\label{environment?-procedure}
+\label{environment-procedure}
 \index{environment? procedure}
 
 Recognizes an environment by type.
@@ -4563,7 +4556,7 @@ After 1860 lines of code, the interpreter is done.
 Now for the built-in procedures!
 
 \chapter{Built-in procedures}
-\label{built-in-procedures}
+\label{builtin-procedures}
 \section{Equivalence predicates}
 \label{equivalence-predicates}
 \index{equivalence predicates}
@@ -4574,7 +4567,7 @@ One of the fundamental questions in programming is ``is A equal to B?'' Whether 
 Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three. Of the three, \texttt{eq} generally tests for identity (with exception for numbers), \texttt{eqv} tests for value equality (except for booleans and procedures, where it tests for identity), and \texttt{equal} tests for whether the output strings are equal.
 
 \subsection{eq? procedure}
-\label{eq?-procedure}
+\label{eq-procedure}
 \index{eq? procedure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -4662,7 +4655,7 @@ proc ::constcl::veq {expr1 expr2} {
 }
 \end{lstlisting}
 \subsection{eqv? procedure}
-\label{eqv?-procedure}
+\label{eqv-procedure}
 \index{eqv? procedure}
 \begin{lstlisting}
 reg eqv?
@@ -4702,7 +4695,7 @@ proc ::constcl::eqv? {expr1 expr2} {
 }
 \end{lstlisting}
 \subsection{equal? procedure}
-\label{equal?-procedure}
+\label{equal-procedure}
 \index{equal? procedure}
 \begin{lstlisting}
 reg equal?
@@ -4793,7 +4786,7 @@ interp alias {} ::constcl::MkNumber \
 interp alias {} N {} ::constcl::Number new
 \end{lstlisting}
 \subsection{number? procedure}
-\label{number?-procedure}
+\label{number-procedure}
 \index{number? procedure}
 
 \texttt{number?} recognizes a number by object type, not by content.
@@ -4813,7 +4806,7 @@ proc ::constcl::number? {val} {
 }
 \end{lstlisting}
 \subsection{= procedure}
-\label{=-procedure}
+\label{-procedure}
 \index{= procedure}
 
 \noindent \textbf{<} procedure
@@ -4923,7 +4916,7 @@ proc ::constcl::>= {args} {
 }
 \end{lstlisting}
 \subsection{zero? procedure}
-\label{zero?-procedure}
+\label{zero-procedure}
 \index{zero? procedure}
 
 The \texttt{zero?} predicate tests if a given number is equal to zero.
@@ -4946,7 +4939,7 @@ proc ::constcl::zero? {num} {
 }
 \end{lstlisting}
 \subsection{positive? procedure}
-\label{positive?-procedure}
+\label{positive-procedure}
 \index{positive? procedure}
 
 \noindent \textbf{negative?} procedure
@@ -5062,7 +5055,7 @@ proc ::constcl::min {num args} {
 }
 \end{lstlisting}
 \subsection{+ procedure}
-\label{+-procedure}
+\label{-procedure1}
 \index{+ procedure}
 
 \noindent \textbf{*} procedure
@@ -5555,7 +5548,7 @@ proc ::constcl::expt {num1 num2} {
 }
 \end{lstlisting}
 \subsection{number->string procedure}
-\label{number->string-procedure}
+\label{numberstring-procedure}
 \index{number->string procedure}
 
 The procedures \texttt{number->string} and \texttt{string->number} convert between number and string with optional radix conversion.
@@ -5628,7 +5621,7 @@ proc base {base number} {
 }
 \end{lstlisting}
 \subsection{string->number procedure}
-\label{string->number-procedure}
+\label{stringnumber-procedure}
 \index{string->number procedure}
 
 As with \texttt{number->string}, above.
@@ -5763,7 +5756,7 @@ proc ::constcl::MkBoolean {bool} {
 }
 \end{lstlisting}
 \subsection{boolean? procedure}
-\label{boolean?-procedure}
+\label{boolean-procedure}
 \index{boolean? procedure}
 
 The \texttt{boolean?} predicate recognizes a Boolean by type.
@@ -5936,7 +5929,7 @@ proc ::constcl::MkChar {char} {
 }
 \end{lstlisting}
 \subsection{char? procedure}
-\label{char?-procedure}
+\label{char-procedure}
 \index{char? procedure}
 
 \texttt{char?} recognizes Char values by type.
@@ -5956,7 +5949,7 @@ proc ::constcl::char? {val} {
 }
 \end{lstlisting}
 \subsection{char=? procedure}
-\label{char=?-procedure}
+\label{char-procedure1}
 \index{char=? procedure}
 
 \noindent \textbf{char<?} procedure
@@ -6071,7 +6064,7 @@ proc ::constcl::char>=? {char1 char2} {
 }
 \end{lstlisting}
 \subsection{char-ci=? procedure}
-\label{char-ci=?-procedure}
+\label{charci-procedure}
 \index{char-ci=? procedure}
 
 \noindent \textbf{char-ci<?} procedure
@@ -6191,7 +6184,7 @@ proc ::constcl::char-ci>=? {char1 char2} {
 }
 \end{lstlisting}
 \subsection{char-alphabetic? procedure}
-\label{char-alphabetic?-procedure}
+\label{charalphabetic-procedure}
 \index{char-alphabetic? procedure}
 
 \noindent \textbf{char-numeric?} procedure
@@ -6280,7 +6273,7 @@ proc ::constcl::char-lower-case? {char} {
 }
 \end{lstlisting}
 \subsection{char->integer procedure}
-\label{char->integer-procedure}
+\label{charinteger-procedure}
 \index{char->integer procedure}
 
 \texttt{char->integer} and \texttt{integer->char} convert between characters and their 16-bit numeric codes.
@@ -6306,7 +6299,7 @@ proc ::constcl::char->integer {char} {
 }
 \end{lstlisting}
 \subsection{integer->char procedure}
-\label{integer->char-procedure}
+\label{integerchar-procedure}
 \index{integer->char procedure}
 
 Example:
@@ -6335,7 +6328,7 @@ proc ::constcl::integer->char {int} {
 }
 \end{lstlisting}
 \subsection{char-upcase procedure}
-\label{char-upcase-procedure}
+\label{charupcase-procedure}
 \index{char-upcase procedure}
 
 \textbf{char-downcase} procedure
@@ -6437,7 +6430,7 @@ interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
 \end{lstlisting}
 \subsection{procedure? procedure}
-\label{procedure?-procedure}
+\label{procedure-procedure}
 \index{procedure? procedure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -6540,7 +6533,7 @@ proc ::constcl::map {pr args} {
 }
 \end{lstlisting}
 \subsection{for-each procedure}
-\label{for-each-procedure}
+\label{foreach-procedure}
 \index{for-each procedure}
 
 \texttt{for-each} iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
@@ -6834,7 +6827,7 @@ set ::constcl::Output_port [
   ::constcl::MkOutputPort stdout]
 \end{lstlisting}
 \subsection{port? procedure}
-\label{port?-procedure}
+\label{port-procedure}
 \index{port? procedure}
 
 \texttt{port?} recognizes Port objects, i.e. all kinds of ports.
@@ -6847,7 +6840,7 @@ proc ::constcl::port? {val} {
 }
 \end{lstlisting}
 \subsection{call-with-input-file procedure}
-\label{call-with-input-file-procedure}
+\label{callwithinputfile-procedure}
 \index{call-with-input-file procedure}
 
 \texttt{call-with-input-file} opens a file for input and passes the port to \texttt{proc}. The file is closed again once \texttt{proc} returns. The result of the call is returned.
@@ -6872,7 +6865,7 @@ proc ::constcl::call-with-input-file {filename proc} {
 }
 \end{lstlisting}
 \subsection{call-with-output-file procedure}
-\label{call-with-output-file-procedure}
+\label{callwithoutputfile-procedure}
 \index{call-with-output-file procedure}
 
 \texttt{call-with-output-file} opens a file for output and passes the port to \texttt{proc}. The file is closed again once \texttt{proc} returns. The result of the call is returned.
@@ -6901,7 +6894,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 }
 \end{lstlisting}
 \subsection{input-port? procedure}
-\label{input-port?-procedure}
+\label{inputport-procedure}
 \index{input-port? procedure}
 
 \texttt{input-port?} recognizes an InputPort object.
@@ -6927,7 +6920,7 @@ proc ::constcl::input-port? {val} {
 }
 \end{lstlisting}
 \subsection{output-port? procedure}
-\label{output-port?-procedure}
+\label{outputport-procedure}
 \index{output-port? procedure}
 
 \texttt{output-port?} recognizes an OutputPort object.
@@ -6953,7 +6946,7 @@ proc ::constcl::output-port? {val} {
 }
 \end{lstlisting}
 \subsection{current-input-port procedure}
-\label{current-input-port-procedure}
+\label{currentinputport-procedure}
 \index{current-input-port procedure}
 
 \texttt{current-input-port} makes a copy of the current shared input port.
@@ -6972,7 +6965,7 @@ proc ::constcl::current-input-port {} {
 }
 \end{lstlisting}
 \subsection{current-output-port procedure}
-\label{current-output-port-procedure}
+\label{currentoutputport-procedure}
 \index{current-output-port procedure}
 
 \texttt{current-output-port} makes a copy of the current shared output port.
@@ -6991,7 +6984,7 @@ proc ::constcl::current-output-port {} {
 }
 \end{lstlisting}
 \subsection{with-input-from-file procedure}
-\label{with-input-from-file-procedure}
+\label{withinputfromfile-procedure}
 \index{with-input-from-file procedure}
 
 \texttt{with-input-from-file} opens a file for input and calls a `thunk' while the file is open. The file is closed again when the call is done.
@@ -7020,7 +7013,7 @@ proc ::constcl::with-input-from-file {filename thunk} {
 }
 \end{lstlisting}
 \subsection{with-output-to-file procedure}
-\label{with-output-to-file-procedure}
+\label{withoutputtofile-procedure}
 \index{with-output-to-file procedure}
 
 \texttt{with-output-to-file} opens a file for output and calls a `thunk' while the file is open. The file is closed again when the call is done.
@@ -7050,7 +7043,7 @@ proc ::constcl::with-output-to-file {filename thunk} {
 }
 \end{lstlisting}
 \subsection{open-input-file procedure}
-\label{open-input-file-procedure}
+\label{openinputfile-procedure}
 \index{open-input-file procedure}
 
 \texttt{open-input-file} opens a file for input and returns the port.
@@ -7079,7 +7072,7 @@ proc ::constcl::open-input-file {filename} {
 }
 \end{lstlisting}
 \subsection{open-output-file procedure}
-\label{open-output-file-procedure}
+\label{openoutputfile-procedure}
 \index{open-output-file procedure}
 
 \texttt{open-output-file} opens a file for output and returns the port.
@@ -7108,7 +7101,7 @@ proc ::constcl::open-output-file {filename} {
 }
 \end{lstlisting}
 \subsection{close-input-port procedure}
-\label{close-input-port-procedure}
+\label{closeinputport-procedure}
 \index{close-input-port procedure}
 
 \texttt{close-input-port} closes an input port.
@@ -7131,7 +7124,7 @@ proc ::constcl::close-input-port {port} {
 }
 \end{lstlisting}
 \subsection{close-output-port procedure}
-\label{close-output-port-procedure}
+\label{closeoutputport-procedure}
 \index{close-output-port procedure}
 
 \texttt{close-output-port} closes an output port.
@@ -7312,7 +7305,7 @@ interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
 \end{lstlisting}
 \subsection{pair? procedure}
-\label{pair?-procedure}
+\label{pair-procedure}
 \index{pair? procedure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7329,7 +7322,7 @@ proc ::constcl::pair? {val} {
 }
 \end{lstlisting}
 \subsection{show-pair procedure}
-\label{show-pair-procedure}
+\label{showpair-procedure}
 \index{show-pair procedure}
 
 Helper procedure to make a string representation of a list.
@@ -7501,7 +7494,7 @@ foreach ads {
 }
 \end{lstlisting}
 \subsection{set-car! procedure}
-\label{set-car"!-procedure}
+\label{setcar-procedure}
 \index{set-car"! procedure}
 
 \texttt{set-car!} sets the contents of the first cell in a pair.
@@ -7529,7 +7522,7 @@ proc ::constcl::set-car! {pair val} {
 }
 \end{lstlisting}
 \subsection{set-cdr! procedure}
-\label{set-cdr"!-procedure}
+\label{setcdr-procedure}
 \index{set-cdr"! procedure}
 
 \texttt{set-cdr!} sets the contents of the second cell in a pair.
@@ -7557,7 +7550,7 @@ proc ::constcl::set-cdr! {pair val} {
 }
 \end{lstlisting}
 \subsection{list? procedure}
-\label{list?-procedure}
+\label{list-procedure}
 \index{list? procedure}
 
 The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:-a-proper-list-and-two-improper-ones}).
@@ -7614,7 +7607,7 @@ proc ::constcl::listp {pair} {
 }
 \end{lstlisting}
 \subsection{list procedure}
-\label{list-procedure}
+\label{list-procedure1}
 \index{list procedure}
 
 \texttt{list} constructs a Lisp list from a number of values.
@@ -7787,7 +7780,7 @@ proc ::constcl::reverse {vals} {
 }
 \end{lstlisting}
 \subsection{list-tail procedure}
-\label{list-tail-procedure}
+\label{listtail-procedure}
 \index{list-tail procedure}
 
 Given a list index, \texttt{list-tail} yields the sublist starting from that index.
@@ -7819,7 +7812,7 @@ proc ::constcl::list-tail {vals k} {
 }
 \end{lstlisting}
 \subsection{list-ref procedure}
-\label{list-ref-procedure}
+\label{listref-procedure}
 \index{list-ref procedure}
 
 \texttt{list-ref} yields the list item at a given index.
@@ -8191,7 +8184,7 @@ interp alias {} ::constcl::MkString \
   {} ::constcl::String new
 \end{lstlisting}
 \subsection{string? procedure}
-\label{string?-procedure}
+\label{string-procedure}
 \index{string? procedure}
 
 \texttt{string?} recognizes a string by type.
@@ -8211,7 +8204,7 @@ proc ::constcl::string? {val} {
 }
 \end{lstlisting}
 \subsection{make-string procedure}
-\label{make-string-procedure}
+\label{makestring-procedure}
 \index{make-string procedure}
 
 \texttt{make-string} creates a string of \emph{k} characters, optionally filled with \emph{char} characters. If \emph{char} is omitted, the string will be filled with space characters.
@@ -8248,7 +8241,7 @@ proc ::constcl::make-string {k args} {
 }
 \end{lstlisting}
 \subsection{string procedure}
-\label{string-procedure}
+\label{string-procedure1}
 \index{string procedure}
 
 \texttt{string} constructs a string from a number of Lisp characters.
@@ -8282,7 +8275,7 @@ proc ::constcl::string {args} {
 }
 \end{lstlisting}
 \subsection{string-length procedure}
-\label{string-length-procedure}
+\label{stringlength-procedure}
 \index{string-length procedure}
 
 \texttt{string-length} reports a string's length.
@@ -8311,7 +8304,7 @@ proc ::constcl::string-length {str} {
 }
 \end{lstlisting}
 \subsection{string-ref procedure}
-\label{string-ref-procedure}
+\label{stringref-procedure}
 \index{string-ref procedure}
 
 \texttt{string-ref} yields the \emph{k}-th character (0-based) in \emph{str}.
@@ -8346,7 +8339,7 @@ proc ::constcl::string-ref {str k} {
 }
 \end{lstlisting}
 \subsection{string-set! procedure}
-\label{string-set"!-procedure}
+\label{stringset-procedure}
 \index{string-set"! procedure}
 
 \texttt{string-set!} replaces the character at \emph{k} with \emph{char} in a non-constant string.
@@ -8685,7 +8678,7 @@ proc ::constcl::substring {str start end} {
 }
 \end{lstlisting}
 \subsection{string-append procedure}
-\label{string-append-procedure}
+\label{stringappend-procedure}
 \index{string-append procedure}
 
 \texttt{string-append} joins strings together.
@@ -8713,7 +8706,7 @@ proc ::constcl::string-append {args} {
 }
 \end{lstlisting}
 \subsection{string->list procedure}
-\label{string->list-procedure}
+\label{stringlist-procedure}
 \index{string->list procedure}
 
 \texttt{string->list} converts a string to a Lisp list of characters.
@@ -8739,7 +8732,7 @@ proc ::constcl::string->list {str} {
 }
 \end{lstlisting}
 \subsection{list->string procedure}
-\label{list->string-procedure}
+\label{liststring-procedure}
 \index{list->string procedure}
 
 \texttt{list->string} converts a Lisp list of characters to a string.
@@ -8766,7 +8759,7 @@ proc ::constcl::list->string {list} {
 }
 \end{lstlisting}
 \subsection{string-copy procedure}
-\label{string-copy-procedure}
+\label{stringcopy-procedure}
 \index{string-copy procedure}
 
 \texttt{string-copy} makes a copy of a string.
@@ -8798,7 +8791,7 @@ proc ::constcl::string-copy {str} {
 }
 \end{lstlisting}
 \subsection{string-fill! procedure}
-\label{string-fill"!-procedure}
+\label{stringfill-procedure}
 \index{string-fill"! procedure}
 
 \texttt{string-fill!} \emph{str} \emph{char} fills a non-constant string with \emph{char}.
@@ -8908,7 +8901,7 @@ proc ::constcl::MkSymbol {str} {
 interp alias {} S {} ::constcl::MkSymbol
 \end{lstlisting}
 \subsection{symbol? procedure}
-\label{symbol?-procedure}
+\label{symbol-procedure}
 \index{symbol? procedure}
 
 \texttt{symbol?} recognizes a symbol by type.
@@ -8928,7 +8921,7 @@ proc ::constcl::symbol? {val} {
 }
 \end{lstlisting}
 \subsection{symbol->string procedure}
-\label{symbol->string-procedure}
+\label{symbolstring-procedure}
 \index{symbol->string procedure}
 
 \texttt{symbol->string} yields a string consisting of the symbol name, usually lower-cased.
@@ -8965,7 +8958,7 @@ proc ::constcl::symbol->string {sym} {
 }
 \end{lstlisting}
 \subsection{string->symbol procedure}
-\label{string->symbol-procedure}
+\label{stringsymbol-procedure}
 \index{string->symbol procedure}
 
 \texttt{string->symbol} creates a symbol with the name given by the string. The symbol is 'case-constant', i.e. it will not be lower-cased.
@@ -9119,7 +9112,7 @@ interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
 \end{lstlisting}
 \subsection{vector? procedure}
-\label{vector?-procedure}
+\label{vector-procedure}
 \index{vector? procedure}
 
 \texttt{vector?} recognizes vectors by type.
@@ -9139,7 +9132,7 @@ proc ::constcl::vector? {val} {
 }
 \end{lstlisting}
 \subsection{make-vector procedure}
-\label{make-vector-procedure}
+\label{makevector-procedure}
 \index{make-vector procedure}
 
 \texttt{make-vector} creates a vector with a given length and optionally a fill value. If a fill value isn't given, the empty list will be used.
@@ -9174,7 +9167,7 @@ proc ::constcl::make-vector {k args} {
 }
 \end{lstlisting}
 \subsection{vector procedure}
-\label{vector-procedure}
+\label{vector-procedure1}
 \index{vector procedure}
 
 Given a number of Lisp values, \texttt{vector} creates a vector containing them.
@@ -9200,7 +9193,7 @@ proc ::constcl::vector {args} {
 }
 \end{lstlisting}
 \subsection{vector-length procedure}
-\label{vector-length-procedure}
+\label{vectorlength-procedure}
 \index{vector-length procedure}
 
 \texttt{vector-length} returns the length of a vector.
@@ -9229,7 +9222,7 @@ proc ::constcl::vector-length {vec} {
 }
 \end{lstlisting}
 \subsection{vector-ref procedure}
-\label{vector-ref-procedure}
+\label{vectorref-procedure}
 \index{vector-ref procedure}
 
 \texttt{vector-ref} returns the element of \emph{vec} at index \emph{k} (0-based).
@@ -9263,7 +9256,7 @@ proc ::constcl::vector-ref {vec k} {
 }
 \end{lstlisting}
 \subsection{vector-set! procedure}
-\label{vector-set"!-procedure}
+\label{vectorset-procedure}
 \index{vector-set"! procedure}
 
 \texttt{vector-set!} sets the element at index \emph{k} to \emph{val} on a vector that isn't constant.
@@ -9304,7 +9297,7 @@ proc ::constcl::vector-set! {vec k val} {
 }
 \end{lstlisting}
 \subsection{vector->list procedure}
-\label{vector->list-procedure}
+\label{vectorlist-procedure}
 \index{vector->list procedure}
 
 \texttt{vector->list} converts a vector value to a Lisp list.
@@ -9330,7 +9323,7 @@ proc ::constcl::vector->list {vec} {
 }
 \end{lstlisting}
 \subsection{list->vector procedure}
-\label{list->vector-procedure}
+\label{listvector-procedure}
 \index{list->vector procedure}
 
 \texttt{list->vector} converts a Lisp list value to a vector.
@@ -9356,7 +9349,7 @@ proc ::constcl::list->vector {list} {
 }
 \end{lstlisting}
 \subsection{vector-fill! procedure}
-\label{vector-fill"!-procedure}
+\label{vectorfill-procedure}
 \index{vector-fill"! procedure}
 
 \texttt{vector-fill!} fills a non-constant vector with a given value.
@@ -9538,7 +9531,7 @@ key & a symbol \\
       #f)))
 \end{lstlisting}
 \subsection{list-find-key procedure}
-\label{list-find-key-procedure}
+\label{listfindkey-procedure}
 \index{list-find-key procedure}
 
 \texttt{list-find-key} searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
@@ -9579,7 +9572,7 @@ count & a number \\
       (lfk (cddr lst) key (+ count 2)))))
 \end{lstlisting}
 \subsection{list-set! procedure}
-\label{list-set"!-procedure}
+\label{listset-procedure}
 \index{list-set"! procedure}
 
 \texttt{list-set!} works in analogy with \texttt{string-set!}. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
@@ -9600,7 +9593,7 @@ val & a value \\
     (list-set! (cdr lst) (- idx 1) val)))
 \end{lstlisting}
 \subsection{delete! procedure}
-\label{delete"!-procedure}
+\label{delete-procedure}
 \index{delete"! procedure}
 
 \texttt{delete!} removes a key-value pair from a property list. Returns the list.
@@ -9626,7 +9619,7 @@ key & a symbol \\
     lst))
 \end{lstlisting}
 \subsection{del-seek procedure}
-\label{del-seek-procedure}
+\label{delseek-procedure}
 \index{del-seek procedure}
 
 \texttt{del-seek} does the searching for \texttt{delete!}.
@@ -9646,7 +9639,7 @@ idx & a number \\
     (del-seek (cdr lst) (- idx 1))))
 \end{lstlisting}
 \subsection{get-alist procedure}
-\label{get-alist-procedure}
+\label{getalist-procedure}
 \index{get-alist procedure}
 
 \texttt{get-alist} is like \texttt{get} but for association lists.
@@ -9689,7 +9682,7 @@ b & a Lisp list of values \\
       (pairlis (cdr a) (cdr b)))))
 \end{lstlisting}
 \subsection{set-alist! procedure}
-\label{set-alist"!-procedure}
+\label{setalist-procedure}
 \index{set-alist"! procedure}
 
 \texttt{set-alist!} updates a value in an association list, given a key.
@@ -9730,7 +9723,7 @@ n & a number \\
     (* n (fact (- n 1)))))
 \end{lstlisting}
 \subsection{list-copy procedure}
-\label{list-copy-procedure}
+\label{listcopy-procedure}
 \index{list-copy procedure}
 
 Returns a newly allocated copy of \emph{list}. This copies each of the pairs comprising \emph{list}. From MIT Scheme.
@@ -9752,6 +9745,7 @@ list & a Lisp list of values \\
 
 And that's all. Thank you for joining me on this voyage of exploration.
 
+\end{document}
 
 \printindex
 \end{document}

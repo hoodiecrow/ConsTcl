@@ -1575,9 +1575,6 @@ The last clause may have the form
 (__else__ _expression_ ...)
 
 
-The `` case `` special form is expanded by `` special-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
-
-
 Example:
 
 ```
@@ -1586,6 +1583,9 @@ Example:
   ((w y) 'semivowel)
   (else 'consonant))     ==> consonant
 ```
+
+The `` case `` special form is expanded by `` special-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
+
 
 __special-case__ procedure
 
@@ -1687,6 +1687,15 @@ The last clause may have the form
 
 (__else__ _expression_ ...)
 
+
+Example:
+
+```
+(let ((a 3))
+  (cond ((> a 3) 'greater)
+        ((< a 3) 'less)
+        (else 'equal)))      ==> equal
+```
 
 The `` cond `` special form is expanded by `` special-cond ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
