@@ -73,7 +73,7 @@ There is also `` regvar ``, which registers variables. You pass the _name_ and _
 
 <table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>?btype?</td><td>either 'special' or 'macro'</td></tr><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
-<table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 unset -nocomplain ::constcl::defreg
@@ -157,7 +157,7 @@ will not do, but
 
 ---
 
-<table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">atom? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg atom?
@@ -182,7 +182,7 @@ Example:
 ```
 if {[T [atom? $x]]} ...
 ```
-<table border=1><thead><tr><th colspan=2 align="left">T (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">T (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
 ```
 proc ::T {val} {
@@ -214,7 +214,7 @@ proc assert {expr} {
 
 A Tcl version of the procedure in the Scheme base.
 
-<table border=1><thead><tr><th colspan=2 align="left">pairlis-tcl (internal)</th></tr></thead><tr><td>lvals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pairlis-tcl (internal)</th></tr></thead><tr><td>lvals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
 
 ```
 proc ::constcl::pairlis-tcl {a b} {
@@ -285,7 +285,7 @@ proc ::unbind {args} {
 
 `` typeof? `` looks at a value's type and reports if it is the same as the given type. To be certain, it looks at the value in two ways: once assuming that the value is a ConsTcl object, and once assuming that the value is an interpreter (the Tcl interpreter, not ConsTcl) alias for a ConsTcl object. If one of those affirms the type, the procedure returns `` #t ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">typeof? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td>type</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::typeof? {val type} {
@@ -432,7 +432,7 @@ proc ::rw {args} {
 
 `` pe `` is also similar, but it doesn't write the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
 
-<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::pe {str {env ::constcl::global_env}} {
@@ -444,7 +444,7 @@ proc ::pe {str {env ::constcl::global_env}} {
 
 `` re `` is like `` pe ``, but it reads from a regular port instead of an string input port. It evaluates what is read.
 
-<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::re {port {env ::constcl::global_env}} {
@@ -467,7 +467,7 @@ proc ::p {str} {
 
 `` e `` is another single-action procedure, evaluating an expression and returning a value.
 
-<table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">e (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::e {expr {env ::constcl::global_env}} {
@@ -478,7 +478,7 @@ proc ::e {expr {env ::constcl::global_env}} {
 
 `` w `` is the third single-action procedure, printing a value and that's all.
 
-<table border=1><thead><tr><th colspan=2 align="left">w (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">w (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::w {val} {
@@ -554,7 +554,7 @@ oo::class create ::constcl::Dot {
 
 `` dot? `` is a type predicate that checks for membership in the type `` Dot ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">dot? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">dot? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::dot? {val} {
@@ -585,7 +585,7 @@ oo::singleton create ::constcl::EndOfFile {
 
 `` eof? `` is a type predicate that recognizes the end-of-file object.
 
-<table border=1><thead><tr><th colspan=2 align="left">eof? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eof? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc eof? {val} {
@@ -638,7 +638,7 @@ oo::singleton create ::constcl::NIL {
 
 The `` null? `` standard predicate recognizes the empty list.
 
-<table border=1><thead><tr><th colspan=2 align="left">null? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">null? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg null?
@@ -703,7 +703,11 @@ The main input procedures, `` read `` and the non-standard `` parse ``, do more 
 [Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_.
 
 
-The parsing process translates a piece of text from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
+The parsing process translates a piece of text from external representation to internal representation.
+
+#### External representation
+
+The external representation is a 'recipe' for an expression that expresses it in a unique way.
 
 
 For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader or parser is working through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
@@ -1398,24 +1402,24 @@ The second thing an interpreter must be able to do is to reduce expressions to t
 
 To be able to evaluate every kind of expression, a structured approach is needed. Lisp has nine syntactic forms, each with its own syntax, and each with its own process of evaluation.
 
-1. __ variable reference__  
+1.  variable reference  
 Syntax: a symbol. Process: [variable lookup](https://github.com/hoodiecrow/ConsTcl#variable-reference).
-1. __ constant literal__  
+1.  constant literal  
 Syntax: a number, string, character, or boolean. Process: [take the value](https://github.com/hoodiecrow/ConsTcl#constant-literal).
-1. __ quotation__  
+1.  quotation  
 Syntax: `` (quote datum) ``. Process: [take the datum](https://github.com/hoodiecrow/ConsTcl#quotation).
-1. __ conditional__  
+1.  conditional  
 Syntax: `` if ``, `` case ``, or `` cond ``. Process: [depends on which syntax](https://github.com/hoodiecrow/ConsTcl#conditional).
-1. __ sequence__  
-Syntax: `` (begin expression ...) ``. Process: [evaluate all expressions, take value of last](https://github.com/hoodiecrow/ConsTcl#sequence).
-1. __ definition__  
-Syntax: `` (define var val) ``. Process: take a variable and a value and [bind the variable](https://github.com/hoodiecrow/ConsTcl#definition) to the value.
-1. __ assignment__  
-Syntax: `` (set! var val) ``. Process: take a variable and a value and [set the variable](https://github.com/hoodiecrow/ConsTcl#assignment) to the value.
-1. __ procedure definition__  
-Syntax: `` (lambda formals body) ``. Process: [see form](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
-1. __ procedure call__  
-Syntax: `` (operator operand ...) ``. Process: [see form](https://github.com/hoodiecrow/ConsTcl#procedure-call).
+1.  sequence  
+Syntax: `` (begin expression ...) ``. Process: evaluate all expressions, [take value of last](https://github.com/hoodiecrow/ConsTcl#sequence).
+1.  definition  
+Syntax: `` (define var val) ``. Process: [bind a variable to a location, store the value there](https://github.com/hoodiecrow/ConsTcl#definition).
+1.  assignment  
+Syntax: `` (set! var val) ``. Process: [take a bound variable, store the value to its location](https://github.com/hoodiecrow/ConsTcl#assignment).
+1.  procedure definition  
+Syntax: `` (lambda formals body) ``. Process: take formals and body and [apply lambda to get a procedure value](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
+1.  procedure call  
+Syntax: `` (operator operand ...) ``. Process: [invoke operator on operands](https://github.com/hoodiecrow/ConsTcl#procedure-call).
 
 The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
 
@@ -1424,13 +1428,13 @@ The evaluator recognizes the syntax of the expression and chooses the appropriat
  _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 
-A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
+A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the [environment chain](https://github.com/hoodiecrow/ConsTcl#environments) for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
 
 
 Syntax: _symbol_
 
 #### lookup procedure
-<table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">lookup (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::constcl::lookup {sym env} {
@@ -1450,7 +1454,7 @@ proc ::constcl::lookup {sym env} {
 Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
 
 
-Syntax: _number_|_string_|_character_|_boolean_
+Syntax: _number_ | _string_ | _character_ | _boolean_
 
 
 __self-evaluating?__ procedure
@@ -1458,7 +1462,7 @@ __self-evaluating?__ procedure
 
 Only numeric, string, character, and boolean constants evaluate to themselves.
 
-<table border=1><thead><tr><th colspan=2 align="left">self-evaluating? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">self-evaluating? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::self-evaluating? {val} {
@@ -1477,7 +1481,7 @@ proc ::constcl::self-evaluating? {val} {
  _Example: `` (quote r) `` ⇒ `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the Lisp reader. The argument of `` quote `` may be any external representation of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
+According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the [Lisp reader](https://github.com/hoodiecrow/ConsTcl#reader-procedures). The argument of `` quote `` may be any [external representation](https://github.com/hoodiecrow/ConsTcl#external-representation) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 #### quote special form
 
@@ -1500,16 +1504,16 @@ proc ::constcl::special-quote {expr env} {
  _Example: `` (if (> 99 100) (* 2 2) (+ 2 4)) `` ⇒ 6_
 
 
-The conditional form `` if `` evaluates a Lisp list of three expressions. The first, the _condition_, is evaluated first. If it evaluates to anything other than `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
+The conditional form `` if `` takes three expressions. The first, the _condition_, is evaluated first. If it evaluates to true, i.e. anything other than the value `` #f `` (false), the second expression (the _consequent_) is evaluated and the value returned. Otherwise, the third expression (the _alternate_) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated. The _alternate_ can be omitted.
 
 #### if special form
 
-Syntax: (__if__ _cond_ _consequent_ ?_alternate_?)
+Syntax: (__if__ _condition_ _consequent_ ?_alternate_?)
 
 
 The `` if `` special form is expanded by `` special-if ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-if (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-if (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special if
@@ -1532,9 +1536,9 @@ The two procedures that help the if form out are `` /if `` and `` /if1 ``. The f
 
 __/if__ procedure __/if1__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td>alternate</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>conseq</td><td>an expression</td></tr><tr><td>altern</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
-<table border=1><thead><tr><th colspan=2 align="left">/if1 (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>consequent</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/if1 (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>conseq</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::constcl::/if {cond conseq altern} {
@@ -1573,6 +1577,15 @@ The last clause may have the form
 
 The `` case `` special form is expanded by `` special-case ``. It expands to `` '() `` if there are no clauses (left), and to nested `` if `` constructs if there are some.
 
+
+Example:
+
+```
+(case 'c
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant))     ==> consonant
+```
 
 __special-case__ procedure
 
@@ -1763,7 +1776,7 @@ Syntax: (__begin__ _expression_ ...)
 
 The `` begin `` special form is expanded by `` special-begin ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-begin (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-begin (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special begin
@@ -1786,7 +1799,7 @@ __/begin__ procedure
 
 The `` /begin `` helper procedure takes a Lisp list of expressions and evaluates them in sequence, returning the value of the last one.
 
-<table border=1><thead><tr><th colspan=2 align="left">/begin (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/begin (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::constcl::/begin {exps env} {
@@ -1892,7 +1905,7 @@ proc ::constcl::rewrite-define {expr env} {
 
 __/define__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">/define (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">/define (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::/define {sym val env} {
@@ -1915,7 +1928,7 @@ Syntax: (__set!__ _variable_ _expression_)
 
 The `` set! `` special form is expanded by `` special-set! ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-set! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-set! (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special set!
@@ -2001,7 +2014,7 @@ Once we have procedures, we can call them to have their calculations performed a
 `` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with `` eval-list `` (see below).
 
 #### invoke procedure
-<table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">invoke (internal)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
 ```
 proc ::constcl::invoke {pr vals} {
@@ -2118,7 +2131,7 @@ __parse-bindings__ procedure
 
 `` parse-bindings `` is a helper procedure that traverses a `` let `` bindings list and extracts variables and values, which it puts in a dictionary. It throws an error if a variable occurs more than once.
 
-<table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse-bindings (internal)</th></tr></thead><tr><td>name</td><td>a call-by-name name</td></tr><tr><td>bindings</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::parse-bindings {name bindings} {
@@ -2223,7 +2236,7 @@ proc ::constcl::special-let* {expr env} {
 
 __rewrite-let*__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">rewrite-let* (internal)</th></tr></thead><tr><td>bindings</td><td>a Lisp list of Lisp values</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">rewrite-let* (internal)</th></tr></thead><tr><td>bindings</td><td>a Lisp list of values</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::rewrite-let* {bindings body env} {
@@ -2267,7 +2280,7 @@ I will talk some more about the implementation of environments in a later sectio
 
 The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Variable reference and constant literals are handled here, but the other seven syntactic forms are delegated to `` eval-form ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval (public)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg eval
@@ -2289,7 +2302,7 @@ proc ::constcl::eval \
 
 If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` [procedure](https://github.com/hoodiecrow/ConsTcl#reg-procedure) puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _handling info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
-<table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::constcl::eval-form {expr env} {
@@ -2345,7 +2358,7 @@ __splitlist__ procedure
 
 `` splitlist `` converts a Lisp list to a Tcl list with Lisp objects.
 
-<table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
 
 ```
 proc ::constcl::splitlist {vals} {
@@ -2363,7 +2376,7 @@ __eval-list__ procedure
 
 `` eval-list `` successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
 
-<table border=1><thead><tr><th colspan=2 align="left">eval-list (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">eval-list (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 proc ::constcl::eval-list {exps env} {
@@ -2476,7 +2489,7 @@ __for-seq__ procedure
 
 `` for-seq `` is a helper procedure that sets up the sequence of values that the iteration is based on. First it evaluates the code that generates the sequence, and then it converts it to a Tcl list.
 
-<table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">for-seq (internal)</th></tr></thead><tr><td>seq</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
 
 ```
 proc ::constcl::for-seq {seq env} {
@@ -2904,7 +2917,7 @@ proc ::constcl::resolve-local-defines {expr} {
 
 `` extract-from-defines `` visits every define in the given list of expressions and extracts either a variable name or a value, depending on the state of the _part_ flag, from each one of them. A Tcl list of 1) the resulting list of names or values, 2) error state, and 3) the rest of the expressions in the original list is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">extract-from-defines (internal)</th></tr></thead><tr><td>exps</td><td>a Lisp list of expressions</td></tr><tr><td>part</td><td>a flag, VARS or VALS</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
 
 ```
 proc ::constcl::extract-from-defines {exps part} {
@@ -2949,7 +2962,7 @@ proc ::constcl::extract-from-defines {exps part} {
 
 `` argument-list? `` accepts a Scheme formals list and rejects other values.
 
-<table border=1><thead><tr><th colspan=2 align="left">argument-list? (internal)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">argument-list? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::argument-list? {val} {
@@ -2999,7 +3012,7 @@ proc ::constcl::make-lambdas {vars args body} {
 
 `` make-temporaries `` creates the symbols that will act as middlemen in transferring the values to the variables.
 
-<table border=1><thead><tr><th colspan=2 align="left">make-temporaries (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">make-temporaries (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 proc ::constcl::make-temporaries {vals} {
@@ -3032,7 +3045,7 @@ proc ::constcl::gensym {prefix} {
 
 `` append-b `` joins two lists together.
 
-<table border=1><thead><tr><th colspan=2 align="left">append-b (internal)</th></tr></thead><tr><td>a</td><td>a Lisp list of Lisp values</td></tr><tr><td>b</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">append-b (internal)</th></tr></thead><tr><td>a</td><td>a Lisp list of values</td></tr><tr><td>b</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 proc ::constcl::append-b {a b} {
@@ -3075,7 +3088,7 @@ proc ::constcl::make-assignments {vars tmps} {
 
 `` make-undefineds `` creates a list of quoted undefined values.
 
-<table border=1><thead><tr><th colspan=2 align="left">make-undefineds (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of nil values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">make-undefineds (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of nil values</td></tr></table>
 
 ```
 proc ::constcl::make-undefineds {vals} {
@@ -3095,7 +3108,7 @@ The third thing an interpreter must be able to do is to present the resulting co
 
 As long as the object given to `` write `` isn't the empty string, it calls the object's `` write `` method and writes a newline.
 
-<table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">write (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg write
@@ -3118,7 +3131,7 @@ proc ::constcl::write {val args} {
 
 The `` display `` procedure is like `` write `` but it calls the object's `` display `` method and doesn't print a newline afterwards.
 
-<table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">display (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td>?port?</td><td>a port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 reg display
@@ -3361,7 +3374,7 @@ oo::class create ::constcl::Environment {
 }
 ```
 #### MkEnv generator
-<table border=1><thead><tr><th colspan=2 align="left">MkEnv (internal)</th></tr></thead><tr><td>?parms?</td><td>a Scheme formals list</td></tr><tr><td>?vals?</td><td>a Tcl list of Lisp values</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkEnv (internal)</th></tr></thead><tr><td>?parms?</td><td>a Scheme formals list</td></tr><tr><td>?vals?</td><td>a Tcl list of values</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
 
 ```
 proc ::constcl::MkEnv {args} {
@@ -3381,7 +3394,7 @@ proc ::constcl::MkEnv {args} {
 
 Recognizes an environment by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">environment? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">environment? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::environment? {val} {
@@ -3663,7 +3676,7 @@ interp alias {} N {} ::constcl::Number new
 
 `` number? `` recognizes a number by object type, not by content.
 
-<table border=1><thead><tr><th colspan=2 align="left">number? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">number? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg number?
@@ -4468,7 +4481,7 @@ proc ::constcl::MkBoolean {bool} {
 
 The `` boolean? `` predicate recognizes a Boolean by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">boolean? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">boolean? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg boolean?
@@ -4488,7 +4501,7 @@ Example:
 (not #f)    ==>  #t   ; #f yields #t, all others #f
 (not nil)   ==>  #f   ; see?
 ```
-<table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">not (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg not
@@ -4616,7 +4629,7 @@ proc ::constcl::MkChar {char} {
 
 `` char? `` recognizes Char values by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">char? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">char? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char?
@@ -5032,7 +5045,7 @@ interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
 ```
 #### procedure? procedure
-<table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg procedure?
@@ -5057,7 +5070,7 @@ Example:
 ```
 (apply + (list 2 3))   =>  5
 ```
-<table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">apply (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>what pr returns</td></tr></table>
 
 ```
 reg apply
@@ -5079,7 +5092,7 @@ Example:
 ```
 (map + '(1 2 3) '(5 6 7))   => (6 8 10)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">map (public)</th></tr></thead><tr><td>pr</td><td>a procedure</td></tr><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg map
@@ -5386,7 +5399,7 @@ proc ::constcl::port? {val} {
 
 `` call-with-input-file `` opens a file for input and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-input-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg call-with-input-file
@@ -5406,7 +5419,7 @@ proc ::constcl::call-with-input-file {filename proc} {
 
 You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
 
-<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg call-with-output-file
@@ -5424,7 +5437,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 
 `` input-port? `` recognizes an InputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">input-port? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">input-port? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg input-port?
@@ -5443,7 +5456,7 @@ proc ::constcl::input-port? {val} {
 
 `` output-port? `` recognizes an OutputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">output-port? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">output-port? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg output-port?
@@ -5731,14 +5744,14 @@ oo::class create ::constcl::Pair {
 
 `` MkPair `` generates a Pair object. Shorter form: `` cons ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkPair (internal)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkPair (internal)</th></tr></thead><tr><td>car</td><td>a value</td></tr><tr><td>cdr</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
 ```
 #### pair? procedure
-<table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pair? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg pair?
@@ -5790,7 +5803,7 @@ Example:
 (cons 'a (cons 'b nil))   ==>  (a b)
 ```
 ![#](images/consing.png)
-<table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a Lisp value</td></tr><tr><td>cdr</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a value</td></tr><tr><td>cdr</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
 ```
 reg cons
@@ -5809,7 +5822,7 @@ Example:
 ```
 (car '(a b))   ==>  a
 ```
-<table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">car (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg car
@@ -5828,7 +5841,7 @@ Example:
 ```
 (cdr '(a b))   ==>  (b)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">cdr (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg cdr
@@ -5900,7 +5913,7 @@ Example:
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-car! pair val))                ==>  (x . b)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">set-car! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
 ```
 reg set-car!
@@ -5920,7 +5933,7 @@ Example:
 (let ((pair (cons 'a 'b)) (val 'x))
   (set-cdr! pair val))                ==>  (a . x)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">set-cdr! (public)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
 ```
 reg set-cdr!
@@ -5933,7 +5946,7 @@ proc ::constcl::set-cdr! {pair val} {
 
 The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:-a-proper-list-and-two-improper-ones).
 
-<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg list?
@@ -5983,7 +5996,7 @@ Example:
 ```
 (list 1 2 3)   ==>  (1 2 3)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list (public)</th></tr></thead><tr><td>args</td><td>some values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg list
@@ -6050,7 +6063,7 @@ Example:
 ```
 (append '(a b) '(c d))   ==>  (a b c d)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">append (public)</th></tr></thead><tr><td>args</td><td>some lists</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg append
@@ -6072,7 +6085,7 @@ __copy-list__ procedure
 
 `` copy-list `` joins together two lists by recursively consing items from the first list towards the second.
 
-<table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">copy-list (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td>next</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 proc ::constcl::copy-list {pair next} {
@@ -6096,7 +6109,7 @@ Example:
 ```
 (reverse '(a b c))   ==>  (c b a)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">reverse (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg reverse
@@ -6116,7 +6129,7 @@ Example:
 (let ((lst '(a b c d e f)) (k 3))
   (list-tail lst k))                ==>  (d e f)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-tail (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg list-tail
@@ -6140,7 +6153,7 @@ Example:
 (let ((lst '(a b c d e f)) (k 3))
   (list-ref lst k))                 ==>  d
 ```
-<table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of Lisp values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-ref (public)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg list-ref
@@ -6166,7 +6179,7 @@ Example:
 (let ((lst '(a b c d e f)) (val 'd))
   (memq val lst))                      ==>  (d e f)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">memq (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg memq
@@ -6175,7 +6188,7 @@ proc ::constcl::memq {val1 val2} {
   return [member-proc eq? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">memv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">memv (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg memv
@@ -6184,7 +6197,7 @@ proc ::constcl::memv {val1 val2} {
   return [member-proc eqv? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">member (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">member (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 reg member
@@ -6199,7 +6212,7 @@ __member-proc__ procedure
 
 The `` member-proc `` helper procedure does the work for the `` memq ``, `` memv ``, and `` member `` procedures. It works by comparing against the `` car `` of the list, then recursively taking the `` cdr `` of the list.
 
-<table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">member-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values OR #f</td></tr></table>
 
 ```
 proc ::constcl::member-proc {epred val1 val2} {
@@ -6240,7 +6253,7 @@ Example:
       (key 'a))
   (assq key e))                        ==> (a . 1)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assq (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assq
@@ -6249,7 +6262,7 @@ proc ::constcl::assq {val1 val2} {
   return [assoc-proc eq? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assv (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assv
@@ -6258,7 +6271,7 @@ proc ::constcl::assv {val1 val2} {
   return [assoc-proc eqv? $val1 $val2]
 }
 ```
-<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc (public)</th></tr></thead><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 reg assoc
@@ -6273,7 +6286,7 @@ __assoc-proc__ procedure
 
 `` assoc-proc `` is a helper procedure which does the work for `` assq ``, `` assv ``, and `` assoc ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a Lisp value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">assoc-proc (internal)</th></tr></thead><tr><td>epred</td><td>an equivalence predicate</td></tr><tr><td>val1</td><td>a value</td></tr><tr><td>val2</td><td>an association list</td></tr><tr><td><i>Returns:</i></td><td>an association pair or #f</td></tr></table>
 
 ```
 proc ::constcl::assoc-proc {epred val1 val2} {
@@ -6426,7 +6439,7 @@ interp alias {} ::constcl::MkString \
 
 `` string? `` recognizes a string by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">string? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">string? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg string?
@@ -7007,7 +7020,7 @@ interp alias {} S {} ::constcl::MkSymbol
 
 `` symbol? `` recognizes a symbol by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">symbol? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg symbol?
@@ -7176,7 +7189,7 @@ oo::class create ::constcl::Vector {
 
 `` MkVector `` generates a Vector object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkVector (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp or Tcl list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkVector (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp or Tcl list of values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkVector \
@@ -7186,7 +7199,7 @@ interp alias {} ::constcl::MkVector \
 
 `` vector? `` recognizes vectors by type.
 
-<table border=1><thead><tr><th colspan=2 align="left">vector? (public)</th></tr></thead><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg vector?
@@ -7208,7 +7221,7 @@ Example:
 (let ((k 3) (val #\A))
   (make-vector k val))    ==>  #(#\A #\A #\A)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?val?</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">make-vector? (public)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>?val?</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg make-vector
@@ -7232,7 +7245,7 @@ Example:
 ```
 (vector 'a "foo" 99)   ==>  #(a "foo" 99)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector (public)</th></tr></thead><tr><td>args</td><td>some values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg vector
@@ -7274,7 +7287,7 @@ Example:
 (let ((vec #(a "foo" 99)) (k 1))
   (vector-ref vec k))              ==>  "foo"
 ```
-<table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector-ref (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg vector-ref
@@ -7306,7 +7319,7 @@ Example:
       (val 'x))
   (vector-set! vec k val))      ==>  #(a x c)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector-set! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg vector-set!
@@ -7331,7 +7344,7 @@ Example:
 ```
 (vector->list #(a b c))   ==>  (a b c)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 reg vector->list
@@ -7350,7 +7363,7 @@ Example:
 ```
 (list->vector '(1 2 3))   ==>  #(1 2 3)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-&gt;vector (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg list->vector
@@ -7371,7 +7384,7 @@ Example:
 (vector-fill! vec 'x)             ==>  #(x x x)
 vec                               ==>  #(x x x)
 ```
-<table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">vector-fill! (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td>fill</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
 
 ```
 reg vector-fill!
@@ -7507,7 +7520,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` get `` is a procedure for picking out values out of property lists. It returns either the value or `` #f `` if the key isn't found.
 
-<table border=1><thead><tr><th colspan=2 align="left">get (public)</th></tr></thead><tr><td>plist</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value OR #f</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">get (public)</th></tr></thead><tr><td>plist</td><td>a Lisp list of values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a value OR #f</td></tr></table>
 
 ```
 (define (get plist key)
@@ -7520,7 +7533,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` list-find-key `` searches for a key in a property list. If it finds it, it returns the (0-based) index of it. If it doesn't find it, it returns -1. It doesn't look at the values.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-find-key (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-find-key (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 (define (list-find-key lst key)
@@ -7530,7 +7543,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` lfk `` does the work for `` list-find-key ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">lfk (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>count</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">lfk (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>count</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 (define (lfk lst key count)
@@ -7544,7 +7557,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` list-set! `` works in analogy with `` string-set! ``. Given a list and an index, it finds the place to insert a value. Is in real trouble if the index value is out of range.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-set! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-set! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 (define (list-set! lst idx val)
@@ -7556,7 +7569,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` delete! `` removes a key-value pair from a property list. Returns the list.
 
-<table border=1><thead><tr><th colspan=2 align="left">delete! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">delete! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of values</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 (define (delete! lst key)
@@ -7574,7 +7587,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` del-seek `` does the searching for `` delete! ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">del-seek (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of Lisp values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">del-seek (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of values</td></tr><tr><td>idx</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 (define (del-seek lst idx)
@@ -7586,7 +7599,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` get-alist `` is like `` get `` but for association lists.
 
-<table border=1><thead><tr><th colspan=2 align="left">get-alist (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a Lisp value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">get-alist (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 (define (get-alist lst key)
@@ -7599,7 +7612,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` pairlis `` takes two lists like `` '(a b c) `` and `` '(1 2 3) `` and produces a list of association pairs `` '((a . 1) (b . 2) (c . 3)) ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">pairlis (public)</th></tr></thead><tr><td>a</td><td>a Lisp list of Lisp values</td></tr><tr><td>b</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pairlis (public)</th></tr></thead><tr><td>a</td><td>a Lisp list of values</td></tr><tr><td>b</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
 
 ```
 (define (pairlis a b)
@@ -7613,7 +7626,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 `` set-alist! `` updates a value in an association list, given a key.
 
-<table border=1><thead><tr><th colspan=2 align="left">set-alist! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>val</td><td>a Lisp value</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">set-alist! (public)</th></tr></thead><tr><td>lst</td><td>a Lisp list of association pairs</td></tr><tr><td>key</td><td>a symbol</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of association pairs</td></tr></table>
 
 ```
 (define (set-alist! lst key val)
@@ -7638,7 +7651,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 Returns a newly allocated copy of _list_. This copies each of the pairs comprising _list_. From MIT Scheme.
 
-<table border=1><thead><tr><th colspan=2 align="left">list-copy (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of Lisp values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of Lisp values</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">list-copy (public)</th></tr></thead><tr><td>list</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
 
 ```
 (define (list-copy list)

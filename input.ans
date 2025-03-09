@@ -18,8 +18,12 @@ letters, digits, and other characters, conforming to the rules of E{external
   E{expression}I{expression}.
 
 The parsing process translates a piece of text from external representation to
-internal representation. The external representation is a 'recipe' for an
-expression that expresses it in a unique way. 
+internal representation.
+
+h4 External representation
+
+The external representation is a 'recipe' for an expression that expresses it in
+a unique way. 
 
 For example, the external representation for a vector is a pound sign (K{#}), a
 left parenthesis (K{(}), the external representation for some values, and a right

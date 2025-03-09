@@ -265,7 +265,7 @@ name & a Tcl string \\
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf regvar (internal)} \\
 name & a Tcl string \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -353,7 +353,7 @@ will not do, but
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf atom? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -385,7 +385,7 @@ if {[T [atom? $x]]} ...
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf T (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -431,7 +431,7 @@ A Tcl version of the procedure in the Scheme base.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis-tcl (internal)} \\
-lvals & a Lisp list of Lisp values \\
+lvals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of association pairs \\
 \hline
 \end{tabular}
@@ -530,7 +530,7 @@ proc ::unbind {args} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf typeof? (internal)} \\
-val & a Lisp value \\
+val & a value \\
 type & a Tcl string \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -738,7 +738,7 @@ proc ::rw {args} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pe (internal)} \\
 str & a Tcl string, Lisp string, or a string input port \\
 ?env? & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -758,7 +758,7 @@ proc ::pe {str {env ::constcl::global_env}} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf re (internal)} \\
 port & an input port \\
 ?env? & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -796,7 +796,7 @@ proc ::p {str} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf e (internal)} \\
 expr & an expression \\
 ?env? & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -813,7 +813,7 @@ proc ::e {expr {env ::constcl::global_env}} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf w (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -922,7 +922,7 @@ oo::class create ::constcl::Dot {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf dot? (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -962,7 +962,7 @@ oo::singleton create ::constcl::EndOfFile {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eof? (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -1024,7 +1024,7 @@ The \texttt{null?} standard predicate recognizes the empty list.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf null? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -1098,7 +1098,13 @@ The main input procedures, \texttt{read} and the non-standard \texttt{parse}, do
 Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of \emph{external representation}\index{external representation}. The result of parsing is an \emph{expression}\index{expression}.
 
 
-The parsing process translates a piece of text from external representation to internal representation. The external representation is a 'recipe' for an expression that expresses it in a unique way.
+The parsing process translates a piece of text from external representation to internal representation.
+
+\subsection{External representation}
+\label{external-representation}
+\index{external representation}
+
+The external representation is a 'recipe' for an expression that expresses it in a unique way.
 
 
 For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader or parser is working through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
@@ -1962,16 +1968,16 @@ To be able to evaluate every kind of expression, a structured approach is needed
 \item[ sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of last (see page \pageref{sequence}).
 \end{description}
 \begin{description}
-\item[ definition] Syntax: \texttt{(define var val)}. Process: take a variable and a value and bind the variable (see page \pageref{definition}) to the value.
+\item[ definition] Syntax: \texttt{(define var val)}. Process: bind a variable to a location, store the value there (see page \pageref{definition}).
 \end{description}
 \begin{description}
-\item[ assignment] Syntax: \texttt{(set! var val)}. Process: take a variable and a value and set the variable (see page \pageref{assignment}) to the value.
+\item[ assignment] Syntax: \texttt{(set! var val)}. Process: take a bound variable, store the value to its location (see page \pageref{assignment}).
 \end{description}
 \begin{description}
-\item[ procedure definition] Syntax: \texttt{(lambda formals body)}. Process: see form (see page \pageref{procedure-definition}).
+\item[ procedure definition] Syntax: \texttt{(lambda formals body)}. Process: take formals and body and apply lambda to get a procedure value (see page \pageref{procedure-definition}).
 \end{description}
 \begin{description}
-\item[ procedure call] Syntax: \texttt{(operator operand \ldots )}. Process: see form (see page \pageref{procedure-call}).
+\item[ procedure call] Syntax: \texttt{(operator operand \ldots )}. Process: invoke operator on operands (see page \pageref{procedure-call}).
 \end{description}
 
 The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
@@ -1983,7 +1989,7 @@ The evaluator recognizes the syntax of the expression and chooses the appropriat
 \emph{Example: \texttt{r} $\Rightarrow$ 10 (a symbol \texttt{r} is evaluated to what it's bound to)}
 
 
-A variable\index{variable} is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
+A variable\index{variable} is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain (see page \pageref{environments}) for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
 
 
 Syntax: \emph{symbol}
@@ -1996,7 +2002,7 @@ Syntax: \emph{symbol}
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lookup (internal)} \\
 sym & a symbol \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -2019,7 +2025,7 @@ proc ::constcl::lookup {sym env} {
 Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
 
 
-Syntax: \emph{number}|\emph{string}|\emph{character}|\emph{boolean}
+Syntax: \emph{number} | \emph{string} | \emph{character} | \emph{boolean}
 
 
 \textbf{self-evaluating?} procedure
@@ -2030,7 +2036,7 @@ Only numeric, string, character, and boolean constants evaluate to themselves.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf self-evaluating? (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -2054,7 +2060,7 @@ proc ::constcl::self-evaluating? {val} {
 \emph{Example: \texttt{(quote r)} $\Rightarrow$ \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader. The argument of \texttt{quote} may be any external representation of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
+According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader (see page \pageref{reader-procedures}). The argument of \texttt{quote} may be any external representation (see page \pageref{external-representation}) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 \subsection{quote special form}
 \label{quote-special-form}
@@ -2087,13 +2093,13 @@ proc ::constcl::special-quote {expr env} {
 \emph{Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} $\Rightarrow$ 6}
 
 
-The conditional\index{conditional} form \texttt{if} evaluates a Lisp list of three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to anything other than \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated.
+The conditional form \texttt{if} takes three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to true, i.e. anything other than the value \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated. The \emph{alternate} can be omitted.
 
 \subsection{if special form}
 \label{if-special-form}
 \index{if special form}
 
-Syntax: (\textbf{if} \emph{cond} \emph{consequent} ?\emph{alternate}?)
+Syntax: (\textbf{if} \emph{condition} \emph{consequent} ?\emph{alternate}?)
 
 
 The \texttt{if} special form is expanded by \texttt{special-if}.
@@ -2103,7 +2109,7 @@ The \texttt{if} special form is expanded by \texttt{special-if}.
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-if (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -2131,17 +2137,17 @@ The two procedures that help the if form out are \texttt{/if} and \texttt{/if1}.
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if (internal)} \\
 cond & an expression \\
-consequent & an expression \\
-alternate & an expression \\
-\textit{Returns:} & a Lisp value \\
+conseq & an expression \\
+altern & an expression \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if1 (internal)} \\
 cond & an expression \\
-consequent & an expression \\
-\textit{Returns:} & a Lisp value \\
+conseq & an expression \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \index{/if}
@@ -2185,6 +2191,15 @@ The last clause may have the form
 
 The \texttt{case} special form is expanded by \texttt{special-case}. It expands to \texttt{'()} if there are no clauses (left), and to nested \texttt{if} constructs if there are some.
 
+
+Example:
+
+\begin{verbatim}
+(case 'c
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant))     ==> consonant
+\end{verbatim}
 
 \textbf{special-case} procedure
 
@@ -2409,7 +2424,7 @@ The \texttt{begin} special form is expanded by \texttt{special-begin}.
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-begin (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -2438,7 +2453,7 @@ The \texttt{/begin} helper procedure takes a Lisp list of expressions and evalua
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /begin (internal)} \\
 exps & a Lisp list of expressions \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \index{/begin}
@@ -2567,7 +2582,7 @@ proc ::constcl::rewrite-define {expr env} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /define (internal)} \\
 sym & a symbol \\
-val & a Lisp value \\
+val & a value \\
 env & an environment \\
 \textit{Returns:} & nothing \\
 \hline
@@ -2603,7 +2618,7 @@ The \texttt{set!} special form is expanded by \texttt{special-set!}.
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-set! (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -2708,7 +2723,7 @@ Once we have procedures, we can call them to have their calculations performed a
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf invoke (internal)} \\
 pr & a procedure \\
-vals & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
 \textit{Returns:} & what pr returns \\
 \hline
 \end{tabular}
@@ -2855,7 +2870,7 @@ proc ::constcl::rewrite-let {expr env} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse-bindings (internal)} \\
 name & a call-by-name name \\
-bindings & a Lisp list of Lisp values \\
+bindings & a Lisp list of values \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -2989,7 +3004,7 @@ proc ::constcl::special-let* {expr env} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-let* (internal)} \\
-bindings & a Lisp list of Lisp values \\
+bindings & a Lisp list of values \\
 body & a Lisp list of expressions \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3049,7 +3064,7 @@ The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and pro
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval (public)} \\
 expr & an expression \\
 ?env? & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -3079,7 +3094,7 @@ If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-f
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-form (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -3145,8 +3160,8 @@ proc ::constcl::binding-info {op env} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf splitlist (internal)} \\
-vals & a Lisp list of Lisp values \\
-\textit{Returns:} & a Tcl list of Lisp values \\
+vals & a Lisp list of values \\
+\textit{Returns:} & a Tcl list of values \\
 \hline
 \end{tabular}
 \index{splitlist}
@@ -3171,7 +3186,7 @@ proc ::constcl::splitlist {vals} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-list (internal)} \\
 exps & a Lisp list of expressions \\
 env & an environment \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \index{eval-list}
@@ -3325,7 +3340,7 @@ proc ::constcl::expand-for {expr env} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf for-seq (internal)} \\
 seq & an expression \\
 env & an environment \\
-\textit{Returns:} & a Tcl list of Lisp values \\
+\textit{Returns:} & a Tcl list of values \\
 \hline
 \end{tabular}
 \index{for-seq}
@@ -3873,7 +3888,7 @@ proc ::constcl::resolve-local-defines {expr} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf extract-from-defines (internal)} \\
 exps & a Lisp list of expressions \\
 part & a flag, VARS or VALS \\
-\textit{Returns:} & a Tcl list of Lisp values \\
+\textit{Returns:} & a Tcl list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -3924,7 +3939,7 @@ proc ::constcl::extract-from-defines {exps part} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf argument-list? (internal)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -3990,8 +4005,8 @@ proc ::constcl::make-lambdas {vars args body} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-temporaries (internal)} \\
-vals & a Lisp list of Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -4037,9 +4052,9 @@ proc ::constcl::gensym {prefix} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf append-b (internal)} \\
-a & a Lisp list of Lisp values \\
-b & a Lisp list of Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+a & a Lisp list of values \\
+b & a Lisp list of values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -4096,7 +4111,7 @@ proc ::constcl::make-assignments {vars tmps} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-undefineds (internal)} \\
-vals & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of nil values \\
 \hline
 \end{tabular}
@@ -4124,7 +4139,7 @@ As long as the object given to \texttt{write} isn't the empty string, it calls t
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf write (public)} \\
-val & a Lisp value \\
+val & a value \\
 ?port? & a port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -4155,7 +4170,7 @@ The \texttt{display} procedure is like \texttt{write} but it calls the object's 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf display (public)} \\
-val & a Lisp value \\
+val & a value \\
 ?port? & a port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -4423,7 +4438,7 @@ oo::class create ::constcl::Environment {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkEnv (internal)} \\
 ?parms? & a Scheme formals list \\
-?vals? & a Tcl list of Lisp values \\
+?vals? & a Tcl list of values \\
 env & an environment \\
 \textit{Returns:} & an environment \\
 \hline
@@ -4451,7 +4466,7 @@ Recognizes an environment by type.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -4786,7 +4801,7 @@ interp alias {} N {} ::constcl::Number new
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf number? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5756,7 +5771,7 @@ The \texttt{boolean?} predicate recognizes a Boolean by type.
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf boolean? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5783,7 +5798,7 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf not (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5929,7 +5944,7 @@ proc ::constcl::MkChar {char} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6427,7 +6442,7 @@ interp alias {} ::constcl::MkProcedure \
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf procedure? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6460,7 +6475,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf apply (public)} \\
 pr & a procedure \\
-vals & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
 \textit{Returns:} & what pr returns \\
 \hline
 \end{tabular}
@@ -6491,7 +6506,7 @@ Example:
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf map (public)} \\
 pr & a procedure \\
 args & some lists \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -6842,7 +6857,7 @@ proc ::constcl::port? {val} {
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-input-file (public)} \\
 filename & a filename string \\
 proc & a procedure \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -6870,7 +6885,7 @@ You can't use this procedure without deleting the first line. I take no responsi
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-output-file (public)} \\
 filename & a filename string \\
 proc & a procedure \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -6894,7 +6909,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf input-port? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6920,7 +6935,7 @@ proc ::constcl::input-port? {val} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf output-port? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -7287,8 +7302,8 @@ oo::class create ::constcl::Pair {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkPair (internal)} \\
-car & a Lisp value \\
-cdr & a Lisp value \\
+car & a value \\
+cdr & a value \\
 \textit{Returns:} & a pair \\
 \hline
 \end{tabular}
@@ -7302,7 +7317,7 @@ interp alias {} ::constcl::MkPair \
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pair? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -7368,8 +7383,8 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cons (public)} \\
-car & a Lisp value \\
-cdr & a Lisp value \\
+car & a value \\
+cdr & a value \\
 \textit{Returns:} & a pair \\
 \hline
 \end{tabular}
@@ -7396,7 +7411,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf car (public)} \\
 pair & a pair \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7422,7 +7437,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cdr (public)} \\
 pair & a pair \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7502,7 +7517,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-car! (public)} \\
 pair & a pair \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a pair \\
 \hline
 \end{tabular}
@@ -7530,7 +7545,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-cdr! (public)} \\
 pair & a pair \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a pair \\
 \hline
 \end{tabular}
@@ -7550,7 +7565,7 @@ The \texttt{list?} predicate tests if a pair is part of a proper list, one that 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -7613,8 +7628,8 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list (public)} \\
-args & some Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+args & some values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7701,7 +7716,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf append (public)} \\
 args & some lists \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7728,8 +7743,8 @@ proc ::constcl::append {args} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf copy-list (internal)} \\
 pair & a pair \\
-next & a Lisp list of Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+next & a Lisp list of values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \index{copy-list}
@@ -7760,8 +7775,8 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reverse (public)} \\
-vals & a Lisp list of Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7787,9 +7802,9 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-tail (public)} \\
-vals & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
 k & a number \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7819,9 +7834,9 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-ref (public)} \\
-vals & a Lisp list of Lisp values \\
+vals & a Lisp list of values \\
 k & a number \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -7853,8 +7868,8 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf memq (public)} \\
-val1 & a Lisp value \\
-val2 & a Lisp list of Lisp values \\
+val1 & a value \\
+val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
@@ -7868,8 +7883,8 @@ proc ::constcl::memq {val1 val2} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf memv (public)} \\
-val1 & a Lisp value \\
-val2 & a Lisp list of Lisp values \\
+val1 & a value \\
+val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
@@ -7884,8 +7899,8 @@ proc ::constcl::memv {val1 val2} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf member (public)} \\
-val1 & a Lisp value \\
-val2 & a Lisp list of Lisp values \\
+val1 & a value \\
+val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
@@ -7907,8 +7922,8 @@ The \texttt{member-proc} helper procedure does the work for the \texttt{memq}, \
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf member-proc (internal)} \\
 epred & an equivalence predicate \\
-val1 & a Lisp value \\
-val2 & a Lisp list of Lisp values \\
+val1 & a value \\
+val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
@@ -7957,7 +7972,7 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assq (public)} \\
-val1 & a Lisp value \\
+val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
@@ -7972,7 +7987,7 @@ proc ::constcl::assq {val1 val2} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assv (public)} \\
-val1 & a Lisp value \\
+val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
@@ -7988,7 +8003,7 @@ proc ::constcl::assv {val1 val2} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc (public)} \\
-val1 & a Lisp value \\
+val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
@@ -8011,7 +8026,7 @@ proc ::constcl::assoc {val1 val2} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc-proc (internal)} \\
 epred & an equivalence predicate \\
-val1 & a Lisp value \\
+val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
@@ -8184,7 +8199,7 @@ interp alias {} ::constcl::MkString \
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -8901,7 +8916,7 @@ interp alias {} S {} ::constcl::MkSymbol
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf symbol? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -9095,7 +9110,7 @@ oo::class create ::constcl::Vector {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkVector (internal)} \\
-vals & a Lisp or Tcl list of Lisp values \\
+vals & a Lisp or Tcl list of values \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9112,7 +9127,7 @@ interp alias {} ::constcl::MkVector \
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector? (public)} \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -9142,7 +9157,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-vector? (public)} \\
 k & a number \\
-?val? & a Lisp value \\
+?val? & a value \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9173,7 +9188,7 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector (public)} \\
-args & some Lisp values \\
+args & some values \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9231,7 +9246,7 @@ Example:
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-ref (public)} \\
 vec & a vector \\
 k & a number \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9271,7 +9286,7 @@ Example:
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-set! (public)} \\
 vec & a vector \\
 k & a number \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9304,7 +9319,7 @@ Example:
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector->list (public)} \\
 vec & a vector \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9329,7 +9344,7 @@ Example:
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list->vector (public)} \\
-list & a Lisp list of Lisp values \\
+list & a Lisp list of values \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9358,7 +9373,7 @@ vec                               ==>  #(x x x)
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-fill! (public)} \\
 vec & a vector \\
-fill & a Lisp value \\
+fill & a value \\
 \textit{Returns:} & a vector \\
 \hline
 \end{tabular}
@@ -9510,9 +9525,9 @@ Thereafter, each time a user-defined procedure is called, a new \texttt{Environm
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get (public)} \\
-plist & a Lisp list of Lisp values \\
+plist & a Lisp list of values \\
 key & a symbol \\
-\textit{Returns:} & a Lisp value OR \#f \\
+\textit{Returns:} & a value OR \#f \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9531,7 +9546,7 @@ key & a symbol \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-find-key (public)} \\
-lst & a Lisp list of Lisp values \\
+lst & a Lisp list of values \\
 key & a symbol \\
 \textit{Returns:} & a number \\
 \hline
@@ -9549,7 +9564,7 @@ key & a symbol \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lfk (public)} \\
-lst & a Lisp list of Lisp values \\
+lst & a Lisp list of values \\
 key & a symbol \\
 count & a number \\
 \textit{Returns:} & a number \\
@@ -9572,10 +9587,10 @@ count & a number \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-set! (public)} \\
-lst & a Lisp list of Lisp values \\
+lst & a Lisp list of values \\
 idx & a number \\
-val & a Lisp value \\
-\textit{Returns:} & a Lisp value \\
+val & a value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9593,9 +9608,9 @@ val & a Lisp value \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delete! (public)} \\
-lst & a Lisp list of Lisp values \\
+lst & a Lisp list of values \\
 key & a symbol \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9619,9 +9634,9 @@ key & a symbol \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf del-seek (public)} \\
-lst & a Lisp list of Lisp values \\
+lst & a Lisp list of values \\
 idx & a number \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9641,7 +9656,7 @@ idx & a number \\
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get-alist (public)} \\
 lst & a Lisp list of association pairs \\
 key & a symbol \\
-\textit{Returns:} & a Lisp value \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
@@ -9660,8 +9675,8 @@ key & a symbol \\
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis (public)} \\
-a & a Lisp list of Lisp values \\
-b & a Lisp list of Lisp values \\
+a & a Lisp list of values \\
+b & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of association pairs \\
 \hline
 \end{tabular}
@@ -9684,7 +9699,7 @@ b & a Lisp list of Lisp values \\
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-alist! (public)} \\
 lst & a Lisp list of association pairs \\
 key & a symbol \\
-val & a Lisp value \\
+val & a value \\
 \textit{Returns:} & a Lisp list of association pairs \\
 \hline
 \end{tabular}
@@ -9723,8 +9738,8 @@ Returns a newly allocated copy of \emph{list}. This copies each of the pairs com
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-copy (public)} \\
-list & a Lisp list of Lisp values \\
-\textit{Returns:} & a Lisp list of Lisp values \\
+list & a Lisp list of values \\
+\textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
 \begin{lstlisting}

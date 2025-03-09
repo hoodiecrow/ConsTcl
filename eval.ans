@@ -14,11 +14,11 @@ DL variable reference LD Syntax: a symbol. Process: R{variable lookup}{variable-
 DL constant literal LD Syntax: a number, string, character, or boolean. Process: R{take the value}{constant-literal}.
 DL quotation LD Syntax: K{(quote datum)}. Process: R{take the datum}{quotation}.
 DL conditional LD Syntax: K{if}, K{case}, or K{cond}. Process: R{depends on which syntax}{conditional}.
-DL sequence LD Syntax: K{(begin expression ...)}. Process: R{evaluate all expressions, take value of last}{sequence}.
-DL definition LD Syntax: K{(define var val)}. Process: take a variable and a value and R{bind the variable}{definition} to the value.
-DL assignment LD Syntax: K{(set! var val)}. Process: take a variable and a value and R{set the variable}{assignment} to the value.
-DL procedure definition LD Syntax: K{(lambda formals body)}. Process: R{see form}{procedure-definition}.
-DL procedure call LD Syntax: K{(operator operand ...)}. Process: R{see form}{procedure-call}.
+DL sequence LD Syntax: K{(begin expression ...)}. Process: evaluate all expressions, R{take value of last}{sequence}.
+DL definition LD Syntax: K{(define var val)}. Process: R{bind a variable to a location, store the value there}{definition}.
+DL assignment LD Syntax: K{(set! var val)}. Process: R{take a bound variable, store the value to its location}{assignment}.
+DL procedure definition LD Syntax: K{(lambda formals body)}. Process: take formals and body and R{apply lambda to get a procedure value}{procedure-definition}.
+DL procedure call LD Syntax: K{(operator operand ...)}. Process: R{invoke operator on operands}{procedure-call}.
 
 The evaluator
 recognizes the syntax of the expression and chooses the appropriate
@@ -29,12 +29,12 @@ h3 Variable reference
 
 EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
 
-A variableI{variable} is an identifier (symbol) bound to a
-location in the environment. If an expression consists of an identifier it is
-evaluated to the value stored in that location. This is handled by the helper
-procedure K{lookup}. It searches the environment chain for the identifier, and
-returns the value stored in the location it is bound to.  It is an error to do
-lookup on an unbound symbol.
+A variableI{variable} is an identifier (symbol) bound to a location in the
+environment. If an expression consists of an identifier it is evaluated to the
+value stored in that location. This is handled by the helper procedure
+K{lookup}. It searches the R{environment chain}{environments} for the
+identifier, and returns the value stored in the location it is bound to.  It is
+an error to do lookup on an unbound symbol.
 
 Syntax: E{symbol}
 
@@ -73,7 +73,7 @@ Not just numbers but booleans, characters, and strings
 evaluate to themselves, to their innate value. Because of this, they are called
 self-evaluating or autoquoting types (see next section).
 
-Syntax: E{number}|E{string}|E{character}|E{boolean}
+Syntax: E{number} | E{string} | E{character} | E{boolean}
 
 B{self-evaluating?} procedure
 
@@ -112,9 +112,10 @@ value. Well, sometimes one wishes to use the symbol itself as a value. That is
 partly what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol
 K{x} itself and not to any value that might be stored under it. This is so
 common that there is a shorthand notation for it: K{'x} is interpreted as
-K{(quote x)} by the Lisp reader. The argument of K{quote} may be any external
-representation of a Lisp object. In this way, for instance a vector or list
-constant can be introduced in the program text.
+K{(quote x)} by the R{Lisp reader}{reader-procedures}. The argument of K{quote}
+may be any R{external representation}{external-representation} of a Lisp object.
+In this way, for instance a vector or list constant can be introduced in the
+program text.
 
 H4 quote special form
 
@@ -145,16 +146,16 @@ h3 Conditional
 
 EM Example: K{(if (> 99 100) (* 2 2) (+ 2 4))} ==> 6
 
-The conditionalI{conditional} form K{if} evaluates a Lisp list of three
-expressions. The first, the E{condition}, is evaluated first. If it evaluates to
-anything other than K{#f} (false), the second expression (the E{consequent}) is
-evaluated and the value returned. Otherwise, the third expression (the
-E{alternate}) is evaluated and the value returned. One of the two latter
-expressions will be evaluated, and the other will remain unevaluated.
+The conditional form K{if} takes three expressions. The first, the E{condition},
+is evaluated first. If it evaluates to true, i.e. anything other than the value
+K{#f} (false), the second expression (the E{consequent}) is evaluated and the
+value returned. Otherwise, the third expression (the E{alternate}) is evaluated
+and the value returned. One of the two latter expressions will be evaluated, and
+the other will remain unevaluated. The E{alternate} can be omitted.
 
 H4 if special form
 
-Syntax: (B{if} E{cond} E{consequent} ?E{alternate}?)
+Syntax: (B{if} E{condition} E{consequent} ?E{alternate}?)
 
 The K{if} special form is expanded by K{special-if}.
 
@@ -186,11 +187,11 @@ B{/if} procedure
 B{/if1} procedure
 
 PR(
-/if (internal);cond expr consequent expr alternate expr -> val
+/if (internal);cond expr conseq expr altern expr -> val
 PR)
 
 PR(
-/if1 (internal);cond expr consequent expr -> val
+/if1 (internal);cond expr conseq expr -> val
 PR)
 
 IX /if
@@ -244,6 +245,15 @@ The last clause may have the form
 The K{case} special form is expanded by K{special-case}.
 It expands to K{'()} if there are
 no clauses (left), and to nested K{if} constructs if there are some.
+
+Example:
+
+VB(
+(case 'c
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant))     ==> consonant
+VB)
 
 B{special-case} procedure
 
