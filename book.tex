@@ -1947,7 +1947,7 @@ proc ::constcl::read-vector-expr {} {
 \chapter{Evaluation}
 \label{evaluation}
 
-The second thing an interpreter must be able to do is to reduce expressions to their \emph{normal form}, or \emph{evaluate}\index{eval}\index{evaluator} them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
+The second thing an interpreter must be able to do is to reduce expressions to their \emph{normal form}, or \emph{evaluate}\index{eval}\index{evaluate} them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
 
 
 To be able to evaluate every kind of expression, a structured approach is needed. Lisp has nine syntactic forms, each with its own syntax, and each with its own process of evaluation.
@@ -1957,7 +1957,7 @@ To be able to evaluate every kind of expression, a structured approach is needed
 \item[constant literal] Syntax: a number, string, character, or boolean. Process: take the value (see page \pageref{constant-literal}).
 \item[quotation] Syntax: \texttt{(quote datum)}. Process: take the datum (see page \pageref{quotation}).
 \item[conditional] Syntax: \texttt{if}, \texttt{case}, or \texttt{cond}. Process: depends on which syntax (see page \pageref{conditional}).
-\item[sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of last (see page \pageref{sequence}).
+\item[sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of the last (see page \pageref{sequence}).
 \item[definition] Syntax: \texttt{(define var val)}. Process: bind a variable to a location, store the value there (see page \pageref{definition}).
 \item[assignment] Syntax: \texttt{(set! var val)}. Process: take a bound variable, store the value to its location (see page \pageref{assignment}).
 \item[procedure definition] Syntax: \texttt{(lambda formals body)}. Process: take formals and body and apply lambda to get a procedure value (see page \pageref{procedure-definition}).
@@ -1966,6 +1966,9 @@ To be able to evaluate every kind of expression, a structured approach is needed
 
 The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
 
+
+A word about \emph{environments}: an environment is where evaluating code keeps track of things. This is why most of the procedures in this chapter get a reference to an environment when they are called. More about environments very soon (see page \pageref{environments}).
+
 \section{Variable reference}
 \label{variable-reference}
 \index{variable reference}
@@ -1973,7 +1976,10 @@ The evaluator recognizes the syntax of the expression and chooses the appropriat
 \emph{Example: \texttt{r} $\Rightarrow$ 10 (a symbol \texttt{r} is evaluated to what it's bound to)}
 
 
-A variable\index{variable} is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure \texttt{lookup}. It searches the environment chain (see page \pageref{environments}) for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
+A variable\index{variable} is about a symbol, a location in the environment, and a value. The symbol is \emph{bound}\index{bound symbol} to the location, and the value is stored there. When an expression consists of the symbol, the evaluator does \emph{lookup} and finds the value.
+
+
+This is handled by the helper procedure \texttt{lookup}. It (or rather, the helper procedure \texttt{binding-info}) searches the environment chain (see page \pageref{environments}) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
 
 
 Syntax: \emph{symbol}
@@ -2015,7 +2021,7 @@ Syntax: \emph{number} | \emph{string} | \emph{character} | \emph{boolean}
 \textbf{self-evaluating?} procedure
 
 
-Only numeric, string, character, and boolean constants evaluate to themselves.
+Only numeric, string, character, and boolean constants evaluate to themselves. This procedure returns \texttt{\#t} if the given value is a self-evaluating value, and \texttt{\#f} otherwise.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2044,7 +2050,7 @@ proc ::constcl::self-evaluating? {val} {
 \emph{Example: \texttt{(quote r)} $\Rightarrow$ \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader (see page \pageref{reader-procedures}). The argument of \texttt{quote} may be any external representation (see page \pageref{external-representation}) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
+According to the rules of variable reference, a symbol evaluates to its stored value. Sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader (see page \pageref{reader-procedures}). The argument of \texttt{quote} may be any external representation (see page \pageref{external-representation}) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 \subsection{quote special form}
 \label{quote-special-form}
@@ -2289,7 +2295,7 @@ or
 (\emph{test} \textbf{=>} \emph{recipient})
 
 
-where \emph{recipient} is a procedure that accepts one argument, which is evaluated with the result of the predicate as argument.
+where \emph{recipient} is a procedure that accepts one argument, which is evaluated with the result of the predicate as argument if the predicate returns a true value.
 
 
 The last clause may have the form
@@ -2392,10 +2398,10 @@ proc ::constcl::do-cond {tail env} {
 \emph{Example: \texttt{(begin (define r 10) (* r r))} $\Rightarrow$ 100}
 
 
-When expressions are evaluated in sequence\index{sequence}, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
+There are times when one wants to treat a number of expressions as if they were one single expression (e.g. in the consequent or alternate of an \texttt{if} form). The \texttt{begin} special form bundles up expressions as an aggregate form. Internally, it sees to it that all the expressions are evaluated in order and that the resulting value of the last one is returned as the aggregate's result.
 
 
-As part of the processing of sequences \emph{local defines} are resolved, acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment. See the part about resolving local defines (see page \pageref{resolving-local-defines}).
+As part of the processing of sequences \emph{local defines} are resolved (see page \pageref{resolving-local-defines}), acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment.
 
 
 The following forms have an implicit \texttt{begin} in their bodies and the use of \texttt{begin} is therefore unnecessary with them:
@@ -2471,7 +2477,7 @@ proc ::constcl::/begin {exps env} {
 \emph{Example: \texttt{(define r 10)} $\Rightarrow$ \ldots  (a definition doesn't evaluate to anything)}
 
 
-We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
 
 \subsection{define special form}
 \label{define-special-form}
@@ -2531,19 +2537,7 @@ proc ::constcl::special-define {expr env} {
 \textbf{rewrite-define} procedure
 
 
-\texttt{define} has two variants, one of which requires some rewriting. It's the one with an implied \texttt{lambda} call, the one that defines a procedure.
-
-
-(define (\emph{symbol} \emph{formals}) \emph{body})
-
-
-is transformed by \texttt{rewrite-define} into
-
-
-(define \emph{symbol} (lambda \emph{formals} \emph{body}))
-
-
-which conforms better to \texttt{eval}'s standard of (define \emph{symbol} \emph{value}). The other variant passes through \texttt{rewrite-define} unchanged.
+\texttt{rewrite-define} rewrites ``procedural define'' syntaxes to their equivalent forms with \texttt{lambda}, which unifies the syntaxes to (define \emph{symbol} \emph{value}). That syntax passes through \texttt{rewrite-define} unchanged.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -2571,6 +2565,9 @@ proc ::constcl::rewrite-define {expr env} {
 
 \textbf{/define} procedure
 
+
+The \texttt{/define} helper procedure carries out the binding of a symbol in a given environment, and stores the value in the location of binding.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /define (internal)} \\
@@ -2584,6 +2581,7 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
+  # will throw an error if $sym is bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -2595,7 +2593,13 @@ proc ::constcl::/define {sym val env} {
 \emph{Example: \texttt{(set! r 20)} $\Rightarrow$ 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)}
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The \texttt{set!} special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+Once again we consider the relationship of a symbol, an environment, and a value. Once a symbol is bound to a location in the environment, the value at that location can be changed with reference to the symbol, altering the value of the variable. The process is called assignment.
+
+
+It is carried out by the \texttt{set!} special form. Given a symbol and a value, it finds the symbol's binding environment and updates the location with the value. It returns the value, so calls to \texttt{set!} can be chained: \texttt{(set! foo (set! bar 99))} sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+
+
+It is an error to do assignment on an unbound symbol.
 
 \subsection{set! special form}
 \label{set-special-form}
@@ -2644,7 +2648,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure? \texttt{(define (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square root of the sum of two squares.
 
 
-The lambda special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is packed inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
+The \texttt{lambda} special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is bundled inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
 
 \begin{pulledtext}
@@ -2704,7 +2708,7 @@ proc ::constcl::special-lambda {expr env} {
 \emph{Example: \texttt{(+ 1 6)} $\Rightarrow$ 7}
 
 
-Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it will return 121.
+Once we have procedures, we can \emph{call} them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it would return 121.
 
 
 \texttt{invoke} arranges for a procedure to be called with each of the values in the \emph{argument list} (the list of operands). It checks if \emph{pr} really is a procedure, and determines whether to call \emph{pr} as an object or as a Tcl command. Before \texttt{invoke} is called, the argument list should be evaluated with \texttt{eval-list} (see below).
@@ -2736,7 +2740,7 @@ proc ::constcl::invoke {pr vals} {
 \label{binding-forms}
 \index{Binding forms}
 
-The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of the procedure definition form and a procedure call. But their use is sufficiently distinguished to earn them their own heading.
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call. But their use is sufficiently distinguished to earn them their own heading.
 
 \subsection{let special form}
 \label{let-special-form}
@@ -2754,7 +2758,7 @@ or
 where \emph{body} is one or more expressions.
 
 
-The \texttt{let} special form (both forms) is expanded by \texttt{special-let}. They are ultimately rewritten to \texttt{lambda} constructs and evaluated as such.
+The \texttt{let} special form (both forms) is expanded by \texttt{special-let}. They are ultimately rewritten to calls to \texttt{lambda} constructs and evaluated as such.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3039,6 +3043,9 @@ Not only procedures but binding forms (such as \texttt{let}) create new environm
 
 Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
 
+
+The other side of the coin is that the evaluator uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
+
 \begin{figure}[h!]\includegraphics{images/environments.png}\captionsetup{labelformat=empty}\caption{ Two sample environments}\label{fig:-two-sample-environments}\end{figure}
 
 I will talk some more about the implementation of environments in a later section.
@@ -3046,6 +3053,9 @@ I will talk some more about the implementation of environments in a later sectio
 \section{The evaluator}
 \label{the-evaluator}
 \index{the evaluator}
+
+Now that all nine syntactic forms are in place and we have a basic understanding of the environment, we can start assembling the evaluator.
+
 \subsection{eval procedure}
 \label{eval-procedure}
 \index{eval procedure}
@@ -3082,6 +3092,9 @@ proc ::constcl::eval \
 
 If the \texttt{car} of the expression (the operator) is a symbol, \texttt{eval-form} looks at the \emph{binding information} (which the \texttt{reg} procedure (see page \pageref{reg-procedure}) puts into the standard library and thereby the global environment) for the symbol. The \emph{binding type} tells in general how the expression should be treated: as a special form, a variable, or a macro (see page \pageref{macros}). The \emph{handling info} gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
+
+The seven remaining syntactic forms are implemented as special forms and handled when the relevant symbol appears in the \texttt{car} of the expression. Their \emph{binding type} is \texttt{SPECIAL} and the \emph{handling info} consists of the name of the procedure expanding the special form. The procedure is called with the expression and the environment as arguments.
+
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-form (internal)} \\
@@ -3107,8 +3120,7 @@ proc ::constcl::eval-form {expr env} {
         invoke $hinfo [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
+        eval [$hinfo $expr $env] $env
       }
       default {
         error "unrecognized binding type" $btype
@@ -3137,10 +3149,10 @@ env & an environment \\
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
   # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
+  if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
+  } else {
+    return [$actual_env get $op]
   }
 }
 \end{lstlisting}
@@ -3185,7 +3197,6 @@ env & an environment \\
 \index{eval-list}
 \begin{lstlisting}
 proc ::constcl::eval-list {exps env} {
-  # don't convert to /if, it breaks (fact 100)
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]

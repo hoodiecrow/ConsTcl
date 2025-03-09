@@ -1411,7 +1411,7 @@ Syntax: `` (quote datum) ``. Process: [take the datum](https://github.com/hoodie
 1.  conditional  
 Syntax: `` if ``, `` case ``, or `` cond ``. Process: [depends on which syntax](https://github.com/hoodiecrow/ConsTcl#conditional).
 1.  sequence  
-Syntax: `` (begin expression ...) ``. Process: evaluate all expressions, [take value of last](https://github.com/hoodiecrow/ConsTcl#sequence).
+Syntax: `` (begin expression ...) ``. Process: evaluate all expressions, [take value of the last](https://github.com/hoodiecrow/ConsTcl#sequence).
 1.  definition  
 Syntax: `` (define var val) ``. Process: [bind a variable to a location, store the value there](https://github.com/hoodiecrow/ConsTcl#definition).
 1.  assignment  
@@ -1423,12 +1423,18 @@ Syntax: `` (operator operand ...) ``. Process: [invoke operator on operands](htt
 
 The evaluator recognizes the syntax of the expression and chooses the appropriate process to evaluate it. How this happens for the nine syntactic forms will be described in the following sections.
 
+
+A word about _environments_: an environment is where evaluating code keeps track of things. This is why most of the procedures in this chapter get a reference to an environment when they are called. More about environments [very soon](https://github.com/hoodiecrow/ConsTcl#environments).
+
 ### Variable reference
 
  _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 
-A variable is an identifier (symbol) bound to a location in the environment. If an expression consists of an identifier it is evaluated to the value stored in that location. This is handled by the helper procedure `` lookup ``. It searches the [environment chain](https://github.com/hoodiecrow/ConsTcl#environments) for the identifier, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol.
+A variable is about a symbol, a location in the environment, and a value. The symbol is _bound_ to the location, and the value is stored there. When an expression consists of the symbol, the evaluator does _lookup_ and finds the value.
+
+
+This is handled by the helper procedure `` lookup ``. It (or rather, the helper procedure `` binding-info ``) searches the [environment chain](https://github.com/hoodiecrow/ConsTcl#environments) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
 
 
 Syntax: _symbol_
@@ -1460,7 +1466,7 @@ Syntax: _number_ | _string_ | _character_ | _boolean_
 __self-evaluating?__ procedure
 
 
-Only numeric, string, character, and boolean constants evaluate to themselves.
+Only numeric, string, character, and boolean constants evaluate to themselves. This procedure returns `` #t `` if the given value is a self-evaluating value, and `` #f `` otherwise.
 
 <table border=1><thead><tr><th colspan=2 align="left">self-evaluating? (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -1481,7 +1487,7 @@ proc ::constcl::self-evaluating? {val} {
  _Example: `` (quote r) `` ⇒ `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Well, sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the [Lisp reader](https://github.com/hoodiecrow/ConsTcl#reader-procedures). The argument of `` quote `` may be any [external representation](https://github.com/hoodiecrow/ConsTcl#external-representation) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
+According to the rules of variable reference, a symbol evaluates to its stored value. Sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the [Lisp reader](https://github.com/hoodiecrow/ConsTcl#reader-procedures). The argument of `` quote `` may be any [external representation](https://github.com/hoodiecrow/ConsTcl#external-representation) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 #### quote special form
 
@@ -1679,7 +1685,7 @@ or
 (_test_ __=>__ _recipient_)
 
 
-where _recipient_ is a procedure that accepts one argument, which is evaluated with the result of the predicate as argument.
+where _recipient_ is a procedure that accepts one argument, which is evaluated with the result of the predicate as argument if the predicate returns a true value.
 
 
 The last clause may have the form
@@ -1767,10 +1773,10 @@ proc ::constcl::do-cond {tail env} {
  _Example: `` (begin (define r 10) (* r r)) `` ⇒ 100_
 
 
-When expressions are evaluated in sequence, the order is important for two reasons. If the expressions have any side effects, they happen in the same order of sequence. Also, if expressions are part of a pipeline of calculations, then they need to be processed in the order of that pipeline.
+There are times when one wants to treat a number of expressions as if they were one single expression (e.g. in the consequent or alternate of an `` if `` form). The `` begin `` special form bundles up expressions as an aggregate form. Internally, it sees to it that all the expressions are evaluated in order and that the resulting value of the last one is returned as the aggregate's result.
 
 
-As part of the processing of sequences _local defines_ are resolved, acting on expressions of the form `` (begin (define ... `` when in a local environment. See the part about [resolving local defines](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines).
+As part of the processing of sequences _local defines_ [are resolved](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines), acting on expressions of the form `` (begin (define ... `` when in a local environment.
 
 
 The following forms have an implicit `` begin `` in their bodies and the use of `` begin `` is therefore unnecessary with them:
@@ -1829,7 +1835,7 @@ proc ::constcl::/begin {exps env} {
  _Example: `` (define r 10) `` ⇒ ... (a definition doesn't evaluate to anything)_
 
 
-We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier, then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
 
 #### define special form
 
@@ -1881,19 +1887,7 @@ proc ::constcl::special-define {expr env} {
 __rewrite-define__ procedure
 
 
-`` define `` has two variants, one of which requires some rewriting. It's the one with an implied `` lambda `` call, the one that defines a procedure.
-
-
-(define (_symbol_ _formals_) _body_)
-
-
-is transformed by `` rewrite-define `` into
-
-
-(define _symbol_ (lambda _formals_ _body_))
-
-
-which conforms better to `` eval ``'s standard of (define _symbol_ _value_). The other variant passes through `` rewrite-define `` unchanged.
+`` rewrite-define `` rewrites ``procedural define'' syntaxes to their equivalent forms with `` lambda ``, which unifies the syntaxes to (define _symbol_ _value_). That syntax passes through `` rewrite-define `` unchanged.
 
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-define (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1914,11 +1908,15 @@ proc ::constcl::rewrite-define {expr env} {
 
 __/define__ procedure
 
+
+The `` /define `` helper procedure carries out the binding of a symbol in a given environment, and stores the value in the location of binding.
+
 <table border=1><thead><tr><th colspan=2 align="left">/define (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>val</td><td>a value</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
+  # will throw an error if $sym is bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -1928,7 +1926,13 @@ proc ::constcl::/define {sym val env} {
  _Example: `` (set! r 20) `` ⇒ 20 (`` r `` is a bound symbol, so it's allowed to assign to it)_
 
 
-Once a variable has been created, the value at the location it is bound to can be changed (hence the name `variable', something that can vary). The process is called assignment. The `` set! `` special form does assignment: it modifies an existing variable that is bound somewhere in the environment chain. It finds the variable's environment and updates the binding. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+Once again we consider the relationship of a symbol, an environment, and a value. Once a symbol is bound to a location in the environment, the value at that location can be changed with reference to the symbol, altering the value of the variable. The process is called assignment.
+
+
+It is carried out by the `` set! `` special form. Given a symbol and a value, it finds the symbol's binding environment and updates the location with the value. It returns the value, so calls to `` set! `` can be chained: `` (set! foo (set! bar 99)) `` sets both variables to 99. By Scheme convention, procedures that modify variables have `!' at the end of their name.
+
+
+It is an error to do assignment on an unbound symbol.
 
 #### set! special form
 
@@ -1967,7 +1971,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
 
-The lambda special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is packed inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+The `` lambda `` special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is bundled inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
 
 
 
@@ -2017,7 +2021,7 @@ proc ::constcl::special-lambda {expr env} {
  _Example: `` (+ 1 6) `` ⇒ 7_
 
 
-Once we have procedures, we can call them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it will return 121.
+Once we have procedures, we can _call_ them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it would return 121.
 
 
 `` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with `` eval-list `` (see below).
@@ -2039,7 +2043,7 @@ proc ::constcl::invoke {pr vals} {
 ```
 ### Binding forms
 
-The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of the procedure definition form and a procedure call. But their use is sufficiently distinguished to earn them their own heading.
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call. But their use is sufficiently distinguished to earn them their own heading.
 
 #### let special form
 
@@ -2055,7 +2059,7 @@ or
 where _body_ is one or more expressions.
 
 
-The `` let `` special form (both forms) is expanded by `` special-let ``. They are ultimately rewritten to `` lambda `` constructs and evaluated as such.
+The `` let `` special form (both forms) is expanded by `` special-let ``. They are ultimately rewritten to calls to `` lambda `` constructs and evaluated as such.
 
 <table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2280,11 +2284,17 @@ Not only procedures but binding forms (such as `` let ``) create new environment
 
 Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
 
+
+The other side of the coin is that the evaluator uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
+
 ![#](images/environments.png)
 
 I will talk some more about the implementation of environments in a later section.
 
 ### The evaluator
+
+Now that all nine syntactic forms are in place and we have a basic understanding of the environment, we can start assembling the evaluator.
+
 #### eval procedure
 
 The heart of the Lisp interpreter, `` eval `` takes a Lisp expression and processes it according to its form. Variable reference and constant literals are handled here, but the other seven syntactic forms are delegated to `` eval-form ``.
@@ -2311,6 +2321,9 @@ proc ::constcl::eval \
 
 If the `` car `` of the expression (the operator) is a symbol, `` eval-form `` looks at the _binding information_ (which the `` reg `` [procedure](https://github.com/hoodiecrow/ConsTcl#reg-procedure) puts into the standard library and thereby the global environment) for the symbol. The _binding type_ tells in general how the expression should be treated: as a special form, a variable, or a [macro](https://github.com/hoodiecrow/ConsTcl#macros). The _handling info_ gives the exact procedure that will take care of the expression. If the operator isn't a symbol, it is evaluated and applied to the evaluated rest of the expression.
 
+
+The seven remaining syntactic forms are implemented as special forms and handled when the relevant symbol appears in the `` car `` of the expression. Their _binding type_ is `` SPECIAL `` and the _handling info_ consists of the name of the procedure expanding the special form. The procedure is called with the expression and the environment as arguments.
+
 <table border=1><thead><tr><th colspan=2 align="left">eval-form (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
@@ -2330,8 +2343,7 @@ proc ::constcl::eval-form {expr env} {
         invoke $hinfo [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
+        eval [$hinfo $expr $env] $env
       }
       default {
         error "unrecognized binding type" $btype
@@ -2354,10 +2366,10 @@ The `` binding-info `` procedure takes a symbol and returns a list of two items:
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
   # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
+  if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
+  } else {
+    return [$actual_env get $op]
   }
 }
 ```
@@ -2389,7 +2401,6 @@ __eval-list__ procedure
 
 ```
 proc ::constcl::eval-list {exps env} {
-  # don't convert to /if, it breaks (fact 100)
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]

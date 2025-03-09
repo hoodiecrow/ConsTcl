@@ -999,6 +999,7 @@ proc ::constcl::rewrite-define {expr env} {
 
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
+  # will throw an error if $sym is bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -1205,8 +1206,7 @@ proc ::constcl::eval-form {expr env} {
         invoke $hinfo [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
+        eval [$hinfo $expr $env] $env
       }
       default {
         error "unrecognized binding type" $btype
@@ -1220,10 +1220,10 @@ proc ::constcl::eval-form {expr env} {
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
   # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
+  if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
+  } else {
+    return [$actual_env get $op]
   }
 }
 
@@ -1237,7 +1237,6 @@ proc ::constcl::splitlist {vals} {
 }
 
 proc ::constcl::eval-list {exps env} {
-  # don't convert to /if, it breaks (fact 100)
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]

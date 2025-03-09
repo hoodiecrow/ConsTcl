@@ -2,7 +2,7 @@
 H2 Evaluation
 
 The second thing an interpreter must be able to do is to reduce expressions to
-their E{normal form}, or E{evaluate}I{eval}I{evaluator} them. As an example, 2 +
+their E{normal form}, or E{evaluate}I{eval}I{evaluate} them. As an example, 2 +
 6 and 8 are two expressions that have the same value, but the latter is in
 normal form (can't be reduced further) and the former is not.
 
@@ -14,7 +14,7 @@ DL variable reference LD Syntax: a symbol. Process: R{variable lookup}{variable-
 DL constant literal LD Syntax: a number, string, character, or boolean. Process: R{take the value}{constant-literal}.
 DL quotation LD Syntax: K{(quote datum)}. Process: R{take the datum}{quotation}.
 DL conditional LD Syntax: K{if}, K{case}, or K{cond}. Process: R{depends on which syntax}{conditional}.
-DL sequence LD Syntax: K{(begin expression ...)}. Process: evaluate all expressions, R{take value of last}{sequence}.
+DL sequence LD Syntax: K{(begin expression ...)}. Process: evaluate all expressions, R{take value of the last}{sequence}.
 DL definition LD Syntax: K{(define var val)}. Process: R{bind a variable to a location, store the value there}{definition}.
 DL assignment LD Syntax: K{(set! var val)}. Process: R{take a bound variable, store the value to its location}{assignment}.
 DL procedure definition LD Syntax: K{(lambda formals body)}. Process: take formals and body and R{apply lambda to get a procedure value}{procedure-definition}.
@@ -25,16 +25,25 @@ recognizes the syntax of the expression and chooses the appropriate
 process to evaluate it. How this happens for the nine syntactic forms will be described in the following
 sections.
 
+A word about E{environments}: an environment is where evaluating code keeps
+track of things. This is why most of the procedures in this chapter get a
+reference to an environment when they are called. More about environments R{very
+  soon}{environments}.
+
 h3 Variable reference
 
 EM Example: K{r} ==> 10 (a symbol K{r} is evaluated to what it's bound to)
 
-A variableI{variable} is an identifier (symbol) bound to a location in the
-environment. If an expression consists of an identifier it is evaluated to the
-value stored in that location. This is handled by the helper procedure
-K{lookup}. It searches the R{environment chain}{environments} for the
-identifier, and returns the value stored in the location it is bound to.  It is
-an error to do lookup on an unbound symbol.
+A variableI{variable} is about a symbol, a location in the environment, and a
+value. The symbol is E{bound}I{bound symbol} to the location, and the value is
+stored there. When an expression consists of the symbol, the evaluator does
+E{lookup} and finds the value.
+
+This is handled by the helper procedure K{lookup}. It (or rather, the helper
+procedure K{binding-info}) searches the R{environment chain}{environments} for
+the symbol, and returns the value stored in the location it is bound to.  It is
+an error to do lookup on an unbound symbol, or a symbol that is bound for some
+other purpose, such as being a keyword or a macro.
 
 Syntax: E{symbol}
 
@@ -69,15 +78,17 @@ h3 Constant literal
 
 EM Example: K{99} ==> 99 (a number evaluates to itself)
 
-Not just numbers but booleans, characters, and strings
-evaluate to themselves, to their innate value. Because of this, they are called
-self-evaluating or autoquoting types (see next section).
+Not just numbers but booleans, characters, and strings evaluate to themselves,
+to their innate value. Because of this, they are called self-evaluating or
+autoquoting types (see next section).
 
 Syntax: E{number} | E{string} | E{character} | E{boolean}
 
 B{self-evaluating?} procedure
 
 Only numeric, string, character, and boolean constants evaluate to themselves.
+This procedure returns K{#t} if the given value is a self-evaluating value, and
+K{#f} otherwise.
 
 PR(
 self-evaluating? (internal);val val -> bool
@@ -108,7 +119,7 @@ h3 Quotation
 EM Example: K{(quote r)} ==> K{r} (quotation makes the symbol evaluate to itself, like a constant)
 
 According to the rules of variable reference, a symbol evaluates to its stored
-value. Well, sometimes one wishes to use the symbol itself as a value. That is
+value. Sometimes one wishes to use the symbol itself as a value. That is
 partly what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol
 K{x} itself and not to any value that might be stored under it. This is so
 common that there is a shorthand notation for it: K{'x} is interpreted as
@@ -251,9 +262,9 @@ VB(
   (else 'consonant))     ==> consonant
 VB)
 
-The K{case} special form is expanded by K{special-case}.
-It expands to K{'()} if there are
-no clauses (left), and to nested K{if} constructs if there are some.
+The K{case} special form is expanded by K{special-case}.  It expands to K{'()}
+if there are no clauses (left), and to nested K{if} constructs if there are
+some.
 
 B{special-case} procedure
 
@@ -363,10 +374,10 @@ TT)
 
 H4 cond special form
 
-K{cond} is the third conditional form.
-The K{cond} form has a list of clauses, each with a predicate and a body. The
-clauses is considered in order, and if a predicate evaluates to something other
-than K{#f} the body is evaluated and the remaining clauses are ignored.
+K{cond} is the third conditional form.  The K{cond} form has a list of clauses,
+each with a predicate and a body. The clauses is considered in order, and if a
+predicate evaluates to something other than K{#f} the body is evaluated and the
+remaining clauses are ignored.
 
 Syntax: (B{cond} E{clause} ...)
 
@@ -379,7 +390,8 @@ or
 (E{test} B{=>} E{recipient})
 
 where E{recipient} is a procedure that accepts one argument, which is evaluated
-with the result of the predicate as argument.
+with the result of the predicate as argument if the predicate returns a true
+value.
 
 The last clause may have the form
 
@@ -394,9 +406,9 @@ VB(
         (else 'equal)))      ==> equal
 VB)
 
-The K{cond} special form is expanded by K{special-cond}.
-It expands to K{'()} if there are
-no clauses (left), and to nested K{if} constructs if there are some.
+The K{cond} special form is expanded by K{special-cond}.  It expands to K{'()}
+if there are no clauses (left), and to nested K{if} constructs if there are
+some.
 
 B{special-cond} procedure
 
@@ -416,9 +428,9 @@ CB)
 B{do-cond} procedure
 
 K{do-cond} is called recursively for every clause of the K{cond} form. It chops
-up the clause into predicate and body. In the last clause, the predicate is allowed to be K{else} (which gets
-translated to K{#t}). If there is no body, the body is set to the predicate. The
-form is expanded to a recursive K{if} form.
+up the clause into predicate and body. In the last clause, the predicate is
+allowed to be K{else} (which gets translated to K{#t}). If there is no body, the
+body is set to the predicate. The form is expanded to a recursive K{if} form.
 
 PR(
 do-cond (internal);tail lexprs env env -> expr
@@ -512,14 +524,15 @@ h3 Sequence
 
 EM Example: K{(begin (define r 10) (* r r))} ==> 100
 
-When expressions are evaluated in sequenceI{sequence}, the order is important
-for two reasons. If the expressions have any side effects, they happen in the
-same order of sequence. Also, if expressions are part of a pipeline of
-calculations, then they need to be processed in the order of that pipeline.
+There are times when one wants to treat a number of expressions as if they were
+one single expression (e.g. in the consequent or alternate of an K{if} form).
+The K{begin} special form bundles up expressions as an aggregate form.
+Internally, it sees to it that all the expressions are evaluated in order and
+that the resulting value of the last one is returned as the aggregate's result.
 
-As part of the processing of sequences E{local defines} are resolved, acting on
-expressions of the form K{(begin (define ...} when in a local environment. See
-the part about R{resolving local defines}{resolving-local-defines}.
+As part of the processing of sequences E{local defines} R{are
+  resolved}{resolving-local-defines}, acting on expressions of the form K{(begin
+    (define ...} when in a local environment.
 
 The following forms have an implicit K{begin} in their bodies and the use of
 K{begin} is therefore unnecessary with them:
@@ -597,8 +610,8 @@ We've already seen the relationship between symbols and values. Through
 (variable) definitionI{variable definition}I{definition}, a symbol is bound to a
 value (or rather to the location the value is in), creating a variable. The
 K{/define} helper procedure adds a variable to the current environment. It first
-checks that the symbol name is a valid identifier, then it updates the
-environment with the new binding.
+checks that the symbol name is a valid identifier and that it isn't already
+bound. Then it updates the environment with the new binding.
 
 H4 define special form
 
@@ -641,17 +654,9 @@ CB)
 
 B{rewrite-define} procedure
 
-K{define} has two variants, one of which requires some rewriting. It's the one
-with an implied K{lambda} call, the one that defines a procedure. 
-
-(define (E{symbol} E{formals}) E{body})
-
-is transformed by K{rewrite-define} into
-
-(define E{symbol} (lambda E{formals} E{body}))
-
-which conforms better to K{eval}'s standard of (define E{symbol} E{value}).
-The other variant passes through K{rewrite-define} unchanged.
+K{rewrite-define} rewrites ``procedural define'' syntaxes to their equivalent
+forms with K{lambda}, which unifies the syntaxes to (define E{symbol} E{value}).
+That syntax passes through K{rewrite-define} unchanged.
 
 PR(
 rewrite-define (internal);expr expr env env -> expr
@@ -698,6 +703,9 @@ TT)
 
 B{/define} procedure
 
+The K{/define} helper procedure carries out the binding of a symbol in a given
+environment, and stores the value in the location of binding.
+
 PR(
 /define (internal);sym sym val val env env -> none
 PR)
@@ -706,6 +714,7 @@ IX /define
 CB(
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
+  # will throw an error if $sym is bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -730,14 +739,18 @@ h3 Assignment
 
 EM Example: K{(set! r 20)} ==> 20 (K{r} is a bound symbol, so it's allowed to assign to it)
 
-Once a variable has been created, the value at the location it is bound to can
-be changed (hence the name `variable', something that can vary). The
-process is called assignment. The K{set!} special form does assignment:
-it modifies an existing variable that is bound somewhere in the environment
-chain. It finds the variable's environment and updates the binding. It returns
-the value, so calls to K{set!} can be chained: K{(set! foo (set! bar 99))} sets
-both variables to 99. By Scheme convention, procedures that modify variables
-have `!' at the end of their name.
+Once again we consider the relationship of a symbol, an environment, and a
+value. Once a symbol is bound to a location in the environment, the value at
+that location can be changed with reference to the symbol, altering the value of
+the variable.  The process is called assignment. 
+
+It is carried out by the K{set!} special form. Given a symbol and a value, it
+finds the symbol's binding environment and updates the location with the value.
+It returns the value, so calls to K{set!} can be chained: K{(set! foo (set! bar
+  99))} sets both variables to 99. By Scheme convention, procedures that modify
+  variables have `!' at the end of their name.
+
+It is an error to do assignment on an unbound symbol.
 
 H4 set"! special form
 
@@ -799,8 +812,8 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
   (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square
   root of the sum of two squares.
 
-The lambda special form makes a R{Procedure}{control} object. First
-it needs to convert the Lisp list K{body}. It is packed inside a K{begin} if it
+The K{lambda} special form makes a R{Procedure}{control} object. First
+it needs to convert the Lisp list K{body}. It is bundled inside a K{begin} if it
 has more than one expression (K{S begin} stands for `the symbol begin'.), and
 taken out of its list if not. The Lisp list K{formals} is passed on as it is.
 
@@ -855,11 +868,11 @@ h3 Procedure call
 
 EM Example: K{(+ 1 6)} ==> 7
 
-Once we have procedures, we can call them to have their
-calculations performed and yield results. The procedure name is put in the
-operator position at the front of a list, and the operands follow in the rest of
-the list. Our K{square} procedure would be called for instance like this:
-K{(square 11)}, and it will return 121.
+Once we have procedures, we can E{call} them to have their calculations
+performed and yield results. The procedure name is put in the operator position
+at the front of a list, and the operands follow in the rest of the list. Our
+K{square} procedure would be called for instance like this: K{(square 11)}, and
+it would return 121.
 
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
@@ -899,10 +912,9 @@ TT)
 H3 Binding forms
 
 The binding forms are not fundamental the way the earlier nine forms are. They
-are an application of a combination of the procedure definition form and a
-procedure call. But their use is sufficiently distinguished to earn them their
-own heading.
-
+are an application of a combination of forms eight and nine, the procedure
+definition form and the procedure call. But their use is sufficiently
+distinguished to earn them their own heading.
 
 H4 let special form
 
@@ -914,8 +926,8 @@ or
 
 where E{body} is one or more expressions.
 
-The K{let} special form (both forms) is expanded by K{special-let}.
-They are ultimately rewritten to K{lambda} constructs and evaluated as such.
+The K{let} special form (both forms) is expanded by K{special-let}.  They are
+ultimately rewritten to calls to K{lambda} constructs and evaluated as such.
 
 PR(
 special-let (internal);expr expr env env -> expr
@@ -1284,11 +1296,18 @@ values and procedures. The ability of procedure calls and execution of binding
 forms to temporarily change the current environment is a powerful one. But still
 the evaluator eventually backtracks into the previous environments. 
 
+The other side of the coin is that the evaluator uses the environment to keep
+track of changes in the state of the evaluation. In this way, the evaluator uses
+the environment for continuity and a progress record.
+
 IF /images/environments.png Two sample environments
 
 I will talk some more about the implementation of environments in a later section.
 
 h3 The evaluator
+
+Now that all nine syntactic forms are in place and we have a basic understanding
+of the environment, we can start assembling the evaluator.
 
 H4 eval procedure
 
@@ -1327,6 +1346,12 @@ special form, a variable, or a R{macro}{macros}. The E{handling info} gives the
 exact procedure that will take care of the expression. If the operator isn't a
 symbol, it is evaluated and applied to the evaluated rest of the expression.
 
+The seven remaining syntactic forms are implemented as special forms and handled
+when the relevant symbol appears in the K{car} of the expression. Their
+E{binding type} is K{SPECIAL} and the E{handling info} consists of the name of
+the procedure expanding the special form. The procedure is called with the
+expression and the environment as arguments.
+
 PR(
 eval-form (internal);expr expr env env -> val
 PR)
@@ -1348,8 +1373,7 @@ proc ::constcl::eval-form {expr env} {
         invoke $hinfo [eval-list $args $env]
       }
       SYNTAX {
-        set expr [$hinfo $expr $env]
-        eval $expr $env
+        eval [$hinfo $expr $env] $env
       }
       default {
         error "unrecognized binding type" $btype
@@ -1375,10 +1399,10 @@ CB(
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
   # parentless envs have #NIL
-  if {$actual_env ne "::constcl::null_env"} {
-    return [$actual_env get $op]
-  } else {
+  if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
+  } else {
+    return [$actual_env get $op]
   }
 }
 CB)
@@ -1415,7 +1439,6 @@ PR)
 IX eval-list
 CB(
 proc ::constcl::eval-list {exps env} {
-  # don't convert to /if, it breaks (fact 100)
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
