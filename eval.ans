@@ -853,8 +853,10 @@ proc ::constcl::special-lambda {expr env} {
   set body [cdr $args]
   if {[[length $body] numval] > 1} {
     set body [cons [S begin] $body]
-  } else {
+  } elseif {[[length $body] numval] == 1} {
     set body [car $body]
+  } else {
+    set body #NIL
   }
   return [MkProcedure $formals $body $env]
 }
