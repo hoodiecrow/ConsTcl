@@ -13,10 +13,11 @@ RM        = rm -f
 LD        = $(CC)
 LDOUT     = -o 
 EXE       = 
+T90       = ../anstox/tclsh90.exe
 ANSTOTEX  = ../anstox/anstotex.awk
 ANSTOMD   = ../anstox/anstomd.awk
-ANSTOCODE = ../anstox/anstocode.awk
-ANSTOTEST = ../anstox/anstotest.awk
+ANSTOCODE = ../anstox/anstocode.tcl
+ANSTOTEST = ../anstox/anstotest.tcl
 ANSTOSCM  = ../anstox/anstoscm.awk
 
 .PHONY: all
@@ -52,13 +53,19 @@ constcl.md: $(source_files) schemebase.ans
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	gawk -f $(ANSTOCODE) $^ >$@
+	$(T90) $(ANSTOCODE) $^ >$@
+
+#constcl.tcl: $(source_files)
+#	gawk -f $(ANSTOCODE) $^ >$@
 
 #constcl.tcl: $(tcl_source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
-	gawk -f $(ANSTOTEST) $^ >$@
+	$(T90) $(ANSTOTEST) $^ >$@
+
+#constcl.test: $(source_files)
+#	gawk -f $(ANSTOTEST) $^ >$@
 
 #constcl.test: $(tcl_source_files)
 #	echo 'package require tcltest' >$@
