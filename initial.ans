@@ -208,7 +208,7 @@ H4 assert procedure
 K{assert} signals an error if an assertion fails.
 
 PR(
-assert (internal);expr texpr -> none
+assert (internal);expr texp -> none
 PR)
 
 CB(

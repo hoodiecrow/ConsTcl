@@ -819,9 +819,9 @@ proc ::constcl::lookup {sym env} {
 }
 
 proc ::constcl::self-evaluating? {val} {
-  if {[T [number? $val]] || 
-    [T [string? $val]] || 
-    [T [char? $val]] || 
+  if {[T [number? $val]] ||
+    [T [string? $val]] ||
+    [T [char? $val]] ||
     [T [boolean? $val]]} {
     return #t
   } else {
@@ -951,7 +951,7 @@ proc ::constcl::do-cond {tail env} {
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  if {$env ne "::constcl::global_env" && 
+  if {$env ne "::constcl::global_env" &&
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
   } {
@@ -993,7 +993,7 @@ proc ::constcl::rewrite-define {expr env} {
                (lambda ,(cdar tail) ,@(cdr tail)))"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
-  } 
+  }
   return $expr
 }
 
@@ -1313,7 +1313,7 @@ proc ::constcl::for-seq {seq env} {
   # make it a Tcl list, one way or another
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[T [string? $seq]]} { 
+  } elseif {[T [string? $seq]]} {
     set seq [lmap c [split [$seq value] {}] {
       switch $c {
         " "  { MkChar #\\space }
@@ -1475,7 +1475,7 @@ proc ::constcl::expand-put! {expr env} {
   /define [S val] [caddr $tail] $env
   set qq "`(let ((idx (list-find-key ,name ,key)))
              (if (< idx 0)
-               (set! 
+               (set!
                  ,name
                  (append (list ,key ,val) ,name))
                (begin
@@ -1550,7 +1550,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
           [T [eq? [car $child] [S quasiquote]]]} {
         lappend res [list [S quasiquote] [car [
           qq-visit-child [cdr $child] [
-            expr {$qqlevel + 1}] $env]]] 
+            expr {$qqlevel + 1}] $env]]]
       } elseif {[T [atom? $child]]} {
         lappend res $child
       } else {
@@ -1964,6 +1964,8 @@ proc ::constcl::MkEnv {args} {
   }
   Environment new $parms $vals $env
 }
+
+reg environment?
 
 proc ::constcl::environment? {val} {
   typeof? $val Environment
@@ -3804,7 +3806,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   if {[T [null? $val2]]} {
     return #f
   } elseif {[T [pair? $val2]]} {
-    if {[T [pair? [car $val2]]] && 
+    if {[T [pair? [car $val2]]] &&
       [T [$epred $val1 [caar $val2]]]} {
       return [car $val2]
     } else {

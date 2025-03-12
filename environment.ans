@@ -172,12 +172,12 @@ H4 environment? procedure
 Recognizes an environment by type.
 
 PR(
-reg environment?
-
 environment? (public);val val -> bool
 PR)
 
 CB(
+reg environment?
+
 proc ::constcl::environment? {val} {
   typeof? $val Environment
 }

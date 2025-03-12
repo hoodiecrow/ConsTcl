@@ -14,10 +14,11 @@ LD        = $(CC)
 LDOUT     = -o 
 EXE       = 
 T90       = ../anstox/tclsh90.exe
-ANSTOTEX  = ../anstox/anstotex.awk
-ANSTOMD   = ../anstox/anstomd.awk
-ANSTOCODE = ../anstox/anstocode.tcl
-ANSTOTEST = ../anstox/anstotest.tcl
+P3        = python3
+ANSTOTEX  = ../anstox/anstotex.py
+ANSTOMD   = ../anstox/anstomd.py
+ANSTOCODE = ../anstox/anstocode.py
+ANSTOTEST = ../anstox/anstotest.py
 ANSTOSCM  = ../anstox/anstoscm.awk
 
 .PHONY: all
@@ -32,7 +33,10 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files) schemebase.ans
-	gawk -f $(ANSTOTEX) dict.txt $^ >$@
+	$(P3) $(ANSTOTEX) $^ >$@
+
+#body.tex: $(source_files) schemebase.ans
+#	gawk -f $(ANSTOTEX) dict.txt $^ >$@
 
 #constcl.tex: book.md
 #	gawk -f latex.awk $< >$@
@@ -47,13 +51,16 @@ README.md: top.md constcl.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files) schemebase.ans
-	gawk -f $(ANSTOMD) dict.txt $^ >$@
+	$(P3) $(ANSTOMD) $^ >$@
+
+#constcl.md: $(source_files) schemebase.ans
+#	gawk -f $(ANSTOMD) dict.txt $^ >$@
 
 #constcl.md: $(tcl_source_files)
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	$(T90) $(ANSTOCODE) $^ >$@
+	$(P3) $(ANSTOCODE) $^ >$@
 
 #constcl.tcl: $(source_files)
 #	gawk -f $(ANSTOCODE) $^ >$@
@@ -62,7 +69,7 @@ constcl.tcl: $(source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
-	$(T90) $(ANSTOTEST) $^ >$@
+	$(P3) $(ANSTOTEST) $^ >$@
 
 #constcl.test: $(source_files)
 #	gawk -f $(ANSTOTEST) $^ >$@

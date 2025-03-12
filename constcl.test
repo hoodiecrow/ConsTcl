@@ -1416,7 +1416,7 @@ if no {
     puts [::tcltest::viewFile iofile.txt]
 } -cleanup {
   ::tcltest::removeFile iofile.txt
-} -returnCodes error -result "remove this line to use" 
+} -returnCodes error -result "remove this line to use"
 #-output "foo99\n"
 
 ::tcltest::test io-3.0 {try with-input-from-file} -setup {

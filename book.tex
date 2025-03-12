@@ -310,6 +310,7 @@ proc regvar {name value} {
 }
 \end{lstlisting}
 
+
 \begin{pulledtext}
 \subsubsection{Procedures, functions, and commands}
 \label{procedures-functions-and-commands}
@@ -322,11 +323,13 @@ And the `internal/public' distinction is probably a misnomer (an aside within an
 
 \end{pulledtext}
 
+
 \subsection{atom? procedure}
 \label{atom-procedure}
 \index{atom? procedure}
 
 This one isn't just for my convenience: it's a standard procedure in Scheme. There are two kinds of data in Lisp: lists\index{lists} and atoms\index{atoms}. Lists are collections of lists and atoms. Atoms are instances of types such as booleans, characters, numbers, ports, strings, symbols, and vectors. \texttt{Atom?} recognizes an atom by checking for membership in any one of the atomic types. It returns \texttt{\#t} (true) if it is an atom, and \texttt{\#f} (false) if not.
+
 
 
 \begin{pulledtext}
@@ -339,16 +342,15 @@ By Scheme convention, predicates (procedures that return either \texttt{\#t} or 
 
 \texttt{if \{[atom? \$x]\} \ldots }
 
-
 will not do, but
 
 
 \texttt{if \{[atom? \$x] ne "\#f"\} \ldots }
 
-
 (``[atom? \$x] not equal to false'') works. Or see the \texttt{T} procedure.
 
 \end{pulledtext}
+
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -410,7 +412,7 @@ proc ::T {val} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assert (internal)} \\
-expr &  \\
+expr & a Tcl expression \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -1147,10 +1149,11 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 
 Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
 
-\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{ The internal structure of the expression}\label{fig:-the-internal-structure-of-the-expression}\end{figure}
+\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{The internal structure of the expression}\label{fig:the-internal-structure-of-the-expression}\end{figure}
 \section{Input procedures}
 \label{input-procedures}
 \index{input procedures}
+
 
 \begin{pulledtext}
 \subsubsection{Ports}
@@ -1160,6 +1163,7 @@ Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was ju
 Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 
 \end{pulledtext}
+
 
 \subsection{parse procedure}
 \label{parse-procedure}
@@ -1647,7 +1651,7 @@ proc ::constcl::read-object-expr {} {
 
 The \texttt{read-pair-expr} procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of Pair (see page \pageref{pairs-and-lists}) objects, either a proper list (one that ends in \texttt{\#NIL}), or an improper one (one that has an atom as its last member). Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
-\begin{figure}[h!]\includegraphics{images/prop-improp.png}\captionsetup{labelformat=empty}\caption{ A proper list and two improper ones.}\label{fig:-a-proper-list-and-two-improper-ones}\end{figure}
+\begin{figure}[h!]\includegraphics{images/prop-improp.png}\captionsetup{labelformat=empty}\caption{A proper list and two improper ones.}\label{fig:a-proper-list-and-two-improper-ones}\end{figure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pair-expr (internal)} \\
@@ -1975,7 +1979,6 @@ A word about \emph{environments}: an environment is where evaluating code keeps 
 
 \emph{Example: \texttt{r} $\Rightarrow$ 10 (a symbol \texttt{r} is evaluated to what it's bound to)}
 
-
 A variable\index{variable} is about a symbol, a location in the environment, and a value. The symbol is \emph{bound}\index{bound symbol} to the location, and the value is stored there. When an expression consists of the symbol, the evaluator does \emph{lookup} and finds the value.
 
 
@@ -2011,7 +2014,6 @@ proc ::constcl::lookup {sym env} {
 
 \emph{Example: \texttt{99} $\Rightarrow$ 99 (a number evaluates to itself)}
 
-
 Not just numbers but booleans, characters, and strings evaluate to themselves, to their innate value. Because of this, they are called self-evaluating or autoquoting types (see next section).
 
 
@@ -2033,9 +2035,9 @@ val & a value \\
 \index{self-evaluating? procedure}
 \begin{lstlisting}
 proc ::constcl::self-evaluating? {val} {
-  if {[T [number? $val]] || 
-    [T [string? $val]] || 
-    [T [char? $val]] || 
+  if {[T [number? $val]] ||
+    [T [string? $val]] ||
+    [T [char? $val]] ||
     [T [boolean? $val]]} {
     return #t
   } else {
@@ -2048,7 +2050,6 @@ proc ::constcl::self-evaluating? {val} {
 \index{quotation}
 
 \emph{Example: \texttt{(quote r)} $\Rightarrow$ \texttt{r} (quotation makes the symbol evaluate to itself, like a constant)}
-
 
 According to the rules of variable reference, a symbol evaluates to its stored value. Sometimes one wishes to use the symbol itself as a value. That is partly what quotation\index{quotation} is for. \texttt{(quote x)} evaluates to the symbol \texttt{x} itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: \texttt{'x} is interpreted as \texttt{(quote x)} by the Lisp reader (see page \pageref{reader-procedures}). The argument of \texttt{quote} may be any external representation (see page \pageref{external-representation}) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
@@ -2081,7 +2082,6 @@ proc ::constcl::special-quote {expr env} {
 \index{conditional}
 
 \emph{Example: \texttt{(if (> 99 100) (* 2 2) (+ 2 4))} $\Rightarrow$ 6}
-
 
 The conditional form \texttt{if} takes three expressions. The first, the \emph{condition}, is evaluated first. If it evaluates to true, i.e. anything other than the value \texttt{\#f} (false), the second expression (the \emph{consequent}) is evaluated and the value returned. Otherwise, the third expression (the \emph{alternate}) is evaluated and the value returned. One of the two latter expressions will be evaluated, and the other will remain unevaluated. The \emph{alternate} can be omitted.
 
@@ -2211,6 +2211,7 @@ proc ::constcl::special-case {expr env} {
 }
 \end{lstlisting}
 
+
 \begin{pulledtext}
 \subsubsection{caar, cadr, cdar, and the rest}
 \label{caar-cadr-cdar-and-the-rest}
@@ -2221,6 +2222,8 @@ The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} 
 \end{pulledtext}
 
 
+
+
 \begin{pulledtext}
 \subsubsection{Quasiquote}
 \label{quasiquote}
@@ -2229,6 +2232,7 @@ The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} 
 In this and many other special form and macro form expanders I use a quasiquote\index{quasiquote} construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (\texttt{`}) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (\texttt{,}). \texttt{`(foo ,bar baz)} is very nearly the same as \texttt{('foo bar 'baz)}. In both cases \texttt{foo} and \texttt{baz} are constants while \texttt{bar} is a variable which will be evaluated. Like in \texttt{do-case} here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use \texttt{/define} to bind them in a temporary environment.
 
 \end{pulledtext}
+
 
 
 \textbf{do-case} procedure
@@ -2397,7 +2401,6 @@ proc ::constcl::do-cond {tail env} {
 
 \emph{Example: \texttt{(begin (define r 10) (* r r))} $\Rightarrow$ 100}
 
-
 There are times when one wants to treat a number of expressions as if they were one single expression (e.g. in the consequent or alternate of an \texttt{if} form). The \texttt{begin} special form bundles up expressions as an aggregate form. Internally, it sees to it that all the expressions are evaluated in order and that the resulting value of the last one is returned as the aggregate's result.
 
 
@@ -2430,7 +2433,7 @@ env & an environment \\
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
-  if {$env ne "::constcl::global_env" && 
+  if {$env ne "::constcl::global_env" &&
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
   } {
@@ -2475,7 +2478,6 @@ proc ::constcl::/begin {exps env} {
 \index{definition}
 
 \emph{Example: \texttt{(define r 10)} $\Rightarrow$ \ldots  (a definition doesn't evaluate to anything)}
-
 
 We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
 
@@ -2561,7 +2563,7 @@ proc ::constcl::rewrite-define {expr env} {
                (lambda ,(cdar tail) ,@(cdr tail)))"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
-  } 
+  }
   return $expr
 }
 \end{lstlisting}
@@ -2594,7 +2596,6 @@ proc ::constcl::/define {sym val env} {
 \index{assignment}
 
 \emph{Example: \texttt{(set! r 20)} $\Rightarrow$ 20 (\texttt{r} is a bound symbol, so it's allowed to assign to it)}
-
 
 Once again we consider the relationship of a symbol, an environment, and a value. Once a symbol is bound to a location in the environment, the value at that location can be changed with reference to the symbol, altering the value of the variable. The process is called assignment.
 
@@ -2638,7 +2639,6 @@ proc ::constcl::special-set! {expr env} {
 
 \emph{Example: \texttt{(lambda (r) (* r r))} $\Rightarrow$ \texttt{::oo::Obj3601} (it will be a different object each time)}
 
-
 In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, which, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
 
 
@@ -2654,6 +2654,7 @@ Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure
 The \texttt{lambda} special form makes a Procedure (see page \pageref{control}) object. First it needs to convert the Lisp list \texttt{body}. It is bundled inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} is passed on as it is.
 
 
+
 \begin{pulledtext}
 \subsubsection{Scheme formal parameters lists}
 \label{scheme-formal-parameters-lists}
@@ -2662,12 +2663,13 @@ The \texttt{lambda} special form makes a Procedure (see page \pageref{control}) 
 A Scheme formals list\index{formals list} is either:
 
 \begin{itemize}
-\item  An \emph{empty list}, \texttt{()}, meaning that no arguments are accepted,
-\item  A \emph{proper list}, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol,
-\item  A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or
-\item  A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
+\item An \emph{empty list}, \texttt{()}, meaning that no arguments are accepted,
+\item A \emph{proper list}, \texttt{(a b c)}, meaning it accepts three arguments, one in each symbol,
+\item A \emph{symbol}, \texttt{a}, meaning that all arguments go into \texttt{a}, or
+\item A \emph{dotted list}, \texttt{(a b . c)}, meaning that two arguments go into \texttt{a} and \texttt{b}, and the rest into \texttt{c}.
 \end{itemize}
 \end{pulledtext}
+
 
 \subsection{lambda special form}
 \label{lambda-special-form}
@@ -2711,7 +2713,6 @@ proc ::constcl::special-lambda {expr env} {
 \index{procedure call}
 
 \emph{Example: \texttt{(+ 1 6)} $\Rightarrow$ 7}
-
 
 Once we have procedures, we can \emph{call} them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it would return 121.
 
@@ -3051,7 +3052,7 @@ Environments make up the world the evaluator lives in and are the source of its 
 
 The other side of the coin is that the evaluator uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
 
-\begin{figure}[h!]\includegraphics{images/environments.png}\captionsetup{labelformat=empty}\caption{ Two sample environments}\label{fig:-two-sample-environments}\end{figure}
+\begin{figure}[h!]\includegraphics{images/environments.png}\captionsetup{labelformat=empty}\caption{Two sample environments}\label{fig:two-sample-environments}\end{figure}
 
 I will talk some more about the implementation of environments in a later section.
 
@@ -3363,7 +3364,7 @@ proc ::constcl::for-seq {seq env} {
   # make it a Tcl list, one way or another
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[T [string? $seq]]} { 
+  } elseif {[T [string? $seq]]} {
     set seq [lmap c [split [$seq value] {}] {
       switch $c {
         " "  { MkChar #\\space }
@@ -3677,7 +3678,7 @@ proc ::constcl::expand-put! {expr env} {
   /define [S val] [caddr $tail] $env
   set qq "`(let ((idx (list-find-key ,name ,key)))
              (if (< idx 0)
-               (set! 
+               (set!
                  ,name
                  (append (list ,key ,val) ,name))
                (begin
@@ -3781,7 +3782,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
           [T [eq? [car $child] [S quasiquote]]]} {
         lappend res [list [S quasiquote] [car [
           qq-visit-child [cdr $child] [
-            expr {$qqlevel + 1}] $env]]] 
+            expr {$qqlevel + 1}] $env]]]
       } elseif {[T [atom? $child]]} {
         lappend res $child
       } else {
@@ -4480,6 +4481,8 @@ val & a value \\
 \hline
 \end{tabular}
 \begin{lstlisting}
+reg environment?
+
 proc ::constcl::environment? {val} {
   typeof? $val Environment
 }
@@ -4827,15 +4830,11 @@ proc ::constcl::number? {val} {
 
 \noindent \textbf{<} procedure
 
-
 \noindent \textbf{>} procedure
-
 
 \noindent \textbf{<=} procedure
 
-
 \noindent \textbf{>=} procedure
-
 
 The predicates \texttt{=}, \texttt{<}, \texttt{>}, \texttt{<=}, and \texttt{>=} are implemented.
 
@@ -4960,12 +4959,9 @@ proc ::constcl::zero? {num} {
 
 \noindent \textbf{negative?} procedure
 
-
 \noindent \textbf{even?} procedure
 
-
 \noindent \textbf{odd?} procedure
-
 
 The \texttt{positive?}/\texttt{negative?}/\texttt{even?}/\texttt{odd?} predicates test a number for those traits.
 
@@ -5076,12 +5072,9 @@ proc ::constcl::min {num args} {
 
 \noindent \textbf{*} procedure
 
-
 \noindent \textbf{-} procedure
 
-
 \noindent \textbf{/} procedure
-
 
 The operators \texttt{+}, \texttt{*}, \texttt{-}, and \texttt{/} stand for the respective mathematical operations. They take a number of operands, but at least one for \texttt{-} and \texttt{/}.
 
@@ -5288,12 +5281,9 @@ proc ::constcl::modulo {num1 num2} {
 
 \noindent \textbf{ceiling} procedure
 
-
 \noindent \textbf{truncate} procedure
 
-
 \noindent \textbf{round} procedure
-
 
 \texttt{floor}, \texttt{ceiling}, \texttt{truncate}, and \texttt{round} are different methods for converting a real number to an integer.
 
@@ -5366,24 +5356,17 @@ proc ::constcl::round {num} {
 
 \noindent \textbf{log} procedure
 
-
 \noindent \textbf{sin} procedure
-
 
 \noindent \textbf{cos} procedure
 
-
 \noindent \textbf{tan} procedure
-
 
 \noindent \textbf{asin} procedure
 
-
 \noindent \textbf{acos} procedure
 
-
 \noindent \textbf{atan} procedure
-
 
 The mathematical functions ${e}^{x}$, natural logarithm, sine, cosine, tangent, arcsine, arccosine, and arctangent are calculated by \texttt{exp}, \texttt{log}, \texttt{sin}, \texttt{cos}, \texttt{tan}, \texttt{asin}, \texttt{acos}, and \texttt{atan}, respectively. \texttt{atan} can be called both as a unary (one argument) function and a binary (two arguments) one.
 
@@ -5970,15 +5953,11 @@ proc ::constcl::char? {val} {
 
 \noindent \textbf{char<?} procedure
 
-
 \noindent \textbf{char>?} procedure
-
 
 \noindent \textbf{char<=?} procedure
 
-
 \noindent \textbf{char>=?} procedure
-
 
 \texttt{char=?}, \texttt{char<?}, \texttt{char>?}, \texttt{char<=?}, and \texttt{char>=?} compare character values. They only compare two characters at a time.
 
@@ -6085,15 +6064,11 @@ proc ::constcl::char>=? {char1 char2} {
 
 \noindent \textbf{char-ci<?} procedure
 
-
 \noindent \textbf{char-ci>?} procedure
-
 
 \noindent \textbf{char-ci<=?} procedure
 
-
 \noindent \textbf{char-ci>=?} procedure
-
 
 \texttt{char-ci=?}, \texttt{char-ci<?}, \texttt{char-ci>?}, \texttt{char-ci<=?}, and \texttt{char-ci>=?} compare character values in a case insensitive manner. They only compare two characters at a time.
 
@@ -6205,15 +6180,11 @@ proc ::constcl::char-ci>=? {char1 char2} {
 
 \noindent \textbf{char-numeric?} procedure
 
-
 \noindent \textbf{char-whitespace?} procedure
-
 
 \noindent \textbf{char-upper-case?} procedure
 
-
 \noindent \textbf{char-lower-case?} procedure
-
 
 The predicates \texttt{char-alphabetic?}, \texttt{char-numeric?}, and \texttt{char-whitespace?} test a character for these conditions.
 
@@ -6608,10 +6579,10 @@ proc ::constcl::for-each {proc args} {
 Like most programming languages, Scheme has input and output facilities beyond direct \texttt{read} and \texttt{write}. I/O is based on the \emph{port} abstraction of a character supplying or receiving device. There are four kinds of ports:
 
 \begin{enumerate}
-\item  file input (InputPort)
-\item  file output (OutputPort)
-\item  string input (StringInputPort)
-\item  string output (StringOutputPort)
+\item file input (InputPort)
+\item file output (OutputPort)
+\item string input (StringInputPort)
+\item string output (StringOutputPort)
 \end{enumerate}
 
 and there is also the \texttt{Port} type, which isn't used other than as a base class.
@@ -7388,7 +7359,7 @@ Example:
 (cons 'a nil)             ==>  (a)
 (cons 'a (cons 'b nil))   ==>  (a b)
 \end{verbatim}
-\begin{figure}[h!]\includegraphics{images/consing.png}\captionsetup{labelformat=empty}\caption{ Examples of consing}\label{fig:-examples-of-consing}\end{figure}
+\begin{figure}[h!]\includegraphics{images/consing.png}\captionsetup{labelformat=empty}\caption{Examples of consing}\label{fig:examples-of-consing}\end{figure}
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cons (public)} \\
@@ -7861,9 +7832,7 @@ proc ::constcl::list-ref {vals k} {
 
 \noindent \textbf{memv} procedure
 
-
 \noindent \textbf{member} procedure
-
 
 \texttt{memq}, \texttt{memv}, and \texttt{member} return the sublist starting with a given item, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison.
 
@@ -7964,9 +7933,7 @@ proc ::constcl::member-proc {epred val1 val2} {
 
 \noindent \textbf{assv} procedure
 
-
 \noindent \textbf{assoc} procedure
-
 
 \texttt{assq}, \texttt{assv}, and \texttt{assoc} scan an association list and return the association pair with a given key, or \texttt{\#f} if there is none. They use \texttt{eq?}, \texttt{eqv?}, and \texttt{equal?}, respectively, for the comparison. They implement lookup in the kind of lookup table known as an association list, or \emph{alist}.
 
@@ -8054,7 +8021,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   if {[T [null? $val2]]} {
     return #f
   } elseif {[T [pair? $val2]]} {
-    if {[T [pair? [car $val2]]] && 
+    if {[T [pair? [car $val2]]] &&
       [T [$epred $val1 [caar $val2]]]} {
       return [car $val2]
     } else {
@@ -9761,7 +9728,8 @@ list & a Lisp list of values \\
 
 And that's all. Thank you for joining me on this voyage of exploration.
 
-\end{document}
+
+
 
 \printindex
 \end{document}

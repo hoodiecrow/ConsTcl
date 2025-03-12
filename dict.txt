@@ -108,6 +108,7 @@ expreof       -> an expression or end of file
 exprtail      -> an expression tail
 exprs         -> some expressions
 lexprs        -> a Lisp list of expressions
+texp          -> a Tcl expression
 texprs        -> a Tcl list of expressions
 arg           -> an argument
 args          -> some arguments
@@ -133,4 +134,3 @@ oport         -> an output port
 oports        -> some output ports
 loports       -> a Lisp list of output ports
 toports       -> a Tcl list of output ports
-
