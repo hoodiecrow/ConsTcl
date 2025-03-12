@@ -19,7 +19,6 @@ ANSTOTEX  = ../anstox/anstotex.py
 ANSTOMD   = ../anstox/anstomd.py
 ANSTOCODE = ../anstox/anstocode.py
 ANSTOTEST = ../anstox/anstotest.py
-ANSTOSCM  = ../anstox/anstoscm.awk
 
 .PHONY: all
 all: book.tex README.md constcl.tcl constcl.test schemebase.scm #wiki/type.md wiki/read.md $(PROGRAM)
@@ -84,7 +83,10 @@ lutables.md: lutables.tcl
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 schemebase.scm: schemebase.ans
-	gawk -f $(ANSTOSCM) $< >$@
+	$(P3) $(ANSTOCODE) $< >$@
+
+#schemebase.scm: schemebase.ans
+#	gawk -f $(ANSTOSCM) $< >$@
 
 #schemebase.md: schemebase.scm
 #	gawk -f scmtomd.awk $< >$@

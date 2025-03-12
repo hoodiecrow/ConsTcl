@@ -848,7 +848,7 @@ Example:
 
 VB(
 (let ((x (log 2))) (= 2 (exp x)))        =>  #t
-(letrec ((a (/ pi 3)) (s (sin a)))
+(let* ((a (/ pi 3)) (s (sin a)))
   (= a (asin s)))                        =>  #t
 VB)
 

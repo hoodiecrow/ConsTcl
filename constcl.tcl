@@ -1,6 +1,4 @@
-
 namespace eval ::constcl {}
-
 unset -nocomplain ::constcl::defreg
 
 proc reg {args} {
@@ -38,7 +36,6 @@ proc regvar {name value} {
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
 }
-
 reg atom?
 
 proc ::constcl::atom? {val} {
@@ -50,7 +47,6 @@ proc ::constcl::atom? {val} {
   }
   return #f
 }
-
 proc ::T {val} {
   if {$val eq "#f"} {
     return 0
@@ -61,14 +57,12 @@ proc ::T {val} {
     return 1
   }
 }
-
 proc assert {expr} {
   if {![uplevel [list expr $expr]]} {
     error "Failed assertion [
       uplevel [list subst $expr]]"
   }
 }
-
 proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
     parse {()}
@@ -78,7 +72,6 @@ proc ::constcl::pairlis-tcl {a b} {
       [pairlis-tcl [cdr $a] [cdr $b]]
   }
 }
-
 proc ::constcl::usage {usage expr} {
   set u $usage
   set e $expr
@@ -96,11 +89,9 @@ proc ::constcl::usage {usage expr} {
       $usage show] not [$expr show]"
   }
 }
-
 proc ::pn {} {
   namespace tail [lindex [info level -1] 0]
 }
-
 proc ::unbind {args} {
   # TODO go from current environment
   set syms $args
@@ -111,7 +102,6 @@ proc ::unbind {args} {
     }
   }
 }
-
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
     return #t
@@ -122,7 +112,6 @@ proc ::constcl::typeof? {val type} {
     return #f
   }
 }
-
 reg in-range
 
 proc ::constcl::in-range {x args} {
@@ -154,7 +143,6 @@ proc ::constcl::in-range {x args} {
   }
   return [list {*}[lmap r $res {MkNumber $r}]]
 }
-
 reg error
 
 proc ::constcl::error {msg args} {
@@ -166,7 +154,6 @@ proc ::constcl::error {msg args} {
   }
   ::error $msg
 }
-
 proc ::constcl::check {cond msg} {
   if {[uplevel $cond] eq "#f"} {
     ::error [
@@ -175,62 +162,50 @@ proc ::constcl::check {cond msg} {
           ::string trim $msg]]]
   }
 }
-
 proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::parse $str] $env]
 }
-
 proc ::rew {port {env ::constcl::global_env}} {
   ::constcl::write [
     ::constcl::eval [
       ::constcl::read $port] $env]
 }
-
 proc ::pw {str} {
   ::constcl::write [
     ::constcl::parse $str]
 }
-
 proc ::rw {args} {
   ::constcl::write [
     ::constcl::read {*}$args]
 }
-
 proc ::pe {str {env ::constcl::global_env}} {
   ::constcl::eval [
     ::constcl::parse $str] $env
 }
-
 proc ::re {port {env ::constcl::global_env}} {
   ::constcl::eval [
     ::constcl::read $port] $env
 }
-
 proc ::p {str} {
   ::constcl::parse $str
 }
-
 proc ::e {expr {env ::constcl::global_env}} {
   ::constcl::eval $expr $env
 }
-
 proc ::w {val} {
   ::constcl::write $val
 }
-
 proc ::r {args} {
   ::constcl::read {*}$args
 }
-
 proc ::prw {str} {
   set expr [::constcl::parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
-
 proc ::pxw {str {env ::constcl::global_env}} {
   set expr [::constcl::parse $str]
   set op [::constcl::car $expr]
@@ -242,7 +217,6 @@ proc ::pxw {str {env ::constcl::global_env}} {
     puts "not a macro"
   }
 }
-
 catch { ::constcl::Dot destroy }
 
 oo::class create ::constcl::Dot {
@@ -257,11 +231,9 @@ oo::class create ::constcl::Dot {
     format "."
   }
 }
-
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-
 catch { ::constcl::EndOfFile destroy }
 
 oo::singleton create ::constcl::EndOfFile {
@@ -276,7 +248,6 @@ oo::singleton create ::constcl::EndOfFile {
     format "#<end-of-file>"
   }
 }
-
 proc eof? {val} {
   if {$val eq "#EOF"} {
     return #t
@@ -284,7 +255,6 @@ proc eof? {val} {
     return #f
   }
 }
-
 catch { ::constcl::NIL destroy }
 
 oo::singleton create ::constcl::NIL {
@@ -317,7 +287,6 @@ oo::singleton create ::constcl::NIL {
     format "()"
   }
 }
-
 reg null?
 
 proc ::constcl::null? {val} {
@@ -327,7 +296,6 @@ proc ::constcl::null? {val} {
     return #f
   }
 }
-
 catch { ::constcl::Undefined destroy }
 
 oo::singleton create ::constcl::Undefined {
@@ -342,7 +310,6 @@ oo::singleton create ::constcl::Undefined {
     format "#<undefined>"
   }
 }
-
 catch { ::constcl::Unspecified destroy }
 
 oo::singleton create ::constcl::Unspecified {
@@ -357,7 +324,6 @@ oo::singleton create ::constcl::Unspecified {
     format "#<unspecified>"
   }
 }
-
 reg parse
 
 proc ::constcl::parse {inp} {
@@ -381,7 +347,6 @@ proc ::constcl::parse {inp} {
   set ::constcl::Input_port $oldport
   return $expr
 }
-
 reg read
 
 proc ::constcl::read {args} {
@@ -396,7 +361,6 @@ proc ::constcl::read {args} {
   set ::constcl::Input_port $oldport
   return $expr
 }
-
 proc ::constcl::make-constant {val} {
   if {[T [pair? $val]]} {
     $val mkconstant
@@ -408,7 +372,6 @@ proc ::constcl::make-constant {val} {
     $val mkconstant
   }
 }
-
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
     return #t
@@ -416,7 +379,6 @@ proc ::constcl::interspace? {c} {
     return #f
   }
 }
-
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
     return #t
@@ -424,7 +386,6 @@ proc ::constcl::delimiter? {c} {
     return #f
   }
 }
-
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
@@ -433,7 +394,6 @@ proc ::constcl::valid-char? {name} {
     return #f
   }
 }
-
 proc ::constcl::readchar {} {
   upvar unget unget
   if {$unget ne {}} {
@@ -447,7 +407,6 @@ proc ::constcl::readchar {} {
   }
   return $c
 }
-
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
   while {[::string is space -strict $c]} {
@@ -457,7 +416,6 @@ proc ::constcl::find-char? {char} {
   }
   expr {($c eq $char) ? "#t" : "#f"}
 }
-
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
@@ -471,7 +429,6 @@ proc ::constcl::read-end? {} {
     return #f
   }
 }
-
 proc ::constcl::skip-ws {} {
   upvar c c unget unget
   while true {
@@ -491,7 +448,6 @@ proc ::constcl::skip-ws {} {
     }
   }
 }
-
 proc ::constcl::read-eof {args} {
   set chars $args
   foreach char $chars {
@@ -500,7 +456,6 @@ proc ::constcl::read-eof {args} {
     }
   }
 }
-
 proc ::constcl::read-expr {args} {
   upvar c c unget unget
   if {[llength $args]} {
@@ -536,7 +491,6 @@ proc ::constcl::read-expr {args} {
     }
   }
 }
-
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
@@ -555,7 +509,6 @@ proc ::constcl::read-character-expr {} {
   read-eof $expr
   return $expr
 }
-
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
@@ -583,7 +536,6 @@ proc ::constcl::read-identifier-expr {args} {
   idcheck $name
   return [S $name]
 }
-
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
   set unget {}
@@ -605,7 +557,6 @@ proc ::constcl::read-number-expr {args} {
   set expr [N $num]
   return $expr
 }
-
 proc ::constcl::read-object-expr {} {
   upvar c c unget unget
   # first colon has already been read
@@ -627,7 +578,6 @@ proc ::constcl::read-object-expr {} {
   set unget $c
   return $res
 }
-
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
   set unget {}
@@ -647,7 +597,6 @@ proc ::constcl::read-pair-expr {char} {
   }
   return $expr
 }
-
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
   set c [readchar]
@@ -680,7 +629,6 @@ proc ::constcl::read-pair {char} {
   }
   return $prev
 }
-
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
   set unget {}
@@ -706,7 +654,6 @@ proc ::constcl::read-plus-minus {char} {
     return $n
   }
 }
-
 proc ::constcl::read-pound {} {
   upvar c c unget unget
   set unget {}
@@ -723,7 +670,6 @@ proc ::constcl::read-pound {} {
   }
   return $n
 }
-
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
@@ -732,7 +678,6 @@ proc ::constcl::read-quasiquoted-expr {} {
   make-constant $expr
   return [list [S quasiquote] $expr]
 }
-
 proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
   set unget {}
@@ -741,7 +686,6 @@ proc ::constcl::read-quoted-expr {} {
   make-constant $expr
   return [list [S quote] $expr]
 }
-
 proc ::constcl::read-string-expr {} {
   upvar c c unget unget
   set str {}
@@ -764,7 +708,6 @@ proc ::constcl::read-string-expr {} {
   make-constant $expr
   return $expr
 }
-
 proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
   set unget {}
@@ -780,7 +723,6 @@ proc ::constcl::read-unquoted-expr {} {
   read-eof $expr
   return [list [S $symbol] $expr]
 }
-
 proc ::constcl::read-vector-expr {} {
   upvar c c unget unget
   set res {}
@@ -808,7 +750,6 @@ proc ::constcl::read-vector-expr {} {
   $expr mkconstant
   return $expr
 }
-
 proc ::constcl::lookup {sym env} {
   lassign [binding-info $sym $env] type value
   if {$type eq "VARIABLE"} {
@@ -817,7 +758,6 @@ proc ::constcl::lookup {sym env} {
     error "not a variable name" $sym
   }
 }
-
 proc ::constcl::self-evaluating? {val} {
   if {[T [number? $val]] ||
     [T [string? $val]] ||
@@ -828,13 +768,11 @@ proc ::constcl::self-evaluating? {val} {
     return #f
   }
 }
-
 reg special quote
 
 proc ::constcl::special-quote {expr env} {
   cadr $expr
 }
-
 reg special if
 
 proc ::constcl::special-if {expr env} {
@@ -848,7 +786,6 @@ proc ::constcl::special-if {expr env} {
       {eval [caddr $args] $env}
   }
 }
-
 proc ::constcl::/if {cond conseq altern} {
   if {[T [uplevel [::list expr $cond]]]} {
     uplevel $conseq
@@ -862,7 +799,6 @@ proc ::constcl::/if1 {cond conseq} {
     uplevel $conseq
   }
 }
-
 reg special case
 
 proc ::constcl::special-case {expr env} {
@@ -870,7 +806,6 @@ proc ::constcl::special-case {expr env} {
   set expr [do-case [car $tail] [cdr $tail] $env]
   eval $expr $env
 }
-
 proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
@@ -899,14 +834,12 @@ proc ::constcl::do-case {keyexpr clauses env} {
     return $expr
   }
 }
-
 reg special cond
 
 proc ::constcl::special-cond {expr env} {
   set expr [do-cond [cdr $expr] $env]
   eval $expr $env
 }
-
 proc ::constcl::do-cond {tail env} {
   set clauses $tail
   if {[T [null? $clauses]]} {
@@ -947,7 +880,6 @@ proc ::constcl::do-cond {tail env} {
     return $expr
   }
 }
-
 reg special begin
 
 proc ::constcl::special-begin {expr env} {
@@ -961,7 +893,6 @@ proc ::constcl::special-begin {expr env} {
     /begin [cdr $expr] $env
   }
 }
-
 proc ::constcl::/begin {exps env} {
   /if {[pair? $exps]} {
     /if {[pair? [cdr $exps]]} {
@@ -974,7 +905,6 @@ proc ::constcl::/begin {exps env} {
     return #NIL
   }
 }
-
 reg special define
 
 proc ::constcl::special-define {expr env} {
@@ -983,7 +913,6 @@ proc ::constcl::special-define {expr env} {
   set val [eval [caddr $expr] $env]
   /define $sym $val $env
 }
-
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
     set tail [cdr $expr]
@@ -996,14 +925,12 @@ proc ::constcl::rewrite-define {expr env} {
   }
   return $expr
 }
-
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
   # will throw an error if $sym is bound
   $env bind $sym VARIABLE $val
   return
 }
-
 reg special set!
 
 proc ::constcl::special-set! {expr env} {
@@ -1013,7 +940,6 @@ proc ::constcl::special-set! {expr env} {
   [$env find $var] assign $var VARIABLE $val
   set val
 }
-
 reg special lambda
 
 proc ::constcl::special-lambda {expr env} {
@@ -1029,7 +955,6 @@ proc ::constcl::special-lambda {expr env} {
   }
   return [MkProcedure $formals $body $env]
 }
-
 proc ::constcl::invoke {pr vals} {
   check {procedure? $pr} {
     PROCEDURE expected\n([$pr show] val ...)
@@ -1040,7 +965,6 @@ proc ::constcl::invoke {pr vals} {
     $pr {*}[splitlist $vals]
   }
 }
-
 reg special let
 
 proc ::constcl::special-let {expr env} {
@@ -1050,7 +974,6 @@ proc ::constcl::special-let {expr env} {
   set expr [rewrite-let $expr $env]
   eval $expr $env
 }
-
 proc ::constcl::rewrite-named-let {expr env} {
   # named let
   set tail [cdr $expr]
@@ -1076,7 +999,6 @@ proc ::constcl::rewrite-named-let {expr env} {
   $env destroy
   return $expr
 }
-
 proc ::constcl::rewrite-let {expr env} {
   # regular let
   set tail [cdr $expr]
@@ -1096,7 +1018,6 @@ proc ::constcl::rewrite-let {expr env} {
   $env destroy
   return $expr
 }
-
 proc ::constcl::parse-bindings {name bindings} {
   upvar $name vars
   foreach binding [splitlist $bindings] {
@@ -1109,14 +1030,12 @@ proc ::constcl::parse-bindings {name bindings} {
   }
   return
 }
-
 reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
   eval $expr $env
 }
-
 proc ::constcl::rewrite-letrec {expr env} {
   # regular let
   set tail [cdr $expr]
@@ -1149,7 +1068,6 @@ proc ::constcl::rewrite-letrec {expr env} {
   $env destroy
   return $expr
 }
-
 reg special let*
 
 proc ::constcl::special-let* {expr env} {
@@ -1157,7 +1075,6 @@ proc ::constcl::special-let* {expr env} {
   set expr [rewrite-let* [car $tail] [cdr $tail] $env]
   eval $expr $env
 }
-
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
   if {$bindings eq "#NIL"} {
@@ -1176,7 +1093,6 @@ proc ::constcl::rewrite-let* {bindings body env} {
   $env destroy
   return $expr
 }
-
 reg eval
 
 proc ::constcl::eval \
@@ -1191,7 +1107,6 @@ proc ::constcl::eval \
     error "unknown expression type [$expr show]"
   }
 }
-
 proc ::constcl::eval-form {expr env} {
   set op [car $expr]
   set args [cdr $expr]
@@ -1218,7 +1133,6 @@ proc ::constcl::eval-form {expr env} {
     invoke [eval $op $env] [eval-list $args $env]
   }
 }
-
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
   # parentless envs have #NIL
@@ -1228,7 +1142,6 @@ proc ::constcl::binding-info {op env} {
     return [$actual_env get $op]
   }
 }
-
 proc ::constcl::splitlist {vals} {
   set result {}
   while {[T [pair? $vals]]} {
@@ -1237,7 +1150,6 @@ proc ::constcl::splitlist {vals} {
   }
   return $result
 }
-
 proc ::constcl::eval-list {exps env} {
   if {[T [pair? $exps]]} {
     return [cons [eval [car $exps] $env] \
@@ -1246,7 +1158,6 @@ proc ::constcl::eval-list {exps env} {
     return #NIL
   }
 }
-
 reg macro and
 
 proc ::constcl::expand-and {expr env} {
@@ -1259,7 +1170,6 @@ proc ::constcl::expand-and {expr env} {
     do-and $tail #t $env
   }
 }
-
 proc ::constcl::do-and {tail prev env} {
   if {[T [null? $tail]]} {
     return $prev
@@ -1274,7 +1184,6 @@ proc ::constcl::do-and {tail prev env} {
     return $expr
   }
 }
-
 reg macro del!
 
 proc ::constcl::expand-del! {expr env} {
@@ -1294,7 +1203,6 @@ proc ::constcl::expand-del! {expr env} {
   $env destroy
   return $expr
 }
-
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
@@ -1303,7 +1211,6 @@ proc ::constcl::expand-for {expr env} {
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
-
 proc ::constcl::for-seq {seq env} {
   if {[T [number? $seq]]} {
     set seq [in-range $seq]
@@ -1327,7 +1234,6 @@ proc ::constcl::for-seq {seq env} {
     set seq [$seq value]
   }
 }
-
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
   set clauses [splitlist [car $tail]]
@@ -1359,7 +1265,6 @@ proc ::constcl::do-for {tail env} {
   }
   return $res
 }
-
 reg macro for/and
 
 proc ::constcl::expand-for/and {expr env} {
@@ -1367,7 +1272,6 @@ proc ::constcl::expand-for/and {expr env} {
   set res [do-for $tail $env]
   return [list [S and] {*}$res]
 }
-
 reg macro for/list
 
 proc ::constcl::expand-for/list {expr env} {
@@ -1375,7 +1279,6 @@ proc ::constcl::expand-for/list {expr env} {
   set res [do-for $tail $env]
   return [list [S list] {*}$res]
 }
-
 reg macro for/or
 
 proc ::constcl::expand-for/or {expr env} {
@@ -1383,7 +1286,6 @@ proc ::constcl::expand-for/or {expr env} {
   set res [do-for $tail $env]
   return [list [S or] {*}$res]
 }
-
 reg macro or
 
 proc ::constcl::expand-or {expr env} {
@@ -1396,7 +1298,6 @@ proc ::constcl::expand-or {expr env} {
     return [do-or $tail $env]
   }
 }
-
 proc ::constcl::do-or {tail env} {
   /if {[null? $tail]} {
     return #f
@@ -1410,7 +1311,6 @@ proc ::constcl::do-or {tail env} {
     return $expr
   }
 }
-
 reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
@@ -1428,7 +1328,6 @@ proc ::constcl::expand-pop! {expr env} {
   $env destroy
   return $expr
 }
-
 reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
@@ -1455,7 +1354,6 @@ proc ::constcl::expand-push! {expr env} {
   $env destroy
   return $expr
 }
-
 reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
@@ -1485,7 +1383,6 @@ proc ::constcl::expand-put! {expr env} {
   $env destroy
   return $expr
 }
-
 reg macro quasiquote
 
 proc ::constcl::expand-quasiquote {expr env} {
@@ -1522,7 +1419,6 @@ proc ::constcl::expand-quasiquote {expr env} {
     return [list [S "vector"] {*}$res]
   }
 }
-
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {
     set qqlevel 0
@@ -1561,7 +1457,6 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
   }
   return [list {*}$res]
 }
-
 reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
@@ -1575,7 +1470,6 @@ proc ::constcl::expand-unless {expr env} {
   $env destroy
   return $expr
 }
-
 reg macro when
 
 proc ::constcl::expand-when {expr env} {
@@ -1589,7 +1483,6 @@ proc ::constcl::expand-when {expr env} {
   $env destroy
   return $expr
 }
-
 proc ::constcl::resolve-local-defines {expr} {
   set exps [cdr $expr]
   set rest [lassign [
@@ -1607,7 +1500,6 @@ proc ::constcl::resolve-local-defines {expr} {
   }
   return [make-lambdas $v $a $rest]
 }
-
 proc ::constcl::extract-from-defines {exps part} {
   set a #NIL
   while {$exps ne "#NIL"} {
@@ -1645,7 +1537,6 @@ proc ::constcl::extract-from-defines {exps part} {
     }
     return [::list $a #f $exps]
 }
-
 proc ::constcl::argument-list? {val} {
   if {$val eq "#NIL"} {
     return #t
@@ -1666,7 +1557,6 @@ proc ::constcl::argument-list? {val} {
     return #t
   }
 }
-
 proc ::constcl::make-lambdas {vars args body} {
   set tmps [make-temporaries $vars]
   set body [append-b [
@@ -1681,7 +1571,6 @@ proc ::constcl::make-lambdas {vars args body} {
   set n [cons $n [make-undefineds $vars]]
   return $n
 }
-
 proc ::constcl::make-temporaries {vals} {
   set res #NIL
   while {$vals ne "#NIL"} {
@@ -1690,7 +1579,6 @@ proc ::constcl::make-temporaries {vals} {
   }
   return $res
 }
-
 proc ::constcl::gensym {prefix} {
   set symbolnames [
     dict keys $::constcl::symbolTable]
@@ -1700,7 +1588,6 @@ proc ::constcl::gensym {prefix} {
   }
   return [S $s]
 }
-
 proc ::constcl::append-b {a b} {
   if {$a eq "#NIL"} {
     return $b
@@ -1716,7 +1603,6 @@ proc ::constcl::append-b {a b} {
   set-cdr! $last $b
   return $a
 }
-
 proc ::constcl::make-assignments {vars tmps} {
   set res #NIL
   while {$vars ne "#NIL"} {
@@ -1729,7 +1615,6 @@ proc ::constcl::make-assignments {vars tmps} {
   }
   return [cons [S begin] $res]
 }
-
 proc ::constcl::make-undefineds {vals} {
   set res #NIL
   while {$vals ne "#NIL"} {
@@ -1738,7 +1623,6 @@ proc ::constcl::make-undefineds {vals} {
   }
   return $res
 }
-
 reg write
 
 proc ::constcl::write {val args} {
@@ -1754,7 +1638,6 @@ proc ::constcl::write {val args} {
   }
   return
 }
-
 reg display
 
 proc ::constcl::display {val args} {
@@ -1770,7 +1653,6 @@ proc ::constcl::display {val args} {
   }
   return
 }
-
 proc ::constcl::write-pair {port pair} {
   # take an object and print the car
   # and the cdr of the stored value
@@ -1792,7 +1674,6 @@ proc ::constcl::write-pair {port pair} {
   }
   return
 }
-
 proc ::constcl::idcheckinit {init} {
   if {[::string is alpha -strict $init] ||
     $init in {! $ % & * / : < = > ? ^ _ ~}} {
@@ -1801,7 +1682,6 @@ proc ::constcl::idcheckinit {init} {
     return false
   }
 }
-
 proc ::constcl::idchecksubs {subs} {
   foreach c [split $subs {}] {
     if {!([::string is alnum -strict $c] ||
@@ -1811,7 +1691,6 @@ proc ::constcl::idchecksubs {subs} {
   }
   return true
 }
-
 proc ::constcl::idcheck {sym} {
   if {$sym eq {}} {return $sym}
   if {(![idcheckinit [::string index $sym 0]] ||
@@ -1821,7 +1700,6 @@ proc ::constcl::idcheck {sym} {
   }
   set sym
 }
-
 proc ::constcl::varcheck {sym} {
   if {$sym in {
     else => define unquote unquote-splicing
@@ -1832,7 +1710,6 @@ proc ::constcl::varcheck {sym} {
   }
   return $sym
 }
-
 catch { ::constcl::Environment destroy }
 
 oo::class create ::constcl::Environment {
@@ -1951,7 +1828,6 @@ oo::class create ::constcl::Environment {
     my write $port
   }
 }
-
 proc ::constcl::MkEnv {args} {
   if {[llength $args] == 1} {
     set parms #NIL
@@ -1964,13 +1840,11 @@ proc ::constcl::MkEnv {args} {
   }
   Environment new $parms $vals $env
 }
-
 reg environment?
 
 proc ::constcl::environment? {val} {
   typeof? $val Environment
 }
-
 proc ::constcl::input {prompt} {
   puts -nonewline $prompt
   flush stdout
@@ -1989,7 +1863,6 @@ proc ::constcl::input {prompt} {
   }
   return $buf
 }
-
 proc ::repl {{prompt "ConsTcl> "}} {
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
@@ -2001,7 +1874,6 @@ proc ::repl {{prompt "ConsTcl> "}} {
   }
   $cur_env destroy
 }
-
 reg eq?
 
 proc ::constcl::eq? {expr1 expr2} {
@@ -2035,16 +1907,13 @@ proc ::constcl::eq? {expr1 expr2} {
     return #f
   }
 }
-
 proc ::constcl::teq {typep expr1 expr2} {
     return [expr {[T [$typep $expr1]] &&
       [T [$typep $expr2]]}]
 }
-
 proc ::constcl::veq {expr1 expr2} {
     return [expr {[$expr1 value] eq [$expr2 value]}]
 }
-
 reg eqv?
 
 proc ::constcl::eqv? {expr1 expr2} {
@@ -2080,7 +1949,6 @@ proc ::constcl::eqv? {expr1 expr2} {
     return #f
   }
 }
-
 reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
@@ -2091,7 +1959,6 @@ proc ::constcl::equal? {expr1 expr2} {
   }
   # TODO
 }
-
 oo::class create ::constcl::Number {
   superclass ::constcl::NIL
   variable value
@@ -2136,17 +2003,14 @@ oo::class create ::constcl::Number {
     set value
   }
 }
-
 interp alias {} ::constcl::MkNumber \
   {} ::constcl::Number new
 interp alias {} N {} ::constcl::Number new
-
 reg number?
 
 proc ::constcl::number? {val} {
   return [typeof? $val Number]
 }
-
 reg =
 
 proc ::constcl::= {args} {
@@ -2162,7 +2026,6 @@ proc ::constcl::= {args} {
     return #f
   }
 }
-
 reg <
 
 proc ::constcl::< {args} {
@@ -2177,7 +2040,6 @@ proc ::constcl::< {args} {
     return #f
   }
 }
-
 reg >
 
 proc ::constcl::> {args} {
@@ -2192,7 +2054,6 @@ proc ::constcl::> {args} {
     return #f
   }
 }
-
 reg <=
 
 proc ::constcl::<= {args} {
@@ -2207,7 +2068,6 @@ proc ::constcl::<= {args} {
     return #f
   }
 }
-
 reg >=
 
 proc ::constcl::>= {args} {
@@ -2222,7 +2082,6 @@ proc ::constcl::>= {args} {
     return #f
   }
 }
-
 reg zero?
 
 proc ::constcl::zero? {num} {
@@ -2231,7 +2090,6 @@ proc ::constcl::zero? {num} {
   }
   return [$num zero?]
 }
-
 reg positive?
 
 proc ::constcl::positive? {num} {
@@ -2240,7 +2098,6 @@ proc ::constcl::positive? {num} {
   }
   return [$num positive?]
 }
-
 reg negative?
 
 proc ::constcl::negative? {num} {
@@ -2249,7 +2106,6 @@ proc ::constcl::negative? {num} {
   }
   return [$num negative?]
 }
-
 reg even?
 
 proc ::constcl::even? {num} {
@@ -2258,7 +2114,6 @@ proc ::constcl::even? {num} {
   }
   return [$num even?]
 }
-
 reg odd?
 
 proc ::constcl::odd? {num} {
@@ -2267,7 +2122,6 @@ proc ::constcl::odd? {num} {
   }
   return [$num odd?]
 }
-
 reg max
 
 proc ::constcl::max {num args} {
@@ -2279,7 +2133,6 @@ proc ::constcl::max {num args} {
   }
   N [::tcl::mathfunc::max {*}$nums]
 }
-
 reg min
 
 proc ::constcl::min {num args} {
@@ -2291,7 +2144,6 @@ proc ::constcl::min {num args} {
   }
   N [::tcl::mathfunc::min {*}$nums]
 }
-
 reg +
 
 proc ::constcl::+ {args} {
@@ -2302,7 +2154,6 @@ proc ::constcl::+ {args} {
   }
   N [::tcl::mathop::+ {*}$nums]
 }
-
 reg *
 
 proc ::constcl::* {args} {
@@ -2313,7 +2164,6 @@ proc ::constcl::* {args} {
   }
   N [::tcl::mathop::* {*}$nums]
 }
-
 reg -
 
 proc ::constcl::- {num args} {
@@ -2324,7 +2174,6 @@ proc ::constcl::- {num args} {
   }
   N [::tcl::mathop::- [$num numval] {*}$nums]
 }
-
 reg /
 
 proc ::constcl::/ {num args} {
@@ -2335,7 +2184,6 @@ proc ::constcl::/ {num args} {
   }
   N [::tcl::mathop::/ [$num numval] {*}$nums]
 }
-
 reg abs
 
 proc ::constcl::abs {num} {
@@ -2348,7 +2196,6 @@ proc ::constcl::abs {num} {
     return $num
   }
 }
-
 reg quotient
 
 proc ::constcl::quotient {num1 num2} {
@@ -2362,7 +2209,6 @@ proc ::constcl::quotient {num1 num2} {
     return #0
   }
 }
-
 reg remainder
 
 proc ::constcl::remainder {num1 num2} {
@@ -2373,14 +2219,12 @@ proc ::constcl::remainder {num1 num2} {
   }
   return [N $n]
 }
-
 reg modulo
 
 proc ::constcl::modulo {num1 num2} {
   return [N [::tcl::mathop::% [$num1 numval] \
     [$num2 numval]]]
 }
-
 reg floor
 
 proc ::constcl::floor {num} {
@@ -2389,7 +2233,6 @@ proc ::constcl::floor {num} {
   }
   N [::tcl::mathfunc::floor [$num numval]]
 }
-
 reg ceiling
 
 proc ::constcl::ceiling {num} {
@@ -2398,7 +2241,6 @@ proc ::constcl::ceiling {num} {
   }
   N [::tcl::mathfunc::ceil [$num numval]]
 }
-
 reg truncate
 
 proc ::constcl::truncate {num} {
@@ -2411,7 +2253,6 @@ proc ::constcl::truncate {num} {
     N [::tcl::mathfunc::floor [$num numval]]
   }
 }
-
 reg round
 
 proc ::constcl::round {num} {
@@ -2420,7 +2261,6 @@ proc ::constcl::round {num} {
   }
   N [::tcl::mathfunc::round [$num numval]]
 }
-
 reg exp
 
 proc ::constcl::exp {num} {
@@ -2429,7 +2269,6 @@ proc ::constcl::exp {num} {
   }
   N [::tcl::mathfunc::exp [$num numval]]
 }
-
 reg log
 
 proc ::constcl::log {num} {
@@ -2438,7 +2277,6 @@ proc ::constcl::log {num} {
   }
   N [::tcl::mathfunc::log [$num numval]]
 }
-
 reg sin
 
 proc ::constcl::sin {num} {
@@ -2447,7 +2285,6 @@ proc ::constcl::sin {num} {
   }
   N [::tcl::mathfunc::sin [$num numval]]
 }
-
 reg cos
 
 proc ::constcl::cos {num} {
@@ -2456,7 +2293,6 @@ proc ::constcl::cos {num} {
   }
   N [::tcl::mathfunc::cos [$num numval]]
 }
-
 reg tan
 
 proc ::constcl::tan {num} {
@@ -2465,7 +2301,6 @@ proc ::constcl::tan {num} {
   }
   N [::tcl::mathfunc::tan [$num numval]]
 }
-
 reg asin
 
 proc ::constcl::asin {num} {
@@ -2474,7 +2309,6 @@ proc ::constcl::asin {num} {
   }
   N [::tcl::mathfunc::asin [$num numval]]
 }
-
 reg acos
 
 proc ::constcl::acos {num} {
@@ -2483,7 +2317,6 @@ proc ::constcl::acos {num} {
   }
   N [::tcl::mathfunc::acos [$num numval]]
 }
-
 reg atan
 
 proc ::constcl::atan {args} {
@@ -2505,7 +2338,6 @@ proc ::constcl::atan {args} {
       [$num1 numval] [$num2 numval]]
   }
 }
-
 reg sqrt
 
 proc ::constcl::sqrt {num} {
@@ -2514,7 +2346,6 @@ proc ::constcl::sqrt {num} {
   }
   N [::tcl::mathfunc::sqrt [$num numval]]
 }
-
 reg expt
 
 proc ::constcl::expt {num1 num2} {
@@ -2529,7 +2360,6 @@ proc ::constcl::expt {num1 num2} {
   N [::tcl::mathfunc::pow [$num1 numval] \
     [$num2 numval]]
 }
-
 reg number->string
 
 proc ::constcl::number->string {num args} {
@@ -2560,7 +2390,6 @@ proc ::constcl::number->string {num args} {
     }
   }
 }
-
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
@@ -2573,7 +2402,6 @@ proc base {base number} {
   if $negative {set res -$res}
   set res
 }
-
 reg string->number
 
 proc ::constcl::string->number {str args} {
@@ -2600,7 +2428,6 @@ proc ::constcl::string->number {str args} {
     }
   }
 }
-
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
@@ -2616,7 +2443,6 @@ proc frombase {base number} {
   if $negative {set res -$res}
   set res
 }
-
 oo::class create ::constcl::Boolean {
   superclass ::constcl::NIL
   variable boolval
@@ -2645,7 +2471,6 @@ oo::class create ::constcl::Boolean {
     set boolval
   }
 }
-
 proc ::constcl::MkBoolean {bool} {
   foreach instance [info class instances \
     ::constcl::Boolean] {
@@ -2655,13 +2480,11 @@ proc ::constcl::MkBoolean {bool} {
   }
   return [::constcl::Boolean new $bool]
 }
-
 reg boolean?
 
 proc ::constcl::boolean? {val} {
   return [typeof? $val Boolean]
 }
-
 reg not
 
 proc ::constcl::not {val} {
@@ -2671,7 +2494,6 @@ proc ::constcl::not {val} {
     return #f
   }
 }
-
 oo::class create ::constcl::Char {
   superclass ::constcl::NIL
   variable value
@@ -2756,7 +2578,6 @@ oo::class create ::constcl::Char {
     my external
   }
 }
-
 proc ::constcl::MkChar {char} {
   if {[regexp -nocase {space|newline} $char]} {
       set char [::string tolower $char]
@@ -2769,13 +2590,11 @@ proc ::constcl::MkChar {char} {
   }
   return [::constcl::Char new $char]
 }
-
 reg char?
 
 proc ::constcl::char? {val} {
   return [typeof? $val Char]
 }
-
 reg char=?
 
 proc ::constcl::char=? {char1 char2} {
@@ -2791,7 +2610,6 @@ proc ::constcl::char=? {char1 char2} {
     return #f
   }
 }
-
 reg char<?
 
 proc ::constcl::char<? {char1 char2} {
@@ -2807,7 +2625,6 @@ proc ::constcl::char<? {char1 char2} {
     return #f
   }
 }
-
 reg char>?
 
 proc ::constcl::char>? {char1 char2} {
@@ -2823,7 +2640,6 @@ proc ::constcl::char>? {char1 char2} {
     return #f
   }
 }
-
 reg char<=?
 
 proc ::constcl::char<=? {char1 char2} {
@@ -2839,7 +2655,6 @@ proc ::constcl::char<=? {char1 char2} {
     return #f
   }
 }
-
 reg char>=?
 
 proc ::constcl::char>=? {char1 char2} {
@@ -2855,7 +2670,6 @@ proc ::constcl::char>=? {char1 char2} {
     return #f
   }
 }
-
 reg char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
@@ -2872,7 +2686,6 @@ proc ::constcl::char-ci=? {char1 char2} {
     return #f
   }
 }
-
 reg char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
@@ -2889,7 +2702,6 @@ proc ::constcl::char-ci<? {char1 char2} {
     return #f
   }
 }
-
 reg char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
@@ -2906,7 +2718,6 @@ proc ::constcl::char-ci>? {char1 char2} {
     return #f
   }
 }
-
 reg char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
@@ -2923,7 +2734,6 @@ proc ::constcl::char-ci<=? {char1 char2} {
     return #f
   }
 }
-
 reg char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
@@ -2940,7 +2750,6 @@ proc ::constcl::char-ci>=? {char1 char2} {
     return #f
   }
 }
-
 reg char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
@@ -2949,7 +2758,6 @@ proc ::constcl::char-alphabetic? {char} {
   }
   return [$char alphabetic?]
 }
-
 reg char-numeric?
 
 proc ::constcl::char-numeric? {char} {
@@ -2958,7 +2766,6 @@ proc ::constcl::char-numeric? {char} {
   }
   return [$char numeric?]
 }
-
 reg char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
@@ -2967,7 +2774,6 @@ proc ::constcl::char-whitespace? {char} {
   }
   return [$char whitespace?]
 }
-
 reg char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
@@ -2976,7 +2782,6 @@ proc ::constcl::char-upper-case? {char} {
   }
   return [$char upper-case?]
 }
-
 reg char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
@@ -2985,13 +2790,11 @@ proc ::constcl::char-lower-case? {char} {
   }
   return [$char lower-case?]
 }
-
 reg char->integer
 
 proc ::constcl::char->integer {char} {
   return [MkNumber [scan [$char char] %c]]
 }
-
 reg integer->char
 
 proc ::constcl::integer->char {int} {
@@ -3003,7 +2806,6 @@ proc ::constcl::integer->char {int} {
     return [MkChar #\\[format %c [$int numval]]]
   }
 }
-
 reg char-upcase
 
 proc ::constcl::char-upcase {char} {
@@ -3013,7 +2815,6 @@ proc ::constcl::char-upcase {char} {
   return [MkChar [
     ::string toupper [$char value]]]
 }
-
 reg char-downcase
 
 proc ::constcl::char-downcase {char} {
@@ -3023,7 +2824,6 @@ proc ::constcl::char-downcase {char} {
   return [MkChar [
     ::string tolower [$char value]]]
 }
-
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
@@ -3051,10 +2851,8 @@ oo::define ::constcl::Procedure method display {port} {
 oo::define ::constcl::Procedure method show {} {
   return [self]
 }
-
 interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
-
 reg procedure?
 
 proc ::constcl::procedure? {val} {
@@ -3066,7 +2864,6 @@ proc ::constcl::procedure? {val} {
     return #f
   }
 }
-
 reg apply
 
 proc ::constcl::apply {pr vals} {
@@ -3075,7 +2872,6 @@ proc ::constcl::apply {pr vals} {
   }
   invoke $pr $vals
 }
-
 reg map
 
 proc ::constcl::map {pr args} {
@@ -3104,7 +2900,6 @@ proc ::constcl::map {pr args} {
   }
   return [list {*}$res]
 }
-
 reg for-each
 
 proc ::constcl::for-each {proc args} {
@@ -3132,7 +2927,6 @@ proc ::constcl::for-each {proc args} {
   }
   return #NIL
 }
-
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
@@ -3161,7 +2955,6 @@ oo::class create ::constcl::Port {
     my write $p
   }
 }
-
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
@@ -3191,10 +2984,8 @@ oo::class create ::constcl::InputPort {
     my write $p
   }
 }
-
 interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
-
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
   variable buffer read_eof
@@ -3231,7 +3022,6 @@ oo::class create ::constcl::StringInputPort {
     my write $p
   }
 }
-
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
@@ -3264,10 +3054,8 @@ oo::class create ::constcl::OutputPort {
     my write $p
   }
 }
-
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
-
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
@@ -3297,18 +3085,15 @@ oo::class create ::constcl::StringOutputPort {
     my write $p
   }
 }
-
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
 set ::constcl::Output_port [
   ::constcl::MkOutputPort stdout]
-
 reg port?
 
 proc ::constcl::port? {val} {
   typeof? $val Port
 }
-
 reg call-with-input-file
 
 proc ::constcl::call-with-input-file {filename proc} {
@@ -3318,7 +3103,6 @@ proc ::constcl::call-with-input-file {filename proc} {
   $port destroy
   return $res
 }
-
 reg call-with-output-file
 
 proc ::constcl::call-with-output-file {filename proc} {
@@ -3329,7 +3113,6 @@ proc ::constcl::call-with-output-file {filename proc} {
   $port destroy
   return $res
 }
-
 reg input-port?
 
 proc ::constcl::input-port? {val} {
@@ -3341,7 +3124,6 @@ proc ::constcl::input-port? {val} {
     return #f
   }
 }
-
 reg output-port?
 
 proc ::constcl::output-port? {val} {
@@ -3353,19 +3135,16 @@ proc ::constcl::output-port? {val} {
     return #f
   }
 }
-
 reg current-input-port
 
 proc ::constcl::current-input-port {} {
   return [$::constcl::Input_port copy]
 }
-
 reg current-output-port
 
 proc ::constcl::current-output-port {} {
   return [$::constcl::Output_port copy]
 }
-
 reg with-input-from-file
 
 proc ::constcl::with-input-from-file {filename thunk} {
@@ -3379,7 +3158,6 @@ proc ::constcl::with-input-from-file {filename thunk} {
   }
   $newport destroy
 }
-
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
@@ -3394,7 +3172,6 @@ proc ::constcl::with-output-to-file {filename thunk} {
   }
   $newport destroy
 }
-
 reg open-input-file
 
 proc cnof {} {return "could not open file"}
@@ -3409,7 +3186,6 @@ proc ::constcl::open-input-file {filename} {
   }
   return $p
 }
-
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
@@ -3424,7 +3200,6 @@ proc ::constcl::open-output-file {filename} {
   }
   return $p
 }
-
 reg close-input-port
 
 proc ::constcl::close-input-port {port} {
@@ -3433,7 +3208,6 @@ proc ::constcl::close-input-port {port} {
   }
   $port close
 }
-
 reg close-output-port
 
 proc ::constcl::close-output-port {port} {
@@ -3442,7 +3216,6 @@ proc ::constcl::close-output-port {port} {
   }
   $port close
 }
-
 reg newline
 
 proc ::constcl::newline {args} {
@@ -3453,7 +3226,6 @@ proc ::constcl::newline {args} {
   }
   pe "(display #\\newline '$port)"
 }
-
 reg load
 
 proc ::constcl::load {filename} {
@@ -3468,7 +3240,6 @@ proc ::constcl::load {filename} {
   }
   $p destroy
 }
-
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
@@ -3524,16 +3295,13 @@ oo::class create ::constcl::Pair {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
-
 interp alias {} ::constcl::MkPair \
   {} ::constcl::Pair new
-
 reg pair?
 
 proc ::constcl::pair? {val} {
   typeof? $val Pair
 }
-
 proc ::constcl::show-pair {pair} {
   # take an object and print the car
   # and the cdr of the stored value
@@ -3556,25 +3324,21 @@ proc ::constcl::show-pair {pair} {
   }
   return $str
 }
-
 reg cons
 
 proc ::constcl::cons {car cdr} {
   MkPair $car $cdr
 }
-
 reg car
 
 proc ::constcl::car {pair} {
   $pair car
 }
-
 reg cdr
 
 proc ::constcl::cdr {pair} {
   $pair cdr
 }
-
 foreach ads {
   aa
   ad
@@ -3619,19 +3383,16 @@ foreach ads {
     "
 
 }
-
 reg set-car!
 
 proc ::constcl::set-car! {pair val} {
   $pair set-car! $val
 }
-
 reg set-cdr!
 
 proc ::constcl::set-cdr! {pair val} {
   $pair set-cdr! $val
 }
-
 reg list?
 
 proc ::constcl::list? {val} {
@@ -3644,7 +3405,6 @@ proc ::constcl::list? {val} {
       return #f
   }
 }
-
 proc ::constcl::listp {pair} {
   upvar visited visited
   if {$pair in $visited} {
@@ -3659,7 +3419,6 @@ proc ::constcl::listp {pair} {
     return #f
   }
 }
-
 reg list
 
 proc ::constcl::list {args} {
@@ -3673,7 +3432,6 @@ proc ::constcl::list {args} {
     return $prev
   }
 }
-
 reg length
 
 proc ::constcl::length {pair} {
@@ -3682,7 +3440,6 @@ proc ::constcl::length {pair} {
   }
   MkNumber [length-helper $pair]
 }
-
 proc ::constcl::length-helper {pair} {
   if {[T [null? $pair]]} {
     return 0
@@ -3691,7 +3448,6 @@ proc ::constcl::length-helper {pair} {
       [length-helper [cdr $pair]]}]
   }
 }
-
 reg append
 
 proc ::constcl::append {args} {
@@ -3704,7 +3460,6 @@ proc ::constcl::append {args} {
   }
   set prev
 }
-
 proc ::constcl::copy-list {pair next} {
   # TODO only fresh conses in the direct chain to NIL
   if {[T [null? $pair]]} {
@@ -3715,13 +3470,11 @@ proc ::constcl::copy-list {pair next} {
     cons [car $pair] [copy-list [cdr $pair] $next]
   }
 }
-
 reg reverse
 
 proc ::constcl::reverse {vals} {
   list {*}[lreverse [splitlist $vals]]
 }
-
 reg list-tail
 
 proc ::constcl::list-tail {vals k} {
@@ -3731,31 +3484,26 @@ proc ::constcl::list-tail {vals k} {
     list-tail [cdr $vals] [- $k #1]
   }
 }
-
 reg list-ref
 
 proc ::constcl::list-ref {vals k} {
   car [list-tail $vals $k]
 }
-
 reg memq
 
 proc ::constcl::memq {val1 val2} {
   return [member-proc eq? $val1 $val2]
 }
-
 reg memv
 
 proc ::constcl::memv {val1 val2} {
   return [member-proc eqv? $val1 $val2]
 }
-
 reg member
 
 proc ::constcl::member {val1 val2} {
   return [member-proc equal? $val1 $val2]
 }
-
 proc ::constcl::member-proc {epred val1 val2} {
   switch $epred {
     eq? { set name "memq" }
@@ -3775,25 +3523,21 @@ proc ::constcl::member-proc {epred val1 val2} {
     }
   }
 }
-
 reg assq
 
 proc ::constcl::assq {val1 val2} {
   return [assoc-proc eq? $val1 $val2]
 }
-
 reg assv
 
 proc ::constcl::assv {val1 val2} {
   return [assoc-proc eqv? $val1 $val2]
 }
-
 reg assoc
 
 proc ::constcl::assoc {val1 val2} {
   return [assoc-proc equal? $val1 $val2]
 }
-
 proc ::constcl::assoc-proc {epred val1 val2} {
   switch $epred {
     eq? { set name "assq" }
@@ -3814,7 +3558,6 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     }
   }
 }
-
 oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
@@ -3917,16 +3660,13 @@ oo::class create ::constcl::String {
     my external
   }
 }
-
 interp alias {} ::constcl::MkString \
   {} ::constcl::String new
-
 reg string?
 
 proc ::constcl::string? {val} {
   typeof? $val String
 }
-
 reg make-string
 
 proc ::constcl::make-string {k args} {
@@ -3939,7 +3679,6 @@ proc ::constcl::make-string {k args} {
   }
   return [MkString [::string repeat $char $i]]
 }
-
 reg string
 
 proc ::constcl::string {args} {
@@ -3953,7 +3692,6 @@ proc ::constcl::string {args} {
   }
   return [MkString $str]
 }
-
 reg string-length
 
 proc ::constcl::string-length {str} {
@@ -3962,7 +3700,6 @@ proc ::constcl::string-length {str} {
   }
   return [$str length]
 }
-
 reg string-ref
 
 proc ::constcl::string-ref {str k} {
@@ -3976,7 +3713,6 @@ proc ::constcl::string-ref {str k} {
   }
   return [$str ref $k]
 }
-
 reg string-set!
 
 proc ::constcl::string-set! {str k char} {
@@ -3995,7 +3731,6 @@ proc ::constcl::string-set! {str k char} {
   $str set! $k $char
   return $str
 }
-
 reg string=?
 
 proc ::constcl::string=? {str1 str2} {
@@ -4013,7 +3748,6 @@ proc ::constcl::string=? {str1 str2} {
     return #f
   }
 }
-
 reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
@@ -4032,7 +3766,6 @@ proc ::constcl::string-ci=? {str1 str2} {
     return #f
   }
 }
-
 reg string<?
 
 proc ::constcl::string<? {str1 str2} {
@@ -4050,7 +3783,6 @@ proc ::constcl::string<? {str1 str2} {
     return #f
   }
 }
-
 reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
@@ -4069,7 +3801,6 @@ proc ::constcl::string-ci<? {str1 str2} {
     return #f
   }
 }
-
 reg string>?
 
 proc ::constcl::string>? {str1 str2} {
@@ -4087,7 +3818,6 @@ proc ::constcl::string>? {str1 str2} {
     return #f
   }
 }
-
 reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
@@ -4106,7 +3836,6 @@ proc ::constcl::string-ci>? {str1 str2} {
     return #f
   }
 }
-
 reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
@@ -4124,7 +3853,6 @@ proc ::constcl::string<=? {str1 str2} {
     return #f
   }
 }
-
 reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
@@ -4143,7 +3871,6 @@ proc ::constcl::string-ci<=? {str1 str2} {
     return #f
   }
 }
-
 reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
@@ -4161,7 +3888,6 @@ proc ::constcl::string>=? {str1 str2} {
     return #f
   }
 }
-
 reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
@@ -4180,7 +3906,6 @@ proc ::constcl::string-ci>=? {str1 str2} {
     return #f
   }
 }
-
 reg substring
 
 proc ::constcl::substring {str start end} {
@@ -4198,7 +3923,6 @@ proc ::constcl::substring {str start end} {
   }
   return [MkString [$str substring $start $end]]
 }
-
 reg string-append
 
 proc ::constcl::string-append {args} {
@@ -4206,20 +3930,17 @@ proc ::constcl::string-append {args} {
       $arg value
     }]]
 }
-
 reg string->list
 
 proc ::constcl::string->list {str} {
   list {*}[$str store]
 }
-
 reg list->string
 
 proc ::constcl::list->string {list} {
   MkString [::append --> {*}[
     lmap c [splitlist $list] {$c char}]]
 }
-
 reg string-copy
 
 proc ::constcl::string-copy {str} {
@@ -4228,7 +3949,6 @@ proc ::constcl::string-copy {str} {
   }
   return [MkString [$str value]]
 }
-
 reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
@@ -4239,7 +3959,6 @@ proc ::constcl::string-fill! {str char} {
   $str fill! $char
   return $str
 }
-
 oo::class create ::constcl::Symbol {
   superclass ::constcl::NIL
   variable name caseconstant
@@ -4280,7 +3999,6 @@ oo::class create ::constcl::Symbol {
     my name
   }
 }
-
 proc ::constcl::MkSymbol {str} {
   if {[dict exists $::constcl::symbolTable $str]} {
     return [dict get $::constcl::symbolTable $str]
@@ -4291,13 +4009,11 @@ proc ::constcl::MkSymbol {str} {
   }
 }
 interp alias {} S {} ::constcl::MkSymbol
-
 reg symbol?
 
 proc ::constcl::symbol? {val} {
   typeof? $val Symbol
 }
-
 reg symbol->string
 
 proc ::constcl::symbol->string {sym} {
@@ -4313,7 +4029,6 @@ proc ::constcl::symbol->string {sym} {
   $str mkconstant
   return $str
 }
-
 reg string->symbol
 
 proc ::constcl::string->symbol {str} {
@@ -4324,7 +4039,6 @@ proc ::constcl::string->symbol {str} {
   $sym make-case-constant
   return $sym
 }
-
 oo::class create ::constcl::Vector {
   superclass ::constcl::NIL
   variable data constant
@@ -4417,16 +4131,13 @@ oo::class create ::constcl::Vector {
       join [lmap val [my value] {$val show}]]
   }
 }
-
 interp alias {} ::constcl::MkVector \
   {} ::constcl::Vector new
-
 reg vector?
 
 proc ::constcl::vector? {val} {
   typeof? $val Vector
 }
-
 reg make-vector
 
 proc ::constcl::make-vector {k args} {
@@ -4437,13 +4148,11 @@ proc ::constcl::make-vector {k args} {
   }
   MkVector [lrepeat [$k numval] $val]
 }
-
 reg vector
 
 proc ::constcl::vector {args} {
   MkVector $args
 }
-
 reg vector-length
 
 proc ::constcl::vector-length {vec} {
@@ -4452,7 +4161,6 @@ proc ::constcl::vector-length {vec} {
   }
   return [$vec length]
 }
-
 reg vector-ref
 
 proc ::constcl::vector-ref {vec k} {
@@ -4464,7 +4172,6 @@ proc ::constcl::vector-ref {vec k} {
   }
   return [$vec ref $k]
 }
-
 reg vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
@@ -4476,19 +4183,16 @@ proc ::constcl::vector-set! {vec k val} {
   }
   return [$vec set! $k $val]
 }
-
 reg vector->list
 
 proc ::constcl::vector->list {vec} {
   list {*}[$vec value]
 }
-
 reg list->vector
 
 proc ::constcl::list->vector {list} {
   vector {*}[splitlist $list]
 }
-
 reg vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
@@ -4498,7 +4202,6 @@ proc ::constcl::vector-fill! {vec fill} {
   }
   $vec fill! $fill
 }
-
 set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 
 set ::constcl::vectorAssign 0
@@ -4509,14 +4212,11 @@ proc ::constcl::vsAlloc {num} {
   incr ::constcl::vectorAssign $num
   return $va
 }
-
 unset -nocomplain ::constcl::symbolTable
 set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
-
 interp recursionlimit {} 2000
-
 interp alias {} #NIL {} [::constcl::NIL new]
 
 interp alias {} #t {} [::constcl::MkBoolean #t]
@@ -4538,11 +4238,8 @@ interp alias {} #UNS {} [::constcl::Unspecified new]
 interp alias {} #UND {} [::constcl::Undefined new]
 
 interp alias {} #EOF {} [::constcl::EndOfFile new]
-
 regvar pi [N 3.1415926535897931]
-
 regvar nil #NIL
-
 ::constcl::Environment create \
   ::constcl::null_env #NIL {}
 
@@ -4557,7 +4254,6 @@ oo::objdefine ::constcl::null_env {
     ::error "Unbound variable: [$sym name]"
   }
 }
-
 namespace eval ::constcl {
   Environment create global_env #NIL {} \
     ::constcl::null_env
@@ -4567,5 +4263,5 @@ namespace eval ::constcl {
     global_env bind [S $key] $bt $in
   }
 }
-
 pe {(load "schemebase.scm")}
+
