@@ -1994,7 +1994,7 @@ oo::class create ::constcl::Number {
     return 1
   }
   method write {port} {
-    $port put [my value]
+    $port put [my show]
   }
   method display {port} {
     my write $port

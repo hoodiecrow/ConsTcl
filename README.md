@@ -265,7 +265,7 @@ proc ::pn {} {
 
 #### unbind procedure
 
-`` unbind `` removes one binding from the environment it is bound in.
+`` unbind `` removes bindings from the environment it is bound in.
 
 <table border=1><thead><tr><th colspan=2 align="left">unbind (internal)</th></tr></thead><tr><td>syms</td><td>some symbols</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -724,9 +724,7 @@ The main input procedures, `` read `` and the non-standard `` parse ``, do more 
 
 ### The parsing process
 
-[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, conforming to the rules of _external representation_. The result of parsing is an _expression_.
-
-The parsing process translates a piece of text from external representation to internal representation.
+[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of _external representation_. The result of parsing is an _expression_ in _internal representation_.
 
 #### External representation
 
@@ -787,7 +785,7 @@ Ports are an abstraction of the input or output mechanism. An input port can be 
 
 #### parse procedure
 
-`` parse `` can be called with either a string input port or a Tcl or ConsTcl string (which it uses to open a string input port). Once the input port is established, `` parse `` leaves control to [``read-expr``](https://github.com/hoodiecrow/ConsTcl#read-expr-procedure).
+`` parse `` can be called with either a string input port or a Tcl or ConsTcl string (which it uses to open a string input port). Once the input port is established, `` parse `` leaves control to [``read-expr``](https://github.com/hoodiecrow/ConsTcl#readexpr-procedure).
 
 <table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>inp</td><td>a Tcl string, Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -1064,7 +1062,7 @@ proc ::constcl::read-expr {args} {
 
 #### read-character-expr procedure
 
-`` read-character-expr `` is activated by `` read-pound `` when that procedure finds a backslash in the input stream (pound-backslash is the external representation prefix for characters). It reads one or more characters to produce a character expression and return a [Char](https://github.com/hoodiecrow/ConsTcl#characters) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-character-expr `` is activated by `` read-pound `` when that procedure finds a backslash in the input stream (pound-backslash is the external representation prefix for characters). It reads one or more characters to produce a character expression and return a [Char object](https://github.com/hoodiecrow/ConsTcl#characters). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-character-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a character or end of file</td></tr></table>
 
@@ -1091,7 +1089,7 @@ proc ::constcl::read-character-expr {} {
 
 #### read-identifier-expr procedure
 
-`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or a delimiter character. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol](https://github.com/hoodiecrow/ConsTcl#symbols) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-identifier-expr `` is activated for 'anything else', and takes in characters until it finds whitespace or a delimiter character. If it is passed one or more characters it will use them before consuming any from input. It checks the input against the rules for identifiers, accepting or rejecting it with an error message. It returns a [Symbol object](https://github.com/hoodiecrow/ConsTcl#symbols). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-identifier-expr (internal)</th></tr></thead><tr><td>?chars?</td><td>some Tcl characters</td></tr><tr><td><i>Returns:</i></td><td>a symbol or end of file</td></tr></table>
 
@@ -1127,7 +1125,7 @@ proc ::constcl::read-identifier-expr {args} {
 
 #### read-number-expr procedure
 
-`` read-number-expr `` reads numerical input, both integers and floating point numbers. It is activated by `` read-expr `` or `` read-plus-minus `` if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or a delimiter character, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number](https://github.com/hoodiecrow/ConsTcl#numbers) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-number-expr `` reads numerical input, both integers and floating point numbers. It is activated by `` read-expr `` or `` read-plus-minus `` if they encounter digits, and it actually takes in anything that starts out like a number and stops at whitespace or a delimiter character, and then it accepts or rejects the input by comparing it to a Tcl double. It returns a [Number object](https://github.com/hoodiecrow/ConsTcl#numbers). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-number-expr (internal)</th></tr></thead><tr><td>?char?</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a number or end of file</td></tr></table>
 
@@ -1187,7 +1185,7 @@ proc ::constcl::read-object-expr {} {
 
 #### read-pair-expr procedure
 
-The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists) objects, either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member). Shares the variables `` c `` and `` unget `` with its caller.
+The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair objects](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists), either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member). Shares the variables `` c `` and `` unget `` with its caller.
 
 ![#](images/prop-improp.png)
 
@@ -1351,7 +1349,7 @@ proc ::constcl::read-quoted-expr {} {
 
 #### read-string-expr procedure
 
-`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable [String](https://github.com/hoodiecrow/ConsTcl#strings) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is a ConsTcl extension). It then returns a string expression--an immutable [String object](https://github.com/hoodiecrow/ConsTcl#strings). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
 
@@ -1406,7 +1404,7 @@ proc ::constcl::read-unquoted-expr {} {
 
 #### read-vector-expr procedure
 
-`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector](https://github.com/hoodiecrow/ConsTcl#vectors) object. Shares the variables `` c `` and `` unget `` with its caller.
+`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector object](https://github.com/hoodiecrow/ConsTcl#vectors). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -1442,7 +1440,7 @@ proc ::constcl::read-vector-expr {} {
 
 ## Evaluation
 
-The second thing an interpreter must be able to do is to reduce expressions to their _normal form_, or _evaluate_ them. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
+The second thing an interpreter must be able to do is to _evaluate_ expressions, that is reduce them to _normal form_. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
 
 To be able to evaluate every kind of expression, a structured approach is needed. Lisp has nine syntactic forms, each with its own syntax, and each with its own process of evaluation.
 
@@ -1573,7 +1571,7 @@ proc ::constcl::special-if {expr env} {
 }
 ```
 
-The two procedures that help the if form out are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
+The two procedures that help the `` if `` form out are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
 
 __/if__ procedure __/if1__ procedure
 
@@ -1599,7 +1597,7 @@ proc ::constcl::/if1 {cond conseq} {
 
 #### case special form
 
-Another conditional form is `` case ``. It implements a multi-choice where a single expression selects between alternatives. The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
+`` case `` is another conditional form. It implements a multi-choice where a single expression selects between alternatives. The body of the `` case `` form consists of a key-expression and a number of clauses. Each clause has a list of values and a body. If the key-expression evaluates to a value that occurs in one of the value-lists (considered in order), that clause's body is evaluated and all other clauses are ignored.
 
 Syntax: (__case__ _key_ _clause_ ...)
 
@@ -1968,7 +1966,7 @@ One more step is needed before we can use the procedure. It must have a name. We
 
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
-The `` lambda `` special form makes a [Procedure](https://github.com/hoodiecrow/ConsTcl#control) object. First it needs to convert the Lisp list `` body ``. It is bundled inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` is passed on as it is.
+The `` lambda `` special form makes a [Procedure object](https://github.com/hoodiecrow/ConsTcl#control). First it needs to convert the Lisp list `` body ``. It is bundled inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` (for _formal parameters_) is passed on as it is.
 
 
 ---
@@ -2264,13 +2262,13 @@ proc ::constcl::rewrite-let* {bindings body env} {
 
 Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
 
-There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure arguments and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
+There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along its call stack, it sheds environment references.
 
 Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
 
 Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
 
-The other side of the coin is that the evaluator uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
+From the evaluator's perspective it uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
 
 ![#](images/environments.png)
 
@@ -2394,9 +2392,9 @@ proc ::constcl::eval-list {exps env} {
 
 ### Macros
 
-Macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions is one of Lisp's strong points. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
+One of Lisp's strong points is macros that allow concise, abstract expressions that are automatically rewritten into other, more concrete but also more verbose expressions. This interpreter does macro expansion, but the user can't define new macros--the ones available are hardcoded in the code below.
 
-A macro expander procedure takes an expression and an environment as a parameter. In the end, the expanded expression is passed back to `` eval ``.
+A macro expander procedure takes an expression and an environment as parameters. In the end, the expanded expression is passed back to `` eval ``.
 
 #### expand-and procedure
 
@@ -2421,7 +2419,7 @@ proc ::constcl::expand-and {expr env} {
 
 __do-and__ procedure
 
-`` do-and `` is called recursively for every argument of `` expand-or `` if there are more than one.
+`` do-and `` is called recursively for every argument of `` expand-and `` if there are more than one.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-and (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>prev</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -3200,13 +3198,13 @@ proc ::constcl::write-pair {port pair} {
 
 ## Identifier validation
 
-__idcheckinit__
+__idcheckinit__ procedure
 
-__idchecksubs__
+__idchecksubs__ procedure
 
-__idcheck__
+__idcheck__ procedure
 
-__varcheck__
+__varcheck__ procedure
 
 Some routines for checking if a string is a valid identifier. `` idcheckinit `` checks the first character, `` idchecksubs `` checks the rest. `` idcheck `` calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which `` varcheck `` checks, for a set of keywords given in the standard.
 
@@ -3264,7 +3262,7 @@ The class for environments is called `` Environment ``. It is mostly a wrapper a
 
 Using a dictionary means that name lookup is by hash table lookup. In a typical Lisp implementation, large environments are served by hash lookup, while small ones have name lookup by linear search.
 
-The long and complex constructor is to accommodate the variations of Scheme parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+The long and complex constructor is to accommodate the variations of Scheme formal parameters lists, which can be empty, a proper list, a symbol, or a dotted list.
 
 Names are stored as Lisp symbols, while values are stored as they are, as Lisp or Tcl values. This means that a name might have to be converted to a symbol before lookup, and the result of lookup may have to be converted afterwards. Note that in the two cases where a number of values are stored under one name (a formals list of a single symbol or a dotted list), then the values are stored as a Lisp list of values.
 
@@ -3505,7 +3503,7 @@ Now for the built-in procedures!
 
 ### Equivalence predicates
 
-One of the fundamental questions in programming is ``is A equal to B?'' Whether the algorithm is about searching, sorting, or almost anything else, an equality test comes up sooner rather than later. Lisp takes the question and adds ``what does it mean to be equal?''
+One of the fundamental questions in programming is ``is A equal to B?''. Lisp takes the question and adds ``what does it mean to be equal?''
 
 Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three. Of the three, `` eq `` generally tests for identity (with exception for numbers), `` eqv `` tests for value equality (except for booleans and procedures, where it tests for identity), and `` equal `` tests for whether the output strings are equal.
 
@@ -3673,7 +3671,7 @@ oo::class create ::constcl::Number {
     return 1
   }
   method write {port} {
-    $port put [my value]
+    $port put [my show]
   }
   method display {port} {
     my write $port
@@ -4055,7 +4053,7 @@ proc ::constcl::quotient {num1 num2} {
 
 #### remainder procedure
 
-`` remainder `` is a variant of the modulus function. (I'm a programmer, not a mathematician!)
+`` remainder `` is similar to `` modulo ``, but the remainder is calculated using absolute values for `` num1 `` and `` num2 ``, and the result is negative if and only if `` num1 `` was negative. a mathematician!)
 
 Example:
 
@@ -4105,7 +4103,7 @@ __truncate__ procedure
 
 __round__ procedure
 
-`` floor ``, `` ceiling ``, `` truncate ``, and `` round `` are different methods for converting a real number to an integer.
+`` floor ``, `` ceiling ``, `` truncate ``, and `` round `` are different methods for converting a floating point number to an integer.
 
 Example:
 

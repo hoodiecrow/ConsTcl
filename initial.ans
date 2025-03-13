@@ -288,7 +288,7 @@ CB)
 
 H4 unbind procedure
 
-K{unbind} removes one binding from the environment it is bound in.
+K{unbind} removes bindings from the environment it is bound in.
 
 PR(
 unbind (internal);syms syms -> none

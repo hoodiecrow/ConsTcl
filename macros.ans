@@ -1,13 +1,13 @@
 
 H3 Macros
 
-Macros that allow concise, abstract expressions that are automatically rewritten
-into other, more concrete but also more verbose expressions is one of Lisp's
-strong points. This interpreter does macro expansion, but the user can't define
+One of Lisp's strong points is macros that allow concise, abstract expressions
+that are automatically rewritten into other, more concrete but also more verbose
+expressions. This interpreter does macro expansion, but the user can't define
 new macros--the ones available are hardcoded in the code below.
 
-A macro expander procedure takes an expression and an environment as a
-parameter.  In the end, the expanded expression is passed back to K{eval}.
+A macro expander procedure takes an expression and an environment as
+parameters.  In the end, the expanded expression is passed back to K{eval}.
 
 H4 expand-and procedure
 
@@ -35,7 +35,7 @@ CB)
 
 B{do-and} procedure
 
-K{do-and} is called recursively for every argument of K{expand-or} if there are
+K{do-and} is called recursively for every argument of K{expand-and} if there are
 more than one.
 
 PR(

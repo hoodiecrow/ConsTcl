@@ -13,12 +13,9 @@ E{internal representation} that the evaluator can use.
 h3 The parsing process
 
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
-letters, digits, and other characters, conforming to the rules of E{external
+letters, digits, and other characters, a piece of text conforming to the rules of E{external
   representation}I{external representation}. The result of parsing is an
-  E{expression}I{expression}.
-
-The parsing process translates a piece of text from external representation to
-internal representation.
+  E{expression}I{expression} in E{internal representation}.
 
 h4 External representation
 
@@ -101,7 +98,7 @@ H4 parse procedure
 
 K{parse} can be called with either a string input port or a Tcl or ConsTcl
 string (which it uses to open a string input port). Once the input port is
-established, K{parse} leaves control to S{read-expr}{read-expr-procedure}.
+established, K{parse} leaves control to S{read-expr}{readexpr-procedure}.
 
 PR(
 parse (internal);inp tstrstrinpbuf -> expr
@@ -540,7 +537,7 @@ H4 read-character-expr procedure
 K{read-character-expr} is activated by K{read-pound} when that procedure finds a
 backslash in the input stream (pound-backslash is the external representation
 prefix for characters). It reads one or more characters to produce a character
-expression and return a R{Char}{characters} object.  Shares the variables K{c}
+expression and return a R{Char object}{characters}.  Shares the variables K{c}
 and K{unget} with its caller.
 
 PR(
@@ -600,7 +597,7 @@ K{read-identifier-expr} is activated for 'anything else', and takes in
 characters until it finds whitespace or a delimiter character. If it
 is passed one or more characters it will use them before consuming any from
 input. It checks the input against the rules for identifiers, accepting or
-rejecting it with an error message. It returns a R{Symbol}{symbols} object.
+rejecting it with an error message. It returns a R{Symbol object}{symbols}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
@@ -668,7 +665,7 @@ K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
 digits, and it actually takes in anything that starts out like a number and
 stops at whitespace or a delimiter character, and then it accepts or rejects the
-input by comparing it to a Tcl double. It returns a R{Number}{numbers} object.
+input by comparing it to a Tcl double. It returns a R{Number object}{numbers}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
@@ -771,7 +768,7 @@ H4 read-pair-expr procedure
 
 The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
-list, or a possibly recursive structure of R{Pair}{pairs-and-lists} objects,
+list, or a possibly recursive structure of R{Pair objects}{pairs-and-lists},
 either a proper list (one that ends in K{#NIL}), or an improper one (one that
 has an atom as its last member).
 Shares the variables K{c} and K{unget} with its caller.
@@ -1117,7 +1114,7 @@ It collects characters until it reaches another (unescaped) double quote. To
 have double quotes in the string, escape them with backslash (which also means
 that backslashes have to be escaped with backslash). A backslash+n pair of
 characters denotes a newline (this is a ConsTcl extension). It then returns a
-string expression--an immutable R{String}{strings} object.
+string expression--an immutable R{String object}{strings}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
@@ -1242,7 +1239,7 @@ H4 read-vector-expr procedure
 
 K{read-vector-expr} is activated by K{read-pound} and reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
-expression and returns a R{Vector}{vectors} object.
+expression and returns a R{Vector object}{vectors}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(

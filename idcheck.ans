@@ -1,13 +1,13 @@
 
 H2 Identifier validation
 
-B{idcheckinit}
+B{idcheckinit} procedure
 
-B{idchecksubs}
+NI B{idchecksubs} procedure
 
-B{idcheck}
+NI B{idcheck} procedure
 
-B{varcheck}
+NI B{varcheck} procedure
 
 Some routines for checking if a string is a valid identifier. K{idcheckinit}
 checks the first character, K{idchecksubs} checks the rest. K{idcheck} calls the

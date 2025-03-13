@@ -48,7 +48,7 @@ oo::class create ::constcl::Number {
     return 1
   }
   method write {port} {
-    $port put [my value]
+    $port put [my show]
   }
   method display {port} {
     my write $port
@@ -642,7 +642,9 @@ CB)
 
 H4 remainder procedure
 
-K{remainder} is a variant of the modulus function. (I'm a programmer, not
+K{remainder} is similar to K{modulo}, but the remainder is calculated using
+absolute values for K{num1} and K{num2}, and the result is negative if and only
+if K{num1} was negative.
 a mathematician!)
 
 Example:
@@ -714,7 +716,7 @@ NI B{truncate} procedure
 NI B{round} procedure
 
 K{floor}, K{ceiling}, K{truncate}, and K{round} are different methods for
-converting a real number to an integer.
+converting a floating point number to an integer.
 
 Example:
 

@@ -1,10 +1,11 @@
 
 H2 Evaluation
 
-The second thing an interpreter must be able to do is to reduce expressions to
-their E{normal form}, or E{evaluate}I{eval}I{evaluate} them. As an example, 2 +
-6 and 8 are two expressions that have the same value, but the latter is in
-normal form (can't be reduced further) and the former is not.
+The second thing an interpreter must be able to do is to
+E{evaluate}I{eval}I{evaluate} expressions, that is reduce them to E{normal
+  form}. As an example, 2 + 6 and 8 are two expressions that have the same
+  value, but the latter is in normal form (can't be reduced further) and the
+  former is not.
 
 To be able to evaluate every kind of expression, a structured approach is
 needed. Lisp has nine syntactic forms, each with its own
@@ -190,7 +191,7 @@ proc ::constcl::special-if {expr env} {
 }
 CB)
 
-The two procedures that help the if form out are K{/if} and K{/if1}. The
+The two procedures that help the K{if} form out are K{/if} and K{/if1}. The
 former takes both a consequent and an alternate, the latter takes only a
 consequent.
 
@@ -235,7 +236,7 @@ TT)
 
 H4 case special form
 
-Another conditional form is K{case}. It implements a multi-choice where a single
+K{case} is another conditional form. It implements a multi-choice where a single
 expression selects between alternatives. The body of the K{case} form consists
 of a key-expression and a number of clauses. Each clause has a list of values
 and a body. If the key-expression evaluates to a value that occurs in one of the
@@ -815,10 +816,11 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
   (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square
   root of the sum of two squares.
 
-The K{lambda} special form makes a R{Procedure}{control} object. First
-it needs to convert the Lisp list K{body}. It is bundled inside a K{begin} if it
-has more than one expression (K{S begin} stands for `the symbol begin'.), and
-taken out of its list if not. The Lisp list K{formals} is passed on as it is.
+The K{lambda} special form makes a R{Procedure object}{control}. First it needs
+to convert the Lisp list K{body}. It is bundled inside a K{begin} if it has more
+than one expression (K{S begin} stands for `the symbol begin'.), and taken out
+of its list if not. The Lisp list K{formals} (for E{formal parameters}) is
+passed on as it is.
 
 PT(
 H5 Scheme formal parameters lists
@@ -1281,11 +1283,11 @@ the interpreter, and syntax bindings for the macros that get expanded to
 
 There isn't just one environment, either. Every time a non-primitive procedure
 is called, a new environment is created which has bindings for the procedure
-arguments and which links to the environment that was current when the procedure
-was defined (which in turn links backwards all the way to the original global
-environment). The evaluator follows into the new environment to evaluate the
-body of the procedure there, and then as the evaluator goes back along its call
-stack, it sheds environment references.
+formal parameters and which links to the environment that was current when the
+procedure was defined (which in turn links backwards all the way to the original
+global environment). The evaluator follows into the new environment to evaluate
+the body of the procedure there, and then as the evaluator goes back along its
+call stack, it sheds environment references.
 
 Not only procedures but binding forms (such as K{let}) create new environments
 for the evaluator to work in. As they do that, they also bind variables to
@@ -1301,9 +1303,9 @@ values and procedures. The ability of procedure calls and execution of binding
 forms to temporarily change the current environment is a powerful one. But still
 the evaluator eventually backtracks into the previous environments. 
 
-The other side of the coin is that the evaluator uses the environment to keep
-track of changes in the state of the evaluation. In this way, the evaluator uses
-the environment for continuity and a progress record.
+From the evaluator's perspective it uses the environment to keep track of
+changes in the state of the evaluation. In this way, the evaluator uses the
+environment for continuity and a progress record.
 
 IF /images/environments.png Two sample environments
 

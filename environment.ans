@@ -13,7 +13,7 @@ Lisp implementation, large environments are served by hash lookup, while small
 ones have name lookup by linear search.
 
 The long and complex constructor is to accommodate the variations of Scheme
-parameter lists, which can be empty, a proper list, a symbol, or a dotted list.
+formal parameters lists, which can be empty, a proper list, a symbol, or a dotted list.
 
 Names are stored as Lisp symbols, while values are stored as they are, as
 Lisp or Tcl values.  This means that a name might have to be converted to a

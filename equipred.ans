@@ -2,10 +2,8 @@ H2 Built-in procedures
 
 h3 Equivalence predicates
 
-One of the fundamental questions in programming is ``is A equal to B?'' Whether
-the algorithm is about searching, sorting, or almost anything else, an equality
-test comes up sooner rather than later. Lisp takes the question and adds ``what
-does it mean to be equal?''
+One of the fundamental questions in programming is ``is A equal to B?''. Lisp
+takes the question and adds ``what does it mean to be equal?''
 
 Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three.
 Of the three, K{eq} generally tests for identity (with exception for numbers),
