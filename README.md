@@ -5770,7 +5770,7 @@ List processing is another of Lisp's great strengths. In Lisp, lists (which are 
 (cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
 ```
 
-A _pair_ consists of a pair of pointers, named the _car_ and the _cdr_ (there are historical, not very interesting, reasons for this naming).
+A _pair_ consists of a pair of pointers, named the _car_ and the _cdr_ (There are historical, not very interesting, reasons for this naming.).
 
 ![#](images/pair.png)
 
