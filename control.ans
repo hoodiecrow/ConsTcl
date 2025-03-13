@@ -34,14 +34,14 @@ oo::define ::constcl::Procedure method call {args} {
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {port} {
-  regexp {(\d+)} [self] -> num
-  $port put "#<proc-$num>"
+  $port put [my show]
 }
 oo::define ::constcl::Procedure method display {port} {
   my write $port
 }
 oo::define ::constcl::Procedure method show {} {
-  return [self]
+  regexp {(\d+)} [self] -> num
+  return "#<proc-$num>"
 }
 CB)
 
@@ -50,7 +50,7 @@ H4 MkProcedure generator
 K{MkProcedure} generates a Procedure object.
 
 PR(
-MkProcedure (internal);parms formals body lexprs env env -> proc
+MkProcedure (internal);parms formals body expr env env -> proc
 PR)
 
 CB(
@@ -59,6 +59,9 @@ interp alias {} ::constcl::MkProcedure \
 CB)
 
 H4 procedure? procedure
+
+K{procedure?} recognizes procedures either by type or by namespace, for
+procedures that are Tcl commands.
 
 PR(
 procedure? (public);val val -> bool

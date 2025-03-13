@@ -4466,7 +4466,7 @@ proc frombase {base number} {
 
 ### Booleans
 
-Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional `` if `` operator considers all values except for `` #f `` to be true.
+Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional forms consider all values of any type except for `` #f `` to be true.
 
 #### Boolean class
 
@@ -5077,14 +5077,14 @@ oo::define ::constcl::Procedure method call {args} {
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {port} {
-  regexp {(\d+)} [self] -> num
-  $port put "#<proc-$num>"
+  $port put [my show]
 }
 oo::define ::constcl::Procedure method display {port} {
   my write $port
 }
 oo::define ::constcl::Procedure method show {} {
-  return [self]
+  regexp {(\d+)} [self] -> num
+  return "#<proc-$num>"
 }
 ```
 
@@ -5092,7 +5092,7 @@ oo::define ::constcl::Procedure method show {} {
 
 `` MkProcedure `` generates a Procedure object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkProcedure (internal)</th></tr></thead><tr><td>parms</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>a Lisp list of expressions</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkProcedure (internal)</th></tr></thead><tr><td>parms</td><td>a Scheme formals list</td></tr><tr><td>body</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a procedure</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkProcedure \
@@ -5100,6 +5100,8 @@ interp alias {} ::constcl::MkProcedure \
 ```
 
 #### procedure? procedure
+
+`` procedure? `` recognizes procedures either by type or by namespace, for procedures that are Tcl commands.
 
 <table border=1><thead><tr><th colspan=2 align="left">procedure? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5238,7 +5240,7 @@ Like most programming languages, Scheme has input and output facilities beyond d
 1. string input (StringInputPort)
 1. string output (StringOutputPort)
 
-and there is also the `` Port `` type, which isn't used other than as a base class.
+and there is also the `` Port `` kind, which isn't used other than as a base class.
 
 #### Port class
 
@@ -5264,11 +5266,14 @@ oo::class create ::constcl::Port {
     return
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<port-$num>"
   }
 }
 ```
@@ -5298,11 +5303,14 @@ oo::class create ::constcl::InputPort {
     ::constcl::InputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<input-port-$num>"
   }
 }
 ```
@@ -5350,11 +5358,14 @@ oo::class create ::constcl::StringInputPort {
     ::constcl::StringInputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-input-port-$num>"
   }
 }
 ```
@@ -5366,6 +5377,7 @@ oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
   method open {name} {
+    ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
@@ -5387,11 +5399,14 @@ oo::class create ::constcl::OutputPort {
     ::constcl::OutputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
   }
 }
 ```
@@ -5432,11 +5447,14 @@ oo::class create ::constcl::StringOutputPort {
     ::constcl::StringOutputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-output-port-$num>"
   }
 }
 ```
@@ -5507,7 +5525,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 
 #### input-port? procedure
 
-`` input-port? `` recognizes an InputPort object.
+`` input-port? `` recognizes an `` InputPort `` or `` StringInputPort `` object.
 
 <table border=1><thead><tr><th colspan=2 align="left">input-port? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5527,7 +5545,7 @@ proc ::constcl::input-port? {val} {
 
 #### output-port? procedure
 
-`` output-port? `` recognizes an OutputPort object.
+`` output-port? `` recognizes an `` OutputPort `` or `` StringOutputPort `` object.
 
 <table border=1><thead><tr><th colspan=2 align="left">output-port? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 

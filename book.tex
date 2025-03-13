@@ -5854,7 +5854,7 @@ proc frombase {base number} {
 \label{booleans}
 \index{Booleans}
 
-Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional \texttt{if} operator considers all values except for \texttt{\#f} to be true.
+Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional forms consider all values of any type except for \texttt{\#f} to be true.
 
 \subsection{Boolean class}
 \label{boolean-class}
@@ -6584,14 +6584,14 @@ oo::define ::constcl::Procedure method call {args} {
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {port} {
-  regexp {(\d+)} [self] -> num
-  $port put "#<proc-$num>"
+  $port put [my show]
 }
 oo::define ::constcl::Procedure method display {port} {
   my write $port
 }
 oo::define ::constcl::Procedure method show {} {
-  return [self]
+  regexp {(\d+)} [self] -> num
+  return "#<proc-$num>"
 }
 \end{lstlisting}
 
@@ -6605,7 +6605,7 @@ oo::define ::constcl::Procedure method show {} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkProcedure (internal)} \\
 parms & a Scheme formals list \\
-body & a Lisp list of expressions \\
+body & an expression \\
 env & an environment \\
 \textit{Returns:} & a procedure \\
 \hline
@@ -6619,6 +6619,8 @@ interp alias {} ::constcl::MkProcedure \
 \subsection{procedure? procedure}
 \label{procedure-procedure}
 \index{procedure? procedure}
+
+\texttt{procedure?} recognizes procedures either by type or by namespace, for procedures that are Tcl commands.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -6794,7 +6796,7 @@ Like most programming languages, Scheme has input and output facilities beyond d
 \item string output (StringOutputPort)
 \end{enumerate}
 
-and there is also the \texttt{Port} type, which isn't used other than as a base class.
+and there is also the \texttt{Port} kind, which isn't used other than as a base class.
 
 \subsection{Port class}
 \label{port-class}
@@ -6822,11 +6824,14 @@ oo::class create ::constcl::Port {
     return
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<port-$num>"
   }
 }
 \end{lstlisting}
@@ -6858,11 +6863,14 @@ oo::class create ::constcl::InputPort {
     ::constcl::InputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<input-port-$num>"
   }
 }
 \end{lstlisting}
@@ -6919,11 +6927,14 @@ oo::class create ::constcl::StringInputPort {
     ::constcl::StringInputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-input-port-$num>"
   }
 }
 \end{lstlisting}
@@ -6937,6 +6948,7 @@ oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
   method open {name} {
+    ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
@@ -6958,11 +6970,14 @@ oo::class create ::constcl::OutputPort {
     ::constcl::OutputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
   }
 }
 \end{lstlisting}
@@ -7012,11 +7027,14 @@ oo::class create ::constcl::StringOutputPort {
     ::constcl::StringOutputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-output-port-$num>"
   }
 }
 \end{lstlisting}
@@ -7109,7 +7127,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 \label{inputport-procedure}
 \index{input-port? procedure}
 
-\texttt{input-port?} recognizes an InputPort object.
+\texttt{input-port?} recognizes an \texttt{InputPort} or \texttt{StringInputPort} object.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7137,7 +7155,7 @@ proc ::constcl::input-port? {val} {
 \label{outputport-procedure}
 \index{output-port? procedure}
 
-\texttt{output-port?} recognizes an OutputPort object.
+\texttt{output-port?} recognizes an \texttt{OutputPort} or \texttt{StringOutputPort} object.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7448,7 +7466,7 @@ List processing is another of Lisp's great strengths. In Lisp, lists (which are 
 (cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
 \end{verbatim}
 
-A \emph{pair} consists of a pair of pointers, named the \emph{car} and the \emph{cdr} (there are historical, not very interesting, reasons for this naming).
+A \emph{pair} consists of a pair of pointers, named the \emph{car} and the \emph{cdr}\footnote{there are historical, not very interesting, reasons for this naming}.
 
 \includegraphics{images/pair.png}
 

@@ -10,7 +10,7 @@ EN file output (OutputPort)
 EN string input (StringInputPort)
 EN string output (StringOutputPort)
 
-and there is also the K{Port} type, which isn't used other than as a base class.
+and there is also the K{Port} kind, which isn't used other than as a base class.
 
 H4 Port class
 
@@ -36,11 +36,14 @@ oo::class create ::constcl::Port {
     return
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<port-$num>"
   }
 }
 CB)
@@ -70,11 +73,14 @@ oo::class create ::constcl::InputPort {
     ::constcl::InputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<input-port-$num>"
   }
 }
 CB)
@@ -124,11 +130,14 @@ oo::class create ::constcl::StringInputPort {
     ::constcl::StringInputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-input-port-$num>"
   }
 }
 CB)
@@ -140,6 +149,7 @@ oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
   method open {name} {
+    ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
@@ -161,11 +171,14 @@ oo::class create ::constcl::OutputPort {
     ::constcl::OutputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
   }
 }
 CB)
@@ -208,11 +221,14 @@ oo::class create ::constcl::StringOutputPort {
     ::constcl::StringOutputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-output-port-$num>"
   }
 }
 CB)
@@ -323,7 +339,7 @@ TT)
 
 H4 input-port? procedure
 
-K{input-port?} recognizes an InputPort object.
+K{input-port?} recognizes an K{InputPort} or K{StringInputPort} object.
 
 PR(
 input-port? (public);val val -> bool
@@ -345,7 +361,7 @@ CB)
 
 H4 output-port? procedure
 
-K{output-port?} recognizes an OutputPort object.
+K{output-port?} recognizes an K{OutputPort} or K{StringOutputPort} object.
 
 PR(
 output-port? (public);val val -> bool

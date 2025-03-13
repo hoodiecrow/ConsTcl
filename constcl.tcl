@@ -2842,14 +2842,14 @@ oo::define ::constcl::Procedure method call {args} {
 }
 oo::define ::constcl::Procedure method value {} {}
 oo::define ::constcl::Procedure method write {port} {
-  regexp {(\d+)} [self] -> num
-  $port put "#<proc-$num>"
+  $port put [my show]
 }
 oo::define ::constcl::Procedure method display {port} {
   my write $port
 }
 oo::define ::constcl::Procedure method show {} {
-  return [self]
+  regexp {(\d+)} [self] -> num
+  return "#<proc-$num>"
 }
 interp alias {} ::constcl::MkProcedure \
   {} ::constcl::Procedure new
@@ -2948,11 +2948,14 @@ oo::class create ::constcl::Port {
     return
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<port-$num>"
   }
 }
 oo::class create ::constcl::InputPort {
@@ -2977,11 +2980,14 @@ oo::class create ::constcl::InputPort {
     ::constcl::InputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<input-port-$num>"
   }
 }
 interp alias {} ::constcl::MkInputPort \
@@ -3015,17 +3021,21 @@ oo::class create ::constcl::StringInputPort {
     ::constcl::StringInputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-input-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-input-port-$num>"
   }
 }
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
   method open {name} {
+    ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
@@ -3047,11 +3057,14 @@ oo::class create ::constcl::OutputPort {
     ::constcl::OutputPort new $handle
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
   }
 }
 interp alias {} ::constcl::MkOutputPort \
@@ -3078,11 +3091,14 @@ oo::class create ::constcl::StringOutputPort {
     ::constcl::StringOutputPort new $buffer
   }
   method write {p} {
-    regexp {(\d+)} [self] -> num
-    $p put "#<string-output-port-$num>"
+    $p put [my show]
   }
   method display {p} {
     my write $p
+  }
+  method show {} {
+    regexp {(\d+)} [self] -> num
+    return "#<string-output-port-$num>"
   }
 }
 set ::constcl::Input_port [

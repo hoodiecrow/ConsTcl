@@ -9,8 +9,8 @@ VB(
 (cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
 VB)
 
-A E{pair} consists of a pair of pointers, named the E{car} and the E{cdr} (there
-are historical, not very interesting, reasons for this naming).
+A E{pair} consists of a pair of pointers, named the E{car} and the E{cdr}F{There
+are historical, not very interesting, reasons for this naming.}.
 
 IG /images/pair.png
 

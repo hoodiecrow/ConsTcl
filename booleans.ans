@@ -3,8 +3,8 @@ H3 Booleans
 
 Booleans are logic values, either true (K{#t}) or false (K{#f}).  All predicates
 (procedures whose name end with -?) return boolean values. It's not just the
-boolean values that have truth value, though.  Scheme's conditional K{if}
-operator considers all values except for K{#f} to be true.
+boolean values that have truth value, though.  Scheme's conditional forms
+consider all values of any type except for K{#f} to be true.
 
 H4 Boolean class
 
