@@ -152,7 +152,7 @@ TT(
 
 TT)
 
-IX <
+IX < procedure
 CB(
 reg <
 
@@ -178,7 +178,7 @@ TT(
 
 TT)
 
-IX >
+IX > procedure
 CB(
 reg >
 
@@ -204,7 +204,7 @@ TT(
 
 TT)
 
-IX <=
+IX <= procedure
 CB(
 reg <=
 
@@ -230,7 +230,7 @@ TT(
 
 TT)
 
-IX >=
+IX >= procedure
 CB(
 reg >=
 
@@ -1122,7 +1122,7 @@ CB)
 
 K{base} is due to L{Richard Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth, Richard}.
 
-IX base
+IX base procedure
 CB(
 proc base {base number} {
   set negative [regexp ^-(.+) $number -> number]
@@ -1203,7 +1203,7 @@ K{frombase} is due to L{Richard
   Suchenwirth}{https://wiki.tcl-lang.org/page/Based+numbers}I{Suchenwirth,
     Richard}.
 
-IX frombase
+IX frombase procedure
 CB(
 proc frombase {base number} {
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}

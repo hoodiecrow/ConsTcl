@@ -42,7 +42,7 @@ PR(
 do-and (internal);tail exprtail prev expr env env -> expr
 PR)
 
-IX do-and
+IX do-and procedure
 CB(
 proc ::constcl::do-and {tail prev env} {
   if {[T [null? $tail]]} {
@@ -172,7 +172,7 @@ PR(
 for-seq (internal);seq expr env env -> tvals
 PR)
 
-IX for-seq
+IX for-seq procedure
 CB(
 proc ::constcl::for-seq {seq env} {
   if {[T [number? $seq]]} {
@@ -218,7 +218,7 @@ PR(
 do-for (internal);tail exprtail env env -> texprs
 PR)
 
-IX do-for
+IX do-for procedure
 CB(
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list
@@ -430,7 +430,7 @@ PR(
 do-or (internal);tail exprtail env env -> expr
 PR)
 
-IX do-or
+IX do-or procedure
 CB(
 proc ::constcl::do-or {tail env} {
   /if {[null? $tail]} {
@@ -651,7 +651,7 @@ PR(
 qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
 PR)
 
-IX qq-visit-child
+IX qq-visit-child procedure
 CB(
 proc ::constcl::qq-visit-child {node qqlevel env} {
   if {$qqlevel < 0} {

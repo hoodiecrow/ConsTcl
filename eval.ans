@@ -206,8 +206,8 @@ PR(
 /if1 (internal);cond expr conseq expr -> val
 PR)
 
-IX /if
-IX /if1
+IX /if procedure
+IX /if1 procedure
 CB(
 proc ::constcl::/if {cond conseq altern} {
   if {[T [uplevel [::list expr $cond]]]} {
@@ -297,7 +297,7 @@ elements of L' or in layman's terms, the second element of L.
 PT)
 
 PT(
-H5 Quasiquote
+h5 Quasiquote
 
 In this and many other special form and macro form expanders I use a
 quasiquoteI{quasiquote} construct to lay out how the form is to be expanded. A
@@ -576,7 +576,7 @@ PR(
 /begin (internal);exps lexprs env env -> val
 PR)
 
-IX /begin
+IX /begin procedure
 CB(
 proc ::constcl::/begin {exps env} {
   /if {[pair? $exps]} {
@@ -666,7 +666,7 @@ PR(
 rewrite-define (internal);expr expr env env -> expr
 PR)
 
-IX rewrite-define
+IX rewrite-define procedure
 CB(
 proc ::constcl::rewrite-define {expr env} {
   if {[T [pair? [cadr $expr]]]} {
@@ -714,7 +714,7 @@ PR(
 /define (internal);sym sym val val env env -> none
 PR)
 
-IX /define
+IX /define procedure
 CB(
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
@@ -1422,7 +1422,7 @@ PR(
 splitlist (internal);vals lvals -> tvals
 PR)
 
-IX splitlist
+IX splitlist procedure
 CB(
 proc ::constcl::splitlist {vals} {
   set result {}
@@ -1443,7 +1443,7 @@ PR(
 eval-list (internal);exps lexprs env env -> lvals
 PR)
 
-IX eval-list
+IX eval-list procedure
 CB(
 proc ::constcl::eval-list {exps env} {
   if {[T [pair? $exps]]} {

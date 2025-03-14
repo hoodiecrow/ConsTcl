@@ -3667,7 +3667,7 @@ oo::class create ::constcl::String {
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
   method write {port} {
-    $port put [my external]
+    $port put [my show]
   }
   method display {port} {
     $port put [my value]

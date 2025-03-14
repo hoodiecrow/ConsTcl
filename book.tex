@@ -2224,8 +2224,8 @@ conseq & an expression \\
 \textit{Returns:} & a value \\
 \hline
 \end{tabular}
-\index{/if}
-\index{/if1}
+\index{/if procedure}
+\index{/if1 procedure}
 
 \begin{lstlisting}
 proc ::constcl::/if {cond conseq altern} {
@@ -2304,7 +2304,7 @@ The \texttt{do-case} procedure uses extensions of the \texttt{car}/\texttt{cdr} 
 
 \subsubsection{Quasiquote}
 \label{quasiquote}
-\index{Quasiquote}
+\index{quasiquote}
 
 In this and many other special form and macro form expanders I use a quasiquote\index{quasiquote} construct to lay out how the form is to be expanded. A quasiquote starts with a backquote (\texttt{`}) instead of the single quote that precedes regular quoted material. A quasiquote allows for `unquoting' of selected parts: this is notated with a comma (\texttt{,}). \texttt{`(foo ,bar baz)} is very nearly the same as \texttt{('foo bar 'baz)}. In both cases \texttt{foo} and \texttt{baz} are constants while \texttt{bar} is a variable which will be evaluated. Like in \texttt{do-case} here, a quasiquote serves well as a templating mechanism. The variables in the quasiquote need to be a part of the environment in which the quasiquote is expanded: I use \texttt{/define} to bind them in a temporary environment.
 \end{pulledtext}
@@ -2522,7 +2522,7 @@ env & an environment \\
 \textit{Returns:} & a value \\
 \hline
 \end{tabular}
-\index{/begin}
+\index{/begin procedure}
 
 \begin{lstlisting}
 proc ::constcl::/begin {exps env} {
@@ -2607,7 +2607,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
-\index{rewrite-define}
+\index{rewrite-define procedure}
 
 \begin{lstlisting}
 proc ::constcl::rewrite-define {expr env} {
@@ -2637,7 +2637,7 @@ env & an environment \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
-\index{/define}
+\index{/define procedure}
 
 \begin{lstlisting}
 proc ::constcl::/define {sym val env} {
@@ -3222,7 +3222,7 @@ vals & a Lisp list of values \\
 \textit{Returns:} & a Tcl list of values \\
 \hline
 \end{tabular}
-\index{splitlist}
+\index{splitlist procedure}
 
 \begin{lstlisting}
 proc ::constcl::splitlist {vals} {
@@ -3247,7 +3247,7 @@ env & an environment \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
-\index{eval-list}
+\index{eval-list procedure}
 
 \begin{lstlisting}
 proc ::constcl::eval-list {exps env} {
@@ -3311,7 +3311,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
-\index{do-and}
+\index{do-and procedure}
 
 \begin{lstlisting}
 proc ::constcl::do-and {tail prev env} {
@@ -3405,7 +3405,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of values \\
 \hline
 \end{tabular}
-\index{for-seq}
+\index{for-seq procedure}
 
 \begin{lstlisting}
 proc ::constcl::for-seq {seq env} {
@@ -3449,7 +3449,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of expressions \\
 \hline
 \end{tabular}
-\index{do-for}
+\index{do-for procedure}
 
 \begin{lstlisting}
 proc ::constcl::do-for {tail env} {
@@ -3608,7 +3608,7 @@ env & an environment \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
-\index{do-or}
+\index{do-or procedure}
 
 \begin{lstlisting}
 proc ::constcl::do-or {tail env} {
@@ -3817,7 +3817,7 @@ env & an environment \\
 \textit{Returns:} & a Tcl list of expressions \\
 \hline
 \end{tabular}
-\index{qq-visit-child}
+\index{qq-visit-child procedure}
 
 \begin{lstlisting}
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -4346,7 +4346,7 @@ proc ::constcl::write-pair {port pair} {
 \noindent \textbf{varcheck} procedure
 
 Some routines for checking if a string is a valid identifier. \texttt{idcheckinit} checks the first character, \texttt{idchecksubs} checks the rest. \texttt{idcheck} calls the others and raises an error if they fail. A valid symbol is still an invalid identifier if has the name of some keyword, which \texttt{varcheck} checks, for a set of keywords given in the standard.
-\index{idcheckinit}
+\index{idcheckinit procedure}
 
 \begin{lstlisting}
 proc ::constcl::idcheckinit {init} {
@@ -4358,7 +4358,7 @@ proc ::constcl::idcheckinit {init} {
   }
 }
 \end{lstlisting}
-\index{idchecksubs}
+\index{idchecksubs procedure}
 
 \begin{lstlisting}
 proc ::constcl::idchecksubs {subs} {
@@ -4371,7 +4371,7 @@ proc ::constcl::idchecksubs {subs} {
   return true
 }
 \end{lstlisting}
-\index{idcheck}
+\index{idcheck procedure}
 
 \begin{lstlisting}
 proc ::constcl::idcheck {sym} {
@@ -4384,7 +4384,7 @@ proc ::constcl::idcheck {sym} {
   set sym
 }
 \end{lstlisting}
-\index{varcheck}
+\index{varcheck procedure}
 
 \begin{lstlisting}
 proc ::constcl::varcheck {sym} {
@@ -4969,7 +4969,7 @@ proc ::constcl::= {args} {
   }
 }
 \end{lstlisting}
-\index{<}
+\index{< procedure}
 
 \begin{lstlisting}
 reg <
@@ -4987,7 +4987,7 @@ proc ::constcl::< {args} {
   }
 }
 \end{lstlisting}
-\index{>}
+\index{> procedure}
 
 \begin{lstlisting}
 reg >
@@ -5005,7 +5005,7 @@ proc ::constcl::> {args} {
   }
 }
 \end{lstlisting}
-\index{<=}
+\index{<= procedure}
 
 \begin{lstlisting}
 reg <=
@@ -5023,7 +5023,7 @@ proc ::constcl::<= {args} {
   }
 }
 \end{lstlisting}
-\index{>=}
+\index{>= procedure}
 
 \begin{lstlisting}
 reg >=
@@ -5759,7 +5759,7 @@ proc ::constcl::number->string {num args} {
 \end{lstlisting}
 
 \texttt{base} is due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
-\index{base}
+\index{base procedure}
 
 \begin{lstlisting}
 proc base {base number} {
@@ -5830,7 +5830,7 @@ proc ::constcl::string->number {str args} {
 \end{lstlisting}
 
 \texttt{frombase} is due to Richard Suchenwirth\footnote{See \texttt{https://wiki.tcl-lang.org/page/Based+numbers}}\index{Suchenwirth, Richard}.
-\index{frombase}
+\index{frombase procedure}
 
 \begin{lstlisting}
 proc frombase {base number} {
@@ -7709,7 +7709,7 @@ proc ::constcl::cdr {pair} {
 \textbf{caar} to \textbf{cddddr}
 
 \texttt{car} and \texttt{cdr} can be combined to form 28 composite access operations.
-\index{caar}
+\index{caar procedure}
 
 \begin{lstlisting}
 foreach ads {
@@ -7822,7 +7822,7 @@ proc ::constcl::set-cdr! {pair val} {
 \label{list-procedure}
 \index{list? procedure}
 
-The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:-a-proper-list-and-two-improper-ones}).
+The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:a-proper-list-and-two-improper-ones}).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7849,7 +7849,7 @@ proc ::constcl::list? {val} {
 
 \textbf{listp} procedure
 
-\texttt{listp} is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in \texttt{\#NIL}, which means that it returns true.
+\texttt{listp} is a helper procedure that recursively traverses a pair trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in \texttt{\#NIL}, which means that it returns true.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7858,7 +7858,7 @@ pair & a pair \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
-\index{listp}
+\index{listp procedure}
 
 \begin{lstlisting}
 proc ::constcl::listp {pair} {
@@ -7955,7 +7955,7 @@ pair & a pair \\
 \textit{Returns:} & a Tcl number \\
 \hline
 \end{tabular}
-\index{length-helper}
+\index{length-helper procedure}
 
 \begin{lstlisting}
 proc ::constcl::length-helper {pair} {
@@ -8015,7 +8015,7 @@ next & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
 \end{tabular}
-\index{copy-list}
+\index{copy-list procedure}
 
 \begin{lstlisting}
 proc ::constcl::copy-list {pair next} {
@@ -8096,7 +8096,7 @@ proc ::constcl::list-tail {vals k} {
 \label{listref-procedure}
 \index{list-ref procedure}
 
-\texttt{list-ref} yields the list item at a given index.
+\texttt{list-ref} yields the list item at a given index (0-based).
 
 Example:
 
@@ -8164,7 +8164,7 @@ val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
-\index{memv}
+\index{memv procedure}
 
 \begin{lstlisting}
 reg memv
@@ -8182,7 +8182,7 @@ val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
-\index{member}
+\index{member procedure}
 
 \begin{lstlisting}
 reg member
@@ -8205,7 +8205,7 @@ val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
 \hline
 \end{tabular}
-\index{member-proc}
+\index{member-proc procedure}
 
 \begin{lstlisting}
 proc ::constcl::member-proc {epred val1 val2} {
@@ -8272,7 +8272,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
-\index{assv}
+\index{assv procedure}
 
 \begin{lstlisting}
 reg assv
@@ -8290,7 +8290,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
-\index{assoc}
+\index{assoc procedure}
 
 \begin{lstlisting}
 reg assoc
@@ -8313,7 +8313,7 @@ val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
 \hline
 \end{tabular}
-\index{assoc-proc}
+\index{assoc-proc procedure}
 
 \begin{lstlisting}
 proc ::constcl::assoc-proc {epred val1 val2} {
@@ -8446,7 +8446,7 @@ oo::class create ::constcl::String {
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
   method write {port} {
-    $port put [my external]
+    $port put [my show]
   }
   method display {port} {
     $port put [my value]
@@ -8734,7 +8734,7 @@ str2 & a string \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
-\index{string=?}
+\index{string=? procedure}
 
 \begin{lstlisting}
 reg string=?
@@ -8755,7 +8755,7 @@ proc ::constcl::string=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci=?}
+\index{string-ci=? procedure}
 
 \begin{lstlisting}
 reg string-ci=?
@@ -8777,7 +8777,7 @@ proc ::constcl::string-ci=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string<?}
+\index{string<? procedure}
 
 \begin{lstlisting}
 reg string<?
@@ -8798,7 +8798,7 @@ proc ::constcl::string<? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci<?}
+\index{string-ci<? procedure}
 
 \begin{lstlisting}
 reg string-ci<?
@@ -8820,7 +8820,7 @@ proc ::constcl::string-ci<? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string>?}
+\index{string>? procedure}
 
 \begin{lstlisting}
 reg string>?
@@ -8841,7 +8841,7 @@ proc ::constcl::string>? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci>?}
+\index{string-ci>? procedure}
 
 \begin{lstlisting}
 reg string-ci>?
@@ -8863,7 +8863,7 @@ proc ::constcl::string-ci>? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string<=?}
+\index{string<=? procedure}
 
 \begin{lstlisting}
 reg string<=?
@@ -8884,7 +8884,7 @@ proc ::constcl::string<=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci<=?}
+\index{string-ci<=? procedure}
 
 \begin{lstlisting}
 reg string-ci<=?
@@ -8906,7 +8906,7 @@ proc ::constcl::string-ci<=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string>=?}
+\index{string>=? procedure}
 
 \begin{lstlisting}
 reg string>=?
@@ -8927,7 +8927,7 @@ proc ::constcl::string>=? {str1 str2} {
   }
 }
 \end{lstlisting}
-\index{string-ci>=?}
+\index{string-ci>=? procedure}
 
 \begin{lstlisting}
 reg string-ci>=?
@@ -9741,6 +9741,12 @@ proc ::constcl::vector-fill! {vec fill} {
 \chapter{Initialization}
 \label{initialization}
 
+Before the interpreter can run, some elements must be initialized.
+
+\subsubsection{Vector space}
+\label{vector-space}
+\index{vector space}
+
 Initialize the memory space for vector contents.
 
 \begin{lstlisting}
@@ -9756,6 +9762,10 @@ proc ::constcl::vsAlloc {num} {
 }
 \end{lstlisting}
 
+\subsubsection{Symbol table}
+\label{symbol-table}
+\index{symbol table}
+
 Initialize the symbol table and gensym number.
 
 \begin{lstlisting}
@@ -9765,13 +9775,21 @@ set ::constcl::symbolTable [dict create]
 set ::constcl::gensymnum 0
 \end{lstlisting}
 
-Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+\subsubsection{Recursion limit}
+\label{recursion-limit}
+\index{recursion limit}
+
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (default is 1000).
 
 \begin{lstlisting}
 interp recursionlimit {} 2000
 \end{lstlisting}
 
-Pre-make a set of constants (e.g. \#NIL, \#t, and \#f) and give them aliases for use in source text.
+\subsubsection{A set of source code constants}
+\label{a-set-of-source-code-constants}
+\index{a set of source code constants}
+
+Pre-make a set of constants (e.g. \texttt{\#NIL}, \texttt{\#t}, and \texttt{\#f}) and give them aliases for use in source text.
 
 \begin{lstlisting}
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -9797,28 +9815,32 @@ interp alias {} #UND {} [::constcl::Undefined new]
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 \end{lstlisting}
 
+\subsubsection{Pi and nil}
+\label{pi-and-nil}
+\index{pi and nil}
+
 Crown the definition register with the queen of numbers (or at least a double-precision floating point approximation).
-\index{pi}
+\index{pi constant}
 
 \begin{lstlisting}
 regvar pi [N 3.1415926535897931]
 \end{lstlisting}
 
 In this interpreter, \texttt{nil} does refer to the empty list.
-\index{nil}
+\index{nil constant}
 
 \begin{lstlisting}
 regvar nil #NIL
 \end{lstlisting}
 
-\section{Environment startup}
+\subsubsection{Environment startup}
 \label{environment-startup}
-\index{Environment startup}
+\index{environment startup}
 
 On startup, two \texttt{Environment} objects called \texttt{null\_env} (the null environment, not the same as \texttt{null-environment} in Scheme) and \texttt{global\_env} (the global environment) are created.
 
 Make \texttt{null\_env} empty and judgemental: this is where searches for unbound symbols end up.
-\index{null\_env}
+\index{null\_env environment}
 
 \begin{lstlisting}
 ::constcl::Environment create \
@@ -9838,7 +9860,7 @@ oo::objdefine ::constcl::null_env {
 \end{lstlisting}
 
 Meanwhile, \texttt{global\_env} is populated with all the definitions from the definitions register, \texttt{defreg}. This is where top level evaluation happens.
-\index{global\_env}
+\index{global\_env environment}
 
 \begin{lstlisting}
 namespace eval ::constcl {
@@ -9852,14 +9874,18 @@ namespace eval ::constcl {
 }
 \end{lstlisting}
 
+Thereafter, each time a user-defined procedure is called, a new \texttt{Environment} object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
+
+\subsubsection{The Scheme base}
+\label{the-scheme-base}
+\index{the scheme base}
+
 Load the Scheme base to add more definitions to the global environment.
-\index{schemebase}
+\index{Scheme base}
 
 \begin{lstlisting}
 pe {(load "schemebase.scm")}
 \end{lstlisting}
-
-Thereafter, each time a user-defined procedure is called, a new \texttt{Environment} object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
 
 \chapter{A Scheme base}
 \label{a-scheme-base}
@@ -10050,7 +10076,7 @@ b & a Lisp list of values \\
 \begin{lstlisting}
 (define (pairlis a b)
   (if (null? a)
-    ()
+    '()
     (cons
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
@@ -10084,7 +10110,7 @@ val & a value \\
 \label{fact-procedure}
 \index{fact procedure}
 
-\texttt{fact} calculates the factorial of \emph{n}.
+\texttt{fact} calculates the factorial of \emph{n}. The function is obvious from the definition of factorial, but I've copied the code from Lispy.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline

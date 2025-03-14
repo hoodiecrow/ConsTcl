@@ -1,5 +1,9 @@
 H2 Initialization
 
+Before the interpreter can run, some elements must be initialized.
+
+h5 Vector space
+
 Initialize the memory space for vector contents.
 
 CB(
@@ -15,6 +19,8 @@ proc ::constcl::vsAlloc {num} {
 }
 CB)
 
+h5 Symbol table
+
 Initialize the symbol table and gensym number.
 
 CB(
@@ -24,13 +30,17 @@ set ::constcl::symbolTable [dict create]
 set ::constcl::gensymnum 0
 CB)
 
-Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+h5 Recursion limit
+
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (default is 1000).
 
 CB(
 interp recursionlimit {} 2000
 CB)
 
-Pre-make a set of constants (e.g. #NIL, #t, and #f)
+h5 A set of source code constants
+
+Pre-make a set of constants (e.g. K{#NIL}, K{#t}, and K{#f})
 and give them aliases for use in source text.
 
 CB(
@@ -57,23 +67,24 @@ interp alias {} #UND {} [::constcl::Undefined new]
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 CB)
 
+h5 Pi and nil
+
 Crown the definition register with the queen of numbers (or at least
 a double-precision floating point approximation).
 
-IX pi
+IX pi constant
 CB(
 regvar pi [N 3.1415926535897931]
 CB)
 
 In this interpreter, K{nil} does refer to the empty list.
 
-IX nil
+IX nil constant
 CB(
 regvar nil #NIL
 CB)
 
-
-H3 Environment startup
+h5 Environment startup
 
 On startup, two K{Environment} objects called K{null_env} (the null environment,
 not the same as K{null-environment} in Scheme) and K{global_env} (the global
@@ -82,7 +93,7 @@ environment) are created.
 Make K{null_env} empty and judgemental: this is where searches for unbound
 symbols end up.
 
-IX null\_env
+IX null\_env environment
 CB(
 ::constcl::Environment create \
   ::constcl::null_env #NIL {}
@@ -103,7 +114,7 @@ CB)
 Meanwhile, K{global_env} is populated with all the definitions from the
 definitions register, K{defreg}. This is where top level evaluation happens.
 
-IX global\_env
+IX global\_env environment
 CB(
 namespace eval ::constcl {
   Environment create global_env #NIL {} \
@@ -116,17 +127,19 @@ namespace eval ::constcl {
 }
 CB)
 
-Load the Scheme base to add more definitions to the global environment.
-
-IX schemebase
-CB(
-pe {(load "schemebase.scm")}
-CB)
-
 Thereafter, each time a user-defined procedure is called, a new K{Environment}
 object is created to hold the bindings introduced by the call, and also a link
 to the outer environment (the one closed over when the procedure was defined).
 
+
+h5 The Scheme base
+
+Load the Scheme base to add more definitions to the global environment.
+
+IX Scheme base
+CB(
+pe {(load "schemebase.scm")}
+CB)
 
 TT(
 ::tcltest::test cons-15.0 {check for a symbol} -body {

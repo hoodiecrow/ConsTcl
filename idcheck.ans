@@ -16,7 +16,7 @@ identifier if has the name of some keyword, which K{varcheck} checks, for a set
 of keywords given in the standard.
 
 
-IX idcheckinit
+IX idcheckinit procedure
 CB(
 proc ::constcl::idcheckinit {init} {
   if {[::string is alpha -strict $init] ||
@@ -28,7 +28,7 @@ proc ::constcl::idcheckinit {init} {
 }
 CB)
 
-IX idchecksubs
+IX idchecksubs procedure
 CB(
 proc ::constcl::idchecksubs {subs} {
   foreach c [split $subs {}] {
@@ -41,7 +41,7 @@ proc ::constcl::idchecksubs {subs} {
 }
 CB)
 
-IX idcheck
+IX idcheck procedure
 CB(
 proc ::constcl::idcheck {sym} {
   if {$sym eq {}} {return $sym}
@@ -54,7 +54,7 @@ proc ::constcl::idcheck {sym} {
 }
 CB)
 
-IX varcheck
+IX varcheck procedure
 CB(
 proc ::constcl::varcheck {sym} {
   if {$sym in {

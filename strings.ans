@@ -112,7 +112,7 @@ oo::class create ::constcl::String {
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
   method write {port} {
-    $port put [my external]
+    $port put [my show]
   }
   method display {port} {
     $port put [my value]
@@ -423,7 +423,7 @@ PR(
 string-ci<=?, string-ci>=? (public);str1 str str2 str -> bool
 PR)
 
-IX string=?
+IX string=? procedure
 CB(
 reg string=?
 
@@ -454,7 +454,7 @@ TT(
 
 TT)
 
-IX string-ci=?
+IX string-ci=? procedure
 CB(
 reg string-ci=?
 
@@ -486,7 +486,7 @@ TT(
 
 TT)
 
-IX string<?
+IX string<? procedure
 CB(
 reg string<?
 
@@ -517,7 +517,7 @@ TT(
 
 TT)
 
-IX string-ci<?
+IX string-ci<? procedure
 CB(
 reg string-ci<?
 
@@ -549,7 +549,7 @@ TT(
 
 TT)
 
-IX string>?
+IX string>? procedure
 CB(
 reg string>?
 
@@ -580,7 +580,7 @@ TT(
 
 TT)
 
-IX string-ci>?
+IX string-ci>? procedure
 CB(
 reg string-ci>?
 
@@ -612,7 +612,7 @@ TT(
 
 TT)
 
-IX string<=?
+IX string<=? procedure
 CB(
 reg string<=?
 
@@ -643,7 +643,7 @@ TT(
 
 TT)
 
-IX string-ci<=?
+IX string-ci<=? procedure
 CB(
 reg string-ci<=?
 
@@ -675,7 +675,7 @@ TT(
 
 TT)
 
-IX string>=?
+IX string>=? procedure
 CB(
 reg string>=?
 
@@ -706,7 +706,7 @@ TT(
 
 TT)
 
-IX string-ci>=?
+IX string-ci>=? procedure
 CB(
 reg string-ci>=?
 

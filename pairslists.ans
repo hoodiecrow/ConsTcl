@@ -308,7 +308,7 @@ B{caar} to B{cddddr}
 K{car} and K{cdr} can be combined to form 28 composite access
 operations.
 
-IX caar
+IX caar procedure
 CB(
 foreach ads {
   aa
@@ -436,7 +436,7 @@ H4 list? procedure
 
 The K{list?} predicate tests if a pair is part of a proper list, one that
 ends with NIL. See figure showing R{proper and improper
-  lists}{fig:-a-proper-list-and-two-improper-ones}.
+  lists}{fig:a-proper-list-and-two-improper-ones}.
 
 PR(
 list? (public);val val -> bool
@@ -459,7 +459,7 @@ CB)
 
 B{listp} procedure
 
-K{listp} is a helper procedure that recursively traverses a cons trail to find
+K{listp} is a helper procedure that recursively traverses a pair trail to find
 out if it is cyclic or ends in an atom, which means that the procedure returns
 false, or if it ends in K{#NIL}, which means that it returns true.
 
@@ -467,7 +467,7 @@ PR(
 listp (internal);pair pair -> bool
 PR)
 
-IX listp
+IX listp procedure
 CB(
 proc ::constcl::listp {pair} {
   upvar visited visited
@@ -575,7 +575,7 @@ PR(
 length-helper (internal);pair pair -> tnum
 PR)
 
-IX length-helper
+IX length-helper procedure
 CB(
 proc ::constcl::length-helper {pair} {
   if {[T [null? $pair]]} {
@@ -635,7 +635,7 @@ PR(
 copy-list (internal);pair pair next lvals -> lvals
 PR)
 
-IX copy-list
+IX copy-list procedure
 CB(
 proc ::constcl::copy-list {pair next} {
   # TODO only fresh conses in the direct chain to NIL
@@ -733,7 +733,7 @@ TT)
 
 H4 list-ref procedure
 
-K{list-ref} yields the list item at a given index.
+K{list-ref} yields the list item at a given index (0-based).
 
 Example:
 
@@ -812,7 +812,7 @@ PR(
 memv (public);val1 val val2 lvals -> lvfalse
 PR)
 
-IX memv
+IX memv procedure
 CB(
 reg memv
 
@@ -825,7 +825,7 @@ PR(
 member (public);val1 val val2 lvals -> lvfalse
 PR)
 
-IX member
+IX member procedure
 CB(
 reg member
 
@@ -844,7 +844,7 @@ PR(
 member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
 PR)
 
-IX member-proc
+IX member-proc procedure
 CB(
 proc ::constcl::member-proc {epred val1 val2} {
   switch $epred {
@@ -903,7 +903,7 @@ assv (public);val1 val val2 alist -> apfalse
 PR)
 
 
-IX assv
+IX assv procedure
 CB(
 reg assv
 
@@ -917,7 +917,7 @@ assoc (public);val1 val val2 alist -> apfalse
 PR)
 
 
-IX assoc
+IX assoc procedure
 CB(
 reg assoc
 
@@ -935,7 +935,7 @@ PR(
 assoc-proc (internal);epred epred val1 val val2 alist -> apfalse
 PR)
 
-IX assoc-proc
+IX assoc-proc procedure
 CB(
 proc ::constcl::assoc-proc {epred val1 val2} {
   switch $epred {

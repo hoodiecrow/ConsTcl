@@ -6053,7 +6053,7 @@ proc ::constcl::set-cdr! {pair val} {
 
 #### list? procedure
 
-The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:-a-proper-list-and-two-improper-ones).
+The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:a-proper-list-and-two-improper-ones).
 
 <table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6074,7 +6074,7 @@ proc ::constcl::list? {val} {
 
 __listp__ procedure
 
-`` listp `` is a helper procedure that recursively traverses a cons trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in `` #NIL ``, which means that it returns true.
+`` listp `` is a helper procedure that recursively traverses a pair trail to find out if it is cyclic or ends in an atom, which means that the procedure returns false, or if it ends in `` #NIL ``, which means that it returns true.
 
 <table border=1><thead><tr><th colspan=2 align="left">listp (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6256,7 +6256,7 @@ proc ::constcl::list-tail {vals k} {
 
 #### list-ref procedure
 
-`` list-ref `` yields the list item at a given index.
+`` list-ref `` yields the list item at a given index (0-based).
 
 Example:
 
@@ -6527,7 +6527,7 @@ oo::class create ::constcl::String {
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
   method write {port} {
-    $port put [my external]
+    $port put [my show]
   }
   method display {port} {
     $port put [my value]
@@ -7547,6 +7547,10 @@ proc ::constcl::vector-fill! {vec fill} {
 
 ## Initialization
 
+Before the interpreter can run, some elements must be initialized.
+
+##### Vector space
+
 Initialize the memory space for vector contents.
 
 ```
@@ -7562,6 +7566,8 @@ proc ::constcl::vsAlloc {num} {
 }
 ```
 
+##### Symbol table
+
 Initialize the symbol table and gensym number.
 
 ```
@@ -7571,13 +7577,17 @@ set ::constcl::symbolTable [dict create]
 set ::constcl::gensymnum 0
 ```
 
-Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (used to be 1000).
+##### Recursion limit
+
+Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (default is 1000).
 
 ```
 interp recursionlimit {} 2000
 ```
 
-Pre-make a set of constants (e.g. #NIL, #t, and #f) and give them aliases for use in source text.
+##### A set of source code constants
+
+Pre-make a set of constants (e.g. `` #NIL ``, `` #t ``, and `` #f ``) and give them aliases for use in source text.
 
 ```
 interp alias {} #NIL {} [::constcl::NIL new]
@@ -7603,6 +7613,8 @@ interp alias {} #UND {} [::constcl::Undefined new]
 interp alias {} #EOF {} [::constcl::EndOfFile new]
 ```
 
+##### Pi and nil
+
 Crown the definition register with the queen of numbers (or at least a double-precision floating point approximation).
 
 ```
@@ -7615,7 +7627,7 @@ In this interpreter, `` nil `` does refer to the empty list.
 regvar nil #NIL
 ```
 
-### Environment startup
+##### Environment startup
 
 On startup, two `` Environment `` objects called `` null_env `` (the null environment, not the same as `` null-environment `` in Scheme) and `` global_env `` (the global environment) are created.
 
@@ -7652,13 +7664,15 @@ namespace eval ::constcl {
 }
 ```
 
+Thereafter, each time a user-defined procedure is called, a new `` Environment `` object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
+
+##### The Scheme base
+
 Load the Scheme base to add more definitions to the global environment.
 
 ```
 pe {(load "schemebase.scm")}
 ```
-
-Thereafter, each time a user-defined procedure is called, a new `` Environment `` object is created to hold the bindings introduced by the call, and also a link to the outer environment (the one closed over when the procedure was defined).
 
 ## A Scheme base
 
@@ -7774,7 +7788,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 ```
 (define (pairlis a b)
   (if (null? a)
-    ()
+    '()
     (cons
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
@@ -7796,7 +7810,7 @@ Thereafter, each time a user-defined procedure is called, a new `` Environment `
 
 #### fact procedure
 
-`` fact `` calculates the factorial of _n_.
+`` fact `` calculates the factorial of _n_. The function is obvious from the definition of factorial, but I've copied the code from Lispy.
 
 <table border=1><thead><tr><th colspan=2 align="left">fact (public)</th></tr></thead><tr><td>n</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 

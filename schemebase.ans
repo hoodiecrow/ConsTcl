@@ -135,7 +135,7 @@ PR)
 CB(
 (define (pairlis a b)
   (if (null? a)
-    ()
+    '()
     (cons
       (cons (car a) (car b))
       (pairlis (cdr a) (cdr b)))))
@@ -159,7 +159,7 @@ CB)
 
 H4 fact procedure
 
-K{fact} calculates the factorial of E{n}.
+K{fact} calculates the factorial of E{n}. The function is obvious from the definition of factorial, but I've copied the code from Lispy.
 
 PR(
 fact (public);n num -> num
