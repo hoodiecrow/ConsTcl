@@ -76,6 +76,46 @@ dialog. Source \textbf{all.tcl} to run the test suite (you need
 \textbf{constcl.test} for that). The files can be found on GitHub/ConsTcl\footnote{See
 \texttt{https://github.com/hoodiecrow/ConsTcl}}.
 
+The following license holds for the software, not the book:
+
+\subsection{MIT License}
+\label{mit-license}
+\index{MIT License}
+
+Copyright (c) 2025 Peter Lewerin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\@. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The software is pretty much harmless, but there is a potential danger if anyone
+were to use it to write and run Scheme code that uses the output functions and
+in the process were careless enough to let the code overwrite existing files. I
+have put safeguards in the output functions that need to be removed before they
+work.
+
+The software works for me, but there might still be problems that I haven't
+noticed. Contact me at
+
+\indent \texttt{plewerin@gmail.com}
+
+with any queries or error reports. I intend to keep updating the software to
+include bug fixes and interesting additions, within reason.
+
 \section{Background}
 \label{background}
 
@@ -117,12 +157,14 @@ else it is a \emph{list expression}, starting and ending with parentheses and
 having an operator at the front of the list, with the rest of the parts being
 operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
 the expression is a \emph{special form}. If not, like \texttt{+} or
-\texttt{write}, then it's a \emph{function call}.  A full description of Lisp
-is beyond the scope of this introduction, but Lisp will be explained from the
-inside out in the rest of this book. If you want to learn Scheme right away,
-there are good tutorials in different\footnote{See
-\texttt{https://docs.scheme.org/schintro/}} places\footnote{See
-\texttt{https://www.scheme.com/tspl4/}} on the web\footnote{See
+\texttt{write}, then it's a \emph{function call}.
+
+A full description of Lisp is beyond the scope of this introduction, but Lisp
+will be explained from the inside out in the rest of this book. If you want to
+learn Scheme right away, there are good tutorials in
+different\footnote{See \texttt{https://docs.scheme.org/schintro/}}
+places\footnote{See \texttt{https://www.scheme.com/tspl4/}} on the
+web\footnote{See
 \texttt{https://files.spritely.institute/papers/scheme-primer.html}}.
 
 \subsection{About ConsTcl}
@@ -173,10 +215,17 @@ ConsTcl is at least 97\% my own work, but I have ported one part (see page
 \pageref{resolving-local-defines}) from ``Scheme 9 from Empty
 Space''\footnote{See \texttt{https://t3x.org/s9book/index.html}} by Nils M
 Holm\index{Holm, Nils M}, a Lisp interpreter written in C and commented in a
-similar manner to this book. Another source of guidance and inspiration was
-``Lisp in Small Pieces'' by Christian Queinnec. Yet another source was ``An
-Introduction to Scheme and its Implementation''\footnote{See
-\texttt{https://docs.scheme.org/schintro/}}
+similar manner to this book.
+
+One source which I spent a lot more time with was R5RS\footnote{Revised${}^{5}$
+Report on the Algorithmic Language Scheme, Scheme's standardization document},
+\emph{the} authoritative manual on Scheme. It says nothing about the
+implementation of the interpreter, but a lot on what features the language has
+and how they are supposed to work.
+
+Another source of guidance and inspiration was ``Lisp in Small Pieces'' by
+Christian Queinnec. Yet another source was ``An Introduction to Scheme and its
+Implementation''\footnote{See \texttt{https://docs.scheme.org/schintro/}}
 
 \subsection{About the program listings}
 \label{about-the-program-listings}
@@ -203,7 +252,7 @@ a CAD subsystem for designing drilling boxes).
 
 In addition to my terms as programmer and system manager, I have worked as a
 teacher (teaching C/C++ in upper secondary school) and for a short while I
-wrote textbooks for the department for information technology at
+wrote manuals for the department for information technology at
 the University of Skövde. I've also been active writing answers at
 question-and-answer sites on the web, mainly Stack Overflow.
 
@@ -264,7 +313,7 @@ name & a Tcl string \\
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf regvar (internal)} \\
 name & a Tcl string \\
-val & a value \\
+value & a value \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -316,9 +365,9 @@ proc regvar {name value} {
 \label{procedures-functions-and-commands}
 \index{procedures, functions, and commands}
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS\footnote{Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document}. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
 
-And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg}* are `public' and those who aren't are `internal'.
+And the `internal/public' distinction is possibly a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg} are `public' and those who aren't are `internal'.
 \end{pulledtext}
 
 \subsection{atom? procedure}

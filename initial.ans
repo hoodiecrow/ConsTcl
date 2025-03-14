@@ -42,7 +42,7 @@ reg (internal);?btype? specmacro name tstr -> none
 PR)
 
 PR(
-regvar (internal);name tstr val val -> none
+regvar (internal);name tstr value val -> none
 PR)
 
 IX regvar procedure
@@ -112,17 +112,16 @@ PT(
 h5 Procedures, functions, and commands
 
 I use all of these terms for the subroutines in ConsTcl. I try to stick to
-procedure, because that's the standard term in R5RSF{Revised:5 Report on the
-  Algorithmic Language Scheme, Scheme's standardization document}. Still, they
+procedure, because that's the standard term in R5RS. Still, they
   usually pass useful values back to the caller, so technically they're
   functions. Lastly, I'm programming in Tcl here, and the usual term for these
   things is `commands' in Tcl.
 
-  And the `internal/public' distinction is probably a misnomer (an aside within
+  And the `internal/public' distinction is possibly a misnomer (an aside within
   an aside, here). What it means is that `public' procedures can be called from
   Lisp code being interpreted, and the others cannot. They are for use in the
   infrastructure around the interpreter, including in implementing the `public'
-  procedures. Another way to put it is that procedures registered by K{reg}* are
+  procedures. Another way to put it is that procedures registered by K{reg} are
   `public' and those who aren't are `internal'.
 
 PT)

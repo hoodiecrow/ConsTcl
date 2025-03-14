@@ -71,7 +71,7 @@ There is also `` regvar ``, which registers variables. You pass the _name_ and _
 
 <table border=1><thead><tr><th colspan=2 align="left">reg (internal)</th></tr></thead><tr><td>?btype?</td><td>either 'special' or 'macro'</td></tr><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
-<table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>value</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 unset -nocomplain ::constcl::defreg
@@ -119,9 +119,9 @@ proc regvar {name value} {
 
 ##### Procedures, functions, and commands
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS (Revised:5 Report on the Algorithmic Language Scheme, Scheme's standardization document). Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
 
-And the `internal/public' distinction is probably a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg ``* are `public' and those who aren't are `internal'.
+And the `internal/public' distinction is possibly a misnomer (an aside within an aside, here). What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by `` reg `` are `public' and those who aren't are `internal'.
 
 
 ---
