@@ -767,7 +767,7 @@ Then, parsing and evaluation and writing goes on in the background and the inter
 
 Anyway, the figure shows what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
 
-![#](images/intreplist.png)
+![#](images/intreplist.png "The internal structure of the expression")
 
 ### Input procedures
 
@@ -1187,7 +1187,7 @@ proc ::constcl::read-object-expr {} {
 
 The `` read-pair-expr `` procedure reads everything between two matching parentheses, or, as the case might be, brackets. It produces either an empty list, or a possibly recursive structure of [Pair objects](https://github.com/hoodiecrow/ConsTcl#pairs-and-lists), either a proper list (one that ends in `` #NIL ``), or an improper one (one that has an atom as its last member). Shares the variables `` c `` and `` unget `` with its caller.
 
-![#](images/prop-improp.png)
+![#](images/prop-improp.png "A proper list and two improper ones.")
 
 <table border=1><thead><tr><th colspan=2 align="left">read-pair-expr (internal)</th></tr></thead><tr><td>char</td><td>the terminating paren or bracket</td></tr><tr><td><i>Returns:</i></td><td>a structure of pair expressions or end of file</td></tr></table>
 
@@ -2270,7 +2270,7 @@ Environments make up the world the evaluator lives in and are the source of its 
 
 From the evaluator's perspective it uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
 
-![#](images/environments.png)
+![#](images/environments.png "Two sample environments")
 
 I will talk some more about the implementation of environments in a later section.
 
@@ -4314,7 +4314,7 @@ proc ::constcl::sqrt {num} {
 
 #### expt procedure
 
-`` expt `` calculates the x to the power of y, or x<sup>y</sup>.
+`` expt `` calculates the x to the power y, or x<sup>y</sup>.
 
 <table border=1><thead><tr><th colspan=2 align="left">expt (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
@@ -4466,7 +4466,11 @@ proc frombase {base number} {
 
 ### Booleans
 
-Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional forms consider all values of any type except for `` #f `` to be true.
+Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predicates (procedures whose name end with -?) return boolean values.
+
+#### Pseudo-booleans
+
+All values can be tested for truth (in a conditional form or as arguments to `` and ``, `` or ``, or `` not ``), though. Any value of any type is considered to be the equivalent of `` #t `` except for `` #f ``.
 
 #### Boolean class
 
@@ -4535,7 +4539,7 @@ proc ::constcl::boolean? {val} {
 
 #### not procedure
 
-The only operation on booleans: `` not ``, or logical negation.
+The only operations on booleans are the macros `` and `` and [``or``](https://github.com/hoodiecrow/ConsTcl#macros) and `` not `` (logical negation).
 
 Example:
 
@@ -5506,7 +5510,7 @@ proc ::constcl::call-with-input-file {filename proc} {
 
 `` call-with-output-file `` opens a file for output and passes the port to `` proc ``. The file is closed again once `` proc `` returns. The result of the call is returned.
 
-You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
+You can't use this procedure without deleting the line in class OutputPort/method open that throws an error on use. I take no responsibility for damage to your files due to overwriting the contents.
 
 <table border=1><thead><tr><th colspan=2 align="left">call-with-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td>proc</td><td>a procedure</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
@@ -5514,7 +5518,6 @@ You can't use this procedure without deleting the first line. I take no responsi
 reg call-with-output-file
 
 proc ::constcl::call-with-output-file {filename proc} {
-  ::error "remove this line to use"
   set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
@@ -5623,7 +5626,6 @@ proc ::constcl::with-input-from-file {filename thunk} {
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
-  ::error "remove this line to use"
   set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
@@ -5661,7 +5663,7 @@ proc ::constcl::open-input-file {filename} {
 
 #### open-output-file procedure
 
-`` open-output-file `` opens a file for output and returns the port.
+`` open-output-file `` opens a file for output and returns the port. Throws an error if the file already exists.
 
 <table border=1><thead><tr><th colspan=2 align="left">open-output-file (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
 
@@ -5669,7 +5671,6 @@ proc ::constcl::open-input-file {filename} {
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
-  ::error "remove this line to use"
   if {[file exists $filename]} {
     error "open-output-file: [fae] $filename"
   }
@@ -5906,7 +5907,7 @@ Example:
 (cons 'a (cons 'b nil))   ==>  (a b)
 ```
 
-![#](images/consing.png)
+![#](images/consing.png "Examples of consing")
 
 <table border=1><thead><tr><th colspan=2 align="left">cons (public)</th></tr></thead><tr><td>car</td><td>a value</td></tr><tr><td>cdr</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
 
@@ -6425,7 +6426,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 
 ### Strings
 
-Procedures for dealing with strings of characters. Strings are sequences of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
+Procedures for dealing with strings of characters. Strings are sequences of characters. Strings are the most common form of real-world data in computing nowadays, having outpaced numbers some time ago. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 #### String class
 

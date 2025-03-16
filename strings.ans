@@ -2,9 +2,10 @@
 H3 Strings
 
 Procedures for dealing with strings of characters. Strings are sequences of
-characters. After numbers, strings are the most common form of real-world data
-in computing. Lisp has strings, both constant and mutable, but some of the uses
-for strings in other languages are instead taken up by symbols.
+characters. Strings are the most common form of real-world data in computing
+nowadays, having outpaced numbers some time ago. Lisp has strings, both constant
+and mutable, but some of the uses for strings in other languages are instead
+taken up by symbols.
 
 H4 String class
 

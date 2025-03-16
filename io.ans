@@ -303,8 +303,9 @@ K{call-with-output-file} opens a file for output and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
 
-You can't use this procedure without deleting the first line. I take no
-responsibility for damage to your files due to overwriting the contents.
+You can't use this procedure without deleting the line in class
+OutputPort/method open that throws an error on use. I take no responsibility for
+damage to your files due to overwriting the contents.
 
 PR(
 call-with-output-file (public);filename filename proc proc -> val
@@ -314,7 +315,6 @@ CB(
 reg call-with-output-file
 
 proc ::constcl::call-with-output-file {filename proc} {
-  ::error "remove this line to use"
   set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
@@ -461,7 +461,6 @@ CB(
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
-  ::error "remove this line to use"
   set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
@@ -512,7 +511,8 @@ CB)
 
 H4 open-output-file procedure
 
-K{open-output-file} opens a file for output and returns the port.
+K{open-output-file} opens a file for output and returns the port. Throws an
+error if the file already exists.
 
 PR(
 open-output-file (public);filename filename -> oport
@@ -522,7 +522,6 @@ CB(
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
-  ::error "remove this line to use"
   if {[file exists $filename]} {
     error "open-output-file: [fae] $filename"
   }

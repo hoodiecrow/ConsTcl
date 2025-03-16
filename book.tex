@@ -111,7 +111,7 @@ work.
 The software works for me, but there might still be problems that I haven't
 noticed. Contact me at
 
-\indent \texttt{plewerin@gmail.com}
+\indent \texttt{constcl1000@gmail.com}
 
 with any queries or error reports. I intend to keep updating the software to
 include bug fixes and interesting additions, within reason.
@@ -5722,7 +5722,7 @@ proc ::constcl::sqrt {num} {
 \label{expt-procedure}
 \index{expt procedure}
 
-\texttt{expt} calculates the x to the power of y, or ${x}^{y}$.
+\texttt{expt} calculates the x to the power y, or ${x}^{y}$.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -5903,7 +5903,13 @@ proc frombase {base number} {
 \label{booleans}
 \index{Booleans}
 
-Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values. It's not just the boolean values that have truth value, though. Scheme's conditional forms consider all values of any type except for \texttt{\#f} to be true.
+Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). All predicates (procedures whose name end with -?) return boolean values.
+
+\subsection{Pseudo-booleans}
+\label{pseudobooleans}
+\index{Pseudo-booleans}
+
+All values can be tested for truth (in a conditional form or as arguments to \texttt{and}, \texttt{or}, or \texttt{not}), though. Any value of any type is considered to be the equivalent of \texttt{\#t} except for \texttt{\#f}.
 
 \subsection{Boolean class}
 \label{boolean-class}
@@ -5992,7 +5998,7 @@ proc ::constcl::boolean? {val} {
 \label{not-procedure}
 \index{not procedure}
 
-The only operation on booleans: \texttt{not}, or logical negation.
+The only operations on booleans are the macros \texttt{and} and \texttt{or} (see page \pageref{macros}) and \texttt{not} (logical negation).
 
 Example:
 
@@ -7148,7 +7154,7 @@ proc ::constcl::call-with-input-file {filename proc} {
 
 \texttt{call-with-output-file} opens a file for output and passes the port to \texttt{proc}. The file is closed again once \texttt{proc} returns. The result of the call is returned.
 
-You can't use this procedure without deleting the first line. I take no responsibility for damage to your files due to overwriting the contents.
+You can't use this procedure without deleting the line in class OutputPort/method open that throws an error on use. I take no responsibility for damage to your files due to overwriting the contents.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7163,7 +7169,6 @@ proc & a procedure \\
 reg call-with-output-file
 
 proc ::constcl::call-with-output-file {filename proc} {
-  ::error "remove this line to use"
   set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
@@ -7320,7 +7325,6 @@ thunk & a procedure \\
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
-  ::error "remove this line to use"
   set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
@@ -7368,7 +7372,7 @@ proc ::constcl::open-input-file {filename} {
 \label{openoutputfile-procedure}
 \index{open-output-file procedure}
 
-\texttt{open-output-file} opens a file for output and returns the port.
+\texttt{open-output-file} opens a file for output and returns the port. Throws an error if the file already exists.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7382,7 +7386,6 @@ filename & a filename string \\
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
-  ::error "remove this line to use"
   if {[file exists $filename]} {
     error "open-output-file: [fae] $filename"
   }
@@ -8391,7 +8394,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 \label{strings}
 \index{Strings}
 
-Procedures for dealing with strings of characters. Strings are sequences of characters. After numbers, strings are the most common form of real-world data in computing. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
+Procedures for dealing with strings of characters. Strings are sequences of characters. Strings are the most common form of real-world data in computing nowadays, having outpaced numbers some time ago. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 \subsection{String class}
 \label{string-class}

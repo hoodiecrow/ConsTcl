@@ -1038,7 +1038,7 @@ TT)
 
 H4 expt procedure
 
-K{expt} calculates the x to the power of y, or P{x}{y}.
+K{expt} calculates the x to the power y, or P{x}{y}.
 
 PR(
 expt (public);num1 num num2 num -> num

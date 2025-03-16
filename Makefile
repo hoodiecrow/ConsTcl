@@ -1,24 +1,25 @@
 
-PROGRAM   = proto
-O         = o
-HDRS      = 
-OBJS      = proto.$(O)
+PROGRAM    = proto
+O          = o
+HDRS       = 
+OBJS       = proto.$(O)
 
-CC        = clang
-FEATURES  =
-CFLAGS    = -g -W -Wall -Wextra -pedantic
-LDFLAGS   =
-LIBS      = 
-RM        = rm -f
-LD        = $(CC)
-LDOUT     = -o 
-EXE       = 
-T90       = ../anstox/tclsh90.exe
-P3        = python3
-ANSTOTEX  = ../anstox/anstotex.py
-ANSTOMD   = ../anstox/anstomd.py
-ANSTOCODE = ../anstox/anstocode.py
-ANSTOTEST = ../anstox/anstotest.py
+CC         = clang
+FEATURES   =
+CFLAGS     = -g -W -Wall -Wextra -pedantic
+LDFLAGS    =
+LIBS       = 
+RM         = rm -f
+LD         = $(CC)
+LDOUT      = -o 
+EXE        = 
+Py3        = python3
+ANSTO_PATH = ../anstox/
+ANSTOTEX   = $(ANSTO_PATH)anstotex.py
+ANSTOMD    = $(ANSTO_PATH)anstomd.py
+ANSTOCODE  = $(ANSTO_PATH)anstocode.py
+ANSTOTEST  = $(ANSTO_PATH)anstotest.py
+ANSTOHTML  = $(ANSTO_PATH)anstohtml.py
 
 .PHONY: all
 all: book.tex README.md constcl.tcl constcl.test schemebase.scm #wiki/type.md wiki/read.md $(PROGRAM)
@@ -32,7 +33,7 @@ book.tex: top.tex body.tex bottom.tex
 	cat $^ >$@
 
 body.tex: $(source_files) schemebase.ans
-	$(P3) $(ANSTOTEX) $^ >$@
+	$(Py3) $(ANSTOTEX) $^ >$@
 
 #body.tex: $(source_files) schemebase.ans
 #	gawk -f $(ANSTOTEX) dict.txt $^ >$@
@@ -50,7 +51,7 @@ README.md: top.md constcl.md
 #	gawk -f prototype.awk dict.txt $^ >$@
 
 constcl.md: $(source_files) schemebase.ans
-	$(P3) $(ANSTOMD) $^ >$@
+	$(Py3) $(ANSTOMD) $^ >$@
 
 #constcl.md: $(source_files) schemebase.ans
 #	gawk -f $(ANSTOMD) dict.txt $^ >$@
@@ -59,7 +60,7 @@ constcl.md: $(source_files) schemebase.ans
 #	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 constcl.tcl: $(source_files)
-	$(P3) $(ANSTOCODE) $^ >$@
+	$(Py3) $(ANSTOCODE) $^ >$@
 
 #constcl.tcl: $(source_files)
 #	gawk -f $(ANSTOCODE) $^ >$@
@@ -68,7 +69,7 @@ constcl.tcl: $(source_files)
 #	cat $^ |sed -e /CB/d -e /^MD/,/^MD/d -e /^PR/,/^PR/d -e /^TT/,/^TT/d -e s/\\r//g >$@
 
 constcl.test: $(source_files)
-	$(P3) $(ANSTOTEST) $^ >$@
+	$(Py3) $(ANSTOTEST) $^ >$@
 
 #constcl.test: $(source_files)
 #	gawk -f $(ANSTOTEST) $^ >$@
@@ -83,7 +84,7 @@ lutables.md: lutables.tcl
 	cat $^ |sed -e s/^CB/\`\`\`/g -e /^MD/d -e /^TT/,/^TT/d >$@
 
 schemebase.scm: schemebase.ans
-	$(P3) $(ANSTOCODE) $< >$@
+	$(Py3) $(ANSTOCODE) $< >$@
 
 #schemebase.scm: schemebase.ans
 #	gawk -f $(ANSTOSCM) $< >$@

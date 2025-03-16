@@ -2,9 +2,13 @@
 H3 Booleans
 
 Booleans are logic values, either true (K{#t}) or false (K{#f}).  All predicates
-(procedures whose name end with -?) return boolean values. It's not just the
-boolean values that have truth value, though.  Scheme's conditional forms
-consider all values of any type except for K{#f} to be true.
+(procedures whose name end with -?) return boolean values. 
+
+H4 Pseudo-booleans
+
+All values can be tested for truth (in a conditional form or as arguments to
+K{and}, K{or}, or K{not}), though. Any value of any type is considered to be
+the equivalent of K{#t} except for K{#f}.
 
 H4 Boolean class
 
@@ -112,7 +116,7 @@ TT)
 
 H4 not procedure
 
-The only operation on booleans: K{not}, or logical negation.
+The only operations on booleans are the macros K{and} and S{or}{macros} and K{not} (logical negation).
 
 Example:
 

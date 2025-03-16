@@ -3122,7 +3122,6 @@ proc ::constcl::call-with-input-file {filename proc} {
 reg call-with-output-file
 
 proc ::constcl::call-with-output-file {filename proc} {
-  ::error "remove this line to use"
   set port [open-output-file $filename]
   set res [invoke $proc [list $port]]
   close-output-port $port
@@ -3177,7 +3176,6 @@ proc ::constcl::with-input-from-file {filename thunk} {
 reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
-  ::error "remove this line to use"
   set newport [open-output-file $filename]
   if {[$newport handle] ne "#NIL"} {
     set oldport $::constcl::Output_port
@@ -3205,7 +3203,6 @@ proc ::constcl::open-input-file {filename} {
 reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
-  ::error "remove this line to use"
   if {[file exists $filename]} {
     error "open-output-file: [fae] $filename"
   }
