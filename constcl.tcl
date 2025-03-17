@@ -778,25 +778,12 @@ reg special if
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
   if {[T [null? [cddr $args]]]} {
-    /if1 {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env}
   } else {
-    /if {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env} \
       {eval [caddr $args] $env}
-  }
-}
-proc ::constcl::/if {cond conseq altern} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
-  } else {
-    uplevel $altern
-  }
-}
-
-proc ::constcl::/if1 {cond conseq} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
   }
 }
 reg special case
@@ -894,14 +881,14 @@ proc ::constcl::special-begin {expr env} {
   }
 }
 proc ::constcl::/begin {exps env} {
-  /if {[pair? $exps]} {
-    /if {[pair? [cdr $exps]]} {
+  if {[T [pair? $exps]]} {
+    if {[T [pair? [cdr $exps]]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
-    } {
+    } else {
       return [eval [car $exps] $env]
     }
-  } {
+  } else {
     return #NIL
   }
 }
@@ -1299,9 +1286,9 @@ proc ::constcl::expand-or {expr env} {
   }
 }
 proc ::constcl::do-or {tail env} {
-  /if {[null? $tail]} {
+  if {[T [null? $tail]]} {
     return #f
-  } {
+  } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env

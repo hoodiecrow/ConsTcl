@@ -181,45 +181,12 @@ reg special if
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
   if {[T [null? [cddr $args]]]} {
-    /if1 {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env}
   } else {
-    /if {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env} \
       {eval [caddr $args] $env}
-  }
-}
-CB)
-
-The two procedures that help the K{if} form out are K{/if} and K{/if1}. The
-former takes both a consequent and an alternate, the latter takes only a
-consequent.
-
-B{/if} procedure
-B{/if1} procedure
-
-PR(
-/if (internal);cond expr conseq expr altern expr -> val
-PR)
-
-PR(
-/if1 (internal);cond expr conseq expr -> val
-PR)
-
-IX /if procedure
-IX /if1 procedure
-CB(
-proc ::constcl::/if {cond conseq altern} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
-  } else {
-    uplevel $altern
-  }
-}
-
-proc ::constcl::/if1 {cond conseq} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
   }
 }
 CB)
@@ -229,7 +196,7 @@ TT(
   pew "(if (= 2 2) (display 'a) (display 'b))"
 } -output "a"
 
-::tcltest::test eval-4.0 {try eval-ing a short conditional} -body {
+::tcltest::test eval-4.1 {try eval-ing a short conditional} -body {
   pew "(if (= 2 3) (display 'a))"
 } -output ""
 TT)
@@ -579,14 +546,14 @@ PR)
 IX /begin procedure
 CB(
 proc ::constcl::/begin {exps env} {
-  /if {[pair? $exps]} {
-    /if {[pair? [cdr $exps]]} {
+  if {[T [pair? $exps]]} {
+    if {[T [pair? [cdr $exps]]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
-    } {
+    } else {
       return [eval [car $exps] $env]
     }
-  } {
+  } else {
     return #NIL
   }
 }

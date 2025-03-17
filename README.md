@@ -1561,36 +1561,12 @@ reg special if
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
   if {[T [null? [cddr $args]]]} {
-    /if1 {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env}
   } else {
-    /if {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env} \
       {eval [caddr $args] $env}
-  }
-}
-```
-
-The two procedures that help the `` if `` form out are `` /if `` and `` /if1 ``. The former takes both a consequent and an alternate, the latter takes only a consequent.
-
-__/if__ procedure __/if1__ procedure
-
-<table border=1><thead><tr><th colspan=2 align="left">/if (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>conseq</td><td>an expression</td></tr><tr><td>altern</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
-
-<table border=1><thead><tr><th colspan=2 align="left">/if1 (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>conseq</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
-
-```
-proc ::constcl::/if {cond conseq altern} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
-  } else {
-    uplevel $altern
-  }
-}
-
-proc ::constcl::/if1 {cond conseq} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
   }
 }
 ```
@@ -1830,14 +1806,14 @@ The `` /begin `` helper procedure takes a Lisp list of expressions and evaluates
 
 ```
 proc ::constcl::/begin {exps env} {
-  /if {[pair? $exps]} {
-    /if {[pair? [cdr $exps]]} {
+  if {[T [pair? $exps]]} {
+    if {[T [pair? [cdr $exps]]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
-    } {
+    } else {
       return [eval [car $exps] $env]
     }
-  } {
+  } else {
     return #NIL
   }
 }
@@ -2644,9 +2620,9 @@ __do-or__ procedure
 
 ```
 proc ::constcl::do-or {tail env} {
-  /if {[null? $tail]} {
+  if {[T [null? $tail]]} {
     return #f
-  } {
+  } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env

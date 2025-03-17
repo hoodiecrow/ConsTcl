@@ -2241,53 +2241,12 @@ reg special if
 proc ::constcl::special-if {expr env} {
   set args [cdr $expr]
   if {[T [null? [cddr $args]]]} {
-    /if1 {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env}
   } else {
-    /if {[eval [car $args] $env]} \
+    if {[T [eval [car $args] $env]]} \
       {eval [cadr $args] $env} \
       {eval [caddr $args] $env}
-  }
-}
-\end{lstlisting}
-
-The two procedures that help the \texttt{if} form out are \texttt{/if} and \texttt{/if1}. The former takes both a consequent and an alternate, the latter takes only a consequent.
-
-\textbf{/if} procedure \textbf{/if1} procedure
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if (internal)} \\
-cond & an expression \\
-conseq & an expression \\
-altern & an expression \\
-\textit{Returns:} & a value \\
-\hline
-\end{tabular}
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /if1 (internal)} \\
-cond & an expression \\
-conseq & an expression \\
-\textit{Returns:} & a value \\
-\hline
-\end{tabular}
-\index{/if procedure}
-\index{/if1 procedure}
-
-\begin{lstlisting}
-proc ::constcl::/if {cond conseq altern} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
-  } else {
-    uplevel $altern
-  }
-}
-
-proc ::constcl::/if1 {cond conseq} {
-  if {[T [uplevel [::list expr $cond]]]} {
-    uplevel $conseq
   }
 }
 \end{lstlisting}
@@ -2575,14 +2534,14 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::/begin {exps env} {
-  /if {[pair? $exps]} {
-    /if {[pair? [cdr $exps]]} {
+  if {[T [pair? $exps]]} {
+    if {[T [pair? [cdr $exps]]]} {
       eval [car $exps] $env
       return [/begin [cdr $exps] $env]
-    } {
+    } else {
       return [eval [car $exps] $env]
     }
-  } {
+  } else {
     return #NIL
   }
 }
@@ -3661,9 +3620,9 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::do-or {tail env} {
-  /if {[null? $tail]} {
+  if {[T [null? $tail]]} {
     return #f
-  } {
+  } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env

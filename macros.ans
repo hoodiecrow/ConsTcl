@@ -433,9 +433,9 @@ PR)
 IX do-or procedure
 CB(
 proc ::constcl::do-or {tail env} {
-  /if {[null? $tail]} {
+  if {[T [null? $tail]]} {
     return #f
-  } {
+  } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
     /define [S rest] [do-or [cdr $tail] $env] $env
