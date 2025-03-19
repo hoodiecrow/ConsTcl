@@ -8,9 +8,14 @@ H4 Pseudo-booleans
 
 All values can be tested for truth (in a conditional form or as arguments to
 K{and}, K{or}, or K{not}), though. Any value of any type is considered to be
-the equivalent of K{#t} except for K{#f}.
+true except for K{#f}.
 
 H4 Boolean class
+
+The Boolean class defines what capabilities a boolean has (in addition to those
+from the NIL class), and also defines the internal representation of a boolean
+value expression. A boolean is stored in an instance in the form of an
+interpreter alias, and the K{boolval} method yields the alias as result.
 
 CB(
 oo::class create ::constcl::Boolean {

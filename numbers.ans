@@ -1,16 +1,21 @@
 
 h3 Numbers
 
-The word `computer' suggests numerical calculations. A programming language
-is almost no use if it doesn't support arithmetic. Scheme has a rich numerical
-library and many number types that support advanced calculations.
+The word `computer' suggests numerical calculations. A programming language is
+almost no use if it doesn't support at least arithmetic. Scheme has a rich
+numerical library and many number types that support advanced calculations.
 
 I have only implemented a bare-bones version of Scheme's numerical library,
 though. The following is a reasonably complete framework for operations on
-integers and floating-point numbers. No rationals, no complex numbers, no gcd or
-lcm.
+integers and floating-point numbers. No rationals, no complex numbers, no K{gcd}
+or K{lcm}.
 
 H4 Number class
+
+The Number class defines what capabilities a number has (in addition to those
+from the NIL class), and also defines the internal representation of a number
+value expression. A number is stored in an instance in Tcl form, and the
+K{numval} method yields the Tcl number as result.
 
 CB(
 oo::class create ::constcl::Number {
@@ -452,7 +457,7 @@ NI B{-} procedure
 
 NI B{/} procedure
 
-The operators K{+}, K{*}, K{-}, and K{/} stand for the respective mathematical
+The operators K{+}, K{*}, K{-}, and K{/} stand for the respective arithmetic
 operations.  They take a number of operands, but at least one for K{-} and K{/}.
 
 Example:
@@ -645,7 +650,6 @@ H4 remainder procedure
 K{remainder} is similar to K{modulo}, but the remainder is calculated using
 absolute values for K{num1} and K{num2}, and the result is negative if and only
 if K{num1} was negative.
-a mathematician!)
 
 Example:
 
@@ -1038,7 +1042,7 @@ TT)
 
 H4 expt procedure
 
-K{expt} calculates the x to the power y, or P{x}{y}.
+K{expt} calculates x to the power y, or P{x}{y}.
 
 PR(
 expt (public);num1 num num2 num -> num

@@ -147,6 +147,10 @@ CB)
 
 H4 MkEnv generator
 
+The K{MkEnv} environment generator can be called with a single argument (the
+linked-to environment). In that case the parameter and argument lists for the
+constructor will be empty. If K{MkEnv} is called with three arguments, they are,
+in order, parameters, arguments, and environment.
 
 PR(
 MkEnv (internal);?parms? formals ?vals? tvals env env -> env

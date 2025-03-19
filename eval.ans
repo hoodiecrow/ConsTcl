@@ -14,17 +14,16 @@ syntax, and each with its own process of evaluation.
 DL variable reference LD Syntax: a symbol. Process: R{variable lookup}{variable-reference}.
 DL constant literal LD Syntax: a number, string, character, or boolean. Process: R{take the value}{constant-literal}.
 DL quotation LD Syntax: K{(quote datum)}. Process: R{take the datum}{quotation}.
-DL conditional LD Syntax: K{if}, K{case}, or K{cond}. Process: R{depends on which syntax}{conditional}.
+DL conditional LD Syntax: K{if}, K{case}, or K{cond} expression. Process: R{depends on which syntax}{conditional}.
 DL sequence LD Syntax: K{(begin expression ...)}. Process: evaluate all expressions, R{take value of the last}{sequence}.
 DL definition LD Syntax: K{(define var val)}. Process: R{bind a variable to a location, store the value there}{definition}.
 DL assignment LD Syntax: K{(set! var val)}. Process: R{take a bound variable, store the value to its location}{assignment}.
 DL procedure definition LD Syntax: K{(lambda formals body)}. Process: take formals and body and R{apply lambda to get a procedure value}{procedure-definition}.
 DL procedure call LD Syntax: K{(operator operand ...)}. Process: R{invoke operator on operands}{procedure-call}.
 
-The evaluator
-recognizes the syntax of the expression and chooses the appropriate
-process to evaluate it. How this happens for the nine syntactic forms will be described in the following
-sections.
+The evaluator recognizes the syntax of the expression and chooses the
+appropriate process to evaluate it. How this happens for the nine syntactic
+forms will be described in the following sections.
 
 A word about E{environments}: an environment is where evaluating code keeps
 track of things. This is why most of the procedures in this chapter get a
@@ -41,10 +40,11 @@ stored there. When an expression consists of the symbol, the evaluator does
 E{lookup} and finds the value.
 
 This is handled by the helper procedure K{lookup}. It (or rather, the helper
-procedure K{binding-info}) searches the R{environment chain}{environments} for
-the symbol, and returns the value stored in the location it is bound to.  It is
-an error to do lookup on an unbound symbol, or a symbol that is bound for some
-other purpose, such as being a keyword or a macro.
+procedure K{binding-info}, which it calls) searches the R{environment
+  chain}{environments} for the symbol, and returns the value stored in the
+  location it is bound to.  It is an error to do lookup on an unbound symbol, or
+  a symbol that is bound for some other purpose, such as being a keyword or a
+  macro.
 
 Syntax: E{symbol}
 
@@ -266,7 +266,7 @@ PT)
 PT(
 h5 Quasiquote
 
-In this and many other special form and macro form expanders I use a
+In this and many other special form and macro expanders I use a
 quasiquoteI{quasiquote} construct to lay out how the form is to be expanded. A
 quasiquote starts with a backquote (K{`}) instead of the single quote that
 precedes regular quoted material. A quasiquote allows for `unquoting' of
@@ -1253,7 +1253,7 @@ is called, a new environment is created which has bindings for the procedure
 formal parameters and which links to the environment that was current when the
 procedure was defined (which in turn links backwards all the way to the original
 global environment). The evaluator follows into the new environment to evaluate
-the body of the procedure there, and then as the evaluator goes back along its
+the body of the procedure there, and then as the evaluator goes back along the
 call stack, it sheds environment references.
 
 Not only procedures but binding forms (such as K{let}) create new environments
@@ -1320,11 +1320,11 @@ special form, a variable, or a R{macro}{macros}. The E{handling info} gives the
 exact procedure that will take care of the expression. If the operator isn't a
 symbol, it is evaluated and applied to the evaluated rest of the expression.
 
-The seven remaining syntactic forms are implemented as special forms and handled
-when the relevant symbol appears in the K{car} of the expression. Their
-E{binding type} is K{SPECIAL} and the E{handling info} consists of the name of
-the procedure expanding the special form. The procedure is called with the
-expression and the environment as arguments.
+The seven remaining syntactic forms (and the binding forms) are implemented as
+one or more special forms and handled when the relevant symbol appears in the
+K{car} of the expression. Their E{binding type} is K{SPECIAL} and the E{handling
+  info} consists of the name of the procedure expanding the special form. The
+  procedure is called with the expression and the environment as arguments.
 
 PR(
 eval-form (internal);expr expr env env -> val

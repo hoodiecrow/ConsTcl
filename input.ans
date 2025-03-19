@@ -13,9 +13,9 @@ E{internal representation} that the evaluator can use.
 h3 The parsing process
 
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
-letters, digits, and other characters, a piece of text conforming to the rules of E{external
-  representation}I{external representation}. The result of parsing is an
-  E{expression}I{expression} in E{internal representation}.
+letters, digits, and other characters, a piece of text conforming to the rules
+of E{external representation}I{external representation}. The result of parsing
+is an E{expression}I{expression} in E{internal representation}.
 
 h4 External representation
 
@@ -24,7 +24,7 @@ a unique way.
 
 For example, the external representation for a vector is a pound sign (K{#}), a
 left parenthesis (K{(}), the external representation for some values, and a right
-parenthesis (K{)}). When the reader or parser is working through input, a K{#(}
+parenthesis (K{)}). When the reader/parser is working through input, a K{#(}
 symbol signals that a vector structure is being read. A number of subexpressions
 for the elements of the vector follow, and then a closing parenthesis K{)}
 signals that the vector is done. The elements are saved in vector memory and the
@@ -85,12 +85,12 @@ PT(
 H5 Ports
 
 Ports are an abstraction of the input or output mechanism. An input port can be
-connected to standard input (the keyboard) or a file
-  opened for input or a string input buffer where the complete available input
-  is laid out before reading starts. Regardless of what kind of input port it
-  is, one can read characters from it until it runs out and signals end-of-file.
-  Likewise, an output port, regardless of whether it's the standard output--the
-  screen--or a file opened for output, will receive characters sent to it.
+connected to standard input (the keyboard) or a file opened for input or a
+string input buffer where the complete available input is laid out before
+reading starts. Regardless of what kind of input port it is, one can read
+characters from it until it runs out and signals end-of-file.  Likewise, an
+output port, regardless of whether it's the standard output--the screen--or a
+file opened for output, will receive characters sent to it.
 
 PT)
 
@@ -147,14 +147,13 @@ TT)
 H4 read procedure
 
 The standard builtin K{read} reads an input port the same way that K{parse}
-does, but one can't pass a string to it. The K{read-} procedures parse their
-input and produce ConsTcl objects.
+does, but one can't pass a string to it.
 
 One can pass a port to K{read} (including a string input port) in which case
 K{read} sets the standard input port temporarily to the provided port. If not,
-K{read} uses the default standard input port (usually the keyboardF{which doesn't work in a Windows
-  windowing environment, e.g. wish or tkcon. repl does work in those, though.
-  Input works in tclsh on Windows.}).
+K{read} uses the default standard input port (usually the keyboardF{which
+  doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does
+  work in those, though.  Input works in tclsh on Windows.}).
 
 PR(
 read (public);?port? iport -> expr
@@ -341,7 +340,9 @@ PR)
 CB(
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
+  # start with stored c
   while {[::string is space -strict $c]} {
+    # this order seems strange but works
     set c [readchar]
     read-eof $c
     set unget $c
@@ -447,18 +448,20 @@ TT)
 
 h3 Reader procedures
 
+The K{read-} procedures parse their input and produce ConsTcl objects.
+
 Reader procedures specialize in reading a certain kind of input, except for
 K{read-expr} which reads them all (with a little help).
 
 H4 read-expr procedure
 
 The K{read-expr} procedure reads the first available character from the input
-port. Based on that it delegates to one of the more detailed readers, producing
-an expression of any kind.  A Tcl character value can be passed to it: that
-character will be used first before reading from the input.  If end of file is
-encountered before an expression can be read in full, the procedure returns end
-of file (K{#EOF})I{end of file}.  Shares the variables K{c} and K{unget} with
-its caller.
+port. Based on that character it delegates to one of the more detailed readers,
+producing an expression of the corresponding kind.  A Tcl character value can be
+passed to it: that character will be used first before reading from the input.
+If end of file is encountered before an expression can be read in full, the
+procedure returns end of file (K{#EOF})I{end of file}.  Shares the variables
+K{c} and K{unget} with its caller.
 
 PR(
 read-expr (internal);?char? tchr -> expreof
@@ -663,8 +666,8 @@ H4 read-number-expr procedure
 
 K{read-number-expr} reads numerical input, both integers and floating point
 numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
-digits, and it actually takes in anything that starts out like a number and
-stops at whitespace or a delimiter character, and then it accepts or rejects the
+digits, and it actually takes in anything that at least starts out like a number.
+It stops at whitespace or a delimiter character, and then it accepts or rejects the
 input by comparing it to a Tcl double. It returns a R{Number object}{numbers}.
 Shares the variables K{c} and K{unget} with its caller.
 
@@ -770,7 +773,8 @@ The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
 list, or a possibly recursive structure of R{Pair objects}{pairs-and-lists},
 either a proper list (one that ends in K{#NIL}), or an improper one (one that
-has an atom as its last member).
+has an atom as its last member). Note that K{read-pair-expr} can't read a cyclic
+improper list.
 Shares the variables K{c} and K{unget} with its caller.
 
 IF /images/prop-improp.png A proper list and two improper ones.
@@ -981,9 +985,8 @@ TT)
 H4 read-pound procedure
 
 K{read-pound} is activated by K{read-expr} when it reads a pound sign (K{#}). It
-in turn either delegates to the vector reader or the character reader, or
-returns boolean literals.
-Shares the variables K{c} and K{unget} with its caller.
+in turn either delegates to the vector or character reader, or returns boolean
+literals.  Shares the variables K{c} and K{unget} with its caller.
 
 PR(
 read-pound (internal);-> poundeof
@@ -1113,7 +1116,7 @@ K{read-string-expr} is activated by K{read-expr} when it reads a double quote.
 It collects characters until it reaches another (unescaped) double quote. To
 have double quotes in the string, escape them with backslash (which also means
 that backslashes have to be escaped with backslash). A backslash+n pair of
-characters denotes a newline (this is a ConsTcl extension). It then returns a
+characters denotes a newline (this is an extension). It then returns a
 string expression--an immutable R{String object}{strings}.
 Shares the variables K{c} and K{unget} with its caller.
 

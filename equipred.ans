@@ -5,10 +5,10 @@ h3 Equivalence predicates
 One of the fundamental questions in programming is ``is A equal to B?''. Lisp
 takes the question and adds ``what does it mean to be equal?''
 
-Lisp has a number of equivalence predicates, ConsTcl, like Scheme, has three.
-Of the three, K{eq} generally tests for identity (with exception for numbers),
-K{eqv} tests for value equality (except for booleans and procedures, where it
-tests for identity), and K{equal} tests for whether the output strings are
+Lisp has a number of equivalence predicates. ConsTcl, like Scheme, has three.
+Of the three, K{eq?} generally tests for identity (with exception for numbers),
+K{eqv?} tests for value equality (except for booleans and procedures, where it
+tests for identity), and K{equal?} tests for whether the output strings are
 equal.
 
 H4 eq? procedure

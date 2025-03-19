@@ -2,7 +2,7 @@
 H3 Input and output
 
 Like most programming languages, Scheme has input and output facilities beyond
-direct K{read} and K{write}.  I/O is based on the E{port} abstraction of a
+mere K{read} and K{write}.  I/O is based on the E{port} abstraction of a
 character supplying or receiving device. There are four kinds of ports:
 
 EN file input (InputPort)
@@ -49,6 +49,9 @@ oo::class create ::constcl::Port {
 CB)
 
 H4 InputPort class
+
+The InputPort class extends Port with the ability to open a channel for reading,
+and to get a character from the channel and detect end-of-file.
 
 CB(
 oo::class create ::constcl::InputPort {
@@ -100,6 +103,10 @@ CB)
 
 H4 StringInputPort class
 
+The StringInputPort class extends Port with the ability to get a character from
+the buffer and detect end-of-file. It turns K{open} and K{close} to no-op
+methods.
+
 CB(
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
@@ -143,6 +150,12 @@ oo::class create ::constcl::StringInputPort {
 CB)
 
 H4 OutputPort class
+
+OutputPort extends port with the ability to open a channel for writing, and to
+put a string through the channel, print a newline, and flush the channel. The
+K{open} method is locked with an error command for safety: only remove this line
+if you really know what you're doing: once it is unlocked, the K{open} method
+can potentially overwrite existing files.
 
 CB(
 oo::class create ::constcl::OutputPort {
@@ -197,6 +210,9 @@ interp alias {} ::constcl::MkOutputPort \
 CB)
 
 H4 StringOutputPort class
+
+StringOutputPort extends port with the ability to put strings into the string
+buffer. The K{tostring} method yields the current contents of the buffer.
 
 CB(
 oo::class create ::constcl::StringOutputPort {
@@ -302,10 +318,6 @@ H4 call-with-output-file procedure
 K{call-with-output-file} opens a file for output and passes the port to K{proc}.
 The file is closed again once K{proc} returns. The result of the call is
 returned.
-
-You can't use this procedure without deleting the line in class
-OutputPort/method open that throws an error on use. I take no responsibility for
-damage to your files due to overwriting the contents.
 
 PR(
 call-with-output-file (public);filename filename proc proc -> val

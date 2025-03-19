@@ -14,7 +14,7 @@ the data elements of 1) the vector address of the first element, and 2) the
 length of the vector. External representation is enclosed within double quotes,
 with double quotes and backslashes within the string escaped with a backslash.
 
-As a ConsTcl extension, a K{\n} pair in the external representation is
+As an extension, a K{\n} pair in the external representation is
 stored as a newline character. It is restored to K{\n} if the string is printed
 using K{write}, but remains a newline character if the string is printed using
 K{display}.

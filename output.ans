@@ -6,8 +6,8 @@ code and data so that the user can know what the outcome of the evaluation was.
 
 H4 write procedure
 
-As long as the object given to K{write} isn't the empty string, it calls the
-object's K{write} method and writes a newline.
+As long as the object given to K{write} isn't the empty string, K{write} calls the
+object's K{write} method and then writes a newline.
 
 PR(
 write (public);val val ?port? port -> none

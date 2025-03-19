@@ -3,9 +3,14 @@ H3 Characters
 
 Characters are any Unicode printing character, and also space and newline space
 characters. External representation is K{#\A} (A stands for any character) or
-K{#\space} or K{#\newline}. Internal representation is simply a Tcl character.
+K{#\space} or K{#\newline}.
 
 H4 Char class
+
+The Char class defines what capabilities a character has (in addition to those
+from the NIL class), and also defines the internal representation of a character
+value expression. A character is stored in an instance as a Tcl character, and
+the K{char} method yields the character as result.
 
 CB(
 oo::class create ::constcl::Char {
@@ -488,12 +493,11 @@ NI B{char-lower-case?} procedure
 The predicates K{char-alphabetic?}, K{char-numeric?}, and K{char-whitespace?}
  test a character for these
 conditions.
+K{char-upper-case?} and K{char-lower-case?} too.
 
 PR(
 char-alphabetic?, char-numeric?, char-whitespace? (public);char char -> bool
 PR)
-
-K{char-upper-case?} and K{char-lower-case?} too.
 
 PR(
 char-upper-case?, char-lower-case? (public);char char -> bool

@@ -7,6 +7,11 @@ against each other.
 
 H4 Symbol class
 
+The Symbol class defines what capabilities a symbol has (in addition to those
+from the NIL class), and also defines the internal representation of a symbol
+value expression. A symbol is stored in an instance as a Tcl string, and
+the K{name} method yields the symbol's name as result.
+
 CB(
 oo::class create ::constcl::Symbol {
   superclass ::constcl::NIL

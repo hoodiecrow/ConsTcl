@@ -195,6 +195,8 @@ proc ::constcl::for-seq {seq env} {
     }]
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
+  } else {
+    ::error "unknown sequence type [$seq show]"
   }
 }
 CB)
@@ -492,7 +494,8 @@ TT)
 
 H4 expand-push"! procedure
 
-The macro K{push!} updates a list. It adds a new element as the new first element.
+The macro K{push!} updates a list. It adds a new element as the new first
+element. The K{push!} and K{pop!} macros together implement a stack on a list.
 
 PR(
 expand-push! (internal);expr expr env env -> expr
@@ -600,7 +603,8 @@ H4 expand-quasiquote procedure
 A quasi-quote isn't a macro, but we will deal with it in this section anyway.
 K{expand-quasiquote} traverses the quasi-quoted structure searching for K{unquote}
 and K{unquote-splicing}. This code is brittle and sprawling and I barely
-understand it myself.
+understand it myself, but it works (and is the basis for a lot of the special
+form/macro expanders).
 
 PR(
 expand-quasiquote (internal);expr expr env env -> expr

@@ -409,7 +409,9 @@ proc ::constcl::readchar {} {
 }
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
+  # start with stored c
   while {[::string is space -strict $c]} {
+    # this order seems strange but works
     set c [readchar]
     read-eof $c
     set unget $c
@@ -1219,6 +1221,8 @@ proc ::constcl::for-seq {seq env} {
     }]
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
+  } else {
+    ::error "unknown sequence type [$seq show]"
   }
 }
 proc ::constcl::do-for {tail env} {
