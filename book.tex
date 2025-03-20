@@ -49,6 +49,7 @@
 \makeindex[intoc]
 \counterwithout{footnote}{chapter}
 \setcounter{secnumdepth}{1}
+\hyphenation{Cons-Tcl}
 
 \begin{document}
 \pagestyle{headings}
@@ -294,7 +295,7 @@ Next, some procedures that make my life as developer somewhat easier.
 
 \texttt{reg} registers built-in procedures, special forms, and macros in the definitions register\index{definitions register}. That way I don't need to manually keep track of and list procedures. The definitions register's contents will eventually get tranferred into the standard library (see page \pageref{environment-startup}).
 
-You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is a string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the \emph{binding type}, either \texttt{special} or \texttt{macro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}.
+You can call \texttt{reg} with one parameter: \emph{name}. \emph{name} is a string that will eventually become the lookup symbol in the standard library. If you give two parameters, the first one is the \emph{binding type}, either \texttt{special} or \texttt{macro}. The former registers special forms like \texttt{if} and \texttt{define}, and the latter registers macros like \texttt{and} or \texttt{when}. The second one is still the \emph{name}.
 
 There is also \texttt{regvar}, which registers variables. You pass \emph{name} and \emph{value} to it. There are only a couple of variables registered this way.
 
@@ -347,6 +348,7 @@ proc reg {args} {
   }
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 
 proc regvar {name value} {
@@ -356,6 +358,7 @@ proc regvar {name value} {
   set val [::list VARIABLE $value]
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 \end{lstlisting}
 
@@ -365,9 +368,9 @@ proc regvar {name value} {
 \label{procedures-functions-and-commands}
 \index{procedures, functions, and commands}
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to procedure, because that's the standard term in R5RS. Still, they usually pass useful values back to the caller, so technically they're functions. Lastly, I'm programming in Tcl here, and the usual term for these things is `commands' in Tcl.
+I use all of these terms for the subroutines in ConsTcl. I try to stick with \emph{procedure}, because that's the standard term in R5RS. Still, they usually pass useful values back to the caller, so technically they're \emph{functions}. Lastly, I'm programming in Tcl here, and the usual term for these things is \emph{commands} in Tcl.
 
-And the `internal/public' distinction is possibly a misnomer. What it means is that `public' procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the `public' procedures. Another way to put it is that procedures registered by \texttt{reg} are `public' and those who aren't are `internal'.
+And the \emph{internal}/\emph{public} distinction is possibly a misnomer. What it means is that \emph{public} procedures can be called from Lisp code being interpreted, and the others cannot. They are for use in the infrastructure around the interpreter, including in implementing the \emph{public} procedures. Another way to put it is that procedures registered by \texttt{reg} are \emph{public} and those who aren't are \emph{internal}.
 \end{pulledtext}
 
 \subsection{atom? procedure}
@@ -488,7 +491,7 @@ lvals & a Lisp list of values \\
 \begin{lstlisting}
 proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
-    parse {()}
+    parse {'()}
   } else {
     cons \
       [cons [car $a] [car $b]] \
@@ -610,7 +613,7 @@ proc ::constcl::typeof? {val type} {
 \label{inrange-procedure}
 \index{in-range procedure}
 
-This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K. Fellows\index{Fellows, Donal}, but has grown a bit since then to suit my needs.
+This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K Fellows\index{Fellows, Donal}, but has grown a bit since then to suit my needs.
 
 The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Number objects. If one is passed to the procedure, it is used as the end of the sequence: the sequence will end just before it. If two numbers are passed, the first one becomes the start of the sequence: the first number in it. The second number will become the end of the sequence. If three numbers are passed, they become start, end, and step, i.e. how much is added to the current number to find next number in the sequence.
 
@@ -714,12 +717,12 @@ Testing gets easier if you have the software tools to manipulate and pick apart 
 \label{pew-procedure}
 \index{pew procedure}
 
-\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled and get to see proper Lisp output from it.
+\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled, and get to see proper Lisp output from it.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pew (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
 \hline
@@ -765,7 +768,7 @@ proc ::rew {port {env ::constcl::global_env}} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pw (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -807,7 +810,7 @@ proc ::rw {args} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pe (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
 \hline
@@ -851,7 +854,7 @@ proc ::re {port {env ::constcl::global_env}} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf p (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
@@ -932,7 +935,7 @@ proc ::r {args} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf prw (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -950,12 +953,12 @@ proc ::prw {str} {
 \label{pxw-procedure}
 \index{pxw procedure}
 
-\texttt{pxw} attempts to macro-expand whatever it reads, and writes the result. (I do know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was when I was developing the macro facility.
+\texttt{pxw} attempts to macro-expand whatever it reads, and writes the result.\footnote{I do know that 'expand' doesn't start with an 'x'.} Again, this command's heyday was when I was developing the macro facility.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pxw (internal)} \\
-str & a Tcl string, Lisp string, or a string input port \\
+str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
 \hline
@@ -970,7 +973,7 @@ proc ::pxw {str {env ::constcl::global_env}} {
     set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
-    puts "not a macro"
+    ::error "not a macro"
   }
 }
 \end{lstlisting}
@@ -1185,7 +1188,7 @@ oo::singleton create ::constcl::Unspecified {
 \chapter{Input}
 \label{input}
 
-The first thing an interpreter must be able to do is to take in the user's code and data input\index{input}, whether from the keyboard or from a source file. \texttt{read} represents the interpreter's main input facility. The \texttt{read-} procedures read from standard input, or--if a port is provided--from the port's channel.
+The first thing an interpreter must be able to do is to take in the user's code and data input\index{input}, whether from the keyboard or from a source file. The procedure \texttt{read} represents the interpreter's main input facility. \texttt{read} and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
 
 The main input procedures, \texttt{read} and the non-standard \texttt{parse}, do more than just read in the text of code and data: they also \emph{parse} the input into an \emph{internal representation} that the evaluator can use.
 
@@ -1201,13 +1204,13 @@ Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsi
 
 The external representation is a 'recipe' for an expression that expresses it in a unique way.
 
-For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader/parser is working through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader/parser is working its way through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
 
 \includegraphics{images/vector-representation.png}
 
-The \texttt{parse} or \texttt{read} procedure takes in the input buffer character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+The \texttt{parse} or \texttt{read} procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
 
-Given a string, \texttt{parse} creates a string input port for itself to read from. It then parses the input and produces the internal representation of an expression.
+Given a string, \texttt{parse} creates a string input port for itself to read from.
 
 Example:
 
@@ -1262,7 +1265,7 @@ Ports are an abstraction of the input or output mechanism. An input port can be 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse (internal)} \\
-inp & a Tcl string, Lisp string, or a string input port \\
+inp & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
@@ -1330,11 +1333,21 @@ proc ::constcl::read {args} {
 \label{input-helper-procedures}
 \index{input helper procedures}
 
+Some utility procedures which are used by the reader/parser procedures.
+
 \subsection{make-constant procedure}
 \label{makeconstant-procedure}
 \index{make-constant procedure}
 
 The \texttt{make-constant} helper procedure is called to set expressions to constants when read as a literal.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-constant (internal)} \\
+val & a value \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \begin{lstlisting}
 proc ::constcl::make-constant {val} {
@@ -1343,9 +1356,10 @@ proc ::constcl::make-constant {val} {
     make-constant [car $val]
     make-constant [cdr $val]
   } elseif {[T [null? $val]]} {
-    return #NIL
+    return
   } else {
     $val mkconstant
+    return
   }
 }
 \end{lstlisting}
@@ -1355,6 +1369,14 @@ proc ::constcl::make-constant {val} {
 \index{interspace? procedure}
 
 The \texttt{interspace?} helper procedure recognizes whitespace between value representations.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf interspace? (internal)} \\
+c & a Tcl character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
 
 \begin{lstlisting}
 proc ::constcl::interspace? {c} {
@@ -1371,6 +1393,14 @@ proc ::constcl::interspace? {c} {
 \index{delimiter? procedure}
 
 The \texttt{delimiter?} helper procedure recognizes delimiter characters between value representations.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delimiter? (internal)} \\
+c & a Tcl character \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
 
 \begin{lstlisting}
 proc ::constcl::delimiter? {c} {
@@ -1440,7 +1470,7 @@ proc ::constcl::readchar {} {
 \label{findchar-procedure}
 \index{find-char? procedure}
 
-\texttt{find-char?} reads ahead through whitespace to find a given character. It returns \texttt{\#t} if it has found the character, and \texttt{\#f} if it has stopped at some other character. Returns end of file if eof is encountered. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{find-char?} reads ahead through whitespace to find a given character. It returns \texttt{\#t} if it has found the character, and \texttt{\#f} if it has stopped at some other character. Sets \texttt{unget} to the character it stopped at. Returns end of file if eof is encountered. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1468,7 +1498,7 @@ proc ::constcl::find-char? {char} {
 \label{readend-procedure}
 \index{read-end? procedure}
 
-\texttt{read-end?} reads one character and returns \texttt{\#t} if it is an interspace character or a delimiter character, or end of file. Otherwise it returns \texttt{\#f}. It ungets the character before returning. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-end?} reads one character and returns \texttt{\#t} if it is an interspace character or a delimiter character, or \texttt{\#EOF} if at end of file. Otherwise it returns \texttt{\#f}. It ungets the character before returning, unless the character was interspace or end-of-file. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1481,11 +1511,13 @@ proc ::constcl::find-char? {char} {
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
-  if {[T [interspace? $c]] ||
-      [T [delimiter? $c]] ||
-      $c eq "#EOF"} {
+  if {[T [interspace? $c]]} {
+    return #t
+  } elseif {[T [delimiter? $c]]} {
     set unget $c
     return #t
+  } elseif {$c eq "#EOF"} {
+    return #EOF
   } else {
     set unget $c
     return #f
@@ -1657,7 +1689,7 @@ proc ::constcl::read-character-expr {} {
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-identifier-expr (internal)} \\
 ?chars? & some Tcl characters \\
-\textit{Returns:} & a symbol or end of file \\
+\textit{Returns:} & a symbol \\
 \hline
 \end{tabular}
 
@@ -1681,10 +1713,9 @@ proc ::constcl::read-identifier-expr {args} {
     set c [readchar]
     # do not check for EOF here
   }
-  if {$c ne "#EOF"} {
+  if {[T [delimiter? $c]]} {
     set unget $c
   }
-  read-eof $name
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -1715,7 +1746,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readchar]
   }
   read-eof $c
-  while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
+  while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
@@ -1806,7 +1837,7 @@ proc ::constcl::read-pair-expr {char} {
 
 \textbf{read-pair} procedure
 
-\texttt{read-pair} is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning \texttt{\#NIL} in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When \texttt{read-pair} has reached the ending parenthesis or bracket, it conses up the elements starting from the last, and returns the head of the list. Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-pair} is a helper procedure that does the heavy lifting in reading a pair structure. First it checks if the list is empty, returning \texttt{\#NIL} in that case. Otherwise it reads the first element in the list and then repeatedly the rest of them. If it reads a Dot object, the following element to be read is the tail end of an improper list. When \texttt{read-pair} has reached the ending parenthesis or bracket, it ``conses up'' the elements starting from the last, and returns the head of the list. Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1823,15 +1854,13 @@ proc ::constcl::read-pair {char} {
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
-    # read right paren/brack
-    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev #NIL
-  while {[find-char? $char] eq "#f"} {
+  while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
     read-eof $c
@@ -1842,9 +1871,7 @@ proc ::constcl::read-pair {char} {
     } else {
       lappend res $x
     }
-    if {[llength $res] > 99} break
   }
-  # read right paren/brack
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -1873,13 +1900,13 @@ proc ::constcl::read-plus-minus {char} {
   set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
-    set n [read-number-expr $c]
-    read-eof $n
+    set expr [read-number-expr $c]
+    read-eof $expr
     if {$char eq "-"} {
-      set n [- $n]
+      set expr [- $expr]
     }
-    return $n
-  } elseif {[::string is space -strict $c] ||
+    return $expr
+  } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
       return [S "+"]
@@ -1887,9 +1914,9 @@ proc ::constcl::read-plus-minus {char} {
       return [S "-"]
     }
   } else {
-    set n [read-identifier-expr $char $c]
-    read-eof $n
-    return $n
+    set expr [read-identifier-expr $char $c]
+    read-eof $expr
+    return $expr
   }
 }
 \end{lstlisting}
@@ -1914,15 +1941,15 @@ proc ::constcl::read-pound {} {
   set c [readchar]
   read-eof $c
   switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[T [read-end?]]} {set n #t} }
-    f    { if {[T [read-end?]]} {set n #f} }
-    "\\" { set n [read-character-expr] }
+    (    { set expr [read-vector-expr] }
+    t    { if {[T [read-end?]]} {set expr #t} }
+    f    { if {[T [read-end?]]} {set expr #f} }
+    "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
     }
   }
-  return $n
+  return $expr
 }
 \end{lstlisting}
 

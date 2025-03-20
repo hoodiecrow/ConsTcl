@@ -26,6 +26,7 @@ proc reg {args} {
   }
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 
 proc regvar {name value} {
@@ -35,6 +36,7 @@ proc regvar {name value} {
   set val [::list VARIABLE $value]
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 reg atom?
 
@@ -65,7 +67,7 @@ proc assert {expr} {
 }
 proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
-    parse {()}
+    parse {'()}
   } else {
     cons \
       [cons [car $a] [car $b]] \
@@ -214,7 +216,7 @@ proc ::pxw {str {env ::constcl::global_env}} {
     set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
-    puts "not a macro"
+    ::error "not a macro"
   }
 }
 catch { ::constcl::Dot destroy }
@@ -367,9 +369,10 @@ proc ::constcl::make-constant {val} {
     make-constant [car $val]
     make-constant [cdr $val]
   } elseif {[T [null? $val]]} {
-    return #NIL
+    return
   } else {
     $val mkconstant
+    return
   }
 }
 proc ::constcl::interspace? {c} {
@@ -421,11 +424,13 @@ proc ::constcl::find-char? {char} {
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
-  if {[T [interspace? $c]] ||
-      [T [delimiter? $c]] ||
-      $c eq "#EOF"} {
+  if {[T [interspace? $c]]} {
+    return #t
+  } elseif {[T [delimiter? $c]]} {
     set unget $c
     return #t
+  } elseif {$c eq "#EOF"} {
+    return #EOF
   } else {
     set unget $c
     return #f
@@ -530,10 +535,9 @@ proc ::constcl::read-identifier-expr {args} {
     set c [readchar]
     # do not check for EOF here
   }
-  if {$c ne "#EOF"} {
+  if {[T [delimiter? $c]]} {
     set unget $c
   }
-  read-eof $name
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -547,7 +551,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readchar]
   }
   read-eof $c
-  while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
+  while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
@@ -604,15 +608,13 @@ proc ::constcl::read-pair {char} {
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
-    # read right paren/brack
-    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev #NIL
-  while {[find-char? $char] eq "#f"} {
+  while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
     read-eof $c
@@ -623,9 +625,7 @@ proc ::constcl::read-pair {char} {
     } else {
       lappend res $x
     }
-    if {[llength $res] > 99} break
   }
-  # read right paren/brack
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -637,13 +637,13 @@ proc ::constcl::read-plus-minus {char} {
   set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
-    set n [read-number-expr $c]
-    read-eof $n
+    set expr [read-number-expr $c]
+    read-eof $expr
     if {$char eq "-"} {
-      set n [- $n]
+      set expr [- $expr]
     }
-    return $n
-  } elseif {[::string is space -strict $c] ||
+    return $expr
+  } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
       return [S "+"]
@@ -651,9 +651,9 @@ proc ::constcl::read-plus-minus {char} {
       return [S "-"]
     }
   } else {
-    set n [read-identifier-expr $char $c]
-    read-eof $n
-    return $n
+    set expr [read-identifier-expr $char $c]
+    read-eof $expr
+    return $expr
   }
 }
 proc ::constcl::read-pound {} {
@@ -662,15 +662,15 @@ proc ::constcl::read-pound {} {
   set c [readchar]
   read-eof $c
   switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[T [read-end?]]} {set n #t} }
-    f    { if {[T [read-end?]]} {set n #f} }
-    "\\" { set n [read-character-expr] }
+    (    { set expr [read-vector-expr] }
+    t    { if {[T [read-end?]]} {set expr #t} }
+    f    { if {[T [read-end?]]} {set expr #f} }
+    "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
     }
   }
-  return $n
+  return $expr
 }
 proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget

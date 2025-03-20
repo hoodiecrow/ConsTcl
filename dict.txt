@@ -10,7 +10,7 @@ lisp          -> Lisp source text
 inpbuf        -> an input buffer
 extrep        -> an external representation of a Lisp object
 tstrinpbuf    -> a Tcl string or an input buffer
-tstrstrinpbuf -> a Tcl string, Lisp string, or a string input port
+tstrstrinpbuf -> a Tcl string, a Lisp string, or a string input port
 none          -> nothing
 noneeof       -> nothing, or end of file
 filename      -> a filename string

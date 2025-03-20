@@ -2,9 +2,10 @@
 H2 Input
 
 The first thing an interpreter must be able to do is to take in the user's code
-and data inputI{input}, whether from the keyboard or from a source file.  K{read}
-represents the interpreter's main input facility. The K{read-} procedures read
-from standard input, or--if a port is provided--from the port's channel.
+and data inputI{input}, whether from the keyboard or from a source file.  The
+procedure K{read} represents the interpreter's main input facility. K{read} and
+its sub-procedures read from standard input, or--if a port is provided--from the
+port's channel.
 
 The main input procedures, K{read} and the non-standard K{parse}, do more than
 just read in the text of code and data: they also E{parse} the input into an
@@ -24,7 +25,7 @@ a unique way.
 
 For example, the external representation for a vector is a pound sign (K{#}), a
 left parenthesis (K{(}), the external representation for some values, and a right
-parenthesis (K{)}). When the reader/parser is working through input, a K{#(}
+parenthesis (K{)}). When the reader/parser is working its way through input, a K{#(}
 symbol signals that a vector structure is being read. A number of subexpressions
 for the elements of the vector follow, and then a closing parenthesis K{)}
 signals that the vector is done. The elements are saved in vector memory and the
@@ -32,13 +33,12 @@ vector gets the address to the first element and the number of elements.
 
 IG /images/vector-representation.png
 
-The K{parse} or K{read} procedure takes in the input buffer character by
+The K{parse} or K{read} procedure takes in input character by
 character, matching each character against a fitting external representation.
 When done, it creates a ConsTcl object, which is the internal representation of
 an expression.  The object can then be passed to the evaluator.
 
-Given a string, K{parse} creates a string input port for itself to read from. It
-then parses the input and produces the internal representation of an expression.
+Given a string, K{parse} creates a string input port for itself to read from.
 
 Example:
 
@@ -192,10 +192,16 @@ TT)
 
 h3 Input helper procedures
 
+Some utility procedures which are used by the reader/parser procedures.
+
 H4 make-constant procedure
 
 The K{make-constant} helper procedure is called to set expressions to constants
 when read as a literal.
+
+PR(
+make-constant (internal);val val -> none
+PR)
 
 CB(
 proc ::constcl::make-constant {val} {
@@ -204,9 +210,10 @@ proc ::constcl::make-constant {val} {
     make-constant [car $val]
     make-constant [cdr $val]
   } elseif {[T [null? $val]]} {
-    return #NIL
+    return
   } else {
     $val mkconstant
+    return
   }
 }
 CB)
@@ -232,6 +239,10 @@ H4 interspace? procedure
 The K{interspace?} helper procedure recognizes whitespace between value
 representations.
 
+PR(
+interspace? (internal);c tchr -> bool
+PR)
+
 CB(
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
@@ -250,6 +261,10 @@ H4 delimiter? procedure
 
 The K{delimiter?} helper procedure recognizes delimiter characters between value
 representations.
+
+PR(
+delimiter? (internal);c tchr -> bool
+PR)
 
 CB(
 proc ::constcl::delimiter? {c} {
@@ -330,8 +345,9 @@ H4 find-char? procedure
 
 K{find-char?} reads ahead through whitespace to find a given character. It
 returns K{#t} if it has found the character, and K{#f} if it has stopped at some
-other character.  Returns end of file if eof is encountered.  Shares the
-variables K{c} and  K{unget} with its caller.
+other character. Sets K{unget} to the character it stopped at. Returns end of
+file if eof is encountered.  Shares the variables K{c} and  K{unget} with its
+caller.
 
 PR(
 find-char? (internal);char tchr -> booleof
@@ -358,9 +374,10 @@ TT)
 H4 read-end? procedure
 
 K{read-end?} reads one character and returns K{#t} if it is an interspace
-character or a delimiter character, or end of file. Otherwise it returns K{#f}.
-It ungets the character before returning.  Shares the variables K{c} and
-K{unget} with its caller.
+character or a delimiter character, or K{#EOF} if at end of file. Otherwise it
+returns K{#f}.  It ungets the character before returning, unless the character
+was interspace or end-of-file.  Shares the variables K{c} and K{unget} with its
+caller.
 
 PR(
 read-end? (internal);-> booleof
@@ -370,11 +387,13 @@ CB(
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
-  if {[T [interspace? $c]] ||
-      [T [delimiter? $c]] ||
-      $c eq "#EOF"} {
+  if {[T [interspace? $c]]} {
+    return #t
+  } elseif {[T [delimiter? $c]]} {
     set unget $c
     return #t
+  } elseif {$c eq "#EOF"} {
+    return #EOF
   } else {
     set unget $c
     return #f
@@ -604,7 +623,7 @@ rejecting it with an error message. It returns a R{Symbol object}{symbols}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
-read-identifier-expr (internal);?chars? tchrs -> symeof
+read-identifier-expr (internal);?chars? tchrs -> sym
 PR)
 
 CB(
@@ -627,10 +646,9 @@ proc ::constcl::read-identifier-expr {args} {
     set c [readchar]
     # do not check for EOF here
   }
-  if {$c ne "#EOF"} {
+  if {[T [delimiter? $c]]} {
     set unget $c
   }
-  read-eof $name
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -685,7 +703,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readchar]
   }
   read-eof $c
-  while {[interspace? $c] ne "#t" && $c ne "#EOF" &&
+  while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
@@ -812,7 +830,7 @@ structure. First it checks if the list is empty, returning K{#NIL} in that case.
 Otherwise it reads the first element in the list and then repeatedly the rest of
 them. If it reads a Dot object, the following element to be read is the tail
 end of an improper list. When K{read-pair} has reached the ending parenthesis or
-bracket, it conses up the elements starting from the last, and returns the head
+bracket, it ``conses up'' the elements starting from the last, and returns the head
 of the list.
 Shares the variables K{c} and K{unget} with its caller.
 
@@ -827,15 +845,13 @@ proc ::constcl::read-pair {char} {
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
-    # read right paren/brack
-    #set c [readchar]
     return #NIL
   }
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev #NIL
-  while {[find-char? $char] eq "#f"} {
+  while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
     read-eof $c
@@ -846,9 +862,7 @@ proc ::constcl::read-pair {char} {
     } else {
       lappend res $x
     }
-    if {[llength $res] > 99} break
   }
-  # read right paren/brack
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -937,13 +951,13 @@ proc ::constcl::read-plus-minus {char} {
   set c [readchar]
   read-eof $c
   if {[::string is digit -strict $c]} {
-    set n [read-number-expr $c]
-    read-eof $n
+    set expr [read-number-expr $c]
+    read-eof $expr
     if {$char eq "-"} {
-      set n [- $n]
+      set expr [- $expr]
     }
-    return $n
-  } elseif {[::string is space -strict $c] ||
+    return $expr
+  } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
       return [S "+"]
@@ -951,9 +965,9 @@ proc ::constcl::read-plus-minus {char} {
       return [S "-"]
     }
   } else {
-    set n [read-identifier-expr $char $c]
-    read-eof $n
-    return $n
+    set expr [read-identifier-expr $char $c]
+    read-eof $expr
+    return $expr
   }
 }
 CB)
@@ -999,15 +1013,15 @@ proc ::constcl::read-pound {} {
   set c [readchar]
   read-eof $c
   switch $c {
-    (    { set n [read-vector-expr] }
-    t    { if {[T [read-end?]]} {set n #t} }
-    f    { if {[T [read-end?]]} {set n #f} }
-    "\\" { set n [read-character-expr] }
+    (    { set expr [read-vector-expr] }
+    t    { if {[T [read-end?]]} {set expr #t} }
+    f    { if {[T [read-end?]]} {set expr #f} }
+    "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
     }
   }
-  return $n
+  return $expr
 }
 CB)
 

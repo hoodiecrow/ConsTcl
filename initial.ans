@@ -25,7 +25,7 @@ You can call K{reg} with one parameter: E{name}. E{name} is a string that will
 eventually become the lookup symbol in the standard library. If you give two
 parameters, the first one is the E{binding type}, either K{special} or K{macro}.
 The former registers special forms like K{if} and K{define}, and the latter
-registers macros like K{and} or K{when}.
+registers macros like K{and} or K{when}. The second one is still the E{name}.
 
 There is also K{regvar}, which registers variables. You pass E{name} and
 E{value} to it. There are only a couple of variables registered this way.
@@ -74,6 +74,7 @@ proc reg {args} {
   }
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 
 proc regvar {name value} {
@@ -83,6 +84,7 @@ proc regvar {name value} {
   set val [::list VARIABLE $value]
   set idx [dict size $::constcl::defreg]
   dict set ::constcl::defreg $idx [::list $name $val]
+  return
 }
 CB)
 
@@ -111,18 +113,18 @@ TT)
 PT(
 h5 Procedures, functions, and commands
 
-I use all of these terms for the subroutines in ConsTcl. I try to stick to
-procedure, because that's the standard term in R5RS. Still, they
+I use all of these terms for the subroutines in ConsTcl. I try to stick with
+E{procedure}, because that's the standard term in R5RS. Still, they
   usually pass useful values back to the caller, so technically they're
-  functions. Lastly, I'm programming in Tcl here, and the usual term for these
-  things is `commands' in Tcl.
+  E{functions}. Lastly, I'm programming in Tcl here, and the usual term for these
+  things is E{commands} in Tcl.
 
-And the `internal/public' distinction is possibly a misnomer. What it means is
-that `public' procedures can be called from Lisp code being interpreted, and the
+And the E{internal}/E{public} distinction is possibly a misnomer. What it means is
+that E{public} procedures can be called from Lisp code being interpreted, and the
 others cannot. They are for use in the infrastructure around the interpreter,
-including in implementing the `public' procedures. Another way to put it is that
-procedures registered by K{reg} are `public' and those who aren't are
-`internal'.
+including in implementing the E{public} procedures. Another way to put it is that
+procedures registered by K{reg} are E{public} and those who aren't are
+E{internal}.
 
 PT)
 
@@ -230,7 +232,7 @@ PR)
 CB(
 proc ::constcl::pairlis-tcl {a b} {
   if {[T [null? $a]]} {
-    parse {()}
+    parse {'()}
   } else {
     cons \
       [cons [car $a] [car $b]] \
@@ -335,7 +337,7 @@ H4 in-range procedure
 
 This one is a little bit of both, a utility function that is also among the
 builtins in the library (it's not standard, though). It started out as a
-one-liner by Donal K. FellowsI{Fellows, Donal}, but has grown a bit since then
+one-liner by Donal K FellowsI{Fellows, Donal}, but has grown a bit since then
 to suit my needs.
 
 The plan is to arrange a sequence of numbers, given one, two or three ConsTcl
@@ -434,7 +436,7 @@ H4 pew procedure
 K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
 named for parse-eval-write. It reads and evals an expression, and writes the
 result.  It's the most common command in the test cases, since it allows me to
-write code directly in Scheme, get it evaled and get to see proper Lisp output
+write code directly in Scheme, get it evaled, and get to see proper Lisp output
 from it.
 
 PR(
@@ -611,8 +613,8 @@ CB)
 
 H4 pxw procedure
 
-K{pxw} attempts to macro-expand whatever it reads, and writes the result. (I do
-know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was
+K{pxw} attempts to macro-expand whatever it reads, and writes the result.F{I do
+know that 'expand' doesn't start with an 'x'.} Again, this command's heyday was
 when I was developing the macro facility.
 
 PR(
@@ -628,7 +630,7 @@ proc ::pxw {str {env ::constcl::global_env}} {
     set expr [$hinfo $expr $env]
     ::constcl::write $expr
   } else {
-    puts "not a macro"
+    ::error "not a macro"
   }
 }
 CB)
