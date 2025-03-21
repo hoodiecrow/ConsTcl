@@ -1135,7 +1135,7 @@ string expression--an immutable R{String object}{strings}.
 Shares the variables K{c} and K{unget} with its caller.
 
 PR(
-read-string-expr (internal);-> streof
+read-string-expr (internal);-> str
 PR)
 
 CB(
@@ -1157,7 +1157,6 @@ proc ::constcl::read-string-expr {} {
   }
   set c [readchar]
   set expr [MkString $str]
-  read-eof $expr
   make-constant $expr
   return $expr
 }
@@ -1270,13 +1269,15 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
+    set e [read-expr $c]
+    read-eof $e
+    set elem [cons $e #NIL]
     if {$res eq {}} {
-      set res $e
-      set last $e
+      set res $elem
+      set last $elem
     } else {
-      set-cdr! $last $e
-      set last $e
+      set-cdr! $last $elem
+      set last $elem
     }
     skip-ws
     read-eof $c
@@ -1287,7 +1288,6 @@ proc ::constcl::read-vector-expr {} {
   set unget {}
   set c [readchar]
   set expr [MkVector $res]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }

@@ -175,7 +175,7 @@ proc ::constcl::char=? {char1 char2} {
   check {char? $char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
-  if {$char1 eq $char2} {
+  if {[$char1 char] eq [$char2 char]} {
     return #t
   } else {
     return #f
@@ -702,8 +702,12 @@ proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string toupper [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string toupper [$char external]]]
+  }
 }
 CB)
 
@@ -726,8 +730,12 @@ proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string tolower [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string tolower [$char external]]]
+  }
 }
 CB)
 

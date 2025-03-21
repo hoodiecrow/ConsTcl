@@ -213,7 +213,7 @@ clauses are ignored.
 
 Syntax: (B{case} E{key} E{clause} ...)
 
-Where each E{clause} has the form
+where each E{clause} has the form
 
 ((E{datum} ...) E{expression} ...)
 
@@ -349,7 +349,7 @@ remaining clauses are ignored.
 
 Syntax: (B{cond} E{clause} ...)
 
-Where each E{clause} has the form
+where each E{clause} has the form
 
 (E{test} E{expression} ...)
 
@@ -554,7 +554,7 @@ proc ::constcl::/begin {exps env} {
       return [eval [car $exps] $env]
     }
   } else {
-    return #NIL
+    return [parse "'()"]
   }
 }
 CB)
@@ -887,7 +887,7 @@ H3 Binding forms
 
 The binding forms are not fundamental the way the earlier nine forms are. They
 are an application of a combination of forms eight and nine, the procedure
-definition form and the procedure call. But their use is sufficiently
+definition form and the procedure call form. But their use is sufficiently
 distinguished to earn them their own heading.
 
 H4 let special form
@@ -904,7 +904,7 @@ The K{let} special form (both forms) is expanded by K{special-let}.  They are
 ultimately rewritten to calls to K{lambda} constructs and evaluated as such.
 
 PR(
-special-let (internal);expr expr env env -> expr
+special-let (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -939,7 +939,6 @@ PR)
 IX rewrite-named-let procedure
 CB(
 proc ::constcl::rewrite-named-let {expr env} {
-  # named let
   set tail [cdr $expr]
   set variable [car $tail]
   set bindings [cadr $tail]
@@ -1085,7 +1084,7 @@ where E{body} is one or more expressions.
 The K{letrec} special form is expanded by K{special-letrec}.
 
 PR(
-special-letrec (internal);expr expr env env -> expr
+special-letrec (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -1118,21 +1117,25 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [
+  # outer vars
+  /define [S ovars] [
     list {*}[dict keys $outer]] $env
-  /define [S outervals] [
+  # outer vals
+  /define [S ovals] [
     list {*}[dict values $outer]] $env
-  /define [S innervars] [
+  # inner vars
+  /define [S ivars] [
     list {*}[dict keys $inner]] $env
-  /define [S innervals] [
+  # inner vals
+  /define [S ivals] [
     list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`((lambda ,outervars
-             ((lambda ,innervars ,@assigns) ,@innervals)
-             ,@body) ,@outervals)"
+  set qq "`((lambda ,ovars
+             ((lambda ,ivars ,@assigns) ,@ivals)
+             ,@body) ,@ovals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1178,7 +1181,7 @@ where E{body} is one or more expressions.
 The K{let*} special form is expanded by K{special-let*}.
 
 PR(
-special-let* (internal);expr expr env env -> expr
+special-let* (internal);expr expr env env -> val
 PR)
 
 CB(
@@ -1242,7 +1245,7 @@ To simplify, an environment can be seen as a table--or spreadsheet, if you
 will--that connects (binds) names to cells, which contain values. The evaluator
 looks up values in the environment that way. But there's more to an environment
 than just a name-value coupling. The environment also contains references to the
-very procedures that make up the Lisp library. And their bindings aren't just a
+procedures that make up the Lisp library. And their bindings aren't just a
 simple connection: there are several kinds of bindings, from variable binding,
 the most common one, to special-form bindings for the fundamental operations of
 the interpreter, and syntax bindings for the macros that get expanded to
@@ -1378,26 +1381,6 @@ proc ::constcl::binding-info {op env} {
   } else {
     return [$actual_env get $op]
   }
-}
-CB)
-
-B{splitlist} procedure
-
-K{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
-
-PR(
-splitlist (internal);vals lvals -> tvals
-PR)
-
-IX splitlist procedure
-CB(
-proc ::constcl::splitlist {vals} {
-  set result {}
-  while {[T [pair? $vals]]} {
-    lappend result [car $vals]
-    set vals [cdr $vals]
-  }
-  return $result
 }
 CB)
 

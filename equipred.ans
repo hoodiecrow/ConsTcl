@@ -145,7 +145,6 @@ proc ::constcl::equal? {expr1 expr2} {
   } else {
     return #f
   }
-  # TODO
 }
 CB)
 

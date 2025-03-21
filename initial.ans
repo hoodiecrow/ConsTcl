@@ -333,6 +333,26 @@ proc ::constcl::typeof? {val type} {
 }
 CB)
 
+H4 splitlist procedure
+
+K{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
+
+PR(
+splitlist (internal);vals lvals -> tvals
+PR)
+
+IX splitlist procedure
+CB(
+proc ::constcl::splitlist {vals} {
+  set result {}
+  while {[T [pair? $vals]]} {
+    lappend result [car $vals]
+    set vals [cdr $vals]
+  }
+  return $result
+}
+CB)
+
 H4 in-range procedure
 
 This one is a little bit of both, a utility function that is also among the

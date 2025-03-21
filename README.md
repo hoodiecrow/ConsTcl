@@ -303,6 +303,23 @@ proc ::constcl::typeof? {val type} {
 }
 ```
 
+#### splitlist procedure
+
+`` splitlist `` converts a Lisp list to a Tcl list with Lisp objects.
+
+<table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
+
+```
+proc ::constcl::splitlist {vals} {
+  set result {}
+  while {[T [pair? $vals]]} {
+    lappend result [car $vals]
+    set vals [cdr $vals]
+  }
+  return $result
+}
+```
+
 #### in-range procedure
 
 This one is a little bit of both, a utility function that is also among the builtins in the library (it's not standard, though). It started out as a one-liner by Donal K Fellows, but has grown a bit since then to suit my needs.
@@ -1363,7 +1380,7 @@ proc ::constcl::read-quoted-expr {} {
 
 `` read-string-expr `` is activated by `` read-expr `` when it reads a double quote. It collects characters until it reaches another (unescaped) double quote. To have double quotes in the string, escape them with backslash (which also means that backslashes have to be escaped with backslash). A backslash+n pair of characters denotes a newline (this is an extension). It then returns a string expression--an immutable [String object](https://github.com/hoodiecrow/ConsTcl#strings). Shares the variables `` c `` and `` unget `` with its caller.
 
-<table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string or end of file</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">read-string-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 proc ::constcl::read-string-expr {} {
@@ -1384,7 +1401,6 @@ proc ::constcl::read-string-expr {} {
   }
   set c [readchar]
   set expr [MkString $str]
-  read-eof $expr
   make-constant $expr
   return $expr
 }
@@ -1427,13 +1443,15 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
+    set e [read-expr $c]
+    read-eof $e
+    set elem [cons $e #NIL]
     if {$res eq {}} {
-      set res $e
-      set last $e
+      set res $elem
+      set last $elem
     } else {
-      set-cdr! $last $e
-      set last $e
+      set-cdr! $last $elem
+      set last $elem
     }
     skip-ws
     read-eof $c
@@ -1444,7 +1462,6 @@ proc ::constcl::read-vector-expr {} {
   set unget {}
   set c [readchar]
   set expr [MkVector $res]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -1589,7 +1606,7 @@ proc ::constcl::special-if {expr env} {
 
 Syntax: (__case__ _key_ _clause_ ...)
 
-Where each _clause_ has the form
+where each _clause_ has the form
 
 ((_datum_ ...) _expression_ ...)
 
@@ -1687,7 +1704,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
 
 Syntax: (__cond__ _clause_ ...)
 
-Where each _clause_ has the form
+where each _clause_ has the form
 
 (_test_ _expression_ ...)
 
@@ -1826,7 +1843,7 @@ proc ::constcl::/begin {exps env} {
       return [eval [car $exps] $env]
     }
   } else {
-    return #NIL
+    return [parse "'()"]
   }
 }
 ```
@@ -2028,7 +2045,7 @@ proc ::constcl::invoke {pr vals} {
 
 ### Binding forms
 
-The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call. But their use is sufficiently distinguished to earn them their own heading.
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call form. But their use is sufficiently distinguished to earn them their own heading.
 
 #### let special form
 
@@ -2042,7 +2059,7 @@ where _body_ is one or more expressions.
 
 The `` let `` special form (both forms) is expanded by `` special-let ``. They are ultimately rewritten to calls to `` lambda `` constructs and evaluated as such.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special let
@@ -2064,7 +2081,6 @@ The rewriter for named `` let `` chops up the expression into _variable_, _bindi
 
 ```
 proc ::constcl::rewrite-named-let {expr env} {
-  # named let
   set tail [cdr $expr]
   set variable [car $tail]
   set bindings [cadr $tail]
@@ -2149,7 +2165,7 @@ where _body_ is one or more expressions.
 
 The `` letrec `` special form is expanded by `` special-letrec ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-letrec (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special letrec
@@ -2178,21 +2194,25 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [
+  # outer vars
+  /define [S ovars] [
     list {*}[dict keys $outer]] $env
-  /define [S outervals] [
+  # outer vals
+  /define [S ovals] [
     list {*}[dict values $outer]] $env
-  /define [S innervars] [
+  # inner vars
+  /define [S ivars] [
     list {*}[dict keys $inner]] $env
-  /define [S innervals] [
+  # inner vals
+  /define [S ivals] [
     list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`((lambda ,outervars
-             ((lambda ,innervars ,@assigns) ,@innervals)
-             ,@body) ,@outervals)"
+  set qq "`((lambda ,ovars
+             ((lambda ,ivars ,@assigns) ,@ivals)
+             ,@body) ,@ovals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -2209,7 +2229,7 @@ where _body_ is one or more expressions.
 
 The `` let* `` special form is expanded by `` special-let* ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">special-let* (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">special-let* (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 reg special let*
@@ -2248,7 +2268,7 @@ proc ::constcl::rewrite-let* {bindings body env} {
 
 ### Environments
 
-Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
+Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
 
 There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
 
@@ -2344,23 +2364,6 @@ proc ::constcl::binding-info {op env} {
 }
 ```
 
-__splitlist__ procedure
-
-`` splitlist `` converts a Lisp list to a Tcl list with Lisp objects.
-
-<table border=1><thead><tr><th colspan=2 align="left">splitlist (internal)</th></tr></thead><tr><td>vals</td><td>a Lisp list of values</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
-
-```
-proc ::constcl::splitlist {vals} {
-  set result {}
-  while {[T [pair? $vals]]} {
-    lappend result [car $vals]
-    set vals [cdr $vals]
-  }
-  return $result
-}
-```
-
 __eval-list__ procedure
 
 `` eval-list `` successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
@@ -2407,7 +2410,7 @@ proc ::constcl::expand-and {expr env} {
 
 __do-and__ procedure
 
-`` do-and `` is called recursively for every argument of `` expand-and `` if there are more than one.
+`` do-and `` is called recursively for every argument of `` expand-and `` if there is more than one.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-and (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>prev</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2628,7 +2631,7 @@ proc ::constcl::expand-or {expr env} {
 
 __do-or__ procedure
 
-`` do-or `` is called recursively for each argument to `` expand-or `` if there are more than one argument.
+`` do-or `` is called recursively for each argument to `` expand-or `` if there is more than one argument.
 
 <table border=1><thead><tr><th colspan=2 align="left">do-or (internal)</th></tr></thead><tr><td>tail</td><td>an expression tail</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2749,7 +2752,7 @@ proc ::constcl::expand-put! {expr env} {
 
 #### expand-quasiquote procedure
 
-A quasi-quote isn't a macro, but we will deal with it in this section anyway. `` expand-quasiquote `` traverses the quasi-quoted structure searching for `` unquote `` and `` unquote-splicing ``. This code is brittle and sprawling and I barely understand it myself, but it works (and is the basis for a lot of the special form/macro expanders).
+A quasi-quote isn't a macro, but we will deal with it in this section anyway. `` expand-quasiquote `` traverses a quasi-quoted structure searching for `` unquote `` and `` unquote-splicing ``. This code is brittle and sprawling and I barely understand it myself, but it works (and is the basis for a lot of the special form/macro expanders).
 
 <table border=1><thead><tr><th colspan=2 align="left">expand-quasiquote (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -2794,7 +2797,7 @@ proc ::constcl::expand-quasiquote {expr env} {
 
 __qq-visit-child__ procedure
 
-<table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Tcl list of expressions</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">qq-visit-child (internal)</th></tr></thead><tr><td>node</td><td>a Lisp list of expressions</td></tr><tr><td>qqlevel</td><td>a Tcl number</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of expressions</td></tr></table>
 
 ```
 proc ::constcl::qq-visit-child {node qqlevel env} {
@@ -3487,7 +3490,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1867 lines of code, the interpreter is done.
+After 1870 lines of code, the interpreter is done.
 
 Now for the built-in procedures!
 
@@ -3615,7 +3618,6 @@ proc ::constcl::equal? {expr1 expr2} {
   } else {
     return #f
   }
-  # TODO
 }
 ```
 
@@ -4712,7 +4714,7 @@ proc ::constcl::char=? {char1 char2} {
   check {char? $char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
-  if {$char1 eq $char2} {
+  if {[$char1 char] eq [$char2 char]} {
     return #t
   } else {
     return #f
@@ -5031,8 +5033,12 @@ proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string toupper [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string toupper [$char external]]]
+  }
 }
 ```
 
@@ -5043,8 +5049,12 @@ proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string tolower [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string tolower [$char external]]]
+  }
 }
 ```
 
@@ -5235,7 +5245,7 @@ proc ::constcl::for-each {proc args} {
 
 ### Input and output
 
-Like most programming languages, Scheme has input and output facilities beyond mere `` read `` and `` write ``. I/O is based on the _port_ abstraction of a character supplying or receiving device. There are four kinds of ports:
+Like most programming languages, Scheme has input and output facilities beyond mere `` read `` and `` write ``. I/O is based on the _port_ [abstraction](https://github.com/hoodiecrow/ConsTcl#ports) of a character supplying or receiving device. There are four kinds of ports:
 
 1. file input (InputPort)
 1. file output (OutputPort)
@@ -5323,7 +5333,7 @@ oo::class create ::constcl::InputPort {
 
 `` MkInputPort `` generates an InputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkInputPort (internal)</th></tr></thead><tr><td>?handle?</td><td>a channel handle</td></tr><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkInputPort \
@@ -5376,9 +5386,20 @@ oo::class create ::constcl::StringInputPort {
 }
 ```
 
+#### MkStringInputPort generator
+
+`` MkStringInputPort `` generates an InputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkStringInputPort (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a string input port</td></tr></table>
+
+```
+interp alias {} ::constcl::MkStringInputPort \
+  {} ::constcl::StringInputPort new
+```
+
 #### OutputPort class
 
-OutputPort extends port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel. The `` open `` method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
+OutputPort extends Port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel. The `` open `` method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
 
 ```
 oo::class create ::constcl::OutputPort {
@@ -5423,7 +5444,7 @@ oo::class create ::constcl::OutputPort {
 
 `` MkOutputPort `` generates an OutputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)?handle? handle </th></tr></thead><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkOutputPort \
@@ -5432,14 +5453,18 @@ interp alias {} ::constcl::MkOutputPort \
 
 #### StringOutputPort class
 
-StringOutputPort extends port with the ability to put strings into the string buffer. The `` tostring `` method yields the current contents of the buffer.
+StringOutputPort extends Port with the ability to put strings into a string buffer. The `` tostring `` method yields the current contents of the buffer.
 
 ```
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
-  constructor {} {
-    set buffer {}
+  constructor {args} {
+    if {[llength $args]} {
+      lassign $args buffer
+    } else {
+      set buffer {}
+    }
   }
   method open {name} {}
   method close {} {}
@@ -5467,6 +5492,17 @@ oo::class create ::constcl::StringOutputPort {
     return "#<string-output-port-$num>"
   }
 }
+```
+
+#### MkStringOutputPort generator
+
+`` MkStringOutputPort `` generates a StringOutputPort object.
+
+<table border=1><thead><tr><th colspan=2 align="left">MkStringOutputPort (internal)</th></tr></thead><tr><td>?str?</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string output port</td></tr></table>
+
+```
+interp alias {} ::constcl::MkStringOutputPort \
+  {} ::constcl::StringOutputPort new
 ```
 
 __Input_Port__ variable
@@ -5723,7 +5759,7 @@ proc ::constcl::close-output-port {port} {
 
 `` write `` is implemented in the [output](https://github.com/hoodiecrow/ConsTcl#output) chapter.
 
-`` display `` is implemented in the output chapter.
+`` display `` is implemented in the same chapter.
 
 #### newline procedure
 
@@ -5746,7 +5782,7 @@ proc ::constcl::newline {args} {
 
 __load__
 
-`` load `` reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+`` load `` reads a Scheme source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
 <table border=1><thead><tr><th colspan=2 align="left">load (public)</th></tr></thead><tr><td>filename</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -5754,16 +5790,16 @@ __load__
 reg load
 
 proc ::constcl::load {filename} {
-  set p [open-input-file $filename]
-  if {[$p handle] ne "#NIL"} {
-    set n [read $p]
-    while {$n ne "#EOF"} {
-      eval $n
-      set n [read $p]
+  set port [open-input-file $filename]
+  if {[$port handle] ne "#NIL"} {
+    set expr [read $port]
+    while {$expr ne "#EOF"} {
+      eval $expr
+      set expr [read $port]
     }
-    close-input-port $p
+    close-input-port $port
   }
-  $p destroy
+  $port destroy
 }
 ```
 

@@ -114,6 +114,14 @@ proc ::constcl::typeof? {val type} {
     return #f
   }
 }
+proc ::constcl::splitlist {vals} {
+  set result {}
+  while {[T [pair? $vals]]} {
+    lappend result [car $vals]
+    set vals [cdr $vals]
+  }
+  return $result
+}
 reg in-range
 
 proc ::constcl::in-range {x args} {
@@ -706,7 +714,6 @@ proc ::constcl::read-string-expr {} {
   }
   set c [readchar]
   set expr [MkString $str]
-  read-eof $expr
   make-constant $expr
   return $expr
 }
@@ -731,13 +738,15 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
+    set e [read-expr $c]
+    read-eof $e
+    set elem [cons $e #NIL]
     if {$res eq {}} {
-      set res $e
-      set last $e
+      set res $elem
+      set last $elem
     } else {
-      set-cdr! $last $e
-      set last $e
+      set-cdr! $last $elem
+      set last $elem
     }
     skip-ws
     read-eof $c
@@ -748,7 +757,6 @@ proc ::constcl::read-vector-expr {} {
   set unget {}
   set c [readchar]
   set expr [MkVector $res]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -891,7 +899,7 @@ proc ::constcl::/begin {exps env} {
       return [eval [car $exps] $env]
     }
   } else {
-    return #NIL
+    return [parse "'()"]
   }
 }
 reg special define
@@ -964,7 +972,6 @@ proc ::constcl::special-let {expr env} {
   eval $expr $env
 }
 proc ::constcl::rewrite-named-let {expr env} {
-  # named let
   set tail [cdr $expr]
   set variable [car $tail]
   set bindings [cadr $tail]
@@ -1038,21 +1045,25 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [
+  # outer vars
+  /define [S ovars] [
     list {*}[dict keys $outer]] $env
-  /define [S outervals] [
+  # outer vals
+  /define [S ovals] [
     list {*}[dict values $outer]] $env
-  /define [S innervars] [
+  # inner vars
+  /define [S ivars] [
     list {*}[dict keys $inner]] $env
-  /define [S innervals] [
+  # inner vals
+  /define [S ivals] [
     list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`((lambda ,outervars
-             ((lambda ,innervars ,@assigns) ,@innervals)
-             ,@body) ,@outervals)"
+  set qq "`((lambda ,ovars
+             ((lambda ,ivars ,@assigns) ,@ivals)
+             ,@body) ,@ovals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -1130,14 +1141,6 @@ proc ::constcl::binding-info {op env} {
   } else {
     return [$actual_env get $op]
   }
-}
-proc ::constcl::splitlist {vals} {
-  set result {}
-  while {[T [pair? $vals]]} {
-    lappend result [car $vals]
-    set vals [cdr $vals]
-  }
-  return $result
 }
 proc ::constcl::eval-list {exps env} {
   if {[T [pair? $exps]]} {
@@ -1948,7 +1951,6 @@ proc ::constcl::equal? {expr1 expr2} {
   } else {
     return #f
   }
-  # TODO
 }
 oo::class create ::constcl::Number {
   superclass ::constcl::NIL
@@ -2595,7 +2597,7 @@ proc ::constcl::char=? {char1 char2} {
   check {char? $char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
-  if {$char1 eq $char2} {
+  if {[$char1 char] eq [$char2 char]} {
     return #t
   } else {
     return #f
@@ -2803,8 +2805,12 @@ proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string toupper [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string toupper [$char external]]]
+  }
 }
 reg char-downcase
 
@@ -2812,8 +2818,12 @@ proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string tolower [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string tolower [$char external]]]
+  }
 }
 catch { ::constcl::Procedure destroy }
 
@@ -3022,6 +3032,8 @@ oo::class create ::constcl::StringInputPort {
     return "#<string-input-port-$num>"
   }
 }
+interp alias {} ::constcl::MkStringInputPort \
+  {} ::constcl::StringInputPort new
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
@@ -3063,8 +3075,12 @@ interp alias {} ::constcl::MkOutputPort \
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
-  constructor {} {
-    set buffer {}
+  constructor {args} {
+    if {[llength $args]} {
+      lassign $args buffer
+    } else {
+      set buffer {}
+    }
   }
   method open {name} {}
   method close {} {}
@@ -3092,6 +3108,8 @@ oo::class create ::constcl::StringOutputPort {
     return "#<string-output-port-$num>"
   }
 }
+interp alias {} ::constcl::MkStringOutputPort \
+  {} ::constcl::StringOutputPort new
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
 set ::constcl::Output_port [
@@ -3233,16 +3251,16 @@ proc ::constcl::newline {args} {
 reg load
 
 proc ::constcl::load {filename} {
-  set p [open-input-file $filename]
-  if {[$p handle] ne "#NIL"} {
-    set n [read $p]
-    while {$n ne "#EOF"} {
-      eval $n
-      set n [read $p]
+  set port [open-input-file $filename]
+  if {[$port handle] ne "#NIL"} {
+    set expr [read $port]
+    while {$expr ne "#EOF"} {
+      eval $expr
+      set expr [read $port]
     }
-    close-input-port $p
+    close-input-port $port
   }
-  $p destroy
+  $port destroy
 }
 catch { ::constcl::Pair destroy }
 

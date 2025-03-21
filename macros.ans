@@ -35,7 +35,7 @@ CB)
 
 B{do-and} procedure
 
-K{do-and} is called recursively for every argument of K{expand-and} if there are
+K{do-and} is called recursively for every argument of K{expand-and} if there is
 more than one.
 
 PR(
@@ -425,7 +425,7 @@ TT)
 
 B{do-or} procedure
 
-K{do-or} is called recursively for each argument to K{expand-or} if there are more than
+K{do-or} is called recursively for each argument to K{expand-or} if there is more than
 one argument. 
 
 PR(
@@ -601,7 +601,7 @@ TT)
 H4 expand-quasiquote procedure
 
 A quasi-quote isn't a macro, but we will deal with it in this section anyway.
-K{expand-quasiquote} traverses the quasi-quoted structure searching for K{unquote}
+K{expand-quasiquote} traverses a quasi-quoted structure searching for K{unquote}
 and K{unquote-splicing}. This code is brittle and sprawling and I barely
 understand it myself, but it works (and is the basis for a lot of the special
 form/macro expanders).
@@ -652,7 +652,7 @@ CB)
 B{qq-visit-child} procedure
 
 PR(
-qq-visit-child (internal);node lexprs qqlevel tnum env env -> texprs
+qq-visit-child (internal);node lexprs qqlevel tnum env env -> lexprs
 PR)
 
 IX qq-visit-child procedure

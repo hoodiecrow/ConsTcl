@@ -2,7 +2,7 @@
 H3 Input and output
 
 Like most programming languages, Scheme has input and output facilities beyond
-mere K{read} and K{write}.  I/O is based on the E{port} abstraction of a
+mere K{read} and K{write}.  I/O is based on the E{port} R{abstraction}{ports} of a
 character supplying or receiving device. There are four kinds of ports:
 
 EN file input (InputPort)
@@ -93,7 +93,7 @@ H4 MkInputPort generator
 K{MkInputPort} generates an InputPort object.
 
 PR(
-MkInputPort (internal);-> iport
+MkInputPort (internal);?handle? handle -> iport
 PR)
 
 CB(
@@ -149,9 +149,22 @@ oo::class create ::constcl::StringInputPort {
 }
 CB)
 
+H4 MkStringInputPort generator
+
+K{MkStringInputPort} generates an InputPort object.
+
+PR(
+MkStringInputPort (internal);str tstr -> siport
+PR)
+
+CB(
+interp alias {} ::constcl::MkStringInputPort \
+  {} ::constcl::StringInputPort new
+CB)
+
 H4 OutputPort class
 
-OutputPort extends port with the ability to open a channel for writing, and to
+OutputPort extends Port with the ability to open a channel for writing, and to
 put a string through the channel, print a newline, and flush the channel. The
 K{open} method is locked with an error command for safety: only remove this line
 if you really know what you're doing: once it is unlocked, the K{open} method
@@ -201,7 +214,7 @@ H4 MkOutputPort generator
 K{MkOutputPort} generates an OutputPort object.
 
 PR(
-MkOutputPort (internal);-> oport
+MkOutputPort (internal)?handle? handle ;-> oport
 PR)
 
 CB(
@@ -211,15 +224,19 @@ CB)
 
 H4 StringOutputPort class
 
-StringOutputPort extends port with the ability to put strings into the string
+StringOutputPort extends Port with the ability to put strings into a string
 buffer. The K{tostring} method yields the current contents of the buffer.
 
 CB(
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
-  constructor {} {
-    set buffer {}
+  constructor {args} {
+    if {[llength $args]} {
+      lassign $args buffer
+    } else {
+      set buffer {}
+    }
   }
   method open {name} {}
   method close {} {}
@@ -247,6 +264,19 @@ oo::class create ::constcl::StringOutputPort {
     return "#<string-output-port-$num>"
   }
 }
+CB)
+
+H4 MkStringOutputPort generator
+
+K{MkStringOutputPort} generates a StringOutputPort object.
+
+PR(
+MkStringOutputPort (internal);?str? str -> soport
+PR)
+
+CB(
+interp alias {} ::constcl::MkStringOutputPort \
+  {} ::constcl::StringOutputPort new
 CB)
 
 B{Input_Port} variable
@@ -586,7 +616,7 @@ CB)
 
 K{write} is implemented in the R{output}{output} chapter.
 
-K{display} is implemented in the output chapter.
+K{display} is implemented in the same chapter.
 
 H4 newline procedure
 
@@ -620,7 +650,7 @@ TT)
 
 B{load}
 
-K{load} reads a Lisp source file and evals the expressions in it in the global
+K{load} reads a Scheme source file and evals the expressions in it in the global
 environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
 PR(
@@ -631,16 +661,16 @@ CB(
 reg load
 
 proc ::constcl::load {filename} {
-  set p [open-input-file $filename]
-  if {[$p handle] ne "#NIL"} {
-    set n [read $p]
-    while {$n ne "#EOF"} {
-      eval $n
-      set n [read $p]
+  set port [open-input-file $filename]
+  if {[$port handle] ne "#NIL"} {
+    set expr [read $port]
+    while {$expr ne "#EOF"} {
+      eval $expr
+      set expr [read $port]
     }
-    close-input-port $p
+    close-input-port $port
   }
-  $p destroy
+  $port destroy
 }
 CB)
 

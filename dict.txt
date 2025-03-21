@@ -130,7 +130,11 @@ iport         -> an input port
 iports        -> some input ports
 liports       -> a Lisp list of input ports
 tiports       -> a Tcl list of input ports
+fiport        -> a file input port
+siport        -> a string input port
 oport         -> an output port
 oports        -> some output ports
 loports       -> a Lisp list of output ports
 toports       -> a Tcl list of output ports
+foport        -> a file output port
+soport        -> a string output port

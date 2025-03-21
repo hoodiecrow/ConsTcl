@@ -609,6 +609,32 @@ proc ::constcl::typeof? {val type} {
 }
 \end{lstlisting}
 
+\subsection{splitlist procedure}
+\label{splitlist-procedure}
+\index{splitlist procedure}
+
+\texttt{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf splitlist (internal)} \\
+vals & a Lisp list of values \\
+\textit{Returns:} & a Tcl list of values \\
+\hline
+\end{tabular}
+\index{splitlist procedure}
+
+\begin{lstlisting}
+proc ::constcl::splitlist {vals} {
+  set result {}
+  while {[T [pair? $vals]]} {
+    lappend result [car $vals]
+    set vals [cdr $vals]
+  }
+  return $result
+}
+\end{lstlisting}
+
 \subsection{in-range procedure}
 \label{inrange-procedure}
 \index{in-range procedure}
@@ -2010,7 +2036,7 @@ proc ::constcl::read-quoted-expr {} {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-string-expr (internal)} \\
-\textit{Returns:} & a string or end of file \\
+\textit{Returns:} & a string \\
 \hline
 \end{tabular}
 
@@ -2033,7 +2059,6 @@ proc ::constcl::read-string-expr {} {
   }
   set c [readchar]
   set expr [MkString $str]
-  read-eof $expr
   make-constant $expr
   return $expr
 }
@@ -2090,13 +2115,15 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
-    set e [cons [read-expr $c] #NIL]
+    set e [read-expr $c]
+    read-eof $e
+    set elem [cons $e #NIL]
     if {$res eq {}} {
-      set res $e
-      set last $e
+      set res $elem
+      set last $elem
     } else {
-      set-cdr! $last $e
-      set last $e
+      set-cdr! $last $elem
+      set last $elem
     }
     skip-ws
     read-eof $c
@@ -2107,7 +2134,6 @@ proc ::constcl::read-vector-expr {} {
   set unget {}
   set c [readchar]
   set expr [MkVector $res]
-  read-eof $expr
   $expr mkconstant
   return $expr
 }
@@ -2290,7 +2316,7 @@ proc ::constcl::special-if {expr env} {
 
 Syntax: (\textbf{case} \emph{key} \emph{clause} \ldots )
 
-Where each \emph{clause} has the form
+where each \emph{clause} has the form
 
 ((\emph{datum} \ldots ) \emph{expression} \ldots )
 
@@ -2400,7 +2426,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
 
 Syntax: (\textbf{cond} \emph{clause} \ldots )
 
-Where each \emph{clause} has the form
+where each \emph{clause} has the form
 
 (\emph{test} \emph{expression} \ldots )
 
@@ -2573,7 +2599,7 @@ proc ::constcl::/begin {exps env} {
       return [eval [car $exps] $env]
     }
   } else {
-    return #NIL
+    return [parse "'()"]
   }
 }
 \end{lstlisting}
@@ -2837,7 +2863,7 @@ proc ::constcl::invoke {pr vals} {
 \label{binding-forms}
 \index{Binding forms}
 
-The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call. But their use is sufficiently distinguished to earn them their own heading.
+The binding forms are not fundamental the way the earlier nine forms are. They are an application of a combination of forms eight and nine, the procedure definition form and the procedure call form. But their use is sufficiently distinguished to earn them their own heading.
 
 \subsection{let special form}
 \label{let-special-form}
@@ -2858,7 +2884,7 @@ The \texttt{let} special form (both forms) is expanded by \texttt{special-let}. 
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & an expression \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 
@@ -2890,7 +2916,6 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::rewrite-named-let {expr env} {
-  # named let
   set tail [cdr $expr]
   set variable [car $tail]
   set bindings [cadr $tail]
@@ -2998,7 +3023,7 @@ The \texttt{letrec} special form is expanded by \texttt{special-letrec}.
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-letrec (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & an expression \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 
@@ -3037,21 +3062,25 @@ proc ::constcl::rewrite-letrec {expr env} {
     dict set assigns $key $g
   }
   set env [MkEnv $env]
-  /define [S outervars] [
+  # outer vars
+  /define [S ovars] [
     list {*}[dict keys $outer]] $env
-  /define [S outervals] [
+  # outer vals
+  /define [S ovals] [
     list {*}[dict values $outer]] $env
-  /define [S innervars] [
+  # inner vars
+  /define [S ivars] [
     list {*}[dict keys $inner]] $env
-  /define [S innervals] [
+  # inner vals
+  /define [S ivals] [
     list {*}[dict values $inner]] $env
   /define [S assigns] [list {*}[lmap {k v} $assigns {
       list [S set!] $k $v
     }]] $env
   /define [S body] $body $env
-  set qq "`((lambda ,outervars
-             ((lambda ,innervars ,@assigns) ,@innervals)
-             ,@body) ,@outervals)"
+  set qq "`((lambda ,ovars
+             ((lambda ,ivars ,@assigns) ,@ivals)
+             ,@body) ,@ovals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
   return $expr
@@ -3075,7 +3104,7 @@ The \texttt{let*} special form is expanded by \texttt{special-let*}.
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let* (internal)} \\
 expr & an expression \\
 env & an environment \\
-\textit{Returns:} & an expression \\
+\textit{Returns:} & a value \\
 \hline
 \end{tabular}
 
@@ -3127,7 +3156,7 @@ proc ::constcl::rewrite-let* {bindings body env} {
 \label{environments}
 \index{environments}
 
-Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the very procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
+Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
 
 There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
 
@@ -3250,30 +3279,6 @@ proc ::constcl::binding-info {op env} {
 }
 \end{lstlisting}
 
-\textbf{splitlist} procedure
-
-\texttt{splitlist} converts a Lisp list to a Tcl list with Lisp objects.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf splitlist (internal)} \\
-vals & a Lisp list of values \\
-\textit{Returns:} & a Tcl list of values \\
-\hline
-\end{tabular}
-\index{splitlist procedure}
-
-\begin{lstlisting}
-proc ::constcl::splitlist {vals} {
-  set result {}
-  while {[T [pair? $vals]]} {
-    lappend result [car $vals]
-    set vals [cdr $vals]
-  }
-  return $result
-}
-\end{lstlisting}
-
 \textbf{eval-list} procedure
 
 \texttt{eval-list} successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
@@ -3339,7 +3344,7 @@ proc ::constcl::expand-and {expr env} {
 
 \textbf{do-and} procedure
 
-\texttt{do-and} is called recursively for every argument of \texttt{expand-and} if there are more than one.
+\texttt{do-and} is called recursively for every argument of \texttt{expand-and} if there is more than one.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3639,7 +3644,7 @@ proc ::constcl::expand-or {expr env} {
 
 \textbf{do-or} procedure
 
-\texttt{do-or} is called recursively for each argument to \texttt{expand-or} if there are more than one argument.
+\texttt{do-or} is called recursively for each argument to \texttt{expand-or} if there is more than one argument.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3797,7 +3802,7 @@ proc ::constcl::expand-put! {expr env} {
 \label{expandquasiquote-procedure}
 \index{expand-quasiquote procedure}
 
-A quasi-quote isn't a macro, but we will deal with it in this section anyway. \texttt{expand-quasiquote} traverses the quasi-quoted structure searching for \texttt{unquote} and \texttt{unquote-splicing}. This code is brittle and sprawling and I barely understand it myself, but it works (and is the basis for a lot of the special form/macro expanders).
+A quasi-quote isn't a macro, but we will deal with it in this section anyway. \texttt{expand-quasiquote} traverses a quasi-quoted structure searching for \texttt{unquote} and \texttt{unquote-splicing}. This code is brittle and sprawling and I barely understand it myself, but it works (and is the basis for a lot of the special form/macro expanders).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -3855,7 +3860,7 @@ proc ::constcl::expand-quasiquote {expr env} {
 node & a Lisp list of expressions \\
 qqlevel & a Tcl number \\
 env & an environment \\
-\textit{Returns:} & a Tcl list of expressions \\
+\textit{Returns:} & a Lisp list of expressions \\
 \hline
 \end{tabular}
 \index{qq-visit-child procedure}
@@ -4707,7 +4712,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1867 lines of code, the interpreter is done.
+After 1870 lines of code, the interpreter is done.
 
 Now for the built-in procedures!
 
@@ -4868,7 +4873,6 @@ proc ::constcl::equal? {expr1 expr2} {
   } else {
     return #f
   }
-  # TODO
 }
 \end{lstlisting}
 
@@ -6208,7 +6212,7 @@ proc ::constcl::char=? {char1 char2} {
   check {char? $char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
-  if {$char1 eq $char2} {
+  if {[$char1 char] eq [$char2 char]} {
     return #t
   } else {
     return #f
@@ -6586,8 +6590,12 @@ proc ::constcl::char-upcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string toupper [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string toupper [$char external]]]
+  }
 }
 \end{lstlisting}
 \index{char-downcase procedure}
@@ -6599,8 +6607,12 @@ proc ::constcl::char-downcase {char} {
   check {char? $char} {
     CHAR expected\n([pn] [$char show])
   }
-  return [MkChar [
-    ::string tolower [$char value]]]
+  if {[$char char] in [::list " " "\n"]} {
+    return $char
+  } else {
+    return [MkChar [
+      ::string tolower [$char external]]]
+  }
 }
 \end{lstlisting}
 
@@ -6842,7 +6854,7 @@ proc ::constcl::for-each {proc args} {
 \label{input-and-output}
 \index{Input and output}
 
-Like most programming languages, Scheme has input and output facilities beyond mere \texttt{read} and \texttt{write}. I/O is based on the \emph{port} abstraction of a character supplying or receiving device. There are four kinds of ports:
+Like most programming languages, Scheme has input and output facilities beyond mere \texttt{read} and \texttt{write}. I/O is based on the \emph{port} abstraction (see page \pageref{ports}) of a character supplying or receiving device. There are four kinds of ports:
 
 \begin{enumerate}
 \item file input (InputPort)
@@ -6941,6 +6953,7 @@ oo::class create ::constcl::InputPort {
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
+?handle? & a channel handle \\
 \textit{Returns:} & an input port \\
 \hline
 \end{tabular}
@@ -6998,11 +7011,30 @@ oo::class create ::constcl::StringInputPort {
 }
 \end{lstlisting}
 
+\subsection{MkStringInputPort generator}
+\label{mkstringinputport-generator}
+\index{MkStringInputPort generator}
+
+\texttt{MkStringInputPort} generates an InputPort object.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkStringInputPort (internal)} \\
+str & a Tcl string \\
+\textit{Returns:} & a string input port \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+interp alias {} ::constcl::MkStringInputPort \
+  {} ::constcl::StringInputPort new
+\end{lstlisting}
+
 \subsection{OutputPort class}
 \label{outputport-class}
 \index{OutputPort class}
 
-OutputPort extends port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel. The \texttt{open} method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the \texttt{open} method can potentially overwrite existing files.
+OutputPort extends Port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel. The \texttt{open} method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the \texttt{open} method can potentially overwrite existing files.
 
 \begin{lstlisting}
 oo::class create ::constcl::OutputPort {
@@ -7051,7 +7083,7 @@ oo::class create ::constcl::OutputPort {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkOutputPort (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkOutputPort (internal)?handle? handle } \\
 \textit{Returns:} & an output port \\
 \hline
 \end{tabular}
@@ -7065,14 +7097,18 @@ interp alias {} ::constcl::MkOutputPort \
 \label{stringoutputport-class}
 \index{StringOutputPort class}
 
-StringOutputPort extends port with the ability to put strings into the string buffer. The \texttt{tostring} method yields the current contents of the buffer.
+StringOutputPort extends Port with the ability to put strings into a string buffer. The \texttt{tostring} method yields the current contents of the buffer.
 
 \begin{lstlisting}
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
-  constructor {} {
-    set buffer {}
+  constructor {args} {
+    if {[llength $args]} {
+      lassign $args buffer
+    } else {
+      set buffer {}
+    }
   }
   method open {name} {}
   method close {} {}
@@ -7100,6 +7136,25 @@ oo::class create ::constcl::StringOutputPort {
     return "#<string-output-port-$num>"
   }
 }
+\end{lstlisting}
+
+\subsection{MkStringOutputPort generator}
+\label{mkstringoutputport-generator}
+\index{MkStringOutputPort generator}
+
+\texttt{MkStringOutputPort} generates a StringOutputPort object.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkStringOutputPort (internal)} \\
+?str? & a string \\
+\textit{Returns:} & a string output port \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+interp alias {} ::constcl::MkStringOutputPort \
+  {} ::constcl::StringOutputPort new
 \end{lstlisting}
 
 \textbf{Input\_Port} variable
@@ -7456,7 +7511,7 @@ proc ::constcl::close-output-port {port} {
 
 \texttt{write} is implemented in the output (see page \pageref{output}) chapter.
 
-\texttt{display} is implemented in the output chapter.
+\texttt{display} is implemented in the same chapter.
 
 \subsection{newline procedure}
 \label{newline-procedure}
@@ -7487,7 +7542,7 @@ proc ::constcl::newline {args} {
 
 \textbf{load}
 
-\texttt{load} reads a Lisp source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
+\texttt{load} reads a Scheme source file and evals the expressions in it in the global environment. The procedure is a ConsTcl mix of Scheme calls and Tcl syntax.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -7501,16 +7556,16 @@ filename & a filename string \\
 reg load
 
 proc ::constcl::load {filename} {
-  set p [open-input-file $filename]
-  if {[$p handle] ne "#NIL"} {
-    set n [read $p]
-    while {$n ne "#EOF"} {
-      eval $n
-      set n [read $p]
+  set port [open-input-file $filename]
+  if {[$port handle] ne "#NIL"} {
+    set expr [read $port]
+    while {$expr ne "#EOF"} {
+      eval $expr
+      set expr [read $port]
     }
-    close-input-port $p
+    close-input-port $port
   }
-  $p destroy
+  $port destroy
 }
 \end{lstlisting}
 
