@@ -6096,7 +6096,7 @@ proc ::constcl::set-cdr! {pair val} {
 
 #### list? procedure
 
-The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:a-proper-list-and-two-improper-ones).
+The `` list? `` predicate tests if a pair is part of a proper list, one that ends with NIL. See the figure showing [proper and improper lists](https://github.com/hoodiecrow/ConsTcl#fig:a-proper-list-and-two-improper-ones).
 
 <table border=1><thead><tr><th colspan=2 align="left">list? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -6241,7 +6241,6 @@ __copy-list__ procedure
 
 ```
 proc ::constcl::copy-list {pair next} {
-  # TODO only fresh conses in the direct chain to NIL
   if {[T [null? $pair]]} {
     set next
   } elseif {[T [null? [cdr $pair]]]} {

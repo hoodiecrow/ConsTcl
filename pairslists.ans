@@ -440,7 +440,7 @@ TT)
 H4 list? procedure
 
 The K{list?} predicate tests if a pair is part of a proper list, one that
-ends with NIL. See figure showing R{proper and improper
+ends with NIL. See the figure showing R{proper and improper
   lists}{fig:a-proper-list-and-two-improper-ones}.
 
 PR(
@@ -643,7 +643,6 @@ PR)
 IX copy-list procedure
 CB(
 proc ::constcl::copy-list {pair next} {
-  # TODO only fresh conses in the direct chain to NIL
   if {[T [null? $pair]]} {
     set next
   } elseif {[T [null? [cdr $pair]]]} {

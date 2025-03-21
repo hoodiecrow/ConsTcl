@@ -7937,7 +7937,7 @@ proc ::constcl::set-cdr! {pair val} {
 \label{list-procedure}
 \index{list? procedure}
 
-The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See figure showing proper and improper lists (see page \pageref{fig:a-proper-list-and-two-improper-ones}).
+The \texttt{list?} predicate tests if a pair is part of a proper list, one that ends with NIL. See the figure showing proper and improper lists (see page \pageref{fig:a-proper-list-and-two-improper-ones}).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -8134,7 +8134,6 @@ next & a Lisp list of values \\
 
 \begin{lstlisting}
 proc ::constcl::copy-list {pair next} {
-  # TODO only fresh conses in the direct chain to NIL
   if {[T [null? $pair]]} {
     set next
   } elseif {[T [null? [cdr $pair]]]} {

@@ -3483,7 +3483,6 @@ proc ::constcl::append {args} {
   set prev
 }
 proc ::constcl::copy-list {pair next} {
-  # TODO only fresh conses in the direct chain to NIL
   if {[T [null? $pair]]} {
     set next
   } elseif {[T [null? [cdr $pair]]]} {
