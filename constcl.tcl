@@ -95,10 +95,15 @@ proc ::pn {} {
   namespace tail [lindex [info level -1] 0]
 }
 proc ::unbind {args} {
-  # TODO go from current environment
+  try {
+    uplevel [list subst \$env]
+  } on ok env {
+  } on error {} {
+    set env ::constcl::global_env
+  }
   set syms $args
   foreach sym $syms {
-    set env [::constcl::global_env find $sym]
+    set env [$env find $sym]
     if {$env ne "::constcl::null_env"} {
       $env unbind $sym
     }
@@ -3583,10 +3588,13 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set v [::string trim $v "\""]
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
+    # allocate vector space for the string's
+    # characters
     set vsa [::constcl::vsAlloc $len]
+    # store the characters in vector space, as
+    # Char objects
     set idx $vsa
     foreach elt [split $v {}] {
       if {$elt eq " "} {
@@ -3600,6 +3608,8 @@ oo::class create ::constcl::String {
         [::constcl::MkChar $c]
       incr idx
     }
+    # store the basic vector data: address of
+    # first character and length
     set data [
       ::constcl::cons [N $vsa] [N $len]]
     set constant 0
@@ -3621,12 +3631,15 @@ oo::class create ::constcl::String {
     lindex [my store] $k
   }
   method store {} {
+    # present the range in vector memory where the
+    # string is stored
     set base [[::constcl::car $data] numval]
     set end [expr {[[my length] numval] +
       $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
+    # present the store as printable characters
     join [lmap c [my store] {$c char}] {}
   }
   method set! {k c} {
@@ -3639,7 +3652,7 @@ oo::class create ::constcl::String {
         ::error "index out of range\n$k"
       }
       set base [[::constcl::car $data] numval]
-      lset ::constcl::vectorSpace $k+$base $c
+      lset ::constcl::vectorSpace $base+$k $c
     }
     return [self]
   }
@@ -3650,7 +3663,7 @@ oo::class create ::constcl::String {
       set base [[::constcl::car $data] numval]
       set len [[my length] numval]
       for {set idx $base} \
-        {$idx < $len+$base} \
+        {$idx < $base+$len} \
         {incr idx} {
         lset ::constcl::vectorSpace $idx $c
       }
@@ -4065,24 +4078,32 @@ oo::class create ::constcl::Vector {
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {
+      # if v is provided in the form of a Lisp list
       set len [[::constcl::length $v] numval]
+      # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
       set idx $vsa
-      while {[::constcl::null? $v] ne "#t"} {
+      while {![T [::constcl::null? $v]]} {
         set elt [::constcl::car $v]
         lset ::constcl::vectorSpace $idx $elt
         incr idx
         set v [::constcl::cdr $v]
       }
     } else {
+      # if v is provided in the form of a Tcl list
       set len [llength $v]
+      # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
       set idx $vsa
       foreach elt $v {
         lset ::constcl::vectorSpace $idx $elt
         incr idx
       }
     }
+    # store the basic vector data: address of
+    # first element and length
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
@@ -4228,7 +4249,9 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-  # TODO calculate free space
+  if {1024-$::constcl::vectorAssign < $num} {
+    error "not enough vector space left"
+  }
   set va $::constcl::vectorAssign
   incr ::constcl::vectorAssign $num
   return $va
@@ -4240,9 +4263,9 @@ set ::constcl::gensymnum 0
 interp recursionlimit {} 2000
 interp alias {} #NIL {} [::constcl::NIL new]
 
-interp alias {} #t {} [::constcl::MkBoolean #t]
+interp alias {} #t {} [::constcl::MkBoolean "#t"]
 
-interp alias {} #f {} [::constcl::MkBoolean #f]
+interp alias {} #f {} [::constcl::MkBoolean "#f"]
 
 interp alias {} #-1 {} [N -1]
 
@@ -4250,9 +4273,9 @@ interp alias {} #0 {} [N 0]
 
 interp alias {} #1 {} [N 1]
 
-interp alias {} #+ {} [::constcl::MkSymbol +]
+interp alias {} #+ {} [::constcl::MkSymbol "+"]
 
-interp alias {} #- {} [::constcl::MkSymbol -]
+interp alias {} #- {} [::constcl::MkSymbol "-"]
 
 interp alias {} #UNS {} [::constcl::Unspecified new]
 

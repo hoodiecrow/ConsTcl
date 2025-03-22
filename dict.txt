@@ -89,7 +89,7 @@ tlists        -> a Tcl list of lists
 str           -> a string
 streof        -> a string or end of file
 strs          -> some strings
-estr          -> an external rep of a string
+estr          -> an external rep of a string, w/o double quotes
 lstrs         -> a Lisp list of strings
 tstrs         -> a Tcl list of strings
 tstr          -> a Tcl string

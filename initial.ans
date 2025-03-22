@@ -296,10 +296,15 @@ PR)
 
 CB(
 proc ::unbind {args} {
-  # TODO go from current environment
+  try {
+    uplevel [list subst \$env]
+  } on ok env {
+  } on error {} {
+    set env ::constcl::global_env
+  }
   set syms $args
   foreach sym $syms {
-    set env [::constcl::global_env find $sym]
+    set env [$env find $sym]
     if {$env ne "::constcl::null_env"} {
       $env unbind $sym
     }

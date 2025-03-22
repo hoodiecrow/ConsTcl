@@ -12,7 +12,9 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-  # TODO calculate free space
+  if {1024-$::constcl::vectorAssign < $num} {
+    error "not enough vector space left"
+  }
   set va $::constcl::vectorAssign
   incr ::constcl::vectorAssign $num
   return $va
@@ -46,9 +48,9 @@ and give them aliases for use in source text.
 CB(
 interp alias {} #NIL {} [::constcl::NIL new]
 
-interp alias {} #t {} [::constcl::MkBoolean #t]
+interp alias {} #t {} [::constcl::MkBoolean "#t"]
 
-interp alias {} #f {} [::constcl::MkBoolean #f]
+interp alias {} #f {} [::constcl::MkBoolean "#f"]
 
 interp alias {} #-1 {} [N -1]
 
@@ -56,9 +58,9 @@ interp alias {} #0 {} [N 0]
 
 interp alias {} #1 {} [N 1]
 
-interp alias {} #+ {} [::constcl::MkSymbol +]
+interp alias {} #+ {} [::constcl::MkSymbol "+"]
 
-interp alias {} #- {} [::constcl::MkSymbol -]
+interp alias {} #- {} [::constcl::MkSymbol "-"]
 
 interp alias {} #UNS {} [::constcl::Unspecified new]
 

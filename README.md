@@ -273,10 +273,15 @@ proc ::pn {} {
 
 ```
 proc ::unbind {args} {
-  # TODO go from current environment
+  try {
+    uplevel [list subst \$env]
+  } on ok env {
+  } on error {} {
+    set env ::constcl::global_env
+  }
   set syms $args
   foreach sym $syms {
-    set env [::constcl::global_env find $sym]
+    set env [$env find $sym]
     if {$env ne "::constcl::null_env"} {
       $env unbind $sym
     }
@@ -6467,11 +6472,11 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 
 ### Strings
 
-Procedures for dealing with strings of characters. Strings are sequences of characters. Strings are the most common form of real-world data in computing nowadays, having outpaced numbers some time ago. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
+Strings are sequences of characters. They are the most common form of real-world data in computing nowadays, having outpaced numbers some time ago. Lisp has strings, both constant and mutable, but some of the uses for strings in other languages are instead taken up by symbols.
 
 #### String class
 
-Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. External representation is enclosed within double quotes, with double quotes and backslashes within the string escaped with a backslash.
+Strings have the internal representation of a vector of character objects, with the data elements of 1) the vector address of the first element, and 2) the length of the vector. The external representation of a string is enclosed within double quotes, with double quotes and backslashes within the string escaped with a backslash.
 
 As an extension, a `` \n `` pair in the external representation is stored as a newline character. It is restored to `` \n `` if the string is printed using `` write ``, but remains a newline character if the string is printed using `` display ``.
 
@@ -6480,10 +6485,13 @@ oo::class create ::constcl::String {
   superclass ::constcl::NIL
   variable data constant
   constructor {v} {
-    set v [::string trim $v "\""]
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
     set len [::string length $v]
+    # allocate vector space for the string's
+    # characters
     set vsa [::constcl::vsAlloc $len]
+    # store the characters in vector space, as
+    # Char objects
     set idx $vsa
     foreach elt [split $v {}] {
       if {$elt eq " "} {
@@ -6497,6 +6505,8 @@ oo::class create ::constcl::String {
         [::constcl::MkChar $c]
       incr idx
     }
+    # store the basic vector data: address of
+    # first character and length
     set data [
       ::constcl::cons [N $vsa] [N $len]]
     set constant 0
@@ -6518,12 +6528,15 @@ oo::class create ::constcl::String {
     lindex [my store] $k
   }
   method store {} {
+    # present the range in vector memory where the
+    # string is stored
     set base [[::constcl::car $data] numval]
     set end [expr {[[my length] numval] +
       $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
+    # present the store as printable characters
     join [lmap c [my store] {$c char}] {}
   }
   method set! {k c} {
@@ -6536,7 +6549,7 @@ oo::class create ::constcl::String {
         ::error "index out of range\n$k"
       }
       set base [[::constcl::car $data] numval]
-      lset ::constcl::vectorSpace $k+$base $c
+      lset ::constcl::vectorSpace $base+$k $c
     }
     return [self]
   }
@@ -6547,7 +6560,7 @@ oo::class create ::constcl::String {
       set base [[::constcl::car $data] numval]
       set len [[my length] numval]
       for {set idx $base} \
-        {$idx < $len+$base} \
+        {$idx < $base+$len} \
         {incr idx} {
         lset ::constcl::vectorSpace $idx $c
       }
@@ -6584,7 +6597,7 @@ oo::class create ::constcl::String {
 
 `` MkString `` generates a String object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkString (internal)</th></tr></thead><tr><td>str</td><td>an external rep of a string</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkString (internal)</th></tr></thead><tr><td>str</td><td>an external rep of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkString \
@@ -7280,24 +7293,32 @@ oo::class create ::constcl::Vector {
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {
+      # if v is provided in the form of a Lisp list
       set len [[::constcl::length $v] numval]
+      # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
       set idx $vsa
-      while {[::constcl::null? $v] ne "#t"} {
+      while {![T [::constcl::null? $v]]} {
         set elt [::constcl::car $v]
         lset ::constcl::vectorSpace $idx $elt
         incr idx
         set v [::constcl::cdr $v]
       }
     } else {
+      # if v is provided in the form of a Tcl list
       set len [llength $v]
+      # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
       set idx $vsa
       foreach elt $v {
         lset ::constcl::vectorSpace $idx $elt
         incr idx
       }
     }
+    # store the basic vector data: address of
+    # first element and length
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
@@ -7449,7 +7470,7 @@ proc ::constcl::vector {args} {
 Example:
 
 ```
-(vector-length #(a "foo" 99))   ==>  3
+(vector-length '#(a "foo" 99))   ==>  3
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-length (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
@@ -7472,7 +7493,7 @@ proc ::constcl::vector-length {vec} {
 Example:
 
 ```
-(let ((vec #(a "foo" 99)) (k 1))
+(let ((vec '#(a "foo" 99)) (k 1))
   (vector-ref vec k))              ==>  "foo"
 ```
 
@@ -7499,7 +7520,7 @@ proc ::constcl::vector-ref {vec k} {
 Example:
 
 ```
-(let ((vec #(a b c))
+(let ((vec '#(a b c))
       (k 1)
       (val 'x))
   (vector-set! vec k val))      ==>  *error*
@@ -7532,7 +7553,7 @@ proc ::constcl::vector-set! {vec k val} {
 Example:
 
 ```
-(vector->list #(a b c))   ==>  (a b c)
+(vector->list '#(a b c))   ==>  (a b c)
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">vector-&gt;list (public)</th></tr></thead><tr><td>vec</td><td>a vector</td></tr><tr><td><i>Returns:</i></td><td>a Lisp list of values</td></tr></table>
@@ -7605,7 +7626,9 @@ set ::constcl::vectorSpace [lrepeat 1024 #NIL]
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-  # TODO calculate free space
+  if {1024-$::constcl::vectorAssign < $num} {
+    error "not enough vector space left"
+  }
   set va $::constcl::vectorAssign
   incr ::constcl::vectorAssign $num
   return $va
@@ -7638,9 +7661,9 @@ Pre-make a set of constants (e.g. `` #NIL ``, `` #t ``, and `` #f ``) and give t
 ```
 interp alias {} #NIL {} [::constcl::NIL new]
 
-interp alias {} #t {} [::constcl::MkBoolean #t]
+interp alias {} #t {} [::constcl::MkBoolean "#t"]
 
-interp alias {} #f {} [::constcl::MkBoolean #f]
+interp alias {} #f {} [::constcl::MkBoolean "#f"]
 
 interp alias {} #-1 {} [N -1]
 
@@ -7648,9 +7671,9 @@ interp alias {} #0 {} [N 0]
 
 interp alias {} #1 {} [N 1]
 
-interp alias {} #+ {} [::constcl::MkSymbol +]
+interp alias {} #+ {} [::constcl::MkSymbol "+"]
 
-interp alias {} #- {} [::constcl::MkSymbol -]
+interp alias {} #- {} [::constcl::MkSymbol "-"]
 
 interp alias {} #UNS {} [::constcl::Unspecified new]
 
