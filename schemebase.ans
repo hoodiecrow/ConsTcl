@@ -188,5 +188,3 @@ CB(
       (list-copy (cdr list)))))
 CB)
 
-And that's all. Thank you for joining me on this voyage of exploration.
-

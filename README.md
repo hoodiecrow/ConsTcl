@@ -7904,6 +7904,4 @@ Returns a newly allocated copy of _list_. This copies each of the pairs comprisi
       (list-copy (cdr list)))))
 ```
 
-And that's all. Thank you for joining me on this voyage of exploration.
-
 
