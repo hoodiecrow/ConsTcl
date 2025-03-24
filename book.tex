@@ -1097,34 +1097,16 @@ proc eof? {val} {
 }
 \end{lstlisting}
 
-\subsection{NIL class}
-\label{nil-class}
-\index{NIL class}
+\subsection{Base class}
+\label{base-class}
+\index{Base class}
 
-The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}. It is also base class for many other type classes.
+The \texttt{Base} class is base class for most of the type classes.
 
 \begin{lstlisting}
-catch { ::constcl::NIL destroy }
+catch { ::constcl::Base destroy }
 
-oo::singleton create ::constcl::NIL {
-  method boolval {} {
-    return [::constcl::MkBoolean "#t"]
-  }
-  method car {} {
-    ::error "PAIR expected"
-  }
-  method cdr {} {
-    ::error "PAIR expected"
-  }
-  method set-car! {v} {
-    ::error "PAIR expected"
-  }
-  method set-cdr! {v} {
-    ::error "PAIR expected"
-  }
-  method numval {} {
-    ::error "NUMBER expected"
-  }
+oo::class create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my show]
@@ -1132,6 +1114,29 @@ oo::singleton create ::constcl::NIL {
   method display {port} {
     my write $port
   }
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\subsection{NIL class}
+\label{nil-class}
+\index{NIL class}
+
+The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}.
+
+\begin{lstlisting}
+oo::singleton create ::constcl::NIL {
+  superclass ::constcl::Base
   method show {} {
     format "()"
   }
@@ -1156,7 +1161,7 @@ val & a value \\
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq [NIL new]} {
+  if {$val eq ${::#NIL}} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -4889,11 +4894,11 @@ I have only implemented a bare-bones version of Scheme's numerical library, thou
 \label{number-class}
 \index{Number class}
 
-The Number class defines what capabilities a number has (in addition to those from the NIL class), and also defines the internal representation of a number value expression. A number is stored in an instance in Tcl form, and the \texttt{numval} method yields the Tcl number as result.
+The Number class defines what capabilities a number has (in addition to those from the Base class), and also defines the internal representation of a number value expression. A number is stored in an instance in Tcl form, and the \texttt{numval} method yields the Tcl number as result.
 
 \begin{lstlisting}
 oo::class create ::constcl::Number {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     if {[::string is double -strict $v]} {
@@ -5932,34 +5937,22 @@ Booleans are logic values, either true (\texttt{\#t}) or false (\texttt{\#f}). A
 
 All values can be tested for truth (in a conditional form or as arguments to \texttt{and}, \texttt{or}, or \texttt{not}), though. Any value of any type is considered to be true except for \texttt{\#f}.
 
-\subsection{Boolean class}
-\label{boolean-class}
-\index{Boolean class}
+\subsection{Boolean classes (True and False)}
+\label{boolean-classes-true-and-false}
+\index{Boolean classes (True and False)}
 
-The Boolean class defines what capabilities a boolean has (in addition to those from the NIL class), and also defines the internal representation of a boolean value expression. A boolean is stored in an instance in the form of an interpreter alias, and the \texttt{boolval} method yields the alias as result.
+The Boolean classes are singleton classes with one value each (see page \pageref{a-set-of-source-code-constants}) (the global values \texttt{\#t} and \texttt{\#f}, respectively).
 
 \begin{lstlisting}
 oo::singleton create ::constcl::True {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#t"
   }
 }
 
 oo::singleton create ::constcl::False {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#f"
   }
@@ -6058,11 +6051,11 @@ Characters are any Unicode printing character, and also space and newline space 
 \label{char-class}
 \index{Char class}
 
-The Char class defines what capabilities a character has (in addition to those from the NIL class), and also defines the internal representation of a character value expression. A character is stored in an instance as a Tcl character, and the \texttt{char} method yields the character as result.
+The Char class defines what capabilities a character has (in addition to those from the Base class), and also defines the internal representation of a character value expression. A character is stored in an instance as a Tcl character, and the \texttt{char} method yields the character as result.
 
 \begin{lstlisting}
 oo::class create ::constcl::Char {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     switch -regexp $v {
@@ -6649,13 +6642,13 @@ When a \texttt{Procedure} object is called, the body is evaluated in a new envir
 \label{procedure-class}
 \index{Procedure class}
 
-The Procedure class defines what capabilities a procedure has (in addition to those from the NIL class), and also defines the internal representation of a procedure value expression. A procedure is stored in an instance as a tuple of formal parameters, body, and closed over environment. There is no method that yields the stored values.
+The Procedure class defines what capabilities a procedure has (in addition to those from the Base class), and also defines the internal representation of a procedure value expression. A procedure is stored in an instance as a tuple of formal parameters, body, and closed over environment. There is no method that yields the stored values.
 
 \begin{lstlisting}
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable parms body env
   constructor {p b e} {
     set parms $p
@@ -6892,7 +6885,7 @@ and there is also the \texttt{Port} kind, which isn't used other than as a base 
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -7617,13 +7610,13 @@ All program source code has a tree structure, even though this is usually mostly
 \label{pair-class}
 \index{Pair class}
 
-The Pair class defines what capabilities a pair has (in addition to those from the NIL class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the \texttt{car} and \texttt{cdr} methods yield each of them as result.
+The Pair class defines what capabilities a pair has (in addition to those from the Base class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the \texttt{car} and \texttt{cdr} methods yield each of them as result.
 
 \begin{lstlisting}
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable car cdr constant
   constructor {a d} {
     set car $a
@@ -8494,7 +8487,7 @@ As an extension, a \texttt{\textbackslash n} pair in the external representation
 
 \begin{lstlisting}
 oo::class create ::constcl::String {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
@@ -9307,11 +9300,11 @@ Symbols are like little immutable strings that are used to refer to things (vari
 \label{symbol-class}
 \index{Symbol class}
 
-The Symbol class defines what capabilities a symbol has (in addition to those from the NIL class), and also defines the internal representation of a symbol value expression. A symbol is stored in an instance as a Tcl string, and the \texttt{name} method yields the symbol's name as result.
+The Symbol class defines what capabilities a symbol has (in addition to those from the Base class), and also defines the internal representation of a symbol value expression. A symbol is stored in an instance as a Tcl string, and the \texttt{name} method yields the symbol's name as result.
 
 \begin{lstlisting}
 oo::class create ::constcl::Symbol {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable name caseconstant
   constructor {n} {
     ::constcl::idcheck $n
@@ -9486,11 +9479,11 @@ Vectors are heterogenous structures of fixed length whose elements are indexed b
 \label{vector-class}
 \index{Vector class}
 
-The Vector class defines what capabilities a vector has (in addition to those from the NIL class), and also defines the internal representation of a vector value expression. A vector is stored in an instance as a tuple of vector memory address and vector length. The \texttt{value} method yields the contents of the vector as result.
+The Vector class defines what capabilities a vector has (in addition to those from the Base class), and also defines the internal representation of a vector value expression. A vector is stored in an instance as a tuple of vector memory address and vector length. The \texttt{value} method yields the contents of the vector as result.
 
 \begin{lstlisting}
 oo::class create ::constcl::Vector {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {

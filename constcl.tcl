@@ -264,27 +264,9 @@ proc eof? {val} {
     return [::constcl::MkBoolean "#f"]
   }
 }
-catch { ::constcl::NIL destroy }
+catch { ::constcl::Base destroy }
 
-oo::singleton create ::constcl::NIL {
-  method boolval {} {
-    return [::constcl::MkBoolean "#t"]
-  }
-  method car {} {
-    ::error "PAIR expected"
-  }
-  method cdr {} {
-    ::error "PAIR expected"
-  }
-  method set-car! {v} {
-    ::error "PAIR expected"
-  }
-  method set-cdr! {v} {
-    ::error "PAIR expected"
-  }
-  method numval {} {
-    ::error "NUMBER expected"
-  }
+oo::class create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my show]
@@ -292,6 +274,20 @@ oo::singleton create ::constcl::NIL {
   method display {port} {
     my write $port
   }
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+oo::singleton create ::constcl::NIL {
+  superclass ::constcl::Base
   method show {} {
     format "()"
   }
@@ -299,7 +295,7 @@ oo::singleton create ::constcl::NIL {
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq [NIL new]} {
+  if {$val eq ${::#NIL}} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -1954,7 +1950,7 @@ proc ::constcl::equal? {expr1 expr2} {
   }
 }
 oo::class create ::constcl::Number {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     if {[::string is double -strict $v]} {
@@ -2458,26 +2454,14 @@ proc frombase {base number} {
   set res
 }
 oo::singleton create ::constcl::True {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#t"
   }
 }
 
 oo::singleton create ::constcl::False {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#f"
   }
@@ -2507,7 +2491,7 @@ proc ::constcl::not {val} {
   }
 }
 oo::class create ::constcl::Char {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     switch -regexp $v {
@@ -2847,7 +2831,7 @@ proc ::constcl::char-downcase {char} {
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable parms body env
   constructor {p b e} {
     set parms $p
@@ -2950,7 +2934,7 @@ proc ::constcl::for-each {proc args} {
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -3289,7 +3273,7 @@ proc ::constcl::load {filename} {
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable car cdr constant
   constructor {a d} {
     set car $a
@@ -3606,7 +3590,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
   }
 }
 oo::class create ::constcl::String {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
@@ -4015,7 +3999,7 @@ proc ::constcl::string-fill! {str char} {
   return $str
 }
 oo::class create ::constcl::Symbol {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable name caseconstant
   constructor {n} {
     ::constcl::idcheck $n
@@ -4095,7 +4079,7 @@ proc ::constcl::string->symbol {str} {
   return $sym
 }
 oo::class create ::constcl::Vector {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {

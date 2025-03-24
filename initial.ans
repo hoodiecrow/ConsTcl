@@ -727,33 +727,14 @@ proc eof? {val} {
 }
 CB)
 
-H4 NIL class
+H4 Base class
 
-The K{NIL} class has one object: the empty list called K{#NIL}. It is also base
-class for many other type classes.
+The K{Base} class is base class for most of the type classes.
 
 CB(
-catch { ::constcl::NIL destroy }
+catch { ::constcl::Base destroy }
 
-oo::singleton create ::constcl::NIL {
-  method boolval {} {
-    return [::constcl::MkBoolean "#t"]
-  }
-  method car {} {
-    ::error "PAIR expected"
-  }
-  method cdr {} {
-    ::error "PAIR expected"
-  }
-  method set-car! {v} {
-    ::error "PAIR expected"
-  }
-  method set-cdr! {v} {
-    ::error "PAIR expected"
-  }
-  method numval {} {
-    ::error "NUMBER expected"
-  }
+oo::class create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my show]
@@ -761,6 +742,27 @@ oo::singleton create ::constcl::NIL {
   method display {port} {
     my write $port
   }
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+CB)
+
+H4 NIL class
+
+The K{NIL} class has one object: the empty list called K{#NIL}.
+
+CB(
+oo::singleton create ::constcl::NIL {
+  superclass ::constcl::Base
   method show {} {
     format "()"
   }
@@ -779,7 +781,7 @@ CB(
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq [NIL new]} {
+  if {$val eq ${::#NIL}} {
     return ${::#t}
   } else {
     return ${::#f}

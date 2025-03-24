@@ -18,7 +18,7 @@ CB(
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable handle
   constructor {args} {
     if {[llength $args]} {

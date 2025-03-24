@@ -28,7 +28,7 @@ the parentheses).
 H4 Pair class
 
 The Pair class defines what capabilities a pair has (in addition to those
-from the NIL class), and also defines the internal representation of a pair
+from the Base class), and also defines the internal representation of a pair
 value expression. A pair is stored in an instance as a couple of pointers, and
 the K{car} and K{cdr} methods yield each of them as result.
 
@@ -36,7 +36,7 @@ CB(
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable car cdr constant
   constructor {a d} {
     set car $a

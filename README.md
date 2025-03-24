@@ -635,32 +635,14 @@ proc eof? {val} {
 }
 ```
 
-#### NIL class
+#### Base class
 
-The `` NIL `` class has one object: the empty list called `` #NIL ``. It is also base class for many other type classes.
+The `` Base `` class is base class for most of the type classes.
 
 ```
-catch { ::constcl::NIL destroy }
+catch { ::constcl::Base destroy }
 
-oo::singleton create ::constcl::NIL {
-  method boolval {} {
-    return [::constcl::MkBoolean "#t"]
-  }
-  method car {} {
-    ::error "PAIR expected"
-  }
-  method cdr {} {
-    ::error "PAIR expected"
-  }
-  method set-car! {v} {
-    ::error "PAIR expected"
-  }
-  method set-cdr! {v} {
-    ::error "PAIR expected"
-  }
-  method numval {} {
-    ::error "NUMBER expected"
-  }
+oo::class create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my show]
@@ -668,6 +650,27 @@ oo::singleton create ::constcl::NIL {
   method display {port} {
     my write $port
   }
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+```
+
+#### NIL class
+
+The `` NIL `` class has one object: the empty list called `` #NIL ``.
+
+```
+oo::singleton create ::constcl::NIL {
+  superclass ::constcl::Base
   method show {} {
     format "()"
   }
@@ -684,7 +687,7 @@ The `` null? `` standard predicate recognizes the empty list.
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq [NIL new]} {
+  if {$val eq ${::#NIL}} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -3630,11 +3633,11 @@ I have only implemented a bare-bones version of Scheme's numerical library, thou
 
 #### Number class
 
-The Number class defines what capabilities a number has (in addition to those from the NIL class), and also defines the internal representation of a number value expression. A number is stored in an instance in Tcl form, and the `` numval `` method yields the Tcl number as result.
+The Number class defines what capabilities a number has (in addition to those from the Base class), and also defines the internal representation of a number value expression. A number is stored in an instance in Tcl form, and the `` numval `` method yields the Tcl number as result.
 
 ```
 oo::class create ::constcl::Number {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     if {[::string is double -strict $v]} {
@@ -4489,32 +4492,20 @@ Booleans are logic values, either true (`` #t ``) or false (`` #f ``). All predi
 
 All values can be tested for truth (in a conditional form or as arguments to `` and ``, `` or ``, or `` not ``), though. Any value of any type is considered to be true except for `` #f ``.
 
-#### Boolean class
+#### Boolean classes (True and False)
 
-The Boolean class defines what capabilities a boolean has (in addition to those from the NIL class), and also defines the internal representation of a boolean value expression. A boolean is stored in an instance in the form of an interpreter alias, and the `` boolval `` method yields the alias as result.
+The Boolean classes are singleton classes with [one value each](https://github.com/hoodiecrow/ConsTcl#a-set-of-source-code-constants) (the global values `` #t `` and `` #f ``, respectively).
 
 ```
 oo::singleton create ::constcl::True {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#t"
   }
 }
 
 oo::singleton create ::constcl::False {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
+  superclass ::constcl::Base
   method show {} {
     return "#f"
   }
@@ -4585,11 +4576,11 @@ Characters are any Unicode printing character, and also space and newline space 
 
 #### Char class
 
-The Char class defines what capabilities a character has (in addition to those from the NIL class), and also defines the internal representation of a character value expression. A character is stored in an instance as a Tcl character, and the `` char `` method yields the character as result.
+The Char class defines what capabilities a character has (in addition to those from the Base class), and also defines the internal representation of a character value expression. A character is stored in an instance as a Tcl character, and the `` char `` method yields the character as result.
 
 ```
 oo::class create ::constcl::Char {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     switch -regexp $v {
@@ -5087,13 +5078,13 @@ When a `` Procedure `` object is called, the body is evaluated in a new environm
 
 #### Procedure class
 
-The Procedure class defines what capabilities a procedure has (in addition to those from the NIL class), and also defines the internal representation of a procedure value expression. A procedure is stored in an instance as a tuple of formal parameters, body, and closed over environment. There is no method that yields the stored values.
+The Procedure class defines what capabilities a procedure has (in addition to those from the Base class), and also defines the internal representation of a procedure value expression. A procedure is stored in an instance as a tuple of formal parameters, body, and closed over environment. There is no method that yields the stored values.
 
 ```
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable parms body env
   constructor {p b e} {
     set parms $p
@@ -5279,7 +5270,7 @@ and there is also the `` Port `` kind, which isn't used other than as a base cla
 catch { ::constcl::Port destroy }
 
 oo::class create ::constcl::Port {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable handle
   constructor {args} {
     if {[llength $args]} {
@@ -5847,13 +5838,13 @@ All program source code has a tree structure, even though this is usually mostly
 
 #### Pair class
 
-The Pair class defines what capabilities a pair has (in addition to those from the NIL class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the `` car `` and `` cdr `` methods yield each of them as result.
+The Pair class defines what capabilities a pair has (in addition to those from the Base class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the `` car `` and `` cdr `` methods yield each of them as result.
 
 ```
 catch { ::constcl::Pair destroy }
 
 oo::class create ::constcl::Pair {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable car cdr constant
   constructor {a d} {
     set car $a
@@ -6503,7 +6494,7 @@ As an extension, a `` \n `` pair in the external representation is stored as a n
 
 ```
 oo::class create ::constcl::String {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
@@ -7163,11 +7154,11 @@ Symbols are like little immutable strings that are used to refer to things (vari
 
 #### Symbol class
 
-The Symbol class defines what capabilities a symbol has (in addition to those from the NIL class), and also defines the internal representation of a symbol value expression. A symbol is stored in an instance as a Tcl string, and the `` name `` method yields the symbol's name as result.
+The Symbol class defines what capabilities a symbol has (in addition to those from the Base class), and also defines the internal representation of a symbol value expression. A symbol is stored in an instance as a Tcl string, and the `` name `` method yields the symbol's name as result.
 
 ```
 oo::class create ::constcl::Symbol {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable name caseconstant
   constructor {n} {
     ::constcl::idcheck $n
@@ -7306,11 +7297,11 @@ Vectors are heterogenous structures of fixed length whose elements are indexed b
 
 #### Vector class
 
-The Vector class defines what capabilities a vector has (in addition to those from the NIL class), and also defines the internal representation of a vector value expression. A vector is stored in an instance as a tuple of vector memory address and vector length. The `` value `` method yields the contents of the vector as result.
+The Vector class defines what capabilities a vector has (in addition to those from the Base class), and also defines the internal representation of a vector value expression. A vector is stored in an instance as a tuple of vector memory address and vector length. The `` value `` method yields the contents of the vector as result.
 
 ```
 oo::class create ::constcl::Vector {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {

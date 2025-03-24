@@ -16,7 +16,7 @@ goes to the closure environment.
 H4 Procedure class
 
 The Procedure class defines what capabilities a procedure has (in addition to
-those from the NIL class), and also defines the internal representation of a
+those from the Base class), and also defines the internal representation of a
 procedure value expression. A procedure is stored in an instance as a tuple of
 formal parameters, body, and closed over environment. There is no method that
 yields the stored values.
@@ -25,7 +25,7 @@ CB(
 catch { ::constcl::Procedure destroy }
 
 oo::class create ::constcl::Procedure {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable parms body env
   constructor {p b e} {
     set parms $p

@@ -8,13 +8,13 @@ K{#\space} or K{#\newline}.
 H4 Char class
 
 The Char class defines what capabilities a character has (in addition to those
-from the NIL class), and also defines the internal representation of a character
+from the Base class), and also defines the internal representation of a character
 value expression. A character is stored in an instance as a Tcl character, and
 the K{char} method yields the character as result.
 
 CB(
 oo::class create ::constcl::Char {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     switch -regexp $v {
@@ -35,37 +35,37 @@ oo::class create ::constcl::Char {
   }
   method alphabetic? {} {
     if {[::string is alpha -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method numeric? {} {
     if {[::string is digit -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method whitespace? {} {
     if {[::string is space -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method upper-case? {} {
     if {[::string is upper -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method lower-case? {} {
     if {[::string is lower -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method constant {} {

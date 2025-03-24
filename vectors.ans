@@ -10,14 +10,14 @@ minus one.
 H4 Vector class
 
 The Vector class defines what capabilities a vector has (in addition to those
-from the NIL class), and also defines the internal representation of a vector
+from the Base class), and also defines the internal representation of a vector
 value expression. A vector is stored in an instance as a tuple of vector memory
 address and vector length. The K{value} method yields the contents of the vector
 as result.
 
 CB(
 oo::class create ::constcl::Vector {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable data constant
   constructor {v} {
     if {[T [::constcl::list? $v]]} {

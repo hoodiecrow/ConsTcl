@@ -13,13 +13,13 @@ or K{lcm}.
 H4 Number class
 
 The Number class defines what capabilities a number has (in addition to those
-from the NIL class), and also defines the internal representation of a number
+from the Base class), and also defines the internal representation of a number
 value expression. A number is stored in an instance in Tcl form, and the
 K{numval} method yields the Tcl number as result.
 
 CB(
 oo::class create ::constcl::Number {
-  superclass ::constcl::NIL
+  superclass ::constcl::Base
   variable value
   constructor {v} {
     if {[::string is double -strict $v]} {
