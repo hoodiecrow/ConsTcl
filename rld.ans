@@ -62,7 +62,7 @@ proc ::constcl::extract-from-defines {exps part} {
         ![T [argument-list? [cadr $n]]] ||
         ([T [symbol? [cadr $n]]] &&
         [$k numval] > 3)} {
-        return [::list ${::#NIL} [MkBoolean "#t"] ${::#NIL}]
+        return [::list ${::#NIL} ${::#t} ${::#NIL}]
       }
       if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
@@ -82,7 +82,7 @@ proc ::constcl::extract-from-defines {exps part} {
       }
       set exps [cdr $exps]
     }
-    return [::list $a [MkBoolean "#f"] $exps]
+    return [::list $a ${::#f} $exps]
 }
 CB)
 
@@ -97,22 +97,22 @@ PR)
 CB(
 proc ::constcl::argument-list? {val} {
   if {$val eq ${::#NIL}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [symbol? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [atom? $val]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
   while {[T [pair? $val]]} {
-    if {[symbol? [car $val]] eq [MkBoolean "#f"]} {
-      return [MkBoolean "#f"]
+    if {[symbol? [car $val]] eq ${::#f}} {
+      return ${::#f}
     }
     set val [cdr $val]
   }
   if {$val eq ${::#NIL}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [symbol? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   }
 }
 CB)

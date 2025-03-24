@@ -77,12 +77,12 @@ CB(
 reg procedure?
 
 proc ::constcl::procedure? {val} {
-  if {[typeof? $val Procedure] eq [MkBoolean "#t"]} {
-    return [MkBoolean "#t"]
+  if {[typeof? $val Procedure] eq ${::#t}} {
+    return ${::#t}
   } elseif {[::string match "::constcl::*" $val]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)

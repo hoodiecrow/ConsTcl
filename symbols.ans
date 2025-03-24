@@ -29,9 +29,9 @@ oo::class create ::constcl::Symbol {
   }
   method = {symname} {
     if {$name eq $symname} {
-      return [MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method constant {} {

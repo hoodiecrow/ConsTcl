@@ -246,9 +246,9 @@ PR)
 CB(
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -269,9 +269,9 @@ PR)
 CB(
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -300,9 +300,9 @@ CB(
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -364,8 +364,8 @@ proc ::constcl::find-char? {char} {
     set unget $c
   }
   expr {($c eq $char) ?
-    [MkBoolean "#t"] :
-    [MkBoolean "#f"]}
+    ${::#t} :
+    ${::#f}}
 }
 CB)
 
@@ -390,15 +390,15 @@ proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
   if {[T [interspace? $c]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [delimiter? $c]]} {
     set unget $c
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {$c eq "#EOF"} {
     return #EOF
   } else {
     set unget $c
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -1016,10 +1016,8 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set expr [read-vector-expr] }
-    t    { if {[T [read-end?]]} \
-           {set expr [MkBoolean "#t"]} }
-    f    { if {[T [read-end?]]} \
-           {set expr [MkBoolean "#f"]} }
+    t    { if {[T [read-end?]]} {set expr ${::#t}} }
+    f    { if {[T [read-end?]]} {set expr ${::#f}} }
     "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"

@@ -1191,6 +1191,10 @@ if no {
 } -output "#t\n"
 
 ::tcltest::test boolean-3.2 {not procedure} -body {
+        pew "(not nil)"
+} -output "#f\n"
+
+::tcltest::test boolean-3.3 {not procedure} -body {
         pew "(not (list 3))"
 } -output "#f\n"
 

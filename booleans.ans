@@ -18,42 +18,36 @@ value expression. A boolean is stored in an instance in the form of an
 interpreter alias, and the K{boolval} method yields the alias as result.
 
 CB(
-oo::class create ::constcl::Boolean {
-  superclass ::constcl::NIL
-  variable boolval
-  constructor {v} {
-    if {$v ni {#t #f}} {
-      ::error "bad boolean value $v"
-    }
-    set boolval $v
-  }
-  method constant {} {
-    return 1
-  }
-  method boolval {} {
-    set boolval
-  }
-  method value {} {
-    set boolval
-  }
+oo::singleton create ::constcl::True {
+  method mkconstant {} {}
   method write {port} {
-    $port put [my boolval]
+    $port put [my show]
   }
   method display {port} {
-    $port put [my boolval]
+    my write $port
   }
   method show {} {
-    set boolval
+    return "#t"
+  }
+}
+
+oo::singleton create ::constcl::False {
+  method mkconstant {} {}
+  method write {port} {
+    $port put [my show]
+  }
+  method display {port} {
+    my write $port
+  }
+  method show {} {
+    return "#f"
   }
 }
 CB)
 
 H4 MkBoolean generator
 
-K{MkBoolean} generates a boolean. If a boolean with the same name already exists
-(which is the case at run time, because there are only two valid boolean values,
-and they're both pre-generated) that boolean will be returned, otherwise a fresh
-boolean will be created.
+Given a string (either K{"#t"} or K{"#f"}), K{MkBoolean} generates a boolean.
 
 PR(
 MkBoolean (internal);bool ebool -> bool
@@ -61,13 +55,10 @@ PR)
 
 CB(
 proc ::constcl::MkBoolean {bool} {
-  foreach instance [info class instances \
-    ::constcl::Boolean] {
-    if {[$instance boolval] eq $bool} {
-      return $instance
-    }
+  switch $bool {
+    "#t" { return ${::#t} }
+    "#f" { return ${::#f} }
   }
-  return [::constcl::Boolean new $bool]
 }
 CB)
 
@@ -111,7 +102,11 @@ CB(
 reg boolean?
 
 proc ::constcl::boolean? {val} {
-  return [typeof? $val Boolean]
+  if {$val eq ${::#t} || $val eq ${::#f}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
 }
 CB)
 
@@ -150,10 +145,10 @@ CB(
 reg not
 
 proc ::constcl::not {val} {
-  if {[$val boolval] eq "#f"} {
-    return [MkBoolean "#t"]
+  if {$val eq ${::#f}} {
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -169,6 +164,10 @@ TT(
 } -output "#t\n"
 
 ::tcltest::test boolean-3.2 {not procedure} -body {
+        pew "(not nil)"
+} -output "#f\n"
+
+::tcltest::test boolean-3.3 {not procedure} -body {
         pew "(not (list 3))"
 } -output "#f\n"
 

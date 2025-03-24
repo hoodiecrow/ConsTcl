@@ -392,11 +392,11 @@ reg input-port?
 
 proc ::constcl::input-port? {val} {
   if {[T typeof? $val InputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T typeof? $val StringInputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -414,11 +414,11 @@ reg output-port?
 
 proc ::constcl::output-port? {val} {
   if {[T typeof? $val OutputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T typeof? $val StringOutputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)

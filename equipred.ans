@@ -23,32 +23,32 @@ reg eq?
 proc ::constcl::eq? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq symbol? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq char? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq null? $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq pair? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq string? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq vector? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -102,34 +102,34 @@ reg eqv?
 proc ::constcl::eqv? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq symbol? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq char? $expr1 $expr2] &&
       [veq $expr1 eq $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq null? $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [pair? $expr1]] &&
       [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq string? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq vector? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -141,9 +141,9 @@ reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
   if {[$expr1 show] eq [$expr2 show]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)

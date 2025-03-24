@@ -145,7 +145,7 @@ By Scheme convention, predicates (procedures that return either `` #t `` or `` #
 
 will not do, but
 
-``if {[atom? $x] ne "#f"} ...``
+``if {[atom? $x] ne ${::#f}} ...``
 
 (``[atom? $x] not equal to false'') works. Or see the `` T `` procedure.
 
@@ -162,10 +162,10 @@ proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
     if {[$type? $val] eq ${::#t}} {
-      return [MkBoolean "#t"]
+      return ${::#t}
     }
   }
-  return [MkBoolean "#f"]
+  return ${::#f}
 }
 ```
 
@@ -183,11 +183,7 @@ if {[T [atom? $x]]} ...
 
 ```
 proc ::T {val} {
-  if {$val eq [::constcl::MkBoolean "#f"]} {
-    return 0
-  } elseif {[::constcl::boolean? $val] eq
-    [::constcl::MkBoolean "#t"] &&
-    [$val boolval] eq [::constcl::MkBoolean "#f"]} {
+  if {$val eq ${::#f}} {
     return 0
   } else {
     return 1
@@ -299,9 +295,9 @@ proc ::unbind {args} {
 ```
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -391,7 +387,7 @@ proc ::constcl::error {msg args} {
 
 ```
 proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq [MkBoolean "#f"]} {
+  if {[uplevel $cond] eq ${::#f}} {
     ::error [
       uplevel [
         ::list subst [
@@ -689,9 +685,9 @@ reg null?
 
 proc ::constcl::null? {val} {
   if {$val eq [NIL new]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -896,9 +892,9 @@ The `` interspace? `` helper procedure recognizes whitespace between value repre
 ```
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -912,9 +908,9 @@ The `` delimiter? `` helper procedure recognizes delimiter characters between va
 ```
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -929,9 +925,9 @@ The `` valid-char? `` helper procedure compares a potential character constant t
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -975,8 +971,8 @@ proc ::constcl::find-char? {char} {
     set unget $c
   }
   expr {($c eq $char) ?
-    [MkBoolean "#t"] :
-    [MkBoolean "#f"]}
+    ${::#t} :
+    ${::#f}}
 }
 ```
 
@@ -991,15 +987,15 @@ proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
   if {[T [interspace? $c]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [delimiter? $c]]} {
     set unget $c
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {$c eq "#EOF"} {
     return #EOF
   } else {
     set unget $c
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -1336,10 +1332,8 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set expr [read-vector-expr] }
-    t    { if {[T [read-end?]]} \
-           {set expr [MkBoolean "#t"]} }
-    f    { if {[T [read-end?]]} \
-           {set expr [MkBoolean "#f"]} }
+    t    { if {[T [read-end?]]} {set expr ${::#t}} }
+    f    { if {[T [read-end?]]} {set expr ${::#f}} }
     "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
@@ -1548,9 +1542,9 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] ||
     [T [char? $val]] ||
     [T [boolean? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -1687,7 +1681,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
     if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl [MkBoolean "#t"]
+        set keyl ${::#t}
       }
     }
     set env [MkEnv $env]
@@ -1777,7 +1771,7 @@ proc ::constcl::do-cond {tail env} {
     if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the predicate
       if {[T [eq? $pred [S else]]]} {
-        set pred [MkBoolean "#t"]
+        set pred ${::#t}
       }
     }
     if {[T [null? $body]]} {
@@ -2092,7 +2086,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set variable [car $tail]
   set bindings [cadr $tail]
   set body [cddr $tail]
-  set vars [dict create $variable [MkBoolean "#f"]]
+  set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
@@ -2406,11 +2400,11 @@ reg macro and
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
-    list [S begin] [MkBoolean "#t"]
+    list [S begin] ${::#t}
   } elseif {[[length $tail] numval] == 1} {
     cons [S begin] $tail
   } else {
-    do-and $tail [MkBoolean "#t"] $env
+    do-and $tail ${::#t} $env
   }
 }
 ```
@@ -2627,7 +2621,7 @@ reg macro or
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
-    return [list [S begin] [MkBoolean "#f"]]
+    return [list [S begin] ${::#f}]
   } elseif {[[length $tail] numval] == 1} {
     return [cons [S begin] $tail]
   } else {
@@ -2645,7 +2639,7 @@ __do-or__ procedure
 ```
 proc ::constcl::do-or {tail env} {
   if {[T [null? $tail]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
@@ -2673,7 +2667,7 @@ proc ::constcl::expand-pop! {expr env} {
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
-  if {[symbol? [car $tail]] eq [MkBoolean "#f"]} {
+  if {[symbol? [car $tail]] eq ${::#f}} {
       ::error "SYMBOL expected:\n(pop! listname)"
   }
   /define [S listname] [car $tail] $env
@@ -2705,7 +2699,7 @@ proc ::constcl::expand-push! {expr env} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
-  if {[symbol? [cadr $tail]] eq [MkBoolean "#f"]} {
+  if {[symbol? [cadr $tail]] eq ${::#f}} {
     ::error \
       "SYMBOL expected:\n(push! obj listname)"
   }
@@ -2941,7 +2935,7 @@ proc ::constcl::extract-from-defines {exps part} {
         ![T [argument-list? [cadr $n]]] ||
         ([T [symbol? [cadr $n]]] &&
         [$k numval] > 3)} {
-        return [::list ${::#NIL} [MkBoolean "#t"] ${::#NIL}]
+        return [::list ${::#NIL} ${::#t} ${::#NIL}]
       }
       if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
@@ -2961,7 +2955,7 @@ proc ::constcl::extract-from-defines {exps part} {
       }
       set exps [cdr $exps]
     }
-    return [::list $a [MkBoolean "#f"] $exps]
+    return [::list $a ${::#f} $exps]
 }
 ```
 
@@ -2974,22 +2968,22 @@ proc ::constcl::extract-from-defines {exps part} {
 ```
 proc ::constcl::argument-list? {val} {
   if {$val eq ${::#NIL}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [symbol? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [atom? $val]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
   while {[T [pair? $val]]} {
-    if {[symbol? [car $val]] eq [MkBoolean "#f"]} {
-      return [MkBoolean "#f"]
+    if {[symbol? [car $val]] eq ${::#f}} {
+      return ${::#f}
     }
     set val [cdr $val]
   }
   if {$val eq ${::#NIL}} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [symbol? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   }
 }
 ```
@@ -3519,32 +3513,32 @@ reg eq?
 proc ::constcl::eq? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq symbol? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq char? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq null? $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq pair? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq string? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq vector? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3582,34 +3576,34 @@ reg eqv?
 proc ::constcl::eqv? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq symbol? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq char? $expr1 $expr2] &&
       [veq $expr1 eq $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq null? $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [pair? $expr1]] &&
       [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq string? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq vector? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3621,9 +3615,9 @@ reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
   if {[$expr1 show] eq [$expr2 show]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3756,9 +3750,9 @@ proc ::constcl::= {args} {
       [lindex $args 0] show] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3773,9 +3767,9 @@ proc ::constcl::< {args} {
     ::error "NUMBER expected\n(< num ...)"
   }
   if {[::tcl::mathop::< {*}$nums]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3790,9 +3784,9 @@ proc ::constcl::> {args} {
     ::error "NUMBER expected\n(> num ...)"
   }
   if {[::tcl::mathop::> {*}$nums]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3807,9 +3801,9 @@ proc ::constcl::<= {args} {
     ::error "NUMBER expected\n(<= num ...)"
   }
   if {[::tcl::mathop::<= {*}$nums]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -3824,9 +3818,9 @@ proc ::constcl::>= {args} {
     ::error "NUMBER expected\n(>= num ...)"
   }
   if {[::tcl::mathop::>= {*}$nums]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4500,51 +4494,45 @@ All values can be tested for truth (in a conditional form or as arguments to `` 
 The Boolean class defines what capabilities a boolean has (in addition to those from the NIL class), and also defines the internal representation of a boolean value expression. A boolean is stored in an instance in the form of an interpreter alias, and the `` boolval `` method yields the alias as result.
 
 ```
-oo::class create ::constcl::Boolean {
-  superclass ::constcl::NIL
-  variable boolval
-  constructor {v} {
-    if {$v ni {#t #f}} {
-      ::error "bad boolean value $v"
-    }
-    set boolval $v
-  }
-  method constant {} {
-    return 1
-  }
-  method boolval {} {
-    set boolval
-  }
-  method value {} {
-    set boolval
-  }
+oo::singleton create ::constcl::True {
+  method mkconstant {} {}
   method write {port} {
-    $port put [my boolval]
+    $port put [my show]
   }
   method display {port} {
-    $port put [my boolval]
+    my write $port
   }
   method show {} {
-    set boolval
+    return "#t"
+  }
+}
+
+oo::singleton create ::constcl::False {
+  method mkconstant {} {}
+  method write {port} {
+    $port put [my show]
+  }
+  method display {port} {
+    my write $port
+  }
+  method show {} {
+    return "#f"
   }
 }
 ```
 
 #### MkBoolean generator
 
-`` MkBoolean `` generates a boolean. If a boolean with the same name already exists (which is the case at run time, because there are only two valid boolean values, and they're both pre-generated) that boolean will be returned, otherwise a fresh boolean will be created.
+Given a string (either `` "#t" `` or `` "#f" ``), `` MkBoolean `` generates a boolean.
 
 <table border=1><thead><tr><th colspan=2 align="left">MkBoolean (internal)</th></tr></thead><tr><td>bool</td><td>an external rep of a bool</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::MkBoolean {bool} {
-  foreach instance [info class instances \
-    ::constcl::Boolean] {
-    if {[$instance boolval] eq $bool} {
-      return $instance
-    }
+  switch $bool {
+    "#t" { return ${::#t} }
+    "#f" { return ${::#f} }
   }
-  return [::constcl::Boolean new $bool]
 }
 ```
 
@@ -4558,7 +4546,11 @@ The `` boolean? `` predicate recognizes a Boolean by type.
 reg boolean?
 
 proc ::constcl::boolean? {val} {
-  return [typeof? $val Boolean]
+  if {$val eq ${::#t} || $val eq ${::#f}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
 }
 ```
 
@@ -4579,10 +4571,10 @@ Example:
 reg not
 
 proc ::constcl::not {val} {
-  if {[$val boolval] eq "#f"} {
-    return [MkBoolean "#t"]
+  if {$val eq ${::#f}} {
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4742,9 +4734,9 @@ proc ::constcl::char=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] eq [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4760,9 +4752,9 @@ proc ::constcl::char<? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] < [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4778,9 +4770,9 @@ proc ::constcl::char>? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] > [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4796,9 +4788,9 @@ proc ::constcl::char<=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] <= [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4814,9 +4806,9 @@ proc ::constcl::char>=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] >= [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4847,9 +4839,9 @@ proc ::constcl::char-ci=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4866,9 +4858,9 @@ proc ::constcl::char-ci<? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4885,9 +4877,9 @@ proc ::constcl::char-ci>? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4904,9 +4896,9 @@ proc ::constcl::char-ci<=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -4923,9 +4915,9 @@ proc ::constcl::char-ci>=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -5148,12 +5140,12 @@ interp alias {} ::constcl::MkProcedure \
 reg procedure?
 
 proc ::constcl::procedure? {val} {
-  if {[typeof? $val Procedure] eq [MkBoolean "#t"]} {
-    return [MkBoolean "#t"]
+  if {[typeof? $val Procedure] eq ${::#t}} {
+    return ${::#t}
   } elseif {[::string match "::constcl::*" $val]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -5604,11 +5596,11 @@ reg input-port?
 
 proc ::constcl::input-port? {val} {
   if {[T typeof? $val InputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T typeof? $val StringInputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -5624,11 +5616,11 @@ reg output-port?
 
 proc ::constcl::output-port? {val} {
   if {[T typeof? $val OutputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T typeof? $val StringOutputPort]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6140,11 +6132,11 @@ reg list?
 proc ::constcl::list? {val} {
   set visited {}
   if {[T [null? $val]]} {
-      return [MkBoolean "#t"]
+      return ${::#t}
   } elseif {[T [pair? $val]]} {
       return [listp $val]
   } else {
-      return [MkBoolean "#f"]
+      return ${::#f}
   }
 }
 ```
@@ -6159,15 +6151,15 @@ __listp__ procedure
 proc ::constcl::listp {pair} {
   upvar visited visited
   if {$pair in $visited} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
   lappend visited $pair
   if {[T [null? $pair]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [pair? $pair]]} {
     return [listp [cdr $pair]]
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6413,7 +6405,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
   if {[T [null? $val2]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   } elseif {[T [pair? $val2]]} {
     if {[T [$epred $val1 [car $val2]]]} {
       return $val2
@@ -6487,7 +6479,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
   if {[T [null? $val2]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   } elseif {[T [pair? $val2]]} {
     if {[T [pair? [car $val2]]] &&
       [T [$epred $val1 [caar $val2]]]} {
@@ -6825,9 +6817,9 @@ proc ::constcl::string=? {str1 str2} {
       [$str2 show])
   }
   if {[$str1 value] eq [$str2 value]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6846,9 +6838,9 @@ proc ::constcl::string-ci=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] eq
       [::string tolower [$str2 value]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6866,9 +6858,9 @@ proc ::constcl::string<? {str1 str2} {
       [$str2 show])
   }
   if {[$str1 value] < [$str2 value]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6887,9 +6879,9 @@ proc ::constcl::string-ci<? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] <
       [::string tolower [$str2 value]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6907,9 +6899,9 @@ proc ::constcl::string>? {str1 str2} {
       [$str2 show])
   }
   if {[$str1 value] > [$str2 value]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6928,9 +6920,9 @@ proc ::constcl::string-ci>? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] >
       [::string tolower [$str2 value]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6948,9 +6940,9 @@ proc ::constcl::string<=? {str1 str2} {
       [$str2 show])
   }
   if {[$str1 value] <= [$str2 value]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6969,9 +6961,9 @@ proc ::constcl::string-ci<=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] <=
       [::string tolower [$str2 value]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -6989,9 +6981,9 @@ proc ::constcl::string>=? {str1 str2} {
       [$str2 show])
   }
   if {[$str1 value] >= [$str2 value]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -7010,9 +7002,9 @@ proc ::constcl::string-ci>=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] >=
       [::string tolower [$str2 value]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
@@ -7190,9 +7182,9 @@ oo::class create ::constcl::Symbol {
   }
   method = {symname} {
     if {$name eq $symname} {
-      return [MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method constant {} {
@@ -7690,9 +7682,9 @@ Pre-make a set of constants (e.g. `` #NIL ``, `` #t ``, and `` #f ``) and give t
 ```
 set #NIL [::constcl::NIL new]
 
-set #t [::constcl::MkBoolean "#t"]
+set #t [::constcl::True new]
 
-set #f [::constcl::MkBoolean "#f"]
+set #f [::constcl::False new]
 
 set #UNS [::constcl::Unspecified new]
 

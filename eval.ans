@@ -102,9 +102,9 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] || 
     [T [char? $val]] || 
     [T [boolean? $val]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -300,7 +300,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
     if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl [MkBoolean "#t"]
+        set keyl ${::#t}
       }
     }
     set env [MkEnv $env]
@@ -427,7 +427,7 @@ proc ::constcl::do-cond {tail env} {
     if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the predicate
       if {[T [eq? $pred [S else]]]} {
-        set pred [MkBoolean "#t"]
+        set pred ${::#t}
       }
     }
     if {[T [null? $body]]} {
@@ -943,7 +943,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set variable [car $tail]
   set bindings [cadr $tail]
   set body [cddr $tail]
-  set vars [dict create $variable [MkBoolean "#f"]]
+  set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [

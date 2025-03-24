@@ -455,11 +455,11 @@ reg list?
 proc ::constcl::list? {val} {
   set visited {}
   if {[T [null? $val]]} {
-      return [MkBoolean "#t"]
+      return ${::#t}
   } elseif {[T [pair? $val]]} {
       return [listp $val]
   } else {
-      return [MkBoolean "#f"]
+      return ${::#f}
   }
 }
 CB)
@@ -479,15 +479,15 @@ CB(
 proc ::constcl::listp {pair} {
   upvar visited visited
   if {$pair in $visited} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
   lappend visited $pair
   if {[T [null? $pair]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } elseif {[T [pair? $pair]]} {
     return [listp [cdr $pair]]
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -862,7 +862,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
   if {[T [null? $val2]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   } elseif {[T [pair? $val2]]} {
     if {[T [$epred $val1 [car $val2]]]} {
       return $val2
@@ -953,7 +953,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     LIST expected\n($name [$val1 show] [$val2 show])
   }
   if {[T [null? $val2]]} {
-    return [MkBoolean "#f"]
+    return ${::#f}
   } elseif {[T [pair? $val2]]} {
     if {[T [pair? [car $val2]]] && 
       [T [$epred $val1 [caar $val2]]]} {

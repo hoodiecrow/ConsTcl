@@ -149,7 +149,7 @@ KB if \{[atom? $x]\} ...
 
 will not do, but 
 
-KB if \{[atom? $x] ne "#f"\} ...
+KB if \{[atom? $x] ne ${::#f}\} ...
 
 (``[atom? $x] not equal to false'') works. Or see the K{T} procedure.
 
@@ -166,10 +166,10 @@ proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
     if {[$type? $val] eq ${::#t}} {
-      return [MkBoolean "#t"]
+      return ${::#t}
     }
   }
-  return [MkBoolean "#f"]
+  return ${::#f}
 }
 CB)
 
@@ -193,11 +193,7 @@ PR)
 
 CB(
 proc ::T {val} {
-  if {$val eq [::constcl::MkBoolean "#f"]} {
-    return 0
-  } elseif {[::constcl::boolean? $val] eq
-    [::constcl::MkBoolean "#t"] &&
-    [$val boolval] eq [::constcl::MkBoolean "#f"]} {
+  if {$val eq ${::#f}} {
     return 0
   } else {
     return 1
@@ -326,9 +322,9 @@ PR)
 CB(
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -436,7 +432,7 @@ it fails.
 
 CB(
 proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq [MkBoolean "#f"]} {
+  if {[uplevel $cond] eq ${::#f}} {
     ::error [
       uplevel [
         ::list subst [
@@ -784,9 +780,9 @@ reg null?
 
 proc ::constcl::null? {val} {
   if {$val eq [NIL new]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)

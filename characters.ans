@@ -176,9 +176,9 @@ proc ::constcl::char=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] eq [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -209,9 +209,9 @@ proc ::constcl::char<? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] < [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -238,9 +238,9 @@ proc ::constcl::char>? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] > [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -267,9 +267,9 @@ proc ::constcl::char<=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] <= [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -296,9 +296,9 @@ proc ::constcl::char>=? {char1 char2} {
     CHAR expected\n([pn] [$char1 show] [$char2 show])
   }
   if {[$char1 char] >= [$char2 char]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -342,9 +342,9 @@ proc ::constcl::char-ci=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -372,9 +372,9 @@ proc ::constcl::char-ci<? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -402,9 +402,9 @@ proc ::constcl::char-ci>? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -432,9 +432,9 @@ proc ::constcl::char-ci<=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
@@ -462,9 +462,9 @@ proc ::constcl::char-ci>=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
-    return [MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)

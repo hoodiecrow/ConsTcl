@@ -48,9 +48,9 @@ and give them aliases for use in source text.
 CB(
 set #NIL [::constcl::NIL new]
 
-set #t [::constcl::MkBoolean "#t"]
+set #t [::constcl::True new]
 
-set #f [::constcl::MkBoolean "#f"]
+set #f [::constcl::False new]
 
 set #UNS [::constcl::Unspecified new]
 
