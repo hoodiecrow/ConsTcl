@@ -181,7 +181,7 @@ reg make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
-    set val #NIL
+    set val ${::#NIL}
   } else {
     lassign $args val
   }

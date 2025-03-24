@@ -159,7 +159,7 @@ PR)
 CB(
 proc ::constcl::MkEnv {args} {
   if {[llength $args] == 1} {
-    set parms #NIL
+    set parms ${::#NIL}
     set vals {}
     lassign $args env
   } elseif {[llength $args] == 3} {

@@ -20,15 +20,15 @@ proc ::constcl::resolve-local-defines {expr} {
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
   if {[T $error]} {
-    return #NIL
+    return ${::#NIL}
   }
   set rest [lassign [
     extract-from-defines $exps VARS] v error]
   if {[T $error]} {
-    return #NIL
+    return ${::#NIL}
   }
-  if {$rest eq "#NIL"} {
-    set rest [cons #UNS #NIL]
+  if {$rest eq ${::#NIL}} {
+    set rest [cons #UNS ${::#NIL}]
   }
   return [make-lambdas $v $a $rest]
 }
@@ -48,8 +48,8 @@ PR)
 
 CB(
 proc ::constcl::extract-from-defines {exps part} {
-  set a #NIL
-  while {$exps ne "#NIL"} {
+  set a ${::#NIL}
+  while {$exps ne ${::#NIL}} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
         ![T [eq? [caar $exps] [S define]]]} {
@@ -62,13 +62,13 @@ proc ::constcl::extract-from-defines {exps part} {
         ![T [argument-list? [cadr $n]]] ||
         ([T [symbol? [cadr $n]]] &&
         [$k numval] > 3)} {
-        return [::list #NIL "#t" #NIL]
+        return [::list ${::#NIL} [MkBoolean "#t"] ${::#NIL}]
       }
       if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
           set a [cons [caadr $n] $a]
         } else {
-          set a [cons #NIL $a]
+          set a [cons ${::#NIL} $a]
           set new [cons [cdadr $n] [cddr $n]]
           set new [cons [S lambda] $new]
           set-car! $a $new
@@ -82,7 +82,7 @@ proc ::constcl::extract-from-defines {exps part} {
       }
       set exps [cdr $exps]
     }
-    return [::list $a #f $exps]
+    return [::list $a [MkBoolean "#f"] $exps]
 }
 CB)
 
@@ -96,23 +96,23 @@ PR)
 
 CB(
 proc ::constcl::argument-list? {val} {
-  if {$val eq "#NIL"} {
-    return #t
+  if {$val eq ${::#NIL}} {
+    return [MkBoolean "#t"]
   } elseif {[T [symbol? $val]]} {
-    return #t
+    return [MkBoolean "#t"]
   } elseif {[T [atom? $val]]} {
-    return #f
+    return [MkBoolean "#f"]
   }
   while {[T [pair? $val]]} {
-    if {[symbol? [car $val]] eq "#f"} {
-      return #f
+    if {[symbol? [car $val]] eq [MkBoolean "#f"]} {
+      return [MkBoolean "#f"]
     }
     set val [cdr $val]
   }
-  if {$val eq "#NIL"} {
-    return #t
+  if {$val eq ${::#NIL}} {
+    return [MkBoolean "#t"]
   } elseif {[T [symbol? $val]]} {
-    return #t
+    return [MkBoolean "#t"]
   }
 }
 CB)
@@ -130,11 +130,11 @@ proc ::constcl::make-lambdas {vars args body} {
   set tmps [make-temporaries $vars]
   set body [append-b [
     make-assignments $vars $tmps] $body]
-  set body [cons $body #NIL]
+  set body [cons $body ${::#NIL}]
   set n [cons $tmps $body]
   set n [cons [S lambda] $n]
   set n [cons $n $args]
-  set n [cons $n #NIL]
+  set n [cons $n ${::#NIL}]
   set n [cons $vars $n]
   set n [cons [S lambda] $n]
   set n [cons $n [make-undefineds $vars]]
@@ -153,8 +153,8 @@ PR)
 
 CB(
 proc ::constcl::make-temporaries {vals} {
-  set res #NIL
-  while {$vals ne "#NIL"} {
+  set res ${::#NIL}
+  while {$vals ne ${::#NIL}} {
     set res [cons [gensym "g"] $res]
     set vals [cdr $vals]
   }
@@ -193,11 +193,11 @@ PR)
 
 CB(
 proc ::constcl::append-b {a b} {
-  if {$a eq "#NIL"} {
+  if {$a eq ${::#NIL}} {
     return $b
   }
   set p $a
-  while {$p ne "#NIL"} {
+  while {$p ne ${::#NIL}} {
     if {[T [atom? $p]]} {
       ::error "append: improper list"
     }
@@ -220,9 +220,9 @@ PR)
 
 CB(
 proc ::constcl::make-assignments {vars tmps} {
-  set res #NIL
-  while {$vars ne "#NIL"} {
-    set asg [cons [car $tmps] #NIL]
+  set res ${::#NIL}
+  while {$vars ne ${::#NIL}} {
+    set asg [cons [car $tmps] ${::#NIL}]
     set asg [cons [car $vars] $asg]
     set asg [cons [S set!] $asg]
     set res [cons $asg $res]
@@ -243,9 +243,9 @@ PR)
 
 CB(
 proc ::constcl::make-undefineds {vals} {
-  set res #NIL
-  while {$vals ne "#NIL"} {
-    set res [cons [list [S quote] #UND] $res]
+  set res ${::#NIL}
+  while {$vals ne ${::#NIL}} {
+    set res [cons [list [S quote] ${::#UND}] $res]
     set vals [cdr $vals]
   }
   return $res

@@ -77,12 +77,12 @@ CB(
 reg procedure?
 
 proc ::constcl::procedure? {val} {
-  if {[typeof? $val Procedure] eq "#t"} {
-    return #t
+  if {[typeof? $val Procedure] eq [MkBoolean "#t"]} {
+    return [MkBoolean "#t"]
   } elseif {[::string match "::constcl::*" $val]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -246,7 +246,7 @@ proc ::constcl::for-each {proc args} {
     }
     invoke $proc [list {*}$arguments]
   }
-  return #NIL
+  return ${::#NIL}
 }
 CB)
 

@@ -29,19 +29,39 @@ oo::class create ::constcl::Number {
     }
   }
   method zero? {} {
-    if {$value == 0} {return #t} {return #f}
+    if {$value == 0} {
+      return [::constcl::MkBoolean "#t"]
+    } else {
+      return [::constcl::MkBoolean "#f"]
+    }
   }
   method positive? {} {
-    if {$value > 0} {return #t} {return #f}
+    if {$value > 0} {
+      return [::constcl::MkBoolean "#t"]
+    } else {
+      return [::constcl::MkBoolean "#f"]
+    }
   }
   method negative? {} {
-    if {$value < 0} {return #t} {return #f}
+    if {$value < 0} {
+      return [::constcl::MkBoolean "#t"]
+    } else {
+      return [::constcl::MkBoolean "#f"]
+    }
   }
   method even? {} {
-    if {$value % 2 == 0} {return #t} {return #f}
+    if {$value % 2 == 0} {
+      return [::constcl::MkBoolean "#t"]
+    } else {
+      return [::constcl::MkBoolean "#f"]
+    }
   }
   method odd? {} {
-    if {$value % 2 == 1} {return #t} {return #f}
+    if {$value % 2 == 1} {
+      return [::constcl::MkBoolean "#t"]
+    } else {
+      return [::constcl::MkBoolean "#f"]
+    }
   }
   method value {} {
     set value
@@ -138,9 +158,9 @@ proc ::constcl::= {args} {
       [lindex $args 0] show] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -168,9 +188,9 @@ proc ::constcl::< {args} {
     ::error "NUMBER expected\n(< num ...)"
   }
   if {[::tcl::mathop::< {*}$nums]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -194,9 +214,9 @@ proc ::constcl::> {args} {
     ::error "NUMBER expected\n(> num ...)"
   }
   if {[::tcl::mathop::> {*}$nums]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -220,9 +240,9 @@ proc ::constcl::<= {args} {
     ::error "NUMBER expected\n(<= num ...)"
   }
   if {[::tcl::mathop::<= {*}$nums]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -246,9 +266,9 @@ proc ::constcl::>= {args} {
     ::error "NUMBER expected\n(>= num ...)"
   }
   if {[::tcl::mathop::>= {*}$nums]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -640,7 +660,7 @@ proc ::constcl::quotient {num1 num2} {
   } elseif {$q < 0} {
     return [N [::tcl::mathfunc::ceil $q]]
   } else {
-    return #0
+    return [N 0]
   }
 }
 CB)

@@ -24,7 +24,7 @@ oo::class create ::constcl::Port {
     if {[llength $args]} {
       lassign $args handle
     } else {
-      set handle #NIL
+      set handle ${::#NIL}
     }
   }
   method handle {} {
@@ -32,7 +32,7 @@ oo::class create ::constcl::Port {
   }
   method close {} {
     close $handle
-    set handle #NIL
+    set handle ${::#NIL}
     return
   }
   method write {p} {
@@ -61,7 +61,7 @@ oo::class create ::constcl::InputPort {
     try {
       set handle [open [$name value] "r"]
     } on error {} {
-      set handle #NIL
+      set handle ${::#NIL}
       return -1
     }
     return $handle
@@ -179,7 +179,7 @@ oo::class create ::constcl::OutputPort {
     try {
       set handle [open [$name value] "w"]
     } on error {} {
-      set handle #NIL
+      set handle ${::#NIL}
       return -1
     }
     return $handle
@@ -392,11 +392,11 @@ reg input-port?
 
 proc ::constcl::input-port? {val} {
   if {[T typeof? $val InputPort]} {
-    return #t
+    return [MkBoolean "#t"]
   } elseif {[T typeof? $val StringInputPort]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -414,11 +414,11 @@ reg output-port?
 
 proc ::constcl::output-port? {val} {
   if {[T typeof? $val OutputPort]} {
-    return #t
+    return [MkBoolean "#t"]
   } elseif {[T typeof? $val StringOutputPort]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -469,7 +469,7 @@ reg with-input-from-file
 
 proc ::constcl::with-input-from-file {filename thunk} {
   set newport [open-input-file $filename]
-  if {[$newport handle] ne "#NIL"} {
+  if {[$newport handle] ne ${::#NIL}} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
     $thunk call
@@ -504,7 +504,7 @@ reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
   set newport [open-output-file $filename]
-  if {[$newport handle] ne "#NIL"} {
+  if {[$newport handle] ne ${::#NIL}} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
     $thunk call
@@ -543,7 +543,7 @@ proc fae {} {return "file already exists"}
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
-  if {[$p handle] eq "#NIL"} {
+  if {[$p handle] eq ${::#NIL}} {
     set fn [$filename value]
     error "open-input-file: [cnof] $fn"
   }
@@ -569,7 +569,7 @@ proc ::constcl::open-output-file {filename} {
   }
   set p [MkOutputPort]
   $p open $filename
-  if {[$p handle] eq "#NIL"} {
+  if {[$p handle] eq ${::#NIL}} {
     error "open-output-file: [cnof] $filename"
   }
   return $p
@@ -661,8 +661,13 @@ CB(
 reg load
 
 proc ::constcl::load {filename} {
-  set port [open-input-file $filename]
-  if {[$port handle] ne "#NIL"} {
+  try {
+    open-input-file $filename
+  } on ok port {
+  } on error {} {
+    return
+  }
+  if {[$port handle] ne ${::#NIL}} {
     set expr [read $port]
     while {$expr ne "#EOF"} {
       eval $expr

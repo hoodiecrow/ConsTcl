@@ -246,9 +246,9 @@ PR)
 CB(
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -269,9 +269,9 @@ PR)
 CB(
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -300,9 +300,9 @@ CB(
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -363,7 +363,9 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ? "#t" : "#f"}
+  expr {($c eq $char) ?
+    [MkBoolean "#t"] :
+    [MkBoolean "#f"]}
 }
 CB)
 
@@ -388,15 +390,15 @@ proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
   if {[T [interspace? $c]]} {
-    return #t
+    return [MkBoolean "#t"]
   } elseif {[T [delimiter? $c]]} {
     set unget $c
-    return #t
+    return [MkBoolean "#t"]
   } elseif {$c eq "#EOF"} {
     return #EOF
   } else {
     set unget $c
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -790,7 +792,7 @@ H4 read-pair-expr procedure
 The K{read-pair-expr} procedure reads everything between two matching
 parentheses, or, as the case might be, brackets. It produces either an empty
 list, or a possibly recursive structure of R{Pair objects}{pairs-and-lists},
-either a proper list (one that ends in K{#NIL}), or an improper one (one that
+either a proper list (one that ends in K{NIL}), or an improper one (one that
 has an atom as its last member). Note that K{read-pair-expr} can't read a cyclic
 improper list.
 Shares the variables K{c} and K{unget} with its caller.
@@ -826,7 +828,7 @@ CB)
 B{read-pair} procedure
 
 K{read-pair} is a helper procedure that does the heavy lifting in reading a pair
-structure. First it checks if the list is empty, returning K{#NIL} in that case.
+structure. First it checks if the list is empty, returning K{NIL} in that case.
 Otherwise it reads the first element in the list and then repeatedly the rest of
 them. If it reads a Dot object, the following element to be read is the tail
 end of an improper list. When K{read-pair} has reached the ending parenthesis or
@@ -845,12 +847,12 @@ proc ::constcl::read-pair {char} {
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
-    return #NIL
+    return ${::#NIL}
   }
   set a [read-expr $c]
   set res $a
   skip-ws
-  set prev #NIL
+  set prev ${::#NIL}
   while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
@@ -1014,8 +1016,10 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set expr [read-vector-expr] }
-    t    { if {[T [read-end?]]} {set expr #t} }
-    f    { if {[T [read-end?]]} {set expr #f} }
+    t    { if {[T [read-end?]]} \
+           {set expr [MkBoolean "#t"]} }
+    f    { if {[T [read-end?]]} \
+           {set expr [MkBoolean "#f"]} }
     "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
@@ -1271,7 +1275,7 @@ proc ::constcl::read-vector-expr {} {
   while {$c ne "#EOF" && $c ne ")"} {
     set e [read-expr $c]
     read-eof $e
-    set elem [cons $e #NIL]
+    set elem [cons $e ${::#NIL}]
     if {$res eq {}} {
       set res $elem
       set last $elem

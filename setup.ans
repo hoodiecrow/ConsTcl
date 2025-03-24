@@ -7,7 +7,7 @@ h5 Vector space
 Initialize the memory space for vector contents.
 
 CB(
-set ::constcl::vectorSpace [lrepeat 1024 #NIL]
+set ::constcl::vectorSpace [lrepeat 1024 [N 0]]
 
 set ::constcl::vectorAssign 0
 
@@ -46,28 +46,29 @@ Pre-make a set of constants (e.g. K{#NIL}, K{#t}, and K{#f})
 and give them aliases for use in source text.
 
 CB(
-interp alias {} #NIL {} [::constcl::NIL new]
+set #NIL [::constcl::NIL new]
 
-interp alias {} #t {} [::constcl::MkBoolean "#t"]
+set #t [::constcl::MkBoolean "#t"]
 
-interp alias {} #f {} [::constcl::MkBoolean "#f"]
+set #f [::constcl::MkBoolean "#f"]
 
-interp alias {} #-1 {} [N -1]
+set #UNS [::constcl::Unspecified new]
 
-interp alias {} #0 {} [N 0]
+set #UND [::constcl::Undefined new]
 
-interp alias {} #1 {} [N 1]
-
-interp alias {} #+ {} [::constcl::MkSymbol "+"]
-
-interp alias {} #- {} [::constcl::MkSymbol "-"]
-
-interp alias {} #UNS {} [::constcl::Unspecified new]
-
-interp alias {} #UND {} [::constcl::Undefined new]
-
-interp alias {} #EOF {} [::constcl::EndOfFile new]
+set #EOF [::constcl::EndOfFile new]
 CB)
+
+TT(
+::tcltest::test setup-1.0 {equivalence of instance and alias} -body {
+        expr {[pe "'()"] == ${#NIL}}
+} -result 1
+
+::tcltest::test setup-1.1 {equivalence of instance and alias} -body {
+        expr {[::constcl::NIL new] == ${#NIL}}
+} -result 1
+
+TT)
 
 h5 Pi and nil
 
@@ -83,7 +84,7 @@ In this interpreter, K{nil} does refer to the empty list.
 
 IX nil constant
 CB(
-regvar nil #NIL
+regvar nil ${::#NIL}
 CB)
 
 h5 Environment startup
@@ -98,7 +99,7 @@ symbols end up.
 IX null\_env environment
 CB(
 ::constcl::Environment create \
-  ::constcl::null_env #NIL {}
+  ::constcl::null_env ${::#NIL} {}
 
 oo::objdefine ::constcl::null_env {
   method find {sym} {
@@ -119,7 +120,7 @@ definitions register, K{defreg}. This is where top level evaluation happens.
 IX global\_env environment
 CB(
 namespace eval ::constcl {
-  Environment create global_env #NIL {} \
+  Environment create global_env ${::#NIL} {} \
     ::constcl::null_env
   foreach v [dict values $defreg] {
     lassign $v key val

@@ -102,9 +102,9 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] || 
     [T [char? $val]] || 
     [T [boolean? $val]]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -297,10 +297,10 @@ proc ::constcl::do-case {keyexpr clauses env} {
     set keyl [list [S memv] $keyexpr \
         [list [S quote] $keyl]]
     # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
+    if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl #t
+        set keyl [MkBoolean "#t"]
       }
     }
     set env [MkEnv $env]
@@ -424,10 +424,10 @@ proc ::constcl::do-cond {tail env} {
       }
     }
     # if this is the last clause...
-    if {[T [eq? [length $clauses] #1]]} {
+    if {[T [eq? [length $clauses] [N 1]]]} {
       # ...allow 'else' in the predicate
       if {[T [eq? $pred [S else]]]} {
-        set pred #t
+        set pred [MkBoolean "#t"]
       }
     }
     if {[T [null? $body]]} {
@@ -825,7 +825,7 @@ proc ::constcl::special-lambda {expr env} {
   } elseif {[[length $body] numval] == 1} {
     set body [car $body]
   } else {
-    set body #NIL
+    set body ${::#NIL}
   }
   return [MkProcedure $formals $body $env]
 }
@@ -879,7 +879,7 @@ TT(
 } -output "100\n"
 
 ::tcltest::test eval-12.1 {try triggering a check} -body {
-    ::constcl::invoke #NIL [list #NIL #NIL]
+    ::constcl::invoke ${::#NIL} [list ${::#NIL} ${::#NIL}]
 } -returnCodes error -result "PROCEDURE expected\n(() val ...)"
 TT)
 
@@ -943,7 +943,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set variable [car $tail]
   set bindings [cadr $tail]
   set body [cddr $tail]
-  set vars [dict create $variable #f]
+  set vars [dict create $variable [MkBoolean "#f"]]
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
@@ -1112,7 +1112,7 @@ proc ::constcl::rewrite-letrec {expr env} {
   set vars [dict create]
   parse-bindings vars $bindings
   foreach {key val} $vars {
-    dict set outer $key [list [S quote] #UND]
+    dict set outer $key [list [S quote] ${::#UND}]
     dict set inner [set g [gensym "g"]] $val
     dict set assigns $key $g
   }
@@ -1204,7 +1204,7 @@ IX rewrite-let* procedure
 CB(
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
-  if {$bindings eq "#NIL"} {
+  if {$bindings eq ${::#NIL}} {
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -1375,7 +1375,7 @@ PR)
 CB(
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
-  # parentless envs have #NIL
+  # parentless envs have ${::#NIL}
   if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
   } else {
@@ -1400,7 +1400,7 @@ proc ::constcl::eval-list {exps env} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } else {
-    return #NIL
+    return ${::#NIL}
   }
 }
 CB)

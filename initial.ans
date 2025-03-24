@@ -165,11 +165,11 @@ reg atom?
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
-    if {[$type? $val] eq "#t"} {
-      return #t
+    if {[$type? $val] eq ${::#t}} {
+      return [MkBoolean "#t"]
     }
   }
-  return #f
+  return [MkBoolean "#f"]
 }
 CB)
 
@@ -193,10 +193,11 @@ PR)
 
 CB(
 proc ::T {val} {
-  if {$val eq "#f"} {
+  if {$val eq [::constcl::MkBoolean "#f"]} {
     return 0
-  } elseif {[::constcl::boolean? $val] eq "#t" &&
-    [$val boolval] eq "#f"} {
+  } elseif {[::constcl::boolean? $val] eq
+    [::constcl::MkBoolean "#t"] &&
+    [$val boolval] eq [::constcl::MkBoolean "#f"]} {
     return 0
   } else {
     return 1
@@ -256,11 +257,11 @@ proc ::constcl::usage {usage expr} {
   set e $expr
   if {[[length $usage] numval] !=
       [[length $expr] numval]} {
-    while {$u ne "#NIL" && $e ne "#NIL"} {
+    while {$u ne ${::#NIL} && $e ne ${::#NIL}} {
       set u [cdr $u]
       set e [cdr $e]
     }
-    if {$e eq "#NIL" && $u ne "#NIL" &&
+    if {$e eq ${::#NIL} && $u ne ${::#NIL} &&
       [regexp {\?.*\?} [[car $u] name]]} {
       return
     }
@@ -315,10 +316,7 @@ CB)
 H4 typeof? procedure
 
 K{typeof?} looks at a value's type and reports if it is the same as the given
-type. To be certain, it looks at the value in two ways: once assuming that the value
-is a ConsTcl object, and once assuming that the value is an interpreterF{the Tcl
-interpreter, not ConsTcl} alias for a ConsTcl object. If one of those affirms
-the type, the procedure returns K{#t}.
+type.
 
 
 PR(
@@ -328,12 +326,9 @@ PR)
 CB(
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
-    return #t
-  } elseif {[info object isa typeof \
-      [interp alias {} $val] $type]} {
-    return #t
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)
@@ -441,7 +436,7 @@ it fails.
 
 CB(
 proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq "#f"} {
+  if {[uplevel $cond] eq [MkBoolean "#f"]} {
     ::error [
       uplevel [
         ::list subst [
@@ -729,9 +724,9 @@ PR)
 CB(
 proc eof? {val} {
   if {$val eq "#EOF"} {
-    return #t
+    return [::constcl::MkBoolean "#t"]
   } else {
-    return #f
+    return [::constcl::MkBoolean "#f"]
   }
 }
 CB)
@@ -746,7 +741,7 @@ catch { ::constcl::NIL destroy }
 
 oo::singleton create ::constcl::NIL {
   method boolval {} {
-    return #t
+    return [::constcl::MkBoolean "#t"]
   }
   method car {} {
     ::error "PAIR expected"
@@ -788,10 +783,10 @@ CB(
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq "#NIL"} {
-    return #t
+  if {$val eq [NIL new]} {
+    return [MkBoolean "#t"]
   } else {
-    return #f
+    return [MkBoolean "#f"]
   }
 }
 CB)

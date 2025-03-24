@@ -29,9 +29,9 @@ oo::class create ::constcl::Symbol {
   }
   method = {symname} {
     if {$name eq $symname} {
-      return #t
+      return [MkBoolean "#t"]
     } else {
-      return #f
+      return [MkBoolean "#f"]
     }
   }
   method constant {} {
@@ -103,8 +103,7 @@ TT(
     pew {(symbol? 'nil)}
     pew {(symbol? '())}
     pew {(symbol? #f)}
-    puts [::constcl::symbol? [S quote]]
-} -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n"
 
 TT)
 

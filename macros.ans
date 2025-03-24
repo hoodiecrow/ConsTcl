@@ -24,11 +24,11 @@ reg macro and
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
-    list [S begin] #t
+    list [S begin] [MkBoolean "#t"]
   } elseif {[[length $tail] numval] == 1} {
     cons [S begin] $tail
   } else {
-    do-and $tail #t $env
+    do-and $tail [MkBoolean "#t"] $env
   }
 }
 CB)
@@ -403,9 +403,9 @@ reg macro or
 
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
-  if {[T [eq? [length $tail] #0]]} {
-    return [list [S begin] #f]
-  } elseif {[T [eq? [length $tail] #1]]} {
+  if {[[length $tail] numval] == 0} {
+    return [list [S begin] [MkBoolean "#f"]]
+  } elseif {[[length $tail] numval] == 1} {
     return [cons [S begin] $tail]
   } else {
     return [do-or $tail $env]
@@ -436,7 +436,7 @@ IX do-or procedure
 CB(
 proc ::constcl::do-or {tail env} {
   if {[T [null? $tail]]} {
-    return #f
+    return [MkBoolean "#f"]
   } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
@@ -466,7 +466,7 @@ proc ::constcl::expand-pop! {expr env} {
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
-  if {[symbol? [car $tail]] eq "#f"} {
+  if {[symbol? [car $tail]] eq [MkBoolean "#f"]} {
       ::error "SYMBOL expected:\n(pop! listname)"
   }
   /define [S listname] [car $tail] $env
@@ -516,7 +516,7 @@ proc ::constcl::expand-push! {expr env} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
-  if {[symbol? [cadr $tail]] eq "#f"} {
+  if {[symbol? [cadr $tail]] eq [MkBoolean "#f"]} {
     ::error \
       "SYMBOL expected:\n(push! obj listname)"
   }
