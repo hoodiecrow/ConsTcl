@@ -43,14 +43,8 @@ oo::class create ::constcl::Symbol {
   method case-constant {} {
     set caseconstant
   }
-  method write {port} {
-    $port put [my name]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    my name
+  method tstr {} {
+    return $name
   }
 }
 CB)
@@ -128,7 +122,7 @@ reg symbol->string
 
 proc ::constcl::symbol->string {sym} {
   check {symbol? $sym} {
-    SYMBOL expected\n([pn] [$sym show])
+    SYMBOL expected\n([pn] [$sym tstr])
   }
   if {![$sym case-constant]} {
     set str [MkString [
@@ -181,7 +175,7 @@ reg string->symbol
 
 proc ::constcl::string->symbol {str} {
   check {string? $str} {
-    STRING expected\n([pn] [$obj show])
+    STRING expected\n([pn] [$obj tstr])
   }
   set sym [MkSymbol [$str value]]
   $sym make-case-constant

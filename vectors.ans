@@ -105,15 +105,9 @@ oo::class create ::constcl::Vector {
   method constant {} {
     set constant
   }
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    format "#(%s)" [
-      join [lmap val [my value] {$val show}]]
+  method tstr {} {
+    return [format "#(%s)" [
+      join [lmap val [my value] {$val tstr}]]]
   }
 }
 CB)
@@ -239,7 +233,7 @@ reg vector-length
 
 proc ::constcl::vector-length {vec} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show])
+    VECTOR expected\n([pn] [$vec tstr])
   }
   return [$vec length]
 }
@@ -273,10 +267,10 @@ reg vector-ref
 
 proc ::constcl::vector-ref {vec k} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$k show])
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
   }
   check {number? $k} {
-    NUMBER expected\n([pn] [$vec show] [$k show])
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
   }
   return [$vec ref $k]
 }
@@ -321,10 +315,10 @@ reg vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$k show])
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
   }
   check {number? $k} {
-    NUMBER expected\n([pn] [$vec show] [$k show])
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
   }
   return [$vec set! $k $val]
 }
@@ -421,8 +415,8 @@ reg vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] \
-      [$fill show])
+    VECTOR expected\n([pn] [$vec tstr] \
+      [$fill tstr])
   }
   $vec fill! $fill
 }

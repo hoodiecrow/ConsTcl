@@ -1,7 +1,7 @@
 
 H3 Characters
 
-Characters are any Unicode printing character, and also space and newline space
+Characters are any Unicode graphic character, and also space and newline space
 characters. External representation is K{#\A} (A stands for any character) or
 K{#\space} or K{#\newline}.
 
@@ -16,6 +16,16 @@ CB(
 oo::class create ::constcl::Char {
   superclass ::constcl::Base
   variable value
+CB)
+
+The constructor tests its argument against the three basic forms of external
+representation for characters, and stores the corresponding Tcl character.
+
+PR(
+Char constructor (internal);v echar -> none
+PR)
+
+CB(
   constructor {v} {
     switch -regexp $v {
       {(?i)#\\space} {
@@ -30,50 +40,137 @@ oo::class create ::constcl::Char {
     }
     set value $v
   }
+CB)
+
+The K{char} method yields the stored character value.
+
+PR(
+(Char instance) char (internal);-> tchr
+PR)
+
+CB(
   method char {} {
     set value
   }
+CB)
+
+The K{alphabetic?} method is a predicate which tests if the stored value is an
+alphabetic character.
+
+PR(
+(Char instance) alphabetic? (internal);-> bool
+PR)
+
+CB(
   method alphabetic? {} {
-    if {[::string is alpha -strict [my char]]} {
+    if {[::string is alpha $value]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{numeric?} method is a predicate which tests if the stored value is a
+numeric character.
+
+PR(
+(Char instance) numeric? (internal);-> bool
+PR)
+
+CB(
   method numeric? {} {
-    if {[::string is digit -strict [my char]]} {
+    if {[::string is digit $value]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{whitespace?} method is a predicate which tests if the stored value is a
+whitespace character.
+
+PR(
+(Char instance) whitespace? (internal);-> bool
+PR)
+
+CB(
   method whitespace? {} {
-    if {[::string is space -strict [my char]]} {
+    if {[::string is space $value]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{upper-case?} method is a predicate which tests if the stored value is an
+uppercase character.
+
+PR(
+(Char instance) upper-case? (internal);-> bool
+PR)
+
+CB(
   method upper-case? {} {
-    if {[::string is upper -strict [my char]]} {
+    if {[::string is upper $value]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{lower-case?} method is a predicate which tests if the stored value is an
+lowercase character.
+
+PR(
+(Char instance) lower-case? (internal);-> bool
+PR)
+
+CB(
   method lower-case? {} {
-    if {[::string is lower -strict [my char]]} {
+    if {[::string is lower $value]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{constant} method signals that the character instance isn't mutable.
+
+PR(
+(Char instance) constant (internal);-> tbooltrue
+PR)
+
+CB(
   method constant {} {
     return 1
   }
+CB)
+
+The K{value} method is another way to yield the stored value
+
+PR(
+(Char instance) value (internal);-> tchr
+PR)
+
+CB(
   method value {} {
     return $value
   }
+CB)
+
+The K{external} method translates the stored value back to external
+representation.
+
+PR(
+(Char instance) external (internal);-> echar
+PR)
+
+CB(
   method external {} {
     switch $value {
       " " {
@@ -87,14 +184,31 @@ oo::class create ::constcl::Char {
       }
     }
   }
-  method write {port} {
-    $port put [my external]
-  }
+CB)
+
+The K{display} method is used by the K{display} standard procedure to print the
+stored value as a character.
+
+PR(
+(Char instance) display (internal);port oport -> none
+PR)
+
+CB(
   method display {port} {
     $port put [my char]
   }
-  method show {} {
-    my external
+CB)
+
+The K{tstr} method yields the external representation of the stored value as a
+Tcl string. It is used by error messages and the K{write} method.
+
+PR(
+(Char instance) tstr (internal);-> echar
+PR)
+
+CB(
+  method tstr {} {
+    return [my external]
   }
 }
 CB)
@@ -170,10 +284,10 @@ reg char=?
 
 proc ::constcl::char=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] eq [$char2 char]} {
     return ${::#t}
@@ -203,10 +317,10 @@ reg char<?
 
 proc ::constcl::char<? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] < [$char2 char]} {
     return ${::#t}
@@ -232,10 +346,10 @@ reg char>?
 
 proc ::constcl::char>? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] > [$char2 char]} {
     return ${::#t}
@@ -261,10 +375,10 @@ reg char<=?
 
 proc ::constcl::char<=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] <= [$char2 char]} {
     return ${::#t}
@@ -290,10 +404,10 @@ reg char>=?
 
 proc ::constcl::char>=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] >= [$char2 char]} {
     return ${::#t}
@@ -335,10 +449,10 @@ reg char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
@@ -365,10 +479,10 @@ reg char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
@@ -395,10 +509,10 @@ reg char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
@@ -425,10 +539,10 @@ reg char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
@@ -455,10 +569,10 @@ reg char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
@@ -508,7 +622,7 @@ reg char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char alphabetic?]
 }
@@ -533,7 +647,7 @@ reg char-numeric?
 
 proc ::constcl::char-numeric? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char numeric?]
 }
@@ -558,7 +672,7 @@ reg char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char whitespace?]
 }
@@ -583,7 +697,7 @@ reg char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char upper-case?]
 }
@@ -608,7 +722,7 @@ reg char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char lower-case?]
 }
@@ -700,7 +814,7 @@ reg char-upcase
 
 proc ::constcl::char-upcase {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   if {[$char char] in [::list " " "\n"]} {
     return $char
@@ -728,7 +842,7 @@ reg char-downcase
 
 proc ::constcl::char-downcase {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   if {[$char char] in [::list " " "\n"]} {
     return $char

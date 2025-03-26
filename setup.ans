@@ -7,12 +7,15 @@ h5 Vector space
 Initialize the memory space for vector contents.
 
 CB(
-set ::constcl::vectorSpace [lrepeat 1024 [N 0]]
+set ::constcl::vectorSpaceSize [expr {64 * 1024}]
+set ::constcl::vectorSpace [
+  lrepeat $::constcl::vectorSpaceSize [N 0]]
 
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-  if {1024-$::constcl::vectorAssign < $num} {
+  if {$::constcl::vectorSpaceSize -
+    $::constcl::vectorAssign < $num} {
     error "not enough vector space left"
   }
   set va $::constcl::vectorAssign

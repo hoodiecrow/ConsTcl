@@ -121,14 +121,11 @@ oo::class create ::constcl::String {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
-  method write {port} {
-    $port put [my show]
-  }
   method display {port} {
     $port put [my value]
   }
-  method show {} {
-    my external
+  method tstr {} {
+    return [my external]
   }
 }
 CB)
@@ -254,7 +251,7 @@ proc ::constcl::string {args} {
   foreach char $args {
     check {::constcl::char? $char} {
       CHAR expected\n([pn] [lmap c $args \
-        {$c show}])
+        {$c tstr}])
     }
     ::append str [$char char]
   }
@@ -293,7 +290,7 @@ reg string-length
 
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show])
+    STRING expected\n([pn] [$str tstr])
   }
   return [$str length]
 }
@@ -326,12 +323,12 @@ reg string-ref
 
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$k show])
+    STRING expected\n([pn] [$str tstr] \
+      [$k tstr])
   }
   check {::constcl::number? $k} {
-    INTEGER expected\n([pn] [$str show] \
-      [$k show])
+    INTEGER expected\n([pn] [$str tstr] \
+      [$k tstr])
   }
   return [$str ref $k]
 }
@@ -367,16 +364,16 @@ reg string-set!
 
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$k show] \
-      [$char show])
+    STRING expected\n([pn] [$str tstr] [$k tstr] \
+      [$char tstr])
   }
   check {number? $k} {
-    INTEGER expected\n([pn] [$str show] \
-      [$k show] [$char show])
+    INTEGER expected\n([pn] [$str tstr] \
+      [$k tstr] [$char tstr])
   }
   check {char? $char} {
-    CHAR expected\n([pn] [$str show] [$k show] \
-      [$char show])
+    CHAR expected\n([pn] [$str tstr] [$k tstr] \
+      [$char tstr])
   }
   $str set! $k $char
   return $str
@@ -439,12 +436,12 @@ reg string=?
 
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] eq [$str2 value]} {
     return ${::#t}
@@ -470,12 +467,12 @@ reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] eq
       [::string tolower [$str2 value]]} {
@@ -502,12 +499,12 @@ reg string<?
 
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] < [$str2 value]} {
     return ${::#t}
@@ -533,12 +530,12 @@ reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] <
       [::string tolower [$str2 value]]} {
@@ -565,12 +562,12 @@ reg string>?
 
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] > [$str2 value]} {
     return ${::#t}
@@ -596,12 +593,12 @@ reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] >
       [::string tolower [$str2 value]]} {
@@ -628,12 +625,12 @@ reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] <= [$str2 value]} {
     return ${::#t}
@@ -659,12 +656,12 @@ reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] <=
       [::string tolower [$str2 value]]} {
@@ -691,12 +688,12 @@ reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] >= [$str2 value]} {
     return ${::#t}
@@ -722,12 +719,12 @@ reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] >=
       [::string tolower [$str2 value]]} {
@@ -767,16 +764,16 @@ reg substring
 
 proc ::constcl::substring {str start end} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    STRING expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   check {number? $start} {
-    NUMBER expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    NUMBER expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   check {number? $end} {
-    NUMBER expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    NUMBER expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   return [MkString [$str substring $start $end]]
 }
@@ -905,7 +902,7 @@ reg string-copy
 
 proc ::constcl::string-copy {str} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show])
+    STRING expected\n([pn] [$str tstr])
   }
   return [MkString [$str value]]
 }
@@ -948,8 +945,8 @@ reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$char show])
+    STRING expected\n([pn] [$str tstr] \
+      [$char tstr])
   }
   $str fill! $char
   return $str

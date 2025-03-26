@@ -45,7 +45,7 @@ oo::class create ::constcl::Pair {
   }
   method name {} {}
   method value {} {
-    my show
+    my tstr
   }
   method car {} {
     set car
@@ -83,10 +83,7 @@ oo::class create ::constcl::Pair {
     ::constcl::write-pair $port [self]
     $port put ")"
   }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
@@ -172,7 +169,7 @@ proc ::constcl::show-pair {pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  ::append str [$a show]
+  ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
@@ -183,7 +180,7 @@ proc ::constcl::show-pair {pair} {
   } else {
     # it is an atom
     ::append str " . "
-    ::append str [$d show]
+    ::append str [$d tstr]
   }
   return $str
 }
@@ -625,7 +622,7 @@ proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
     check {list? $r} {
-      LIST expected\n([pn] [$r show])
+      LIST expected\n([pn] [$r tstr])
     }
     set prev [copy-list $r $prev]
   }
@@ -859,7 +856,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     equal? { set name "member" }
   }
   check {list? $val2} {
-    LIST expected\n($name [$val1 show] [$val2 show])
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
     return ${::#f}
@@ -950,7 +947,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     equal? { set name "assoc" }
   }
   check {list? $val2} {
-    LIST expected\n($name [$val1 show] [$val2 show])
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
     return ${::#f}

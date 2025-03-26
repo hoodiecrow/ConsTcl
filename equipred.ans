@@ -140,7 +140,7 @@ CB(
 reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
-  if {[$expr1 show] eq [$expr2 show]} {
+  if {[$expr1 tstr] eq [$expr2 tstr]} {
     return ${::#t}
   } else {
     return ${::#f}

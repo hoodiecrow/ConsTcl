@@ -114,13 +114,13 @@ proc ::constcl::parse {inp} {
     if {[T [typeof? $inp StringInputPort]]} {
       set port $inp
     } elseif {[T [typeof? $inp String]]} {
-      set port [StringInputPort new [$inp value]]
+      set port [MkStringInputPort [$inp value]]
     } else {
-      ::error "Unknown object [$inp show]"
+      ::error "Unknown object [$inp tstr]"
     }
   } else {
     # It's a Tcl string, we hope
-    set port [StringInputPort new $inp]
+    set port [MkStringInputPort $inp]
   }
   set oldport $::constcl::Input_port
   set ::constcl::Input_port $port
@@ -131,7 +131,7 @@ proc ::constcl::parse {inp} {
 CB)
 
 TT(
-::tcltest::test read-1.0 {try parse in ConsTcl} -body {
+::tcltest::test read-1.0 {try parse with String} -body {
   pew {(parse "42")}
 } -output "42\n"
 
@@ -139,7 +139,7 @@ TT(
   pw [::constcl::StringInputPort new "42"]
 } -output "42\n"
 
-::tcltest::test read-1.2 {try parse with string} -body {
+::tcltest::test read-1.2 {try parse with Tcl string} -body {
   pw "42"
 } -output "42\n"
 TT)

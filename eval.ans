@@ -863,7 +863,7 @@ PR)
 CB(
 proc ::constcl::invoke {pr vals} {
   check {procedure? $pr} {
-    PROCEDURE expected\n([$pr show] val ...)
+    PROCEDURE expected\n([$pr tstr] val ...)
   }
   if {[info object isa object $pr]} {
     $pr call {*}[splitlist $vals]
@@ -1308,7 +1308,7 @@ proc ::constcl::eval \
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
-    error "unknown expression type [$expr show]"
+    error "unknown expression type [$expr tstr]"
   }
 }
 CB)

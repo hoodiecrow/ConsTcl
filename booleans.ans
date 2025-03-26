@@ -19,14 +19,36 @@ The Boolean classes are singleton classes with R{one value
 CB(
 oo::singleton create ::constcl::True {
   superclass ::constcl::Base
-  method show {} {
+CB)
+
+The K{tstr} method yields the value K{#t} as a Tcl string. It is used for error
+messages.
+
+PR(
+(True instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     return "#t"
   }
 }
+CB)
 
+CB(
 oo::singleton create ::constcl::False {
   superclass ::constcl::Base
-  method show {} {
+CB)
+
+The K{tstr} method yields the value K{#f} as a Tcl string. It is used for error
+messages.
+
+PR(
+(False instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     return "#f"
   }
 }
@@ -45,6 +67,7 @@ proc ::constcl::MkBoolean {bool} {
   switch $bool {
     "#t" { return ${::#t} }
     "#f" { return ${::#f} }
+    default { ::error "invalid boolean ($bool)" }
   }
 }
 CB)

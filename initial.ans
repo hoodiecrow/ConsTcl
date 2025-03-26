@@ -262,7 +262,7 @@ proc ::constcl::usage {usage expr} {
       return
     }
     ::error "usage error\n[
-      $usage show] not [$expr show]"
+      $usage tstr] not [$expr tstr]"
   }
 }
 CB)
@@ -417,7 +417,7 @@ reg error
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
     set res [lmap arg $args {
-      $arg show
+      $arg tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -653,22 +653,110 @@ CB)
 
 h3 Some small classes
 
+H4 Base class
+
+The K{Base} class is base class for most of the type classes.
+
+CB(
+catch { ::constcl::Base destroy }
+
+oo::abstract create ::constcl::Base {
+CB)
+
+The K{mkconstant} method is a dummy method that can be called when the instance
+is part of an immutable structure.
+
+PR(
+(concrete instance) mkconstant (internal);-> none
+PR)
+
+CB(
+  method mkconstant {} {}
+CB)
+
+The K{write} method is used by the K{write} standard procedure to print the
+external representation of an instance.
+
+PR(
+(concrete instance) write (internal);port oport -> none
+PR)
+
+CB(
+  method write {port} {
+    $port put [my tstr]
+  }
+CB)
+
+The K{display} method is used by the K{display} standard procedure to print the
+external representation or a human-readable version of an instance.
+
+PR(
+(concrete instance) display (internal);port oport -> none
+PR)
+
+CB(
+  method display {port} {
+    my write $port
+  }
+CB)
+
+The K{show} method yields the external representation of the instance as a string.
+
+PR(
+(concrete instance) show (internal);-> str
+PR)
+
+CB(
+  method show {} {
+    ::constcl::MkString [my tstr]
+  }
+CB)
+
+The K{tstr} method yields the external representation of the instance as a Tcl
+string. It is used by error messages and the K{write} method. Should be
+overridden by a concrete class.
+
+PR(
+(concrete instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
+    return "#<base>"
+  }
+CB)
+
+The K{unknown} method responds to calls to undefined methods. It produces a
+suitable error message.
+
+PR(
+(concrete instance) unknown (internal);method_name tstr args args -> none
+PR)
+
+CB(
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+CB)
+
 H4 Dot class
 
 The K{Dot} class is a helper class for the parser.
 
 CB(
-catch { ::constcl::Dot destroy }
-
 oo::class create ::constcl::Dot {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "."
   }
 }
@@ -693,17 +781,10 @@ H4 EndOfFile class
 The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
 
 CB(
-catch { ::constcl::EndOfFile destroy }
-
 oo::singleton create ::constcl::EndOfFile {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<end-of-file>"
   }
 }
@@ -727,35 +808,6 @@ proc eof? {val} {
 }
 CB)
 
-H4 Base class
-
-The K{Base} class is base class for most of the type classes.
-
-CB(
-catch { ::constcl::Base destroy }
-
-oo::class create ::constcl::Base {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method unknown {method_name args} {
-    switch $method_name {
-      car - cdr - set-car! -
-      set-cdr {
-        ::error "PAIR expected"
-      }
-      numval {
-        ::error "NUMBER expected"
-      }
-    }
-  }
-}
-CB)
-
 H4 NIL class
 
 The K{NIL} class has one object: the empty list called K{#NIL}.
@@ -763,8 +815,8 @@ The K{NIL} class has one object: the empty list called K{#NIL}.
 CB(
 oo::singleton create ::constcl::NIL {
   superclass ::constcl::Base
-  method show {} {
-    format "()"
+  method tstr {} {
+    return "()"
   }
 }
 CB)
@@ -795,17 +847,10 @@ The K{Undefined} class is for undefined things. It was created to facilitate
 porting of code from `Scheme 9 from Empty Space'I{S9fES}.
 
 CB(
-catch { ::constcl::Undefined destroy }
-
 oo::singleton create ::constcl::Undefined {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<undefined>"
   }
 }
@@ -816,17 +861,10 @@ H4 Unspecified class
 The K{Unspecified} class is for unspecified things. Also a S9fES support class.
 
 CB(
-catch { ::constcl::Unspecified destroy }
-
 oo::singleton create ::constcl::Unspecified {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<unspecified>"
   }
 }

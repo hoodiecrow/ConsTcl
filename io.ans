@@ -15,11 +15,20 @@ and there is also the K{Port} kind, which isn't used other than as a base class.
 H4 Port class
 
 CB(
-catch { ::constcl::Port destroy }
-
 oo::class create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
+CB)
+
+The K{Port} constructor uses a fake argument to store a value in the instance
+variable K{handle}. If the value isn't provided, K{handle} gets the value of the
+empty list.
+
+PR(
+Port constructor (internal);?h? handle -> none
+PR)
+
+CB(
   constructor {args} {
     if {[llength $args]} {
       lassign $args handle
@@ -27,21 +36,44 @@ oo::class create ::constcl::Port {
       set handle ${::#NIL}
     }
   }
+CB)
+
+The K{handle} method yields the stored handle value.
+
+PR(
+(Port instance) handle (internal);-> handlenil
+PR)
+
+CB(
   method handle {} {
     set handle
   }
+CB)
+
+The K{close} method acts to close the stored handle's channel, and sets the
+stored handle to the empty list.
+
+PR(
+(Port instance) close (internal);-> none
+PR)
+
+CB(
   method close {} {
     close $handle
     set handle ${::#NIL}
     return
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+CB)
+
+The K{tstr} method yields the external representation of the port as a Tcl
+string. It is used by error messages.
+
+PR(
+(Port instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<port-$num>"
   }
@@ -57,31 +89,74 @@ CB(
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
+CB)
+
+The InputPort K{open} method takes a file name and attempts to open it for
+reading. If it succeeds, it sets the stored handle to the opened channel. If it
+fails, it sets the stored handle to the empty list.
+
+PR(
+(InputPort instance) open (internal);name filename -> handlenil
+PR)
+
+CB(
   method open {name} {
     try {
       set handle [open [$name value] "r"]
     } on error {} {
       set handle ${::#NIL}
-      return -1
     }
     return $handle
   }
+CB)
+
+The K{get} method reads one character from the channel of the stored handle.
+
+PR(
+(InputPort instance) get (internal);-> tchr
+PR)
+
+CB(
   method get {} {
     chan read $handle 1
   }
+CB)
+
+The K{eof} method reports end-of-file status on the channel of the stored
+handle.
+
+PR(
+(InputPort instance) eof (internal);-> tbool
+PR)
+
+CB(
   method eof {} {
     chan eof $handle
   }
+CB)
+
+The K{copy} method returns a new instance of InputPort which is a copy of this
+instance, sharing the stored handle.
+
+PR(
+(InputPort instance) copy (internal);-> iport
+PR)
+
+CB(
   method copy {} {
     ::constcl::InputPort new $handle
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+CB)
+
+The K{tstr} method yields the external representation of the port as a Tcl
+string. It is used by error messages.
+
+PR(
+(InputPort instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<input-port-$num>"
   }
@@ -104,19 +179,53 @@ CB)
 H4 StringInputPort class
 
 The StringInputPort class extends Port with the ability to get a character from
-the buffer and detect end-of-file. It turns K{open} and K{close} to no-op
+the buffer and detect end-of-file. It turns K{open} and K{close} into no-op
 methods.
 
 CB(
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
   variable buffer read_eof
+CB)
+
+The StringInputPort constructor simply copies a given string into the stored
+buffer and sets the K{read_eof} state variable to 0.
+
+PR(
+StringInputPort constructor (internal);str tstr -> none
+PR)
+
+CB(
   constructor {str} {
     set buffer $str
     set read_eof 0
   }
+CB)
+
+The K{open} and K{close} methods are present but don't do anything.
+
+PR(
+(StringInputPort instance) open (internal);name filename -> none
+PR)
+
+PR(
+(StringInputPort instance) close (internal);-> none
+PR)
+
+CB(
   method open {name} {}
   method close {} {}
+CB)
+
+The StringInputPort K{get} method reads one character from the buffer. If the
+buffer is empty, K{#EOF} is returned and K{read_eof} is set to 1. The buffer is
+reduced by one character.
+
+PR(
+(StringInputPort instance) get (internal);-> tchreof
+PR)
+
+CB(
   method get {} {
     if {[::string length $buffer] == 0} {
       set read_eof 1
@@ -126,6 +235,15 @@ oo::class create ::constcl::StringInputPort {
     set buffer [::string range $buffer 1 end]
     return $c
   }
+CB)
+
+The K{eof} method reports end-of-file status on the buffer.
+
+PR(
+(StringInputPort instance) eof (internal);-> tbool
+PR)
+
+CB(
   method eof {} {
     if {$read_eof} {
       return 1
@@ -133,16 +251,30 @@ oo::class create ::constcl::StringInputPort {
       return 0
     }
   }
+CB)
+
+The K{copy} method creates a new instance with a (non-shared) copy of the buffer
+such as it is at this point in time.
+
+PR(
+(StringInputPort instance) copy (internal);-> siport
+PR)
+
+CB(
   method copy {} {
     ::constcl::StringInputPort new $buffer
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+CB)
+
+The K{tstr} method yields the external representation of the string input port
+as a Tcl string. It is used by error messages.
+
+PR(
+(StringInputPort instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<string-input-port-$num>"
   }
@@ -151,10 +283,10 @@ CB)
 
 H4 MkStringInputPort generator
 
-K{MkStringInputPort} generates an InputPort object.
+K{MkStringInputPort} generates a StringInputPort object.
 
 PR(
-MkStringInputPort (internal);str tstr -> siport
+MkStringInputPort (internal);str str -> siport
 PR)
 
 CB(
@@ -165,44 +297,96 @@ CB)
 H4 OutputPort class
 
 OutputPort extends Port with the ability to open a channel for writing, and to
-put a string through the channel, print a newline, and flush the channel. The
-K{open} method is locked with an error command for safety: only remove this line
-if you really know what you're doing: once it is unlocked, the K{open} method
-can potentially overwrite existing files.
+put a string through the channel, print a newline, and flush the channel.
 
 CB(
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
+CB)
+
+The OutputPort K{open} method attempts to open a channel for writing on a given
+file name, setting the stored handle to the channel if it succeeds and to the
+empty list if it fails.
+
+The K{open} method is locked with an error command for safety: only remove this
+line if you really know what you're doing: once it is unlocked, the K{open}
+method can potentially overwrite existing files.
+
+PR(
+(OutputPort instance) open (internal);name filename -> handlenil
+PR)
+
+CB(
   method open {name} {
     ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
       set handle ${::#NIL}
-      return -1
     }
     return $handle
   }
-  method put {c} {
-    puts -nonewline $handle $c
+CB)
+
+The OutputPort K{put} method outputs a string on the channel in the stored
+handle.
+
+PR(
+(OutputPort instance) put (internal);str tstr -> none
+PR)
+
+CB(
+  method put {str} {
+    puts -nonewline $handle $str
   }
+CB)
+
+The K{newline} method prints a newline on the channel in the stored handle.
+
+PR(
+(OutputPort instance) newline (internal);-> none
+PR)
+
+CB(
   method newline {} {
     puts $handle {}
   }
+CB)
+
+The K{flush} method flushes the output channel in the stored handle.
+
+PR(
+(OutputPort instance) flush (internal);-> none
+PR)
+
+CB(
   method flush {} {
     flush $handle
   }
+CB)
+
+The K{copy} method returns a new instance of OutputPort which is a copy of this
+instance, sharing the stored handle.
+
+PR(
+PR)
+
+CB(
   method copy {} {
     ::constcl::OutputPort new $handle
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+CB)
+
+The K{tstr} method yields the external representation of the port as a Tcl
+string. It is used by error messages.
+
+PR(
+(OutputPort instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<output-port-$num>"
   }
@@ -214,7 +398,7 @@ H4 MkOutputPort generator
 K{MkOutputPort} generates an OutputPort object.
 
 PR(
-MkOutputPort (internal)?handle? handle ;-> oport
+MkOutputPort (internal);?handle? handle -> oport
 PR)
 
 CB(
@@ -231,35 +415,111 @@ CB(
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
+CB)
+
+The StringOutputPort constructor uses a fake argument to optionally initialize
+the internal buffer, which otherwise is empty.
+
+PR(
+StringOutputPort constructor (internal);?str? tstr -> none
+PR)
+
+CB(
   constructor {args} {
     if {[llength $args]} {
-      lassign $args buffer
+      lassign $args str
+      set buffer $str
     } else {
       set buffer {}
     }
   }
+CB)
+
+The K{open} and K{close} methods are present but don't do anything.
+
+PR(
+(StringOutputPort instance) open (internal);name filename -> none
+PR)
+
+PR(
+(StringOutputPort instance) close (internal);-> none
+PR)
+
+CB(
   method open {name} {}
   method close {} {}
-  method put {s} {
-    append buffer $s
+CB)
+
+The StringOutputPort K{put} method appends a string to the internal buffer.
+
+PR(
+(StringOutputPort instance) put (internal);str tstr -> none
+PR)
+
+CB(
+  method put {str} {
+    append buffer $str
+    return
   }
+CB)
+
+The K{newline} method appends a newline character to the internal buffer.
+
+PR(
+(StringOutputPort instance) newline (internal);-> none
+PR)
+
+CB(
   method newline {} {
     append buffer \n
   }
+CB)
+
+The K{flush} method is present but does nothing.
+
+PR(
+(StringOutputPort instance) flush (internal);-> none
+PR)
+
+CB(
   method flush {} {}
+CB)
+
+The K{tostring} method dumps the internal buffer as a string.
+
+PR(
+(StringOutputPort instance) tostring (internal);-> str
+PR)
+
+CB(
   method tostring {} {
-    set buffer
+    MkString $buffer
   }
+CB)
+
+The K{copy} method returns a new instance of StringOutputPort which is a copy of this
+instance, with a (non-shared) copy of the internal buffer such as it is at this
+point in time.
+
+PR(
+(StringOutputPort instance) copy (internal);-> soport
+PR)
+
+CB(
   method copy {} {
     ::constcl::StringOutputPort new $buffer
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+CB)
+
+The K{tstr} method yields the external representation of the string output port
+as a Tcl string. It is used by error messages.
+
+PR(
+(StringOutputPort instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<string-output-port-$num>"
   }
@@ -283,8 +543,8 @@ B{Input_Port} variable
 
 B{Output_port} variable
 
-These two variables store globally the current configuration of the shared
-input and output ports. They are initially set to standard input and output
+These two variables store the current configuration of the shared input and
+output ports globally. They are initially set to standard input and output
 respectively.
 
 CB(
@@ -636,7 +896,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline '$port)"
+  $port newline
 }
 CB)
 

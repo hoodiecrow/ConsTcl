@@ -22,7 +22,7 @@ source constcl.tcl
   set ::constcl::defreg $dr
 } -output "198 {foo {VARIABLE bar}}\n"
 
-::tcltest::test read-1.0 {try parse in ConsTcl} -body {
+::tcltest::test read-1.0 {try parse with String} -body {
   pew {(parse "42")}
 } -output "42\n"
 
@@ -30,7 +30,7 @@ source constcl.tcl
   pw [::constcl::StringInputPort new "42"]
 } -output "42\n"
 
-::tcltest::test read-1.2 {try parse with string} -body {
+::tcltest::test read-1.2 {try parse with Tcl string} -body {
   pw "42"
 } -output "42\n"
 
@@ -1408,6 +1408,14 @@ if no {
 ::tcltest::test control-4.0 {try for-each)} -body {
     pew {(for-each display '(1 2 3))}
 } -output "123()\n"
+
+::tcltest::test control-4.1 {try for-each)} -body {
+    pew {(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)}
+} -output "#(0 1 4 9 16)\n"
 
 
 ::tcltest::test io-1.0 {try call-with-input-file} -setup {

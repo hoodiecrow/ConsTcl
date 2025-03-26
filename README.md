@@ -245,7 +245,7 @@ proc ::constcl::usage {usage expr} {
       return
     }
     ::error "usage error\n[
-      $usage show] not [$expr show]"
+      $usage tstr] not [$expr tstr]"
   }
 }
 ```
@@ -373,7 +373,7 @@ reg error
 proc ::constcl::error {msg args} {
   if {[llength $args]} {
     set res [lmap arg $args {
-      $arg show
+      $arg tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -565,22 +565,92 @@ proc ::pxw {str {env ::constcl::global_env}} {
 
 ### Some small classes
 
+#### Base class
+
+The `` Base `` class is base class for most of the type classes.
+
+```
+catch { ::constcl::Base destroy }
+
+oo::abstract create ::constcl::Base {
+```
+
+The `` mkconstant `` method is a dummy method that can be called when the instance is part of an immutable structure.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) mkconstant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method mkconstant {} {}
+```
+
+The `` write `` method is used by the `` write `` standard procedure to print the external representation of an instance.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) write (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method write {port} {
+    $port put [my tstr]
+  }
+```
+
+The `` display `` method is used by the `` display `` standard procedure to print the external representation or a human-readable version of an instance.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) display (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method display {port} {
+    my write $port
+  }
+```
+
+The `` show `` method yields the external representation of the instance as a string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) show (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
+  method show {} {
+    ::constcl::MkString [my tstr]
+  }
+```
+
+The `` tstr `` method yields the external representation of the instance as a Tcl string. It is used by error messages and the `` write `` method. Should be overridden by a concrete class.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
+    return "#<base>"
+  }
+```
+
+The `` unknown `` method responds to calls to undefined methods. It produces a suitable error message.
+
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) unknown (internal)</th></tr></thead><tr><td>method_name</td><td>a Tcl string</td></tr><tr><td>args</td><td>some arguments</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method unknown {method_name args} {
+    switch $method_name {
+      car - cdr - set-car! -
+      set-cdr {
+        ::error "PAIR expected"
+      }
+      numval {
+        ::error "NUMBER expected"
+      }
+    }
+  }
+}
+```
+
 #### Dot class
 
 The `` Dot `` class is a helper class for the parser.
 
 ```
-catch { ::constcl::Dot destroy }
-
 oo::class create ::constcl::Dot {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "."
   }
 }
@@ -603,17 +673,10 @@ proc ::constcl::dot? {val} {
 The `` EndOfFile `` class is for end-of-file conditions.
 
 ```
-catch { ::constcl::EndOfFile destroy }
-
 oo::singleton create ::constcl::EndOfFile {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<end-of-file>"
   }
 }
@@ -635,35 +698,6 @@ proc eof? {val} {
 }
 ```
 
-#### Base class
-
-The `` Base `` class is base class for most of the type classes.
-
-```
-catch { ::constcl::Base destroy }
-
-oo::class create ::constcl::Base {
-  method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method unknown {method_name args} {
-    switch $method_name {
-      car - cdr - set-car! -
-      set-cdr {
-        ::error "PAIR expected"
-      }
-      numval {
-        ::error "NUMBER expected"
-      }
-    }
-  }
-}
-```
-
 #### NIL class
 
 The `` NIL `` class has one object: the empty list called `` #NIL ``.
@@ -671,8 +705,8 @@ The `` NIL `` class has one object: the empty list called `` #NIL ``.
 ```
 oo::singleton create ::constcl::NIL {
   superclass ::constcl::Base
-  method show {} {
-    format "()"
+  method tstr {} {
+    return "()"
   }
 }
 ```
@@ -700,17 +734,10 @@ proc ::constcl::null? {val} {
 The `` Undefined `` class is for undefined things. It was created to facilitate porting of code from `Scheme 9 from Empty Space'.
 
 ```
-catch { ::constcl::Undefined destroy }
-
 oo::singleton create ::constcl::Undefined {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<undefined>"
   }
 }
@@ -721,17 +748,10 @@ oo::singleton create ::constcl::Undefined {
 The `` Unspecified `` class is for unspecified things. Also a S9fES support class.
 
 ```
-catch { ::constcl::Unspecified destroy }
-
 oo::singleton create ::constcl::Unspecified {
+  superclass ::constcl::Base
   method mkconstant {} {}
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "#<unspecified>"
   }
 }
@@ -820,13 +840,13 @@ proc ::constcl::parse {inp} {
     if {[T [typeof? $inp StringInputPort]]} {
       set port $inp
     } elseif {[T [typeof? $inp String]]} {
-      set port [StringInputPort new [$inp value]]
+      set port [MkStringInputPort [$inp value]]
     } else {
-      ::error "Unknown object [$inp show]"
+      ::error "Unknown object [$inp tstr]"
     }
   } else {
     # It's a Tcl string, we hope
-    set port [StringInputPort new $inp]
+    set port [MkStringInputPort $inp]
   }
   set oldport $::constcl::Input_port
   set ::constcl::Input_port $port
@@ -2037,7 +2057,7 @@ Once we have procedures, we can _call_ them to have their calculations performed
 ```
 proc ::constcl::invoke {pr vals} {
   check {procedure? $pr} {
-    PROCEDURE expected\n([$pr show] val ...)
+    PROCEDURE expected\n([$pr tstr] val ...)
   }
   if {[info object isa object $pr]} {
     $pr call {*}[splitlist $vals]
@@ -2308,7 +2328,7 @@ proc ::constcl::eval \
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
-    error "unknown expression type [$expr show]"
+    error "unknown expression type [$expr tstr]"
   }
 }
 ```
@@ -2509,7 +2529,7 @@ proc ::constcl::for-seq {seq env} {
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
   } else {
-    ::error "unknown sequence type [$seq show]"
+    ::error "unknown sequence type [$seq tstr]"
   }
 }
 ```
@@ -3617,7 +3637,7 @@ proc ::constcl::eqv? {expr1 expr2} {
 reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
-  if {[$expr1 show] eq [$expr2 show]} {
+  if {[$expr1 tstr] eq [$expr2 tstr]} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -3648,37 +3668,37 @@ oo::class create ::constcl::Number {
   }
   method zero? {} {
     if {$value == 0} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method positive? {} {
     if {$value > 0} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method negative? {} {
     if {$value < 0} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method even? {} {
     if {$value % 2 == 0} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method odd? {} {
     if {$value % 2 == 1} {
-      return [::constcl::MkBoolean "#t"]
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
   method value {} {
@@ -3690,14 +3710,8 @@ oo::class create ::constcl::Number {
   method constant {} {
     return 1
   }
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    set value
+  method tstr {} {
+    return $value
   }
 }
 ```
@@ -3750,7 +3764,7 @@ proc ::constcl::= {args} {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
     ::error "NUMBER expected\n(= [
-      [lindex $args 0] show] ...)"
+      [lindex $args 0] tstr] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
     return ${::#t}
@@ -3839,7 +3853,7 @@ reg zero?
 
 proc ::constcl::zero? {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   return [$num zero?]
 }
@@ -3862,7 +3876,7 @@ reg positive?
 
 proc ::constcl::positive? {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   return [$num positive?]
 }
@@ -3873,7 +3887,7 @@ reg negative?
 
 proc ::constcl::negative? {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   return [$num negative?]
 }
@@ -3884,7 +3898,7 @@ reg even?
 
 proc ::constcl::even? {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   return [$num even?]
 }
@@ -3895,7 +3909,7 @@ reg odd?
 
 proc ::constcl::odd? {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   return [$num odd?]
 }
@@ -4033,7 +4047,7 @@ reg abs
 
 proc ::constcl::abs {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
@@ -4141,7 +4155,7 @@ reg floor
 
 proc ::constcl::floor {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::floor [$num numval]]
 }
@@ -4152,7 +4166,7 @@ reg ceiling
 
 proc ::constcl::ceiling {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::ceil [$num numval]]
 }
@@ -4163,7 +4177,7 @@ reg truncate
 
 proc ::constcl::truncate {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   if {[T [$num negative?]]} {
     N [::tcl::mathfunc::ceil [$num numval]]
@@ -4178,7 +4192,7 @@ reg round
 
 proc ::constcl::round {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::round [$num numval]]
 }
@@ -4219,7 +4233,7 @@ reg exp
 
 proc ::constcl::exp {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::exp [$num numval]]
 }
@@ -4230,7 +4244,7 @@ reg log
 
 proc ::constcl::log {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::log [$num numval]]
 }
@@ -4241,7 +4255,7 @@ reg sin
 
 proc ::constcl::sin {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::sin [$num numval]]
 }
@@ -4252,7 +4266,7 @@ reg cos
 
 proc ::constcl::cos {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::cos [$num numval]]
 }
@@ -4263,7 +4277,7 @@ reg tan
 
 proc ::constcl::tan {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::tan [$num numval]]
 }
@@ -4274,7 +4288,7 @@ reg asin
 
 proc ::constcl::asin {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::asin [$num numval]]
 }
@@ -4285,7 +4299,7 @@ reg acos
 
 proc ::constcl::acos {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::acos [$num numval]]
 }
@@ -4298,16 +4312,16 @@ proc ::constcl::atan {args} {
   if {[llength $args] == 1} {
     set num [lindex $args 0]
     check {number? $num} {
-        NUMBER expected\n([pn] [$num show])
+        NUMBER expected\n([pn] [$num tstr])
     }
     N [::tcl::mathfunc::atan [$num numval]]
   } else {
     lassign $args num1 num2
     check {number? $num1} {
-        NUMBER expected\n([pn] [$num1 show])
+        NUMBER expected\n([pn] [$num1 tstr])
     }
     check {number? $num2} {
-        NUMBER expected\n([pn] [$num2 show])
+        NUMBER expected\n([pn] [$num2 tstr])
     }
     N [::tcl::mathfunc::atan2 \
       [$num1 numval] [$num2 numval]]
@@ -4326,7 +4340,7 @@ reg sqrt
 
 proc ::constcl::sqrt {num} {
   check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
   }
   N [::tcl::mathfunc::sqrt [$num numval]]
 }
@@ -4343,12 +4357,12 @@ reg expt
 
 proc ::constcl::expt {num1 num2} {
   check {number? $num1} {
-      NUMBER expected\n([pn] [$num1 show] \
-        [$num2 show])
+      NUMBER expected\n([pn] [$num1 tstr] \
+        [$num2 tstr])
   }
   check {number? $num2} {
-      NUMBER expected\n([pn] [$num1 show] \
-        [$num2 show])
+      NUMBER expected\n([pn] [$num1 tstr] \
+        [$num2 tstr])
   }
   N [::tcl::mathfunc::pow [$num1 numval] \
     [$num2 numval]]
@@ -4376,22 +4390,22 @@ reg number->string
 proc ::constcl::number->string {num args} {
   if {[llength $args] == 0} {
     check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
     }
     return [MkString [$num numval]]
   } else {
     lassign $args radix
     check {number? $num} {
-      NUMBER expected\n([pn] [$num show])
+      NUMBER expected\n([pn] [$num tstr])
     }
     check {number? $radix} {
-      NUMBER expected\n([pn] [$num show] \
-        [$radix show])
+      NUMBER expected\n([pn] [$num tstr] \
+        [$radix tstr])
     }
     set radices [list [N 2] [N 8] [N 10] [N 16]]
     check {memv $radix $radices} {
       Radix not in 2, 8, 10, 16\n([pn] \
-        [$num show] [$radix show])
+        [$num tstr] [$radix tstr])
     }
     if {[$radix numval] == 10} {
       return [MkString [$num numval]]
@@ -4441,18 +4455,18 @@ reg string->number
 proc ::constcl::string->number {str args} {
   if {[llength $args] == 0} {
     check {string? $str} {
-      STRING expected\n([pn] [$str show])
+      STRING expected\n([pn] [$str tstr])
     }
     return [N [$str value]]
   } else {
     lassign $args radix
     check {string? $str} {
-      STRING expected\n([pn] [$str show])
+      STRING expected\n([pn] [$str tstr])
     }
     set radices [list [N 2] [N 8] [N 10] [N 16]]
     check {memv $radix $radices} {
-      Radix not in 2, 8, 10, 16\n([pn] [$str show] \
-        [$radix show])
+      Radix not in 2, 8, 10, 16\n([pn] [$str tstr] \
+        [$radix tstr])
     }
     if {[$radix numval] == 10} {
       return [N [$str value]]
@@ -4499,14 +4513,30 @@ The Boolean classes are singleton classes with [one value each](https://github.c
 ```
 oo::singleton create ::constcl::True {
   superclass ::constcl::Base
-  method show {} {
+```
+
+The `` tstr `` method yields the value `` #t `` as a Tcl string. It is used for error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(True instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     return "#t"
   }
 }
+```
 
+```
 oo::singleton create ::constcl::False {
   superclass ::constcl::Base
-  method show {} {
+```
+
+The `` tstr `` method yields the value `` #f `` as a Tcl string. It is used for error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(False instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     return "#f"
   }
 }
@@ -4523,13 +4553,14 @@ proc ::constcl::MkBoolean {bool} {
   switch $bool {
     "#t" { return ${::#t} }
     "#f" { return ${::#f} }
+    default { ::error "invalid boolean ($bool)" }
   }
 }
 ```
 
 #### boolean? procedure
 
-The `` boolean? `` predicate recognizes a Boolean by type.
+The `` boolean? `` predicate recognizes a boolean by object identity (i.e. is it the true or false constant? If yes, then it is a boolean).
 
 <table border=1><thead><tr><th colspan=2 align="left">boolean? (public)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -4572,7 +4603,7 @@ proc ::constcl::not {val} {
 
 ### Characters
 
-Characters are any Unicode printing character, and also space and newline space characters. External representation is `` #\A `` (A stands for any character) or `` #\space `` or `` #\newline ``.
+Characters are any Unicode graphic character, and also space and newline space characters. External representation is `` #\A `` (A stands for any character) or `` #\space `` or `` #\newline ``.
 
 #### Char class
 
@@ -4582,6 +4613,13 @@ The Char class defines what capabilities a character has (in addition to those f
 oo::class create ::constcl::Char {
   superclass ::constcl::Base
   variable value
+```
+
+The constructor tests its argument against the three basic forms of external representation for characters, and stores the corresponding Tcl character.
+
+<table border=1><thead><tr><th colspan=2 align="left">Char constructor (internal)</th></tr></thead><tr><td>v</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {v} {
     switch -regexp $v {
       {(?i)#\\space} {
@@ -4596,50 +4634,113 @@ oo::class create ::constcl::Char {
     }
     set value $v
   }
+```
+
+The `` char `` method yields the stored character value.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) char (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character</td></tr></table>
+
+```
   method char {} {
     set value
   }
+```
+
+The `` alphabetic? `` method is a predicate which tests if the stored value is an alphabetic character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) alphabetic? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method alphabetic? {} {
-    if {[::string is alpha -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+    if {[::string is alpha $value]} {
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
+```
+
+The `` numeric? `` method is a predicate which tests if the stored value is a numeric character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) numeric? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method numeric? {} {
-    if {[::string is digit -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+    if {[::string is digit $value]} {
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
+```
+
+The `` whitespace? `` method is a predicate which tests if the stored value is a whitespace character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) whitespace? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method whitespace? {} {
-    if {[::string is space -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+    if {[::string is space $value]} {
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
+```
+
+The `` upper-case? `` method is a predicate which tests if the stored value is an uppercase character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) upper-case? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method upper-case? {} {
-    if {[::string is upper -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+    if {[::string is upper $value]} {
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
+```
+
+The `` lower-case? `` method is a predicate which tests if the stored value is an lowercase character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) lower-case? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method lower-case? {} {
-    if {[::string is lower -strict [my char]]} {
-      return [::constcl::MkBoolean "#t"]
+    if {[::string is lower $value]} {
+      return ${::#t}
     } else {
-      return [::constcl::MkBoolean "#f"]
+      return ${::#f}
     }
   }
+```
+
+The `` constant `` method signals that the character instance isn't mutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
+
+```
   method constant {} {
     return 1
   }
+```
+
+The `` value `` method is another way to yield the stored value
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character</td></tr></table>
+
+```
   method value {} {
     return $value
   }
+```
+
+The `` external `` method translates the stored value back to external representation.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a char</td></tr></table>
+
+```
   method external {} {
     switch $value {
       " " {
@@ -4653,14 +4754,25 @@ oo::class create ::constcl::Char {
       }
     }
   }
-  method write {port} {
-    $port put [my external]
-  }
+```
+
+The `` display `` method is used by the `` display `` standard procedure to print the stored value as a character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) display (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method display {port} {
     $port put [my char]
   }
-  method show {} {
-    my external
+```
+
+The `` tstr `` method yields the external representation of the stored value as a Tcl string. It is used by error messages and the `` write `` method.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a char</td></tr></table>
+
+```
+  method tstr {} {
+    return [my external]
   }
 }
 ```
@@ -4719,10 +4831,10 @@ reg char=?
 
 proc ::constcl::char=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] eq [$char2 char]} {
     return ${::#t}
@@ -4737,10 +4849,10 @@ reg char<?
 
 proc ::constcl::char<? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] < [$char2 char]} {
     return ${::#t}
@@ -4755,10 +4867,10 @@ reg char>?
 
 proc ::constcl::char>? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] > [$char2 char]} {
     return ${::#t}
@@ -4773,10 +4885,10 @@ reg char<=?
 
 proc ::constcl::char<=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] <= [$char2 char]} {
     return ${::#t}
@@ -4791,10 +4903,10 @@ reg char>=?
 
 proc ::constcl::char>=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] >= [$char2 char]} {
     return ${::#t}
@@ -4823,10 +4935,10 @@ reg char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
@@ -4842,10 +4954,10 @@ reg char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
@@ -4861,10 +4973,10 @@ reg char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
@@ -4880,10 +4992,10 @@ reg char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
@@ -4899,10 +5011,10 @@ reg char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
   check {char? $char1} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   check {char? $char2} {
-    CHAR expected\n([pn] [$char1 show] [$char2 show])
+    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
@@ -4934,7 +5046,7 @@ reg char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char alphabetic?]
 }
@@ -4945,7 +5057,7 @@ reg char-numeric?
 
 proc ::constcl::char-numeric? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char numeric?]
 }
@@ -4956,7 +5068,7 @@ reg char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char whitespace?]
 }
@@ -4967,7 +5079,7 @@ reg char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char upper-case?]
 }
@@ -4978,7 +5090,7 @@ reg char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   return [$char lower-case?]
 }
@@ -5041,7 +5153,7 @@ reg char-upcase
 
 proc ::constcl::char-upcase {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   if {[$char char] in [::list " " "\n"]} {
     return $char
@@ -5057,7 +5169,7 @@ reg char-downcase
 
 proc ::constcl::char-downcase {char} {
   check {char? $char} {
-    CHAR expected\n([pn] [$char show])
+    CHAR expected\n([pn] [$char tstr])
   }
   if {[$char char] in [::list " " "\n"]} {
     return $char
@@ -5086,25 +5198,57 @@ catch { ::constcl::Procedure destroy }
 oo::class create ::constcl::Procedure {
   superclass ::constcl::Base
   variable parms body env
+```
+
+The `` Procedure `` constructor simply copies its arguments into the instance variables `` parms ``, `` body ``, and `` env ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">Procedure constructor (internal)</th></tr></thead><tr><td>p</td><td>a Scheme formals list</td></tr><tr><td>b</td><td>an expression</td></tr><tr><td>e</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {p b e} {
     set parms $p
     set body $b
     set env $e
   }
 }
+```
+
+The `` call `` method makes each argument a tuple of `` VARIABLE `` and the argument value, storing the argument tuples in the list `` vals ``. Then an environment is created with the stored `` parms ``, `` vals ``, and stored `` env `` as arguments. The stored `` body `` is evaluated in this environment and the result is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) call (internal)</th></tr></thead><tr><td>args</td><td>some values</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
+
+```
 oo::define ::constcl::Procedure method call {args} {
   set vals [lmap a $args {list VARIABLE $a}]
   ::constcl::eval $body [
     ::constcl::MkEnv $parms $vals $env]
 }
+```
+
+The `` value `` method is a dummy.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
 oo::define ::constcl::Procedure method value {} {}
-oo::define ::constcl::Procedure method write {port} {
-  $port put [my show]
-}
-oo::define ::constcl::Procedure method display {port} {
-  my write $port
-}
+```
+
+The `` show `` method yields the external representation of the procedure. It is used by the `` write `` method.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) show (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
 oo::define ::constcl::Procedure method show {} {
+  ::constcl::MkString [my tstr]
+}
+```
+
+The `` tstr `` method yields the external representation of the procedure. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+oo::define ::constcl::Procedure method tstr {} {
   regexp {(\d+)} [self] -> num
   return "#<proc-$num>"
 }
@@ -5158,7 +5302,7 @@ reg apply
 
 proc ::constcl::apply {pr vals} {
   check {procedure? $pr} {
-    PROCEDURE expected\n([pn] [$pr show] ...)
+    PROCEDURE expected\n([pn] [$pr tstr] ...)
   }
   invoke $pr $vals
 }
@@ -5181,8 +5325,13 @@ reg map
 
 proc ::constcl::map {pr args} {
   check {procedure? $pr} {
-    PROCEDURE expected\n([pn] [$pr show] ...)
+    PROCEDURE expected\n([pn] [$pr tstr] ...)
   }
+```
+
+The procedure iterates over the list of argument lists, converting each of them to a Tcl list.
+
+```
   set arglists $args
   for {set i 0} \
     {$i < [llength $arglists]} \
@@ -5190,18 +5339,23 @@ proc ::constcl::map {pr args} {
     lset arglists $i [
       splitlist [lindex $arglists $i]]
   }
+```
+
+The procedure iterates over the items in each argument list (`` item ``) and each argument list (`` arglist ``), building a list of actual parameters (`` actuals ``). Then `` pr `` is invoked on the Lisp list of actuals and the result list-appended to `` res ``. After all the iterations, the Lisp list of items in `` res `` is returned.
+
+```
   set res {}
   for {set item 0} \
     {$item < [llength [lindex $arglists 0]]} \
     {incr item} {
-    set arguments {}
-    for {set arg 0} \
-      {$arg < [llength $arglists]} \
-      {incr arg} {
-      lappend arguments [
-        lindex $arglists $arg $item]
+    set actuals {}
+    for {set arglist 0} \
+      {$arglist < [llength $arglists]} \
+      {incr arglist} {
+      lappend actuals [
+        lindex $arglists $arglist $item]
     }
-    lappend res [invoke $pr [list {*}$arguments]]
+    lappend res [invoke $pr [list {*}$actuals]]
   }
   return [list {*}$res]
 }
@@ -5228,8 +5382,13 @@ reg for-each
 
 proc ::constcl::for-each {proc args} {
   check {procedure? $proc} {
-    PROCEDURE expected\n([pn] [$proc show] ...)
+    PROCEDURE expected\n([pn] [$proc tstr] ...)
   }
+```
+
+The procedure iterates over the list of argument lists, converting each of them to a Tcl list.
+
+```
   set arglists $args
   for {set i 0} \
     {$i < [llength $arglists]} \
@@ -5237,17 +5396,22 @@ proc ::constcl::for-each {proc args} {
     lset arglists $i [
       splitlist [lindex $arglists $i]]
   }
+```
+
+The procedure iterates over the items in each argument list (`` item ``) and each argument list (`` arglist ``), building a list of actual parameters (`` actuals ``). Then `` proc `` is invoked on the Lisp list of actuals. After all the iterations, the empty list is returned.
+
+```
   for {set item 0} \
     {$item < [llength [lindex $arglists 0]]} \
     {incr item} {
-    set arguments {}
-    for {set arg 0} \
-      {$arg < [llength $arglists]} \
-      {incr arg} {
-      lappend arguments [
-        lindex $arglists $arg $item]
+    set actuals {}
+    for {set arglist 0} \
+      {$arglist < [llength $arglists]} \
+      {incr arglist} {
+      lappend actuals [
+        lindex $arglists $arglist $item]
     }
-    invoke $proc [list {*}$arguments]
+    invoke $proc [list {*}$actuals]
   }
   return ${::#NIL}
 }
@@ -5267,11 +5431,16 @@ and there is also the `` Port `` kind, which isn't used other than as a base cla
 #### Port class
 
 ```
-catch { ::constcl::Port destroy }
-
 oo::class create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
+```
+
+The `` Port `` constructor uses a fake argument to store a value in the instance variable `` handle ``. If the value isn't provided, `` handle `` gets the value of the empty list.
+
+<table border=1><thead><tr><th colspan=2 align="left">Port constructor (internal)</th></tr></thead><tr><td>?h?</td><td>a channel handle</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {args} {
     if {[llength $args]} {
       lassign $args handle
@@ -5279,21 +5448,36 @@ oo::class create ::constcl::Port {
       set handle ${::#NIL}
     }
   }
+```
+
+The `` handle `` method yields the stored handle value.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Port instance) handle (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
+
+```
   method handle {} {
     set handle
   }
+```
+
+The `` close `` method acts to close the stored handle's channel, and sets the stored handle to the empty list.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Port instance) close (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method close {} {
     close $handle
     set handle ${::#NIL}
     return
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+```
+
+The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Port instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<port-$num>"
   }
@@ -5308,31 +5492,59 @@ The InputPort class extends Port with the ability to open a channel for reading,
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
+```
+
+The InputPort `` open `` method takes a file name and attempts to open it for reading. If it succeeds, it sets the stored handle to the opened channel. If it fails, it sets the stored handle to the empty list.
+
+<table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) open (internal)</th></tr></thead><tr><td>name</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
+
+```
   method open {name} {
     try {
       set handle [open [$name value] "r"]
     } on error {} {
       set handle ${::#NIL}
-      return -1
     }
     return $handle
   }
+```
+
+The `` get `` method reads one character from the channel of the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) get (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character</td></tr></table>
+
+```
   method get {} {
     chan read $handle 1
   }
+```
+
+The `` eof `` method reports end-of-file status on the channel of the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) eof (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method eof {} {
     chan eof $handle
   }
+```
+
+The `` copy `` method returns a new instance of InputPort which is a copy of this instance, sharing the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) copy (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an input port</td></tr></table>
+
+```
   method copy {} {
     ::constcl::InputPort new $handle
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+```
+
+The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<input-port-$num>"
   }
@@ -5352,18 +5564,41 @@ interp alias {} ::constcl::MkInputPort \
 
 #### StringInputPort class
 
-The StringInputPort class extends Port with the ability to get a character from the buffer and detect end-of-file. It turns `` open `` and `` close `` to no-op methods.
+The StringInputPort class extends Port with the ability to get a character from the buffer and detect end-of-file. It turns `` open `` and `` close `` into no-op methods.
 
 ```
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
   variable buffer read_eof
+```
+
+The StringInputPort constructor simply copies a given string into the stored buffer and sets the `` read_eof `` state variable to 0.
+
+<table border=1><thead><tr><th colspan=2 align="left">StringInputPort constructor (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {str} {
     set buffer $str
     set read_eof 0
   }
+```
+
+The `` open `` and `` close `` methods are present but don't do anything.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) open (internal)</th></tr></thead><tr><td>name</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) close (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method open {name} {}
   method close {} {}
+```
+
+The StringInputPort `` get `` method reads one character from the buffer. If the buffer is empty, `` #EOF `` is returned and `` read_eof `` is set to 1. The buffer is reduced by one character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) get (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+
+```
   method get {} {
     if {[::string length $buffer] == 0} {
       set read_eof 1
@@ -5373,6 +5608,13 @@ oo::class create ::constcl::StringInputPort {
     set buffer [::string range $buffer 1 end]
     return $c
   }
+```
+
+The `` eof `` method reports end-of-file status on the buffer.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) eof (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method eof {} {
     if {$read_eof} {
       return 1
@@ -5380,16 +5622,24 @@ oo::class create ::constcl::StringInputPort {
       return 0
     }
   }
+```
+
+The `` copy `` method creates a new instance with a (non-shared) copy of the buffer such as it is at this point in time.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) copy (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string input port</td></tr></table>
+
+```
   method copy {} {
     ::constcl::StringInputPort new $buffer
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+```
+
+The `` tstr `` method yields the external representation of the string input port as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<string-input-port-$num>"
   }
@@ -5398,9 +5648,9 @@ oo::class create ::constcl::StringInputPort {
 
 #### MkStringInputPort generator
 
-`` MkStringInputPort `` generates an InputPort object.
+`` MkStringInputPort `` generates a StringInputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkStringInputPort (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a string input port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkStringInputPort (internal)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a string input port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkStringInputPort \
@@ -5409,41 +5659,76 @@ interp alias {} ::constcl::MkStringInputPort \
 
 #### OutputPort class
 
-OutputPort extends Port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel. The `` open `` method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
+OutputPort extends Port with the ability to open a channel for writing, and to put a string through the channel, print a newline, and flush the channel.
 
 ```
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
+```
+
+The OutputPort `` open `` method attempts to open a channel for writing on a given file name, setting the stored handle to the channel if it succeeds and to the empty list if it fails.
+
+The `` open `` method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
+
+<table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) open (internal)</th></tr></thead><tr><td>name</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
+
+```
   method open {name} {
     ::error "remove this line to use"
     try {
       set handle [open [$name value] "w"]
     } on error {} {
       set handle ${::#NIL}
-      return -1
     }
     return $handle
   }
-  method put {c} {
-    puts -nonewline $handle $c
+```
+
+The OutputPort `` put `` method outputs a string on the channel in the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) put (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method put {str} {
+    puts -nonewline $handle $str
   }
+```
+
+The `` newline `` method prints a newline on the channel in the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) newline (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method newline {} {
     puts $handle {}
   }
+```
+
+The `` flush `` method flushes the output channel in the stored handle.
+
+<table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) flush (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method flush {} {
     flush $handle
   }
+```
+
+The `` copy `` method returns a new instance of OutputPort which is a copy of this instance, sharing the stored handle.
+
+```
   method copy {} {
     ::constcl::OutputPort new $handle
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+```
+
+The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<output-port-$num>"
   }
@@ -5454,7 +5739,7 @@ oo::class create ::constcl::OutputPort {
 
 `` MkOutputPort `` generates an OutputPort object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)?handle? handle </th></tr></thead><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkOutputPort (internal)</th></tr></thead><tr><td>?handle?</td><td>a channel handle</td></tr><tr><td><i>Returns:</i></td><td>an output port</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkOutputPort \
@@ -5469,35 +5754,89 @@ StringOutputPort extends Port with the ability to put strings into a string buff
 oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
+```
+
+The StringOutputPort constructor uses a fake argument to optionally initialize the internal buffer, which otherwise is empty.
+
+<table border=1><thead><tr><th colspan=2 align="left">StringOutputPort constructor (internal)</th></tr></thead><tr><td>?str?</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {args} {
     if {[llength $args]} {
-      lassign $args buffer
+      lassign $args str
+      set buffer $str
     } else {
       set buffer {}
     }
   }
+```
+
+The `` open `` and `` close `` methods are present but don't do anything.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) open (internal)</th></tr></thead><tr><td>name</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) close (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method open {name} {}
   method close {} {}
-  method put {s} {
-    append buffer $s
+```
+
+The StringOutputPort `` put `` method appends a string to the internal buffer.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) put (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  method put {str} {
+    append buffer $str
+    return
   }
+```
+
+The `` newline `` method appends a newline character to the internal buffer.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) newline (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method newline {} {
     append buffer \n
   }
+```
+
+The `` flush `` method is present but does nothing.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) flush (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method flush {} {}
+```
+
+The `` tostring `` method dumps the internal buffer as a string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) tostring (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
   method tostring {} {
-    set buffer
+    MkString $buffer
   }
+```
+
+The `` copy `` method returns a new instance of StringOutputPort which is a copy of this instance, with a (non-shared) copy of the internal buffer such as it is at this point in time.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) copy (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a string output port</td></tr></table>
+
+```
   method copy {} {
     ::constcl::StringOutputPort new $buffer
   }
-  method write {p} {
-    $p put [my show]
-  }
-  method display {p} {
-    my write $p
-  }
-  method show {} {
+```
+
+The `` tstr `` method yields the external representation of the string output port as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<string-output-port-$num>"
   }
@@ -5519,7 +5858,7 @@ __Input_Port__ variable
 
 __Output_port__ variable
 
-These two variables store globally the current configuration of the shared input and output ports. They are initially set to standard input and output respectively.
+These two variables store the current configuration of the shared input and output ports globally. They are initially set to standard input and output respectively.
 
 ```
 set ::constcl::Input_port [
@@ -5786,7 +6125,7 @@ proc ::constcl::newline {args} {
   } else {
     set port [current-output-port]
   }
-  pe "(display #\\newline '$port)"
+  $port newline
 }
 ```
 
@@ -5853,7 +6192,7 @@ oo::class create ::constcl::Pair {
   }
   method name {} {}
   method value {} {
-    my show
+    my tstr
   }
   method car {} {
     set car
@@ -5891,10 +6230,7 @@ oo::class create ::constcl::Pair {
     ::constcl::write-pair $port [self]
     $port put ")"
   }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
+  method tstr {} {
     format "(%s)" [::constcl::show-pair [self]]
   }
 }
@@ -5937,7 +6273,7 @@ proc ::constcl::show-pair {pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  ::append str [$a show]
+  ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
@@ -5948,7 +6284,7 @@ proc ::constcl::show-pair {pair} {
   } else {
     # it is an atom
     ::append str " . "
-    ::append str [$d show]
+    ::append str [$d tstr]
   }
   return $str
 }
@@ -6242,7 +6578,7 @@ proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
     check {list? $r} {
-      LIST expected\n([pn] [$r show])
+      LIST expected\n([pn] [$r tstr])
     }
     set prev [copy-list $r $prev]
   }
@@ -6393,7 +6729,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     equal? { set name "member" }
   }
   check {list? $val2} {
-    LIST expected\n($name [$val1 show] [$val2 show])
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
     return ${::#f}
@@ -6467,7 +6803,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     equal? { set name "assoc" }
   }
   check {list? $val2} {
-    LIST expected\n($name [$val1 show] [$val2 show])
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
     return ${::#f}
@@ -6593,14 +6929,11 @@ oo::class create ::constcl::String {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
-  method write {port} {
-    $port put [my show]
-  }
   method display {port} {
     $port put [my value]
   }
-  method show {} {
-    my external
+  method tstr {} {
+    return [my external]
   }
 }
 ```
@@ -6680,7 +7013,7 @@ proc ::constcl::string {args} {
   foreach char $args {
     check {::constcl::char? $char} {
       CHAR expected\n([pn] [lmap c $args \
-        {$c show}])
+        {$c tstr}])
     }
     ::append str [$char char]
   }
@@ -6705,7 +7038,7 @@ reg string-length
 
 proc ::constcl::string-length {str} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show])
+    STRING expected\n([pn] [$str tstr])
   }
   return [$str length]
 }
@@ -6728,12 +7061,12 @@ reg string-ref
 
 proc ::constcl::string-ref {str k} {
   check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$k show])
+    STRING expected\n([pn] [$str tstr] \
+      [$k tstr])
   }
   check {::constcl::number? $k} {
-    INTEGER expected\n([pn] [$str show] \
-      [$k show])
+    INTEGER expected\n([pn] [$str tstr] \
+      [$k tstr])
   }
   return [$str ref $k]
 }
@@ -6759,16 +7092,16 @@ reg string-set!
 
 proc ::constcl::string-set! {str k char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] [$k show] \
-      [$char show])
+    STRING expected\n([pn] [$str tstr] [$k tstr] \
+      [$char tstr])
   }
   check {number? $k} {
-    INTEGER expected\n([pn] [$str show] \
-      [$k show] [$char show])
+    INTEGER expected\n([pn] [$str tstr] \
+      [$k tstr] [$char tstr])
   }
   check {char? $char} {
-    CHAR expected\n([pn] [$str show] [$k show] \
-      [$char show])
+    CHAR expected\n([pn] [$str tstr] [$k tstr] \
+      [$char tstr])
   }
   $str set! $k $char
   return $str
@@ -6800,12 +7133,12 @@ reg string=?
 
 proc ::constcl::string=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] eq [$str2 value]} {
     return ${::#t}
@@ -6820,12 +7153,12 @@ reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] eq
       [::string tolower [$str2 value]]} {
@@ -6841,12 +7174,12 @@ reg string<?
 
 proc ::constcl::string<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] < [$str2 value]} {
     return ${::#t}
@@ -6861,12 +7194,12 @@ reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] <
       [::string tolower [$str2 value]]} {
@@ -6882,12 +7215,12 @@ reg string>?
 
 proc ::constcl::string>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] > [$str2 value]} {
     return ${::#t}
@@ -6902,12 +7235,12 @@ reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] >
       [::string tolower [$str2 value]]} {
@@ -6923,12 +7256,12 @@ reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] <= [$str2 value]} {
     return ${::#t}
@@ -6943,12 +7276,12 @@ reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] <=
       [::string tolower [$str2 value]]} {
@@ -6964,12 +7297,12 @@ reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[$str1 value] >= [$str2 value]} {
     return ${::#t}
@@ -6984,12 +7317,12 @@ reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
   check {string? $str1} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   check {string? $str2} {
-    STRING expected\n([pn] [$str1 show] \
-      [$str2 show])
+    STRING expected\n([pn] [$str1 tstr] \
+      [$str2 tstr])
   }
   if {[::string tolower [$str1 value]] >=
       [::string tolower [$str2 value]]} {
@@ -7017,16 +7350,16 @@ reg substring
 
 proc ::constcl::substring {str start end} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    STRING expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   check {number? $start} {
-    NUMBER expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    NUMBER expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   check {number? $end} {
-    NUMBER expected\n([pn] [$str show] \
-      [$start show] [$end show])
+    NUMBER expected\n([pn] [$str tstr] \
+      [$start tstr] [$end tstr])
   }
   return [MkString [$str substring $start $end]]
 }
@@ -7115,7 +7448,7 @@ reg string-copy
 
 proc ::constcl::string-copy {str} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show])
+    STRING expected\n([pn] [$str tstr])
   }
   return [MkString [$str value]]
 }
@@ -7140,8 +7473,8 @@ reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
   check {string? $str} {
-    STRING expected\n([pn] [$str show] \
-      [$char show])
+    STRING expected\n([pn] [$str tstr] \
+      [$char tstr])
   }
   $str fill! $char
   return $str
@@ -7187,14 +7520,8 @@ oo::class create ::constcl::Symbol {
   method case-constant {} {
     set caseconstant
   }
-  method write {port} {
-    $port put [my name]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    my name
+  method tstr {} {
+    return $name
   }
 }
 ```
@@ -7250,7 +7577,7 @@ reg symbol->string
 
 proc ::constcl::symbol->string {sym} {
   check {symbol? $sym} {
-    SYMBOL expected\n([pn] [$sym show])
+    SYMBOL expected\n([pn] [$sym tstr])
   }
   if {![$sym case-constant]} {
     set str [MkString [
@@ -7283,7 +7610,7 @@ reg string->symbol
 
 proc ::constcl::string->symbol {str} {
   check {string? $str} {
-    STRING expected\n([pn] [$obj show])
+    STRING expected\n([pn] [$obj tstr])
   }
   set sym [MkSymbol [$str value]]
   $sym make-case-constant
@@ -7389,15 +7716,9 @@ oo::class create ::constcl::Vector {
   method constant {} {
     set constant
   }
-  method write {port} {
-    $port put [my show]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    format "#(%s)" [
-      join [lmap val [my value] {$val show}]]
+  method tstr {} {
+    return [format "#(%s)" [
+      join [lmap val [my value] {$val tstr}]]]
   }
 }
 ```
@@ -7492,7 +7813,7 @@ reg vector-length
 
 proc ::constcl::vector-length {vec} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show])
+    VECTOR expected\n([pn] [$vec tstr])
   }
   return [$vec length]
 }
@@ -7516,10 +7837,10 @@ reg vector-ref
 
 proc ::constcl::vector-ref {vec k} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$k show])
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
   }
   check {number? $k} {
-    NUMBER expected\n([pn] [$vec show] [$k show])
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
   }
   return [$vec ref $k]
 }
@@ -7549,10 +7870,10 @@ reg vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] [$k show])
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
   }
   check {number? $k} {
-    NUMBER expected\n([pn] [$vec show] [$k show])
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
   }
   return [$vec set! $k $val]
 }
@@ -7617,8 +7938,8 @@ reg vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
   check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec show] \
-      [$fill show])
+    VECTOR expected\n([pn] [$vec tstr] \
+      [$fill tstr])
   }
   $vec fill! $fill
 }
@@ -7633,12 +7954,15 @@ Before the interpreter can run, some elements must be initialized.
 Initialize the memory space for vector contents.
 
 ```
-set ::constcl::vectorSpace [lrepeat 1024 [N 0]]
+set ::constcl::vectorSpaceSize [expr {64 * 1024}]
+set ::constcl::vectorSpace [
+  lrepeat $::constcl::vectorSpaceSize [N 0]]
 
 set ::constcl::vectorAssign 0
 
 proc ::constcl::vsAlloc {num} {
-  if {1024-$::constcl::vectorAssign < $num} {
+  if {$::constcl::vectorSpaceSize -
+    $::constcl::vectorAssign < $num} {
     error "not enough vector space left"
   }
   set va $::constcl::vectorAssign

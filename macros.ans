@@ -196,7 +196,7 @@ proc ::constcl::for-seq {seq env} {
   } elseif {[T [vector? $seq]]} {
     set seq [$seq value]
   } else {
-    ::error "unknown sequence type [$seq show]"
+    ::error "unknown sequence type [$seq tstr]"
   }
 }
 CB)
