@@ -1679,9 +1679,8 @@ proc ::constcl::varcheck {sym} {
   }
   return $sym
 }
-catch { ::constcl::Environment destroy }
-
 oo::class create ::constcl::Environment {
+  superclass ::constcl::Base
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
@@ -1752,6 +1751,7 @@ oo::class create ::constcl::Environment {
       "SYMBOL expected\nEnvironment unbind"
     }
     dict unset bindings $sym
+    return
   }
   method bind {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
@@ -1765,6 +1765,7 @@ oo::class create ::constcl::Environment {
       }
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
   method assign {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
@@ -1779,6 +1780,7 @@ oo::class create ::constcl::Environment {
       error "[$sym name] is not assignable"
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
   method parent {} {
     set outer_env
@@ -1789,12 +1791,9 @@ oo::class create ::constcl::Environment {
   method values {} {
     dict values $bindings
   }
-  method write {port} {
+  method tstr {} {
     regexp {(\d+)} [self] -> num
-    $port put "#<env-$num>"
-  }
-  method display {port} {
-    my write $port
+    return "#<env-$num>"
   }
 }
 proc ::constcl::MkEnv {args} {

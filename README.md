@@ -3286,16 +3286,25 @@ Names are stored as Lisp symbols, while values are stored as they are, as Lisp o
 #### Environment class
 
 ```
-catch { ::constcl::Environment destroy }
-
 oo::class create ::constcl::Environment {
+  superclass ::constcl::Base
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
+```
+
+If the formals list (`` syms ``) is the empty list, then no arguments are accepted.
+
+```
     if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
         error "too many arguments"
       }
+```
+
+If the formals list is a proper list, there should be one argument per list item.
+
+```
     } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
@@ -3308,11 +3317,21 @@ oo::class create ::constcl::Environment {
       foreach sym $syms val $vals {
         my bind $sym [lindex $val 0] [lindex $val 1]
       }
+```
+
+If the formals list is actually a single symbol, it takes all the arguments as a list.
+
+```
     } elseif {[T [::constcl::symbol? $syms]]} {
       my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
+```
+
+Else, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
+
+```
     } else {
       while true {
         if {[llength $vals] < 1} {
@@ -3336,8 +3355,20 @@ oo::class create ::constcl::Environment {
         }
       }
     }
+```
+
+Set the link to the outer environment.
+
+```
     set outer_env $outer
   }
+```
+
+The `` find `` method searches the environment chain for bindings for a given symbol. The search starts with the current environment instance and ends at the innermost occurrence of a binding for _sym_. The environment containing the binding is returned.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) find (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
   method find {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
@@ -3348,18 +3379,40 @@ oo::class create ::constcl::Environment {
       $outer_env find $sym
     }
   }
+```
+
+The `` get `` method returns the binding type and handling info for _sym_ as a tuple.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) get (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>binding info</td></tr></table>
+
+```
   method get {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment get"
     }
     dict get $bindings $sym
   }
+```
+
+The `` unbind `` method unsets a binding in the current environment instance. Fails silently if no such binding exists.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) unbind (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method unbind {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment unbind"
     }
     dict unset bindings $sym
+    return
   }
+```
+
+The `` bind `` method binds a symbol in the current environment instance. It is an error to attempt to bind a symbol that is already bound in the environment.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) bind (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>type</td><td>binding type</td></tr><tr><td>info</td><td>handling info</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method bind {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment bind"
@@ -3372,7 +3425,15 @@ oo::class create ::constcl::Environment {
       }
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+```
+
+The `` assign `` method updates the location that _sym_ is bound to with a new binding type and handling info / value. _Sym_ must be bound, and the old binding type must be VARIABLE.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) assign (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td>type</td><td>binding type</td></tr><tr><td>info</td><td>handling info</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method assign {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment assign"
@@ -3386,22 +3447,48 @@ oo::class create ::constcl::Environment {
       error "[$sym name] is not assignable"
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+```
+
+The `` parent `` method yields the current environment instance's linked outer environment.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) parent (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an environment</td></tr></table>
+
+```
   method parent {} {
     set outer_env
   }
+```
+
+The `` names `` method returns a Tcl list of all the symbols bound in the current environment instance.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) names (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl list of symbols</td></tr></table>
+
+```
   method names {} {
     dict keys $bindings
   }
+```
+
+The `` values `` method returns a Tcl list of all the binding type/handling info tuples in the current environment instance.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) values (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl list of binding info tuples</td></tr></table>
+
+```
   method values {} {
     dict values $bindings
   }
-  method write {port} {
+```
+
+The `` tstr `` method returns an external representation of the environment instance as a Tcl string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Environment instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
+  method tstr {} {
     regexp {(\d+)} [self] -> num
-    $port put "#<env-$num>"
-  }
-  method display {port} {
-    my write $port
+    return "#<env-$num>"
   }
 }
 ```
@@ -3514,7 +3601,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1870 lines of code, the interpreter is done.
+After 1844 lines of code, the interpreter is done.
 
 Now for the built-in procedures!
 

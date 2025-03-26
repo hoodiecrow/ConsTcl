@@ -6,6 +6,9 @@ msg           -> a message string
 invoke        -> what pr returns
 formals       -> a Scheme formals list
 bindfo        -> binding info
+tbindfos      -> a Tcl list of binding info tuples
+btype         -> binding type
+hinfo         -> handling info
 lisp          -> Lisp source text
 inpbuf        -> an input buffer
 extrep        -> an external representation of a Lisp object

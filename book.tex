@@ -4521,16 +4521,25 @@ Names are stored as Lisp symbols, while values are stored as they are, as Lisp o
 \index{Environment class}
 
 \begin{lstlisting}
-catch { ::constcl::Environment destroy }
-
 oo::class create ::constcl::Environment {
+  superclass ::constcl::Base
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
+\end{lstlisting}
+
+If the formals list (\texttt{syms}) is the empty list, then no arguments are accepted.
+
+\begin{lstlisting}
     if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
         error "too many arguments"
       }
+\end{lstlisting}
+
+If the formals list is a proper list, there should be one argument per list item.
+
+\begin{lstlisting}
     } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
@@ -4543,11 +4552,21 @@ oo::class create ::constcl::Environment {
       foreach sym $syms val $vals {
         my bind $sym [lindex $val 0] [lindex $val 1]
       }
+\end{lstlisting}
+
+If the formals list is actually a single symbol, it takes all the arguments as a list.
+
+\begin{lstlisting}
     } elseif {[T [::constcl::symbol? $syms]]} {
       my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
+\end{lstlisting}
+
+Else, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
+
+\begin{lstlisting}
     } else {
       while true {
         if {[llength $vals] < 1} {
@@ -4571,8 +4590,26 @@ oo::class create ::constcl::Environment {
         }
       }
     }
+\end{lstlisting}
+
+Set the link to the outer environment.
+
+\begin{lstlisting}
     set outer_env $outer
   }
+\end{lstlisting}
+
+The \texttt{find} method searches the environment chain for bindings for a given symbol. The search starts with the current environment instance and ends at the innermost occurrence of a binding for \emph{sym}. The environment containing the binding is returned.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) find (internal)} \\
+sym & a symbol \\
+\textit{Returns:} & an environment \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method find {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
@@ -4583,18 +4620,60 @@ oo::class create ::constcl::Environment {
       $outer_env find $sym
     }
   }
+\end{lstlisting}
+
+The \texttt{get} method returns the binding type and handling info for \emph{sym} as a tuple.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) get (internal)} \\
+sym & a symbol \\
+\textit{Returns:} & binding info \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method get {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment get"
     }
     dict get $bindings $sym
   }
+\end{lstlisting}
+
+The \texttt{unbind} method unsets a binding in the current environment instance. Fails silently if no such binding exists.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) unbind (internal)} \\
+sym & a symbol \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method unbind {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment unbind"
     }
     dict unset bindings $sym
+    return
   }
+\end{lstlisting}
+
+The \texttt{bind} method binds a symbol in the current environment instance. It is an error to attempt to bind a symbol that is already bound in the environment.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) bind (internal)} \\
+sym & a symbol \\
+type & binding type \\
+info & handling info \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method bind {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment bind"
@@ -4607,7 +4686,23 @@ oo::class create ::constcl::Environment {
       }
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+\end{lstlisting}
+
+The \texttt{assign} method updates the location that \emph{sym} is bound to with a new binding type and handling info / value. \emph{Sym} must be bound, and the old binding type must be VARIABLE.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) assign (internal)} \\
+sym & a symbol \\
+type & binding type \\
+info & handling info \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method assign {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment assign"
@@ -4621,22 +4716,68 @@ oo::class create ::constcl::Environment {
       error "[$sym name] is not assignable"
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+\end{lstlisting}
+
+The \texttt{parent} method yields the current environment instance's linked outer environment.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) parent (internal)} \\
+\textit{Returns:} & an environment \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method parent {} {
     set outer_env
   }
+\end{lstlisting}
+
+The \texttt{names} method returns a Tcl list of all the symbols bound in the current environment instance.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) names (internal)} \\
+\textit{Returns:} & a Tcl list of symbols \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method names {} {
     dict keys $bindings
   }
+\end{lstlisting}
+
+The \texttt{values} method returns a Tcl list of all the binding type/handling info tuples in the current environment instance.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) values (internal)} \\
+\textit{Returns:} & a Tcl list of binding info tuples \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method values {} {
     dict values $bindings
   }
-  method write {port} {
+\end{lstlisting}
+
+The \texttt{tstr} method returns an external representation of the environment instance as a Tcl string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) tstr (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+  method tstr {} {
     regexp {(\d+)} [self] -> num
-    $port put "#<env-$num>"
-  }
-  method display {port} {
-    my write $port
+    return "#<env-$num>"
   }
 }
 \end{lstlisting}
@@ -4772,7 +4913,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1870 lines of code, the interpreter is done.
+After 1844 lines of code, the interpreter is done.
 
 Now for the built-in procedures!
 

@@ -25,16 +25,26 @@ are stored as a Lisp list of values.
 H4 Environment class
 
 CB(
-catch { ::constcl::Environment destroy }
-
 oo::class create ::constcl::Environment {
+  superclass ::constcl::Base
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
     set bindings [dict create]
+CB)
+
+If the formals list (K{syms}) is the empty list, then no arguments are accepted.
+
+CB(
     if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
         error "too many arguments"
       }
+CB)
+
+If the formals list is a proper list, there should be one argument per list
+item.
+
+CB(
     } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
@@ -47,11 +57,24 @@ oo::class create ::constcl::Environment {
       foreach sym $syms val $vals {
         my bind $sym [lindex $val 0] [lindex $val 1]
       }
+CB)
+
+If the formals list is actually a single symbol, it takes all the arguments as a
+list.
+
+CB(
     } elseif {[T [::constcl::symbol? $syms]]} {
       my bind $syms VARIABLE [
         ::constcl::list {*}[lmap v $vals {
           lindex $v 1
         }]]
+CB)
+
+Else, bind an argument to the first item in the formals lists and cdr the
+formals list until the dotted end comes up. Bind all the remaining arguments to
+it.
+
+CB(
     } else {
       while true {
         if {[llength $vals] < 1} {
@@ -75,8 +98,25 @@ oo::class create ::constcl::Environment {
         }
       }
     }
+CB)
+
+Set the link to the outer environment.
+
+CB(
     set outer_env $outer
   }
+CB)
+
+The K{find} method searches the environment chain for bindings for a given
+symbol. The search starts with the current environment instance and ends at the
+innermost occurrence of a binding for E{sym}. The environment containing the
+binding is returned.
+
+PR(
+(Environment instance) find (internal);sym sym -> env
+PR)
+
+CB(
   method find {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment find"
@@ -87,18 +127,49 @@ oo::class create ::constcl::Environment {
       $outer_env find $sym
     }
   }
+CB)
+
+The K{get} method returns the binding type and handling info for E{sym} as a
+tuple.
+
+PR(
+(Environment instance) get (internal);sym sym -> bindfo
+PR)
+
+CB(
   method get {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment get"
     }
     dict get $bindings $sym
   }
+CB)
+
+The K{unbind} method unsets a binding in the current environment instance. Fails
+silently if no such binding exists.
+
+PR(
+(Environment instance) unbind (internal);sym sym -> none
+PR)
+
+CB(
   method unbind {sym} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment unbind"
     }
     dict unset bindings $sym
+    return
   }
+CB)
+
+The K{bind} method binds a symbol in the current environment instance. It is an
+error to attempt to bind a symbol that is already bound in the environment.
+
+PR(
+(Environment instance) bind (internal);sym sym type btype info hinfo -> none
+PR)
+
+CB(
   method bind {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment bind"
@@ -111,7 +182,19 @@ oo::class create ::constcl::Environment {
       }
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+CB)
+
+The K{assign} method updates the location that E{sym} is bound to with a new
+binding type and handling info / value. E{Sym} must be bound, and the old
+binding type must be VARIABLE.
+
+PR(
+(Environment instance) assign (internal);sym sym type btype info hinfo -> none
+PR)
+
+CB(
   method assign {sym type info} {
     ::constcl::check {::constcl::symbol? $sym} {
       "SYMBOL expected\nEnvironment assign"
@@ -125,22 +208,60 @@ oo::class create ::constcl::Environment {
       error "[$sym name] is not assignable"
     }
     dict set bindings $sym [::list $type $info]
+    return
   }
+CB)
+
+The K{parent} method yields the current environment instance's linked outer
+environment.
+
+PR(
+(Environment instance) parent (internal);-> env
+PR)
+
+CB(
   method parent {} {
     set outer_env
   }
+CB)
+
+The K{names} method returns a Tcl list of all the symbols bound in the current
+environment instance.
+
+PR(
+(Environment instance) names (internal);-> tsyms
+PR)
+
+CB(
   method names {} {
     dict keys $bindings
   }
+CB)
+
+The K{values} method returns a Tcl list of all the binding type/handling info
+tuples in the current environment instance.
+
+PR(
+(Environment instance) values (internal);-> tbindfos
+PR)
+
+CB(
   method values {} {
     dict values $bindings
   }
-  method write {port} {
+CB)
+
+The K{tstr} method returns an external representation of the environment
+instance as a Tcl string.
+
+PR(
+(Environment instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
     regexp {(\d+)} [self] -> num
-    $port put "#<env-$num>"
-  }
-  method display {port} {
-    my write $port
+    return "#<env-$num>"
   }
 }
 CB)
