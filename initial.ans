@@ -293,17 +293,29 @@ PR)
 
 CB(
 proc ::unbind {args} {
+CB)
+
+Try reading the value of K{env} in the caller's context. If it succeeds, use
+that environment value; if it fails, use the global environment.
+
+CB(
   try {
     uplevel [list subst \$env]
   } on ok env {
   } on error {} {
     set env ::constcl::global_env
   }
+CB)
+
+For each symbol given, check if it is bound in K{env} or any of its linked
+environments except the null environment. If it is, unbind it there.
+
+CB(
   set syms $args
   foreach sym $syms {
-    set env [$env find $sym]
-    if {$env ne "::constcl::null_env"} {
-      $env unbind $sym
+    set e [$env find $sym]
+    if {$e ne "::constcl::null_env"} {
+      $e unbind $sym
     }
   }
 }
@@ -664,7 +676,8 @@ oo::abstract create ::constcl::Base {
 CB)
 
 The K{mkconstant} method is a dummy method that can be called when the instance
-is part of an immutable structure.
+is part of an immutable structure. Classes that change their state when this
+method is called will override it.
 
 PR(
 (concrete instance) mkconstant (internal);-> none
@@ -688,7 +701,8 @@ CB(
 CB)
 
 The K{display} method is used by the K{display} standard procedure to print the
-external representation or a human-readable version of an instance.
+external representation or a human-readable version of an instance. In the
+latter case the method will be overridden.
 
 PR(
 (concrete instance) display (internal);port oport -> none
@@ -800,7 +814,7 @@ PR)
 
 CB(
 proc eof? {val} {
-  if {$val eq "#EOF"} {
+  if {$val eq ${::#EOF}} {
     return [::constcl::MkBoolean "#t"]
   } else {
     return [::constcl::MkBoolean "#f"]

@@ -21,13 +21,33 @@ CB(
 oo::class create ::constcl::Number {
   superclass ::constcl::Base
   variable value
-  constructor {v} {
-    if {[::string is double -strict $v]} {
-      set value $v
+CB)
+
+The constructor tests its argument against the form of a double-precision
+floating point number, which admits an integer number as well.
+
+PR(
+Number constructor (internal);val enum -> none
+PR)
+
+CB(
+  constructor {val} {
+    if {[::string is double -strict $val]} {
+      set value $val
     } else {
-      ::error "NUMBER expected\n$v"
+      ::error "NUMBER expected\n$val"
     }
   }
+CB)
+
+The K{zero?} method is a predicate that tells if the stored number is equal to
+0.
+
+PR(
+(Number instance) zero? (internal);-> bool
+PR)
+
+CB(
   method zero? {} {
     if {$value == 0} {
       return ${::#t}
@@ -35,6 +55,16 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+CB)
+
+The K{positive?} method is a predicate that tells if the stored number is
+greater than 0.
+
+PR(
+(Number instance) positive? (internal);-> bool
+PR)
+
+CB(
   method positive? {} {
     if {$value > 0} {
       return ${::#t}
@@ -42,6 +72,16 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+CB)
+
+The K{negative?} method is a predicate that tells if the stored number is less
+than 0.
+
+PR(
+(Number instance) negative? (internal);-> bool
+PR)
+
+CB(
   method negative? {} {
     if {$value < 0} {
       return ${::#t}
@@ -49,6 +89,15 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+CB)
+
+The K{even?} method is a predicate that tells if the stored number is even.
+
+PR(
+(Number instance) even? (internal);-> bool
+PR)
+
+CB(
   method even? {} {
     if {$value % 2 == 0} {
       return ${::#t}
@@ -56,6 +105,15 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+CB)
+
+The K{odd?} method is a predicate that tells if the stored number is odd.
+
+PR(
+(Number instance) odd? (internal);-> bool
+PR)
+
+CB(
   method odd? {} {
     if {$value % 2 == 1} {
       return ${::#t}
@@ -63,15 +121,52 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+CB)
+
+The K{value} method returns the stored number.
+
+PR(
+(Number instance) value (internal);-> num
+PR)
+
+CB(
   method value {} {
     set value
   }
+CB)
+
+The K{numval} method is a synonym for K{value}.
+
+PR(
+(Number instance) numval (internal);-> num
+PR)
+
+CB(
   method numval {} {
     set value
   }
+CB)
+
+The K{constant} method signals that the number instance isn't mutable.
+
+PR(
+(Number instance) constant (internal);-> tbooltrue
+PR)
+
+CB(
   method constant {} {
     return 1
   }
+CB)
+
+The K{tstr} method yields the external representation of the stored value as a
+Tcl string. It is used by error messages and the K{write} method.
+
+PR(
+(Char instance) tstr (internal);-> enum
+PR)
+
+CB(
   method tstr {} {
     return $value
   }

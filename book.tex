@@ -567,17 +567,27 @@ syms & some symbols \\
 
 \begin{lstlisting}
 proc ::unbind {args} {
+\end{lstlisting}
+
+Try reading the value of \texttt{env} in the caller's context. If it succeeds, use that environment value; if it fails, use the global environment.
+
+\begin{lstlisting}
   try {
     uplevel [list subst \$env]
   } on ok env {
   } on error {} {
     set env ::constcl::global_env
   }
+\end{lstlisting}
+
+For each symbol given, check if it is bound in \texttt{env} or any of its linked environments except the null environment. If it is, unbind it there.
+
+\begin{lstlisting}
   set syms $args
   foreach sym $syms {
-    set env [$env find $sym]
-    if {$env ne "::constcl::null_env"} {
-      $env unbind $sym
+    set e [$env find $sym]
+    if {$e ne "::constcl::null_env"} {
+      $e unbind $sym
     }
   }
 }
@@ -1019,7 +1029,7 @@ catch { ::constcl::Base destroy }
 oo::abstract create ::constcl::Base {
 \end{lstlisting}
 
-The \texttt{mkconstant} method is a dummy method that can be called when the instance is part of an immutable structure.
+The \texttt{mkconstant} method is a dummy method that can be called when the instance is part of an immutable structure. Classes that change their state when this method is called will override it.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1048,7 +1058,7 @@ port & an output port \\
   }
 \end{lstlisting}
 
-The \texttt{display} method is used by the \texttt{display} standard procedure to print the external representation or a human-readable version of an instance.
+The \texttt{display} method is used by the \texttt{display} standard procedure to print the external representation or a human-readable version of an instance. In the latter case the method will be overridden.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
@@ -1188,7 +1198,7 @@ val & a value \\
 
 \begin{lstlisting}
 proc eof? {val} {
-  if {$val eq "#EOF"} {
+  if {$val eq ${::#EOF}} {
     return [::constcl::MkBoolean "#t"]
   } else {
     return [::constcl::MkBoolean "#f"]
@@ -5095,13 +5105,38 @@ The Number class defines what capabilities a number has (in addition to those fr
 oo::class create ::constcl::Number {
   superclass ::constcl::Base
   variable value
-  constructor {v} {
-    if {[::string is double -strict $v]} {
-      set value $v
+\end{lstlisting}
+
+The constructor tests its argument against the form of a double-precision floating point number, which admits an integer number as well.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Number constructor (internal)} \\
+val & an external rep of a number \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+  constructor {val} {
+    if {[::string is double -strict $val]} {
+      set value $val
     } else {
-      ::error "NUMBER expected\n$v"
+      ::error "NUMBER expected\n$val"
     }
   }
+\end{lstlisting}
+
+The \texttt{zero?} method is a predicate that tells if the stored number is equal to 0.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) zero? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method zero? {} {
     if {$value == 0} {
       return ${::#t}
@@ -5109,6 +5144,18 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{positive?} method is a predicate that tells if the stored number is greater than 0.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) positive? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method positive? {} {
     if {$value > 0} {
       return ${::#t}
@@ -5116,6 +5163,18 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{negative?} method is a predicate that tells if the stored number is less than 0.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) negative? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method negative? {} {
     if {$value < 0} {
       return ${::#t}
@@ -5123,6 +5182,18 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{even?} method is a predicate that tells if the stored number is even.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) even? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method even? {} {
     if {$value % 2 == 0} {
       return ${::#t}
@@ -5130,6 +5201,18 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{odd?} method is a predicate that tells if the stored number is odd.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) odd? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method odd? {} {
     if {$value % 2 == 1} {
       return ${::#t}
@@ -5137,15 +5220,63 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{value} method returns the stored number.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) value (internal)} \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method value {} {
     set value
   }
+\end{lstlisting}
+
+The \texttt{numval} method is a synonym for \texttt{value}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) numval (internal)} \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method numval {} {
     set value
   }
+\end{lstlisting}
+
+The \texttt{constant} method signals that the number instance isn't mutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method constant {} {
     return 1
   }
+\end{lstlisting}
+
+The \texttt{tstr} method yields the external representation of the stored value as a Tcl string. It is used by error messages and the \texttt{write} method.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) tstr (internal)} \\
+\textit{Returns:} & an external rep of a number \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method tstr {} {
     return $value
   }
@@ -6280,25 +6411,28 @@ The constructor tests its argument against the three basic forms of external rep
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Char constructor (internal)} \\
-v & an external rep of a char \\
+val & an external rep of a char \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
-  constructor {v} {
-    switch -regexp $v {
+  constructor {val} {
+    switch -regexp $val {
       {(?i)#\\space} {
-        set v " "
+        set val " "
       }
       {(?i)#\\newline} {
-        set v "\n"
+        set val "\n"
       }
       {#\\[[:graph:]]} {
-        set v [::string index $v 2]
+        set val [::string index $val 2]
+      }
+      default {
+        ::error "CHAR expected\n$val"
       }
     }
-    set value $v
+    set value $val
   }
 \end{lstlisting}
 
@@ -8388,26 +8522,86 @@ All program source code has a tree structure, even though this is usually mostly
 The Pair class defines what capabilities a pair has (in addition to those from the Base class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the \texttt{car} and \texttt{cdr} methods yield each of them as result.
 
 \begin{lstlisting}
-catch { ::constcl::Pair destroy }
-
 oo::class create ::constcl::Pair {
   superclass ::constcl::Base
   variable car cdr constant
+\end{lstlisting}
+
+The constructor stores values into the \texttt{car} and \texttt{cdr} variables, and sets \texttt{constant} to 0, denoting that the pair is mutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Pair constructor (internal)} \\
+a & a value \\
+d & a value \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   constructor {a d} {
     set car $a
     set cdr $d
     set constant 0
   }
-  method name {} {}
+\end{lstlisting}
+
+The \texttt{value} method is a synonym for \texttt{tstr}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) value (internal)} \\
+\textit{Returns:} & an external rep of a pair \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method value {} {
     my tstr
   }
+\end{lstlisting}
+
+The \texttt{car} method returns the value stored in the \texttt{car} variable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) car (internal)} \\
+\textit{Returns:} & a value \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method car {} {
     set car
   }
+\end{lstlisting}
+
+The \texttt{cdr} method returns the value stored in the \texttt{cdr} variable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) cdr (internal)} \\
+\textit{Returns:} & a value \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method cdr {} {
     set cdr
   }
+\end{lstlisting}
+
+The \texttt{set-car!} method modifies the value stored in the \texttt{car} variable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) set-car! (internal)} \\
+val & a value \\
+\textit{Returns:} & a pair \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method set-car! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -8415,6 +8609,19 @@ oo::class create ::constcl::Pair {
     set car $val
     self
   }
+\end{lstlisting}
+
+The \texttt{set-cdr!} method modifies the value stored in the \texttt{cdr} variable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) set-cdr! (internal)} \\
+val & a value \\
+\textit{Returns:} & a pair \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method set-cdr! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -8422,24 +8629,84 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
+\end{lstlisting}
+
+The \texttt{mkconstant} method changes the instance from mutable to immutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) mkconstant (internal)} \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method mkconstant {} {
     set constant 1
+    return
   }
+\end{lstlisting}
+
+The \texttt{constant} method signals whether the pair instance is mutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method constant {} {
     return $constant
   }
+\end{lstlisting}
+
+The \texttt{mutable?} method is a predicate that tells if the pair instance is mutable or not.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) mutable? (internal)} \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method mutable? {} {
-    expr {$constant ?
-      [::constcl::MkBoolean "#f"] :
-      [::constcl::MkBoolean "#t"]}
+    expr {$constant ? ${::#f} : ${::#t}}
   }
+\end{lstlisting}
+
+The \texttt{write} method prints an external representation of the pair on the given port.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) write (internal)} \\
+port & an output port \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method write {port} {
     $port put "("
     ::constcl::write-pair $port [self]
     $port put ")"
   }
+\end{lstlisting}
+
+The \texttt{tstr} method yields the external representation of the pair instance as a Tcl string. It is used by error messages.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\textit{Returns:} & an external rep of a pair \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method tstr {} {
-    format "(%s)" [::constcl::show-pair [self]]
+    format "(%s)" [::constcl::tstr-pair [self]]
   }
 }
 \end{lstlisting}
@@ -8484,22 +8751,22 @@ proc ::constcl::pair? {val} {
 }
 \end{lstlisting}
 
-\subsection{show-pair procedure}
-\label{showpair-procedure}
-\index{show-pair procedure}
+\subsection{tstr-pair procedure}
+\label{tstrpair-procedure}
+\index{tstr-pair procedure}
 
 Helper procedure to make a string representation of a list.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf show-pair (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf tstr-pair (internal)} \\
 pair & a pair \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
-proc ::constcl::show-pair {pair} {
+proc ::constcl::tstr-pair {pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set str {}
@@ -8510,7 +8777,7 @@ proc ::constcl::show-pair {pair} {
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
-    ::append str [show-pair $d]
+    ::append str [tstr-pair $d]
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
@@ -8650,15 +8917,15 @@ foreach ads {
 } {
     reg c${ads}r
 
-    proc ::constcl::c${ads}r {pair} "
+    proc ::constcl::c${ads}r {x} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set pair \[car \$pair\]
+                set x \[car \$x\]
             } else {
-                set pair \[cdr \$pair\]
+                set x \[cdr \$x\]
             }
         }
-        return \$pair
+        return \$x
     "
 
 }
@@ -9261,16 +9528,29 @@ As an extension, a \texttt{\textbackslash n} pair in the external representation
 oo::class create ::constcl::String {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
-    set len [::string length $v]
+\end{lstlisting}
+
+The String constructor converts the given string to print form (no backslashes), sets the string length, and allocates that much vector memory to store the string. The characters that make up the string are stored as Char objects. Finally the string's data tuple (a pair holding the address to the first stored character and the length of the string) is stored and \texttt{constant} is set to 0, indicating a mutable string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf String constructor (internal)} \\
+val & an external rep of a string, w/o double quotes \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+  constructor {val} {
+    set val [string map {\\\\ \\ \\\" \" \\n \n} $val]
+    set len [::string length $val]
     # allocate vector space for the string's
     # characters
     set vsa [::constcl::vsAlloc $len]
     # store the characters in vector space, as
     # Char objects
     set idx $vsa
-    foreach elt [split $v {}] {
+    foreach elt [split $val {}] {
       if {$elt eq " "} {
         set c #\\space
       } elseif {$elt eq "\n"} {
@@ -9288,15 +9568,66 @@ oo::class create ::constcl::String {
       ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
+\end{lstlisting}
+
+The \texttt{=} method tells if the stored string is equal to a given string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) = (internal)} \\
+str & a string \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method = {str} {
     ::string equal [my value] [$str value]
   }
+\end{lstlisting}
+
+The \texttt{cmp} method compares the stored string to a given string. Returns -1, 0, or 1, depending on whether the stored string is less than, equal to, or greater than the other string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) cmp (internal)} \\
+str & a string \\
+\textit{Returns:} & a comparison value: -1, 0, or 1 \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method cmp {str} {
     ::string compare [my value] [$str value]
   }
+\end{lstlisting}
+
+The \texttt{length} method returns the length (as a Number object) of the internal representation of the string in characters.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) length (internal)} \\
+\textit{Returns:} & a number \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method length {} {
     ::constcl::cdr $data
   }
+\end{lstlisting}
+
+The \texttt{ref} method, given an index value which is between 0 and the length of the string, returns the character at that index position.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) ref (internal)} \\
+k & a number \\
+\textit{Returns:} & a character \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -9304,18 +9635,53 @@ oo::class create ::constcl::String {
     }
     lindex [my store] $k
   }
+\end{lstlisting}
+
+The \texttt{store} method presents the range in vector memory where the string is stored.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) store (internal)} \\
+\textit{Returns:} & a Tcl list of characters \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method store {} {
-    # present the range in vector memory where the
-    # string is stored
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
+\end{lstlisting}
+
+The \texttt{value} method presents the store as a Tcl string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) value (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method value {} {
     # present the store as printable characters
     join [lmap c [my store] {$c char}] {}
   }
+\end{lstlisting}
+
+The \texttt{set!} method does nothing to a constant string. Given an index value which is between 0 and the length of the string, it changes the character at that position to a given character.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) set! (internal)} \\
+k & a number \\
+c & a character \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method set! {k c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -9330,6 +9696,19 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+\end{lstlisting}
+
+The \texttt{fill!} method does nothing to a constant string. Given a character, it changes every character of the string to that character.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) fill! (internal)} \\
+c & a character \\
+\textit{Returns:} & a string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method fill! {c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -9344,23 +9723,112 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+\end{lstlisting}
+
+The \texttt{substring} method, given a \emph{from} and a \emph{to} index, returns the substring between those two indexes.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) substring (internal)} \\
+from & a number \\
+to & a number \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method substring {from to} {
-    join [lmap c [lrange [my store] \
-      [$from numval] [$to numval]] {$c char}] {}
+    set f [$from numval]
+    if {$f < 0 ||
+      $f >= [[my length] numval]} {
+      ::error "index out of range\n$f"
+    }
+    set t [$to numval]
+    if {$t < 0 ||
+      $t > [[my length] numval]} {
+      ::error "index out of range\n$t"
+    }
+    if {$t < $f} {
+      ::error "index out of range\n$t"
+    }
+    join [lmap c [
+      lrange [my store] $f $t-1] {$c char}] {}
   }
+\end{lstlisting}
+
+The \texttt{mkconstant} method changes the instance from mutable to immutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) mkconstant (internal)} \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method mkconstant {} {
     set constant 1
+    return
   }
+\end{lstlisting}
+
+The \texttt{constant} method signals whether the string instance is mutable.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method constant {} {
-    set constant
+    return $constant
   }
+\end{lstlisting}
+
+The \texttt{external} method renders a string in external representation format.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) external (internal)} \\
+\textit{Returns:} & an external rep of a string, w/o double quotes \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method external {} {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
+\end{lstlisting}
+
+The \texttt{display} method prints a string in internal representation format.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) display (internal)} \\
+port & an output port \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method display {port} {
     $port put [my value]
   }
+\end{lstlisting}
+
+The \texttt{tstr} method yields the external representation of the string instance as a Tcl string. It is used by error messages and the \texttt{write} method.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\textit{Returns:} & an external rep of a string, w/o double quotes \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method tstr {} {
     return [my external]
   }
@@ -9864,12 +10332,12 @@ proc ::constcl::string-ci>=? {str1 str2} {
 \label{substring-procedure}
 \index{substring procedure}
 
-\texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends at \emph{end}.
+\texttt{substring} yields the substring of \emph{str} that starts at \emph{start} and ends before \emph{end}.
 
 Example:
 
 \begin{verbatim}
-(substring "foobar" 2 4)   ==> "oba"
+(substring "foobar" 2 5)   ==> "oba"
 \end{verbatim}
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
@@ -10075,33 +10543,131 @@ The Symbol class defines what capabilities a symbol has (in addition to those fr
 oo::class create ::constcl::Symbol {
   superclass ::constcl::Base
   variable name caseconstant
+\end{lstlisting}
+
+The Symbol constructor checks that the given name is a valid identifier and then stores it. It also sets \texttt{caseconstant} to 0, indicating that the name doesn't keep its case when turned into a string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Symbol constructor (internal)} \\
+n & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   constructor {n} {
     ::constcl::idcheck $n
     set name $n
     set caseconstant 0
   }
+\end{lstlisting}
+
+The \texttt{name} method returns the symbol's name.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) name (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method name {} {
     set name
   }
+\end{lstlisting}
+
+The \texttt{value} method is a synonym for \texttt{name}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) value (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method value {} {
     set name
   }
+\end{lstlisting}
+
+The \texttt{=} compares the stored name with the name of a given symbol. It returns \texttt{\#t} if they are equal, otherwise \texttt{\#f}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) = (internal)} \\
+sym & a symbol \\
+\textit{Returns:} & a boolean \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method = {symname} {
-    if {$name eq $symname} {
+    if {$name eq [$sym name]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+\end{lstlisting}
+
+The \texttt{constant} method signals whether the symbol instance is mutable (it is).
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method constant {} {
     return 1
   }
-  method make-case-constant {} {
-    set caseconstant 1
-  }
+\end{lstlisting}
+
+The \texttt{case-constant} method signals whether the symbol instance is \emph{case constant}, i.e. keeps its case when turned into a string.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) case-constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1 or 0) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method case-constant {} {
     set caseconstant
   }
+\end{lstlisting}
+
+The \texttt{make-case-constant} method makes the symbol \emph{case constant}.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) make-case-constant (internal)} \\
+\textit{Returns:} & a Tcl truth value (1) \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+\end{lstlisting}
+
+The \texttt{tstr} method yields the external representation of the symbol instance (the name) as a Tcl string. It is used by error messages.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\textit{Returns:} & a Tcl string \\
+\hline
+\end{tabular}
+
+\begin{lstlisting}
   method tstr {} {
     return $name
   }
@@ -10248,28 +10814,31 @@ The Vector class defines what capabilities a vector has (in addition to those fr
 oo::class create ::constcl::Vector {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    if {[T [::constcl::list? $v]]} {
-      # if v is provided in the form of a Lisp list
-      set len [[::constcl::length $v] numval]
+\end{lstlisting}
+
+\begin{lstlisting}
+  constructor {val} {
+    if {[T [::constcl::list? $val]]} {
+      # if val is provided in the form of a Lisp list
+      set len [[::constcl::length $val] numval]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      while {![T [::constcl::null? $v]]} {
-        set elt [::constcl::car $v]
+      while {![T [::constcl::null? $val]]} {
+        set elt [::constcl::car $val]
         lset ::constcl::vectorSpace $idx $elt
         incr idx
-        set v [::constcl::cdr $v]
+        set val [::constcl::cdr $val]
       }
     } else {
-      # if v is provided in the form of a Tcl list
-      set len [llength $v]
+      # if val is provided in the form of a Tcl list
+      set len [llength $val]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      foreach elt $v {
+      foreach elt $val {
         lset ::constcl::vectorSpace $idx $elt
         incr idx
       }

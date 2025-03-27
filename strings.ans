@@ -24,16 +24,30 @@ CB(
 oo::class create ::constcl::String {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
-    set len [::string length $v]
+CB)
+
+The String constructor converts the given string to print form (no backslashes),
+sets the string length, and allocates that much vector memory to store the
+string. The characters that make up the string are stored as Char objects.
+Finally the string's data tuple (a pair holding the address to the first stored
+character and the length of the string) is stored and K{constant} is set to 0,
+indicating a mutable string.
+
+PR(
+String constructor (internal);val estr -> none
+PR)
+
+CB(
+  constructor {val} {
+    set val [string map {\\\\ \\ \\\" \" \\n \n} $val]
+    set len [::string length $val]
     # allocate vector space for the string's
     # characters
     set vsa [::constcl::vsAlloc $len]
     # store the characters in vector space, as
     # Char objects
     set idx $vsa
-    foreach elt [split $v {}] {
+    foreach elt [split $val {}] {
       if {$elt eq " "} {
         set c #\\space
       } elseif {$elt eq "\n"} {
@@ -51,15 +65,53 @@ oo::class create ::constcl::String {
       ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
+CB)
+
+The K{=} method tells if the stored string is equal to a given string.
+
+PR(
+(String instance) = (internal);str str -> tbool
+PR)
+
+CB(
   method = {str} {
     ::string equal [my value] [$str value]
   }
+CB)
+
+The K{cmp} method compares the stored string to a given string. Returns -1, 0, or 1, depending on whether the stored string is less than, equal to, or greater than the other string.
+
+PR(
+(String instance) cmp (internal);str str -> cmp
+PR)
+
+CB(
   method cmp {str} {
     ::string compare [my value] [$str value]
   }
+CB)
+
+The K{length} method returns the length (as a Number object) of the internal
+representation of the string in characters.
+
+PR(
+(String instance) length (internal);-> num
+PR)
+
+CB(
   method length {} {
     ::constcl::cdr $data
   }
+CB)
+
+The K{ref} method, given an index value which is between 0 and the length of the
+string, returns the character at that index position.
+
+PR(
+(String instance) ref (internal);k num -> char
+PR)
+
+CB(
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -67,18 +119,45 @@ oo::class create ::constcl::String {
     }
     lindex [my store] $k
   }
+CB)
+
+The K{store} method presents the range in vector memory where the string is
+stored.
+
+PR(
+(String instance) store (internal);-> tchars
+PR)
+
+CB(
   method store {} {
-    # present the range in vector memory where the
-    # string is stored 
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
+CB)
+
+The K{value} method presents the store as a Tcl string.
+
+PR(
+(String instance) value (internal);-> tstr
+PR)
+
+CB(
   method value {} {
     # present the store as printable characters
     join [lmap c [my store] {$c char}] {}
   }
+CB)
+
+The K{set!} method does nothing to a constant string. Given an index value which
+is between 0 and the length of the string, it changes the character at that
+position to a given character.
+
+PR(
+(String instance) set! (internal);k num c char -> str
+PR)
+
+CB(
   method set! {k c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -93,6 +172,16 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+CB)
+
+The K{fill!} method does nothing to a constant string. Given a character, it
+changes every character of the string to that character.
+
+PR(
+(String instance) fill! (internal);c char -> str
+PR)
+
+CB(
   method fill! {c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -107,23 +196,93 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+CB)
+
+The K{substring} method, given a E{from} and a E{to} index, returns the
+substring between those two indexes.
+
+PR(
+(String instance) substring (internal);from num to num -> tstr
+PR)
+
+CB(
   method substring {from to} {
-    join [lmap c [lrange [my store] \
-      [$from numval] [$to numval]] {$c char}] {}
+    set f [$from numval]
+    if {$f < 0 ||
+      $f >= [[my length] numval]} {
+      ::error "index out of range\n$f"
+    }
+    set t [$to numval]
+    if {$t < 0 ||
+      $t > [[my length] numval]} {
+      ::error "index out of range\n$t"
+    }
+    if {$t < $f} {
+      ::error "index out of range\n$t"
+    }
+    join [lmap c [
+      lrange [my store] $f $t-1] {$c char}] {}
   }
+CB)
+
+The K{mkconstant} method changes the instance from mutable to immutable.
+
+PR(
+(String instance) mkconstant (internal);-> none
+PR)
+
+CB(
   method mkconstant {} {
     set constant 1
+    return
   }
+CB)
+
+The K{constant} method signals whether the string instance is mutable.
+
+PR(
+(String instance) constant (internal);-> tbool
+PR)
+
+CB(
   method constant {} {
-    set constant
+    return $constant
   }
+CB)
+
+The K{external} method renders a string in external representation format.
+
+PR(
+(String instance) external (internal);-> estr
+PR)
+
+CB(
   method external {} {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
+CB)
+
+The K{display} method prints a string in internal representation format.
+
+PR(
+(String instance) display (internal);port oport -> none
+PR)
+
+CB(
   method display {port} {
     $port put [my value]
   }
+CB)
+
+The K{tstr} method yields the external representation of the string instance as a
+Tcl string. It is used by error messages and the K{write} method.
+
+PR(
+(Pair instance) tstr (internal);-> estr
+PR)
+
+CB(
   method tstr {} {
     return [my external]
   }
@@ -747,12 +906,12 @@ TT)
 
 H4 substring procedure
 
-K{substring} yields the substring of E{str} that starts at E{start} and ends at E{end}.
+K{substring} yields the substring of E{str} that starts at E{start} and ends before E{end}.
 
 Example:
 
 VB(
-(substring "foobar" 2 4)   ==> "oba"
+(substring "foobar" 2 5)   ==> "oba"
 VB)
 
 PR(
@@ -782,7 +941,7 @@ CB)
 TT(
 
 ::tcltest::test strings-18.0 {try substring} -body {
-    pew {(substring "foo bar" 0 2)}
+    pew {(substring "foo bar" 0 3)}
 } -output "\"foo\"\n"
 
 TT)

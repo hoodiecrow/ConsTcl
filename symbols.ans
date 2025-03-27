@@ -16,33 +16,110 @@ CB(
 oo::class create ::constcl::Symbol {
   superclass ::constcl::Base
   variable name caseconstant
+CB)
+
+The Symbol constructor checks that the given name is a valid identifier and then
+stores it. It also sets K{caseconstant} to 0, indicating that the name doesn't
+keep its case when turned into a string.
+
+PR(
+Symbol constructor (internal);n tstr -> none
+PR)
+
+CB(
   constructor {n} {
     ::constcl::idcheck $n
     set name $n
     set caseconstant 0
   }
+CB)
+
+The K{name} method returns the symbol's name.
+
+PR(
+(Symbol instance) name (internal);-> tstr
+PR)
+
+CB(
   method name {} {
     set name
   }
+CB)
+
+The K{value} method is a synonym for K{name}.
+
+PR(
+(Symbol instance) value (internal);-> tstr
+PR)
+
+CB(
   method value {} {
     set name
   }
+CB)
+
+The K{=} compares the stored name with the name of a given symbol. It returns
+K{#t} if they are equal, otherwise K{#f}.
+
+PR(
+(Symbol instance) = (internal);sym sym -> bool
+PR)
+
+CB(
   method = {symname} {
-    if {$name eq $symname} {
+    if {$name eq [$sym name]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+CB)
+
+The K{constant} method signals whether the symbol instance is mutable (it is).
+
+PR(
+(Symbol instance) constant (internal);-> tbooltrue
+PR)
+
+CB(
   method constant {} {
     return 1
   }
-  method make-case-constant {} {
-    set caseconstant 1
-  }
+CB)
+
+The K{case-constant} method signals whether the symbol instance is E{case
+  constant}, i.e. keeps its case when turned into a string.
+
+PR(
+(Symbol instance) case-constant (internal);-> tbool
+PR)
+
+CB(
   method case-constant {} {
     set caseconstant
   }
+CB)
+
+The K{make-case-constant} method makes the symbol E{case constant}.
+
+PR(
+(Symbol instance) make-case-constant (internal);-> tbooltrue
+PR)
+
+CB(
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+CB)
+
+The K{tstr} method yields the external representation of the symbol instance (the name) as a
+Tcl string. It is used by error messages.
+
+PR(
+(Pair instance) tstr (internal);-> tstr
+PR)
+
+CB(
   method tstr {} {
     return $name
   }

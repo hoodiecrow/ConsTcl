@@ -22,23 +22,26 @@ The constructor tests its argument against the three basic forms of external
 representation for characters, and stores the corresponding Tcl character.
 
 PR(
-Char constructor (internal);v echar -> none
+Char constructor (internal);val echar -> none
 PR)
 
 CB(
-  constructor {v} {
-    switch -regexp $v {
+  constructor {val} {
+    switch -regexp $val {
       {(?i)#\\space} {
-        set v " "
+        set val " "
       }
       {(?i)#\\newline} {
-        set v "\n"
+        set val "\n"
       }
       {#\\[[:graph:]]} {
-        set v [::string index $v 2]
+        set val [::string index $val 2]
+      }
+      default {
+        ::error "CHAR expected\n$val"
       }
     }
-    set value $v
+    set value $val
   }
 CB)
 

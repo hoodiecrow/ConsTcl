@@ -1500,11 +1500,11 @@ if no {
 
 
 
-::tcltest::test pairslists-3.0 {try show-pair} -body {
-    puts [::constcl::show-pair [p {(a . b)}]]
-    puts [::constcl::show-pair [p {(a b c)}]]
-    puts [::constcl::show-pair [p {(a b . c)}]]
-    puts [::constcl::show-pair [p {(a)}]]
+::tcltest::test pairslists-3.0 {try tstr-pair} -body {
+    puts [::constcl::tstr-pair [p {(a . b)}]]
+    puts [::constcl::tstr-pair [p {(a b c)}]]
+    puts [::constcl::tstr-pair [p {(a b . c)}]]
+    puts [::constcl::tstr-pair [p {(a)}]]
 } -output "a . b\na b c\na b . c\na\n"
 
 
@@ -1810,7 +1810,7 @@ qux\bod
 
 
 ::tcltest::test strings-18.0 {try substring} -body {
-    pew {(substring "foo bar" 0 2)}
+    pew {(substring "foo bar" 0 3)}
 } -output "\"foo\"\n"
 
 

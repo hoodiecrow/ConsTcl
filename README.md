@@ -270,17 +270,27 @@ proc ::pn {} {
 
 ```
 proc ::unbind {args} {
+```
+
+Try reading the value of `` env `` in the caller's context. If it succeeds, use that environment value; if it fails, use the global environment.
+
+```
   try {
     uplevel [list subst \$env]
   } on ok env {
   } on error {} {
     set env ::constcl::global_env
   }
+```
+
+For each symbol given, check if it is bound in `` env `` or any of its linked environments except the null environment. If it is, unbind it there.
+
+```
   set syms $args
   foreach sym $syms {
-    set env [$env find $sym]
-    if {$env ne "::constcl::null_env"} {
-      $env unbind $sym
+    set e [$env find $sym]
+    if {$e ne "::constcl::null_env"} {
+      $e unbind $sym
     }
   }
 }
@@ -575,7 +585,7 @@ catch { ::constcl::Base destroy }
 oo::abstract create ::constcl::Base {
 ```
 
-The `` mkconstant `` method is a dummy method that can be called when the instance is part of an immutable structure.
+The `` mkconstant `` method is a dummy method that can be called when the instance is part of an immutable structure. Classes that change their state when this method is called will override it.
 
 <table border=1><thead><tr><th colspan=2 align="left">(concrete instance) mkconstant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -593,7 +603,7 @@ The `` write `` method is used by the `` write `` standard procedure to print th
   }
 ```
 
-The `` display `` method is used by the `` display `` standard procedure to print the external representation or a human-readable version of an instance.
+The `` display `` method is used by the `` display `` standard procedure to print the external representation or a human-readable version of an instance. In the latter case the method will be overridden.
 
 <table border=1><thead><tr><th colspan=2 align="left">(concrete instance) display (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
@@ -690,7 +700,7 @@ oo::singleton create ::constcl::EndOfFile {
 
 ```
 proc eof? {val} {
-  if {$val eq "#EOF"} {
+  if {$val eq ${::#EOF}} {
     return [::constcl::MkBoolean "#t"]
   } else {
     return [::constcl::MkBoolean "#f"]
@@ -3746,13 +3756,27 @@ The Number class defines what capabilities a number has (in addition to those fr
 oo::class create ::constcl::Number {
   superclass ::constcl::Base
   variable value
-  constructor {v} {
-    if {[::string is double -strict $v]} {
-      set value $v
+```
+
+The constructor tests its argument against the form of a double-precision floating point number, which admits an integer number as well.
+
+<table border=1><thead><tr><th colspan=2 align="left">Number constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a number</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  constructor {val} {
+    if {[::string is double -strict $val]} {
+      set value $val
     } else {
-      ::error "NUMBER expected\n$v"
+      ::error "NUMBER expected\n$val"
     }
   }
+```
+
+The `` zero? `` method is a predicate that tells if the stored number is equal to 0.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) zero? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method zero? {} {
     if {$value == 0} {
       return ${::#t}
@@ -3760,6 +3784,13 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+```
+
+The `` positive? `` method is a predicate that tells if the stored number is greater than 0.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) positive? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method positive? {} {
     if {$value > 0} {
       return ${::#t}
@@ -3767,6 +3798,13 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+```
+
+The `` negative? `` method is a predicate that tells if the stored number is less than 0.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) negative? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method negative? {} {
     if {$value < 0} {
       return ${::#t}
@@ -3774,6 +3812,13 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+```
+
+The `` even? `` method is a predicate that tells if the stored number is even.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) even? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method even? {} {
     if {$value % 2 == 0} {
       return ${::#t}
@@ -3781,6 +3826,13 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+```
+
+The `` odd? `` method is a predicate that tells if the stored number is odd.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) odd? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method odd? {} {
     if {$value % 2 == 1} {
       return ${::#t}
@@ -3788,15 +3840,43 @@ oo::class create ::constcl::Number {
       return ${::#f}
     }
   }
+```
+
+The `` value `` method returns the stored number.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
   method value {} {
     set value
   }
+```
+
+The `` numval `` method is a synonym for `` value ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) numval (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
   method numval {} {
     set value
   }
+```
+
+The `` constant `` method signals that the number instance isn't mutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Number instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
+
+```
   method constant {} {
     return 1
   }
+```
+
+The `` tstr `` method yields the external representation of the stored value as a Tcl string. It is used by error messages and the `` write `` method.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a number</td></tr></table>
+
+```
   method tstr {} {
     return $value
   }
@@ -4704,22 +4784,25 @@ oo::class create ::constcl::Char {
 
 The constructor tests its argument against the three basic forms of external representation for characters, and stores the corresponding Tcl character.
 
-<table border=1><thead><tr><th colspan=2 align="left">Char constructor (internal)</th></tr></thead><tr><td>v</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">Char constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-  constructor {v} {
-    switch -regexp $v {
+  constructor {val} {
+    switch -regexp $val {
       {(?i)#\\space} {
-        set v " "
+        set val " "
       }
       {(?i)#\\newline} {
-        set v "\n"
+        set val "\n"
       }
       {#\\[[:graph:]]} {
-        set v [::string index $v 2]
+        set val [::string index $val 2]
+      }
+      default {
+        ::error "CHAR expected\n$val"
       }
     }
-    set value $v
+    set value $val
   }
 ```
 
@@ -6267,26 +6350,58 @@ All program source code has a tree structure, even though this is usually mostly
 The Pair class defines what capabilities a pair has (in addition to those from the Base class), and also defines the internal representation of a pair value expression. A pair is stored in an instance as a couple of pointers, and the `` car `` and `` cdr `` methods yield each of them as result.
 
 ```
-catch { ::constcl::Pair destroy }
-
 oo::class create ::constcl::Pair {
   superclass ::constcl::Base
   variable car cdr constant
+```
+
+The constructor stores values into the `` car `` and `` cdr `` variables, and sets `` constant `` to 0, denoting that the pair is mutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">Pair constructor (internal)</th></tr></thead><tr><td>a</td><td>a value</td></tr><tr><td>d</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {a d} {
     set car $a
     set cdr $d
     set constant 0
   }
-  method name {} {}
+```
+
+The `` value `` method is a synonym for `` tstr ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a pair</td></tr></table>
+
+```
   method value {} {
     my tstr
   }
+```
+
+The `` car `` method returns the value stored in the `` car `` variable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) car (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
+
+```
   method car {} {
     set car
   }
+```
+
+The `` cdr `` method returns the value stored in the `` cdr `` variable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) cdr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
+
+```
   method cdr {} {
     set cdr
   }
+```
+
+The `` set-car! `` method modifies the value stored in the `` car `` variable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) set-car! (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
+```
   method set-car! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -6294,6 +6409,13 @@ oo::class create ::constcl::Pair {
     set car $val
     self
   }
+```
+
+The `` set-cdr! `` method modifies the value stored in the `` cdr `` variable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) set-cdr! (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a pair</td></tr></table>
+
+```
   method set-cdr! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -6301,24 +6423,58 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
+```
+
+The `` mkconstant `` method changes the instance from mutable to immutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) mkconstant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method mkconstant {} {
     set constant 1
+    return
   }
+```
+
+The `` constant `` method signals whether the pair instance is mutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method constant {} {
     return $constant
   }
+```
+
+The `` mutable? `` method is a predicate that tells if the pair instance is mutable or not.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) mutable? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method mutable? {} {
-    expr {$constant ?
-      [::constcl::MkBoolean "#f"] :
-      [::constcl::MkBoolean "#t"]}
+    expr {$constant ? ${::#f} : ${::#t}}
   }
+```
+
+The `` write `` method prints an external representation of the pair on the given port.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) write (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method write {port} {
     $port put "("
     ::constcl::write-pair $port [self]
     $port put ")"
   }
+```
+
+The `` tstr `` method yields the external representation of the pair instance as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a pair</td></tr></table>
+
+```
   method tstr {} {
-    format "(%s)" [::constcl::show-pair [self]]
+    format "(%s)" [::constcl::tstr-pair [self]]
   }
 }
 ```
@@ -6346,14 +6502,14 @@ proc ::constcl::pair? {val} {
 }
 ```
 
-#### show-pair procedure
+#### tstr-pair procedure
 
 Helper procedure to make a string representation of a list.
 
-<table border=1><thead><tr><th colspan=2 align="left">show-pair (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">tstr-pair (internal)</th></tr></thead><tr><td>pair</td><td>a pair</td></tr><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
 ```
-proc ::constcl::show-pair {pair} {
+proc ::constcl::tstr-pair {pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set str {}
@@ -6364,7 +6520,7 @@ proc ::constcl::show-pair {pair} {
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
-    ::append str [show-pair $d]
+    ::append str [tstr-pair $d]
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
@@ -6478,15 +6634,15 @@ foreach ads {
 } {
     reg c${ads}r
 
-    proc ::constcl::c${ads}r {pair} "
+    proc ::constcl::c${ads}r {x} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set pair \[car \$pair\]
+                set x \[car \$x\]
             } else {
-                set pair \[cdr \$pair\]
+                set x \[cdr \$x\]
             }
         }
-        return \$pair
+        return \$x
     "
 
 }
@@ -6919,16 +7075,23 @@ As an extension, a `` \n `` pair in the external representation is stored as a n
 oo::class create ::constcl::String {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
-    set len [::string length $v]
+```
+
+The String constructor converts the given string to print form (no backslashes), sets the string length, and allocates that much vector memory to store the string. The characters that make up the string are stored as Char objects. Finally the string's data tuple (a pair holding the address to the first stored character and the length of the string) is stored and `` constant `` is set to 0, indicating a mutable string.
+
+<table border=1><thead><tr><th colspan=2 align="left">String constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+  constructor {val} {
+    set val [string map {\\\\ \\ \\\" \" \\n \n} $val]
+    set len [::string length $val]
     # allocate vector space for the string's
     # characters
     set vsa [::constcl::vsAlloc $len]
     # store the characters in vector space, as
     # Char objects
     set idx $vsa
-    foreach elt [split $v {}] {
+    foreach elt [split $val {}] {
       if {$elt eq " "} {
         set c #\\space
       } elseif {$elt eq "\n"} {
@@ -6946,15 +7109,43 @@ oo::class create ::constcl::String {
       ::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
+```
+
+The `` = `` method tells if the stored string is equal to a given string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) = (internal)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method = {str} {
     ::string equal [my value] [$str value]
   }
+```
+
+The `` cmp `` method compares the stored string to a given string. Returns -1, 0, or 1, depending on whether the stored string is less than, equal to, or greater than the other string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) cmp (internal)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a comparison value: -1, 0, or 1</td></tr></table>
+
+```
   method cmp {str} {
     ::string compare [my value] [$str value]
   }
+```
+
+The `` length `` method returns the length (as a Number object) of the internal representation of the string in characters.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) length (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
   method length {} {
     ::constcl::cdr $data
   }
+```
+
+The `` ref `` method, given an index value which is between 0 and the length of the string, returns the character at that index position.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) ref (internal)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+
+```
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -6962,18 +7153,36 @@ oo::class create ::constcl::String {
     }
     lindex [my store] $k
   }
+```
+
+The `` store `` method presents the range in vector memory where the string is stored.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) store (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl list of characters</td></tr></table>
+
+```
   method store {} {
-    # present the range in vector memory where the
-    # string is stored
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
+```
+
+The `` value `` method presents the store as a Tcl string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method value {} {
     # present the store as printable characters
     join [lmap c [my store] {$c char}] {}
   }
+```
+
+The `` set! `` method does nothing to a constant string. Given an index value which is between 0 and the length of the string, it changes the character at that position to a given character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) set! (internal)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>c</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
   method set! {k c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -6988,6 +7197,13 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+```
+
+The `` fill! `` method does nothing to a constant string. Given a character, it changes every character of the string to that character.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) fill! (internal)</th></tr></thead><tr><td>c</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+
+```
   method fill! {c} {
     if {[my constant]} {
       ::error "string is constant"
@@ -7002,23 +7218,79 @@ oo::class create ::constcl::String {
     }
     return [self]
   }
+```
+
+The `` substring `` method, given a _from_ and a _to_ index, returns the substring between those two indexes.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) substring (internal)</th></tr></thead><tr><td>from</td><td>a number</td></tr><tr><td>to</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method substring {from to} {
-    join [lmap c [lrange [my store] \
-      [$from numval] [$to numval]] {$c char}] {}
+    set f [$from numval]
+    if {$f < 0 ||
+      $f >= [[my length] numval]} {
+      ::error "index out of range\n$f"
+    }
+    set t [$to numval]
+    if {$t < 0 ||
+      $t > [[my length] numval]} {
+      ::error "index out of range\n$t"
+    }
+    if {$t < $f} {
+      ::error "index out of range\n$t"
+    }
+    join [lmap c [
+      lrange [my store] $f $t-1] {$c char}] {}
   }
+```
+
+The `` mkconstant `` method changes the instance from mutable to immutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) mkconstant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method mkconstant {} {
     set constant 1
+    return
   }
+```
+
+The `` constant `` method signals whether the string instance is mutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method constant {} {
-    set constant
+    return $constant
   }
+```
+
+The `` external `` method renders a string in external representation format.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a string, w/o double quotes</td></tr></table>
+
+```
   method external {} {
     return "\"[
       string map {\\ \\\\ \" \\\" \n \\n} [my value]]\""
   }
+```
+
+The `` display `` method prints a string in internal representation format.
+
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) display (internal)</th></tr></thead><tr><td>port</td><td>an output port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   method display {port} {
     $port put [my value]
   }
+```
+
+The `` tstr `` method yields the external representation of the string instance as a Tcl string. It is used by error messages and the `` write `` method.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a string, w/o double quotes</td></tr></table>
+
+```
   method tstr {} {
     return [my external]
   }
@@ -7422,12 +7694,12 @@ proc ::constcl::string-ci>=? {str1 str2} {
 
 #### substring procedure
 
-`` substring `` yields the substring of _str_ that starts at _start_ and ends at _end_.
+`` substring `` yields the substring of _str_ that starts at _start_ and ends before _end_.
 
 Example:
 
 ```
-(substring "foobar" 2 4)   ==> "oba"
+(substring "foobar" 2 5)   ==> "oba"
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">substring (public)</th></tr></thead><tr><td>str</td><td>a string</td></tr><tr><td>start</td><td>a number</td></tr><tr><td>end</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
@@ -7580,33 +7852,89 @@ The Symbol class defines what capabilities a symbol has (in addition to those fr
 oo::class create ::constcl::Symbol {
   superclass ::constcl::Base
   variable name caseconstant
+```
+
+The Symbol constructor checks that the given name is a valid identifier and then stores it. It also sets `` caseconstant `` to 0, indicating that the name doesn't keep its case when turned into a string.
+
+<table border=1><thead><tr><th colspan=2 align="left">Symbol constructor (internal)</th></tr></thead><tr><td>n</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
   constructor {n} {
     ::constcl::idcheck $n
     set name $n
     set caseconstant 0
   }
+```
+
+The `` name `` method returns the symbol's name.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) name (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method name {} {
     set name
   }
+```
+
+The `` value `` method is a synonym for `` name ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method value {} {
     set name
   }
+```
+
+The `` = `` compares the stored name with the name of a given symbol. It returns `` #t `` if they are equal, otherwise `` #f ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) = (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
   method = {symname} {
-    if {$name eq $symname} {
+    if {$name eq [$sym name]} {
       return ${::#t}
     } else {
       return ${::#f}
     }
   }
+```
+
+The `` constant `` method signals whether the symbol instance is mutable (it is).
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
+
+```
   method constant {} {
     return 1
   }
-  method make-case-constant {} {
-    set caseconstant 1
-  }
+```
+
+The `` case-constant `` method signals whether the symbol instance is _case constant_, i.e. keeps its case when turned into a string.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) case-constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method case-constant {} {
     set caseconstant
   }
+```
+
+The `` make-case-constant `` method makes the symbol _case constant_.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) make-case-constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
+
+```
+  method make-case-constant {} {
+    set caseconstant 1
+  }
+```
+
+The `` tstr `` method yields the external representation of the symbol instance (the name) as a Tcl string. It is used by error messages.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method tstr {} {
     return $name
   }
@@ -7717,28 +8045,31 @@ The Vector class defines what capabilities a vector has (in addition to those fr
 oo::class create ::constcl::Vector {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    if {[T [::constcl::list? $v]]} {
-      # if v is provided in the form of a Lisp list
-      set len [[::constcl::length $v] numval]
+```
+
+```
+  constructor {val} {
+    if {[T [::constcl::list? $val]]} {
+      # if val is provided in the form of a Lisp list
+      set len [[::constcl::length $val] numval]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      while {![T [::constcl::null? $v]]} {
-        set elt [::constcl::car $v]
+      while {![T [::constcl::null? $val]]} {
+        set elt [::constcl::car $val]
         lset ::constcl::vectorSpace $idx $elt
         incr idx
-        set v [::constcl::cdr $v]
+        set val [::constcl::cdr $val]
       }
     } else {
-      # if v is provided in the form of a Tcl list
-      set len [llength $v]
+      # if val is provided in the form of a Tcl list
+      set len [llength $val]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      foreach elt $v {
+      foreach elt $val {
         lset ::constcl::vectorSpace $idx $elt
         incr idx
       }

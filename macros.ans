@@ -183,7 +183,7 @@ proc ::constcl::for-seq {seq env} {
   # make it a Tcl list, one way or another
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
-  } elseif {[T [string? $seq]]} { 
+  } elseif {[T [string? $seq]]} {
     set seq [lmap c [split [$seq value] {}] {
       switch $c {
         " "  { MkChar #\\space }

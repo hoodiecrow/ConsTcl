@@ -33,26 +33,69 @@ value expression. A pair is stored in an instance as a couple of pointers, and
 the K{car} and K{cdr} methods yield each of them as result.
 
 CB(
-catch { ::constcl::Pair destroy }
-
 oo::class create ::constcl::Pair {
   superclass ::constcl::Base
   variable car cdr constant
+CB)
+
+The constructor stores values into the K{car} and K{cdr} variables, and sets
+K{constant} to 0, denoting that the pair is mutable.
+
+PR(
+Pair constructor (internal);a val d val -> none
+PR)
+
+CB(
   constructor {a d} {
     set car $a
     set cdr $d
     set constant 0
   }
-  method name {} {}
+CB)
+
+The K{value} method is a synonym for K{tstr}.
+
+PR(
+(Pair instance) value (internal);-> epair
+PR)
+
+CB(
   method value {} {
     my tstr
   }
+CB)
+
+The K{car} method returns the value stored in the K{car} variable.
+
+PR(
+(Pair instance) car (internal);-> val
+PR)
+
+CB(
   method car {} {
     set car
   }
+CB)
+
+The K{cdr} method returns the value stored in the K{cdr} variable.
+
+PR(
+(Pair instance) cdr (internal);-> val
+PR)
+
+CB(
   method cdr {} {
     set cdr
   }
+CB)
+
+The K{set-car!} method modifies the value stored in the K{car} variable.
+
+PR(
+(Pair instance) set-car! (internal);val val -> pair
+PR)
+
+CB(
   method set-car! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -60,6 +103,15 @@ oo::class create ::constcl::Pair {
     set car $val
     self
   }
+CB)
+
+The K{set-cdr!} method modifies the value stored in the K{cdr} variable.
+
+PR(
+(Pair instance) set-cdr! (internal);val val -> pair
+PR)
+
+CB(
   method set-cdr! {val} {
     ::constcl::check {my mutable?} {
       Can't modify a constant pair
@@ -67,24 +119,71 @@ oo::class create ::constcl::Pair {
     set cdr $val
     self
   }
+CB)
+
+The K{mkconstant} method changes the instance from mutable to immutable.
+
+PR(
+(Pair instance) mkconstant (internal);-> none
+PR)
+
+CB(
   method mkconstant {} {
     set constant 1
+    return
   }
+CB)
+
+The K{constant} method signals whether the pair instance is mutable.
+
+PR(
+(Pair instance) constant (internal);-> tbool
+PR)
+
+CB(
   method constant {} {
     return $constant
   }
+CB)
+
+The K{mutable?} method is a predicate that tells if the pair instance is mutable
+or not.
+
+PR(
+(Pair instance) mutable? (internal);-> bool
+PR)
+
+CB(
   method mutable? {} {
-    expr {$constant ?
-      [::constcl::MkBoolean "#f"] :
-      [::constcl::MkBoolean "#t"]}
+    expr {$constant ? ${::#f} : ${::#t}}
   }
+CB)
+
+The K{write} method prints an external representation of the pair on the given
+port.
+
+PR(
+(Pair instance) write (internal);port oport -> none
+PR)
+
+CB(
   method write {port} {
     $port put "("
     ::constcl::write-pair $port [self]
     $port put ")"
   }
+CB)
+
+The K{tstr} method yields the external representation of the pair instance as a
+Tcl string. It is used by error messages.
+
+PR(
+(Pair instance) tstr (internal);-> epair
+PR)
+
+CB(
   method tstr {} {
-    format "(%s)" [::constcl::show-pair [self]]
+    format "(%s)" [::constcl::tstr-pair [self]]
   }
 }
 CB)
@@ -153,16 +252,16 @@ TT(
 
 TT)
 
-H4 show-pair procedure
+H4 tstr-pair procedure
 
 Helper procedure to make a string representation of a list.
 
 PR(
-show-pair (internal);pair pair -> tstr
+tstr-pair (internal);pair pair -> tstr
 PR)
 
 CB(
-proc ::constcl::show-pair {pair} {
+proc ::constcl::tstr-pair {pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set str {}
@@ -173,7 +272,7 @@ proc ::constcl::show-pair {pair} {
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
-    ::append str [show-pair $d]
+    ::append str [tstr-pair $d]
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
@@ -188,11 +287,11 @@ CB)
 
 TT(
 
-::tcltest::test pairslists-3.0 {try show-pair} -body {
-    puts [::constcl::show-pair [p {(a . b)}]]
-    puts [::constcl::show-pair [p {(a b c)}]]
-    puts [::constcl::show-pair [p {(a b . c)}]]
-    puts [::constcl::show-pair [p {(a)}]]
+::tcltest::test pairslists-3.0 {try tstr-pair} -body {
+    puts [::constcl::tstr-pair [p {(a . b)}]]
+    puts [::constcl::tstr-pair [p {(a b c)}]]
+    puts [::constcl::tstr-pair [p {(a b . c)}]]
+    puts [::constcl::tstr-pair [p {(a)}]]
 } -output "a . b\na b c\na b . c\na\n"
 
 TT)
@@ -346,15 +445,15 @@ foreach ads {
 } {
     reg c${ads}r
 
-    proc ::constcl::c${ads}r {pair} "
+    proc ::constcl::c${ads}r {x} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set pair \[car \$pair\]
+                set x \[car \$x\]
             } else {
-                set pair \[cdr \$pair\]
+                set x \[cdr \$x\]
             }
         }
-        return \$pair
+        return \$x
     "
 
 }

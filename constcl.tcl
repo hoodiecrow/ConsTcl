@@ -100,9 +100,9 @@ proc ::unbind {args} {
   }
   set syms $args
   foreach sym $syms {
-    set env [$env find $sym]
-    if {$env ne "::constcl::null_env"} {
-      $env unbind $sym
+    set e [$env find $sym]
+    if {$e ne "::constcl::null_env"} {
+      $e unbind $sym
     }
   }
 }
@@ -272,7 +272,7 @@ oo::singleton create ::constcl::EndOfFile {
   }
 }
 proc eof? {val} {
-  if {$val eq "#EOF"} {
+  if {$val eq ${::#EOF}} {
     return [::constcl::MkBoolean "#t"]
   } else {
     return [::constcl::MkBoolean "#f"]
@@ -1929,11 +1929,11 @@ proc ::constcl::equal? {expr1 expr2} {
 oo::class create ::constcl::Number {
   superclass ::constcl::Base
   variable value
-  constructor {v} {
-    if {[::string is double -strict $v]} {
-      set value $v
+  constructor {val} {
+    if {[::string is double -strict $val]} {
+      set value $val
     } else {
-      ::error "NUMBER expected\n$v"
+      ::error "NUMBER expected\n$val"
     }
   }
   method zero? {} {
@@ -2464,19 +2464,22 @@ proc ::constcl::not {val} {
 oo::class create ::constcl::Char {
   superclass ::constcl::Base
   variable value
-  constructor {v} {
-    switch -regexp $v {
+  constructor {val} {
+    switch -regexp $val {
       {(?i)#\\space} {
-        set v " "
+        set val " "
       }
       {(?i)#\\newline} {
-        set v "\n"
+        set val "\n"
       }
       {#\\[[:graph:]]} {
-        set v [::string index $v 2]
+        set val [::string index $val 2]
+      }
+      default {
+        ::error "CHAR expected\n$val"
       }
     }
-    set value $v
+    set value $val
   }
   method char {} {
     set value
@@ -3203,8 +3206,6 @@ proc ::constcl::load {filename} {
   }
   $port destroy
 }
-catch { ::constcl::Pair destroy }
-
 oo::class create ::constcl::Pair {
   superclass ::constcl::Base
   variable car cdr constant
@@ -3213,7 +3214,6 @@ oo::class create ::constcl::Pair {
     set cdr $d
     set constant 0
   }
-  method name {} {}
   method value {} {
     my tstr
   }
@@ -3239,14 +3239,13 @@ oo::class create ::constcl::Pair {
   }
   method mkconstant {} {
     set constant 1
+    return
   }
   method constant {} {
     return $constant
   }
   method mutable? {} {
-    expr {$constant ?
-      [::constcl::MkBoolean "#f"] :
-      [::constcl::MkBoolean "#t"]}
+    expr {$constant ? ${::#f} : ${::#t}}
   }
   method write {port} {
     $port put "("
@@ -3254,7 +3253,7 @@ oo::class create ::constcl::Pair {
     $port put ")"
   }
   method tstr {} {
-    format "(%s)" [::constcl::show-pair [self]]
+    format "(%s)" [::constcl::tstr-pair [self]]
   }
 }
 interp alias {} ::constcl::MkPair \
@@ -3264,7 +3263,7 @@ reg pair?
 proc ::constcl::pair? {val} {
   typeof? $val Pair
 }
-proc ::constcl::show-pair {pair} {
+proc ::constcl::tstr-pair {pair} {
   # take an object and print the car
   # and the cdr of the stored value
   set str {}
@@ -3275,7 +3274,7 @@ proc ::constcl::show-pair {pair} {
   if {[T [pair? $d]]} {
     # cdr is a cons pair
     ::append str " "
-    ::append str [show-pair $d]
+    ::append str [tstr-pair $d]
   } elseif {[T [null? $d]]} {
     # cdr is nil
     return $str
@@ -3333,15 +3332,15 @@ foreach ads {
 } {
     reg c${ads}r
 
-    proc ::constcl::c${ads}r {pair} "
+    proc ::constcl::c${ads}r {x} "
         foreach c \[lreverse \[split $ads {}\]\] {
             if {\$c eq \"a\"} {
-                set pair \[car \$pair\]
+                set x \[car \$x\]
             } else {
-                set pair \[cdr \$pair\]
+                set x \[cdr \$x\]
             }
         }
-        return \$pair
+        return \$x
     "
 
 }
@@ -3522,16 +3521,16 @@ proc ::constcl::assoc-proc {epred val1 val2} {
 oo::class create ::constcl::String {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    set v [string map {\\\\ \\ \\\" \" \\n \n} $v]
-    set len [::string length $v]
+  constructor {val} {
+    set val [string map {\\\\ \\ \\\" \" \\n \n} $val]
+    set len [::string length $val]
     # allocate vector space for the string's
     # characters
     set vsa [::constcl::vsAlloc $len]
     # store the characters in vector space, as
     # Char objects
     set idx $vsa
-    foreach elt [split $v {}] {
+    foreach elt [split $val {}] {
       if {$elt eq " "} {
         set c #\\space
       } elseif {$elt eq "\n"} {
@@ -3566,11 +3565,8 @@ oo::class create ::constcl::String {
     lindex [my store] $k
   }
   method store {} {
-    # present the range in vector memory where the
-    # string is stored
     set base [[::constcl::car $data] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
@@ -3606,14 +3602,28 @@ oo::class create ::constcl::String {
     return [self]
   }
   method substring {from to} {
-    join [lmap c [lrange [my store] \
-      [$from numval] [$to numval]] {$c char}] {}
+    set f [$from numval]
+    if {$f < 0 ||
+      $f >= [[my length] numval]} {
+      ::error "index out of range\n$f"
+    }
+    set t [$to numval]
+    if {$t < 0 ||
+      $t > [[my length] numval]} {
+      ::error "index out of range\n$t"
+    }
+    if {$t < $f} {
+      ::error "index out of range\n$t"
+    }
+    join [lmap c [
+      lrange [my store] $f $t-1] {$c char}] {}
   }
   method mkconstant {} {
     set constant 1
+    return
   }
   method constant {} {
-    set constant
+    return $constant
   }
   method external {} {
     return "\"[
@@ -3940,7 +3950,7 @@ oo::class create ::constcl::Symbol {
     set name
   }
   method = {symname} {
-    if {$name eq $symname} {
+    if {$name eq [$sym name]} {
       return ${::#t}
     } else {
       return ${::#f}
@@ -3949,11 +3959,11 @@ oo::class create ::constcl::Symbol {
   method constant {} {
     return 1
   }
-  method make-case-constant {} {
-    set caseconstant 1
-  }
   method case-constant {} {
     set caseconstant
+  }
+  method make-case-constant {} {
+    set caseconstant 1
   }
   method tstr {} {
     return $name
@@ -4002,28 +4012,28 @@ proc ::constcl::string->symbol {str} {
 oo::class create ::constcl::Vector {
   superclass ::constcl::Base
   variable data constant
-  constructor {v} {
-    if {[T [::constcl::list? $v]]} {
-      # if v is provided in the form of a Lisp list
-      set len [[::constcl::length $v] numval]
+  constructor {val} {
+    if {[T [::constcl::list? $val]]} {
+      # if val is provided in the form of a Lisp list
+      set len [[::constcl::length $val] numval]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      while {![T [::constcl::null? $v]]} {
-        set elt [::constcl::car $v]
+      while {![T [::constcl::null? $val]]} {
+        set elt [::constcl::car $val]
         lset ::constcl::vectorSpace $idx $elt
         incr idx
-        set v [::constcl::cdr $v]
+        set val [::constcl::cdr $val]
       }
     } else {
-      # if v is provided in the form of a Tcl list
-      set len [llength $v]
+      # if val is provided in the form of a Tcl list
+      set len [llength $val]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
       # store the elements in vector space
       set idx $vsa
-      foreach elt $v {
+      foreach elt $val {
         lset ::constcl::vectorSpace $idx $elt
         incr idx
       }
