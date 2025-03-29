@@ -58,6 +58,6 @@ Well!
 
 After 1844 lines of code, the interpreter is done.
 
-Now for the built-in procedures!
+Now for the built-in types and procedures!
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

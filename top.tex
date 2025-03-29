@@ -49,6 +49,7 @@
 \makeindex[intoc]
 \counterwithout{footnote}{chapter}
 \setcounter{secnumdepth}{1}
+\hyphenation{Cons-Tcl}
 
 \begin{document}
 \pagestyle{headings}
@@ -156,7 +157,7 @@ In Lisp, everything is either an \emph{atom}, an indivisible value, like
 else it is a \emph{list expression}, starting and ending with parentheses and
 having an operator at the front of the list, with the rest of the parts being
 operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
-the expression is a \emph{special form}. If not, like \texttt{+} or
+the expression is a \emph{special form}. If not, like \texttt{=} or
 \texttt{write}, then it's a \emph{function call}.
 
 A full description of Lisp is beyond the scope of this introduction, but Lisp
@@ -225,7 +226,7 @@ and how they are supposed to work.
 
 Another source of guidance and inspiration was ``Lisp in Small Pieces'' by
 Christian Queinnec. Yet another source was ``An Introduction to Scheme and its
-Implementation''\footnote{See \texttt{https://docs.scheme.org/schintro/}}
+Implementation''\footnote{See \texttt{https://docs.scheme.org/schintro/}}.
 
 \subsection{About the program listings}
 \label{about-the-program-listings}
@@ -242,7 +243,7 @@ lines have the \textbackslash: some are broken inside a
 \label{about-me}
 
 I'm a 60 year old former system manager who has been active in programming
-since 1979. Currently, since around 25 years, my language of choice is the
+since 1979. Currently, and for some time, my language of choice is the
 rather marginal Tcl\footnote{See \texttt{https://www.tcl-lang.org/}} (it's not
 even in the 100 most used languages). Tcl suits me, and there are things that
 one can do in Tcl that one can't easily do in other languages. Lisp is a

@@ -114,9 +114,10 @@ source constcl.tcl
 
 ::tcltest::test read-13.0 {try reading a character} -body {
     ::constcl::display [p {#\A}]
+    ::constcl::display [p {#\(}]
     ::constcl::display [p "#\\space"]
     ::constcl::display [p "#\\newline"]
-} -output "A \n"
+} -output "A( \n"
 
 ::tcltest::test read-13.3 {try reading a character} -body {
     set expr [p "#\\foobar"]

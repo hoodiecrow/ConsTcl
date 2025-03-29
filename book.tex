@@ -157,7 +157,7 @@ In Lisp, everything is either an \emph{atom}, an indivisible value, like
 else it is a \emph{list expression}, starting and ending with parentheses and
 having an operator at the front of the list, with the rest of the parts being
 operands. If the operator is a keyword like \texttt{let} or \texttt{if}, then
-the expression is a \emph{special form}. If not, like \texttt{+} or
+the expression is a \emph{special form}. If not, like \texttt{=} or
 \texttt{write}, then it's a \emph{function call}.
 
 A full description of Lisp is beyond the scope of this introduction, but Lisp
@@ -226,7 +226,7 @@ and how they are supposed to work.
 
 Another source of guidance and inspiration was ``Lisp in Small Pieces'' by
 Christian Queinnec. Yet another source was ``An Introduction to Scheme and its
-Implementation''\footnote{See \texttt{https://docs.scheme.org/schintro/}}
+Implementation''\footnote{See \texttt{https://docs.scheme.org/schintro/}}.
 
 \subsection{About the program listings}
 \label{about-the-program-listings}
@@ -243,7 +243,7 @@ lines have the \textbackslash: some are broken inside a
 \label{about-me}
 
 I'm a 60 year old former system manager who has been active in programming
-since 1979. Currently, since around 25 years, my language of choice is the
+since 1979. Currently, and for some time, my language of choice is the
 rather marginal Tcl\footnote{See \texttt{https://www.tcl-lang.org/}} (it's not
 even in the 100 most used languages). Tcl suits me, and there are things that
 one can do in Tcl that one can't easily do in other languages. Lisp is a
@@ -318,6 +318,8 @@ value & a value \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
+
+(This kind of box explains a few things about a procedure. The last line shows what kind of value the procedure returns, if any. Above that are a number of lines that describe the parameters of the procedure, in order, by name and expected value type. If a parameter name is enclosed in ?\ldots ?, it means that the parameter is optional and can be left out.)
 \index{regvar procedure}
 
 \begin{lstlisting}
@@ -391,7 +393,7 @@ By Scheme convention, predicates (procedures that return either \texttt{\#t} or 
 
 will not do, but
 
-\texttt{if \{[atom? \$x] ne \${::\#f}\} \ldots }
+\texttt{if \{[atom? \$x] ne \$\{::\#f\}\} \ldots }
 
 (``[atom? \$x] not equal to false'') works. Or see the \texttt{T} procedure.
 \end{pulledtext}
@@ -715,9 +717,10 @@ msg & a message string \\
 reg error
 
 proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    set res [lmap arg $args {
-      $arg tstr
+  set exprs $args
+  if {[llength $exprs]} {
+    set res [lmap expr $exprs {
+      $expr tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -730,6 +733,15 @@ proc ::constcl::error {msg args} {
 \index{check procedure}
 
 \texttt{check} does a check (typically a type check) on something and throws an error if it fails.
+
+\noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
+\hline
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf check (internal)} \\
+cond & an expression \\
+msg & a Tcl string \\
+\textit{Returns:} & nothing \\
+\hline
+\end{tabular}
 
 \begin{lstlisting}
 proc ::constcl::check {cond msg} {
@@ -810,8 +822,7 @@ str & a Tcl string, a Lisp string, or a string input port \\
 
 \begin{lstlisting}
 proc ::pw {str} {
-  ::constcl::write [
-    ::constcl::parse $str]
+  ::constcl::write [::constcl::parse $str]
 }
 \end{lstlisting}
 
@@ -831,8 +842,7 @@ proc ::pw {str} {
 
 \begin{lstlisting}
 proc ::rw {args} {
-  ::constcl::write [
-    ::constcl::read {*}$args]
+  ::constcl::write [::constcl::read {*}$args]
 }
 \end{lstlisting}
 
@@ -853,8 +863,7 @@ str & a Tcl string, a Lisp string, or a string input port \\
 
 \begin{lstlisting}
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::parse $str] $env
+  ::constcl::eval [::constcl::parse $str] $env
 }
 \end{lstlisting}
 
@@ -875,8 +884,7 @@ port & an input port \\
 
 \begin{lstlisting}
 proc ::re {port {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::read $port] $env
+  ::constcl::eval [::constcl::read $port] $env
 }
 \end{lstlisting}
 
@@ -1139,7 +1147,6 @@ The \texttt{Dot} class is a helper class for the parser.
 \begin{lstlisting}
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "."
   }
@@ -1175,7 +1182,6 @@ The \texttt{EndOfFile} class is for end-of-file\index{end of file} conditions.
 \begin{lstlisting}
 oo::singleton create ::constcl::EndOfFile {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<end-of-file>"
   }
@@ -1199,9 +1205,9 @@ val & a value \\
 \begin{lstlisting}
 proc eof? {val} {
   if {$val eq ${::#EOF}} {
-    return [::constcl::MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [::constcl::MkBoolean "#f"]
+    return ${::#f}
   }
 }
 \end{lstlisting}
@@ -1210,7 +1216,7 @@ proc eof? {val} {
 \label{nil-class}
 \index{NIL class}
 
-The \texttt{NIL} class has one object: the empty list called \texttt{\#NIL}.
+The \texttt{NIL} class has one instance: the empty list called \texttt{\#NIL}.
 
 \begin{lstlisting}
 oo::singleton create ::constcl::NIL {
@@ -1256,7 +1262,6 @@ The \texttt{Undefined} class is for undefined things. It was created to facilita
 \begin{lstlisting}
 oo::singleton create ::constcl::Undefined {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<undefined>"
   }
@@ -1272,7 +1277,6 @@ The \texttt{Unspecified} class is for unspecified things. Also a S9fES support c
 \begin{lstlisting}
 oo::singleton create ::constcl::Unspecified {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<unspecified>"
   }
@@ -1303,8 +1307,6 @@ For example, the external representation for a vector is a pound sign (\texttt{\
 \includegraphics{images/vector-representation.png}
 
 The \texttt{parse} or \texttt{read} procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
-
-Given a string, \texttt{parse} creates a string input port for itself to read from.
 
 Example:
 
@@ -1584,9 +1586,7 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ?
-    ${::#t} :
-    ${::#f}}
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
 }
 \end{lstlisting}
 
@@ -1731,7 +1731,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return }
+    {^$}          { return #EOF }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -1758,17 +1758,39 @@ proc ::constcl::read-expr {args} {
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
+\end{lstlisting}
+
+A character name can be one or more characters long. Accept the first character if it is a graphic character.
+
+\begin{lstlisting}
   set c [readchar]
   read-eof $c
-  while {![T [delimiter? $c]] &&
-      [::string is graph $c] &&
-      $c ne "#EOF"} {
+  if {[::string is graph $c]} {
     ::append name $c
+\end{lstlisting}
+
+Keep adding to the name as long as the input is an alphabetic character.
+
+\begin{lstlisting}
     set c [readchar]
+    while {[::string is alpha $c]} {
+      ::append name $c
+      set c [readchar]
+    }
   }
+\end{lstlisting}
+
+Check if we have a valid character name.
+
+\begin{lstlisting}
   check {valid-char? $name} {
       Invalid character constant $name
   }
+\end{lstlisting}
+
+Make and return a character object.
+
+\begin{lstlisting}
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -1793,6 +1815,11 @@ proc ::constcl::read-character-expr {} {
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
+\end{lstlisting}
+
+If one or more characters have been passed to the procedure, join them together and store them in \texttt{c}. Otherwise, read a character from input.
+
+\begin{lstlisting}
   if {[llength $args]} {
     set c [join $args {}]
   } else {
@@ -1800,18 +1827,32 @@ proc ::constcl::read-identifier-expr {args} {
   }
   read-eof $c
   set name {}
+\end{lstlisting}
+
+Add the contents of \texttt{c} to \texttt{name} as long as the character is graphic and not a delimiter or \texttt{\#EOF}.
+
+\begin{lstlisting}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [interspace? $c]] ||
-      [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
     set c [readchar]
     # do not check for EOF here
   }
+\end{lstlisting}
+
+If the last character read is a delimiter, unget it.
+
+\begin{lstlisting}
   if {[T [delimiter? $c]]} {
     set unget $c
   }
+\end{lstlisting}
+
+Check if the name is a valid identifier, and create and return a symbol object.
+
+\begin{lstlisting}
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -1836,18 +1877,40 @@ proc ::constcl::read-identifier-expr {args} {
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
   set unget {}
+\end{lstlisting}
+
+If a character has been passed to the procedure, store it in \texttt{c}. Otherwise, read a character from input.
+
+\begin{lstlisting}
   if {[llength $args]} {
     lassign $args c
   } else {
     set c [readchar]
   }
   read-eof $c
+\end{lstlisting}
+
+Add the contents of \texttt{c} to \texttt{num} as long as the character isn't space, \texttt{\#EOF}, or a delimiter.
+
+\begin{lstlisting}
   while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
   }
-  set unget $c
+\end{lstlisting}
+
+If the last character read is a delimiter, unget it.
+
+\begin{lstlisting}
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
+\end{lstlisting}
+
+Check if the contents of \texttt{num} is a valid number, and create and return a number object.
+
+\begin{lstlisting}
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
@@ -1947,15 +2010,30 @@ char & the terminating paren or bracket \\
 \begin{lstlisting}
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
+\end{lstlisting}
+
+If the first non-space character is the ending parenthesis or bracket, return an empty list.
+
+\begin{lstlisting}
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     return ${::#NIL}
   }
+\end{lstlisting}
+
+Read an expression and put it in the result list. Tentatively set the end of the list to \texttt{\#NIL}.
+
+\begin{lstlisting}
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev ${::#NIL}
+\end{lstlisting}
+
+As long as the ending parenthesis or bracket isn't found, read an expression into \texttt{x}. If it is a dot, read another expression and set the end of the list to it. Otherwise, append the expression in \texttt{x} to the result list.
+
+\begin{lstlisting}
   while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
@@ -1968,6 +2046,11 @@ proc ::constcl::read-pair {char} {
       lappend res $x
     }
   }
+\end{lstlisting}
+
+Reverse the result list and construct pairs from each item and the current end of the list. Return the final end of the list.
+
+\begin{lstlisting}
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -1995,6 +2078,11 @@ proc ::constcl::read-plus-minus {char} {
   set unget {}
   set c [readchar]
   read-eof $c
+\end{lstlisting}
+
+If the first character read is a digit, read a number. If the character passed to the procedure was a minus sign, make the number negative.
+
+\begin{lstlisting}
   if {[::string is digit -strict $c]} {
     set expr [read-number-expr $c]
     read-eof $expr
@@ -2002,6 +2090,11 @@ proc ::constcl::read-plus-minus {char} {
       set expr [- $expr]
     }
     return $expr
+\end{lstlisting}
+
+If the first character read is a space or delimiter character, return a \texttt{+} or \texttt{-} symbol, depending on the character passed to the procedure.
+
+\begin{lstlisting}
   } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
@@ -2009,6 +2102,11 @@ proc ::constcl::read-plus-minus {char} {
     } else {
       return [S "-"]
     }
+\end{lstlisting}
+
+Otherwise, read an identifier.
+
+\begin{lstlisting}
   } else {
     set expr [read-identifier-expr $char $c]
     read-eof $expr
@@ -2116,18 +2214,39 @@ proc ::constcl::read-string-expr {} {
   set str {}
   set c [readchar]
   read-eof $c
+\end{lstlisting}
+
+As long as the input isn't a double quote or end-of-file, add it to \texttt{str}.
+
+\begin{lstlisting}
   while {$c ne "\"" && $c ne "#EOF"} {
+\end{lstlisting}
+
+If the input is a backslash, add it to \texttt{str} and read another character. In this way escaped double quotes are bypassed.
+
+\begin{lstlisting}
     if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
+      read-eof $c
     }
     ::append str $c
     set c [readchar]
   }
+\end{lstlisting}
+
+If the last read character is end-of-file, the ending double quote was missing.
+
+\begin{lstlisting}
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
   set c [readchar]
+\end{lstlisting}
+
+Create and return an immutable string object.
+
+\begin{lstlisting}
   set expr [MkString $str]
   make-constant $expr
   return $expr
@@ -2185,24 +2304,38 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
+\end{lstlisting}
+
+Read an expression, put it in an element constructed as a pair with the expression and \texttt{\#NIL}, and affix the element to the result list.
+
+\begin{lstlisting}
     set e [read-expr $c]
     read-eof $e
     set elem [cons $e ${::#NIL}]
     if {$res eq {}} {
       set res $elem
-      set last $elem
     } else {
       set-cdr! $last $elem
-      set last $elem
     }
+    set last $elem
     skip-ws
     read-eof $c
   }
+\end{lstlisting}
+
+Report missing ending parenthesis.
+
+\begin{lstlisting}
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
   set c [readchar]
+\end{lstlisting}
+
+Create and return an immutable vector object.
+
+\begin{lstlisting}
   set expr [MkVector $res]
   $expr mkconstant
   return $expr
@@ -4925,7 +5058,7 @@ Well!
 
 After 1844 lines of code, the interpreter is done.
 
-Now for the built-in procedures!
+Now for the built-in types and procedures!
 
 \chapter{Built-in procedures}
 \label{builtin-procedures}

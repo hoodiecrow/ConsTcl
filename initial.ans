@@ -41,6 +41,11 @@ PR(
 reg (internal);?btype? specmacro name tstr -> none
 PR)
 
+(This kind of box explains a few things about a procedure. The last line shows
+what kind of value the procedure returns, if any. Above that are a number of
+lines that describe the parameters of the procedure, in order, by name and
+expected value type. If a parameter name is enclosed in ?...?, it means that the
+parameter is optional and can be left out.)
 PR(
 regvar (internal);name tstr value val -> none
 PR)
@@ -149,7 +154,7 @@ KB if \{[atom? $x]\} ...
 
 will not do, but 
 
-KB if \{[atom? $x] ne ${::#f}\} ...
+KB if \{[atom? $x] ne $\{::#f\}\} ...
 
 (``[atom? $x] not equal to false'') works. Or see the K{T} procedure.
 
@@ -427,9 +432,10 @@ CB(
 reg error
 
 proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    set res [lmap arg $args {
-      $arg tstr
+  set exprs $args
+  if {[llength $exprs]} {
+    set res [lmap expr $exprs {
+      $expr tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -441,6 +447,10 @@ H4 check procedure
 
 K{check} does a check (typically a type check) on something and throws an error if
 it fails.
+
+PR(
+check (internal);cond expr msg tstr -> none
+PR)
 
 CB(
 proc ::constcl::check {cond msg} {
@@ -509,8 +519,7 @@ PR)
 
 CB(
 proc ::pw {str} {
-  ::constcl::write [
-    ::constcl::parse $str]
+  ::constcl::write [::constcl::parse $str]
 }
 CB)
 
@@ -525,8 +534,7 @@ PR)
 
 CB(
 proc ::rw {args} {
-  ::constcl::write [
-    ::constcl::read {*}$args]
+  ::constcl::write [::constcl::read {*}$args]
 }
 CB)
 
@@ -542,8 +550,7 @@ PR)
 
 CB(
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::parse $str] $env
+  ::constcl::eval [::constcl::parse $str] $env
 }
 CB)
 
@@ -558,8 +565,7 @@ PR)
 
 CB(
 proc ::re {port {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::read $port] $env
+  ::constcl::eval [::constcl::read $port] $env
 }
 CB)
 
@@ -769,7 +775,6 @@ The K{Dot} class is a helper class for the parser.
 CB(
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "."
   }
@@ -797,7 +802,6 @@ The K{EndOfFile} class is for end-of-fileI{end of file} conditions.
 CB(
 oo::singleton create ::constcl::EndOfFile {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<end-of-file>"
   }
@@ -815,16 +819,16 @@ PR)
 CB(
 proc eof? {val} {
   if {$val eq ${::#EOF}} {
-    return [::constcl::MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [::constcl::MkBoolean "#f"]
+    return ${::#f}
   }
 }
 CB)
 
 H4 NIL class
 
-The K{NIL} class has one object: the empty list called K{#NIL}.
+The K{NIL} class has one instance: the empty list called K{#NIL}.
 
 CB(
 oo::singleton create ::constcl::NIL {
@@ -863,7 +867,6 @@ porting of code from `Scheme 9 from Empty Space'I{S9fES}.
 CB(
 oo::singleton create ::constcl::Undefined {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<undefined>"
   }
@@ -877,7 +880,6 @@ The K{Unspecified} class is for unspecified things. Also a S9fES support class.
 CB(
 oo::singleton create ::constcl::Unspecified {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<unspecified>"
   }

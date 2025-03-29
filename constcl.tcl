@@ -155,9 +155,10 @@ proc ::constcl::in-range {x args} {
 reg error
 
 proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    set res [lmap arg $args {
-      $arg tstr
+  set exprs $args
+  if {[llength $exprs]} {
+    set res [lmap expr $exprs {
+      $expr tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -182,20 +183,16 @@ proc ::rew {port {env ::constcl::global_env}} {
       ::constcl::read $port] $env]
 }
 proc ::pw {str} {
-  ::constcl::write [
-    ::constcl::parse $str]
+  ::constcl::write [::constcl::parse $str]
 }
 proc ::rw {args} {
-  ::constcl::write [
-    ::constcl::read {*}$args]
+  ::constcl::write [::constcl::read {*}$args]
 }
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::parse $str] $env
+  ::constcl::eval [::constcl::parse $str] $env
 }
 proc ::re {port {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::read $port] $env
+  ::constcl::eval [::constcl::read $port] $env
 }
 proc ::p {str} {
   ::constcl::parse $str
@@ -256,7 +253,6 @@ oo::abstract create ::constcl::Base {
 }
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "."
   }
@@ -266,16 +262,15 @@ proc ::constcl::dot? {val} {
 }
 oo::singleton create ::constcl::EndOfFile {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<end-of-file>"
   }
 }
 proc eof? {val} {
   if {$val eq ${::#EOF}} {
-    return [::constcl::MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [::constcl::MkBoolean "#f"]
+    return ${::#f}
   }
 }
 oo::singleton create ::constcl::NIL {
@@ -295,14 +290,12 @@ proc ::constcl::null? {val} {
 }
 oo::singleton create ::constcl::Undefined {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<undefined>"
   }
 }
 oo::singleton create ::constcl::Unspecified {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<unspecified>"
   }
@@ -400,9 +393,7 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ?
-    ${::#t} :
-    ${::#f}}
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
 }
 proc ::constcl::read-end? {} {
   upvar c c unget unget
@@ -473,7 +464,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return }
+    {^$}          { return #EOF }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -486,11 +477,13 @@ proc ::constcl::read-character-expr {} {
   set name "#\\"
   set c [readchar]
   read-eof $c
-  while {![T [delimiter? $c]] &&
-      [::string is graph $c] &&
-      $c ne "#EOF"} {
+  if {[::string is graph $c]} {
     ::append name $c
     set c [readchar]
+    while {[::string is alpha $c]} {
+      ::append name $c
+      set c [readchar]
+    }
   }
   check {valid-char? $name} {
       Invalid character constant $name
@@ -510,8 +503,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [interspace? $c]] ||
-      [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
@@ -539,7 +531,9 @@ proc ::constcl::read-number-expr {args} {
     ::append num $c
     set c [readchar]
   }
-  set unget $c
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
@@ -680,6 +674,7 @@ proc ::constcl::read-string-expr {} {
     if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
+      read-eof $c
     }
     ::append str $c
     set c [readchar]
@@ -718,11 +713,10 @@ proc ::constcl::read-vector-expr {} {
     set elem [cons $e ${::#NIL}]
     if {$res eq {}} {
       set res $elem
-      set last $elem
     } else {
       set-cdr! $last $elem
-      set last $elem
     }
+    set last $elem
     skip-ws
     read-eof $c
   }

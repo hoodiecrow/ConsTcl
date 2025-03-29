@@ -38,8 +38,6 @@ character, matching each character against a fitting external representation.
 When done, it creates a ConsTcl object, which is the internal representation of
 an expression.  The object can then be passed to the evaluator.
 
-Given a string, K{parse} creates a string input port for itself to read from.
-
 Example:
 
 VB(
@@ -363,9 +361,7 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ?
-    ${::#t} :
-    ${::#f}}
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
 }
 CB)
 
@@ -516,7 +512,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return }
+    {^$}          { return #EOF }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -572,17 +568,40 @@ CB(
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
+CB)
+
+A character name can be one or more characters long. Accept the first character
+if it is a graphic character.
+
+CB(
   set c [readchar]
   read-eof $c
-  while {![T [delimiter? $c]] &&
-      [::string is graph $c] &&
-      $c ne "#EOF"} {
+  if {[::string is graph $c]} {
     ::append name $c
+CB)
+
+Keep adding to the name as long as the input is an alphabetic character.
+
+CB(
     set c [readchar]
+    while {[::string is alpha $c]} {
+      ::append name $c
+      set c [readchar]
+    }
   }
+CB)
+
+Check if we have a valid character name.
+
+CB(
   check {valid-char? $name} {
       Invalid character constant $name
   }
+CB)
+
+Make and return a character object.
+
+CB(
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -593,9 +612,10 @@ TT(
 
 ::tcltest::test read-13.0 {try reading a character} -body {
     ::constcl::display [p {#\A}]
+    ::constcl::display [p {#\(}]
     ::constcl::display [p "#\\space"]
     ::constcl::display [p "#\\newline"]
-} -output "A \n"
+} -output "A( \n"
 
 ::tcltest::test read-13.3 {try reading a character} -body {
     set expr [p "#\\foobar"]
@@ -632,6 +652,12 @@ CB(
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
+CB)
+
+If one or more characters have been passed to the procedure, join them together
+and store them in K{c}. Otherwise, read a character from input.
+
+CB(
   if {[llength $args]} {
     set c [join $args {}]
   } else {
@@ -639,18 +665,33 @@ proc ::constcl::read-identifier-expr {args} {
   }
   read-eof $c
   set name {}
+CB)
+
+Add the contents of K{c} to K{name} as long as the character is graphic and not
+a delimiter or K{#EOF}.
+
+CB(
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [interspace? $c]] ||
-      [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
     set c [readchar]
     # do not check for EOF here
   }
+CB)
+
+If the last character read is a delimiter, unget it.
+
+CB(
   if {[T [delimiter? $c]]} {
     set unget $c
   }
+CB)
+
+Check if the name is a valid identifier, and create and return a symbol object.
+
+CB(
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -699,18 +740,43 @@ CB(
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
   set unget {}
+CB)
+
+If a character has been passed to the procedure, store it in K{c}. Otherwise,
+read a character from input.
+
+CB(
   if {[llength $args]} {
     lassign $args c
   } else {
     set c [readchar]
   }
   read-eof $c
+CB)
+
+Add the contents of K{c} to K{num} as long as the character isn't space,
+K{#EOF}, or a delimiter.
+
+CB(
   while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
   }
-  set unget $c
+CB)
+
+If the last character read is a delimiter, unget it.
+
+CB(
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
+CB)
+
+Check if the contents of K{num} is a valid number, and create and return a
+number object.
+
+CB(
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
@@ -844,15 +910,37 @@ IX read-pair
 CB(
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
+CB)
+
+If the first non-space character is the ending parenthesis or bracket, return an
+empty list.
+
+CB(
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     return ${::#NIL}
   }
+CB)
+
+Read an expression and put it in the result list. Tentatively set the end of
+the list to K{#NIL}.
+
+CB(
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev ${::#NIL}
+CB)
+
+As long as the ending parenthesis or bracket isn't found, read an expression
+into K{x}. If it is a dot, read another expression and set the end of the list
+to it.  Otherwise, append the expression in K{x} to the result list.
+
+PR(
+PR)
+
+CB(
   while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
@@ -865,6 +953,12 @@ proc ::constcl::read-pair {char} {
       lappend res $x
     }
   }
+CB)
+
+Reverse the result list and construct pairs from each item and the current end
+of the list. Return the final end of the list.
+
+CB(
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -952,6 +1046,12 @@ proc ::constcl::read-plus-minus {char} {
   set unget {}
   set c [readchar]
   read-eof $c
+CB)
+
+If the first character read is a digit, read a number. If the character passed
+to the procedure was a minus sign, make the number negative.
+
+CB(
   if {[::string is digit -strict $c]} {
     set expr [read-number-expr $c]
     read-eof $expr
@@ -959,6 +1059,12 @@ proc ::constcl::read-plus-minus {char} {
       set expr [- $expr]
     }
     return $expr
+CB)
+
+If the first character read is a space or delimiter character, return a K{+} or
+K{-} symbol, depending on the character passed to the procedure.
+
+CB(
   } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
@@ -966,6 +1072,11 @@ proc ::constcl::read-plus-minus {char} {
     } else {
       return [S "-"]
     }
+CB)
+
+Otherwise, read an identifier.
+
+CB(
   } else {
     set expr [read-identifier-expr $char $c]
     read-eof $expr
@@ -1146,18 +1257,40 @@ proc ::constcl::read-string-expr {} {
   set str {}
   set c [readchar]
   read-eof $c
+CB)
+
+As long as the input isn't a double quote or end-of-file, add it to K{str}.
+
+CB(
   while {$c ne "\"" && $c ne "#EOF"} {
+CB)
+
+If the input is a backslash, add it to K{str} and read another character. In
+this way escaped double quotes are bypassed.
+
+CB(
     if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
+      read-eof $c
     }
     ::append str $c
     set c [readchar]
   }
+CB)
+
+If the last read character is end-of-file, the ending double quote was missing.
+
+CB(
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
   set c [readchar]
+CB)
+
+Create and return an immutable string object.
+
+CB(
   set expr [MkString $str]
   make-constant $expr
   return $expr
@@ -1271,24 +1404,39 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
+CB)
+
+Read an expression, put it in an element constructed as a pair with the
+expression and K{#NIL}, and affix the element to the result list.
+
+CB(
     set e [read-expr $c]
     read-eof $e
     set elem [cons $e ${::#NIL}]
     if {$res eq {}} {
       set res $elem
-      set last $elem
     } else {
       set-cdr! $last $elem
-      set last $elem
     }
+    set last $elem
     skip-ws
     read-eof $c
   }
+CB)
+
+Report missing ending parenthesis.
+
+CB(
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
   set c [readchar]
+CB)
+
+Create and return an immutable vector object.
+
+CB(
   set expr [MkVector $res]
   $expr mkconstant
   return $expr

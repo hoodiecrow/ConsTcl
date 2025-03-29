@@ -73,6 +73,8 @@ There is also `` regvar ``, which registers variables. You pass _name_ and _valu
 
 <table border=1><thead><tr><th colspan=2 align="left">regvar (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>value</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
+(This kind of box explains a few things about a procedure. The last line shows what kind of value the procedure returns, if any. Above that are a number of lines that describe the parameters of the procedure, in order, by name and expected value type. If a parameter name is enclosed in ?...?, it means that the parameter is optional and can be left out.)
+
 ```
 unset -nocomplain ::constcl::defreg
 
@@ -381,9 +383,10 @@ proc ::constcl::in-range {x args} {
 reg error
 
 proc ::constcl::error {msg args} {
-  if {[llength $args]} {
-    set res [lmap arg $args {
-      $arg tstr
+  set exprs $args
+  if {[llength $exprs]} {
+    set res [lmap expr $exprs {
+      $expr tstr
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -394,6 +397,8 @@ proc ::constcl::error {msg args} {
 #### check procedure
 
 `` check `` does a check (typically a type check) on something and throws an error if it fails.
+
+<table border=1><thead><tr><th colspan=2 align="left">check (internal)</th></tr></thead><tr><td>cond</td><td>an expression</td></tr><tr><td>msg</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::constcl::check {cond msg} {
@@ -446,8 +451,7 @@ proc ::rew {port {env ::constcl::global_env}} {
 
 ```
 proc ::pw {str} {
-  ::constcl::write [
-    ::constcl::parse $str]
+  ::constcl::write [::constcl::parse $str]
 }
 ```
 
@@ -459,8 +463,7 @@ proc ::pw {str} {
 
 ```
 proc ::rw {args} {
-  ::constcl::write [
-    ::constcl::read {*}$args]
+  ::constcl::write [::constcl::read {*}$args]
 }
 ```
 
@@ -472,8 +475,7 @@ proc ::rw {args} {
 
 ```
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::parse $str] $env
+  ::constcl::eval [::constcl::parse $str] $env
 }
 ```
 
@@ -485,8 +487,7 @@ proc ::pe {str {env ::constcl::global_env}} {
 
 ```
 proc ::re {port {env ::constcl::global_env}} {
-  ::constcl::eval [
-    ::constcl::read $port] $env
+  ::constcl::eval [::constcl::read $port] $env
 }
 ```
 
@@ -659,7 +660,6 @@ The `` Dot `` class is a helper class for the parser.
 ```
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "."
   }
@@ -685,7 +685,6 @@ The `` EndOfFile `` class is for end-of-file conditions.
 ```
 oo::singleton create ::constcl::EndOfFile {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<end-of-file>"
   }
@@ -701,16 +700,16 @@ oo::singleton create ::constcl::EndOfFile {
 ```
 proc eof? {val} {
   if {$val eq ${::#EOF}} {
-    return [::constcl::MkBoolean "#t"]
+    return ${::#t}
   } else {
-    return [::constcl::MkBoolean "#f"]
+    return ${::#f}
   }
 }
 ```
 
 #### NIL class
 
-The `` NIL `` class has one object: the empty list called `` #NIL ``.
+The `` NIL `` class has one instance: the empty list called `` #NIL ``.
 
 ```
 oo::singleton create ::constcl::NIL {
@@ -746,7 +745,6 @@ The `` Undefined `` class is for undefined things. It was created to facilitate 
 ```
 oo::singleton create ::constcl::Undefined {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<undefined>"
   }
@@ -760,7 +758,6 @@ The `` Unspecified `` class is for unspecified things. Also a S9fES support clas
 ```
 oo::singleton create ::constcl::Unspecified {
   superclass ::constcl::Base
-  method mkconstant {} {}
   method tstr {} {
     format "#<unspecified>"
   }
@@ -786,8 +783,6 @@ For example, the external representation for a vector is a pound sign (`` # ``),
 ![#](images/vector-representation.png)
 
 The `` parse `` or `` read `` procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
-
-Given a string, `` parse `` creates a string input port for itself to read from.
 
 Example:
 
@@ -1003,9 +998,7 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ?
-    ${::#t} :
-    ${::#f}}
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
 }
 ```
 
@@ -1118,7 +1111,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return }
+    {^$}          { return #EOF }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -1138,17 +1131,39 @@ proc ::constcl::read-expr {args} {
 proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
+```
+
+A character name can be one or more characters long. Accept the first character if it is a graphic character.
+
+```
   set c [readchar]
   read-eof $c
-  while {![T [delimiter? $c]] &&
-      [::string is graph $c] &&
-      $c ne "#EOF"} {
+  if {[::string is graph $c]} {
     ::append name $c
+```
+
+Keep adding to the name as long as the input is an alphabetic character.
+
+```
     set c [readchar]
+    while {[::string is alpha $c]} {
+      ::append name $c
+      set c [readchar]
+    }
   }
+```
+
+Check if we have a valid character name.
+
+```
   check {valid-char? $name} {
       Invalid character constant $name
   }
+```
+
+Make and return a character object.
+
+```
   set expr [MkChar $name]
   read-eof $expr
   return $expr
@@ -1165,6 +1180,11 @@ proc ::constcl::read-character-expr {} {
 proc ::constcl::read-identifier-expr {args} {
   upvar c c unget unget
   set unget {}
+```
+
+If one or more characters have been passed to the procedure, join them together and store them in `` c ``. Otherwise, read a character from input.
+
+```
   if {[llength $args]} {
     set c [join $args {}]
   } else {
@@ -1172,18 +1192,32 @@ proc ::constcl::read-identifier-expr {args} {
   }
   read-eof $c
   set name {}
+```
+
+Add the contents of `` c `` to `` name `` as long as the character is graphic and not a delimiter or `` #EOF ``.
+
+```
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [interspace? $c]] ||
-      [T [delimiter? $c]]} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
     set c [readchar]
     # do not check for EOF here
   }
+```
+
+If the last character read is a delimiter, unget it.
+
+```
   if {[T [delimiter? $c]]} {
     set unget $c
   }
+```
+
+Check if the name is a valid identifier, and create and return a symbol object.
+
+```
   # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
@@ -1200,18 +1234,40 @@ proc ::constcl::read-identifier-expr {args} {
 proc ::constcl::read-number-expr {args} {
   upvar c c unget unget
   set unget {}
+```
+
+If a character has been passed to the procedure, store it in `` c ``. Otherwise, read a character from input.
+
+```
   if {[llength $args]} {
     lassign $args c
   } else {
     set c [readchar]
   }
   read-eof $c
+```
+
+Add the contents of `` c `` to `` num `` as long as the character isn't space, `` #EOF ``, or a delimiter.
+
+```
   while {![T [interspace? $c]] && $c ne "#EOF" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
   }
-  set unget $c
+```
+
+If the last character read is a delimiter, unget it.
+
+```
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
+```
+
+Check if the contents of `` num `` is a valid number, and create and return a number object.
+
+```
   check {::string is double -strict $num} {
       Invalid numeric constant $num
   }
@@ -1289,15 +1345,30 @@ __read-pair__ procedure
 ```
 proc ::constcl::read-pair {char} {
   upvar c c unget unget
+```
+
+If the first non-space character is the ending parenthesis or bracket, return an empty list.
+
+```
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
     return ${::#NIL}
   }
+```
+
+Read an expression and put it in the result list. Tentatively set the end of the list to `` #NIL ``.
+
+```
   set a [read-expr $c]
   set res $a
   skip-ws
   set prev ${::#NIL}
+```
+
+As long as the ending parenthesis or bracket isn't found, read an expression into `` x ``. If it is a dot, read another expression and set the end of the list to it. Otherwise, append the expression in `` x `` to the result list.
+
+```
   while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
@@ -1310,6 +1381,11 @@ proc ::constcl::read-pair {char} {
       lappend res $x
     }
   }
+```
+
+Reverse the result list and construct pairs from each item and the current end of the list. Return the final end of the list.
+
+```
   foreach r [lreverse $res] {
     set prev [cons $r $prev]
   }
@@ -1329,6 +1405,11 @@ proc ::constcl::read-plus-minus {char} {
   set unget {}
   set c [readchar]
   read-eof $c
+```
+
+If the first character read is a digit, read a number. If the character passed to the procedure was a minus sign, make the number negative.
+
+```
   if {[::string is digit -strict $c]} {
     set expr [read-number-expr $c]
     read-eof $expr
@@ -1336,6 +1417,11 @@ proc ::constcl::read-plus-minus {char} {
       set expr [- $expr]
     }
     return $expr
+```
+
+If the first character read is a space or delimiter character, return a `` + `` or `` - `` symbol, depending on the character passed to the procedure.
+
+```
   } elseif {[T [interspace? $c]] ||
       [T [delimiter? $c]]} {
     if {$char eq "+"} {
@@ -1343,6 +1429,11 @@ proc ::constcl::read-plus-minus {char} {
     } else {
       return [S "-"]
     }
+```
+
+Otherwise, read an identifier.
+
+```
   } else {
     set expr [read-identifier-expr $char $c]
     read-eof $expr
@@ -1422,18 +1513,39 @@ proc ::constcl::read-string-expr {} {
   set str {}
   set c [readchar]
   read-eof $c
+```
+
+As long as the input isn't a double quote or end-of-file, add it to `` str ``.
+
+```
   while {$c ne "\"" && $c ne "#EOF"} {
+```
+
+If the input is a backslash, add it to `` str `` and read another character. In this way escaped double quotes are bypassed.
+
+```
     if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
+      read-eof $c
     }
     ::append str $c
     set c [readchar]
   }
+```
+
+If the last read character is end-of-file, the ending double quote was missing.
+
+```
   if {$c eq "#EOF"} {
     error "bad string (no ending double quote)"
   }
   set c [readchar]
+```
+
+Create and return an immutable string object.
+
+```
   set expr [MkString $str]
   make-constant $expr
   return $expr
@@ -1477,24 +1589,38 @@ proc ::constcl::read-vector-expr {} {
   set last {}
   set c [readchar]
   while {$c ne "#EOF" && $c ne ")"} {
+```
+
+Read an expression, put it in an element constructed as a pair with the expression and `` #NIL ``, and affix the element to the result list.
+
+```
     set e [read-expr $c]
     read-eof $e
     set elem [cons $e ${::#NIL}]
     if {$res eq {}} {
       set res $elem
-      set last $elem
     } else {
       set-cdr! $last $elem
-      set last $elem
     }
+    set last $elem
     skip-ws
     read-eof $c
   }
+```
+
+Report missing ending parenthesis.
+
+```
   if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
   }
   set unget {}
   set c [readchar]
+```
+
+Create and return an immutable vector object.
+
+```
   set expr [MkVector $res]
   $expr mkconstant
   return $expr
@@ -3613,7 +3739,7 @@ Well!
 
 After 1844 lines of code, the interpreter is done.
 
-Now for the built-in procedures!
+Now for the built-in types and procedures!
 
 ## Built-in procedures
 
