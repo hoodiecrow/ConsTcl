@@ -1,10 +1,10 @@
-\documentclass[twoside]{report}
-\usepackage[a5paper]{geometry}
+\documentclass[a5paper,draft]{book}
+%\usepackage[a5paper]{geometry}
 \usepackage{newpxmath}
 %\usepackage{libertine} \usepackage[libertine]{newtxmath}
 %\usepackage{kpfonts}
-\usepackage{graphicx}
-\usepackage{listings}
+\usepackage[final]{graphicx}
+\usepackage[final]{listings}
 \usepackage[T1]{fontenc}
 \usepackage{imakeidx}
 \usepackage{marginnote}
@@ -23,7 +23,7 @@
   numbers=left,
   numberstyle=\tiny,
   firstnumber=last,
-  basicstyle=\small\ttfamily,
+  basicstyle=\footnotesize\ttfamily,
 }
 %\renewcommand{\thesection}{\arabic{section}}
 \title{Into the Interpreter\\with ConsTcl}
@@ -50,9 +50,11 @@
 \counterwithout{footnote}{chapter}
 \setcounter{secnumdepth}{1}
 \hyphenation{Cons-Tcl}
+\hyphenation{ins-tan-ce}
 
 \begin{document}
-\pagestyle{headings}
+\frontmatter
+\pagestyle{empty}
 \maketitle
 
 \renewcommand*{\contentsname}{Short contents}
@@ -63,10 +65,11 @@
 \etocignoretoctocdepth
 \tableofcontents
 
-
-\chapter{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+\chapter*{Introduction}
 \label{introduction}
-\section{To run the software}
+\addcontentsline{toc}{section}{To run the software}
+\section*{To run the software}
 \label{to-run-the-software}
 
 
@@ -117,7 +120,8 @@ noticed. Contact me at
 with any queries or error reports. I intend to keep updating the software to
 include bug fixes and interesting additions, within reason.
 
-\section{Background}
+\addcontentsline{toc}{section}{Background}
+\section*{Background}
 \label{background}
 
 It all started with Peter Norvig's\index{Norvig, Peter} Lisp emulator
@@ -272,6 +276,13 @@ I'd like to thank
 
 And now let's journey into the Interpreter.
 
+\mainmatter
+\pagestyle{headings}
+
+
+\part{The interpreter}
+\label{the-interpreter}
+
 \chapter{Initial declarations}
 \label{initial-declarations}
 
@@ -303,7 +314,7 @@ There is also \texttt{regvar}, which registers variables. You pass \emph{name} a
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reg (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{reg (internal)}} \\
 ?btype? & either 'special' or 'macro' \\
 name & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -312,7 +323,7 @@ name & a Tcl string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf regvar (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{regvar (internal)}} \\
 name & a Tcl string \\
 value & a value \\
 \textit{Returns:} & nothing \\
@@ -400,7 +411,7 @@ will not do, but
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf atom? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{atom? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -434,7 +445,7 @@ if {[T [atom? $x]]} ...
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf T (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{T (internal)}} \\
 val & a value \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
@@ -458,7 +469,7 @@ proc ::T {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assert (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{assert (internal)}} \\
 expr & a Tcl expression \\
 \textit{Returns:} & nothing \\
 \hline
@@ -481,7 +492,7 @@ A Tcl version of the procedure in the Scheme base (see page \pageref{pairlis-pro
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis-tcl (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pairlis-tcl (internal)}} \\
 lvals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of association pairs \\
 \hline
@@ -507,7 +518,7 @@ proc ::constcl::pairlis-tcl {a b} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf usage (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{usage (internal)}} \\
 usage & an expression \\
 expr & an expression \\
 \textit{Returns:} & nothing \\
@@ -542,7 +553,7 @@ proc ::constcl::usage {usage expr} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pn (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pn (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -561,7 +572,7 @@ proc ::pn {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf unbind (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{unbind (internal)}} \\
 syms & some symbols \\
 \textit{Returns:} & nothing \\
 \hline
@@ -603,7 +614,7 @@ For each symbol given, check if it is bound in \texttt{env} or any of its linked
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf typeof? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{typeof? (internal)}} \\
 val & a value \\
 type & a Tcl string \\
 \textit{Returns:} & a boolean \\
@@ -628,7 +639,7 @@ proc ::constcl::typeof? {val type} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf splitlist (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{splitlist (internal)}} \\
 vals & a Lisp list of values \\
 \textit{Returns:} & a Tcl list of values \\
 \hline
@@ -656,7 +667,7 @@ The plan is to arrange a sequence of numbers, given one, two or three ConsTcl Nu
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf in-range (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{in-range (public)}} \\
 x & a number \\
 ?e? & a number \\
 ?t? & a number \\
@@ -706,7 +717,7 @@ proc ::constcl::in-range {x args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf error (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{error (public)}} \\
 msg & a message string \\
 ?exprs? & some expressions \\
 \textit{Returns:} & -don't care- \\
@@ -736,7 +747,7 @@ proc ::constcl::error {msg args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf check (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{check (internal)}} \\
 cond & an expression \\
 msg & a Tcl string \\
 \textit{Returns:} & nothing \\
@@ -768,7 +779,7 @@ Testing gets easier if you have the software tools to manipulate and pick apart 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pew (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pew (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
@@ -791,7 +802,7 @@ proc ::pew {str {env ::constcl::global_env}} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rew (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rew (internal)}} \\
 port & an input port \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
@@ -814,7 +825,7 @@ proc ::rew {port {env ::constcl::global_env}} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pw (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pw (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -834,7 +845,7 @@ proc ::pw {str} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rw (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rw (internal)}} \\
 ?port? & an input port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -854,7 +865,7 @@ proc ::rw {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pe (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pe (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
@@ -875,7 +886,7 @@ proc ::pe {str {env ::constcl::global_env}} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf re (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{re (internal)}} \\
 port & an input port \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
@@ -896,7 +907,7 @@ proc ::re {port {env ::constcl::global_env}} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf p (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{p (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & an expression \\
 \hline
@@ -916,7 +927,7 @@ proc ::p {str} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf e (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{e (internal)}} \\
 expr & an expression \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
@@ -937,7 +948,7 @@ proc ::e {expr {env ::constcl::global_env}} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf w (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{w (internal)}} \\
 val & a value \\
 \textit{Returns:} & nothing \\
 \hline
@@ -957,7 +968,7 @@ proc ::w {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf r (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{r (internal)}} \\
 ?port? & an input port \\
 \textit{Returns:} & an expression \\
 \hline
@@ -977,7 +988,7 @@ proc ::r {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf prw (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{prw (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1000,7 +1011,7 @@ proc ::prw {str} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pxw (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pxw (internal)}} \\
 str & a Tcl string, a Lisp string, or a string input port \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
@@ -1041,7 +1052,7 @@ The \texttt{mkconstant} method is a dummy method that can be called when the ins
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) mkconstant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) mkconstant (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -1054,7 +1065,7 @@ The \texttt{write} method is used by the \texttt{write} standard procedure to pr
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) write (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) write (internal)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1070,7 +1081,7 @@ The \texttt{display} method is used by the \texttt{display} standard procedure t
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) display (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) display (internal)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1086,7 +1097,7 @@ The \texttt{show} method yields the external representation of the instance as a
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) show (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) show (internal)}} \\
 \textit{Returns:} & a string \\
 \hline
 \end{tabular}
@@ -1101,7 +1112,7 @@ The \texttt{tstr} method yields the external representation of the instance as a
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -1116,7 +1127,7 @@ The \texttt{unknown} method responds to calls to undefined methods. It produces 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (concrete instance) unknown (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) unknown (internal)}} \\
 method\_name & a Tcl string \\
 args & some arguments \\
 \textit{Returns:} & nothing \\
@@ -1161,7 +1172,7 @@ oo::class create ::constcl::Dot {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf dot? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{dot? (internal)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1196,7 +1207,7 @@ oo::singleton create ::constcl::EndOfFile {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eof? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{eof? (internal)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1235,7 +1246,7 @@ The \texttt{null?} standard predicate recognizes the empty list.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf null? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{null? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1360,7 +1371,7 @@ Ports are an abstraction of the input or output mechanism. An input port can be 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{parse (internal)}} \\
 inp & a Tcl string, a Lisp string, or a string input port \\
 \textit{Returns:} & an expression \\
 \hline
@@ -1402,7 +1413,7 @@ One can pass a port to \texttt{read} (including a string input port) in which ca
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read (public)}} \\
 ?port? & an input port \\
 \textit{Returns:} & an expression \\
 \hline
@@ -1439,7 +1450,7 @@ The \texttt{make-constant} helper procedure is called to set expressions to cons
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-constant (internal)}} \\
 val & a value \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1468,7 +1479,7 @@ The \texttt{interspace?} helper procedure recognizes whitespace between value re
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf interspace? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{interspace? (internal)}} \\
 c & a Tcl character \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1492,7 +1503,7 @@ The \texttt{delimiter?} helper procedure recognizes delimiter characters between
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delimiter? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{delimiter? (internal)}} \\
 c & a Tcl character \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1516,7 +1527,7 @@ The \texttt{valid-char?} helper procedure compares a potential character constan
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf valid-char? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{valid-char? (internal)}} \\
 name & a Tcl string \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -1541,7 +1552,7 @@ proc ::constcl::valid-char? {name} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf readchar (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{readchar (internal)}} \\
 \textit{Returns:} & a Tcl character or end of file \\
 \hline
 \end{tabular}
@@ -1570,7 +1581,7 @@ proc ::constcl::readchar {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf find-char? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{find-char? (internal)}} \\
 char & a Tcl character \\
 \textit{Returns:} & a boolean or end of file \\
 \hline
@@ -1598,7 +1609,7 @@ proc ::constcl::find-char? {char} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-end? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-end? (internal)}} \\
 \textit{Returns:} & a boolean or end of file \\
 \hline
 \end{tabular}
@@ -1629,7 +1640,7 @@ proc ::constcl::read-end? {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf skip-ws (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{skip-ws (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -1664,7 +1675,7 @@ proc ::constcl::skip-ws {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-eof (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-eof (internal)}} \\
 chars & some characters \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1697,7 +1708,7 @@ The \texttt{read-expr} procedure reads the first available character from the in
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-expr (internal)}} \\
 ?char? & a Tcl character \\
 \textit{Returns:} & an expression or end of file \\
 \hline
@@ -1749,7 +1760,7 @@ proc ::constcl::read-expr {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-character-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-character-expr (internal)}} \\
 \textit{Returns:} & a character or end of file \\
 \hline
 \end{tabular}
@@ -1805,7 +1816,7 @@ Make and return a character object.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-identifier-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-identifier-expr (internal)}} \\
 ?chars? & some Tcl characters \\
 \textit{Returns:} & a symbol \\
 \hline
@@ -1867,7 +1878,7 @@ Check if the name is a valid identifier, and create and return a symbol object.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-number-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-number-expr (internal)}} \\
 ?char? & a Tcl character \\
 \textit{Returns:} & a number or end of file \\
 \hline
@@ -1927,7 +1938,7 @@ A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of an
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-object-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-object-expr (internal)}} \\
 \textit{Returns:} & a ConsTcl object or end of file \\
 \hline
 \end{tabular}
@@ -1966,7 +1977,7 @@ The \texttt{read-pair-expr} procedure reads everything between two matching pare
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pair-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-pair-expr (internal)}} \\
 char & the terminating paren or bracket \\
 \textit{Returns:} & a structure of pair expressions or end of file \\
 \hline
@@ -2000,7 +2011,7 @@ proc ::constcl::read-pair-expr {char} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pair (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-pair (internal)}} \\
 char & the terminating paren or bracket \\
 \textit{Returns:} & a structure of pair expressions or end of file \\
 \hline
@@ -2066,7 +2077,7 @@ Reverse the result list and construct pairs from each item and the current end o
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-plus-minus (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-plus-minus (internal)}} \\
 char & a Tcl character \\
 \textit{Returns:} & either the symbols + or - or a number or end of file \\
 \hline
@@ -2123,7 +2134,7 @@ Otherwise, read an identifier.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-pound (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-pound (internal)}} \\
 \textit{Returns:} & a vector, boolean, or character value or end of file \\
 \hline
 \end{tabular}
@@ -2155,7 +2166,7 @@ proc ::constcl::read-pound {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-quasiquoted-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-quasiquoted-expr (internal)}} \\
 \textit{Returns:} & an expr. wr. in the quasiquote symbol or end of file \\
 \hline
 \end{tabular}
@@ -2179,7 +2190,7 @@ proc ::constcl::read-quasiquoted-expr {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-quoted-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-quoted-expr (internal)}} \\
 \textit{Returns:} & an expression wrapped in the quote symbol or end of file \\
 \hline
 \end{tabular}
@@ -2203,7 +2214,7 @@ proc ::constcl::read-quoted-expr {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-string-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-string-expr (internal)}} \\
 \textit{Returns:} & a string \\
 \hline
 \end{tabular}
@@ -2261,7 +2272,7 @@ When a comma is found in the input stream, \texttt{read-unquoted-expr} is activa
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-unquoted-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-unquoted-expr (internal)}} \\
 \textit{Returns:} & an expr. wr. in the unquote/-splicing symbol or end of file \\
 \hline
 \end{tabular}
@@ -2292,7 +2303,7 @@ proc ::constcl::read-unquoted-expr {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf read-vector-expr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-vector-expr (internal)}} \\
 \textit{Returns:} & a vector or end of file \\
 \hline
 \end{tabular}
@@ -2383,7 +2394,7 @@ Syntax: \emph{symbol}
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lookup (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{lookup (internal)}} \\
 sym & a symbol \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -2417,7 +2428,7 @@ Only numeric, string, character, and boolean constants evaluate to themselves. T
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf self-evaluating? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{self-evaluating? (internal)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -2455,7 +2466,7 @@ The \texttt{quote} special form is expanded by \texttt{special-quote}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-quote (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-quote (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -2488,7 +2499,7 @@ The \texttt{if} special form is expanded by \texttt{special-if}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-if (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-if (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -2542,7 +2553,7 @@ The \texttt{case} special form is expanded by \texttt{special-case}. It expands 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-case (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-case (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -2581,7 +2592,7 @@ In this and many other special form and macro expanders I use a quasiquote\index
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-case (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{do-case (internal)}} \\
 keyexpr & an expression \\
 clauses & a Lisp list of expressions \\
 env & an environment \\
@@ -2595,23 +2606,36 @@ proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set keyl [caar $clauses]
+\end{lstlisting}
+
+If the length of the \emph{clauses} is greater than 0, extract a \emph{datumlist} and a \emph{body} from the first clause. Then build a \emph{predicate} of the form \texttt{(memv keyexpr (quote datumlist))}.
+
+\begin{lstlisting}
+    set datumlist [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
+    set predicate [list [S memv] $keyexpr \
+        [list [S quote] $datumlist]]
+\end{lstlisting}
+
+If the length of the \emph{clauses} is 1, meaning that this is the last clause, and an \texttt{else} is found instead of a datumlist, set the predicate to \texttt{\#t}.
+
+\begin{lstlisting}
     if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl ${::#t}
+        set predicate ${::#t}
       }
     }
+\end{lstlisting}
+
+Finally, build a quasiquote structure and expand it to get the expansion of the \texttt{case} expression.
+
+\begin{lstlisting}
     set env [MkEnv $env]
-    /define [S keyl] $keyl $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
+    set qq "`(if ,predicate
                (begin ,@body)
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -2658,7 +2682,7 @@ The \texttt{cond} special form is expanded by \texttt{special-cond}. It expands 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-cond (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-cond (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -2680,7 +2704,7 @@ proc ::constcl::special-cond {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-cond (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{do-cond (internal)}} \\
 tail & a Lisp list of expressions \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -2694,34 +2718,54 @@ proc ::constcl::do-cond {tail env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set pred [caar $clauses]
+\end{lstlisting}
+
+If the length of the \emph{clauses} is greater than 0, extract a \emph{predicate} and a \emph{body} from the first clause.
+
+\begin{lstlisting}
+    set predicate [caar $clauses]
     set body [cdar $clauses]
+\end{lstlisting}
+
+If the length of the \emph{clauses} is 1, meaning that this is the last clause, and an \texttt{else} is found instead of a predicate, set the predicate to \texttt{\#t}.
+
+\begin{lstlisting}
+    if {[T [eq? [length $clauses] [N 1]]]} {
+      if {[T [eq? $predicate [S else]]]} {
+        set predicate ${::#t}
+      }
+    }
+\end{lstlisting}
+
+If there is a \texttt{=>} between the \emph{predicate} and the \emph{body}, rewrite the \emph{body} to call the \texttt{caddar} of the \emph{clauses} with the result of \emph{predicate} as argument.
+
+\begin{lstlisting}
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [list [caddar $clauses] $pred]
+      set body [list [caddar $clauses] $predicate]
+\end{lstlisting}
+
+Otherwise, if the \emph{body} is empty, set \emph{body} to \emph{predicate}. If \emph{body} has one or more expressions, wrap them in \texttt{begin}.
+
+\begin{lstlisting}
     } else {
-      if {[[length $body] numval] == 1} {
-        set body [car $body]
-      } elseif {[[length $body] numval] > 1} {
+      if {[[length $body] numval] == 0} {
+        set body $predicate
+      } else {
         set body [cons [S begin] $body]
       }
     }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred ${::#t}
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
+\end{lstlisting}
+
+Finally, build a quasiquote structure and expand it to get the expansion of the \texttt{cond} expression.
+
+\begin{lstlisting}
     set env [MkEnv $env]
-    /define [S pred] $pred $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
+    set qq "`(if ,predicate
                ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -2739,7 +2783,7 @@ proc ::constcl::do-cond {tail env} {
 
 There are times when one wants to treat a number of expressions as if they were one single expression (e.g. in the consequent or alternate of an \texttt{if} form). The \texttt{begin} special form bundles up expressions as an aggregate form. Internally, it sees to it that all the expressions are evaluated in order and that the resulting value of the last one is returned as the aggregate's result.
 
-As part of the processing of sequences \emph{local defines} are resolved (see page \pageref{resolving-local-defines}), acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment.
+As part of the processing of sequences, \emph{local defines} are resolved (see page \pageref{resolving-local-defines}), acting on expressions of the form \texttt{(begin (define \ldots } when in a local environment.
 
 The following forms have an implicit \texttt{begin} in their bodies and the use of \texttt{begin} is therefore unnecessary with them:
 
@@ -2755,7 +2799,7 @@ The \texttt{begin} special form is expanded by \texttt{special-begin}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-begin (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-begin (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -2769,7 +2813,7 @@ proc ::constcl::special-begin {expr env} {
   if {$env ne "::constcl::global_env" &&
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
-  } {
+  } then {
     set expr [resolve-local-defines $expr]
     eval $expr $env
   } else {
@@ -2784,7 +2828,7 @@ The \texttt{/begin} helper procedure takes a Lisp list of expressions and evalua
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /begin (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{/begin (internal)}} \\
 exps & a Lisp list of expressions \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -2813,7 +2857,7 @@ proc ::constcl::/begin {exps env} {
 
 \emph{Example: \texttt{(define r 10)} $\Rightarrow$ \ldots  (a definition doesn't evaluate to anything)}
 
-We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. Through (variable) definition\index{variable definition}\index{definition}, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The \texttt{/define} helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound in the current environment. Then it updates the environment with the new binding.
 
 The syntaxes with \texttt{lambda} in them refer to the eight syntactic form, procedure definition (see page \pageref{procedure-definition}).
 
@@ -2845,7 +2889,7 @@ The \texttt{define} special form is expanded by \texttt{special-define}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-define (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-define (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & nothing \\
@@ -2869,7 +2913,7 @@ proc ::constcl::special-define {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-define (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rewrite-define (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -2898,7 +2942,7 @@ The \texttt{/define} helper procedure carries out the binding of a symbol in a g
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf /define (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{/define (internal)}} \\
 sym & a symbol \\
 val & a value \\
 env & an environment \\
@@ -2938,7 +2982,7 @@ The \texttt{set!} special form is expanded by \texttt{special-set!}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-set! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-set! (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -2963,15 +3007,15 @@ proc ::constcl::special-set! {expr env} {
 
 \emph{Example: \texttt{(lambda (r) (* r r))} $\Rightarrow$ \texttt{::oo::Obj3601} (it will be a different object each time)}
 
-In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, which, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
+In Lisp, procedures are values just like numbers or characters. They can be defined\index{procedure definition} as the value of a variable, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the \emph{body} of the procedure. Also, which, if any, items of data (\emph{parameters}) will have to be provided to the procedure to make it possible to calculate its result?
 
-As an example, imagine that we want to have a procedure that calculates the square (\texttt{x * x}) of a given number. In Lisp, expressions are written with the operator first and then the operands\index{operator operand order}: \texttt{(* x x)}. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable \texttt{x} will do. It's only a single variable, but by custom we need to put it in a list: \texttt{(x)}. The operator that creates procedures is called \texttt{lambda}\index{lambda}, and we create the function with \texttt{(lambda (x) (* x x))}.
+As an example, imagine that we want to have a procedure that calculates the square (\texttt{x * x}) of a given number. In Lisp, expressions are written with the operator first and then the operands\index{operator operand order}: \texttt{(* x x)}. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable \texttt{x} will do. It's only a single parameter, but by custom we need to put it in a list: \texttt{(x)}. The operator that creates procedures is called \texttt{lambda}\index{lambda}, and we create the function with \texttt{(lambda (x) (* x x))}.
 
 One more step is needed before we can use the procedure. It must have a name. We could define it like this: \texttt{(define square (lambda (x) (* x x)))} but there is actually a shortcut notation for it: \texttt{(define (square x) (* x x))}.
 
 Now, \texttt{square} is pretty tame. How about the \texttt{hypotenuse} procedure? \texttt{(define (hypotenuse a b) (sqrt (+ (square a) (square b))))}. It calculates the square root of the sum of two squares.
 
-The \texttt{lambda} special form makes a Procedure object (see page \pageref{control}). First it needs to convert the Lisp list \texttt{body}. It is bundled inside a \texttt{begin} if it has more than one expression (\texttt{S begin} stands for `the symbol begin'.), and taken out of its list if not. The Lisp list \texttt{formals} (for \emph{formal parameters}) is passed on as it is.
+The \texttt{lambda} special form makes a Procedure object (see page \pageref{control}). First it needs to wrap \texttt{body} inside a \texttt{begin} (\texttt{S begin} stands for `the symbol begin'). The Lisp list \texttt{formals} (for \emph{formal parameters}) is passed on as it is.
 
 \begin{pulledtext}
 
@@ -3001,7 +3045,7 @@ The \texttt{lambda} special form is expanded by \texttt{special-lambda}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-lambda (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-lambda (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a procedure \\
@@ -3014,14 +3058,7 @@ reg special lambda
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
   set formals [car $args]
-  set body [cdr $args]
-  if {[[length $body] numval] > 1} {
-    set body [cons [S begin] $body]
-  } elseif {[[length $body] numval] == 1} {
-    set body [car $body]
-  } else {
-    set body ${::#NIL}
-  }
+  set body [cons [S begin] [cdr $args]]
   return [MkProcedure $formals $body $env]
 }
 \end{lstlisting}
@@ -3034,7 +3071,7 @@ proc ::constcl::special-lambda {expr env} {
 
 Once we have procedures, we can \emph{call} them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our \texttt{square} procedure would be called for instance like this: \texttt{(square 11)}, and it would return 121.
 
-\texttt{invoke} arranges for a procedure to be called with each of the values in the \emph{argument list} (the list of operands). It checks if \emph{pr} really is a procedure, and determines whether to call \emph{pr} as an object or as a Tcl command. Before \texttt{invoke} is called, the argument list should be evaluated with \texttt{eval-list} (see below).
+\texttt{invoke} arranges for a procedure to be called with each of the values in the \emph{argument list} (the list of operands). It checks if \emph{pr} really is a procedure, and determines whether to call \emph{pr} as an object or as a Tcl command. Before \texttt{invoke} is called, the argument list should be evaluated with \texttt{eval-list} (see page \pageref{evallist-procedure}).
 
 \subsection{invoke procedure}
 \label{invoke-procedure}
@@ -3042,7 +3079,7 @@ Once we have procedures, we can \emph{call} them to have their calculations perf
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf invoke (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{invoke (internal)}} \\
 pr & a procedure \\
 vals & a Lisp list of values \\
 \textit{Returns:} & what pr returns \\
@@ -3074,7 +3111,7 @@ The binding forms are not fundamental the way the earlier nine forms are. They a
 
 Syntax: (\textbf{let} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
 
-or
+or (``named let'')
 
 (\textbf{let} \emph{variable} ((\emph{variable} \emph{init}) \ldots ) \emph{body})
 
@@ -3084,7 +3121,7 @@ The \texttt{let} special form (both forms) is expanded by \texttt{special-let}. 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-let (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -3105,11 +3142,9 @@ proc ::constcl::special-let {expr env} {
 
 \textbf{rewrite-named-let} procedure
 
-The rewriter for named \texttt{let} chops up the expression into \emph{variable}, \emph{bindings}, and \emph{body}. It creates a dictionary with the \emph{variable} as key and \texttt{\#f} as value. Then it fills up the dictionary with variable/value pairs from the \emph{bindings}. It uses the dictionary to build a declaration list for a \texttt{let} form, a variable list for a \texttt{lambda} form, and a procedure call. Then it assembles a \texttt{let} form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a \texttt{lambda} form with the varlist and the original \emph{body}. The \texttt{let} form is returned, meaning that the primary expansion of the named \texttt{let} is a regular \texttt{let} form.
-
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-named-let (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rewrite-named-let (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3119,12 +3154,26 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::rewrite-named-let {expr env} {
-  set tail [cdr $expr]
-  set variable [car $tail]
-  set bindings [cadr $tail]
-  set body [cddr $tail]
+\end{lstlisting}
+
+The rewriter for named \texttt{let} chops up the expression into \emph{variable}, \emph{bindings}, and \emph{body}.
+
+\begin{lstlisting}
+  set variable [cadr $expr]
+  set bindings [caddr $expr]
+  set body [cdddr $expr]
+\end{lstlisting}
+
+It creates a dictionary with the \emph{variable} as key and \texttt{\#f} as value. Then it fills up the dictionary with variable/value pairs from the \emph{bindings}.
+
+\begin{lstlisting}
   set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
+\end{lstlisting}
+
+It uses the dictionary to build a declaration list for a \texttt{let} form, a variable list for a \texttt{lambda} form, and a procedure call. Then it assembles a \texttt{let} form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a \texttt{lambda} form with the varlist and the original \emph{body}. The \texttt{let} form is returned, meaning that the primary expansion of the named \texttt{let} is a regular \texttt{let} form.
+
+\begin{lstlisting}
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
@@ -3146,11 +3195,9 @@ proc ::constcl::rewrite-named-let {expr env} {
 
 \textbf{rewrite-let} procedure
 
-The rewriter for regular \texttt{let} chops up the original expression into \emph{bindings} and \emph{body}. It creates an empty dictionary and fills it up with variable/value pairs from the \emph{bindings}. Then it builds a \texttt{lambda} operator form with the variable list, the \emph{body}, and the value list. The \texttt{lambda} call is returned as the expansion of the regular \texttt{let} form.
-
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-let (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rewrite-let (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3160,12 +3207,25 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::rewrite-let {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+\end{lstlisting}
+
+The rewriter for regular \texttt{let} chops up the original expression into \emph{bindings} and \emph{body}.
+
+\begin{lstlisting}
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+\end{lstlisting}
+
+It creates an empty dictionary and fills it up with variable/value pairs from the \emph{bindings}.
+
+\begin{lstlisting}
   set vars [dict create]
   parse-bindings vars $bindings
+\end{lstlisting}
+
+Then it builds a \texttt{lambda} operator form with the variable list, the \emph{body}, and the value list. The \texttt{lambda} call is returned as the expansion of the regular \texttt{let} form.
+
+\begin{lstlisting}
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
     dict keys $vars]] $env
@@ -3186,7 +3246,7 @@ proc ::constcl::rewrite-let {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf parse-bindings (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{parse-bindings (internal)}} \\
 name & a call-by-name name \\
 bindings & a Lisp list of values \\
 \textit{Returns:} & nothing \\
@@ -3223,7 +3283,7 @@ The \texttt{letrec} special form is expanded by \texttt{special-letrec}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-letrec (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-letrec (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -3243,7 +3303,7 @@ proc ::constcl::special-letrec {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-letrec (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rewrite-letrec (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3253,17 +3313,35 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::rewrite-letrec {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+\end{lstlisting}
+
+The rewriter for \texttt{letrec} chops up the original expression into \emph{bindings} and \emph{body}.
+
+\begin{lstlisting}
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+\end{lstlisting}
+
+It creates an empty dictionary and fills it up with variable/value pairs from the \emph{bindings}.
+
+\begin{lstlisting}
   set vars [dict create]
   parse-bindings vars $bindings
+\end{lstlisting}
+
+The keys and values in the dictionary are used to create three dictionaries: one for the outer lambda, one for the inner lambda, and one for the assignments.
+
+\begin{lstlisting}
   foreach {key val} $vars {
     dict set outer $key [list [S quote] ${::#UND}]
     dict set inner [set g [gensym "g"]] $val
     dict set assigns $key $g
   }
+\end{lstlisting}
+
+The three dictionaries are used to populate a double lambda construct in a quasiquote structure, which is expanded and returned.
+
+\begin{lstlisting}
   set env [MkEnv $env]
   # outer vars
   /define [S ovars] [
@@ -3304,7 +3382,7 @@ The \texttt{let*} special form is expanded by \texttt{special-let*}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf special-let* (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{special-let* (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -3315,8 +3393,7 @@ env & an environment \\
 reg special let*
 
 proc ::constcl::special-let* {expr env} {
-  set tail [cdr $expr]
-  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let* [cadr $expr] [cddr $expr] $env]
   eval $expr $env
 }
 \end{lstlisting}
@@ -3325,7 +3402,7 @@ proc ::constcl::special-let* {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf rewrite-let* (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{rewrite-let* (internal)}} \\
 bindings & a Lisp list of values \\
 body & a Lisp list of expressions \\
 env & an environment \\
@@ -3338,10 +3415,22 @@ env & an environment \\
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
   if {$bindings eq ${::#NIL}} {
+\end{lstlisting}
+
+If there are no more bindings, wrap the \emph{body} in a \texttt{begin} and return it.
+
+\begin{lstlisting}
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
+\end{lstlisting}
+
+Otherwise, create a quasiquote structure with a lambda call and put a variable and a value at a time in it. The body of the lambda is the rewriter itself called recursively.
+
+Return the lambda call.
+
+\begin{lstlisting}
     /define [S var] [caar $bindings] $env
     /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
@@ -3361,11 +3450,11 @@ proc ::constcl::rewrite-let* {bindings body env} {
 
 Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
 
-There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
+There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created, one which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
 
 Not only procedures but binding forms (such as \texttt{let}) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
 
-Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
+Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one.
 
 From the evaluator's perspective it uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
 
@@ -3387,7 +3476,7 @@ The heart of the Lisp interpreter, \texttt{eval} takes a Lisp expression and pro
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{eval (public)}} \\
 expr & an expression \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
@@ -3421,7 +3510,7 @@ The seven remaining syntactic forms (and the binding forms) are implemented as o
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-form (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{eval-form (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & a value \\
@@ -3463,7 +3552,7 @@ The \texttt{binding-info} procedure takes a symbol and returns a list of two ite
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf binding-info (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{binding-info (internal)}} \\
 op & a symbol \\
 env & an environment \\
 \textit{Returns:} & binding info \\
@@ -3473,7 +3562,6 @@ env & an environment \\
 \begin{lstlisting}
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
-  # parentless envs have ${::#NIL}
   if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
   } else {
@@ -3482,13 +3570,13 @@ proc ::constcl::binding-info {op env} {
 }
 \end{lstlisting}
 
-\textbf{eval-list} procedure
+\textbf{eval-list} procedure \label{evallist-procedure}
 
 \texttt{eval-list} successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eval-list (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{eval-list (internal)}} \\
 exps & a Lisp list of expressions \\
 env & an environment \\
 \textit{Returns:} & a Lisp list of values \\
@@ -3523,7 +3611,7 @@ A macro expander procedure takes an expression and an environment as parameters.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-and (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-and (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3551,7 +3639,7 @@ proc ::constcl::expand-and {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-and (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{do-and (internal)}} \\
 tail & an expression tail \\
 prev & an expression \\
 env & an environment \\
@@ -3585,7 +3673,7 @@ The macro \texttt{del!} updates a property list. It removes a key-value pair if 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-del! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-del! (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3622,7 +3710,7 @@ The \texttt{expand-for} procedure expands the \texttt{for} macro. It returns a \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-for (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-for (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3633,8 +3721,7 @@ env & an environment \\
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
+  set res [do-for [cdr $expr] $env]
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
@@ -3646,7 +3733,7 @@ proc ::constcl::expand-for {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf for-seq (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{for-seq (internal)}} \\
 seq & an expression \\
 env & an environment \\
 \textit{Returns:} & a Tcl list of values \\
@@ -3656,12 +3743,21 @@ env & an environment \\
 
 \begin{lstlisting}
 proc ::constcl::for-seq {seq env} {
+\end{lstlisting}
+
+If \emph{seq} is a number, call the \texttt{in-range} procedure to get a sequence. Otherwise, evaluate \emph{seq}.
+
+\begin{lstlisting}
   if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
-  # make it a Tcl list, one way or another
+\end{lstlisting}
+
+Make the sequence a Tcl list, one way or another.
+
+\begin{lstlisting}
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} {
@@ -3679,6 +3775,7 @@ proc ::constcl::for-seq {seq env} {
   } else {
     ::error "unknown sequence type [$seq tstr]"
   }
+  return $seq
 }
 \end{lstlisting}
 
@@ -3692,7 +3789,7 @@ Each clause's sequence is supposed to be the same length as the others. One weak
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-for (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{do-for (internal)}} \\
 tail & an expression tail \\
 env & an environment \\
 \textit{Returns:} & a Tcl list of expressions \\
@@ -3744,7 +3841,7 @@ The only differences from \texttt{expand-for} is that it doesn't add \texttt{(qu
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-for/and (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-for/and (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3771,7 +3868,7 @@ The only difference from \texttt{expand-for/and} is that it wraps the list of it
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand for/list (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand for/list (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3798,7 +3895,7 @@ The only difference from \texttt{expand-for/list} is that it wraps the list of i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-for/or (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-for/or (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3823,7 +3920,7 @@ proc ::constcl::expand-for/or {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-or (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-or (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3851,7 +3948,7 @@ proc ::constcl::expand-or {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf do-or (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{do-or (internal)}} \\
 tail & an expression tail \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3883,7 +3980,7 @@ The macro \texttt{pop!} updates a list. It removes the first element.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-pop! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-pop! (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3918,7 +4015,7 @@ The macro \texttt{push!} updates a list. It adds a new element as the new first 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-push! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-push! (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -3962,7 +4059,7 @@ The macro \texttt{put!} updates a property list. It adds a key-value pair if the
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-put! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-put! (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -4009,7 +4106,7 @@ A quasi-quote isn't a macro, but we will deal with it in this section anyway. \t
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-quasiquote (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-quasiquote (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -4059,7 +4156,7 @@ proc ::constcl::expand-quasiquote {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf qq-visit-child (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{qq-visit-child (internal)}} \\
 node & a Lisp list of expressions \\
 qqlevel & a Tcl number \\
 env & an environment \\
@@ -4117,7 +4214,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-unless (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-unless (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -4148,7 +4245,7 @@ proc ::constcl::expand-unless {expr env} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expand-when (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expand-when (internal)}} \\
 expr & an expression \\
 env & an environment \\
 \textit{Returns:} & an expression \\
@@ -4183,7 +4280,7 @@ This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. \texttt{re
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf resolve-local-defines} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{resolve-local-defines}} \\
 expr & an expression \\
 \textit{Returns:} & an expression \\
 \hline
@@ -4217,7 +4314,7 @@ proc ::constcl::resolve-local-defines {expr} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf extract-from-defines (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{extract-from-defines (internal)}} \\
 exps & a Lisp list of expressions \\
 part & a flag, VARS or VALS \\
 \textit{Returns:} & a Tcl list of values \\
@@ -4272,7 +4369,7 @@ proc ::constcl::extract-from-defines {exps part} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf argument-list? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{argument-list? (internal)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -4309,7 +4406,7 @@ proc ::constcl::argument-list? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-lambdas (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-lambdas (internal)}} \\
 vars & a Lisp list of symbols \\
 args & a Lisp list of expressions \\
 body & a Lisp list of expressions \\
@@ -4342,7 +4439,7 @@ proc ::constcl::make-lambdas {vars args body} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-temporaries (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-temporaries (internal)}} \\
 vals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -4367,7 +4464,7 @@ proc ::constcl::make-temporaries {vals} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf gensym (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{gensym (internal)}} \\
 prefix & a string \\
 \textit{Returns:} & a symbol \\
 \hline
@@ -4393,7 +4490,7 @@ proc ::constcl::gensym {prefix} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf append-b (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{append-b (internal)}} \\
 a & a Lisp list of values \\
 b & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
@@ -4426,7 +4523,7 @@ proc ::constcl::append-b {a b} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-assignments (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-assignments (internal)}} \\
 vars & a Lisp list of symbols \\
 tmps & a Lisp list of symbols \\
 \textit{Returns:} & an expression \\
@@ -4456,7 +4553,7 @@ proc ::constcl::make-assignments {vars tmps} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-undefineds (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-undefineds (internal)}} \\
 vals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of nil values \\
 \hline
@@ -4486,7 +4583,7 @@ As long as the object given to \texttt{write} isn't the empty string, \texttt{wr
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf write (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{write (public)}} \\
 val & a value \\
 ?port? & a port \\
 \textit{Returns:} & nothing \\
@@ -4519,7 +4616,7 @@ The \texttt{display} procedure is like \texttt{write} but it calls the object's 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf display (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{display (public)}} \\
 val & a value \\
 ?port? & a port \\
 \textit{Returns:} & nothing \\
@@ -4552,7 +4649,7 @@ The \texttt{write-pair} procedure prints a Pair object except for the beginning 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf write-pair (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{write-pair (internal)}} \\
 port & an output port \\
 pair & a pair \\
 \textit{Returns:} & nothing \\
@@ -4707,7 +4804,7 @@ If the formals list is actually a single symbol, it takes all the arguments as a
         }]]
 \end{lstlisting}
 
-Else, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
+Otherwise, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
 
 \begin{lstlisting}
     } else {
@@ -4746,7 +4843,7 @@ The \texttt{find} method searches the environment chain for bindings for a given
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) find (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) find (internal)}} \\
 sym & a symbol \\
 \textit{Returns:} & an environment \\
 \hline
@@ -4769,7 +4866,7 @@ The \texttt{get} method returns the binding type and handling info for \emph{sym
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) get (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) get (internal)}} \\
 sym & a symbol \\
 \textit{Returns:} & binding info \\
 \hline
@@ -4788,7 +4885,7 @@ The \texttt{unbind} method unsets a binding in the current environment instance.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) unbind (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) unbind (internal)}} \\
 sym & a symbol \\
 \textit{Returns:} & nothing \\
 \hline
@@ -4808,7 +4905,7 @@ The \texttt{bind} method binds a symbol in the current environment instance. It 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) bind (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) bind (internal)}} \\
 sym & a symbol \\
 type & binding type \\
 info & handling info \\
@@ -4837,7 +4934,7 @@ The \texttt{assign} method updates the location that \emph{sym} is bound to with
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) assign (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) assign (internal)}} \\
 sym & a symbol \\
 type & binding type \\
 info & handling info \\
@@ -4867,7 +4964,7 @@ The \texttt{parent} method yields the current environment instance's linked oute
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) parent (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) parent (internal)}} \\
 \textit{Returns:} & an environment \\
 \hline
 \end{tabular}
@@ -4882,7 +4979,7 @@ The \texttt{names} method returns a Tcl list of all the symbols bound in the cur
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) names (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) names (internal)}} \\
 \textit{Returns:} & a Tcl list of symbols \\
 \hline
 \end{tabular}
@@ -4897,7 +4994,7 @@ The \texttt{values} method returns a Tcl list of all the binding type/handling i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) values (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) values (internal)}} \\
 \textit{Returns:} & a Tcl list of binding info tuples \\
 \hline
 \end{tabular}
@@ -4912,7 +5009,7 @@ The \texttt{tstr} method returns an external representation of the environment i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Environment instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Environment instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -4933,7 +5030,7 @@ The \texttt{MkEnv} environment generator can be called with a single argument (t
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkEnv (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkEnv (internal)}} \\
 ?parms? & a Scheme formals list \\
 ?vals? & a Tcl list of values \\
 env & an environment \\
@@ -4964,7 +5061,7 @@ Recognizes an environment by type.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf environment? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{environment? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -5060,8 +5157,11 @@ After 1844 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 
-\chapter{Built-in procedures}
-\label{builtin-procedures}
+\part{Built-in types and procedures}
+\label{builtin-types-and-procedures}
+
+\chapter{The standard library}
+\label{the-standard-library}
 
 \section{Equivalence predicates}
 \label{equivalence-predicates}
@@ -5077,7 +5177,7 @@ Lisp has a number of equivalence predicates. ConsTcl, like Scheme, has three. Of
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf eq?, eqv?, equal? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{eq?, eqv?, equal? (public)}} \\
 expr1 & an expression \\
 expr2 & an expression \\
 \textit{Returns:} & a boolean \\
@@ -5126,7 +5226,7 @@ proc ::constcl::eq? {expr1 expr2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf teq (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{teq (internal)}} \\
 typep & a procedure \\
 expr1 & an expression \\
 expr2 & an expression \\
@@ -5148,7 +5248,7 @@ proc ::constcl::teq {typep expr1 expr2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf veq (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{veq (internal)}} \\
 expr1 & an expression \\
 expr2 & an expression \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
@@ -5244,7 +5344,7 @@ The constructor tests its argument against the form of a double-precision floati
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Number constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Number constructor (internal)}} \\
 val & an external rep of a number \\
 \textit{Returns:} & nothing \\
 \hline
@@ -5264,7 +5364,7 @@ The \texttt{zero?} method is a predicate that tells if the stored number is equa
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) zero? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) zero? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5283,7 +5383,7 @@ The \texttt{positive?} method is a predicate that tells if the stored number is 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) positive? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) positive? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5302,7 +5402,7 @@ The \texttt{negative?} method is a predicate that tells if the stored number is 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) negative? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) negative? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5321,7 +5421,7 @@ The \texttt{even?} method is a predicate that tells if the stored number is even
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) even? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) even? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5340,7 +5440,7 @@ The \texttt{odd?} method is a predicate that tells if the stored number is odd.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) odd? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) odd? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -5359,7 +5459,7 @@ The \texttt{value} method returns the stored number.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) value (internal)}} \\
 \textit{Returns:} & a number \\
 \hline
 \end{tabular}
@@ -5374,7 +5474,7 @@ The \texttt{numval} method is a synonym for \texttt{value}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) numval (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) numval (internal)}} \\
 \textit{Returns:} & a number \\
 \hline
 \end{tabular}
@@ -5389,7 +5489,7 @@ The \texttt{constant} method signals that the number instance isn't mutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Number instance) constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Number instance) constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1) \\
 \hline
 \end{tabular}
@@ -5404,7 +5504,7 @@ The \texttt{tstr} method yields the external representation of the stored value 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) tstr (internal)}} \\
 \textit{Returns:} & an external rep of a number \\
 \hline
 \end{tabular}
@@ -5424,7 +5524,7 @@ The \texttt{tstr} method yields the external representation of the stored value 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkNumber (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkNumber (internal)}} \\
 str & a string \\
 \textit{Returns:} & a number \\
 \hline
@@ -5444,7 +5544,7 @@ interp alias {} N {} ::constcl::Number new
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf number? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{number? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -5474,7 +5574,7 @@ The predicates \texttt{=}, \texttt{<}, \texttt{>}, \texttt{<=}, and \texttt{>=} 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf =, <, >, <=, >= (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{=, <, >, <=, >= (public)}} \\
 nums & some numbers \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -5578,7 +5678,7 @@ The \texttt{zero?} predicate tests if a given number is equal to zero.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf zero? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{zero? (public)}} \\
 num & a number \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -5609,7 +5709,7 @@ The \texttt{positive?}/\texttt{negative?}/\texttt{even?}/\texttt{odd?} predicate
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf positive?, negative?, even?, odd? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{positive?, negative?, even?, odd? (public)}} \\
 num & a number \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -5679,7 +5779,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf max, min (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{max, min (public)}} \\
 num & a number \\
 nums & some numbers \\
 \textit{Returns:} & a number \\
@@ -5741,7 +5841,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf +, * (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{+, * (public)}} \\
 ?nums? & some numbers \\
 \textit{Returns:} & a number \\
 \hline
@@ -5749,7 +5849,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf -, / (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{-, / (public)}} \\
 num & a number \\
 ?nums? & some numbers \\
 \textit{Returns:} & a number \\
@@ -5819,7 +5919,7 @@ The \texttt{abs} function yields the absolute value of a number.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf abs (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{abs (public)}} \\
 num & a number \\
 \textit{Returns:} & a number \\
 \hline
@@ -5854,7 +5954,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf quotient (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{quotient (public)}} \\
 num1 & a number \\
 num2 & a number \\
 \textit{Returns:} & a number \\
@@ -5891,7 +5991,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf remainder (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{remainder (public)}} \\
 num1 & a number \\
 num2 & a number \\
 \textit{Returns:} & a number \\
@@ -5923,7 +6023,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf modulo (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{modulo (public)}} \\
 num1 & a number \\
 num2 & a number \\
 \textit{Returns:} & a number \\
@@ -5962,7 +6062,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf floor, ceiling, truncate, round (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{floor, ceiling, truncate, round (public)}} \\
 num & a number \\
 \textit{Returns:} & a number \\
 \hline
@@ -6049,7 +6149,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf exp, log, sin, cos, tan, asin, acos, atan (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{exp, log, sin, cos, tan, asin, acos, atan (public)}} \\
 num & a number \\
 \textit{Returns:} & a number \\
 \hline
@@ -6057,7 +6157,7 @@ num & a number \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (binary) atan (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(binary) atan (public)}} \\
 num1 & a number \\
 num2 & a number \\
 \textit{Returns:} & a number \\
@@ -6180,7 +6280,7 @@ proc ::constcl::atan {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf sqrt (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{sqrt (public)}} \\
 num & a number \\
 \textit{Returns:} & a number \\
 \hline
@@ -6205,7 +6305,7 @@ proc ::constcl::sqrt {num} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf expt (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{expt (public)}} \\
 num1 & a number \\
 num2 & a number \\
 \textit{Returns:} & a number \\
@@ -6246,7 +6346,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf number->string (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{number->string (public)}} \\
 num & a number \\
 ?radix? & a number \\
 \textit{Returns:} & a string \\
@@ -6321,7 +6421,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string->number (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string->number (public)}} \\
 str & a string \\
 ?radix? & a number \\
 \textit{Returns:} & a number \\
@@ -6405,7 +6505,7 @@ The \texttt{tstr} method yields the value \texttt{\#t} as a Tcl string. It is us
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (True instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(True instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -6426,7 +6526,7 @@ The \texttt{tstr} method yields the value \texttt{\#f} as a Tcl string. It is us
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (False instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(False instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -6446,7 +6546,7 @@ Given a string (either \texttt{"\#t"} or \texttt{"\#f"}), \texttt{MkBoolean} gen
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkBoolean (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkBoolean (internal)}} \\
 bool & an external rep of a bool \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -6470,7 +6570,7 @@ The \texttt{boolean?} predicate recognizes a boolean by object identity (i.e. is
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf boolean? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{boolean? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -6503,7 +6603,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf not (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{not (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -6543,7 +6643,7 @@ The constructor tests its argument against the three basic forms of external rep
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Char constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Char constructor (internal)}} \\
 val & an external rep of a char \\
 \textit{Returns:} & nothing \\
 \hline
@@ -6573,7 +6673,7 @@ The \texttt{char} method yields the stored character value.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) char (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) char (internal)}} \\
 \textit{Returns:} & a Tcl character \\
 \hline
 \end{tabular}
@@ -6588,7 +6688,7 @@ The \texttt{alphabetic?} method is a predicate which tests if the stored value i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) alphabetic? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) alphabetic? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6607,7 +6707,7 @@ The \texttt{numeric?} method is a predicate which tests if the stored value is a
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) numeric? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) numeric? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6626,7 +6726,7 @@ The \texttt{whitespace?} method is a predicate which tests if the stored value i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) whitespace? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) whitespace? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6645,7 +6745,7 @@ The \texttt{upper-case?} method is a predicate which tests if the stored value i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) upper-case? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) upper-case? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6664,7 +6764,7 @@ The \texttt{lower-case?} method is a predicate which tests if the stored value i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) lower-case? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) lower-case? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -6683,7 +6783,7 @@ The \texttt{constant} method signals that the character instance isn't mutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1) \\
 \hline
 \end{tabular}
@@ -6698,7 +6798,7 @@ The \texttt{value} method is another way to yield the stored value
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) value (internal)}} \\
 \textit{Returns:} & a Tcl character \\
 \hline
 \end{tabular}
@@ -6713,7 +6813,7 @@ The \texttt{external} method translates the stored value back to external repres
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) external (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) external (internal)}} \\
 \textit{Returns:} & an external rep of a char \\
 \hline
 \end{tabular}
@@ -6738,7 +6838,7 @@ The \texttt{display} method is used by the \texttt{display} standard procedure t
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) display (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) display (internal)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -6754,7 +6854,7 @@ The \texttt{tstr} method yields the external representation of the stored value 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Char instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Char instance) tstr (internal)}} \\
 \textit{Returns:} & an external rep of a char \\
 \hline
 \end{tabular}
@@ -6774,7 +6874,7 @@ The \texttt{tstr} method yields the external representation of the stored value 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkChar (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkChar (internal)}} \\
 char & an external rep of a char \\
 \textit{Returns:} & a character \\
 \hline
@@ -6803,7 +6903,7 @@ proc ::constcl::MkChar {char} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -6833,7 +6933,7 @@ proc ::constcl::char? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char=?, char<?, char>?, char<=?, char>=? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char=?, char<?, char>?, char<=?, char>=? (public)}} \\
 char1 & a character \\
 char2 & a character \\
 \textit{Returns:} & a boolean \\
@@ -6950,7 +7050,7 @@ proc ::constcl::char>=? {char1 char2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public)}} \\
 char1 & a character \\
 char2 & a character \\
 \textit{Returns:} & a boolean \\
@@ -7072,7 +7172,7 @@ The predicates \texttt{char-alphabetic?}, \texttt{char-numeric?}, and \texttt{ch
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char-alphabetic?, char-numeric?, char-whitespace? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char-alphabetic?, char-numeric?, char-whitespace? (public)}} \\
 char & a character \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -7080,7 +7180,7 @@ char & a character \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char-upper-case?, char-lower-case? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char-upper-case?, char-lower-case? (public)}} \\
 char & a character \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -7159,7 +7259,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char->integer (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char->integer (public)}} \\
 char & a character \\
 \textit{Returns:} & an integer \\
 \hline
@@ -7185,7 +7285,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf integer->char (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{integer->char (public)}} \\
 int & an integer \\
 \textit{Returns:} & a character \\
 \hline
@@ -7215,7 +7315,7 @@ proc ::constcl::integer->char {int} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf char-upcase, char-downcase (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{char-upcase, char-downcase (public)}} \\
 char & a character \\
 \textit{Returns:} & a character \\
 \hline
@@ -7282,7 +7382,7 @@ The \texttt{Procedure} constructor simply copies its arguments into the instance
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Procedure constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Procedure constructor (internal)}} \\
 p & a Scheme formals list \\
 b & an expression \\
 e & an environment \\
@@ -7303,7 +7403,7 @@ The \texttt{call} method makes each argument a tuple of \texttt{VARIABLE} and th
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Procedure instance) call (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Procedure instance) call (internal)}} \\
 args & some values \\
 \textit{Returns:} & a value \\
 \hline
@@ -7321,7 +7421,7 @@ The \texttt{value} method is a dummy.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Procedure instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Procedure instance) value (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -7334,7 +7434,7 @@ The \texttt{show} method yields the external representation of the procedure. It
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Procedure instance) show (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Procedure instance) show (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -7349,7 +7449,7 @@ The \texttt{tstr} method yields the external representation of the procedure. It
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Procedure instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Procedure instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -7369,7 +7469,7 @@ oo::define ::constcl::Procedure method tstr {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkProcedure (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkProcedure (internal)}} \\
 parms & a Scheme formals list \\
 body & an expression \\
 env & an environment \\
@@ -7390,7 +7490,7 @@ interp alias {} ::constcl::MkProcedure \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf procedure? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{procedure? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -7424,7 +7524,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf apply (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{apply (public)}} \\
 pr & a procedure \\
 vals & a Lisp list of values \\
 \textit{Returns:} & what pr returns \\
@@ -7456,7 +7556,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf map (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{map (public)}} \\
 pr & a procedure \\
 args & some lists \\
 \textit{Returns:} & a Lisp list of values \\
@@ -7522,7 +7622,7 @@ Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomac
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf for-each (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{for-each (public)}} \\
 pr & a procedure \\
 args & some lists \\
 \textit{Returns:} & the empty list \\
@@ -7598,7 +7698,7 @@ The \texttt{Port} constructor uses a fake argument to store a value in the insta
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Port constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Port constructor (internal)}} \\
 ?h? & a channel handle \\
 \textit{Returns:} & nothing \\
 \hline
@@ -7618,7 +7718,7 @@ The \texttt{handle} method yields the stored handle value.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Port instance) handle (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Port instance) handle (internal)}} \\
 \textit{Returns:} & a channel handle or NIL \\
 \hline
 \end{tabular}
@@ -7633,7 +7733,7 @@ The \texttt{close} method acts to close the stored handle's channel, and sets th
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Port instance) close (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Port instance) close (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -7650,7 +7750,7 @@ The \texttt{tstr} method yields the external representation of the port as a Tcl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Port instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Port instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -7679,7 +7779,7 @@ The InputPort \texttt{open} method takes a file name and attempts to open it for
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (InputPort instance) open (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(InputPort instance) open (internal)}} \\
 name & a filename string \\
 \textit{Returns:} & a channel handle or NIL \\
 \hline
@@ -7700,7 +7800,7 @@ The \texttt{get} method reads one character from the channel of the stored handl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (InputPort instance) get (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(InputPort instance) get (internal)}} \\
 \textit{Returns:} & a Tcl character \\
 \hline
 \end{tabular}
@@ -7715,7 +7815,7 @@ The \texttt{eof} method reports end-of-file status on the channel of the stored 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (InputPort instance) eof (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(InputPort instance) eof (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -7730,7 +7830,7 @@ The \texttt{copy} method returns a new instance of InputPort which is a copy of 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (InputPort instance) copy (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(InputPort instance) copy (internal)}} \\
 \textit{Returns:} & an input port \\
 \hline
 \end{tabular}
@@ -7745,7 +7845,7 @@ The \texttt{tstr} method yields the external representation of the port as a Tcl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (InputPort instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(InputPort instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -7766,7 +7866,7 @@ The \texttt{tstr} method yields the external representation of the port as a Tcl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkInputPort (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkInputPort (internal)}} \\
 ?handle? & a channel handle \\
 \textit{Returns:} & an input port \\
 \hline
@@ -7793,7 +7893,7 @@ The StringInputPort constructor simply copies a given string into the stored buf
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf StringInputPort constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{StringInputPort constructor (internal)}} \\
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -7810,7 +7910,7 @@ The \texttt{open} and \texttt{close} methods are present but don't do anything.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) open (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) open (internal)}} \\
 name & a filename string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -7818,7 +7918,7 @@ name & a filename string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) close (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) close (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -7832,7 +7932,7 @@ The StringInputPort \texttt{get} method reads one character from the buffer. If 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) get (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) get (internal)}} \\
 \textit{Returns:} & a Tcl character or end of file \\
 \hline
 \end{tabular}
@@ -7853,7 +7953,7 @@ The \texttt{eof} method reports end-of-file status on the buffer.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) eof (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) eof (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -7872,7 +7972,7 @@ The \texttt{copy} method creates a new instance with a (non-shared) copy of the 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) copy (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) copy (internal)}} \\
 \textit{Returns:} & a string input port \\
 \hline
 \end{tabular}
@@ -7887,7 +7987,7 @@ The \texttt{tstr} method yields the external representation of the string input 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringInputPort instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringInputPort instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -7908,7 +8008,7 @@ The \texttt{tstr} method yields the external representation of the string input 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkStringInputPort (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkStringInputPort (internal)}} \\
 str & a string \\
 \textit{Returns:} & a string input port \\
 \hline
@@ -7937,7 +8037,7 @@ The \texttt{open} method is locked with an error command for safety: only remove
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (OutputPort instance) open (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(OutputPort instance) open (internal)}} \\
 name & a filename string \\
 \textit{Returns:} & a channel handle or NIL \\
 \hline
@@ -7959,7 +8059,7 @@ The OutputPort \texttt{put} method outputs a string on the channel in the stored
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (OutputPort instance) put (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(OutputPort instance) put (internal)}} \\
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -7975,7 +8075,7 @@ The \texttt{newline} method prints a newline on the channel in the stored handle
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (OutputPort instance) newline (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(OutputPort instance) newline (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -7990,7 +8090,7 @@ The \texttt{flush} method flushes the output channel in the stored handle.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (OutputPort instance) flush (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(OutputPort instance) flush (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -8013,7 +8113,7 @@ The \texttt{tstr} method yields the external representation of the port as a Tcl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (OutputPort instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(OutputPort instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -8034,7 +8134,7 @@ The \texttt{tstr} method yields the external representation of the port as a Tcl
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkOutputPort (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkOutputPort (internal)}} \\
 ?handle? & a channel handle \\
 \textit{Returns:} & an output port \\
 \hline
@@ -8061,7 +8161,7 @@ The StringOutputPort constructor uses a fake argument to optionally initialize t
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf StringOutputPort constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{StringOutputPort constructor (internal)}} \\
 ?str? & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8082,7 +8182,7 @@ The \texttt{open} and \texttt{close} methods are present but don't do anything.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) open (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) open (internal)}} \\
 name & a filename string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8090,7 +8190,7 @@ name & a filename string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) close (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) close (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -8104,7 +8204,7 @@ The StringOutputPort \texttt{put} method appends a string to the internal buffer
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) put (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) put (internal)}} \\
 str & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8121,7 +8221,7 @@ The \texttt{newline} method appends a newline character to the internal buffer.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) newline (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) newline (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -8136,7 +8236,7 @@ The \texttt{flush} method is present but does nothing.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) flush (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) flush (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -8149,7 +8249,7 @@ The \texttt{tostring} method dumps the internal buffer as a string.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) tostring (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) tostring (internal)}} \\
 \textit{Returns:} & a string \\
 \hline
 \end{tabular}
@@ -8164,7 +8264,7 @@ The \texttt{copy} method returns a new instance of StringOutputPort which is a c
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) copy (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) copy (internal)}} \\
 \textit{Returns:} & a string output port \\
 \hline
 \end{tabular}
@@ -8179,7 +8279,7 @@ The \texttt{tstr} method yields the external representation of the string output
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (StringOutputPort instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(StringOutputPort instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -8200,7 +8300,7 @@ The \texttt{tstr} method yields the external representation of the string output
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkStringOutputPort (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkStringOutputPort (internal)}} \\
 ?str? & a string \\
 \textit{Returns:} & a string output port \\
 \hline
@@ -8246,7 +8346,7 @@ proc ::constcl::port? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-input-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{call-with-input-file (public)}} \\
 filename & a filename string \\
 proc & a procedure \\
 \textit{Returns:} & a value \\
@@ -8273,7 +8373,7 @@ proc ::constcl::call-with-input-file {filename proc} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf call-with-output-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{call-with-output-file (public)}} \\
 filename & a filename string \\
 proc & a procedure \\
 \textit{Returns:} & a value \\
@@ -8300,7 +8400,7 @@ proc ::constcl::call-with-output-file {filename proc} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf input-port? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{input-port? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -8328,7 +8428,7 @@ proc ::constcl::input-port? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf output-port? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{output-port? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -8356,7 +8456,7 @@ proc ::constcl::output-port? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf current-input-port (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{current-input-port (public)}} \\
 \textit{Returns:} & a port \\
 \hline
 \end{tabular}
@@ -8377,7 +8477,7 @@ proc ::constcl::current-input-port {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf current-output-port (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{current-output-port (public)}} \\
 \textit{Returns:} & a port \\
 \hline
 \end{tabular}
@@ -8398,7 +8498,7 @@ proc ::constcl::current-output-port {} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf with-input-from-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{with-input-from-file (public)}} \\
 filename & a filename string \\
 thunk & a procedure \\
 \textit{Returns:} & nothing \\
@@ -8429,7 +8529,7 @@ proc ::constcl::with-input-from-file {filename thunk} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf with-output-to-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{with-output-to-file (public)}} \\
 filename & a filename string \\
 thunk & a procedure \\
 \textit{Returns:} & nothing \\
@@ -8460,7 +8560,7 @@ proc ::constcl::with-output-to-file {filename thunk} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf open-input-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{open-input-file (public)}} \\
 filename & a filename string \\
 \textit{Returns:} & an input port \\
 \hline
@@ -8491,7 +8591,7 @@ proc ::constcl::open-input-file {filename} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf open-output-file (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{open-output-file (public)}} \\
 filename & a filename string \\
 \textit{Returns:} & an output port \\
 \hline
@@ -8521,7 +8621,7 @@ proc ::constcl::open-output-file {filename} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf close-input-port (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{close-input-port (public)}} \\
 port & an input port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8546,7 +8646,7 @@ proc ::constcl::close-input-port {port} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf close-output-port (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{close-output-port (public)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8575,7 +8675,7 @@ proc ::constcl::close-output-port {port} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf newline (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{newline (public)}} \\
 ?port? & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8600,7 +8700,7 @@ proc ::constcl::newline {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf load (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{load (public)}} \\
 filename & a filename string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8664,7 +8764,7 @@ The constructor stores values into the \texttt{car} and \texttt{cdr} variables, 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Pair constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Pair constructor (internal)}} \\
 a & a value \\
 d & a value \\
 \textit{Returns:} & nothing \\
@@ -8683,7 +8783,7 @@ The \texttt{value} method is a synonym for \texttt{tstr}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) value (internal)}} \\
 \textit{Returns:} & an external rep of a pair \\
 \hline
 \end{tabular}
@@ -8698,7 +8798,7 @@ The \texttt{car} method returns the value stored in the \texttt{car} variable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) car (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) car (internal)}} \\
 \textit{Returns:} & a value \\
 \hline
 \end{tabular}
@@ -8713,7 +8813,7 @@ The \texttt{cdr} method returns the value stored in the \texttt{cdr} variable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) cdr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) cdr (internal)}} \\
 \textit{Returns:} & a value \\
 \hline
 \end{tabular}
@@ -8728,7 +8828,7 @@ The \texttt{set-car!} method modifies the value stored in the \texttt{car} varia
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) set-car! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) set-car! (internal)}} \\
 val & a value \\
 \textit{Returns:} & a pair \\
 \hline
@@ -8748,7 +8848,7 @@ The \texttt{set-cdr!} method modifies the value stored in the \texttt{cdr} varia
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) set-cdr! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) set-cdr! (internal)}} \\
 val & a value \\
 \textit{Returns:} & a pair \\
 \hline
@@ -8768,7 +8868,7 @@ The \texttt{mkconstant} method changes the instance from mutable to immutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) mkconstant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) mkconstant (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -8784,7 +8884,7 @@ The \texttt{constant} method signals whether the pair instance is mutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -8799,7 +8899,7 @@ The \texttt{mutable?} method is a predicate that tells if the pair instance is m
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) mutable? (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) mutable? (internal)}} \\
 \textit{Returns:} & a boolean \\
 \hline
 \end{tabular}
@@ -8814,7 +8914,7 @@ The \texttt{write} method prints an external representation of the pair on the g
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) write (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) write (internal)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -8832,7 +8932,7 @@ The \texttt{tstr} method yields the external representation of the pair instance
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) tstr (internal)}} \\
 \textit{Returns:} & an external rep of a pair \\
 \hline
 \end{tabular}
@@ -8852,7 +8952,7 @@ The \texttt{tstr} method yields the external representation of the pair instance
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkPair (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkPair (internal)}} \\
 car & a value \\
 cdr & a value \\
 \textit{Returns:} & a pair \\
@@ -8870,7 +8970,7 @@ interp alias {} ::constcl::MkPair \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pair? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pair? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -8892,7 +8992,7 @@ Helper procedure to make a string representation of a list.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf tstr-pair (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{tstr-pair (internal)}} \\
 pair & a pair \\
 \textit{Returns:} & a Tcl string \\
 \hline
@@ -8941,7 +9041,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cons (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{cons (public)}} \\
 car & a value \\
 cdr & a value \\
 \textit{Returns:} & a pair \\
@@ -8970,7 +9070,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf car (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{car (public)}} \\
 pair & a pair \\
 \textit{Returns:} & a value \\
 \hline
@@ -8998,7 +9098,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf cdr (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{cdr (public)}} \\
 pair & a pair \\
 \textit{Returns:} & a value \\
 \hline
@@ -9079,7 +9179,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-car! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{set-car! (public)}} \\
 pair & a pair \\
 val & a value \\
 \textit{Returns:} & a pair \\
@@ -9109,7 +9209,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-cdr! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{set-cdr! (public)}} \\
 pair & a pair \\
 val & a value \\
 \textit{Returns:} & a pair \\
@@ -9132,7 +9232,7 @@ The \texttt{list?} predicate tests if a pair is part of a proper list, one that 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -9159,7 +9259,7 @@ proc ::constcl::list? {val} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf listp (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{listp (internal)}} \\
 pair & a pair \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -9197,7 +9297,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list (public)}} \\
 args & some values \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -9233,7 +9333,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf length (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{length (public)}} \\
 pair & a pair \\
 \textit{Returns:} & a number \\
 \hline
@@ -9256,7 +9356,7 @@ proc ::constcl::length {pair} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf length-helper (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{length-helper (internal)}} \\
 pair & a pair \\
 \textit{Returns:} & a Tcl number \\
 \hline
@@ -9288,7 +9388,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf append (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{append (public)}} \\
 args & some lists \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -9315,7 +9415,7 @@ proc ::constcl::append {args} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf copy-list (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{copy-list (internal)}} \\
 pair & a pair \\
 next & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
@@ -9349,7 +9449,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf reverse (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{reverse (public)}} \\
 vals & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -9378,7 +9478,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-tail (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list-tail (public)}} \\
 vals & a Lisp list of values \\
 k & a number \\
 \textit{Returns:} & a Lisp list of values \\
@@ -9412,7 +9512,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-ref (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list-ref (public)}} \\
 vals & a Lisp list of values \\
 k & a number \\
 \textit{Returns:} & a value \\
@@ -9446,7 +9546,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf memq (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{memq (public)}} \\
 val1 & a value \\
 val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
@@ -9463,7 +9563,7 @@ proc ::constcl::memq {val1 val2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf memv (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{memv (public)}} \\
 val1 & a value \\
 val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
@@ -9481,7 +9581,7 @@ proc ::constcl::memv {val1 val2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf member (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{member (public)}} \\
 val1 & a value \\
 val2 & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values OR \#f \\
@@ -9503,7 +9603,7 @@ The \texttt{member-proc} helper procedure does the work for the \texttt{memq}, \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf member-proc (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{member-proc (internal)}} \\
 epred & an equivalence predicate \\
 val1 & a value \\
 val2 & a Lisp list of values \\
@@ -9554,7 +9654,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assq (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{assq (public)}} \\
 val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
@@ -9571,7 +9671,7 @@ proc ::constcl::assq {val1 val2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assv (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{assv (public)}} \\
 val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
@@ -9589,7 +9689,7 @@ proc ::constcl::assv {val1 val2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{assoc (public)}} \\
 val1 & a value \\
 val2 & an association list \\
 \textit{Returns:} & an association pair or \#f \\
@@ -9611,7 +9711,7 @@ proc ::constcl::assoc {val1 val2} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf assoc-proc (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{assoc-proc (internal)}} \\
 epred & an equivalence predicate \\
 val1 & a value \\
 val2 & an association list \\
@@ -9667,7 +9767,7 @@ The String constructor converts the given string to print form (no backslashes),
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf String constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{String constructor (internal)}} \\
 val & an external rep of a string, w/o double quotes \\
 \textit{Returns:} & nothing \\
 \hline
@@ -9707,7 +9807,7 @@ The \texttt{=} method tells if the stored string is equal to a given string.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) = (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) = (internal)}} \\
 str & a string \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
@@ -9723,7 +9823,7 @@ The \texttt{cmp} method compares the stored string to a given string. Returns -1
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) cmp (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) cmp (internal)}} \\
 str & a string \\
 \textit{Returns:} & a comparison value: -1, 0, or 1 \\
 \hline
@@ -9739,7 +9839,7 @@ The \texttt{length} method returns the length (as a Number object) of the intern
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) length (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) length (internal)}} \\
 \textit{Returns:} & a number \\
 \hline
 \end{tabular}
@@ -9754,7 +9854,7 @@ The \texttt{ref} method, given an index value which is between 0 and the length 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) ref (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) ref (internal)}} \\
 k & a number \\
 \textit{Returns:} & a character \\
 \hline
@@ -9774,7 +9874,7 @@ The \texttt{store} method presents the range in vector memory where the string i
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) store (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) store (internal)}} \\
 \textit{Returns:} & a Tcl list of characters \\
 \hline
 \end{tabular}
@@ -9791,7 +9891,7 @@ The \texttt{value} method presents the store as a Tcl string.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) value (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -9807,7 +9907,7 @@ The \texttt{set!} method does nothing to a constant string. Given an index value
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) set! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) set! (internal)}} \\
 k & a number \\
 c & a character \\
 \textit{Returns:} & a string \\
@@ -9835,7 +9935,7 @@ The \texttt{fill!} method does nothing to a constant string. Given a character, 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) fill! (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) fill! (internal)}} \\
 c & a character \\
 \textit{Returns:} & a string \\
 \hline
@@ -9862,7 +9962,7 @@ The \texttt{substring} method, given a \emph{from} and a \emph{to} index, return
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) substring (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) substring (internal)}} \\
 from & a number \\
 to & a number \\
 \textit{Returns:} & a Tcl string \\
@@ -9893,7 +9993,7 @@ The \texttt{mkconstant} method changes the instance from mutable to immutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) mkconstant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) mkconstant (internal)}} \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
@@ -9909,7 +10009,7 @@ The \texttt{constant} method signals whether the string instance is mutable.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -9924,7 +10024,7 @@ The \texttt{external} method renders a string in external representation format.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) external (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) external (internal)}} \\
 \textit{Returns:} & an external rep of a string, w/o double quotes \\
 \hline
 \end{tabular}
@@ -9940,7 +10040,7 @@ The \texttt{display} method prints a string in internal representation format.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (String instance) display (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(String instance) display (internal)}} \\
 port & an output port \\
 \textit{Returns:} & nothing \\
 \hline
@@ -9956,7 +10056,7 @@ The \texttt{tstr} method yields the external representation of the string instan
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) tstr (internal)}} \\
 \textit{Returns:} & an external rep of a string, w/o double quotes \\
 \hline
 \end{tabular}
@@ -9976,7 +10076,7 @@ The \texttt{tstr} method yields the external representation of the string instan
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkString (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkString (internal)}} \\
 str & an external rep of a string, w/o double quotes \\
 \textit{Returns:} & a string \\
 \hline
@@ -9995,7 +10095,7 @@ interp alias {} ::constcl::MkString \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -10026,7 +10126,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-string (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-string (public)}} \\
 k & a number \\
 ?char? & a character \\
 \textit{Returns:} & a string \\
@@ -10062,7 +10162,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string (public)}} \\
 args & some characters \\
 \textit{Returns:} & a string \\
 \hline
@@ -10098,7 +10198,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-length (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-length (public)}} \\
 str & a string \\
 \textit{Returns:} & a number \\
 \hline
@@ -10129,7 +10229,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-ref (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-ref (public)}} \\
 str & a string \\
 k & a number \\
 \textit{Returns:} & a character \\
@@ -10169,7 +10269,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-set! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-set! (public)}} \\
 str & a string \\
 k & a number \\
 char & a character \\
@@ -10212,7 +10312,7 @@ proc ::constcl::string-set! {str k char} {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string=?, string<?, string>? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string=?, string<?, string>? (public)}} \\
 str1 & a string \\
 str2 & a string \\
 \textit{Returns:} & a boolean \\
@@ -10221,7 +10321,7 @@ str2 & a string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string<=?, string>=? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string<=?, string>=? (public)}} \\
 str1 & a string \\
 str2 & a string \\
 \textit{Returns:} & a boolean \\
@@ -10230,7 +10330,7 @@ str2 & a string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-ci=?, string-ci<?, string-ci>? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-ci=?, string-ci<?, string-ci>? (public)}} \\
 str1 & a string \\
 str2 & a string \\
 \textit{Returns:} & a boolean \\
@@ -10239,7 +10339,7 @@ str2 & a string \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-ci<=?, string-ci>=? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-ci<=?, string-ci>=? (public)}} \\
 str1 & a string \\
 str2 & a string \\
 \textit{Returns:} & a boolean \\
@@ -10475,7 +10575,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf substring (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{substring (public)}} \\
 str & a string \\
 start & a number \\
 end & a number \\
@@ -10517,7 +10617,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-append (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-append (public)}} \\
 args & some strings \\
 \textit{Returns:} & a string \\
 \hline
@@ -10547,7 +10647,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string->list (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string->list (public)}} \\
 str & a string \\
 \textit{Returns:} & a Lisp list of characters \\
 \hline
@@ -10575,7 +10675,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list->string (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list->string (public)}} \\
 list & a Lisp list of characters \\
 \textit{Returns:} & a string \\
 \hline
@@ -10607,7 +10707,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-copy (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-copy (public)}} \\
 str & a string \\
 \textit{Returns:} & a string \\
 \hline
@@ -10640,7 +10740,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string-fill! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string-fill! (public)}} \\
 str & a string \\
 char & a character \\
 \textit{Returns:} & a string \\
@@ -10682,7 +10782,7 @@ The Symbol constructor checks that the given name is a valid identifier and then
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf Symbol constructor (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{Symbol constructor (internal)}} \\
 n & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
@@ -10700,7 +10800,7 @@ The \texttt{name} method returns the symbol's name.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) name (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) name (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -10715,7 +10815,7 @@ The \texttt{value} method is a synonym for \texttt{name}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) value (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) value (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -10730,7 +10830,7 @@ The \texttt{=} compares the stored name with the name of a given symbol. It retu
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) = (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) = (internal)}} \\
 sym & a symbol \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -10750,7 +10850,7 @@ The \texttt{constant} method signals whether the symbol instance is mutable (it 
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1) \\
 \hline
 \end{tabular}
@@ -10765,7 +10865,7 @@ The \texttt{case-constant} method signals whether the symbol instance is \emph{c
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) case-constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) case-constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1 or 0) \\
 \hline
 \end{tabular}
@@ -10780,7 +10880,7 @@ The \texttt{make-case-constant} method makes the symbol \emph{case constant}.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Symbol instance) make-case-constant (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Symbol instance) make-case-constant (internal)}} \\
 \textit{Returns:} & a Tcl truth value (1) \\
 \hline
 \end{tabular}
@@ -10795,7 +10895,7 @@ The \texttt{tstr} method yields the external representation of the symbol instan
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf (Pair instance) tstr (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(Pair instance) tstr (internal)}} \\
 \textit{Returns:} & a Tcl string \\
 \hline
 \end{tabular}
@@ -10815,7 +10915,7 @@ The \texttt{tstr} method yields the external representation of the symbol instan
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkSymbol (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkSymbol (internal)}} \\
 str & a Tcl string \\
 \textit{Returns:} & a symbol \\
 \hline
@@ -10842,7 +10942,7 @@ interp alias {} S {} ::constcl::MkSymbol
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf symbol? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{symbol? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -10871,7 +10971,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf symbol->string (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{symbol->string (public)}} \\
 sym & a symbol \\
 \textit{Returns:} & a string \\
 \hline
@@ -10912,7 +11012,7 @@ sym                                    ==>  Foobar
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf string->symbol (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{string->symbol (public)}} \\
 str & a string \\
 \textit{Returns:} & a symbol \\
 \hline
@@ -11051,7 +11151,7 @@ oo::class create ::constcl::Vector {
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf MkVector (internal)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{MkVector (internal)}} \\
 vals & a Lisp or Tcl list of values \\
 \textit{Returns:} & a vector \\
 \hline
@@ -11070,7 +11170,7 @@ interp alias {} ::constcl::MkVector \
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector? (public)}} \\
 val & a value \\
 \textit{Returns:} & a boolean \\
 \hline
@@ -11101,7 +11201,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf make-vector? (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{make-vector? (public)}} \\
 k & a number \\
 ?val? & a value \\
 \textit{Returns:} & a vector \\
@@ -11135,7 +11235,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector (public)}} \\
 args & some values \\
 \textit{Returns:} & a vector \\
 \hline
@@ -11163,7 +11263,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-length (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector-length (public)}} \\
 vec & a vector \\
 \textit{Returns:} & a number \\
 \hline
@@ -11195,7 +11295,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-ref (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector-ref (public)}} \\
 vec & a vector \\
 k & a number \\
 \textit{Returns:} & a value \\
@@ -11237,7 +11337,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-set! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector-set! (public)}} \\
 vec & a vector \\
 k & a number \\
 val & a value \\
@@ -11273,7 +11373,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector->list (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector->list (public)}} \\
 vec & a vector \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -11301,7 +11401,7 @@ Example:
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list->vector (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list->vector (public)}} \\
 list & a Lisp list of values \\
 \textit{Returns:} & a vector \\
 \hline
@@ -11331,7 +11431,7 @@ vec                               ==>  #(x x x)
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf vector-fill! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{vector-fill! (public)}} \\
 vec & a vector \\
 fill & a value \\
 \textit{Returns:} & a vector \\
@@ -11509,7 +11609,7 @@ pe {(load "schemebase.scm")}
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{get (public)}} \\
 plist & a Lisp list of values \\
 key & a symbol \\
 \textit{Returns:} & a value OR \#f \\
@@ -11532,7 +11632,7 @@ key & a symbol \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-find-key (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list-find-key (public)}} \\
 lst & a Lisp list of values \\
 key & a symbol \\
 \textit{Returns:} & a number \\
@@ -11552,7 +11652,7 @@ key & a symbol \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf lfk (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{lfk (public)}} \\
 lst & a Lisp list of values \\
 key & a symbol \\
 count & a number \\
@@ -11577,7 +11677,7 @@ count & a number \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-set! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list-set! (public)}} \\
 lst & a Lisp list of values \\
 idx & a number \\
 val & a value \\
@@ -11600,7 +11700,7 @@ val & a value \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf delete! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{delete! (public)}} \\
 lst & a Lisp list of values \\
 key & a symbol \\
 \textit{Returns:} & a Lisp list of values \\
@@ -11628,7 +11728,7 @@ key & a symbol \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf del-seek (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{del-seek (public)}} \\
 lst & a Lisp list of values \\
 idx & a number \\
 \textit{Returns:} & a Lisp list of values \\
@@ -11650,7 +11750,7 @@ idx & a number \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf get-alist (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{get-alist (public)}} \\
 lst & a Lisp list of association pairs \\
 key & a symbol \\
 \textit{Returns:} & a value \\
@@ -11673,7 +11773,7 @@ key & a symbol \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf pairlis (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pairlis (public)}} \\
 a & a Lisp list of values \\
 b & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of association pairs \\
@@ -11697,7 +11797,7 @@ b & a Lisp list of values \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf set-alist! (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{set-alist! (public)}} \\
 lst & a Lisp list of association pairs \\
 key & a symbol \\
 val & a value \\
@@ -11721,7 +11821,7 @@ val & a value \\
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf fact (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{fact (public)}} \\
 n & a number \\
 \textit{Returns:} & a number \\
 \hline
@@ -11742,7 +11842,7 @@ Returns a newly allocated copy of \emph{list}. This copies each of the pairs com
 
 \noindent\begin{tabular}{ |p{1.9cm} p{8cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\bf list-copy (public)} \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{list-copy (public)}} \\
 list & a Lisp list of values \\
 \textit{Returns:} & a Lisp list of values \\
 \hline
@@ -11760,6 +11860,7 @@ list & a Lisp list of values \\
 
 And that's all. Thank you for joining me on this voyage of exploration.
 
+\backmatter
 \printindex
 \end{document}
 

@@ -292,23 +292,40 @@ proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set keyl [caar $clauses]
+CB)
+
+If the length of the E{clauses} is greater than 0, extract a E{datumlist} and a
+E{body} from the first clause. Then build a E{predicate} of the form K{(memv
+  keyexpr (quote datumlist))}.
+
+CB(
+    set datumlist [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
+    set predicate [list [S memv] $keyexpr \
+        [list [S quote] $datumlist]]
+CB)
+
+If the length of the E{clauses} is 1, meaning that this is the last clause, and
+an K{else} is found instead of a datumlist, set the predicate to K{#t}.
+
+CB(
     if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl ${::#t}
+        set predicate ${::#t}
       }
     }
+CB)
+
+Finally, build a quasiquote structure and expand it to get the expansion of the
+K{case} expression.
+
+CB(
     set env [MkEnv $env]
-    /define [S keyl] $keyl $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
+    set qq "`(if ,predicate
                (begin ,@body)
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -411,34 +428,60 @@ proc ::constcl::do-cond {tail env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set pred [caar $clauses]
+CB)
+
+If the length of the E{clauses} is greater than 0, extract a E{predicate} and a
+E{body} from the first clause.
+
+CB(
+    set predicate [caar $clauses]
     set body [cdar $clauses]
+CB)
+
+If the length of the E{clauses} is 1, meaning that this is the last clause, and
+an K{else} is found instead of a predicate, set the predicate to K{#t}.
+
+CB(
+    if {[T [eq? [length $clauses] [N 1]]]} {
+      if {[T [eq? $predicate [S else]]]} {
+        set predicate ${::#t}
+      }
+    }
+CB)
+
+If there is a K{=>} between the E{predicate} and the E{body}, rewrite the
+E{body} to call the K{caddar} of the E{clauses} with the result of E{predicate} as
+argument.
+
+CB(
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [list [caddar $clauses] $pred]
+      set body [list [caddar $clauses] $predicate]
+CB)
+
+Otherwise, if the E{body} is empty, set E{body} to E{predicate}. If E{body} has
+one or more expressions, wrap them in K{begin}.
+
+CB(
     } else {
-      if {[[length $body] numval] == 1} {
-        set body [car $body]
-      } elseif {[[length $body] numval] > 1} {
+      if {[[length $body] numval] == 0} {
+        set body $predicate
+      } else {
         set body [cons [S begin] $body]
       }
     }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred ${::#t}
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
+CB)
+
+Finally, build a quasiquote structure and expand it to get the expansion of the
+K{cond} expression.
+
+CB(
     set env [MkEnv $env]
-    /define [S pred] $pred $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
+    set qq "`(if ,predicate
                ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -453,7 +496,7 @@ TT(
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (if #t (- 8 5) (quote ()))))\n"
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
 
 ::tcltest::test eval-6.1 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
@@ -463,7 +506,7 @@ TT(
     set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (+ 4 2) (if (> 1 2) (+ 5 5) (quote ())))\n"
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test eval-6.3 {run cond macro} -body {
     pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
@@ -473,14 +516,14 @@ TT(
     set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (+ 5 5) (quote ())))\n"
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test eval-6.5 {expand cond macro} -body {
   p {(define alist '((a . 1) (b . 2)))}
     set x [p "(cond ((assv 'b alist) => cdr) (else #f))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
-} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t #f (quote ())))\n"
+} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t (begin #f) (quote ())))\n"
 
 ::tcltest::test eval-6.6 {run cond macro} -body {
     pew "(cond ((assv 'b '((a . 1) (b . 2))) => cdr) (else #f))"
@@ -498,7 +541,7 @@ The K{begin} special form bundles up expressions as an aggregate form.
 Internally, it sees to it that all the expressions are evaluated in order and
 that the resulting value of the last one is returned as the aggregate's result.
 
-As part of the processing of sequences E{local defines} R{are
+As part of the processing of sequences, E{local defines} R{are
   resolved}{resolving-local-defines}, acting on expressions of the form K{(begin
     (define ...} when in a local environment.
 
@@ -524,7 +567,7 @@ proc ::constcl::special-begin {expr env} {
   if {$env ne "::constcl::global_env" && 
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
-  } {
+  } then {
     set expr [resolve-local-defines $expr]
     eval $expr $env
   } else {
@@ -579,7 +622,7 @@ We've already seen the relationship between symbols and values. Through
 value (or rather to the location the value is in), creating a variable. The
 K{/define} helper procedure adds a variable to the current environment. It first
 checks that the symbol name is a valid identifier and that it isn't already
-bound. Then it updates the environment with the new binding.
+bound in the current environment. Then it updates the environment with the new binding.
 
 The syntaxes with K{lambda} in them refer to the eight syntactic form,
 R{procedure definition}{procedure-definition}.
@@ -759,7 +802,7 @@ h3 Procedure definition
 EM Example: K{(lambda (r) (* r r))} ==> K{::oo::Obj3601} (it will be a different object each time)
 
 In Lisp, procedures are values just like numbers or characters. They can be
-definedI{procedure definition} as the value of a symbol, passed to other
+definedI{procedure definition} as the value of a variable, passed to other
 procedures, and returned from procedures. One difference from most values is
 that procedures need to be specified.  Two questions must answered: what is the
 procedure meant to do? The code that does that will form the E{body} of the
@@ -771,7 +814,7 @@ square (K{x * x}) of a given number. In Lisp, expressions are written with
 the operator first and then the operandsI{operator operand order}: K{(* x x)}.
 That is the body of the procedure. Now, what data will we have to provide to the
 procedure to make it work? A value stored in the variable K{x} will do. It's
-only a single variable, but by custom we need to put it in a list: K{(x)}. The
+only a single parameter, but by custom we need to put it in a list: K{(x)}. The
 operator that creates procedures is called K{lambda}I{lambda}, and we create the
 function with K{(lambda (x) (* x x))}.
 
@@ -784,10 +827,8 @@ Now, K{square} is pretty tame. How about the K{hypotenuse} procedure? K{(define
   root of the sum of two squares.
 
 The K{lambda} special form makes a R{Procedure object}{control}. First it needs
-to convert the Lisp list K{body}. It is bundled inside a K{begin} if it has more
-than one expression (K{S begin} stands for `the symbol begin'.), and taken out
-of its list if not. The Lisp list K{formals} (for E{formal parameters}) is
-passed on as it is.
+to wrap K{body} inside a K{begin} (K{S begin} stands for `the symbol begin').
+The Lisp list K{formals} (for E{formal parameters}) is passed on as it is.
 
 PT(
 H5 Scheme formal parameters lists
@@ -819,14 +860,7 @@ reg special lambda
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
   set formals [car $args]
-  set body [cdr $args]
-  if {[[length $body] numval] > 1} {
-    set body [cons [S begin] $body]
-  } elseif {[[length $body] numval] == 1} {
-    set body [car $body]
-  } else {
-    set body ${::#NIL}
-  }
+  set body [cons [S begin] [cdr $args]]
   return [MkProcedure $formals $body $env]
 }
 CB)
@@ -852,7 +886,7 @@ K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
 procedure, and determines whether to call E{pr} as an object or as a Tcl
 command. Before K{invoke} is called, the argument list should be evaluated with
-K{eval-list} (see below).
+S{eval-list}{evallist-procedure}.
 
 H4 invoke procedure
 
@@ -894,7 +928,7 @@ H4 let special form
 
 Syntax: (B{let} ((E{variable} E{init}) ...) E{body})
 
-or
+or (``named let'')
 
 (B{let} E{variable} ((E{variable} E{init}) ...) E{body})
 
@@ -921,17 +955,6 @@ CB)
 
 B{rewrite-named-let} procedure
 
-The rewriter for named K{let} chops up the expression into E{variable},
-E{bindings}, and E{body}. It creates a dictionary with the E{variable} as key
-and K{#f} as value. Then it fills up the dictionary with variable/value pairs
-from the E{bindings}. It uses the dictionary to build a declaration list for a
-K{let} form, a variable list for a K{lambda} form, and a procedure call. Then it
-assembles a K{let} form with the declaration list and a body consisting of an
-assignment and the procedure call.  The assignment binds the variable to a
-K{lambda} form with the varlist and the original E{body}. The K{let} form is
-returned, meaning that the primary expansion of the named K{let} is a regular
-K{let} form.
-
 PR(
 rewrite-named-let (internal);expr expr env env -> expr
 PR)
@@ -939,12 +962,35 @@ PR)
 IX rewrite-named-let procedure
 CB(
 proc ::constcl::rewrite-named-let {expr env} {
-  set tail [cdr $expr]
-  set variable [car $tail]
-  set bindings [cadr $tail]
-  set body [cddr $tail]
+CB)
+
+The rewriter for named K{let} chops up the expression into E{variable},
+E{bindings}, and E{body}. 
+
+CB(
+  set variable [cadr $expr]
+  set bindings [caddr $expr]
+  set body [cdddr $expr]
+CB)
+
+It creates a dictionary with the E{variable} as key
+and K{#f} as value. Then it fills up the dictionary with variable/value pairs
+from the E{bindings}. 
+
+CB(
   set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
+CB)
+
+It uses the dictionary to build a declaration list for a
+K{let} form, a variable list for a K{lambda} form, and a procedure call. Then it
+assembles a K{let} form with the declaration list and a body consisting of an
+assignment and the procedure call.  The assignment binds the variable to a
+K{lambda} form with the varlist and the original E{body}. The K{let} form is
+returned, meaning that the primary expansion of the named K{let} is a regular
+K{let} form.
+
+CB(
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
@@ -966,12 +1012,6 @@ CB)
 
 B{rewrite-let} procedure
 
-The rewriter for regular K{let} chops up the original expression into
-E{bindings} and E{body}. It creates an empty dictionary and fills it up with
-variable/value pairs from the E{bindings}. Then it builds a K{lambda} operator
-form with the variable list, the E{body}, and the value list. The K{lambda} call
-is returned as the expansion of the regular K{let} form.
-
 PR(
 rewrite-let (internal);expr expr env env -> expr
 PR)
@@ -979,12 +1019,29 @@ PR)
 IX rewrite-let procedure
 CB(
 proc ::constcl::rewrite-let {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+CB)
+
+The rewriter for regular K{let} chops up the original expression into
+E{bindings} and E{body}. 
+
+CB(
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+CB)
+
+It creates an empty dictionary and fills it up with
+variable/value pairs from the E{bindings}. 
+
+CB(
   set vars [dict create]
   parse-bindings vars $bindings
+CB)
+
+Then it builds a K{lambda} operator
+form with the variable list, the E{body}, and the value list. The K{lambda} call
+is returned as the expansion of the regular K{let} form.
+
+CB(
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
     dict keys $vars]] $env
@@ -1105,17 +1162,39 @@ PR)
 IX rewrite-letrec procedure
 CB(
 proc ::constcl::rewrite-letrec {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+CB)
+
+The rewriter for K{letrec} chops up the original expression into
+E{bindings} and E{body}. 
+
+CB(
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+CB)
+
+It creates an empty dictionary and fills it up with
+variable/value pairs from the E{bindings}. 
+
+CB(
   set vars [dict create]
   parse-bindings vars $bindings
+CB)
+
+The keys and values in the dictionary are used to create three dictionaries: one
+for the outer lambda, one for the inner lambda, and one for the assignments.
+
+CB(
   foreach {key val} $vars {
     dict set outer $key [list [S quote] ${::#UND}]
     dict set inner [set g [gensym "g"]] $val
     dict set assigns $key $g
   }
+CB)
+
+The three dictionaries are used to populate a double lambda construct in a
+quasiquote structure, which is expanded and returned.
+
+CB(
   set env [MkEnv $env]
   # outer vars
   /define [S ovars] [
@@ -1188,8 +1267,7 @@ CB(
 reg special let*
 
 proc ::constcl::special-let* {expr env} {
-  set tail [cdr $expr]
-  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let* [cadr $expr] [cddr $expr] $env]
   eval $expr $env
 }
 CB)
@@ -1205,10 +1283,24 @@ CB(
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
   if {$bindings eq ${::#NIL}} {
+CB)
+
+If there are no more bindings, wrap the E{body} in a K{begin} and return it.
+
+CB(
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
+CB)
+
+Otherwise, create a quasiquote structure with a lambda call and put a
+variable and a value at a time in it. The body of the lambda is the rewriter
+itself called recursively.
+
+Return the lambda call.
+
+CB(
     /define [S var] [caar $bindings] $env
     /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
@@ -1252,7 +1344,7 @@ the interpreter, and syntax bindings for the macros that get expanded to
 `normal' code.
 
 There isn't just one environment, either. Every time a non-primitive procedure
-is called, a new environment is created which has bindings for the procedure
+is called, a new environment is created, one which has bindings for the procedure
 formal parameters and which links to the environment that was current when the
 procedure was defined (which in turn links backwards all the way to the original
 global environment). The evaluator follows into the new environment to evaluate
@@ -1270,8 +1362,7 @@ it looks for in the parent environment, or its parent and so on.
 
 Environments make up the world the evaluator lives in and are the source of its
 values and procedures. The ability of procedure calls and execution of binding
-forms to temporarily change the current environment is a powerful one. But still
-the evaluator eventually backtracks into the previous environments. 
+forms to temporarily change the current environment is a powerful one. 
 
 From the evaluator's perspective it uses the environment to keep track of
 changes in the state of the evaluation. In this way, the evaluator uses the
@@ -1375,7 +1466,6 @@ PR)
 CB(
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
-  # parentless envs have ${::#NIL}
   if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
   } else {
@@ -1385,6 +1475,7 @@ proc ::constcl::binding-info {op env} {
 CB)
 
 B{eval-list} procedure
+A{eval-list procedure}
 
 K{eval-list} successively evaluates the elements of a Lisp list and returns the
 collected results as a Lisp list.

@@ -155,8 +155,7 @@ CB(
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
+  set res [do-for [cdr $expr] $env]
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
@@ -175,12 +174,22 @@ PR)
 IX for-seq procedure
 CB(
 proc ::constcl::for-seq {seq env} {
+CB)
+
+If E{seq} is a number, call the K{in-range} procedure to get a sequence.
+Otherwise, evaluate E{seq}.
+
+CB(
   if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
-  # make it a Tcl list, one way or another
+CB)
+
+Make the sequence a Tcl list, one way or another.
+
+CB(
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} {
@@ -198,6 +207,7 @@ proc ::constcl::for-seq {seq env} {
   } else {
     ::error "unknown sequence type [$seq tstr]"
   }
+  return $seq
 }
 CB)
 

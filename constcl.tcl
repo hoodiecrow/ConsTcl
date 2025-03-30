@@ -776,23 +776,21 @@ proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set keyl [caar $clauses]
+    set datumlist [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
+    set predicate [list [S memv] $keyexpr \
+        [list [S quote] $datumlist]]
     if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl ${::#t}
+        set predicate ${::#t}
       }
     }
     set env [MkEnv $env]
-    /define [S keyl] $keyl $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
+    set qq "`(if ,predicate
                (begin ,@body)
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -811,34 +809,29 @@ proc ::constcl::do-cond {tail env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set pred [caar $clauses]
+    set predicate [caar $clauses]
     set body [cdar $clauses]
+    if {[T [eq? [length $clauses] [N 1]]]} {
+      if {[T [eq? $predicate [S else]]]} {
+        set predicate ${::#t}
+      }
+    }
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [list [caddar $clauses] $pred]
+      set body [list [caddar $clauses] $predicate]
     } else {
-      if {[[length $body] numval] == 1} {
-        set body [car $body]
-      } elseif {[[length $body] numval] > 1} {
+      if {[[length $body] numval] == 0} {
+        set body $predicate
+      } else {
         set body [cons [S begin] $body]
       }
     }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred ${::#t}
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
     set env [MkEnv $env]
-    /define [S pred] $pred $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
+    set qq "`(if ,predicate
                ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -852,7 +845,7 @@ proc ::constcl::special-begin {expr env} {
   if {$env ne "::constcl::global_env" &&
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
-  } {
+  } then {
     set expr [resolve-local-defines $expr]
     eval $expr $env
   } else {
@@ -911,14 +904,7 @@ reg special lambda
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
   set formals [car $args]
-  set body [cdr $args]
-  if {[[length $body] numval] > 1} {
-    set body [cons [S begin] $body]
-  } elseif {[[length $body] numval] == 1} {
-    set body [car $body]
-  } else {
-    set body ${::#NIL}
-  }
+  set body [cons [S begin] [cdr $args]]
   return [MkProcedure $formals $body $env]
 }
 proc ::constcl::invoke {pr vals} {
@@ -941,10 +927,9 @@ proc ::constcl::special-let {expr env} {
   eval $expr $env
 }
 proc ::constcl::rewrite-named-let {expr env} {
-  set tail [cdr $expr]
-  set variable [car $tail]
-  set bindings [cadr $tail]
-  set body [cddr $tail]
+  set variable [cadr $expr]
+  set bindings [caddr $expr]
+  set body [cdddr $expr]
   set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
   set env [MkEnv $env]
@@ -965,10 +950,8 @@ proc ::constcl::rewrite-named-let {expr env} {
   return $expr
 }
 proc ::constcl::rewrite-let {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+  set bindings [cadr $expr]
+  set body [cddr $expr]
   set vars [dict create]
   parse-bindings vars $bindings
   set env [MkEnv $env]
@@ -1002,10 +985,8 @@ proc ::constcl::special-letrec {expr env} {
   eval $expr $env
 }
 proc ::constcl::rewrite-letrec {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+  set bindings [cadr $expr]
+  set body [cddr $expr]
   set vars [dict create]
   parse-bindings vars $bindings
   foreach {key val} $vars {
@@ -1040,8 +1021,7 @@ proc ::constcl::rewrite-letrec {expr env} {
 reg special let*
 
 proc ::constcl::special-let* {expr env} {
-  set tail [cdr $expr]
-  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let* [cadr $expr] [cddr $expr] $env]
   eval $expr $env
 }
 proc ::constcl::rewrite-let* {bindings body env} {
@@ -1104,7 +1084,6 @@ proc ::constcl::eval-form {expr env} {
 }
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
-  # parentless envs have ${::#NIL}
   if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
   } else {
@@ -1167,8 +1146,7 @@ proc ::constcl::expand-del! {expr env} {
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
+  set res [do-for [cdr $expr] $env]
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
@@ -1178,7 +1156,6 @@ proc ::constcl::for-seq {seq env} {
   } else {
     set seq [eval $seq $env]
   }
-  # make it a Tcl list, one way or another
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} {
@@ -1196,6 +1173,7 @@ proc ::constcl::for-seq {seq env} {
   } else {
     ::error "unknown sequence type [$seq tstr]"
   }
+  return $seq
 }
 proc ::constcl::do-for {tail env} {
   # make clauses a Tcl list

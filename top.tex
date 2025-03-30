@@ -1,10 +1,10 @@
-\documentclass[twoside]{report}
-\usepackage[a5paper]{geometry}
+\documentclass[a5paper,draft]{book}
+%\usepackage[a5paper]{geometry}
 \usepackage{newpxmath}
 %\usepackage{libertine} \usepackage[libertine]{newtxmath}
 %\usepackage{kpfonts}
-\usepackage{graphicx}
-\usepackage{listings}
+\usepackage[final]{graphicx}
+\usepackage[final]{listings}
 \usepackage[T1]{fontenc}
 \usepackage{imakeidx}
 \usepackage{marginnote}
@@ -23,7 +23,7 @@
   numbers=left,
   numberstyle=\tiny,
   firstnumber=last,
-  basicstyle=\small\ttfamily,
+  basicstyle=\footnotesize\ttfamily,
 }
 %\renewcommand{\thesection}{\arabic{section}}
 \title{Into the Interpreter\\with ConsTcl}
@@ -50,9 +50,11 @@
 \counterwithout{footnote}{chapter}
 \setcounter{secnumdepth}{1}
 \hyphenation{Cons-Tcl}
+\hyphenation{ins-tan-ce}
 
 \begin{document}
-\pagestyle{headings}
+\frontmatter
+\pagestyle{empty}
 \maketitle
 
 \renewcommand*{\contentsname}{Short contents}
@@ -63,10 +65,11 @@
 \etocignoretoctocdepth
 \tableofcontents
 
-
-\chapter{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+\chapter*{Introduction}
 \label{introduction}
-\section{To run the software}
+\addcontentsline{toc}{section}{To run the software}
+\section*{To run the software}
 \label{to-run-the-software}
 
 
@@ -117,7 +120,8 @@ noticed. Contact me at
 with any queries or error reports. I intend to keep updating the software to
 include bug fixes and interesting additions, within reason.
 
-\section{Background}
+\addcontentsline{toc}{section}{Background}
+\section*{Background}
 \label{background}
 
 It all started with Peter Norvig's\index{Norvig, Peter} Lisp emulator
@@ -271,3 +275,7 @@ I'd like to thank
 \end{itemize}
 
 And now let's journey into the Interpreter.
+
+\mainmatter
+\pagestyle{headings}
+

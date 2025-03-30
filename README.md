@@ -45,6 +45,8 @@ tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
 
 
+# The interpreter
+
 ## Initial declarations
 
 In this chapter there is mostly things I need to start working on the interpreter. Feel free to skim it, maybe coming back later to check up on things here.
@@ -1832,23 +1834,36 @@ proc ::constcl::do-case {keyexpr clauses env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set keyl [caar $clauses]
+```
+
+If the length of the _clauses_ is greater than 0, extract a _datumlist_ and a _body_ from the first clause. Then build a _predicate_ of the form `` (memv keyexpr (quote datumlist)) ``.
+
+```
+    set datumlist [caar $clauses]
     set body [cdar $clauses]
-    set keyl [list [S memv] $keyexpr \
-        [list [S quote] $keyl]]
-    # if this is the last clause...
+    set predicate [list [S memv] $keyexpr \
+        [list [S quote] $datumlist]]
+```
+
+If the length of the _clauses_ is 1, meaning that this is the last clause, and an `` else `` is found instead of a datumlist, set the predicate to `` #t ``.
+
+```
     if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the condition
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set keyl ${::#t}
+        set predicate ${::#t}
       }
     }
+```
+
+Finally, build a quasiquote structure and expand it to get the expansion of the `` case `` expression.
+
+```
     set env [MkEnv $env]
-    /define [S keyl] $keyl $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-case $keyexpr [cdr $clauses] $env] $env
-    set qq "`(if ,keyl
+    set qq "`(if ,predicate
                (begin ,@body)
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -1914,34 +1929,54 @@ proc ::constcl::do-cond {tail env} {
   if {[T [null? $clauses]]} {
     return [parse "'()"]
   } else {
-    set pred [caar $clauses]
+```
+
+If the length of the _clauses_ is greater than 0, extract a _predicate_ and a _body_ from the first clause.
+
+```
+    set predicate [caar $clauses]
     set body [cdar $clauses]
+```
+
+If the length of the _clauses_ is 1, meaning that this is the last clause, and an `` else `` is found instead of a predicate, set the predicate to `` #t ``.
+
+```
+    if {[T [eq? [length $clauses] [N 1]]]} {
+      if {[T [eq? $predicate [S else]]]} {
+        set predicate ${::#t}
+      }
+    }
+```
+
+If there is a `` => `` between the _predicate_ and the _body_, rewrite the _body_ to call the `` caddar `` of the _clauses_ with the result of _predicate_ as argument.
+
+```
     if {[T [symbol? [car $body]]] &&
         [[car $body] name] eq "=>"} {
-      set body [list [caddar $clauses] $pred]
+      set body [list [caddar $clauses] $predicate]
+```
+
+Otherwise, if the _body_ is empty, set _body_ to _predicate_. If _body_ has one or more expressions, wrap them in `` begin ``.
+
+```
     } else {
-      if {[[length $body] numval] == 1} {
-        set body [car $body]
-      } elseif {[[length $body] numval] > 1} {
+      if {[[length $body] numval] == 0} {
+        set body $predicate
+      } else {
         set body [cons [S begin] $body]
       }
     }
-    # if this is the last clause...
-    if {[T [eq? [length $clauses] [N 1]]]} {
-      # ...allow 'else' in the predicate
-      if {[T [eq? $pred [S else]]]} {
-        set pred ${::#t}
-      }
-    }
-    if {[T [null? $body]]} {
-        set body $pred
-    }
+```
+
+Finally, build a quasiquote structure and expand it to get the expansion of the `` cond `` expression.
+
+```
     set env [MkEnv $env]
-    /define [S pred] $pred $env
+    /define [S predicate] $predicate $env
     /define [S body] $body $env
     /define [S rest] [
       do-cond [cdr $clauses] $env] $env
-    set qq "`(if ,pred
+    set qq "`(if ,predicate
                ,body
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -1957,7 +1992,7 @@ _Example: `` (begin (define r 10) (* r r)) `` ⇒ 100_
 
 There are times when one wants to treat a number of expressions as if they were one single expression (e.g. in the consequent or alternate of an `` if `` form). The `` begin `` special form bundles up expressions as an aggregate form. Internally, it sees to it that all the expressions are evaluated in order and that the resulting value of the last one is returned as the aggregate's result.
 
-As part of the processing of sequences _local defines_ [are resolved](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines), acting on expressions of the form `` (begin (define ... `` when in a local environment.
+As part of the processing of sequences, _local defines_ [are resolved](https://github.com/hoodiecrow/ConsTcl#resolving-local-defines), acting on expressions of the form `` (begin (define ... `` when in a local environment.
 
 The following forms have an implicit `` begin `` in their bodies and the use of `` begin `` is therefore unnecessary with them:
 
@@ -1978,7 +2013,7 @@ proc ::constcl::special-begin {expr env} {
   if {$env ne "::constcl::global_env" &&
     [T [pair? [cadr $expr]]] &&
     [T [eq? [caadr $expr] [S define]]]
-  } {
+  } then {
     set expr [resolve-local-defines $expr]
     eval $expr $env
   } else {
@@ -2012,7 +2047,7 @@ proc ::constcl::/begin {exps env} {
 
 _Example: `` (define r 10) `` ⇒ ... (a definition doesn't evaluate to anything)_
 
-We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound. Then it updates the environment with the new binding.
+We've already seen the relationship between symbols and values. Through (variable) definition, a symbol is bound to a value (or rather to the location the value is in), creating a variable. The `` /define `` helper procedure adds a variable to the current environment. It first checks that the symbol name is a valid identifier and that it isn't already bound in the current environment. Then it updates the environment with the new binding.
 
 The syntaxes with `` lambda `` in them refer to the eight syntactic form, [procedure definition](https://github.com/hoodiecrow/ConsTcl#procedure-definition).
 
@@ -2123,15 +2158,15 @@ proc ::constcl::special-set! {expr env} {
 
 _Example: `` (lambda (r) (* r r)) `` ⇒ `` ::oo::Obj3601 `` (it will be a different object each time)_
 
-In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a symbol, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the _body_ of the procedure. Also, which, if any, items of data (_parameters_) will have to be provided to the procedure to make it possible to calculate its result?
+In Lisp, procedures are values just like numbers or characters. They can be defined as the value of a variable, passed to other procedures, and returned from procedures. One difference from most values is that procedures need to be specified. Two questions must answered: what is the procedure meant to do? The code that does that will form the _body_ of the procedure. Also, which, if any, items of data (_parameters_) will have to be provided to the procedure to make it possible to calculate its result?
 
-As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single variable, but by custom we need to put it in a list: `` (x) ``. The operator that creates procedures is called `` lambda ``, and we create the function with `` (lambda (x) (* x x)) ``.
+As an example, imagine that we want to have a procedure that calculates the square (`` x * x ``) of a given number. In Lisp, expressions are written with the operator first and then the operands: `` (* x x) ``. That is the body of the procedure. Now, what data will we have to provide to the procedure to make it work? A value stored in the variable `` x `` will do. It's only a single parameter, but by custom we need to put it in a list: `` (x) ``. The operator that creates procedures is called `` lambda ``, and we create the function with `` (lambda (x) (* x x)) ``.
 
 One more step is needed before we can use the procedure. It must have a name. We could define it like this: `` (define square (lambda (x) (* x x))) `` but there is actually a shortcut notation for it: `` (define (square x) (* x x)) ``.
 
 Now, `` square `` is pretty tame. How about the `` hypotenuse `` procedure? `` (define (hypotenuse a b) (sqrt (+ (square a) (square b)))) ``. It calculates the square root of the sum of two squares.
 
-The `` lambda `` special form makes a [Procedure object](https://github.com/hoodiecrow/ConsTcl#control). First it needs to convert the Lisp list `` body ``. It is bundled inside a `` begin `` if it has more than one expression (`` S begin `` stands for `the symbol begin'.), and taken out of its list if not. The Lisp list `` formals `` (for _formal parameters_) is passed on as it is.
+The `` lambda `` special form makes a [Procedure object](https://github.com/hoodiecrow/ConsTcl#control). First it needs to wrap `` body `` inside a `` begin `` (`` S begin `` stands for `the symbol begin'). The Lisp list `` formals `` (for _formal parameters_) is passed on as it is.
 
 
 ---
@@ -2166,14 +2201,7 @@ reg special lambda
 proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
   set formals [car $args]
-  set body [cdr $args]
-  if {[[length $body] numval] > 1} {
-    set body [cons [S begin] $body]
-  } elseif {[[length $body] numval] == 1} {
-    set body [car $body]
-  } else {
-    set body ${::#NIL}
-  }
+  set body [cons [S begin] [cdr $args]]
   return [MkProcedure $formals $body $env]
 }
 ```
@@ -2184,7 +2212,7 @@ _Example: `` (+ 1 6) `` ⇒ 7_
 
 Once we have procedures, we can _call_ them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it would return 121.
 
-`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with `` eval-list `` (see below).
+`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with [``eval-list``](https://github.com/hoodiecrow/ConsTcl#evallist-procedure).
 
 #### invoke procedure
 
@@ -2211,7 +2239,7 @@ The binding forms are not fundamental the way the earlier nine forms are. They a
 
 Syntax: (__let__ ((_variable_ _init_) ...) _body_)
 
-or
+or (``named let'')
 
 (__let__ _variable_ ((_variable_ _init_) ...) _body_)
 
@@ -2235,18 +2263,30 @@ proc ::constcl::special-let {expr env} {
 
 __rewrite-named-let__ procedure
 
-The rewriter for named `` let `` chops up the expression into _variable_, _bindings_, and _body_. It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_. It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
-
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-named-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::rewrite-named-let {expr env} {
-  set tail [cdr $expr]
-  set variable [car $tail]
-  set bindings [cadr $tail]
-  set body [cddr $tail]
+```
+
+The rewriter for named `` let `` chops up the expression into _variable_, _bindings_, and _body_.
+
+```
+  set variable [cadr $expr]
+  set bindings [caddr $expr]
+  set body [cdddr $expr]
+```
+
+It creates a dictionary with the _variable_ as key and `` #f `` as value. Then it fills up the dictionary with variable/value pairs from the _bindings_.
+
+```
   set vars [dict create $variable ${::#f}]
   parse-bindings vars $bindings
+```
+
+It uses the dictionary to build a declaration list for a `` let `` form, a variable list for a `` lambda `` form, and a procedure call. Then it assembles a `` let `` form with the declaration list and a body consisting of an assignment and the procedure call. The assignment binds the variable to a `` lambda `` form with the varlist and the original _body_. The `` let `` form is returned, meaning that the primary expansion of the named `` let `` is a regular `` let `` form.
+
+```
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
     dict map {k v} $vars {list $k $v}]]] $env
@@ -2268,18 +2308,29 @@ proc ::constcl::rewrite-named-let {expr env} {
 
 __rewrite-let__ procedure
 
-The rewriter for regular `` let `` chops up the original expression into _bindings_ and _body_. It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_. Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
-
 <table border=1><thead><tr><th colspan=2 align="left">rewrite-let (internal)</th></tr></thead><tr><td>expr</td><td>an expression</td></tr><tr><td>env</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
 proc ::constcl::rewrite-let {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+```
+
+The rewriter for regular `` let `` chops up the original expression into _bindings_ and _body_.
+
+```
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+```
+
+It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_.
+
+```
   set vars [dict create]
   parse-bindings vars $bindings
+```
+
+Then it builds a `` lambda `` operator form with the variable list, the _body_, and the value list. The `` lambda `` call is returned as the expansion of the regular `` let `` form.
+
+```
   set env [MkEnv $env]
   /define [S varlist] [list {*}[
     dict keys $vars]] $env
@@ -2342,17 +2393,35 @@ __rewrite-letrec__ procedure
 
 ```
 proc ::constcl::rewrite-letrec {expr env} {
-  # regular let
-  set tail [cdr $expr]
-  set bindings [car $tail]
-  set body [cdr $tail]
+```
+
+The rewriter for `` letrec `` chops up the original expression into _bindings_ and _body_.
+
+```
+  set bindings [cadr $expr]
+  set body [cddr $expr]
+```
+
+It creates an empty dictionary and fills it up with variable/value pairs from the _bindings_.
+
+```
   set vars [dict create]
   parse-bindings vars $bindings
+```
+
+The keys and values in the dictionary are used to create three dictionaries: one for the outer lambda, one for the inner lambda, and one for the assignments.
+
+```
   foreach {key val} $vars {
     dict set outer $key [list [S quote] ${::#UND}]
     dict set inner [set g [gensym "g"]] $val
     dict set assigns $key $g
   }
+```
+
+The three dictionaries are used to populate a double lambda construct in a quasiquote structure, which is expanded and returned.
+
+```
   set env [MkEnv $env]
   # outer vars
   /define [S ovars] [
@@ -2395,8 +2464,7 @@ The `` let* `` special form is expanded by `` special-let* ``.
 reg special let*
 
 proc ::constcl::special-let* {expr env} {
-  set tail [cdr $expr]
-  set expr [rewrite-let* [car $tail] [cdr $tail] $env]
+  set expr [rewrite-let* [cadr $expr] [cddr $expr] $env]
   eval $expr $env
 }
 ```
@@ -2409,10 +2477,22 @@ __rewrite-let*__ procedure
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
   if {$bindings eq ${::#NIL}} {
+```
+
+If there are no more bindings, wrap the _body_ in a `` begin `` and return it.
+
+```
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
   } else {
+```
+
+Otherwise, create a quasiquote structure with a lambda call and put a variable and a value at a time in it. The body of the lambda is the rewriter itself called recursively.
+
+Return the lambda call.
+
+```
     /define [S var] [caar $bindings] $env
     /define [S val] [cadar $bindings] $env
     /define [S rest] [rewrite-let* [cdr $bindings] \
@@ -2430,11 +2510,11 @@ proc ::constcl::rewrite-let* {bindings body env} {
 
 Before I can talk about the evaluator, I need to spend some time on environments. To simplify, an environment can be seen as a table--or spreadsheet, if you will--that connects (binds) names to cells, which contain values. The evaluator looks up values in the environment that way. But there's more to an environment than just a name-value coupling. The environment also contains references to the procedures that make up the Lisp library. And their bindings aren't just a simple connection: there are several kinds of bindings, from variable binding, the most common one, to special-form bindings for the fundamental operations of the interpreter, and syntax bindings for the macros that get expanded to `normal' code.
 
-There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
+There isn't just one environment, either. Every time a non-primitive procedure is called, a new environment is created, one which has bindings for the procedure formal parameters and which links to the environment that was current when the procedure was defined (which in turn links backwards all the way to the original global environment). The evaluator follows into the new environment to evaluate the body of the procedure there, and then as the evaluator goes back along the call stack, it sheds environment references.
 
 Not only procedures but binding forms (such as `` let ``) create new environments for the evaluator to work in. As they do that, they also bind variables to values. Just like with procedures, the added local bindings can shadow bindings in underlying environments but does not affect them: once the local environment has been forgotten by the evaluator, the underlying bindings are once more visible. The other side of the coin is that temporary environments don't have to be complete: every binding that the evaluator can't find in a temporary environment it looks for in the parent environment, or its parent and so on.
 
-Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one. But still the evaluator eventually backtracks into the previous environments.
+Environments make up the world the evaluator lives in and are the source of its values and procedures. The ability of procedure calls and execution of binding forms to temporarily change the current environment is a powerful one.
 
 From the evaluator's perspective it uses the environment to keep track of changes in the state of the evaluation. In this way, the evaluator uses the environment for continuity and a progress record.
 
@@ -2515,7 +2595,6 @@ The `` binding-info `` procedure takes a symbol and returns a list of two items:
 ```
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
-  # parentless envs have ${::#NIL}
   if {$actual_env eq "::constcl::null_env"} {
     return [::list UNBOUND {}]
   } else {
@@ -2524,7 +2603,7 @@ proc ::constcl::binding-info {op env} {
 }
 ```
 
-__eval-list__ procedure
+__eval-list__ procedure 
 
 `` eval-list `` successively evaluates the elements of a Lisp list and returns the collected results as a Lisp list.
 
@@ -2629,8 +2708,7 @@ The `` expand-for `` procedure expands the `` for `` macro. It returns a `` begi
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
-  set tail [cdr $expr]
-  set res [do-for $tail $env]
+  set res [do-for [cdr $expr] $env]
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
@@ -2644,12 +2722,21 @@ __for-seq__ procedure
 
 ```
 proc ::constcl::for-seq {seq env} {
+```
+
+If _seq_ is a number, call the `` in-range `` procedure to get a sequence. Otherwise, evaluate _seq_.
+
+```
   if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
     set seq [eval $seq $env]
   }
-  # make it a Tcl list, one way or another
+```
+
+Make the sequence a Tcl list, one way or another.
+
+```
   if {[T [list? $seq]]} {
     set seq [splitlist $seq]
   } elseif {[T [string? $seq]]} {
@@ -2667,6 +2754,7 @@ proc ::constcl::for-seq {seq env} {
   } else {
     ::error "unknown sequence type [$seq tstr]"
   }
+  return $seq
 }
 ```
 
@@ -3465,7 +3553,7 @@ If the formals list is actually a single symbol, it takes all the arguments as a
         }]]
 ```
 
-Else, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
+Otherwise, bind an argument to the first item in the formals lists and cdr the formals list until the dotted end comes up. Bind all the remaining arguments to it.
 
 ```
     } else {
@@ -3741,7 +3829,9 @@ After 1844 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 
-## Built-in procedures
+# Built-in types and procedures
+
+## The standard library
 
 ### Equivalence predicates
 

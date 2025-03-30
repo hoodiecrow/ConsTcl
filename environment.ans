@@ -70,7 +70,7 @@ CB(
         }]]
 CB)
 
-Else, bind an argument to the first item in the formals lists and cdr the
+Otherwise, bind an argument to the first item in the formals lists and cdr the
 formals list until the dotted end comes up. Bind all the remaining arguments to
 it.
 
