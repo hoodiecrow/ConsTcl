@@ -1,4 +1,4 @@
-\documentclass[a5paper,draft]{book}
+\documentclass[a5paper,draft]{memoir}
 %\usepackage[a5paper]{geometry}
 \usepackage{newpxmath}
 %\usepackage{libertine} \usepackage[libertine]{newtxmath}
@@ -55,16 +55,38 @@
 \hyphenation{need-ed}
 
 \begin{document}
-\frontmatter
+
 \pagestyle{empty}
-\maketitle
+\begin{flushright}
+{\large\sffamily Into the Interpreter}
+\end{flushright}
+\cleardoublepage
+
+\begin{center}
+{\Huge\sffamily\thetitle}
+
+\vspace{1in}
+\theauthor
+
+\vspace{1in}
+{\small\thedate}
+
+\end{center}
+\clearpage
+\begin{center}
+\textcopyright\ 2025 Peter Lewerin
+\end{center}
+\clearpage
+
+\frontmatter
+\pagestyle{plain}
 
 \renewcommand*{\contentsname}{Short contents}
-\etocsettocdepth.toc{section}
+\setcounter{tocdepth}{0}% chapters and above
 \tableofcontents
-
-\renewcommand*\contentsname{Detailed contents}
-\etocignoretoctocdepth
+\clearpage
+\renewcommand*{\contentsname}{Contents}
+\setcounter{tocdepth}{2}% subsections and above
 \tableofcontents
 
 \addcontentsline{toc}{section}{Introduction}
@@ -75,12 +97,12 @@
 \label{to-run-the-software}
 
 
-First things first. To run, source the file \textbf{constcl.tcl} (with
-\textbf{schemebase.scm} in the directory) in a Tcl console (I use
+First things first. To run the software, source the file \textbf{constcl.tcl}
+(with \textbf{schemebase.scm} in the directory) in a Tcl console (I use
 \textbf{tkcon}) and use the command \textbf{repl} for a primitive command
 dialog. Source \textbf{all.tcl} to run the test suite (you need
-\textbf{constcl.test} for that). The files can be found on GitHub/ConsTcl\footnote{See
-\texttt{https://github.com/hoodiecrow/ConsTcl}}.
+\textbf{constcl.test} for that). The files can be found on
+GitHub/ConsTcl\footnote{See \texttt{https://github.com/hoodiecrow/ConsTcl}}.
 
 The following license holds for the software, not the book:
 
@@ -276,7 +298,7 @@ I'd like to thank
 \item my mother, sister and brother-in-law for being supportive.
 \end{itemize}
 
-And now let's journey into the Interpreter.
+\vspace{1in}\noindent And now let's journey into the Interpreter.
 
 \mainmatter
 \pagestyle{headings}
