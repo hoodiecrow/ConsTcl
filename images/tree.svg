@@ -27,7 +27,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="2.2723039"
-     inkscape:cx="482.76993"
+     inkscape:cx="482.54989"
      inkscape:cy="136.42541"
      inkscape:window-width="1278"
      inkscape:window-height="1000"
@@ -169,7 +169,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <g
-       id="g2396">
+       id="g1197">
       <rect
          style="fill:#ffffff;fill-opacity:0.5;stroke:none;stroke-width:0.264999;stop-color:#000000"
          id="rect15457"
@@ -178,7 +178,7 @@
          x="85.27774"
          y="8.2315454" />
       <g
-         id="g2361">
+         id="g1163">
         <rect
            style="fill:#ffffff;fill-opacity:0.5;stroke:#000000;stroke-width:0.264998;stop-color:#000000"
            id="rect4908"
@@ -246,42 +246,37 @@
            d="m 134.07645,28.188994 1.77987,8.056343"
            id="path14431"
            sodipodi:nodetypes="cc" />
-        <g
-           id="g2301"
-           style="stroke-width:1.24903"
-           transform="matrix(0.8006233,0,0,0.8006233,41.209221,2.0834114)">
-          <ellipse
-             style="fill:#ffffff;fill-opacity:0.5;stroke:#000000;stroke-width:0.330989;stop-color:#000000"
-             id="path5252"
-             cx="89.147049"
-             cy="31.656898"
-             rx="2.4785082"
-             ry="2.4775052" />
-          <text
-             xml:space="preserve"
-             style="font-size:2.35169px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.330472"
-             x="88.464729"
-             y="32.302326"
-             id="text11538"
-             transform="scale(1.0002024,0.99979764)"><tspan
-               sodipodi:role="line"
-               id="tspan11536"
-               style="stroke-width:0.330472"
-               x="88.464729"
-               y="32.302326">a</tspan></text>
-          <text
-             xml:space="preserve"
-             style="font-size:2.35169px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.330472"
-             x="96.206245"
-             y="12.166237"
-             id="text1841"
-             transform="scale(1.0002024,0.99979764)"><tspan
-               sodipodi:role="line"
-               id="tspan1839"
-               style="stroke-width:0.330472"
-               x="96.206245"
-               y="12.166237">L</tspan></text>
-        </g>
+        <ellipse
+           style="fill:#ffffff;fill-opacity:0.5;stroke:#000000;stroke-width:0.264998;stop-color:#000000"
+           id="path5252"
+           cx="112.58243"
+           cy="27.428661"
+           rx="1.9843514"
+           ry="1.9835484" />
+        <text
+           xml:space="preserve"
+           style="font-size:1.88282px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264584"
+           x="112.02781"
+           y="27.945827"
+           id="text11538"
+           transform="scale(1.0002024,0.99979764)"><tspan
+             sodipodi:role="line"
+             id="tspan11536"
+             style="stroke-width:0.264584"
+             x="112.02781"
+             y="27.945827">a</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:3.64484px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+           x="118.05378"
+           y="11.824406"
+           id="text1841"
+           transform="scale(1.0002024,0.99979765)"><tspan
+             sodipodi:role="line"
+             id="tspan1839"
+             style="stroke-width:0.264583"
+             x="118.05378"
+             y="11.824406">L</tspan></text>
         <g
            id="g2311"
            transform="matrix(0.8006233,0,0,0.8006233,29.349404,3.4313898)"
@@ -361,7 +356,7 @@
            sodipodi:nodetypes="cc" />
         <path
            style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
-           d="m 119.52234,12.029744 3.43279,4.565692"
+           d="m 119.98809,12.611936 2.96704,3.9835"
            id="path2007"
            sodipodi:nodetypes="cc" />
       </g>
