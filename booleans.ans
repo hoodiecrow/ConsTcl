@@ -25,7 +25,7 @@ The K{tstr} method yields the value K{#t} as a Tcl string. It is used for error
 messages.
 
 PR(
-(True instance) tstr (internal);-> tstr
+(True instance) tstr (internal);-> etrue
 PR)
 
 CB(
@@ -44,7 +44,7 @@ The K{tstr} method yields the value K{#f} as a Tcl string. It is used for error
 messages.
 
 PR(
-(False instance) tstr (internal);-> tstr
+(False instance) tstr (internal);-> efalse
 PR)
 
 CB(

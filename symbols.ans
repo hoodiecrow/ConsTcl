@@ -58,7 +58,7 @@ CB(
   }
 CB)
 
-The K{=} compares the stored name with the name of a given symbol. It returns
+The K{=} method compares the stored name with the name of a given symbol. It returns
 K{#t} if they are equal, otherwise K{#f}.
 
 PR(
@@ -75,7 +75,7 @@ CB(
   }
 CB)
 
-The K{constant} method signals whether the symbol instance is mutable (it is).
+The K{constant} method signals whether the symbol instance is immutable (it is).
 
 PR(
 (Symbol instance) constant (internal);-> tbooltrue
@@ -116,7 +116,7 @@ The K{tstr} method yields the external representation of the symbol instance (th
 Tcl string. It is used by error messages.
 
 PR(
-(Pair instance) tstr (internal);-> tstr
+(Symbol instance) tstr (internal);-> tstr
 PR)
 
 CB(

@@ -26,15 +26,15 @@ oo::class create ::constcl::String {
   variable data constant
 CB)
 
-The String constructor converts the given string to print form (no backslashes),
-sets the string length, and allocates that much vector memory to store the
-string. The characters that make up the string are stored as Char objects.
-Finally the string's data tuple (a pair holding the address to the first stored
-character and the length of the string) is stored and K{constant} is set to 0,
-indicating a mutable string.
+The String constructor converts the given string to print form (no escaping
+backslashes), sets the string length, and allocates that much vector memory to
+store the string. The characters that make up the string are stored as Char
+objects.  Finally the string's data tuple (a pair holding the address to the
+first stored character and the length of the string) is stored and K{constant}
+is set to 0, indicating a mutable string.
 
 PR(
-String constructor (internal);val estr -> none
+String constructor (internal);val estrnodblq -> none
 PR)
 
 CB(
@@ -279,7 +279,7 @@ The K{tstr} method yields the external representation of the string instance as 
 Tcl string. It is used by error messages and the K{write} method.
 
 PR(
-(Pair instance) tstr (internal);-> estr
+(String instance) tstr (internal);-> estr
 PR)
 
 CB(
@@ -294,7 +294,7 @@ H4 MkString generator
 K{MkString} generates a String object.
 
 PR(
-MkString (internal);str estr -> str
+MkString (internal);str estrnodblq -> str
 PR)
 
 CB(
@@ -569,7 +569,7 @@ B{string<=?}, B{string-ci<=?}
 
 B{string>=?}, B{string-ci>=?}
 
-K{string=?}, K{string<?}, K{string>?}, K{string<=?}, K{string>=?} and
+The procedures K{string=?}, K{string<?}, K{string>?}, K{string<=?}, K{string>=?} and
 their case insensitive variants K{string-ci=?}, K{string-ci<?},
 K{string-ci>?}, K{string-ci<=?}, K{string-ci>=?} compare strings.
 

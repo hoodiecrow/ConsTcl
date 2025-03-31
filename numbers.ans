@@ -572,13 +572,13 @@ operations.  They take a number of operands, but at least one for K{-} and K{/}.
 Example:
 
 VB(
-(list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))   =>  (4 4 4 4)
-(+ 21 7 3)                                 =>  31
-(* 21 7 3)                                 =>  441
-(- 21 7 3)                                 =>  11
-(/ 21 7 3)                                 =>  1
-(- 5)                                      =>  -5
-(/ 5)                                      =>  0.2
+(list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))  => (4 4 4 4)
+(+ 21 7 3)                                => 31
+(* 21 7 3)                                => 441
+(- 21 7 3)                                => 11
+(/ 21 7 3)                                => 1
+(- 5)                                     => -5
+(/ 5)                                     => 0.2
 VB)
 
 PR(
@@ -962,9 +962,9 @@ arguments) one.
 Example:
 
 VB(
-(let ((x (log 2))) (= 2 (exp x)))        =>  #t
+(let ((x (log 2))) (= 2 (exp x)))   =>  #t
 (let* ((a (/ pi 3)) (s (sin a)))
-  (= a (asin s)))                        =>  #t
+  (= a (asin s)))                   =>  #t
 VB)
 
 PR(

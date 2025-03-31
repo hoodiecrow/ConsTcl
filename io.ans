@@ -15,7 +15,7 @@ and there is also the K{Port} kind, which isn't used other than as a base class.
 H4 Port class
 
 CB(
-oo::class create ::constcl::Port {
+oo::abstract create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
 CB)
@@ -41,7 +41,7 @@ CB)
 The K{handle} method yields the stored handle value.
 
 PR(
-(Port instance) handle (internal);-> handlenil
+(concrete instance) handle (internal);-> handlenil
 PR)
 
 CB(
@@ -54,7 +54,7 @@ The K{close} method acts to close the stored handle's channel, and sets the
 stored handle to the empty list.
 
 PR(
-(Port instance) close (internal);-> none
+(concrete instance) close (internal);-> none
 PR)
 
 CB(
@@ -63,27 +63,13 @@ CB(
     set handle ${::#NIL}
     return
   }
-CB)
-
-The K{tstr} method yields the external representation of the port as a Tcl
-string. It is used by error messages.
-
-PR(
-(Port instance) tstr (internal);-> tstr
-PR)
-
-CB(
-  method tstr {} {
-    regexp {(\d+)} [self] -> num
-    return "#<port-$num>"
-  }
 }
 CB)
 
 H4 InputPort class
 
 The InputPort class extends Port with the ability to open a channel for reading,
-and to get a character from the channel and detect end-of-file.
+and to get a character from the channel and to detect end-of-file.
 
 CB(
 oo::class create ::constcl::InputPort {
@@ -149,7 +135,7 @@ CB(
 CB)
 
 The K{tstr} method yields the external representation of the port as a Tcl
-string. It is used by error messages.
+string. It is used by error messages and the K{write} method.
 
 PR(
 (InputPort instance) tstr (internal);-> tstr
@@ -245,11 +231,7 @@ PR)
 
 CB(
   method eof {} {
-    if {$read_eof} {
-      return 1
-    } else {
-      return 0
-    }
+    return $read_eof
   }
 CB)
 
@@ -267,7 +249,7 @@ CB(
 CB)
 
 The K{tstr} method yields the external representation of the string input port
-as a Tcl string. It is used by error messages.
+as a Tcl string. It is used by error messages and the K{write} method.
 
 PR(
 (StringInputPort instance) tstr (internal);-> tstr
@@ -309,7 +291,7 @@ The OutputPort K{open} method attempts to open a channel for writing on a given
 file name, setting the stored handle to the channel if it succeeds and to the
 empty list if it fails.
 
-The K{open} method is locked with an error command for safety: only remove this
+The K{open} method is locked with an error command for safety. Only remove this
 line if you really know what you're doing: once it is unlocked, the K{open}
 method can potentially overwrite existing files.
 
@@ -379,7 +361,7 @@ CB(
 CB)
 
 The K{tstr} method yields the external representation of the port as a Tcl
-string. It is used by error messages.
+string. It is used by error messages and the K{write} method.
 
 PR(
 (OutputPort instance) tstr (internal);-> tstr
@@ -512,7 +494,7 @@ CB(
 CB)
 
 The K{tstr} method yields the external representation of the string output port
-as a Tcl string. It is used by error messages.
+as a Tcl string. It is used by error messages and the K{write} method.
 
 PR(
 (StringOutputPort instance) tstr (internal);-> tstr

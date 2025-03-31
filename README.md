@@ -3976,7 +3976,7 @@ oo::class create ::constcl::Number {
 
 The constructor tests its argument against the form of a double-precision floating point number, which admits an integer number as well.
 
-<table border=1><thead><tr><th colspan=2 align="left">Number constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a number</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">Number constructor (internal)</th></tr></thead><tr><td>val</td><td>an external representation of a number</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
   constructor {val} {
@@ -4090,7 +4090,7 @@ The `` constant `` method signals that the number instance isn't mutable.
 
 The `` tstr `` method yields the external representation of the stored value as a Tcl string. It is used by error messages and the `` write `` method.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external representation of a number</td></tr></table>
 
 ```
   method tstr {} {
@@ -4354,13 +4354,13 @@ The operators `` + ``, `` * ``, `` - ``, and `` / `` stand for the respective ar
 Example:
 
 ```
-(list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))   =>  (4 4 4 4)
-(+ 21 7 3)                                 =>  31
-(* 21 7 3)                                 =>  441
-(- 21 7 3)                                 =>  11
-(/ 21 7 3)                                 =>  1
-(- 5)                                      =>  -5
-(/ 5)                                      =>  0.2
+(list (+ 2 2) (* 2 2) (- 10 6) (/ 20 5))  => (4 4 4 4)
+(+ 21 7 3)                                => 31
+(* 21 7 3)                                => 441
+(- 21 7 3)                                => 11
+(/ 21 7 3)                                => 1
+(- 5)                                     => -5
+(/ 5)                                     => 0.2
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">+, * (public)</th></tr></thead><tr><td>?nums?</td><td>some numbers</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
@@ -4602,9 +4602,9 @@ The mathematical functions e<sup>x</sup>, natural logarithm, sine, cosine, tange
 Example:
 
 ```
-(let ((x (log 2))) (= 2 (exp x)))        =>  #t
+(let ((x (log 2))) (= 2 (exp x)))   =>  #t
 (let* ((a (/ pi 3)) (s (sin a)))
-  (= a (asin s)))                        =>  #t
+  (= a (asin s)))                   =>  #t
 ```
 
 <table border=1><thead><tr><th colspan=2 align="left">exp, log, sin, cos, tan, asin, acos, atan (public)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
@@ -4900,7 +4900,7 @@ oo::singleton create ::constcl::True {
 
 The `` tstr `` method yields the value `` #t `` as a Tcl string. It is used for error messages.
 
-<table border=1><thead><tr><th colspan=2 align="left">(True instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(True instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>the external representation of true</td></tr></table>
 
 ```
   method tstr {} {
@@ -4916,7 +4916,7 @@ oo::singleton create ::constcl::False {
 
 The `` tstr `` method yields the value `` #f `` as a Tcl string. It is used for error messages.
 
-<table border=1><thead><tr><th colspan=2 align="left">(False instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(False instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>the external representation of false</td></tr></table>
 
 ```
   method tstr {} {
@@ -4929,7 +4929,7 @@ The `` tstr `` method yields the value `` #f `` as a Tcl string. It is used for 
 
 Given a string (either `` "#t" `` or `` "#f" ``), `` MkBoolean `` generates a boolean.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkBoolean (internal)</th></tr></thead><tr><td>bool</td><td>an external rep of a bool</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkBoolean (internal)</th></tr></thead><tr><td>bool</td><td>an external representation of a bool</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 proc ::constcl::MkBoolean {bool} {
@@ -5000,7 +5000,7 @@ oo::class create ::constcl::Char {
 
 The constructor tests its argument against the three basic forms of external representation for characters, and stores the corresponding Tcl character.
 
-<table border=1><thead><tr><th colspan=2 align="left">Char constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">Char constructor (internal)</th></tr></thead><tr><td>val</td><td>an external representation of a char</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
   constructor {val} {
@@ -5124,7 +5124,7 @@ The `` value `` method is another way to yield the stored value
 
 The `` external `` method translates the stored value back to external representation.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Char instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a char</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external representation of a char</td></tr></table>
 
 ```
   method external {} {
@@ -5154,7 +5154,7 @@ The `` display `` method is used by the `` display `` standard procedure to prin
 
 The `` tstr `` method yields the external representation of the stored value as a Tcl string. It is used by error messages and the `` write `` method.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a char</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Char instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external representation of a char</td></tr></table>
 
 ```
   method tstr {} {
@@ -5167,7 +5167,7 @@ The `` tstr `` method yields the external representation of the stored value as 
 
 `` MkChar `` generates a character object. If a character object with the same name already exists, that character will be returned, otherwise a fresh character will be created.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkChar (internal)</th></tr></thead><tr><td>char</td><td>an external rep of a char</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkChar (internal)</th></tr></thead><tr><td>char</td><td>an external representation of a char</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
 proc ::constcl::MkChar {char} {
@@ -5210,7 +5210,9 @@ __char>=?__ procedure
 
 `` char=? ``, `` char<? ``, `` char>? ``, `` char<=? ``, and `` char>=? `` compare character values. They only compare two characters at a time.
 
-<table border=1><thead><tr><th colspan=2 align="left">char=?, char&lt;?, char&gt;?, char&lt;=?, char&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">char=?, char&lt;?, char&gt;? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">char&lt;=?, char&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char=?
@@ -5314,7 +5316,9 @@ __char-ci>=?__ procedure
 
 `` char-ci=? ``, `` char-ci<? ``, `` char-ci>? ``, `` char-ci<=? ``, and `` char-ci>=? `` compare character values in a case insensitive manner. They only compare two characters at a time.
 
-<table border=1><thead><tr><th colspan=2 align="left">char-ci=?, char-ci&lt;?, char-ci&gt;?, char-ci&lt;=?, char-ci&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">char-ci=?, char-ci&lt;?, char-ci&gt;? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">char-ci&lt;=?, char-ci&gt;=? (public)</th></tr></thead><tr><td>char1</td><td>a character</td></tr><tr><td>char2</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 ```
 reg char-ci=?
@@ -5421,9 +5425,11 @@ __char-upper-case?__ procedure
 
 __char-lower-case?__ procedure
 
-The predicates `` char-alphabetic? ``, `` char-numeric? ``, and `` char-whitespace? `` test a character for these conditions. `` char-upper-case? `` and `` char-lower-case? `` too.
+The predicate `` char-alphabetic? `` tests if a character is alphabetic, `` char-numeric? `` tests if a character is numeric, and `` char-whitespace? `` tests if a character is whitespace. `` char-upper-case? `` and `` char-lower-case? `` test if a character is upper- or lower-case.
 
-<table border=1><thead><tr><th colspan=2 align="left">char-alphabetic?, char-numeric?, char-whitespace? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">char-alphabetic?, char-numeric? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+<table border=1><thead><tr><th colspan=2 align="left">char-whitespace? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
 <table border=1><thead><tr><th colspan=2 align="left">char-upper-case?, char-lower-case? (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -5532,6 +5538,12 @@ __char-downcase__ procedure
 
 `` char-upcase `` and `` char-downcase `` alter the case of a character.
 
+Example:
+
+```
+(char-upcase #\a)   ==>  #\A
+```
+
 <table border=1><thead><tr><th colspan=2 align="left">char-upcase, char-downcase (public)</th></tr></thead><tr><td>char</td><td>a character</td></tr><tr><td><i>Returns:</i></td><td>a character</td></tr></table>
 
 ```
@@ -5619,17 +5631,7 @@ The `` value `` method is a dummy.
 oo::define ::constcl::Procedure method value {} {}
 ```
 
-The `` show `` method yields the external representation of the procedure. It is used by the `` write `` method.
-
-<table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) show (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
-
-```
-oo::define ::constcl::Procedure method show {} {
-  ::constcl::MkString [my tstr]
-}
-```
-
-The `` tstr `` method yields the external representation of the procedure. It is used by error messages.
+The `` tstr `` method yields the external representation of the procedure. It is used by error messages and by the `` write `` method.
 
 <table border=1><thead><tr><th colspan=2 align="left">(Procedure instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -5751,7 +5753,7 @@ The procedure iterates over the items in each argument list (`` item ``) and eac
 
 `` for-each `` iterates over one or more lists, taking an element from each list to pass to a procedure as an argument. The empty list is returned.
 
-Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach it.)
+Example: (from R5RS; must be pasted as a oneliner for the `` tkcon `` repl to stomach it.)
 
 ```
 (let ((v (make-vector 5)))
@@ -5817,7 +5819,7 @@ and there is also the `` Port `` kind, which isn't used other than as a base cla
 #### Port class
 
 ```
-oo::class create ::constcl::Port {
+oo::abstract create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
 ```
@@ -5838,7 +5840,7 @@ The `` Port `` constructor uses a fake argument to store a value in the instance
 
 The `` handle `` method yields the stored handle value.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Port instance) handle (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) handle (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
 
 ```
   method handle {} {
@@ -5848,7 +5850,7 @@ The `` handle `` method yields the stored handle value.
 
 The `` close `` method acts to close the stored handle's channel, and sets the stored handle to the empty list.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Port instance) close (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) close (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
   method close {} {
@@ -5856,23 +5858,12 @@ The `` close `` method acts to close the stored handle's channel, and sets the s
     set handle ${::#NIL}
     return
   }
-```
-
-The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
-
-<table border=1><thead><tr><th colspan=2 align="left">(Port instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
-
-```
-  method tstr {} {
-    regexp {(\d+)} [self] -> num
-    return "#<port-$num>"
-  }
 }
 ```
 
 #### InputPort class
 
-The InputPort class extends Port with the ability to open a channel for reading, and to get a character from the channel and detect end-of-file.
+The InputPort class extends Port with the ability to open a channel for reading, and to get a character from the channel and to detect end-of-file.
 
 ```
 oo::class create ::constcl::InputPort {
@@ -5925,7 +5916,7 @@ The `` copy `` method returns a new instance of InputPort which is a copy of thi
   }
 ```
 
-The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
+The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages and the `` write `` method.
 
 <table border=1><thead><tr><th colspan=2 align="left">(InputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -6002,11 +5993,7 @@ The `` eof `` method reports end-of-file status on the buffer.
 
 ```
   method eof {} {
-    if {$read_eof} {
-      return 1
-    } else {
-      return 0
-    }
+    return $read_eof
   }
 ```
 
@@ -6020,7 +6007,7 @@ The `` copy `` method creates a new instance with a (non-shared) copy of the buf
   }
 ```
 
-The `` tstr `` method yields the external representation of the string input port as a Tcl string. It is used by error messages.
+The `` tstr `` method yields the external representation of the string input port as a Tcl string. It is used by error messages and the `` write `` method.
 
 <table border=1><thead><tr><th colspan=2 align="left">(StringInputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -6055,7 +6042,7 @@ oo::class create ::constcl::OutputPort {
 
 The OutputPort `` open `` method attempts to open a channel for writing on a given file name, setting the stored handle to the channel if it succeeds and to the empty list if it fails.
 
-The `` open `` method is locked with an error command for safety: only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
+The `` open `` method is locked with an error command for safety. Only remove this line if you really know what you're doing: once it is unlocked, the `` open `` method can potentially overwrite existing files.
 
 <table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) open (internal)</th></tr></thead><tr><td>name</td><td>a filename string</td></tr><tr><td><i>Returns:</i></td><td>a channel handle or NIL</td></tr></table>
 
@@ -6109,7 +6096,7 @@ The `` copy `` method returns a new instance of OutputPort which is a copy of th
   }
 ```
 
-The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages.
+The `` tstr `` method yields the external representation of the port as a Tcl string. It is used by error messages and the `` write `` method.
 
 <table border=1><thead><tr><th colspan=2 align="left">(OutputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -6217,7 +6204,7 @@ The `` copy `` method returns a new instance of StringOutputPort which is a copy
   }
 ```
 
-The `` tstr `` method yields the external representation of the string output port as a Tcl string. It is used by error messages.
+The `` tstr `` method yields the external representation of the string output port as a Tcl string. It is used by error messages and the `` write `` method.
 
 <table border=1><thead><tr><th colspan=2 align="left">(StringOutputPort instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
@@ -6548,7 +6535,8 @@ proc ::constcl::load {filename} {
 List processing is another of Lisp's great strengths. In Lisp, lists (which are actually tree structures) are composed of _pairs_, which in the most elementary case are constructed using calls to the `` cons `` function. Example:
 
 ```
-(cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
+(cons 'a
+  (cons 'b (cons (cons 'c '()) '())))  ==> (a b (c))
 ```
 
 A _pair_ consists of a pair of pointers, named the _car_ and the _cdr_ (There are historical, not very interesting, reasons for this naming.).
@@ -6585,7 +6573,7 @@ The constructor stores values into the `` car `` and `` cdr `` variables, and se
 
 The `` value `` method is a synonym for `` tstr ``.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external representation of a pair</td></tr></table>
 
 ```
   method value {} {
@@ -6652,7 +6640,7 @@ The `` mkconstant `` method changes the instance from mutable to immutable.
   }
 ```
 
-The `` constant `` method signals whether the pair instance is mutable.
+The `` constant `` method signals whether the pair instance is immutable.
 
 <table border=1><thead><tr><th colspan=2 align="left">(Pair instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
 
@@ -6686,7 +6674,7 @@ The `` write `` method prints an external representation of the pair on the give
 
 The `` tstr `` method yields the external representation of the pair instance as a Tcl string. It is used by error messages.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a pair</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external representation of a pair</td></tr></table>
 
 ```
   method tstr {} {
@@ -7293,9 +7281,9 @@ oo::class create ::constcl::String {
   variable data constant
 ```
 
-The String constructor converts the given string to print form (no backslashes), sets the string length, and allocates that much vector memory to store the string. The characters that make up the string are stored as Char objects. Finally the string's data tuple (a pair holding the address to the first stored character and the length of the string) is stored and `` constant `` is set to 0, indicating a mutable string.
+The String constructor converts the given string to print form (no escaping backslashes), sets the string length, and allocates that much vector memory to store the string. The characters that make up the string are stored as Char objects. Finally the string's data tuple (a pair holding the address to the first stored character and the length of the string) is stored and `` constant `` is set to 0, indicating a mutable string.
 
-<table border=1><thead><tr><th colspan=2 align="left">String constructor (internal)</th></tr></thead><tr><td>val</td><td>an external rep of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">String constructor (internal)</th></tr></thead><tr><td>val</td><td>an external repr. of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
   constructor {val} {
@@ -7483,7 +7471,7 @@ The `` constant `` method signals whether the string instance is mutable.
 
 The `` external `` method renders a string in external representation format.
 
-<table border=1><thead><tr><th colspan=2 align="left">(String instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a string, w/o double quotes</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) external (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external repr. of a string</td></tr></table>
 
 ```
   method external {} {
@@ -7504,7 +7492,7 @@ The `` display `` method prints a string in internal representation format.
 
 The `` tstr `` method yields the external representation of the string instance as a Tcl string. It is used by error messages and the `` write `` method.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external rep of a string, w/o double quotes</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(String instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>an external repr. of a string</td></tr></table>
 
 ```
   method tstr {} {
@@ -7517,7 +7505,7 @@ The `` tstr `` method yields the external representation of the string instance 
 
 `` MkString `` generates a String object.
 
-<table border=1><thead><tr><th colspan=2 align="left">MkString (internal)</th></tr></thead><tr><td>str</td><td>an external rep of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">MkString (internal)</th></tr></thead><tr><td>str</td><td>an external repr. of a string, w/o double quotes</td></tr><tr><td><i>Returns:</i></td><td>a string</td></tr></table>
 
 ```
 interp alias {} ::constcl::MkString \
@@ -7693,7 +7681,7 @@ __string<=?__, __string-ci<=?__
 
 __string>=?__, __string-ci>=?__
 
-`` string=? ``, `` string<? ``, `` string>? ``, `` string<=? ``, `` string>=? `` and their case insensitive variants `` string-ci=? ``, `` string-ci<? ``, `` string-ci>? ``, `` string-ci<=? ``, `` string-ci>=? `` compare strings.
+The procedures `` string=? ``, `` string<? ``, `` string>? ``, `` string<=? ``, `` string>=? `` and their case insensitive variants `` string-ci=? ``, `` string-ci<? ``, `` string-ci>? ``, `` string-ci<=? ``, `` string-ci>=? `` compare strings.
 
 <table border=1><thead><tr><th colspan=2 align="left">string=?, string&lt;?, string&gt;? (public)</th></tr></thead><tr><td>str1</td><td>a string</td></tr><tr><td>str2</td><td>a string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -8102,7 +8090,7 @@ The `` value `` method is a synonym for `` name ``.
   }
 ```
 
-The `` = `` compares the stored name with the name of a given symbol. It returns `` #t `` if they are equal, otherwise `` #f ``.
+The `` = `` method compares the stored name with the name of a given symbol. It returns `` #t `` if they are equal, otherwise `` #f ``.
 
 <table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) = (internal)</th></tr></thead><tr><td>sym</td><td>a symbol</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
 
@@ -8116,7 +8104,7 @@ The `` = `` compares the stored name with the name of a given symbol. It returns
   }
 ```
 
-The `` constant `` method signals whether the symbol instance is mutable (it is).
+The `` constant `` method signals whether the symbol instance is immutable (it is).
 
 <table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
 
@@ -8148,7 +8136,7 @@ The `` make-case-constant `` method makes the symbol _case constant_.
 
 The `` tstr `` method yields the external representation of the symbol instance (the name) as a Tcl string. It is used by error messages.
 
-<table border=1><thead><tr><th colspan=2 align="left">(Pair instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(Symbol instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
 
 ```
   method tstr {} {
@@ -8263,6 +8251,10 @@ oo::class create ::constcl::Vector {
   variable data constant
 ```
 
+The Vector constructor is divided in two main parts, one for the case where the value is a Lisp list, and one for the case where the value is a Tcl list. Their structure is similar: set the length (number of items), allocate vector space, and store the elements.
+
+<table border=1><thead><tr><th colspan=2 align="left">Vector constructor (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
 ```
   constructor {val} {
     if {[T [::constcl::list? $val]]} {
@@ -8295,12 +8287,33 @@ oo::class create ::constcl::Vector {
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
+```
+
+The `` baseadr `` method returns the address of the first element as a number object.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) baseadr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
   method baseadr {} {
     ::constcl::car $data
   }
+```
+
+The `` length `` method returns the length (number of elements) as a number object.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) length (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+
+```
   method length {} {
     ::constcl::cdr $data
   }
+```
+
+The `` ref `` method returns one element given the (0-based) index for it.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) ref (internal)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
+
+```
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -8308,16 +8321,36 @@ oo::class create ::constcl::Vector {
     }
     lindex [my store] $k
   }
+```
+
+The `` store `` method returns the range of vector memory cells that store the vector's elements.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) store (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
+
+```
   method store {} {
     set base [[my baseadr] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
+```
+
+The `` value `` method is a synonym for `` store ``.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) value (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl list of values</td></tr></table>
+
+```
   method value {} {
     my store
   }
-  method set! {k obj} {
+```
+
+The `` set! `` method changes one element in a mutable vector given a (0-based) index value and a value.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) set! (internal)</th></tr></thead><tr><td>k</td><td>a number</td></tr><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
+```
+  method set! {k val} {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
@@ -8326,10 +8359,17 @@ oo::class create ::constcl::Vector {
         ::error "index out of range\n$k"
       }
       set base [[my baseadr] numval]
-      lset ::constcl::vectorSpace $k+$base $obj
+      lset ::constcl::vectorSpace $k+$base $val
     }
     return [self]
   }
+```
+
+The `` fill! `` method changes every element in a mutable vector to a given value.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) fill! (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>a vector</td></tr></table>
+
+```
   method fill! {val} {
     if {[my constant]} {
       ::error "vector is constant"
@@ -8344,12 +8384,33 @@ oo::class create ::constcl::Vector {
     }
     return [self]
   }
+```
+
+The `` mkconstant `` method makes a vector immutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) mkconstant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1)</td></tr></table>
+
+```
   method mkconstant {} {
     set constant 1
   }
+```
+
+The `` constant `` method signals whether the vector instance is immutable.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) constant (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl truth value (1 or 0)</td></tr></table>
+
+```
   method constant {} {
     set constant
   }
+```
+
+The `` tstr `` method yields the external representation of the symbol instance (the name) as a Tcl string. It is used by error messages and for the `` write `` method.
+
+<table border=1><thead><tr><th colspan=2 align="left">(Vector instance) tstr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl string</td></tr></table>
+
+```
   method tstr {} {
     return [format "#(%s)" [
       join [lmap val [my value] {$val tstr}]]]
@@ -8588,12 +8649,18 @@ Before the interpreter can run, some elements must be initialized.
 Initialize the memory space for vector contents.
 
 ```
-set ::constcl::vectorSpaceSize [expr {64 * 1024}]
+set ::constcl::vectorSpaceSize [expr {1 * 1024}]
 set ::constcl::vectorSpace [
   lrepeat $::constcl::vectorSpaceSize [N 0]]
 
 set ::constcl::vectorAssign 0
+```
 
+The `` vsAlloc `` procedure allocates vector space for strings and vectors. First it checks that there is enough space left, and then it increases the fill marker and returns its old value.
+
+<table border=1><thead><tr><th colspan=2 align="left">vsAlloc (internal)</th></tr></thead><tr><td>num</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a Tcl number</td></tr></table>
+
+```
 proc ::constcl::vsAlloc {num} {
   if {$::constcl::vectorSpaceSize -
     $::constcl::vectorAssign < $num} {

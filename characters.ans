@@ -279,7 +279,11 @@ K{char=?}, K{char<?}, K{char>?}, K{char<=?}, and K{char>=?} compare character
 values. They only compare two characters at a time.
 
 PR(
-char=?, char<?, char>?, char<=?, char>=? (public);char1 char char2 char -> bool
+char=?, char<?, char>? (public);char1 char char2 char -> bool
+PR)
+
+PR(
+char<=?, char>=? (public);char1 char char2 char -> bool
 PR)
 
 CB(
@@ -444,7 +448,11 @@ K{char-ci=?}, K{char-ci<?}, K{char-ci>?}, K{char-ci<=?}, and K{char-ci>=?} compa
 values in a case insensitive manner. They only compare two characters at a time.
 
 PR(
-char-ci=?, char-ci<?, char-ci>?, char-ci<=?, char-ci>=? (public);char1 char char2 char -> bool
+char-ci=?, char-ci<?, char-ci>? (public);char1 char char2 char -> bool
+PR)
+
+PR(
+char-ci<=?, char-ci>=? (public);char1 char char2 char -> bool
 PR)
 
 CB(
@@ -607,13 +615,16 @@ NI B{char-upper-case?} procedure
 
 NI B{char-lower-case?} procedure
 
-The predicates K{char-alphabetic?}, K{char-numeric?}, and K{char-whitespace?}
- test a character for these
-conditions.
-K{char-upper-case?} and K{char-lower-case?} too.
+The predicate K{char-alphabetic?} tests if a character is alphabetic, K{char-numeric?} tests if a character is numeric, and K{char-whitespace?} tests if a character is whitespace.
+K{char-upper-case?} and K{char-lower-case?} test if a character is upper- or
+lower-case.
 
 PR(
-char-alphabetic?, char-numeric?, char-whitespace? (public);char char -> bool
+char-alphabetic?, char-numeric? (public);char char -> bool
+PR)
+
+PR(
+char-whitespace? (public);char char -> bool
 PR)
 
 PR(
@@ -807,6 +818,12 @@ H4 char-upcase procedure
 B{char-downcase} procedure
 
 K{char-upcase} and K{char-downcase} alter the case of a character.
+
+Example:
+
+VB(
+(char-upcase #\a)   ==>  #\A
+VB)
 
 PR(
 char-upcase, char-downcase (public);char char -> char

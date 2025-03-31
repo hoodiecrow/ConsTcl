@@ -6,7 +6,8 @@ actually tree structures) are composed of E{pairs}, which in the most elementary
 case are constructed using calls to the K{cons} function. Example:
 
 VB(
-(cons 'a (cons 'b (cons (cons 'c '()) '())))   ==> (a b (c))
+(cons 'a
+  (cons 'b (cons (cons 'c '()) '())))  ==> (a b (c))
 VB)
 
 A E{pair} consists of a pair of pointers, named the E{car} and the E{cdr}F{There
@@ -134,7 +135,7 @@ CB(
   }
 CB)
 
-The K{constant} method signals whether the pair instance is mutable.
+The K{constant} method signals whether the pair instance is immutable.
 
 PR(
 (Pair instance) constant (internal);-> tbool

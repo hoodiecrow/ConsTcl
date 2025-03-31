@@ -61,7 +61,7 @@ nums          -> some numbers
 lnums         -> a Lisp list of numbers
 tnum          -> a Tcl number
 tnums         -> a Tcl list of numbers
-enum          -> an external rep of a number
+enum          -> an external representation of a number
 bool          -> a boolean
 bools         -> some booleans
 booleof       -> a boolean or end of file
@@ -71,12 +71,14 @@ tbooltrue     -> a Tcl truth value (1)
 tbooleof      -> a Tcl truth value (1 or 0) or end of file
 tbools        -> a Tcl list of booleans
 cmp           -> a comparison value: -1, 0, or 1
-ebool         -> an external rep of a bool
+ebool         -> an external representation of a bool
+etrue         -> the external representation of true
+efalse        -> the external representation of false
 char          -> a character
 chareof       -> a character or end of file
 chars         -> some characters
 lchars        -> a Lisp list of characters
-echar         -> an external rep of a char
+echar         -> an external representation of a char
 tchr          -> a Tcl character
 tchrs         -> some Tcl characters
 tchreof       -> a Tcl character or end of file
@@ -89,7 +91,7 @@ pair          -> a pair
 pairs         -> some pairs
 lpairs        -> a Lisp list of pairs
 tpairs        -> a Tcl list of pairs
-epair         -> an external rep of a pair
+epair         -> an external representation of a pair
 list          -> a list
 lists         -> some lists
 llists        -> a Lisp list of lists
@@ -97,7 +99,8 @@ tlists        -> a Tcl list of lists
 str           -> a string
 streof        -> a string or end of file
 strs          -> some strings
-estr          -> an external rep of a string, w/o double quotes
+estr          -> an external repr. of a string
+estrnodblq    -> an external repr. of a string, w/o double quotes
 lstrs         -> a Lisp list of strings
 tstrs         -> a Tcl list of strings
 tstr          -> a Tcl string

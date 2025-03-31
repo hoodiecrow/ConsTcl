@@ -7,12 +7,22 @@ h5 Vector space
 Initialize the memory space for vector contents.
 
 CB(
-set ::constcl::vectorSpaceSize [expr {64 * 1024}]
+set ::constcl::vectorSpaceSize [expr {1 * 1024}]
 set ::constcl::vectorSpace [
   lrepeat $::constcl::vectorSpaceSize [N 0]]
 
 set ::constcl::vectorAssign 0
+CB)
 
+The K{vsAlloc} procedure allocates vector space for strings and vectors. First
+it checks that there is enough space left, and then it increases the fill marker
+and returns its old value.
+
+PR(
+vsAlloc (internal);num num -> tnum
+PR)
+
+CB(
 proc ::constcl::vsAlloc {num} {
   if {$::constcl::vectorSpaceSize -
     $::constcl::vectorAssign < $num} {
@@ -37,7 +47,8 @@ CB)
 
 h5 Recursion limit
 
-Make it possible to reach (fact 100). Probably more than needed, but this amount can't hurt (default is 1000).
+Make it possible to reach (fact 100). Probably more than needed, but this amount
+can't hurt (default is 1000).
 
 CB(
 interp recursionlimit {} 2000

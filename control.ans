@@ -72,21 +72,8 @@ CB(
 oo::define ::constcl::Procedure method value {} {}
 CB)
 
-The K{show} method yields the external representation of the procedure. It is
-used by the K{write} method.
-
-PR(
-(Procedure instance) show (internal);-> tstr
-PR)
-
-CB(
-oo::define ::constcl::Procedure method show {} {
-  ::constcl::MkString [my tstr]
-}
-CB)
-
 The K{tstr} method yields the external representation of the procedure. It is
-used by error messages.
+used by error messages and by the K{write} method.
 
 PR(
 (Procedure instance) tstr (internal);-> tstr
@@ -269,7 +256,7 @@ H4 for-each procedure
 K{for-each} iterates over one or more lists, taking an element from each list to pass to
 a procedure as an argument. The empty list is returned.
 
-Example: (from R5RS; must be pasted as a oneliner for the ConsTcl repl to stomach it.)
+Example: (from R5RS; must be pasted as a oneliner for the K{tkcon} repl to stomach it.)
 
 VB(
 (let ((v (make-vector 5)))

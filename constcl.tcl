@@ -2788,9 +2788,6 @@ oo::define ::constcl::Procedure method call {args} {
     ::constcl::MkEnv $parms $vals $env]
 }
 oo::define ::constcl::Procedure method value {} {}
-oo::define ::constcl::Procedure method show {} {
-  ::constcl::MkString [my tstr]
-}
 oo::define ::constcl::Procedure method tstr {} {
   regexp {(\d+)} [self] -> num
   return "#<proc-$num>"
@@ -2871,7 +2868,7 @@ proc ::constcl::for-each {proc args} {
   }
   return ${::#NIL}
 }
-oo::class create ::constcl::Port {
+oo::abstract create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
   constructor {args} {
@@ -2888,10 +2885,6 @@ oo::class create ::constcl::Port {
     close $handle
     set handle ${::#NIL}
     return
-  }
-  method tstr {} {
-    regexp {(\d+)} [self] -> num
-    return "#<port-$num>"
   }
 }
 oo::class create ::constcl::InputPort {
@@ -2940,11 +2933,7 @@ oo::class create ::constcl::StringInputPort {
     return $c
   }
   method eof {} {
-    if {$read_eof} {
-      return 1
-    } else {
-      return 0
-    }
+    return $read_eof
   }
   method copy {} {
     ::constcl::StringInputPort new $buffer
@@ -4030,14 +4019,13 @@ oo::class create ::constcl::Vector {
   }
   method store {} {
     set base [[my baseadr] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
   method value {} {
     my store
   }
-  method set! {k obj} {
+  method set! {k val} {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
@@ -4046,7 +4034,7 @@ oo::class create ::constcl::Vector {
         ::error "index out of range\n$k"
       }
       set base [[my baseadr] numval]
-      lset ::constcl::vectorSpace $k+$base $obj
+      lset ::constcl::vectorSpace $k+$base $val
     }
     return [self]
   }
@@ -4146,12 +4134,11 @@ proc ::constcl::vector-fill! {vec fill} {
   }
   $vec fill! $fill
 }
-set ::constcl::vectorSpaceSize [expr {64 * 1024}]
+set ::constcl::vectorSpaceSize [expr {1 * 1024}]
 set ::constcl::vectorSpace [
   lrepeat $::constcl::vectorSpaceSize [N 0]]
 
 set ::constcl::vectorAssign 0
-
 proc ::constcl::vsAlloc {num} {
   if {$::constcl::vectorSpaceSize -
     $::constcl::vectorAssign < $num} {

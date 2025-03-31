@@ -21,8 +21,13 @@ oo::class create ::constcl::Vector {
   variable data constant
 CB)
 
+The Vector constructor is divided in two main parts, one for the case where the
+value is a Lisp list, and one for the case where the value is a Tcl list. Their
+structure is similar: set the length (number of items), allocate vector space,
+and store the elements.
 
 PR(
+Vector constructor (internal);val val -> none
 PR)
 
 CB(
@@ -57,12 +62,40 @@ CB(
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
   }
+CB)
+
+The K{baseadr} method returns the address of the first element as a number
+object.
+
+PR(
+(Vector instance) baseadr (internal);-> num
+PR)
+
+CB(
   method baseadr {} {
     ::constcl::car $data
   }
+CB)
+
+The K{length} method returns the length (number of elements) as a number object.
+
+PR(
+(Vector instance) length (internal);-> num
+PR)
+
+CB(
   method length {} {
     ::constcl::cdr $data
   }
+CB)
+
+The K{ref} method returns one element given the (0-based) index for it.
+
+PR(
+(Vector instance) ref (internal);k num -> val
+PR)
+
+CB(
   method ref {k} {
     set k [$k numval]
     if {$k < 0 || $k >= [[my length] numval]} {
@@ -70,16 +103,44 @@ CB(
     }
     lindex [my store] $k
   }
+CB)
+
+The K{store} method returns the range of vector memory cells that store the
+vector's elements.
+
+PR(
+(Vector instance) store (internal);-> tvals
+PR)
+
+CB(
   method store {} {
     set base [[my baseadr] numval]
-    set end [expr {[[my length] numval] +
-      $base - 1}]
+    set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
+CB)
+
+The K{value} method is a synonym for K{store}.
+
+PR(
+(Vector instance) value (internal);-> tvals
+PR)
+
+CB(
   method value {} {
     my store
   }
-  method set! {k obj} {
+CB)
+
+The K{set!} method changes one element in a mutable vector given a (0-based)
+index value and a value.
+
+PR(
+(Vector instance) set! (internal);k num val val -> vec
+PR)
+
+CB(
+  method set! {k val} {
     if {[my constant]} {
       ::error "vector is constant"
     } else {
@@ -88,10 +149,19 @@ CB(
         ::error "index out of range\n$k"
       }
       set base [[my baseadr] numval]
-      lset ::constcl::vectorSpace $k+$base $obj
+      lset ::constcl::vectorSpace $k+$base $val
     }
     return [self]
   }
+CB)
+
+The K{fill!} method changes every element in a mutable vector to a given value.
+
+PR(
+(Vector instance) fill! (internal);val val -> vec
+PR)
+
+CB(
   method fill! {val} {
     if {[my constant]} {
       ::error "vector is constant"
@@ -106,12 +176,40 @@ CB(
     }
     return [self]
   }
+CB)
+
+The K{mkconstant} method makes a vector immutable.
+
+PR(
+(Vector instance) mkconstant (internal);-> tbooltrue
+PR)
+
+CB(
   method mkconstant {} {
     set constant 1
   }
+CB)
+
+The K{constant} method signals whether the vector instance is immutable.
+
+PR(
+(Vector instance) constant (internal);-> tbool
+PR)
+
+CB(
   method constant {} {
     set constant
   }
+CB)
+
+The K{tstr} method yields the external representation of the symbol instance (the name) as a
+Tcl string. It is used by error messages and for the K{write} method.
+
+PR(
+(Vector instance) tstr (internal);-> tstr
+PR)
+
+CB(
   method tstr {} {
     return [format "#(%s)" [
       join [lmap val [my value] {$val tstr}]]]
