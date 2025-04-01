@@ -10,7 +10,6 @@
 \usepackage{marginnote}
 \usepackage[table]{xcolor}
 \usepackage{caption}
-\usepackage{etoc}
 \usepackage{float}
   \floatstyle{boxed}
   \newfloat{pulledtext}{tbp}{pulledtext}
@@ -56,29 +55,30 @@
 
 \begin{document}
 
+\frontmatter
 \pagestyle{empty}
 \begin{flushright}
-{\large\sffamily Into the Interpreter}
+{\scshape Into the Interpreter}
 \end{flushright}
 \cleardoublepage
 
 \begin{center}
 {\Huge\sffamily\thetitle}
 
-\vspace{1in}
+\vspace{0.7in}
 \theauthor
 
-\vspace{1in}
-{\small\thedate}
-
 \end{center}
 \clearpage
+
 \begin{center}
-\textcopyright\ 2025 Peter Lewerin
+{\small
+\textcopyright\ 2025 Peter J Lewerin\\
+($\phi$) Funktion förlag, Tidaholm
+}
 \end{center}
 \clearpage
 
-\frontmatter
 \pagestyle{plain}
 
 \renewcommand*{\contentsname}{Short contents}
