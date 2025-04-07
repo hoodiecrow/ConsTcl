@@ -64,7 +64,7 @@ PR(
 teq (internal);typep proc expr1 expr expr2 expr -> tbool
 PR)
 
-IX teq
+IX teq procedure
 CB(
 proc ::constcl::teq {typep expr1 expr2} {
     return [expr {[T [$typep $expr1]] &&
@@ -80,7 +80,7 @@ PR(
 veq (internal);expr1 expr expr2 expr -> tbool
 PR)
 
-IX veq
+IX veq procedure
 CB(
 proc ::constcl::veq {expr1 expr2} {
     return [expr {[$expr1 value] eq [$expr2 value]}]
