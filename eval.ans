@@ -12,7 +12,7 @@ needed. Lisp has nine syntactic forms, each with its own
 syntax, and each with its own process of evaluation.
 
 DL variable reference LD Syntax: a symbol. Process: R{variable lookup}{variable-reference}.
-DL constant literal LD Syntax: a number, string, character, or boolean. Process: R{take the value}{constant-literal}.
+DL constant literal LD Syntax: a string, character, boolean, or number. Process: R{take the value}{constant-literal}.
 DL quotation LD Syntax: K{(quote datum)}. Process: R{take the datum}{quotation}.
 DL conditional LD Syntax: K{if}, K{case}, or K{cond} expression. Process: R{depends on which syntax}{conditional}.
 DL sequence LD Syntax: K{(begin expression ...)}. Process: evaluate all expressions, R{take value of the last}{sequence}.
@@ -40,7 +40,7 @@ stored there. When an expression consists of the symbol, the evaluator does
 E{lookup} and finds the value.
 
 This is handled by the helper procedure K{lookup}. It (or rather, the helper
-procedure K{binding-info}, which it calls) searches the R{environment
+function K{binding-info}, which it calls) searches the R{environment
   chain}{environments} for the symbol, and returns the value stored in the
   location it is bound to.  It is an error to do lookup on an unbound symbol, or
   a symbol that is bound for some other purpose, such as being a keyword or a

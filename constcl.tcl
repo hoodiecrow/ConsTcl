@@ -239,8 +239,8 @@ oo::abstract create ::constcl::Base {
   method tstr {} {
     return "#<base>"
   }
-  method unknown {method_name args} {
-    switch $method_name {
+  method unknown {name args} {
+    switch $name {
       car - cdr - set-car! -
       set-cdr {
         ::error "PAIR expected"
@@ -3225,12 +3225,11 @@ proc ::constcl::pair? {val} {
   typeof? $val Pair
 }
 proc ::constcl::tstr-pair {pair} {
-  # take an object and print the car
+  # take a pair and make a string of the car
   # and the cdr of the stored value
   set str {}
   set a [car $pair]
   set d [cdr $pair]
-  # print car
   ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair

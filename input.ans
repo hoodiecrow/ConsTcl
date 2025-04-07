@@ -1388,7 +1388,7 @@ TT)
 
 H4 read-vector-expr procedure
 
-K{read-vector-expr} is activated by K{read-pound} and reads a number of
+K{read-vector-expr} is activated by K{read-pound}. It reads a number of
 expressions until it finds an ending parenthesis.  It produces a vector
 expression and returns a R{Vector object}{vectors}.
 Shares the variables K{c} and K{unget} with its caller.

@@ -263,12 +263,11 @@ PR)
 
 CB(
 proc ::constcl::tstr-pair {pair} {
-  # take an object and print the car
+  # take a pair and make a string of the car
   # and the cdr of the stored value
   set str {}
   set a [car $pair]
   set d [cdr $pair]
-  # print car
   ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair

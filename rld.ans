@@ -1,12 +1,11 @@
 
 H3 Resolving local defines
 
-This section is ported from 'Scheme 9 from Empty Space'I{S9fES}. K{resolve-local-defines}
-is the topmost procedure in rewriting local defines as essentially a K{letrec}
-form. It takes a list of expressions and extracts variables and values from the
-defines in the beginning of the list. It builds a double lambda expression with
-the variables and values, and the rest of the expressions from the original list
-as body.
+This section is ported from 'Scheme 9 from Empty Space'I{S9fES}. It rewrites
+local defines as a K{letrec} form. K{resolve-local-defines} takes a list of
+expressions and extracts variables and values from the defines in the beginning
+of the list. It builds a double lambda expression with the variables and values,
+and the rest of the expressions from the original list as body.
 
 H4 resolve-local-defines procedure
 

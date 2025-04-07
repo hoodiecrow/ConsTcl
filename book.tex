@@ -52,6 +52,12 @@
 \hyphenation{ins-tan-ce}
 \hyphenation{na-me-spa-ce}
 \hyphenation{need-ed}
+\hyphenation{back-slash}
+\hyphenation{ta-kes}
+\hyphenation{look-up}
+\hyphenation{bool-ean}
+\hyphenation{search-es}
+\hyphenation{expres-sion}
 
 \begin{document}
 
@@ -73,6 +79,11 @@
 
 \begin{center}
 {\small
+
+Automatiserad teknik vilken används för att analysera text och data i digital
+form i syfte att generera information, enligt 15a, 15b och 15c \S\S\ 
+upphovsrättslagen (text- och datautvinning), är förbjuden.
+
 \textcopyright\ 2025 Peter J Lewerin\\
 ($\phi$) Funktion förlag, Tidaholm
 }
@@ -293,9 +304,9 @@ I'd like to thank
 \begin{itemize}
 \item my children and their lifemates for being awesome.
 
-\item my ex-wife for supporting the printing of the book financially.
+\item my mother and my ex-wife for supporting the printing of the book financially.
 
-\item my mother, sister and brother-in-law for being supportive.
+\item my sister and brother-in-law for being supportive.
 \end{itemize}
 
 \vspace{1in}\noindent And now let's journey into the Interpreter.
@@ -1152,15 +1163,15 @@ The \texttt{unknown} method responds to calls to undefined methods. It produces 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{(concrete instance) unknown (internal)}} \\
-method\_name & a Tcl string \\
+name & a Tcl string \\
 args & some arguments \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
-  method unknown {method_name args} {
-    switch $method_name {
+  method unknown {name args} {
+    switch $name {
       car - cdr - set-car! -
       set-cdr {
         ::error "PAIR expected"
@@ -2323,7 +2334,7 @@ proc ::constcl::read-unquoted-expr {} {
 \label{readvectorexpr-procedure}
 \index{read-vector-expr procedure}
 
-\texttt{read-vector-expr} is activated by \texttt{read-pound} and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector object (see page \pageref{vectors}). Shares the variables \texttt{c} and \texttt{unget} with its caller.
+\texttt{read-vector-expr} is activated by \texttt{read-pound}. It reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a Vector object (see page \pageref{vectors}). Shares the variables \texttt{c} and \texttt{unget} with its caller.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
@@ -2386,7 +2397,7 @@ To be able to evaluate every kind of expression, a structured approach is needed
 
 \begin{description}
 \item[variable reference] Syntax: a symbol. Process: variable lookup (see page \pageref{variable-reference}).
-\item[constant literal] Syntax: a number, string, character, or boolean. Process: take the value (see page \pageref{constant-literal}).
+\item[constant literal] Syntax: a string, character, boolean, or number. Process: take the value (see page \pageref{constant-literal}).
 \item[quotation] Syntax: \texttt{(quote datum)}. Process: take the datum (see page \pageref{quotation}).
 \item[conditional] Syntax: \texttt{if}, \texttt{case}, or \texttt{cond} expression. Process: depends on which syntax (see page \pageref{conditional}).
 \item[sequence] Syntax: \texttt{(begin expression \ldots )}. Process: evaluate all expressions, take value of the last (see page \pageref{sequence}).
@@ -2408,7 +2419,7 @@ A word about \emph{environments}: an environment is where evaluating code keeps 
 
 A variable\index{variable} is about a symbol, a location in the environment, and a value. The symbol is \emph{bound}\index{bound symbol} to the location, and the value is stored there. When an expression consists of the symbol, the evaluator does \emph{lookup} and finds the value.
 
-This is handled by the helper procedure \texttt{lookup}. It (or rather, the helper procedure \texttt{binding-info}, which it calls) searches the environment chain (see page \pageref{environments}) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
+This is handled by the helper procedure \texttt{lookup}. It (or rather, the helper function \texttt{binding-info}, which it calls) searches the environment chain (see page \pageref{environments}) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
 
 Syntax: \emph{symbol}
 
@@ -4296,7 +4307,7 @@ proc ::constcl::expand-when {expr env} {
 \label{resolving-local-defines}
 \index{Resolving local defines}
 
-This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. \texttt{resolve-local-defines} is the topmost procedure in rewriting local defines as essentially a \texttt{letrec} form. It takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
+This section is ported from 'Scheme 9 from Empty Space'\index{S9fES}. It rewrites local defines as a \texttt{letrec} form. \texttt{resolve-local-defines} takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
 
 \subsection{resolve-local-defines procedure}
 \label{resolvelocaldefines-procedure}
@@ -4776,7 +4787,7 @@ The class for environments is called \texttt{Environment}. It is mostly a wrappe
 
 Using a dictionary means that name lookup is by hash table lookup. In a typical Lisp implementation, large environments are served by hash lookup, while small ones have name lookup by linear search.
 
-The long and complex constructor is to accommodate the variations of Scheme formal parameters lists, which can be empty, a proper list, a symbol, or a dotted list.
+The long and complex constructor is to accommodate the variations of Scheme formal parameters lists, which can be an empty list, a proper list, a symbol, or a dotted list.
 
 Names are stored as Lisp symbols, while values are stored as they are, as Lisp or Tcl values. This means that a name might have to be converted to a symbol before lookup, and the result of lookup may have to be converted afterwards. Note that in the two cases where a number of values are stored under one name (a formals list of a single symbol or a dotted list), then the values are stored as a Lisp list of values.
 
@@ -9022,12 +9033,11 @@ pair & a pair \\
 
 \begin{lstlisting}
 proc ::constcl::tstr-pair {pair} {
-  # take an object and print the car
+  # take a pair and make a string of the car
   # and the cdr of the stored value
   set str {}
   set a [car $pair]
   set d [cdr $pair]
-  # print car
   ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair
@@ -12029,5 +12039,11 @@ list & a Lisp list of values \\
 
 \backmatter
 \printindex
+\newpage 
+\pagestyle{empty}
+
+\ % The empty page
+
+\newpage
 \end{document}
 

@@ -752,12 +752,12 @@ The K{unknown} method responds to calls to undefined methods. It produces a
 suitable error message.
 
 PR(
-(concrete instance) unknown (internal);method_name tstr args args -> none
+(concrete instance) unknown (internal);name tstr args args -> none
 PR)
 
 CB(
-  method unknown {method_name args} {
-    switch $method_name {
+  method unknown {name args} {
+    switch $name {
       car - cdr - set-car! -
       set-cdr {
         ::error "PAIR expected"

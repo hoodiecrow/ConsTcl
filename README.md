@@ -638,11 +638,11 @@ The `` tstr `` method yields the external representation of the instance as a Tc
 
 The `` unknown `` method responds to calls to undefined methods. It produces a suitable error message.
 
-<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) unknown (internal)</th></tr></thead><tr><td>method_name</td><td>a Tcl string</td></tr><tr><td>args</td><td>some arguments</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">(concrete instance) unknown (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td>args</td><td>some arguments</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
-  method unknown {method_name args} {
-    switch $method_name {
+  method unknown {name args} {
+    switch $name {
       car - cdr - set-car! -
       set-cdr {
         ::error "PAIR expected"
@@ -1580,7 +1580,7 @@ proc ::constcl::read-unquoted-expr {} {
 
 #### read-vector-expr procedure
 
-`` read-vector-expr `` is activated by `` read-pound `` and reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector object](https://github.com/hoodiecrow/ConsTcl#vectors). Shares the variables `` c `` and `` unget `` with its caller.
+`` read-vector-expr `` is activated by `` read-pound ``. It reads a number of expressions until it finds an ending parenthesis. It produces a vector expression and returns a [Vector object](https://github.com/hoodiecrow/ConsTcl#vectors). Shares the variables `` c `` and `` unget `` with its caller.
 
 <table border=1><thead><tr><th colspan=2 align="left">read-vector-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a vector or end of file</td></tr></table>
 
@@ -1638,7 +1638,7 @@ To be able to evaluate every kind of expression, a structured approach is needed
 1. variable reference  
 Syntax: a symbol. Process: [variable lookup](https://github.com/hoodiecrow/ConsTcl#variable-reference).
 1. constant literal  
-Syntax: a number, string, character, or boolean. Process: [take the value](https://github.com/hoodiecrow/ConsTcl#constant-literal).
+Syntax: a string, character, boolean, or number. Process: [take the value](https://github.com/hoodiecrow/ConsTcl#constant-literal).
 1. quotation  
 Syntax: `` (quote datum) ``. Process: [take the datum](https://github.com/hoodiecrow/ConsTcl#quotation).
 1. conditional  
@@ -1664,7 +1664,7 @@ _Example: `` r `` ⇒ 10 (a symbol `` r `` is evaluated to what it's bound to)_
 
 A variable is about a symbol, a location in the environment, and a value. The symbol is _bound_ to the location, and the value is stored there. When an expression consists of the symbol, the evaluator does _lookup_ and finds the value.
 
-This is handled by the helper procedure `` lookup ``. It (or rather, the helper procedure `` binding-info ``, which it calls) searches the [environment chain](https://github.com/hoodiecrow/ConsTcl#environments) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
+This is handled by the helper procedure `` lookup ``. It (or rather, the helper function `` binding-info ``, which it calls) searches the [environment chain](https://github.com/hoodiecrow/ConsTcl#environments) for the symbol, and returns the value stored in the location it is bound to. It is an error to do lookup on an unbound symbol, or a symbol that is bound for some other purpose, such as being a keyword or a macro.
 
 Syntax: _symbol_
 
@@ -3134,7 +3134,7 @@ proc ::constcl::expand-when {expr env} {
 
 ### Resolving local defines
 
-This section is ported from 'Scheme 9 from Empty Space'. `` resolve-local-defines `` is the topmost procedure in rewriting local defines as essentially a `` letrec `` form. It takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
+This section is ported from 'Scheme 9 from Empty Space'. It rewrites local defines as a `` letrec `` form. `` resolve-local-defines `` takes a list of expressions and extracts variables and values from the defines in the beginning of the list. It builds a double lambda expression with the variables and values, and the rest of the expressions from the original list as body.
 
 #### resolve-local-defines procedure
 
@@ -3503,7 +3503,7 @@ The class for environments is called `` Environment ``. It is mostly a wrapper a
 
 Using a dictionary means that name lookup is by hash table lookup. In a typical Lisp implementation, large environments are served by hash lookup, while small ones have name lookup by linear search.
 
-The long and complex constructor is to accommodate the variations of Scheme formal parameters lists, which can be empty, a proper list, a symbol, or a dotted list.
+The long and complex constructor is to accommodate the variations of Scheme formal parameters lists, which can be an empty list, a proper list, a symbol, or a dotted list.
 
 Names are stored as Lisp symbols, while values are stored as they are, as Lisp or Tcl values. This means that a name might have to be converted to a symbol before lookup, and the result of lookup may have to be converted afterwards. Note that in the two cases where a number of values are stored under one name (a formals list of a single symbol or a dotted list), then the values are stored as a Lisp list of values.
 
@@ -6714,12 +6714,11 @@ Helper procedure to make a string representation of a list.
 
 ```
 proc ::constcl::tstr-pair {pair} {
-  # take an object and print the car
+  # take a pair and make a string of the car
   # and the cdr of the stored value
   set str {}
   set a [car $pair]
   set d [cdr $pair]
-  # print car
   ::append str [$a tstr]
   if {[T [pair? $d]]} {
     # cdr is a cons pair
