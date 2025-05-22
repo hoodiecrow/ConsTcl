@@ -288,10 +288,10 @@ CB)
 TT(
 
 ::tcltest::test pairslists-3.0 {try tstr-pair} -body {
-    puts [::constcl::tstr-pair [p {(a . b)}]]
-    puts [::constcl::tstr-pair [p {(a b c)}]]
-    puts [::constcl::tstr-pair [p {(a b . c)}]]
-    puts [::constcl::tstr-pair [p {(a)}]]
+    puts [::constcl::tstr-pair [parse {(a . b)}]]
+    puts [::constcl::tstr-pair [parse {(a b c)}]]
+    puts [::constcl::tstr-pair [parse {(a b . c)}]]
+    puts [::constcl::tstr-pair [parse {(a)}]]
 } -output "a . b\na b c\na b . c\na\n"
 
 TT)

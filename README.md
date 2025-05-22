@@ -419,15 +419,14 @@ Testing gets easier if you have the software tools to manipulate and pick apart 
 
 #### pew procedure
 
-`` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled, and get to see proper Lisp output from it.
+`` pew `` was originally named `` pep `` after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads an expression from a string, evals it, and writes the resulting value. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled, and get to see proper Lisp output from it.
 
-<table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pew (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
-    ::constcl::eval [
-      ::constcl::parse $str] $env]
+    ::constcl::eval [parse $str] $env]
 }
 ```
 
@@ -449,11 +448,11 @@ proc ::rew {port {env ::constcl::global_env}} {
 
 `` pw `` is a similar command, except it doesn't eval the expression. It just writes what is parsed. It is useful for tests when the evaluator can't (yet) evaluate the form, but I can still check if it gets read and written correctly.
 
-<table border=1><thead><tr><th colspan=2 align="left">pw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pw {str} {
-  ::constcl::write [::constcl::parse $str]
+  ::constcl::write [parse $str]
 }
 ```
 
@@ -473,17 +472,17 @@ proc ::rw {args} {
 
 `` pe `` is also similar, but it doesn't write the expression. It just evaluates what is read. That way I get a value object which I can pass to another command, or pick apart in different ways.
 
-<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pe (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
 ```
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [::constcl::parse $str] $env
+  ::constcl::eval [parse $str] $env
 }
 ```
 
 #### re procedure
 
-`` re `` is like `` pe ``, but it reads from a regular port instead of an string input port or a string. It evaluates what is read.
+`` re `` is like `` pe ``, but it reads from a regular port instead of from a string. It evaluates what is read.
 
 <table border=1><thead><tr><th colspan=2 align="left">re (internal)</th></tr></thead><tr><td>port</td><td>an input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>a value</td></tr></table>
 
@@ -493,15 +492,16 @@ proc ::re {port {env ::constcl::global_env}} {
 }
 ```
 
-#### p procedure
+#### parse procedure
 
-`` p `` only parses the input, returning an expression object.
+`` parse `` only parses the input, returning an expression object.
 
-<table border=1><thead><tr><th colspan=2 align="left">p (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
 ```
-proc ::p {str} {
-  ::constcl::parse $str
+proc ::parse {str} {
+  ::constcl::read [
+    ::constcl::MkStringInputPort $str]
 }
 ```
 
@@ -545,11 +545,11 @@ proc ::r {args} {
 
 `` prw `` reads an expression, resolves defines, and writes the result. It was handy during the time I was porting the `resolve local defines' section.
 
-<table border=1><thead><tr><th colspan=2 align="left">prw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">prw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::prw {str} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
@@ -560,11 +560,11 @@ proc ::prw {str} {
 
 `` pxw `` attempts to macro-expand whatever it reads, and writes the result. (I do know that 'expand' doesn't start with an 'x'.) Again, this command's heyday was when I was developing the macro facility.
 
-<table border=1><thead><tr><th colspan=2 align="left">pxw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">pxw (internal)</th></tr></thead><tr><td>str</td><td>a Tcl string</td></tr><tr><td>?env?</td><td>an environment</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
 
 ```
 proc ::pxw {str {env ::constcl::global_env}} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set op [::constcl::car $expr]
   lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
@@ -768,56 +768,11 @@ oo::singleton create ::constcl::Unspecified {
 
 ## Input
 
-The first thing an interpreter must be able to do is to take in the user's code and data input, whether from the keyboard or from a source file. The procedure `` read `` represents the interpreter's main input facility. `` read `` and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
+The first thing an interpreter must be able to do is to take in the user's code and data input and make it fit to evaluate.
 
-The main input procedures, `` read `` and the non-standard `` parse ``, do more than just read in the text of code and data: they also _parse_ the input into an _internal representation_ that the evaluator can use.
+### Input and ports
 
-### The parsing process
-
-[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of _external representation_. The result of parsing is an _expression_ in _internal representation_.
-
-#### External representation
-
-The external representation is a 'recipe' for an expression that expresses it in a unique way.
-
-For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader/parser is working its way through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
-
-![#](images/vector-representation.png)
-
-The `` parse `` or `` read `` procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
-
-Example:
-
-```
-% ::constcl::parse "(+ 2 3)"
-::oo::Obj491
-```
-
-Here, `` parse `` parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled `` ::oo::Obj491 ``. I will now reach briefly into the following chapters and present procedures like `` eval ``, which transforms an expression into a value, and `` write ``, which writes a printed external representation of expressions and values. Putting them together we can see
-
-```
-% ::constcl::write ::oo::Obj491
-(+ 2 3)
-% ::constcl::eval ::oo::Obj491
-::oo::Obj494
-% ::constcl::write ::oo::Obj494
-5
-```
-
-Fortunately, we don't _have_ to work at such a low level. We can use the `` repl `` instead:
-
-```
-ConsTcl> (+ 2 3)
-5
-```
-
-Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
-
-Anyway, the figure shows what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
-
-![#](images/intreplist.png "The internal structure of the expression")
-
-### Input procedures
+The procedure `` read `` represents the interpreter's main input facility. `` read `` and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
 
 
 ---
@@ -831,43 +786,9 @@ Ports are an abstraction of the input or output mechanism. An input port can be 
 ---
 
 
-#### parse procedure
-
-`` parse `` can be called with either a string input port or a Tcl or ConsTcl string (which it uses to open a string input port). Once the input port is established, `` parse `` leaves control to [``read-expr``](https://github.com/hoodiecrow/ConsTcl#readexpr-procedure).
-
-<table border=1><thead><tr><th colspan=2 align="left">parse (internal)</th></tr></thead><tr><td>inp</td><td>a Tcl string, a Lisp string, or a string input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
-
-```
-reg parse
-
-proc ::constcl::parse {inp} {
-  set c {}
-  set unget {}
-  if {[info object isa object $inp]} {
-    if {[T [typeof? $inp StringInputPort]]} {
-      set port $inp
-    } elseif {[T [typeof? $inp String]]} {
-      set port [MkStringInputPort [$inp value]]
-    } else {
-      ::error "Unknown object [$inp tstr]"
-    }
-  } else {
-    # It's a Tcl string, we hope
-    set port [MkStringInputPort $inp]
-  }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
-  set expr [read-expr]
-  set ::constcl::Input_port $oldport
-  return $expr
-}
-```
-
 #### read procedure
 
-The standard builtin `` read `` reads an input port the same way that `` parse `` does, but one can't pass a string to it.
-
-One can pass a port to `` read `` (including a string input port) in which case `` read `` sets the standard input port temporarily to the provided port. If not, `` read `` uses the default standard input port (usually the keyboard (which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.)).
+One can pass a port to `` read `` in which case `` read `` sets the current input port temporarily to the provided port. If no port is passed, `` read `` uses the default standard input port (usually the keyboard (which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.)).
 
 <table border=1><thead><tr><th colspan=2 align="left">read (public)</th></tr></thead><tr><td>?port?</td><td>an input port</td></tr><tr><td><i>Returns:</i></td><td>an expression</td></tr></table>
 
@@ -888,9 +809,71 @@ proc ::constcl::read {args} {
 }
 ```
 
+### Input and parsing
+
+The input procedure `` read `` does more than just read in the text of code and data: it also _parses_ the input into an _internal representation_ that the evaluator can use.
+
+[Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of _external representation_. The result of parsing is an _expression_ in _internal representation_.
+
+#### External representation
+
+The external representation is a 'recipe' for an expression that expresses it in a unique way.
+
+For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader/parser is working its way through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+
+![#](images/vector-representation.png)
+
+##### Types of data and external representation
+
+String: `` "abc" ``
+
+Character: `` #\c ``
+
+Vector: `` #(99 "abc") ``
+
+List: `` (1 2) `` or `` [3 4] ``
+
+Number: `` 99 ``
+
+Identifier: `` abc ``
+
+The `` read `` procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+
+Example (running in `` tclsh ``):
+
+```
+% ::constcl::read
+(+ 2 3)
+::oo::Obj491
+```
+
+Here, `` read `` read and parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled `` ::oo::Obj491 `` (the number has no significance other than to identifiy the object: it will be different each time the code is run). I will now reach briefly into the following chapters and present procedures like `` eval ``, which transforms an expression into a value, and `` write ``, which writes a printed external representation of expressions and values. Putting them together we can see
+
+```
+% ::constcl::write ::oo::Obj491
+(+ 2 3)
+% ::constcl::eval ::oo::Obj491
+::oo::Obj494
+% ::constcl::write ::oo::Obj494
+5
+```
+
+Fortunately, we don't _have_ to work at such a low level. We can use the `` repl `` instead:
+
+```
+ConsTcl> (+ 2 3)
+5
+```
+
+Then, parsing, evaluation, and writing goes on in the background and the internal representations of expressions and values are hidden.
+
+Anyway, the figure shows what it really looks like. `` ::oo::Obj491 `` was just the head of the list.
+
+![#](images/intreplist.png "The internal structure of the expression")
+
 ### Input helper procedures
 
-Some utility procedures which are used by the reader/parser procedures.
+Some utility procedures which are used during reading/parsing.
 
 #### make-constant procedure
 
@@ -1109,7 +1092,6 @@ proc ::constcl::read-expr {args} {
     {\.} {
         set x [Dot new]; set c [readchar]; set x
     }
-    {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
@@ -1275,36 +1257,6 @@ Check if the contents of `` num `` is a valid number, and create and return a nu
   }
   set expr [N $num]
   return $expr
-}
-```
-
-#### read-object-expr procedure
-
-A non-standard extension, `` read-object-expr `` reads a ConsTcl object of any kind and passes its name along. It is activated when `` read-expr `` finds a colon in the input. Shares the variables `` c `` and `` unget `` with its caller.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-object-expr (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a ConsTcl object or end of file</td></tr></table>
-
-```
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readchar]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readchar]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readchar]
-    read-eof $c
-  }
-  set unget $c
-  return $res
 }
 ```
 
@@ -3814,7 +3766,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    set expr [::constcl::parse $str]
+    set expr [parse $str]
     set val [::constcl::eval $expr $cur_env]
     ::constcl::write $val
     set str [::constcl::input $prompt]
@@ -3825,7 +3777,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1816 lines of code, the interpreter is done.
+After 1771 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 

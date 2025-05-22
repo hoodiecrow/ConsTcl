@@ -174,8 +174,7 @@ proc ::constcl::check {cond msg} {
 }
 proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
-    ::constcl::eval [
-      ::constcl::parse $str] $env]
+    ::constcl::eval [parse $str] $env]
 }
 proc ::rew {port {env ::constcl::global_env}} {
   ::constcl::write [
@@ -183,19 +182,20 @@ proc ::rew {port {env ::constcl::global_env}} {
       ::constcl::read $port] $env]
 }
 proc ::pw {str} {
-  ::constcl::write [::constcl::parse $str]
+  ::constcl::write [parse $str]
 }
 proc ::rw {args} {
   ::constcl::write [::constcl::read {*}$args]
 }
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [::constcl::parse $str] $env
+  ::constcl::eval [parse $str] $env
 }
 proc ::re {port {env ::constcl::global_env}} {
   ::constcl::eval [::constcl::read $port] $env
 }
-proc ::p {str} {
-  ::constcl::parse $str
+proc ::parse {str} {
+  ::constcl::read [
+    ::constcl::MkStringInputPort $str]
 }
 proc ::e {expr {env ::constcl::global_env}} {
   ::constcl::eval $expr $env
@@ -207,13 +207,13 @@ proc ::r {args} {
   ::constcl::read {*}$args
 }
 proc ::prw {str} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
 }
 proc ::pxw {str {env ::constcl::global_env}} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set op [::constcl::car $expr]
   lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
@@ -299,29 +299,6 @@ oo::singleton create ::constcl::Unspecified {
   method tstr {} {
     format "#<unspecified>"
   }
-}
-reg parse
-
-proc ::constcl::parse {inp} {
-  set c {}
-  set unget {}
-  if {[info object isa object $inp]} {
-    if {[T [typeof? $inp StringInputPort]]} {
-      set port $inp
-    } elseif {[T [typeof? $inp String]]} {
-      set port [MkStringInputPort [$inp value]]
-    } else {
-      ::error "Unknown object [$inp tstr]"
-    }
-  } else {
-    # It's a Tcl string, we hope
-    set port [MkStringInputPort $inp]
-  }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
-  set expr [read-expr]
-  set ::constcl::Input_port $oldport
-  return $expr
 }
 reg read
 
@@ -460,7 +437,6 @@ proc ::constcl::read-expr {args} {
     {\.} {
         set x [Dot new]; set c [readchar]; set x
     }
-    {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
@@ -539,27 +515,6 @@ proc ::constcl::read-number-expr {args} {
   }
   set expr [N $num]
   return $expr
-}
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readchar]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readchar]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readchar]
-    read-eof $c
-  }
-  set unget $c
-  return $res
 }
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
@@ -1807,7 +1762,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    set expr [::constcl::parse $str]
+    set expr [parse $str]
     set val [::constcl::eval $expr $cur_env]
     ::constcl::write $val
     set str [::constcl::input $prompt]

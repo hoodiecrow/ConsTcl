@@ -276,7 +276,7 @@ TT(
 
 ::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
   unbind [S f]
-    set x [p "(define (f) (define r 20) (* r r))"]
+    set x [parse "(define (f) (define r 20) (* r r))"]
     set x [::constcl::rewrite-define $x ::constcl::global_env]
     w $x
 } -output "(define f (lambda () (define r 20) (* r r)))\n"

@@ -337,7 +337,7 @@ CB)
 
 TT(
 ::tcltest::test eval-5.0 {expand case macro} -body {
-    set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
+    set x [parse "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
@@ -347,7 +347,7 @@ TT(
 } -output "composite\n"
 
 ::tcltest::test eval-5.2 {expand case macro} -body {
-    set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
+    set x [parse "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
     set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
     w $x
 } -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
@@ -493,7 +493,7 @@ CB)
 
 TT(
 ::tcltest::test eval-6.0 {expand cond macro} -body {
-    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
@@ -503,7 +503,7 @@ TT(
 } -output "3\n"
 
 ::tcltest::test eval-6.2 {expand cond macro} -body {
-    set x [p "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
@@ -513,14 +513,14 @@ TT(
 } -output "()\n"
 
 ::tcltest::test eval-6.4 {expand cond macro} -body {
-    set x [p "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
+    set x [parse "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
 
 ::tcltest::test eval-6.5 {expand cond macro} -body {
-  p {(define alist '((a . 1) (b . 2)))}
-    set x [p "(cond ((assv 'b alist) => cdr) (else #f))"]
+  parse {(define alist '((a . 1) (b . 2)))}
+    set x [parse "(cond ((assv 'b alist) => cdr) (else #f))"]
     set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
     w $x
 } -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t (begin #f) (quote ())))\n"
@@ -608,7 +608,7 @@ TT(
 } -output "ab"
 
 ::tcltest::test eval-7.1 {try eval-ing a sequence} -body {
-  set x [p "(begin (define a 3) (define b 4) (display a) (display b))"]
+  set x [parse "(begin (define a 3) (define b 4) (display a) (display b))"]
   set v [::constcl::eval $x [::constcl::MkEnv ::constcl::global_env]]
 } -output "34"
 TT)
@@ -694,23 +694,23 @@ CB)
 
 TT(
 ::tcltest::test eval-8.0 {define} -body {
-    w [::constcl::rewrite-define [p {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
+    w [::constcl::rewrite-define [parse {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
 } -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
 
 ::tcltest::test eval-8.1 {define} -body {
-    w [::constcl::rewrite-define [p "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
+    w [::constcl::rewrite-define [parse "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
 } -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
 
 ::tcltest::test eval-8.2 {define} -body {
-    w [::constcl::rewrite-define [p "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
+    w [::constcl::rewrite-define [parse "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
 } -output "(define f (lambda () (define r 20) (* r r)))\n"
 
 ::tcltest::test eval-8.3 {define} -body {
-    w [::constcl::rewrite-define [p "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
+    w [::constcl::rewrite-define [parse "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
 } -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
 
 ::tcltest::test eval-8.4 {define} -body {
-    w [::constcl::rewrite-define [p "(define (f . r) (* r r))"] ::constcl::global_env]
+    w [::constcl::rewrite-define [parse "(define (f . r) (* r r))"] ::constcl::global_env]
 } -output "(define f (lambda r (* r r)))\n"
 
 TT)
@@ -1084,13 +1084,13 @@ CB)
 
 TT(
 ::tcltest::test eval-13.3 {expand let macro} -body {
-    set x [p "(let ((x 10)) (* x x))"]
+    set x [parse "(let ((x 10)) (* x x))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
-    set x [p "(let ((x 10) (y 5)) (* x y))"]
+    set x [parse "(let ((x 10) (y 5)) (* x y))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
-    set x [p "(let ((x 10) (y 5)) (define z 7) (* x y z))"]
+    set x [parse "(let ((x 10) (y 5)) (define z 7) (* x y z))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
 } -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
@@ -1102,7 +1102,7 @@ TT(
 } -output "100\n50\n350\n"
 
 ::tcltest::test eval-13.5 {expand named let macro} -body {
-    set x [p {(let loop ((lst lst) (result '()))
+    set x [parse {(let loop ((lst lst) (result '()))
     (if (null? lst)
         (reverse result)
         (let ((item (car lst)))
@@ -1113,7 +1113,7 @@ TT(
 } -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
 
 ::tcltest::test eval-13.7 {expand let macro} -body {
-    set x [p "(let ((vec #(a b c)) (k 1)) (list vec k))"]
+    set x [parse "(let ((vec #(a b c)) (k 1)) (list vec k))"]
     set x [::constcl::rewrite-let $x ::constcl::global_env]
     w $x
 } -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
@@ -1223,7 +1223,7 @@ CB)
 
 TT(
 ::tcltest::test eval-14.0 {expand letrec} -body {
-  set x [p "(letrec ((a 0) (b 1)) (- a b))"]
+  set x [parse "(letrec ((a 0) (b 1)) (- a b))"]
   set x [::constcl::rewrite-letrec $x ::constcl::global_env]
   w $x
 } -match glob -output {((lambda (a b) ((lambda (g<[0-9]*> g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>)) 0 1) (- a b)) (quote #<undefined>) (quote #<undefined>))*}
@@ -1316,7 +1316,7 @@ CB)
 
 TT(
 ::tcltest::test eval-15.0 {expand let*} -body {
-  set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]
+  set x [parse "(let* ((a 2) (b (+ a 1))) (* a b))"]
   set bind [::constcl::cadr $x]
   set body [::constcl::cddr $x]
   set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]

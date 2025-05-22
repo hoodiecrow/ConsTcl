@@ -304,13 +304,13 @@ CB)
 
 TT(
 ::tcltest::test strings-1.0 {try reading a string} -body {
-    set o [p {"foo bar baz"}]
+    set o [parse {"foo bar baz"}]
     puts [$o value]
 } -output {foo bar baz
 }
 
 ::tcltest::test strings-1.1 {try reading a string} -body {
-    set o [p {"foo \"bar\" baz\nqux\\bod"}]
+    set o [parse {"foo \"bar\" baz\nqux\\bod"}]
     puts [$o value]
 } -output {foo "bar" baz
 qux\bod

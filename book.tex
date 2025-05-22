@@ -814,12 +814,12 @@ Testing gets easier if you have the software tools to manipulate and pick apart 
 \label{pew-procedure}
 \index{pew procedure}
 
-\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads and evals an expression, and writes the result. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled, and get to see proper Lisp output from it.
+\texttt{pew} was originally named \texttt{pep} after the sequence parse-eval-print. Now it's named for parse-eval-write. It reads an expression from a string, evals it, and writes the resulting value. It's the most common command in the test cases, since it allows me to write code directly in Scheme, get it evaled, and get to see proper Lisp output from it.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pew (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+str & a Tcl string \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
 \hline
@@ -828,8 +828,7 @@ str & a Tcl string, a Lisp string, or a string input port \\
 \begin{lstlisting}
 proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
-    ::constcl::eval [
-      ::constcl::parse $str] $env]
+    ::constcl::eval [parse $str] $env]
 }
 \end{lstlisting}
 
@@ -865,14 +864,14 @@ proc ::rew {port {env ::constcl::global_env}} {
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pw (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+str & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
 proc ::pw {str} {
-  ::constcl::write [::constcl::parse $str]
+  ::constcl::write [parse $str]
 }
 \end{lstlisting}
 
@@ -905,7 +904,7 @@ proc ::rw {args} {
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pe (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+str & a Tcl string \\
 ?env? & an environment \\
 \textit{Returns:} & a value \\
 \hline
@@ -913,7 +912,7 @@ str & a Tcl string, a Lisp string, or a string input port \\
 
 \begin{lstlisting}
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [::constcl::parse $str] $env
+  ::constcl::eval [parse $str] $env
 }
 \end{lstlisting}
 
@@ -921,7 +920,7 @@ proc ::pe {str {env ::constcl::global_env}} {
 \label{re-procedure}
 \index{re procedure}
 
-\texttt{re} is like \texttt{pe}, but it reads from a regular port instead of an string input port or a string. It evaluates what is read.
+\texttt{re} is like \texttt{pe}, but it reads from a regular port instead of from a string. It evaluates what is read.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
@@ -938,23 +937,24 @@ proc ::re {port {env ::constcl::global_env}} {
 }
 \end{lstlisting}
 
-\subsection{p procedure}
-\label{p-procedure}
-\index{p procedure}
+\subsection{parse procedure}
+\label{parse-procedure}
+\index{parse procedure}
 
-\texttt{p} only parses the input, returning an expression object.
+\texttt{parse} only parses the input, returning an expression object.
 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{p (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{parse (internal)}} \\
+str & a Tcl string \\
 \textit{Returns:} & an expression \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
-proc ::p {str} {
-  ::constcl::parse $str
+proc ::parse {str} {
+  ::constcl::read [
+    ::constcl::MkStringInputPort $str]
 }
 \end{lstlisting}
 
@@ -1028,14 +1028,14 @@ proc ::r {args} {
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{prw (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+str & a Tcl string \\
 \textit{Returns:} & nothing \\
 \hline
 \end{tabular}
 
 \begin{lstlisting}
 proc ::prw {str} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
@@ -1051,7 +1051,7 @@ proc ::prw {str} {
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
 \rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{pxw (internal)}} \\
-str & a Tcl string, a Lisp string, or a string input port \\
+str & a Tcl string \\
 ?env? & an environment \\
 \textit{Returns:} & nothing \\
 \hline
@@ -1059,7 +1059,7 @@ str & a Tcl string, a Lisp string, or a string input port \\
 
 \begin{lstlisting}
 proc ::pxw {str {env ::constcl::global_env}} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set op [::constcl::car $expr]
   lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {
@@ -1336,62 +1336,13 @@ oo::singleton create ::constcl::Unspecified {
 \chapter{Input}
 \label{input}
 
-The first thing an interpreter must be able to do is to take in the user's code and data input\index{input}, whether from the keyboard or from a source file. The procedure \texttt{read} represents the interpreter's main input facility. \texttt{read} and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
+The first thing an interpreter must be able to do is to take in the user's code and data input\index{input} and make it fit to evaluate.
 
-The main input procedures, \texttt{read} and the non-standard \texttt{parse}, do more than just read in the text of code and data: they also \emph{parse} the input into an \emph{internal representation} that the evaluator can use.
+\section{Input and ports}
+\label{input-and-ports}
+\index{input and ports}
 
-\section{The parsing process}
-\label{the-parsing-process}
-\index{the parsing process}
-
-Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of \emph{external representation}\index{external representation}. The result of parsing is an \emph{expression}\index{expression} in \emph{internal representation}.
-
-\subsection{External representation}
-\label{external-representation}
-\index{external representation}
-
-The external representation is a 'recipe' for an expression that expresses it in a unique way.
-
-For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader/parser is working its way through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
-
-\includegraphics{images/vector-representation.png}
-
-The \texttt{parse} or \texttt{read} procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
-
-Example:
-
-\begin{verbatim}
-% ::constcl::parse "(+ 2 3)"
-::oo::Obj491
-\end{verbatim}
-
-Here, \texttt{parse} parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled \texttt{::oo::Obj491}. I will now reach briefly into the following chapters and present procedures like \texttt{eval}, which transforms an expression into a value, and \texttt{write}, which writes a printed external representation of expressions and values. Putting them together we can see
-
-\begin{verbatim}
-% ::constcl::write ::oo::Obj491
-(+ 2 3)
-% ::constcl::eval ::oo::Obj491
-::oo::Obj494
-% ::constcl::write ::oo::Obj494
-5
-\end{verbatim}
-
-Fortunately, we don't \emph{have} to work at such a low level. We can use the \texttt{repl}\index{repl} instead:
-
-\begin{verbatim}
-ConsTcl> (+ 2 3)
-5
-\end{verbatim}
-
-Then, parsing and evaluation and writing goes on in the background and the internal representations of expressions and values are hidden.
-
-Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
-
-\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{The internal structure of the expression}\label{fig:the-internal-structure-of-the-expression}\end{figure}
-
-\section{Input procedures}
-\label{input-procedures}
-\index{input procedures}
+The procedure \texttt{read} represents the interpreter's main input facility. \texttt{read} and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
 
 \begin{pulledtext}
 
@@ -1402,53 +1353,11 @@ Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was ju
 Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
 \end{pulledtext}
 
-\subsection{parse procedure}
-\label{parse-procedure}
-\index{parse procedure}
-
-\texttt{parse} can be called with either a string input port or a Tcl or ConsTcl string (which it uses to open a string input port). Once the input port is established, \texttt{parse} leaves control to \texttt{read-expr} (see page \pageref{readexpr-procedure}).
-
-\noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{parse (internal)}} \\
-inp & a Tcl string, a Lisp string, or a string input port \\
-\textit{Returns:} & an expression \\
-\hline
-\end{tabular}
-
-\begin{lstlisting}
-reg parse
-
-proc ::constcl::parse {inp} {
-  set c {}
-  set unget {}
-  if {[info object isa object $inp]} {
-    if {[T [typeof? $inp StringInputPort]]} {
-      set port $inp
-    } elseif {[T [typeof? $inp String]]} {
-      set port [MkStringInputPort [$inp value]]
-    } else {
-      ::error "Unknown object [$inp tstr]"
-    }
-  } else {
-    # It's a Tcl string, we hope
-    set port [MkStringInputPort $inp]
-  }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
-  set expr [read-expr]
-  set ::constcl::Input_port $oldport
-  return $expr
-}
-\end{lstlisting}
-
 \subsection{read procedure}
 \label{read-procedure}
 \index{read procedure}
 
-The standard builtin \texttt{read} reads an input port the same way that \texttt{parse} does, but one can't pass a string to it.
-
-One can pass a port to \texttt{read} (including a string input port) in which case \texttt{read} sets the standard input port temporarily to the provided port. If not, \texttt{read} uses the default standard input port (usually the keyboard\footnote{which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.}).
+One can pass a port to \texttt{read} in which case \texttt{read} sets the current input port temporarily to the provided port. If no port is passed, \texttt{read} uses the default standard input port (usually the keyboard\footnote{which doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does work in those, though. Input works in tclsh on Windows.}).
 
 \noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
 \hline
@@ -1475,11 +1384,79 @@ proc ::constcl::read {args} {
 }
 \end{lstlisting}
 
+\section{Input and parsing}
+\label{input-and-parsing}
+\index{input and parsing}
+
+The input procedure \texttt{read} does more than just read in the text of code and data: it also \emph{parses} the input into an \emph{internal representation} that the evaluator can use.
+
+Parsing\footnote{See \texttt{https://en.wikipedia.org/wiki/Parsing}}\index{parsing}, or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of \emph{external representation}\index{external representation}. The result of parsing is an \emph{expression}\index{expression} in \emph{internal representation}.
+
+\subsection{External representation}
+\label{external-representation}
+\index{external representation}
+
+The external representation is a 'recipe' for an expression that expresses it in a unique way.
+
+For example, the external representation for a vector is a pound sign (\texttt{\#}), a left parenthesis (\texttt{(}), the external representation for some values, and a right parenthesis (\texttt{)}). When the reader/parser is working its way through input, a \texttt{\#(} symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis \texttt{)} signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
+
+\includegraphics{images/vector-representation.png}
+
+\subsubsection{Types of data and external representation}
+\label{types-of-data-and-external-representation}
+\index{types of data and external representation}
+
+String: \texttt{"abc"}
+
+\noindent Character: \texttt{\#\textbackslash c}
+
+\noindent Vector: \texttt{\#(99 "abc")}
+
+\noindent List: \texttt{(1 2)} or \texttt{[3 4]}
+
+\noindent Number: \texttt{99}
+
+\noindent Identifier: \texttt{abc}
+
+The \texttt{read} procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+
+Example (running in \texttt{tclsh}):
+
+\begin{verbatim}
+% ::constcl::read
+(+ 2 3)
+::oo::Obj491
+\end{verbatim}
+
+Here, \texttt{read} read and parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled \texttt{::oo::Obj491} (the number has no significance other than to identifiy the object: it will be different each time the code is run). I will now reach briefly into the following chapters and present procedures like \texttt{eval}, which transforms an expression into a value, and \texttt{write}, which writes a printed external representation of expressions and values. Putting them together we can see
+
+\begin{verbatim}
+% ::constcl::write ::oo::Obj491
+(+ 2 3)
+% ::constcl::eval ::oo::Obj491
+::oo::Obj494
+% ::constcl::write ::oo::Obj494
+5
+\end{verbatim}
+
+Fortunately, we don't \emph{have} to work at such a low level. We can use the \texttt{repl}\index{repl} instead:
+
+\begin{verbatim}
+ConsTcl> (+ 2 3)
+5
+\end{verbatim}
+
+Then, parsing, evaluation, and writing goes on in the background and the internal representations of expressions and values are hidden.
+
+Anyway, the figure shows what it really looks like. \texttt{::oo::Obj491} was just the head of the list.
+
+\begin{figure}[h!]\includegraphics{images/intreplist.png}\captionsetup{labelformat=empty}\caption{The internal structure of the expression}\label{fig:the-internal-structure-of-the-expression}\end{figure}
+
 \section{Input helper procedures}
 \label{input-helper-procedures}
 \index{input helper procedures}
 
-Some utility procedures which are used by the reader/parser procedures.
+Some utility procedures which are used during reading/parsing.
 
 \subsection{make-constant procedure}
 \label{makeconstant-procedure}
@@ -1777,7 +1754,6 @@ proc ::constcl::read-expr {args} {
     {\.} {
         set x [Dot new]; set c [readchar]; set x
     }
-    {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
@@ -1966,43 +1942,6 @@ Check if the contents of \texttt{num} is a valid number, and create and return a
   }
   set expr [N $num]
   return $expr
-}
-\end{lstlisting}
-
-\subsection{read-object-expr procedure}
-\label{readobjectexpr-procedure}
-\index{read-object-expr procedure}
-
-A non-standard extension, \texttt{read-object-expr} reads a ConsTcl object of any kind and passes its name along. It is activated when \texttt{read-expr} finds a colon in the input. Shares the variables \texttt{c} and \texttt{unget} with its caller.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{read-object-expr (internal)}} \\
-\textit{Returns:} & a ConsTcl object or end of file \\
-\hline
-\end{tabular}
-
-\begin{lstlisting}
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readchar]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readchar]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readchar]
-    read-eof $c
-  }
-  set unget $c
-  return $res
 }
 \end{lstlisting}
 
@@ -5181,7 +5120,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    set expr [::constcl::parse $str]
+    set expr [parse $str]
     set val [::constcl::eval $expr $cur_env]
     ::constcl::write $val
     set str [::constcl::input $prompt]
@@ -5192,7 +5131,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1816 lines of code, the interpreter is done.
+After 1771 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 

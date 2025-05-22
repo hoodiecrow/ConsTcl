@@ -45,7 +45,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
-    set expr [::constcl::parse $str]
+    set expr [parse $str]
     set val [::constcl::eval $expr $cur_env]
     ::constcl::write $val
     set str [::constcl::input $prompt]
@@ -56,7 +56,7 @@ CB)
 
 Well! 
 
-After 1816 lines of code, the interpreter is done.
+After 1771 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 

@@ -105,7 +105,7 @@ TT(
   puts [lrange $::constcl::defreg end-5 end]
 } -cleanup {
   set ::constcl::defreg $dr
-} -output "198 {foo {VARIABLE ::constcl::foo}} 199 {bar {SPECIAL ::constcl::special-bar}} 200 {baz {SYNTAX ::constcl::expand-baz}}\n"
+} -output "197 {foo {VARIABLE ::constcl::foo}} 198 {bar {SPECIAL ::constcl::special-bar}} 199 {baz {SYNTAX ::constcl::expand-baz}}\n"
 
 ::tcltest::test initial-1.1 {try regvar} -setup {
   set dr $::constcl::defreg
@@ -114,7 +114,7 @@ TT(
   puts [lrange $::constcl::defreg end-1 end]
 } -cleanup {
   set ::constcl::defreg $dr
-} -output "198 {foo {VARIABLE bar}}\n"
+} -output "197 {foo {VARIABLE bar}}\n"
 TT)
 
 PT(
@@ -474,20 +474,19 @@ the cost of some readability.
 H4 pew procedure
 
 K{pew} was originally named K{pep} after the sequence parse-eval-print. Now it's
-named for parse-eval-write. It reads and evals an expression, and writes the
-result.  It's the most common command in the test cases, since it allows me to
+named for parse-eval-write. It reads an expression from a string, evals it, and writes the
+resulting value.  It's the most common command in the test cases, since it allows me to
 write code directly in Scheme, get it evaled, and get to see proper Lisp output
 from it.
 
 PR(
-pew (internal);str tstrstrinpbuf ?env? env -> none
+pew (internal);str tstr ?env? env -> none
 PR)
 
 CB(
 proc ::pew {str {env ::constcl::global_env}} {
   ::constcl::write [
-    ::constcl::eval [
-      ::constcl::parse $str] $env]
+    ::constcl::eval [parse $str] $env]
 }
 CB)
 
@@ -516,12 +515,12 @@ writes what is parsed. It is useful for tests when the evaluator can't (yet)
 evaluate the form, but I can still check if it gets read and written correctly.
 
 PR(
-pw (internal);str tstrstrinpbuf -> none
+pw (internal);str tstr -> none
 PR)
 
 CB(
 proc ::pw {str} {
-  ::constcl::write [::constcl::parse $str]
+  ::constcl::write [parse $str]
 }
 CB)
 
@@ -547,19 +546,19 @@ is read. That way I get a value object which I can pass to another command, or
 pick apart in different ways.
 
 PR(
-pe (internal);str tstrstrinpbuf ?env? env -> val
+pe (internal);str tstr ?env? env -> val
 PR)
 
 CB(
 proc ::pe {str {env ::constcl::global_env}} {
-  ::constcl::eval [::constcl::parse $str] $env
+  ::constcl::eval [parse $str] $env
 }
 CB)
 
 H4 re procedure
 
-K{re} is like K{pe}, but it reads from a regular port instead of an string input
-port or a string. It evaluates what is read.
+K{re} is like K{pe}, but it reads from a regular port instead of from a string.
+It evaluates what is read.
 
 PR(
 re (internal);port iport ?env? env -> val
@@ -571,17 +570,18 @@ proc ::re {port {env ::constcl::global_env}} {
 }
 CB)
 
-H4 p procedure
+H4 parse procedure
 
-K{p} only parses the input, returning an expression object.
+K{parse} only parses the input, returning an expression object.
 
 PR(
-p (internal);str tstrstrinpbuf -> expr
+parse (internal);str tstr -> expr
 PR)
 
 CB(
-proc ::p {str} {
-  ::constcl::parse $str
+proc ::parse {str} {
+  ::constcl::read [
+    ::constcl::MkStringInputPort $str]
 }
 CB)
 
@@ -635,12 +635,12 @@ K{prw}  reads an expression, resolves defines, and writes the result. It was
 handy during the time I was porting the `resolve local defines' section.
 
 PR(
-prw (internal);str tstrstrinpbuf -> none
+prw (internal);str tstr -> none
 PR)
 
 CB(
 proc ::prw {str} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set expr [::constcl::resolve-local-defines \
     [::constcl::cdr $expr]]
   ::constcl::write $expr
@@ -654,12 +654,12 @@ know that 'expand' doesn't start with an 'x'.} Again, this command's heyday was
 when I was developing the macro facility.
 
 PR(
-pxw (internal);str tstrstrinpbuf ?env? env -> none
+pxw (internal);str tstr ?env? env -> none
 PR)
 
 CB(
 proc ::pxw {str {env ::constcl::global_env}} {
-  set expr [::constcl::parse $str]
+  set expr [parse $str]
   set op [::constcl::car $expr]
   lassign [::constcl::binding-info $op $env] btype hinfo
   if {$btype eq "SYNTAX"} {

@@ -2,82 +2,13 @@
 H2 Input
 
 The first thing an interpreter must be able to do is to take in the user's code
-and data inputI{input}, whether from the keyboard or from a source file.  The
-procedure K{read} represents the interpreter's main input facility. K{read} and
-its sub-procedures read from standard input, or--if a port is provided--from the
-port's channel.
+and data inputI{input} and make it fit to evaluate.
 
-The main input procedures, K{read} and the non-standard K{parse}, do more than
-just read in the text of code and data: they also E{parse} the input into an
-E{internal representation} that the evaluator can use.
+h3 Input and ports
 
-h3 The parsing process
-
-W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
-letters, digits, and other characters, a piece of text conforming to the rules
-of E{external representation}I{external representation}. The result of parsing
-is an E{expression}I{expression} in E{internal representation}.
-
-h4 External representation
-
-The external representation is a 'recipe' for an expression that expresses it in
-a unique way. 
-
-For example, the external representation for a vector is a pound sign (K{#}), a
-left parenthesis (K{(}), the external representation for some values, and a right
-parenthesis (K{)}). When the reader/parser is working its way through input, a K{#(}
-symbol signals that a vector structure is being read. A number of subexpressions
-for the elements of the vector follow, and then a closing parenthesis K{)}
-signals that the vector is done. The elements are saved in vector memory and the
-vector gets the address to the first element and the number of elements.
-
-IG /images/vector-representation.png
-
-The K{parse} or K{read} procedure takes in input character by
-character, matching each character against a fitting external representation.
-When done, it creates a ConsTcl object, which is the internal representation of
-an expression.  The object can then be passed to the evaluator.
-
-Example:
-
-VB(
-% ::constcl::parse "(+ 2 3)"
-::oo::Obj491
-VB)
-
-Here, K{parse} parsed the external representation of a list with three elements,
-+, 2, and 3. It produced the expression that has an internal representation
-labeled K{::oo::Obj491}. I will now reach briefly into the following chapters
-and present procedures like K{eval}, which transforms an expression into a
-value, and K{write}, which writes a printed external representation of
-expressions and values. Putting them together we can see
-
-VB(
-% ::constcl::write ::oo::Obj491
-(+ 2 3)
-% ::constcl::eval ::oo::Obj491
-::oo::Obj494
-% ::constcl::write ::oo::Obj494
-5
-VB)
-
-Fortunately, we don't E{have} to work at such a low level. We can use the
-K{repl}I{repl} instead:
-
-VB(
-ConsTcl> (+ 2 3)
-5
-VB)
-
-Then, parsing and evaluation and writing goes on in the background and the
-internal representations of expressions and values are hidden.
-
-Anyway, the figure shows what it really looks like. K{::oo::Obj491} was just
-the head of the list.
-
-IF /images/intreplist.png The internal structure of the expression
-
-h3 Input procedures
+The procedure K{read} represents the
+interpreter's main input facility. K{read} and its sub-procedures read from
+standard input, or--if a port is provided--from the port's channel.
 
 PT(
 H5 Ports
@@ -92,63 +23,11 @@ file opened for output, will receive characters sent to it.
 
 PT)
 
-H4 parse procedure
-
-K{parse} can be called with either a string input port or a Tcl or ConsTcl
-string (which it uses to open a string input port). Once the input port is
-established, K{parse} leaves control to S{read-expr}{readexpr-procedure}.
-
-PR(
-parse (internal);inp tstrstrinpbuf -> expr
-PR)
-
-CB(
-reg parse
-
-proc ::constcl::parse {inp} {
-  set c {}
-  set unget {}
-  if {[info object isa object $inp]} {
-    if {[T [typeof? $inp StringInputPort]]} {
-      set port $inp
-    } elseif {[T [typeof? $inp String]]} {
-      set port [MkStringInputPort [$inp value]]
-    } else {
-      ::error "Unknown object [$inp tstr]"
-    }
-  } else {
-    # It's a Tcl string, we hope
-    set port [MkStringInputPort $inp]
-  }
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $port
-  set expr [read-expr]
-  set ::constcl::Input_port $oldport
-  return $expr
-}
-CB)
-
-TT(
-::tcltest::test read-1.0 {try parse with String} -body {
-  pew {(parse "42")}
-} -output "42\n"
-
-::tcltest::test read-1.1 {try parse with StringInputPort buffer} -body {
-  pw [::constcl::StringInputPort new "42"]
-} -output "42\n"
-
-::tcltest::test read-1.2 {try parse with Tcl string} -body {
-  pw "42"
-} -output "42\n"
-TT)
-
 H4 read procedure
 
-The standard builtin K{read} reads an input port the same way that K{parse}
-does, but one can't pass a string to it.
-
-One can pass a port to K{read} (including a string input port) in which case
-K{read} sets the standard input port temporarily to the provided port. If not,
+One can pass a port to K{read} in which case
+K{read} sets the current input port temporarily to the provided port. If no
+port is passed,
 K{read} uses the default standard input port (usually the keyboardF{which
   doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does
   work in those, though.  Input works in tclsh on Windows.}).
@@ -188,9 +67,96 @@ TT(
 
 TT)
 
+h3 Input and parsing
+
+The input procedure K{read} does more than
+just read in the text of code and data: it also E{parses} the input into an
+E{internal representation} that the evaluator can use.
+
+W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
+letters, digits, and other characters, a piece of text conforming to the rules
+of E{external representation}I{external representation}. The result of parsing
+is an E{expression}I{expression} in E{internal representation}.
+
+h4 External representation
+
+The external representation is a 'recipe' for an expression that expresses it in
+a unique way. 
+
+For example, the external representation for a vector is a pound sign (K{#}), a
+left parenthesis (K{(}), the external representation for some values, and a right
+parenthesis (K{)}). When the reader/parser is working its way through input, a K{#(}
+symbol signals that a vector structure is being read. A number of subexpressions
+for the elements of the vector follow, and then a closing parenthesis K{)}
+signals that the vector is done. The elements are saved in vector memory and the
+vector gets the address to the first element and the number of elements.
+
+IG /images/vector-representation.png
+
+h5 Types of data and external representation
+
+String: K{"abc"}
+
+NI Character: K{#\c}
+
+NI Vector: K{#(99 "abc")}
+
+NI List: K{(1 2)} or K{[3 4]}
+
+NI Number: K{99}
+
+NI Identifier: K{abc}
+
+The K{read} procedure takes in input character by
+character, matching each character against a fitting external representation.
+When done, it creates a ConsTcl object, which is the internal representation of
+an expression.  The object can then be passed to the evaluator.
+
+Example (running in K{tclsh}):
+
+VB(
+% ::constcl::read
+(+ 2 3)
+::oo::Obj491
+VB)
+
+Here, K{read} read and parsed the external representation of a list with three
+elements, +, 2, and 3. It produced the expression that has an internal
+representation labeled K{::oo::Obj491} (the number has no significance other
+than to identifiy the object: it will be different each time the code is run). I
+will now reach briefly into the following chapters and present procedures like
+K{eval}, which transforms an expression into a value, and K{write}, which writes
+a printed external representation of expressions and values. Putting them
+together we can see
+
+VB(
+% ::constcl::write ::oo::Obj491
+(+ 2 3)
+% ::constcl::eval ::oo::Obj491
+::oo::Obj494
+% ::constcl::write ::oo::Obj494
+5
+VB)
+
+Fortunately, we don't E{have} to work at such a low level. We can use the
+K{repl}I{repl} instead:
+
+VB(
+ConsTcl> (+ 2 3)
+5
+VB)
+
+Then, parsing, evaluation, and writing goes on in the background and the
+internal representations of expressions and values are hidden.
+
+Anyway, the figure shows what it really looks like. K{::oo::Obj491} was just
+the head of the list.
+
+IF /images/intreplist.png The internal structure of the expression
+
 h3 Input helper procedures
 
-Some utility procedures which are used by the reader/parser procedures.
+Some utility procedures which are used during reading/parsing.
 
 H4 make-constant procedure
 
@@ -219,10 +185,10 @@ CB)
 TT(
 ::tcltest::test input-3.0 {try make-constant} -setup {
 } -body {
-  set a [p {'(a b c)}]
-  set b [p {`(a b c)}]
-  set c [p {'#(a b c)}]
-  set d [p {"a b c"}]
+  set a [parse {'(a b c)}]
+  set b [parse {`(a b c)}]
+  set c [parse {'#(a b c)}]
+  set d [parse {"a b c"}]
     puts [[::constcl::cadr $a] constant]
     puts [[::constcl::cadr $b] constant]
     puts [[::constcl::cadr $c] constant]
@@ -508,7 +474,6 @@ proc ::constcl::read-expr {args} {
     {\.} {
         set x [Dot new]; set c [readchar]; set x
     }
-    {\:}          { read-object-expr }
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
@@ -611,14 +576,14 @@ CB)
 TT(
 
 ::tcltest::test read-13.0 {try reading a character} -body {
-    ::constcl::display [p {#\A}]
-    ::constcl::display [p {#\(}]
-    ::constcl::display [p "#\\space"]
-    ::constcl::display [p "#\\newline"]
+    ::constcl::display [parse {#\A}]
+    ::constcl::display [parse {#\(}]
+    ::constcl::display [parse "#\\space"]
+    ::constcl::display [parse "#\\newline"]
 } -output "A( \n"
 
 ::tcltest::test read-13.3 {try reading a character} -body {
-    set expr [p "#\\foobar"]
+    set expr [parse "#\\foobar"]
     $expr char
 } -returnCodes error -result "Invalid character constant #\\foobar"
 
@@ -701,12 +666,12 @@ CB)
 TT(
 
 ::tcltest::test read-14.0 {try reading an identifier} {
-    set expr [p "foo"]
+    set expr [parse "foo"]
     $expr name
 } "foo"
 
 ::tcltest::test read-14.1 {try reading an identifier} -body {
-    set expr [p "let"]
+    set expr [parse "let"]
     ::constcl::varcheck [$expr name]
 } -returnCodes error -result "Variable name is reserved: let"
 
@@ -787,23 +752,23 @@ CB)
 
 TT(
 ::tcltest::test read-15.0 {try reading a number} {
-    [p "99.99"] numval
+    [parse "99.99"] numval
 } "99.99"
 
 ::tcltest::test read-15.1 {try reading a number} {
-    [p "     99.99"] numval
+    [parse "     99.99"] numval
 } "99.99"
 
 ::tcltest::test read-15.2 {try reading a number} {
-    [p "     9"] numval
+    [parse "     9"] numval
 } "9"
 
 ::tcltest::test read-15.3 {try reading a number} {
-    [p "     +9"] numval
+    [parse "     +9"] numval
 } "9"
 
 ::tcltest::test read-15.4 {try reading a number} {
-    [p "     -9"] numval
+    [parse "     -9"] numval
 } "-9"
 
 ::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
@@ -817,41 +782,6 @@ TT(
 } -output "99\n"
 
 TT)
-
-H4 read-object-expr procedure
-
-A non-standard extension, K{read-object-expr} reads a ConsTcl object of any kind
-and passes its name along. It is activated when K{read-expr} finds a colon in
-the input.
-Shares the variables K{c} and K{unget} with its caller.
-
-PR(
-read-object-expr (internal);-> objeof
-PR)
-
-CB(
-proc ::constcl::read-object-expr {} {
-  upvar c c unget unget
-  # first colon has already been read
-  foreach ch [split ":oo::Obj" {}] {
-    set c [readchar]
-    read-eof $c
-    if {$c ne $ch} {
-      error "bad object name"
-    }
-  }
-  set res "::oo::Obj"
-  set c [readchar]
-  read-eof $c
-  while {[::string is digit $c]} {
-    ::append res $c
-    set c [readchar]
-    read-eof $c
-  }
-  set unget $c
-  return $res
-}
-CB)
 
 H4 read-pair-expr procedure
 
@@ -976,7 +906,7 @@ TT(
 } -output "(a b . c)\n"
 
 ::tcltest::test read-16.2 {try reading a list} -body {
-    set expr [p "(a (b))"]
+    set expr [parse "(a (b))"]
     [::constcl::caadr $expr] name
 } -result "b"
 
@@ -1086,16 +1016,6 @@ CB(
 CB)
 
 TT(
-::tcltest::test read-17.0 {try reading a number} {
-    set obj [::constcl::parse "     - "]
-    $obj name
-} "-"
-
-::tcltest::test read-17.1 {try reading a number} {
-    set obj [::constcl::parse "     + "]
-    $obj name
-} "+"
-
 ::tcltest::test read-17.2 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
     set p [pe {(open-input-file "testrr.lsp")}]
@@ -1300,17 +1220,17 @@ CB)
 TT(
 
 ::tcltest::test read-21.0 {try reading a string} {
-    set expr [p {"foo bar"}]
+    set expr [parse {"foo bar"}]
     $expr value
 } "foo bar"
 
 ::tcltest::test read-21.1 {try reading a string} {
-    set expr [p {"\"foo\" \\ bar"}]
+    set expr [parse {"\"foo\" \\ bar"}]
     $expr value
 } {"foo" \ bar}
 
 ::tcltest::test read-21.2 {try reading a string} {
-    set expr [p {"\"foo\" \\ bar"}]
+    set expr [parse {"\"foo\" \\ bar"}]
     $expr external
 } {"\"foo\" \\ bar"}
 
