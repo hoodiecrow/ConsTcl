@@ -245,35 +245,6 @@ proc ::constcl::pairlis-tcl {a b} {
 }
 CB)
 
-H4 usage procedure
-
-K{usage} is a simple procedure to compare a Lisp list with the expected format
-of the expression. Mostly it just compares lengths.
-
-PR(
-usage (internal);usage expr expr expr -> none
-PR)
-
-CB(
-proc ::constcl::usage {usage expr} {
-  set u $usage
-  set e $expr
-  if {[[length $usage] numval] !=
-      [[length $expr] numval]} {
-    while {$u ne ${::#NIL} && $e ne ${::#NIL}} {
-      set u [cdr $u]
-      set e [cdr $e]
-    }
-    if {$e eq ${::#NIL} && $u ne ${::#NIL} &&
-      [regexp {\?.*\?} [[car $u] name]]} {
-      return
-    }
-    ::error "usage error\n[
-      $usage tstr] not [$expr tstr]"
-  }
-}
-CB)
-
 H4 pn procedure
 
 K{pn} stands for 'procedure name'. When called, tells the caller the name of its

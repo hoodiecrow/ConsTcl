@@ -71,23 +71,6 @@ proc ::constcl::pairlis-tcl {a b} {
       [pairlis-tcl [cdr $a] [cdr $b]]
   }
 }
-proc ::constcl::usage {usage expr} {
-  set u $usage
-  set e $expr
-  if {[[length $usage] numval] !=
-      [[length $expr] numval]} {
-    while {$u ne ${::#NIL} && $e ne ${::#NIL}} {
-      set u [cdr $u]
-      set e [cdr $e]
-    }
-    if {$e eq ${::#NIL} && $u ne ${::#NIL} &&
-      [regexp {\?.*\?} [[car $u] name]]} {
-      return
-    }
-    ::error "usage error\n[
-      $usage tstr] not [$expr tstr]"
-  }
-}
 proc ::pn {} {
   namespace tail [lindex [info level -1] 0]
 }

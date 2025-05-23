@@ -549,41 +549,6 @@ proc ::constcl::pairlis-tcl {a b} {
 }
 \end{lstlisting}
 
-\subsection{usage procedure}
-\label{usage-procedure}
-\index{usage procedure}
-
-\texttt{usage} is a simple procedure to compare a Lisp list with the expected format of the expression. Mostly it just compares lengths.
-
-\noindent\begin{tabular}{ |p{1.9cm} p{6.5cm}| }
-\hline
-\rowcolor[HTML]{CCCCCC} \multicolumn{2}{|l|}{\textbf{usage (internal)}} \\
-usage & an expression \\
-expr & an expression \\
-\textit{Returns:} & nothing \\
-\hline
-\end{tabular}
-
-\begin{lstlisting}
-proc ::constcl::usage {usage expr} {
-  set u $usage
-  set e $expr
-  if {[[length $usage] numval] !=
-      [[length $expr] numval]} {
-    while {$u ne ${::#NIL} && $e ne ${::#NIL}} {
-      set u [cdr $u]
-      set e [cdr $e]
-    }
-    if {$e eq ${::#NIL} && $u ne ${::#NIL} &&
-      [regexp {\?.*\?} [[car $u] name]]} {
-      return
-    }
-    ::error "usage error\n[
-      $usage tstr] not [$expr tstr]"
-  }
-}
-\end{lstlisting}
-
 \subsection{pn procedure}
 \label{pn-procedure}
 \index{pn procedure}
@@ -5131,7 +5096,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1771 lines of code, the interpreter is done.
+After 1754 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 

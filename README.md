@@ -228,32 +228,6 @@ proc ::constcl::pairlis-tcl {a b} {
 }
 ```
 
-#### usage procedure
-
-`` usage `` is a simple procedure to compare a Lisp list with the expected format of the expression. Mostly it just compares lengths.
-
-<table border=1><thead><tr><th colspan=2 align="left">usage (internal)</th></tr></thead><tr><td>usage</td><td>an expression</td></tr><tr><td>expr</td><td>an expression</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::usage {usage expr} {
-  set u $usage
-  set e $expr
-  if {[[length $usage] numval] !=
-      [[length $expr] numval]} {
-    while {$u ne ${::#NIL} && $e ne ${::#NIL}} {
-      set u [cdr $u]
-      set e [cdr $e]
-    }
-    if {$e eq ${::#NIL} && $u ne ${::#NIL} &&
-      [regexp {\?.*\?} [[car $u] name]]} {
-      return
-    }
-    ::error "usage error\n[
-      $usage tstr] not [$expr tstr]"
-  }
-}
-```
-
 #### pn procedure
 
 `` pn `` stands for 'procedure name'. When called, tells the caller the name of its command. I use it for error messages so the error message can automagically tell the user which command failed.
@@ -3777,7 +3751,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 
 Well!
 
-After 1771 lines of code, the interpreter is done.
+After 1754 lines of code, the interpreter is done.
 
 Now for the built-in types and procedures!
 
