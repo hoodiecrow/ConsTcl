@@ -297,106 +297,6 @@ proc ::constcl::read {args} {
   set ::constcl::Input_port $oldport
   return $expr
 }
-proc ::constcl::make-constant {val} {
-  if {[T [pair? $val]]} {
-    $val mkconstant
-    make-constant [car $val]
-    make-constant [cdr $val]
-  } elseif {[T [null? $val]]} {
-    return
-  } else {
-    $val mkconstant
-    return
-  }
-}
-proc ::constcl::interspace? {c} {
-  if {[::string is space $c]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-proc ::constcl::delimiter? {c} {
-  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-proc ::constcl::valid-char? {name} {
-  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-proc ::constcl::readchar {} {
-  upvar unget unget
-  if {$unget ne {}} {
-    set c $unget
-    set unget {}
-  } else {
-    set c [$::constcl::Input_port get]
-    if {[$::constcl::Input_port eof]} {
-      return #EOF
-    }
-  }
-  return $c
-}
-proc ::constcl::find-char? {char} {
-  upvar c c unget unget
-  # start with stored c
-  while {[::string is space -strict $c]} {
-    # this order seems strange but works
-    set c [readchar]
-    read-eof $c
-    set unget $c
-  }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
-}
-proc ::constcl::read-end? {} {
-  upvar c c unget unget
-  set c [readchar]
-  if {[T [interspace? $c]]} {
-    return ${::#t}
-  } elseif {[T [delimiter? $c]]} {
-    set unget $c
-    return ${::#t}
-  } elseif {$c eq "#EOF"} {
-    return #EOF
-  } else {
-    set unget $c
-    return ${::#f}
-  }
-}
-proc ::constcl::skip-ws {} {
-  upvar c c unget unget
-  while true {
-    switch -regexp $c {
-      {[[:space:]]} {
-        set c [readchar]
-      }
-      {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readchar]
-        }
-      }
-      default {
-        set unget $c
-        return
-      }
-    }
-  }
-}
-proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
-    }
-  }
-}
 proc ::constcl::read-expr {args} {
   upvar c c unget unget
   if {[llength $args]} {
@@ -666,6 +566,106 @@ proc ::constcl::read-vector-expr {} {
   set expr [MkVector $res]
   $expr mkconstant
   return $expr
+}
+proc ::constcl::make-constant {val} {
+  if {[T [pair? $val]]} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[T [null? $val]]} {
+    return
+  } else {
+    $val mkconstant
+    return
+  }
+}
+proc ::constcl::interspace? {c} {
+  if {[::string is space $c]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+proc ::constcl::valid-char? {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+proc ::constcl::readchar {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+proc ::constcl::find-char? {char} {
+  upvar c c unget unget
+  # start with stored c
+  while {[::string is space -strict $c]} {
+    # this order seems strange but works
+    set c [readchar]
+    read-eof $c
+    set unget $c
+  }
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
+}
+proc ::constcl::read-end? {} {
+  upvar c c unget unget
+  set c [readchar]
+  if {[T [interspace? $c]]} {
+    return ${::#t}
+  } elseif {[T [delimiter? $c]]} {
+    set unget $c
+    return ${::#t}
+  } elseif {$c eq "#EOF"} {
+    return #EOF
+  } else {
+    set unget $c
+    return ${::#f}
+  }
+}
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readchar]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readchar]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
 }
 proc ::constcl::lookup {sym env} {
   lassign [binding-info $sym $env] type value

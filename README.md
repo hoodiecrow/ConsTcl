@@ -742,23 +742,13 @@ oo::singleton create ::constcl::Unspecified {
 
 ## Input
 
-The first thing an interpreter must be able to do is to take in the user's code and data input and make it fit to evaluate.
+The first thing an interpreter must be able to do is to take in the user's code and data (_input_) and make it fit to be evaluated. This is handled by the `` read `` procedure.
 
 ### Input and ports
 
-The procedure `` read `` represents the interpreter's main input facility. `` read `` and its sub-procedures read from standard input, or--if a port is provided--from the port's channel.
+The main challenge in taking in code and data is to determine from which device the input will come. Possible alternatives are the keyboard, an input file, a string buffer, etc. To make input streamlined, the various kinds of devices are abstracted into _ports_.
 
-
----
-
-
-##### Ports
-
-Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
-
-
----
-
+The procedure `` read `` represents the interpreter's main input facility.
 
 #### read procedure
 
@@ -783,21 +773,39 @@ proc ::constcl::read {args} {
 }
 ```
 
-### Input and parsing
 
-The input procedure `` read `` does more than just read in the text of code and data: it also _parses_ the input into an _internal representation_ that the evaluator can use.
+---
+
+
+##### Ports
+
+Ports are an abstraction of the input or output mechanism. An input port can be connected to standard input (the keyboard) or a file opened for input or a string input buffer where the complete available input is laid out before reading starts. Regardless of what kind of input port it is, one can read characters from it until it runs out and signals end-of-file. Likewise, an output port, regardless of whether it's the standard output--the screen--or a file opened for output, will receive characters sent to it.
+
+
+---
+
+
+### Parsing
+
+Making input fit to be evaluated is a more complex procedure, and most of the procedures in this section deal with this conversion, which is also known as _parsing_. To make parsing possible, the input must be encoded in a way that makes the type of input obvious and consistent.
 
 [Parsing](https://en.wikipedia.org/wiki/Parsing), or syntactic analysis, is analyzing a sequence of letters, digits, and other characters, a piece of text conforming to the rules of _external representation_. The result of parsing is an _expression_ in _internal representation_.
 
-#### External representation
+As a simple example of external representation, `` 99 `` denotes a number, while `` "99" `` denotes a string. The `` read `` procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
 
-The external representation is a 'recipe' for an expression that expresses it in a unique way.
+`` 99 `` is parsed into a Number object, while `` "99" `` is parsed into a String object. `` '(99 "99") `` is parsed into a quoted Pair structure with two elements, a Number object and a String object.
+
+
+---
+
+
+##### External representation
+
+The external representation is a 'recipe' for an expression that expresses it in a unique and consistent way.
 
 For example, the external representation for a vector is a pound sign (`` # ``), a left parenthesis (`` ( ``), the external representation for some values, and a right parenthesis (`` ) ``). When the reader/parser is working its way through input, a `` #( `` symbol signals that a vector structure is being read. A number of subexpressions for the elements of the vector follow, and then a closing parenthesis `` ) `` signals that the vector is done. The elements are saved in vector memory and the vector gets the address to the first element and the number of elements.
 
-![#](images/vector-representation.png)
-
-##### Types of data and external representation
+Some types of data and external representation:
 
 String: `` "abc" ``
 
@@ -805,13 +813,21 @@ Character: `` #\c ``
 
 Vector: `` #(99 "abc") ``
 
-List: `` (1 2) `` or `` [3 4] ``
+List (stored as a Pair structure): `` (1 2) `` or `` [3 4] ``
 
 Number: `` 99 ``
 
 Identifier: `` abc ``
 
-The `` read `` procedure takes in input character by character, matching each character against a fitting external representation. When done, it creates a ConsTcl object, which is the internal representation of an expression. The object can then be passed to the evaluator.
+
+---
+
+
+![#](images/vector-representation.png "Vector representation")
+
+Once input has been parsed into an expression, the expression can be evaluated using the `` eval `` [procedure](https://github.com/hoodiecrow/ConsTcl#eval-procedure) or printed using the `` write `` [procedure](https://github.com/hoodiecrow/ConsTcl#write-procedure).
+
+A non-quoted list is parsed into a structure of Pair objects and evaluates to the result of the execution of the components of the list (the operator and the operands).
 
 Example (running in `` tclsh ``):
 
@@ -821,13 +837,25 @@ Example (running in `` tclsh ``):
 ::oo::Obj491
 ```
 
-Here, `` read `` read and parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled `` ::oo::Obj491 `` (the number has no significance other than to identifiy the object: it will be different each time the code is run). I will now reach briefly into the following chapters and present procedures like `` eval ``, which transforms an expression into a value, and `` write ``, which writes a printed external representation of expressions and values. Putting them together we can see
+Here, `` read `` read and parsed the external representation of a list with three elements, +, 2, and 3. It produced the expression that has an internal representation labeled `` ::oo::Obj491 `` (the number has no significance other than to identifiy the object: it will be different each time the code is run).
+
+Printing the object returns it to external representation:
 
 ```
 % ::constcl::write ::oo::Obj491
 (+ 2 3)
+```
+
+Evaluating the object creates a new expression (the result of applying the operator to the operands):
+
+```
 % ::constcl::eval ::oo::Obj491
 ::oo::Obj494
+```
+
+Printing it shows the result:
+
+```
 % ::constcl::write ::oo::Obj494
 5
 ```
@@ -845,192 +873,9 @@ Anyway, the figure shows what it really looks like. `` ::oo::Obj491 `` was just 
 
 ![#](images/intreplist.png "The internal structure of the expression")
 
-### Input helper procedures
+(The parts of the list can be inspected using the `` car `` and `` cdr `` [procedures](https://github.com/hoodiecrow/ConsTcl#car-procedure).)
 
-Some utility procedures which are used during reading/parsing.
-
-#### make-constant procedure
-
-The `` make-constant `` helper procedure is called to set expressions to constants when read as a literal.
-
-<table border=1><thead><tr><th colspan=2 align="left">make-constant (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::make-constant {val} {
-  if {[T [pair? $val]]} {
-    $val mkconstant
-    make-constant [car $val]
-    make-constant [cdr $val]
-  } elseif {[T [null? $val]]} {
-    return
-  } else {
-    $val mkconstant
-    return
-  }
-}
-```
-
-#### interspace? procedure
-
-The `` interspace? `` helper procedure recognizes whitespace between value representations.
-
-<table border=1><thead><tr><th colspan=2 align="left">interspace? (internal)</th></tr></thead><tr><td>c</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::interspace? {c} {
-  if {[::string is space $c]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-```
-
-#### delimiter? procedure
-
-The `` delimiter? `` helper procedure recognizes delimiter characters between value representations.
-
-<table border=1><thead><tr><th colspan=2 align="left">delimiter? (internal)</th></tr></thead><tr><td>c</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::delimiter? {c} {
-  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-```
-
-#### valid-char? procedure
-
-The `` valid-char? `` helper procedure compares a potential character constant to the valid kinds.
-
-<table border=1><thead><tr><th colspan=2 align="left">valid-char? (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
-
-```
-proc ::constcl::valid-char? {name} {
-  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-```
-
-#### readchar procedure
-
-`` readchar `` reads one character from the `` unget `` store if it isn't empty or else from the input port. If the input is at end-of-file, an `` #EOF `` object is returned. Shares the variable `` unget `` with its caller.
-
-<table border=1><thead><tr><th colspan=2 align="left">readchar (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
-
-```
-proc ::constcl::readchar {} {
-  upvar unget unget
-  if {$unget ne {}} {
-    set c $unget
-    set unget {}
-  } else {
-    set c [$::constcl::Input_port get]
-    if {[$::constcl::Input_port eof]} {
-      return #EOF
-    }
-  }
-  return $c
-}
-```
-
-#### find-char? procedure
-
-`` find-char? `` reads ahead through whitespace to find a given character. It returns `` #t `` if it has found the character, and `` #f `` if it has stopped at some other character. Sets `` unget `` to the character it stopped at. Returns end of file if eof is encountered. Shares the variables `` c `` and `` unget `` with its caller.
-
-<table border=1><thead><tr><th colspan=2 align="left">find-char? (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
-
-```
-proc ::constcl::find-char? {char} {
-  upvar c c unget unget
-  # start with stored c
-  while {[::string is space -strict $c]} {
-    # this order seems strange but works
-    set c [readchar]
-    read-eof $c
-    set unget $c
-  }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
-}
-```
-
-#### read-end? procedure
-
-`` read-end? `` reads one character and returns `` #t `` if it is an interspace character or a delimiter character, or `` #EOF `` if at end of file. Otherwise it returns `` #f ``. It ungets the character before returning, unless the character was interspace or end-of-file. Shares the variables `` c `` and `` unget `` with its caller.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-end? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
-
-```
-proc ::constcl::read-end? {} {
-  upvar c c unget unget
-  set c [readchar]
-  if {[T [interspace? $c]]} {
-    return ${::#t}
-  } elseif {[T [delimiter? $c]]} {
-    set unget $c
-    return ${::#t}
-  } elseif {$c eq "#EOF"} {
-    return #EOF
-  } else {
-    set unget $c
-    return ${::#f}
-  }
-}
-```
-
-#### skip-ws procedure
-
-`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). It leaves the first character not to be skipped in `` c `` and also ungets it. Shares the variables `` c `` and `` unget `` with its caller.
-
-<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::skip-ws {} {
-  upvar c c unget unget
-  while true {
-    switch -regexp $c {
-      {[[:space:]]} {
-        set c [readchar]
-      }
-      {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readchar]
-        }
-      }
-      default {
-        set unget $c
-        return
-      }
-    }
-  }
-}
-```
-
-#### read-eof procedure
-
-`` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
-
-<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
-
-```
-proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
-    }
-  }
-}
-```
-
-### Reader procedures
+For the rest of subsection, procedures that implement parsing.
 
 The `` read- `` procedures parse their input and produce ConsTcl objects.
 
@@ -1555,6 +1400,191 @@ Create and return an immutable vector object.
 }
 ```
 
+### Input helper procedures
+
+In this subsection, some procedures which are used by the reading/parsing procedures.
+
+#### make-constant procedure
+
+The `` make-constant `` helper procedure is called to set expressions to constants when read as a literal.
+
+<table border=1><thead><tr><th colspan=2 align="left">make-constant (internal)</th></tr></thead><tr><td>val</td><td>a value</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::make-constant {val} {
+  if {[T [pair? $val]]} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[T [null? $val]]} {
+    return
+  } else {
+    $val mkconstant
+    return
+  }
+}
+```
+
+#### interspace? procedure
+
+The `` interspace? `` helper procedure recognizes whitespace between value representations.
+
+<table border=1><thead><tr><th colspan=2 align="left">interspace? (internal)</th></tr></thead><tr><td>c</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::interspace? {c} {
+  if {[::string is space $c]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+```
+
+#### delimiter? procedure
+
+The `` delimiter? `` helper procedure recognizes delimiter characters between value representations.
+
+<table border=1><thead><tr><th colspan=2 align="left">delimiter? (internal)</th></tr></thead><tr><td>c</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+```
+
+#### valid-char? procedure
+
+The `` valid-char? `` helper procedure compares a potential character constant to the valid kinds.
+
+<table border=1><thead><tr><th colspan=2 align="left">valid-char? (internal)</th></tr></thead><tr><td>name</td><td>a Tcl string</td></tr><tr><td><i>Returns:</i></td><td>a boolean</td></tr></table>
+
+```
+proc ::constcl::valid-char? {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+```
+
+#### readchar procedure
+
+`` readchar `` reads one character from the `` unget `` store if it isn't empty or else from the input port. If the input is at end-of-file, an `` #EOF `` object is returned. Shares the variable `` unget `` with its caller.
+
+<table border=1><thead><tr><th colspan=2 align="left">readchar (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a Tcl character or end of file</td></tr></table>
+
+```
+proc ::constcl::readchar {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+```
+
+#### find-char? procedure
+
+`` find-char? `` reads ahead through whitespace to find a given character. It returns `` #t `` if it has found the character, and `` #f `` if it has stopped at some other character. Sets `` unget `` to the character it stopped at. Returns end of file if eof is encountered. Shares the variables `` c `` and `` unget `` with its caller.
+
+<table border=1><thead><tr><th colspan=2 align="left">find-char? (internal)</th></tr></thead><tr><td>char</td><td>a Tcl character</td></tr><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
+
+```
+proc ::constcl::find-char? {char} {
+  upvar c c unget unget
+  # start with stored c
+  while {[::string is space -strict $c]} {
+    # this order seems strange but works
+    set c [readchar]
+    read-eof $c
+    set unget $c
+  }
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
+}
+```
+
+#### read-end? procedure
+
+`` read-end? `` reads one character and returns `` #t `` if it is an interspace character or a delimiter character, or `` #EOF `` if at end of file. Otherwise it returns `` #f ``. It ungets the character before returning, unless the character was interspace or end-of-file. Shares the variables `` c `` and `` unget `` with its caller.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-end? (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>a boolean or end of file</td></tr></table>
+
+```
+proc ::constcl::read-end? {} {
+  upvar c c unget unget
+  set c [readchar]
+  if {[T [interspace? $c]]} {
+    return ${::#t}
+  } elseif {[T [delimiter? $c]]} {
+    set unget $c
+    return ${::#t}
+  } elseif {$c eq "#EOF"} {
+    return #EOF
+  } else {
+    set unget $c
+    return ${::#f}
+  }
+}
+```
+
+#### skip-ws procedure
+
+`` skip-ws `` skips whitespace and comments (the `` ; `` to end of line kind). It leaves the first character not to be skipped in `` c `` and also ungets it. Shares the variables `` c `` and `` unget `` with its caller.
+
+<table border=1><thead><tr><th colspan=2 align="left">skip-ws (internal)</th></tr></thead><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readchar]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readchar]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+```
+
+#### read-eof procedure
+
+`` read-eof `` checks a number of presumed characters for possible end-of-file objects. If it finds one, it returns _from its caller_ with the EOF value.
+
+<table border=1><thead><tr><th colspan=2 align="left">read-eof (internal)</th></tr></thead><tr><td>chars</td><td>some characters</td></tr><tr><td><i>Returns:</i></td><td>nothing</td></tr></table>
+
+```
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
+}
+```
+
 ## Evaluation
 
 The second thing an interpreter must be able to do is to _evaluate_ expressions, that is reduce them to _normal form_. As an example, 2 + 6 and 8 are two expressions that have the same value, but the latter is in normal form (can't be reduced further) and the former is not.
@@ -1640,7 +1670,7 @@ proc ::constcl::self-evaluating? {val} {
 
 _Example: `` (quote r) `` ⇒ `` r `` (quotation makes the symbol evaluate to itself, like a constant)_
 
-According to the rules of variable reference, a symbol evaluates to its stored value. Sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the [Lisp reader](https://github.com/hoodiecrow/ConsTcl#reader-procedures). The argument of `` quote `` may be any [external representation](https://github.com/hoodiecrow/ConsTcl#external-representation) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
+According to the rules of variable reference, a symbol evaluates to its stored value. Sometimes one wishes to use the symbol itself as a value. That is partly what quotation is for. `` (quote x) `` evaluates to the symbol `` x `` itself and not to any value that might be stored under it. This is so common that there is a shorthand notation for it: `` 'x `` is interpreted as `` (quote x) `` by the [Lisp reader](https://github.com/hoodiecrow/ConsTcl#read-procedure). The argument of `` quote `` may be any [external representation](https://github.com/hoodiecrow/ConsTcl#external-representation) of a Lisp object. In this way, for instance a vector or list constant can be introduced in the program text.
 
 #### quote special form
 

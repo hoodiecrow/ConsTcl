@@ -1,27 +1,17 @@
 
 H2 Input
 
-The first thing an interpreter must be able to do is to take in the user's code
-and data inputI{input} and make it fit to evaluate.
+The first thing an interpreter must be able to do is to take in the user's code and
+data (E{input}I{input}) and make it fit to be evaluated. This is handled by the K{read} procedure.
 
 h3 Input and ports
 
-The procedure K{read} represents the
-interpreter's main input facility. K{read} and its sub-procedures read from
-standard input, or--if a port is provided--from the port's channel.
+The main challenge in taking in code and data is to determine
+from which device the input will come. Possible alternatives are the
+keyboard, an input file, a string buffer, etc. To make input
+streamlined, the various kinds of devices are abstracted into E{ports}.
 
-PT(
-H5 Ports
-
-Ports are an abstraction of the input or output mechanism. An input port can be
-connected to standard input (the keyboard) or a file opened for input or a
-string input buffer where the complete available input is laid out before
-reading starts. Regardless of what kind of input port it is, one can read
-characters from it until it runs out and signals end-of-file.  Likewise, an
-output port, regardless of whether it's the standard output--the screen--or a
-file opened for output, will receive characters sent to it.
-
-PT)
+The procedure K{read} represents the interpreter's main input facility. 
 
 H4 read procedure
 
@@ -67,21 +57,47 @@ TT(
 
 TT)
 
-h3 Input and parsing
+PT(
+H5 Ports
 
-The input procedure K{read} does more than
-just read in the text of code and data: it also E{parses} the input into an
-E{internal representation} that the evaluator can use.
+Ports are an abstraction of the input or output mechanism. An input port can be
+connected to standard input (the keyboard) or a file opened for input or a
+string input buffer where the complete available input is laid out before
+reading starts. Regardless of what kind of input port it is, one can read
+characters from it until it runs out and signals end-of-file.  Likewise, an
+output port, regardless of whether it's the standard output--the screen--or a
+file opened for output, will receive characters sent to it.
+
+PT)
+
+h3 Parsing
+
+Making input fit to be evaluated is a more complex procedure, and most of the
+procedures in this section deal with this conversion, which is also known as
+E{parsing}. To make parsing possible, the input must be encoded in a way that
+makes the type of input obvious and consistent.
 
 W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
 letters, digits, and other characters, a piece of text conforming to the rules
 of E{external representation}I{external representation}. The result of parsing
 is an E{expression}I{expression} in E{internal representation}.
 
-h4 External representation
+As a simple example of external representation, K{99} denotes a number,
+while K{"99"} denotes a string.
+The K{read} procedure takes in input character by
+character, matching each character against a fitting external representation.
+When done, it creates a ConsTcl object, which is the internal representation of
+an expression.  The object can then be passed to the evaluator.
+
+K{99} is parsed into a Number object, while K{"99"} is parsed into a String
+object. K{'(99 "99")} is parsed into a quoted Pair structure with two elements,
+a Number object and a String object.
+
+PT(
+h5 External representation
 
 The external representation is a 'recipe' for an expression that expresses it in
-a unique way. 
+a unique and consistent way. 
 
 For example, the external representation for a vector is a pound sign (K{#}), a
 left parenthesis (K{(}), the external representation for some values, and a right
@@ -91,26 +107,30 @@ for the elements of the vector follow, and then a closing parenthesis K{)}
 signals that the vector is done. The elements are saved in vector memory and the
 vector gets the address to the first element and the number of elements.
 
-IG /images/vector-representation.png
+NI Some types of data and external representation:
 
-h5 Types of data and external representation
-
-String: K{"abc"}
+NI String: K{"abc"}
 
 NI Character: K{#\c}
 
 NI Vector: K{#(99 "abc")}
 
-NI List: K{(1 2)} or K{[3 4]}
+NI List (stored as a Pair structure): K{(1 2)} or K{[3 4]}
 
 NI Number: K{99}
 
 NI Identifier: K{abc}
+PT)
 
-The K{read} procedure takes in input character by
-character, matching each character against a fitting external representation.
-When done, it creates a ConsTcl object, which is the internal representation of
-an expression.  The object can then be passed to the evaluator.
+IF /images/vector-representation.png Vector representation
+
+Once input has been parsed into an expression, the expression can be
+evaluated using the K{eval} R{procedure}{eval-procedure} or printed using the
+K{write} R{procedure}{write-procedure}.
+
+A non-quoted list is parsed into a structure of Pair objects and
+evaluates to the result of the execution of the components of the list
+(the operator and the operands).
 
 Example (running in K{tclsh}):
 
@@ -123,17 +143,26 @@ VB)
 Here, K{read} read and parsed the external representation of a list with three
 elements, +, 2, and 3. It produced the expression that has an internal
 representation labeled K{::oo::Obj491} (the number has no significance other
-than to identifiy the object: it will be different each time the code is run). I
-will now reach briefly into the following chapters and present procedures like
-K{eval}, which transforms an expression into a value, and K{write}, which writes
-a printed external representation of expressions and values. Putting them
-together we can see
+than to identifiy the object: it will be different each time the code is run).
+
+Printing the object returns it to external representation:
 
 VB(
 % ::constcl::write ::oo::Obj491
 (+ 2 3)
+VB)
+
+Evaluating the object creates a new expression (the result of applying
+the operator to the operands):
+
+VB(
 % ::constcl::eval ::oo::Obj491
 ::oo::Obj494
+VB)
+
+Printing it shows the result:
+
+VB(
 % ::constcl::write ::oo::Obj494
 5
 VB)
@@ -154,289 +183,17 @@ the head of the list.
 
 IF /images/intreplist.png The internal structure of the expression
 
-h3 Input helper procedures
+(The parts of the list can be inspected using the K{car} and K{cdr}
+R{procedures}{car-procedure}.)
 
-Some utility procedures which are used during reading/parsing.
-
-H4 make-constant procedure
-
-The K{make-constant} helper procedure is called to set expressions to constants
-when read as a literal.
-
-PR(
-make-constant (internal);val val -> none
-PR)
-
-CB(
-proc ::constcl::make-constant {val} {
-  if {[T [pair? $val]]} {
-    $val mkconstant
-    make-constant [car $val]
-    make-constant [cdr $val]
-  } elseif {[T [null? $val]]} {
-    return
-  } else {
-    $val mkconstant
-    return
-  }
-}
-CB)
-
-TT(
-::tcltest::test input-3.0 {try make-constant} -setup {
-} -body {
-  set a [parse {'(a b c)}]
-  set b [parse {`(a b c)}]
-  set c [parse {'#(a b c)}]
-  set d [parse {"a b c"}]
-    puts [[::constcl::cadr $a] constant]
-    puts [[::constcl::cadr $b] constant]
-    puts [[::constcl::cadr $c] constant]
-    puts [$d constant]
-} -cleanup {
-} -output "1\n1\n1\n1\n"
-
-TT)
-
-H4 interspace? procedure
-
-The K{interspace?} helper procedure recognizes whitespace between value
-representations.
-
-PR(
-interspace? (internal);c tchr -> bool
-PR)
-
-CB(
-proc ::constcl::interspace? {c} {
-  if {[::string is space $c]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-CB)
-
-TT(
-# 4
-TT)
-
-H4 delimiter? procedure
-
-The K{delimiter?} helper procedure recognizes delimiter characters between value
-representations.
-
-PR(
-delimiter? (internal);c tchr -> bool
-PR)
-
-CB(
-proc ::constcl::delimiter? {c} {
-  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-CB)
-
-TT(
-::tcltest::test input-5.0 {try delimiter?} -setup {
-} -body {
-  pew {(let ((name "Max")) (list"Hi"name(+ 1 2)))}
-} -cleanup {
-} -output "(\"Hi\" \"Max\" 3)\n"
-
-#"
-
-TT)
-
-H4 valid-char? procedure
-
-The K{valid-char?} helper procedure compares a potential
-character constant to the valid kinds.
-
-PR(
-valid-char? (internal);name tstr -> bool
-PR)
-
-CB(
-proc ::constcl::valid-char? {name} {
-  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-CB)
-
-TT(
-# 6
-TT)
-
-H4 readchar procedure
-
-K{readchar} reads one character from the K{unget} store if it isn't empty or else
-from the input port. If the input is at end-of-file, an K{#EOF} object is
-returned.  Shares the variable K{unget} with its caller.
-
-PR(
-readchar (internal);-> tchreof
-PR)
-
-CB(
-proc ::constcl::readchar {} {
-  upvar unget unget
-  if {$unget ne {}} {
-    set c $unget
-    set unget {}
-  } else {
-    set c [$::constcl::Input_port get]
-    if {[$::constcl::Input_port eof]} {
-      return #EOF
-    }
-  }
-  return $c
-}
-CB)
-
-TT(
-# 7
-TT)
-
-H4 find-char? procedure
-
-K{find-char?} reads ahead through whitespace to find a given character. It
-returns K{#t} if it has found the character, and K{#f} if it has stopped at some
-other character. Sets K{unget} to the character it stopped at. Returns end of
-file if eof is encountered.  Shares the variables K{c} and  K{unget} with its
-caller.
-
-PR(
-find-char? (internal);char tchr -> booleof
-PR)
-
-CB(
-proc ::constcl::find-char? {char} {
-  upvar c c unget unget
-  # start with stored c
-  while {[::string is space -strict $c]} {
-    # this order seems strange but works
-    set c [readchar]
-    read-eof $c
-    set unget $c
-  }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
-}
-CB)
-
-TT(
-# 8
-TT)
-
-H4 read-end? procedure
-
-K{read-end?} reads one character and returns K{#t} if it is an interspace
-character or a delimiter character, or K{#EOF} if at end of file. Otherwise it
-returns K{#f}.  It ungets the character before returning, unless the character
-was interspace or end-of-file.  Shares the variables K{c} and K{unget} with its
-caller.
-
-PR(
-read-end? (internal);-> booleof
-PR)
-
-CB(
-proc ::constcl::read-end? {} {
-  upvar c c unget unget
-  set c [readchar]
-  if {[T [interspace? $c]]} {
-    return ${::#t}
-  } elseif {[T [delimiter? $c]]} {
-    set unget $c
-    return ${::#t}
-  } elseif {$c eq "#EOF"} {
-    return #EOF
-  } else {
-    set unget $c
-    return ${::#f}
-  }
-}
-CB)
-
-TT(
-# 9
-TT)
-
-H4 skip-ws procedure
-
-K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It
-leaves the first character not to be skipped in K{c} and also ungets it.  Shares
-the variables K{c} and K{unget} with its caller.
-
-PR(
-skip-ws (internal);-> none
-PR)
-
-CB(
-proc ::constcl::skip-ws {} {
-  upvar c c unget unget
-  while true {
-    switch -regexp $c {
-      {[[:space:]]} {
-        set c [readchar]
-      }
-      {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
-          set c [readchar]
-        }
-      }
-      default {
-        set unget $c
-        return
-      }
-    }
-  }
-}
-CB)
-
-TT(
-# 10
-TT)
-
-H4 read-eof procedure
-
-K{read-eof} checks a number of presumed characters for possible end-of-file
-objects. If it finds one, it returns E{from its caller} with the EOF value.
-
-PR(
-read-eof (internal);chars chars -> none
-PR)
-
-CB(
-proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
-    }
-  }
-}
-CB)
-
-TT(
-# 11
-TT)
-
-h3 Reader procedures
+For the rest of subsection, procedures that implement parsing.
 
 The K{read-} procedures parse their input and produce ConsTcl objects.
 
 Reader procedures specialize in reading a certain kind of input, except for
 K{read-expr} which reads them all (with a little help).
 
-H4 read-expr procedure
+h4 read-expr procedure
 
 The K{read-expr} procedure reads the first available character from the input
 port. Based on that character it delegates to one of the more detailed readers,
@@ -1385,5 +1142,282 @@ TT(
 } -output "#(1 2 3)\n#(11 22 33)\n"
 
 TT)
+
+h3 Input helper procedures
+
+In this subsection, some procedures which are used by the reading/parsing
+procedures.
+
+H4 make-constant procedure
+
+The K{make-constant} helper procedure is called to set expressions to constants
+when read as a literal.
+
+PR(
+make-constant (internal);val val -> none
+PR)
+
+CB(
+proc ::constcl::make-constant {val} {
+  if {[T [pair? $val]]} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[T [null? $val]]} {
+    return
+  } else {
+    $val mkconstant
+    return
+  }
+}
+CB)
+
+TT(
+::tcltest::test input-3.0 {try make-constant} -setup {
+} -body {
+  set a [parse {'(a b c)}]
+  set b [parse {`(a b c)}]
+  set c [parse {'#(a b c)}]
+  set d [parse {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [[::constcl::cadr $c] constant]
+    puts [$d constant]
+} -cleanup {
+} -output "1\n1\n1\n1\n"
+
+TT)
+
+H4 interspace? procedure
+
+The K{interspace?} helper procedure recognizes whitespace between value
+representations.
+
+PR(
+interspace? (internal);c tchr -> bool
+PR)
+
+CB(
+proc ::constcl::interspace? {c} {
+  if {[::string is space $c]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 4
+TT)
+
+H4 delimiter? procedure
+
+The K{delimiter?} helper procedure recognizes delimiter characters between value
+representations.
+
+PR(
+delimiter? (internal);c tchr -> bool
+PR)
+
+CB(
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+::tcltest::test input-5.0 {try delimiter?} -setup {
+} -body {
+  pew {(let ((name "Max")) (list"Hi"name(+ 1 2)))}
+} -cleanup {
+} -output "(\"Hi\" \"Max\" 3)\n"
+
+#"
+
+TT)
+
+H4 valid-char? procedure
+
+The K{valid-char?} helper procedure compares a potential
+character constant to the valid kinds.
+
+PR(
+valid-char? (internal);name tstr -> bool
+PR)
+
+CB(
+proc ::constcl::valid-char? {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 6
+TT)
+
+H4 readchar procedure
+
+K{readchar} reads one character from the K{unget} store if it isn't empty or else
+from the input port. If the input is at end-of-file, an K{#EOF} object is
+returned.  Shares the variable K{unget} with its caller.
+
+PR(
+readchar (internal);-> tchreof
+PR)
+
+CB(
+proc ::constcl::readchar {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+CB)
+
+TT(
+# 7
+TT)
+
+H4 find-char? procedure
+
+K{find-char?} reads ahead through whitespace to find a given character. It
+returns K{#t} if it has found the character, and K{#f} if it has stopped at some
+other character. Sets K{unget} to the character it stopped at. Returns end of
+file if eof is encountered.  Shares the variables K{c} and  K{unget} with its
+caller.
+
+PR(
+find-char? (internal);char tchr -> booleof
+PR)
+
+CB(
+proc ::constcl::find-char? {char} {
+  upvar c c unget unget
+  # start with stored c
+  while {[::string is space -strict $c]} {
+    # this order seems strange but works
+    set c [readchar]
+    read-eof $c
+    set unget $c
+  }
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
+}
+CB)
+
+TT(
+# 8
+TT)
+
+H4 read-end? procedure
+
+K{read-end?} reads one character and returns K{#t} if it is an interspace
+character or a delimiter character, or K{#EOF} if at end of file. Otherwise it
+returns K{#f}.  It ungets the character before returning, unless the character
+was interspace or end-of-file.  Shares the variables K{c} and K{unget} with its
+caller.
+
+PR(
+read-end? (internal);-> booleof
+PR)
+
+CB(
+proc ::constcl::read-end? {} {
+  upvar c c unget unget
+  set c [readchar]
+  if {[T [interspace? $c]]} {
+    return ${::#t}
+  } elseif {[T [delimiter? $c]]} {
+    set unget $c
+    return ${::#t}
+  } elseif {$c eq "#EOF"} {
+    return #EOF
+  } else {
+    set unget $c
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 9
+TT)
+
+H4 skip-ws procedure
+
+K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It
+leaves the first character not to be skipped in K{c} and also ungets it.  Shares
+the variables K{c} and K{unget} with its caller.
+
+PR(
+skip-ws (internal);-> none
+PR)
+
+CB(
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readchar]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readchar]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+CB)
+
+TT(
+# 10
+TT)
+
+H4 read-eof procedure
+
+K{read-eof} checks a number of presumed characters for possible end-of-file
+objects. If it finds one, it returns E{from its caller} with the EOF value.
+
+PR(
+read-eof (internal);chars chars -> none
+PR)
+
+CB(
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
+}
+CB)
+
+TT(
+# 11
+TT)
+
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

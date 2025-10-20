@@ -124,7 +124,7 @@ value. Sometimes one wishes to use the symbol itself as a value. That is
 partly what quotationI{quotation} is for. K{(quote x)} evaluates to the symbol
 K{x} itself and not to any value that might be stored under it. This is so
 common that there is a shorthand notation for it: K{'x} is interpreted as
-K{(quote x)} by the R{Lisp reader}{reader-procedures}. The argument of K{quote}
+K{(quote x)} by the R{Lisp reader}{read-procedure}. The argument of K{quote}
 may be any R{external representation}{external-representation} of a Lisp object.
 In this way, for instance a vector or list constant can be introduced in the
 program text.
