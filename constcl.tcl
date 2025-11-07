@@ -2239,17 +2239,17 @@ proc ::constcl::sqrt {num} {
 }
 reg expt
 
-proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+proc ::constcl::expt {x y} {
+  check {number? $x} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  check {number? $num2} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+  check {number? $y} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  N [::tcl::mathfunc::pow [$num1 numval] \
-    [$num2 numval]]
+  N [::tcl::mathfunc::pow [$x numval] \
+    [$y numval]]
 }
 reg number->string
 

@@ -256,10 +256,10 @@ H5 caar, cadr, cdar, and the rest
 The K{do-case} procedure uses extensions of the K{car}/K{cdr} operators like
 K{caar} and K{cdar}I{car/cdr operators}. K{car}/K{cdr} notation gets really
 powerful when combined to form operators from K{caar} to K{cddddr}. One can read
-K{caar L} as `the first element of the first element of L', implying that the
+K{caar L} as `the first element of the first element of L, implying that the
 first element of K{L} is a list.  K{cdar L} is `the rest of the elements of the
-first element of L', and K{cadr L} is `the first element of the rest of the
-elements of L' or in layman's terms, the second element of L.
+first element of L, and K{cadr L} is `the first element of the rest of the
+elements of K{L} or in layman's terms, the second element of K{L}.
 
 PT)
 
@@ -884,7 +884,7 @@ it would return 121.
 
 K{invoke} arranges for a procedure to be called with each of the values in
 the E{argument list} (the list of operands). It checks if E{pr} really is a
-procedure, and determines whether to call E{pr} as an object or as a Tcl
+procedure, and determines whether to call E{pr} as a K{call} method invocation or as a Tcl
 command. Before K{invoke} is called, the argument list should be evaluated with
 S{eval-list}{evallist-procedure}.
 

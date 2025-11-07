@@ -1154,23 +1154,23 @@ H4 expt procedure
 K{expt} calculates x to the power y, or P{x}{y}.
 
 PR(
-expt (public);num1 num num2 num -> num
+expt (public);x num y num -> num
 PR)
 
 CB(
 reg expt
 
-proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+proc ::constcl::expt {x y} {
+  check {number? $x} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  check {number? $num2} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+  check {number? $y} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  N [::tcl::mathfunc::pow [$num1 numval] \
-    [$num2 numval]]
+  N [::tcl::mathfunc::pow [$x numval] \
+    [$y numval]]
 }
 CB)
 

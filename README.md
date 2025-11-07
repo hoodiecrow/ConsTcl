@@ -1763,7 +1763,7 @@ proc ::constcl::special-case {expr env} {
 
 ##### caar, cadr, cdar, and the rest
 
-The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L', implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L', and `` cadr L `` is `the first element of the rest of the elements of L' or in layman's terms, the second element of L.
+The `` do-case `` procedure uses extensions of the `` car ``/`` cdr `` operators like `` caar `` and `` cdar ``. `` car ``/`` cdr `` notation gets really powerful when combined to form operators from `` caar `` to `` cddddr ``. One can read `` caar L `` as `the first element of the first element of L, implying that the first element of `` L `` is a list. `` cdar L `` is `the rest of the elements of the first element of L, and `` cadr L `` is `the first element of the rest of the elements of `` L `` or in layman's terms, the second element of `` L ``.
 
 
 ---
@@ -2168,7 +2168,7 @@ _Example: `` (+ 1 6) `` ⇒ 7_
 
 Once we have procedures, we can _call_ them to have their calculations performed and yield results. The procedure name is put in the operator position at the front of a list, and the operands follow in the rest of the list. Our `` square `` procedure would be called for instance like this: `` (square 11) ``, and it would return 121.
 
-`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as an object or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with [``eval-list``](https://github.com/hoodiecrow/ConsTcl#evallist-procedure).
+`` invoke `` arranges for a procedure to be called with each of the values in the _argument list_ (the list of operands). It checks if _pr_ really is a procedure, and determines whether to call _pr_ as a `` call `` method invocation or as a Tcl command. Before `` invoke `` is called, the argument list should be evaluated with [``eval-list``](https://github.com/hoodiecrow/ConsTcl#evallist-procedure).
 
 #### invoke procedure
 
@@ -4689,22 +4689,22 @@ proc ::constcl::sqrt {num} {
 
 `` expt `` calculates x to the power y, or x<sup>y</sup>.
 
-<table border=1><thead><tr><th colspan=2 align="left">expt (public)</th></tr></thead><tr><td>num1</td><td>a number</td></tr><tr><td>num2</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
+<table border=1><thead><tr><th colspan=2 align="left">expt (public)</th></tr></thead><tr><td>x</td><td>a number</td></tr><tr><td>y</td><td>a number</td></tr><tr><td><i>Returns:</i></td><td>a number</td></tr></table>
 
 ```
 reg expt
 
-proc ::constcl::expt {num1 num2} {
-  check {number? $num1} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+proc ::constcl::expt {x y} {
+  check {number? $x} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  check {number? $num2} {
-      NUMBER expected\n([pn] [$num1 tstr] \
-        [$num2 tstr])
+  check {number? $y} {
+      NUMBER expected\n([pn] [$x tstr] \
+        [$y tstr])
   }
-  N [::tcl::mathfunc::pow [$num1 numval] \
-    [$num2 numval]]
+  N [::tcl::mathfunc::pow [$x numval] \
+    [$y numval]]
 }
 ```
 
