@@ -3,7 +3,7 @@
 ## To run the software
 
 First things first. To run, source the file __constcl.tcl__ (with
-__schemebase.lsp__ in the directory) in a Tcl console (I use __tkcon__) and use
+__schemebase.scm__ in the directory) in a Tcl console (I use __tkcon__) and use
 the command __repl__ for a primitive command dialog.  Source
 __all.tcl__ to run the test suite (you need __constcl.test__ for that). The
 files can be found on [GitHub/ConsTcl](https://github.com/hoodiecrow/ConsTcl).
@@ -41,4 +41,5 @@ ConsTcl is of course still limited. It doesn't come close to having call/cc or
 tail recursion. It doesn't have exact/inexact numbers, or most of the numerical
 tower. There is no memory management. Error reporting is spotty, and there is no
 error recovery.
+
 
