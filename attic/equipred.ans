@@ -1,0 +1,154 @@
+
+h1 Built-in types and procedures
+
+h2 The standard library
+
+h3 Equivalence predicates
+
+One of the fundamental questions in programming is ``is A equal to B?''. Lisp
+takes the question and adds ``what does it mean to be equal?''
+
+Lisp has a number of equivalence predicates. ConsTcl, like Scheme, has three.
+Of the three, K{eq?} generally tests for identity (with exception for numbers),
+K{eqv?} tests for value equality (except for booleans and procedures, where it
+tests for identity), and K{equal?} tests for whether the output strings are
+equal.
+
+H4 eq? procedure
+
+PR(
+eq?, eqv?, equal? (public);expr1 expr expr2 expr -> bool
+PR)
+
+CB(
+reg eq?
+
+proc ::constcl::eq? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq char? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq null? $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq pair? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq string? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq vector? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+B{teq} procedure
+
+K{teq} tests for type equality, i.e. that the expressions have the same type.
+
+PR(
+teq (internal);typep proc expr1 expr expr2 expr -> tbool
+PR)
+
+IX teq procedure
+CB(
+proc ::constcl::teq {typep expr1 expr2} {
+    return [expr {[T [$typep $expr1]] &&
+      [T [$typep $expr2]]}]
+}
+CB)
+
+B{veq} procedure
+
+K{veq} tests for value equality, i.e. that the expressions have the same value.
+
+PR(
+veq (internal);expr1 expr expr2 expr -> tbool
+PR)
+
+IX veq procedure
+CB(
+proc ::constcl::veq {expr1 expr2} {
+    return [expr {[$expr1 value] eq [$expr2 value]}]
+}
+CB)
+
+TT(
+::tcltest::test equipred-1.0 {try comparing a boolean and a symbol} -body {
+    pew "(eq? #t 'a)"
+} -output "#f\n"
+
+::tcltest::test equipred-1.1 {try comparing two booleans} -body {
+    pew "(eq? #t #t)"
+} -output "#t\n"
+TT)
+
+H4 eqv? procedure
+
+CB(
+reg eqv?
+
+proc ::constcl::eqv? {expr1 expr2} {
+  if {[teq boolean? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } elseif {[teq symbol? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq number? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq char? $expr1 $expr2] &&
+      [veq $expr1 eq $expr2]} {
+    return ${::#t}
+  } elseif {[teq null? $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[T [pair? $expr1]] &&
+      [T [pair? $expr2]] &&
+      [$expr1 car] eq [$expr2 car] &&
+      [$expr1 cdr] eq [$expr2 cdr]} {
+    return ${::#t}
+  } elseif {[teq string? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq vector? $expr1 $expr2] &&
+      [veq $expr1 $expr2]} {
+    return ${::#t}
+  } elseif {[teq procedure? $expr1 $expr2] &&
+      $expr1 eq $expr2} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+H4 equal? procedure
+
+CB(
+reg equal?
+
+proc ::constcl::equal? {expr1 expr2} {
+  if {[$expr1 tstr] eq [$expr2 tstr]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
