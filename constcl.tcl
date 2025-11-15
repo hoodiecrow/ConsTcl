@@ -672,7 +672,7 @@ proc ::constcl::lookup {sym env} {
   if {$type eq "VARIABLE"} {
     return $value
   } else {
-    error "not a variable name" $sym
+    error "not a variable name: " $sym
   }
 }
 proc ::constcl::self-evaluating? {val} {

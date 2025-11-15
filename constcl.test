@@ -1157,6 +1157,9 @@ if no {
 
 ::tcltest::test boolean-2.2 {evaluate boolean values} -body {
         pew "(boolean? '())"
+
+::tcltest::test boolean-2.3 {evaluate boolean values} -body {
+        pew "(boolean? nil)"
 } -output "#f\n"
 
 
