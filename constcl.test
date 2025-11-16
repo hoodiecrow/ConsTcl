@@ -352,7 +352,14 @@ source constcl.tcl
 } -output "1\n1\n1\n1\n"
 
 
-# 4
+::tcltest::test input-4.0 {try interspace?} -body {
+  puta [::constcl::interspace? " "]
+  puta [::constcl::interspace? "\n"]
+  puta [::constcl::interspace? "\t"]
+  puta [::constcl::interspace? "a"]
+  puta [::constcl::interspace? "b"]
+  puta [::constcl::interspace? "c"]
+} -output "#t\n#t\n#t\n#f\n#f\n#f\n"
 
 ::tcltest::test input-5.0 {try delimiter?} -setup {
 } -body {
@@ -363,7 +370,22 @@ source constcl.tcl
 #"
 
 
-# 6
+::tcltest::test input-6.0 {try valid-char?} -body {
+  ::constcl::valid-char? "A"
+} -return {#t}
+
+::tcltest::test input-6.1 {try valid-char?} -body {
+  ::constcl::valid-char? "a"
+} -return {#t}
+
+::tcltest::test input-6.2 {try valid-char?} -body {
+  ::constcl::valid-char? "="
+} -return {#t}
+
+::tcltest::test input-6.3 {try valid-char?} -body {
+  ::constcl::valid-char? "a"
+} -return {#t}
+
 
 # 7
 
@@ -1157,6 +1179,7 @@ if no {
 
 ::tcltest::test boolean-2.2 {evaluate boolean values} -body {
         pew "(boolean? '())"
+} -output "#f\n"
 
 ::tcltest::test boolean-2.3 {evaluate boolean values} -body {
         pew "(boolean? nil)"
