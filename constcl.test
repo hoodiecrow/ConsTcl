@@ -353,12 +353,12 @@ source constcl.tcl
 
 
 ::tcltest::test input-4.0 {try interspace?} -body {
-  puta [::constcl::interspace? " "]
-  puta [::constcl::interspace? "\n"]
-  puta [::constcl::interspace? "\t"]
-  puta [::constcl::interspace? "a"]
-  puta [::constcl::interspace? "b"]
-  puta [::constcl::interspace? "c"]
+  puts [::constcl::interspace? " "]
+  puts [::constcl::interspace? "\n"]
+  puts [::constcl::interspace? "\t"]
+  puts [::constcl::interspace? "a"]
+  puts [::constcl::interspace? "b"]
+  puts [::constcl::interspace? "c"]
 } -output "#t\n#t\n#t\n#f\n#f\n#f\n"
 
 ::tcltest::test input-5.0 {try delimiter?} -setup {
@@ -372,19 +372,27 @@ source constcl.tcl
 
 ::tcltest::test input-6.0 {try valid-char?} -body {
   ::constcl::valid-char? "A"
-} -return {#t}
+} -result {#t}
 
 ::tcltest::test input-6.1 {try valid-char?} -body {
   ::constcl::valid-char? "a"
-} -return {#t}
+} -result {#t}
 
 ::tcltest::test input-6.2 {try valid-char?} -body {
   ::constcl::valid-char? "="
-} -return {#t}
+} -result {#t}
 
 ::tcltest::test input-6.3 {try valid-char?} -body {
-  ::constcl::valid-char? "a"
-} -return {#t}
+  ::constcl::valid-char? "#\\space"
+} -result {#t}
+
+::tcltest::test input-6.4 {try valid-char?} -body {
+  ::constcl::valid-char? "#\\newline"
+} -result {#t}
+
+::tcltest::test input-6.5 {try valid-char?} -body {
+  ::constcl::valid-char? " "
+} -result {#f}
 
 
 # 7
