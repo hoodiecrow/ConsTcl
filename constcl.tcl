@@ -2854,8 +2854,9 @@ interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
-  variable buffer read_eof
+  variable buffer read_eof handle
   constructor {str} {
+    set handle {}
     set buffer $str
     set read_eof 0
   }

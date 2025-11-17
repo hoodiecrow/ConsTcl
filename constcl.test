@@ -353,12 +353,12 @@ source constcl.tcl
 
 
 ::tcltest::test input-4.0 {try interspace?} -body {
-  puts [::constcl::interspace? " "]
-  puts [::constcl::interspace? "\n"]
-  puts [::constcl::interspace? "\t"]
-  puts [::constcl::interspace? "a"]
-  puts [::constcl::interspace? "b"]
-  puts [::constcl::interspace? "c"]
+  w [::constcl::interspace? " "]
+  w [::constcl::interspace? "\n"]
+  w [::constcl::interspace? "\t"]
+  w [::constcl::interspace? "a"]
+  w [::constcl::interspace? "b"]
+  w [::constcl::interspace? "c"]
 } -output "#t\n#t\n#t\n#f\n#f\n#f\n"
 
 ::tcltest::test input-5.0 {try delimiter?} -setup {
@@ -371,33 +371,45 @@ source constcl.tcl
 
 
 ::tcltest::test input-6.0 {try valid-char?} -body {
-  ::constcl::valid-char? "A"
-} -result {#t}
+  w [::constcl::valid-char? "#\\A"]
+} -output "#t\n"
 
 ::tcltest::test input-6.1 {try valid-char?} -body {
-  ::constcl::valid-char? "a"
-} -result {#t}
+  w [::constcl::valid-char? "#\\a"]
+} -output "#t\n"
 
 ::tcltest::test input-6.2 {try valid-char?} -body {
-  ::constcl::valid-char? "="
-} -result {#t}
+  w [::constcl::valid-char? "#\\="]
+} -output "#t\n"
 
 ::tcltest::test input-6.3 {try valid-char?} -body {
-  ::constcl::valid-char? "#\\space"
-} -result {#t}
+  w [::constcl::valid-char? "#\\space"]
+} -output "#t\n"
 
 ::tcltest::test input-6.4 {try valid-char?} -body {
-  ::constcl::valid-char? "#\\newline"
-} -result {#t}
+  w [::constcl::valid-char? "#\\newline"]
+} -output "#t\n"
 
 ::tcltest::test input-6.5 {try valid-char?} -body {
-  ::constcl::valid-char? " "
-} -result {#f}
+  w [::constcl::valid-char? " "]
+} -output "#f\n"
 
 
 # 7
 
-# 8
+::tcltest::test input-8.0 {try valid-char?} -setup {
+  set newport [::constcl::StringInputPort new "   A"]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $newport
+
+} -body {
+  w [::constcl::find-char? "#\\A"]
+} -cleanup {
+  set ::constcl::Input_port $oldport
+  ::constcl::close-input-port $newport
+  $newport destroy
+} -output "#t\n"
+
 
 # 9
 
