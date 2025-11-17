@@ -420,7 +420,7 @@ source constcl.tcl
   set oldport $::constcl::Input_port
   set ::constcl::Input_port $newport
   proc ::w' {cmd} {
-    set c {}
+    set c { }
     set unget {}
     set val [eval $cmd]
     ::constcl::display $val
