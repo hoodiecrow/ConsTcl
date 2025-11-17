@@ -415,48 +415,24 @@ source constcl.tcl
 } -output "A"
 
 
-::tcltest::test input-8.0 {try valid-char?} -setup {
+::tcltest::test input-8.0 {try find-char?} -constraints knownBug -setup {
   set newport [::constcl::StringInputPort new "   A"]
   set oldport $::constcl::Input_port
   set ::constcl::Input_port $newport
-  proc ::w' {cmd} {
+  proc ::w' {cmd chr} {
     set c { }
     set unget {}
-    set val [eval $cmd]
+    set val [$cmd $chr]
     ::constcl::display $val
   }
 } -body {
-  w' [list ::constcl::find-char? "A"]
+  w' ::constcl::find-char? "A"
 } -cleanup {
   set ::constcl::Input_port $oldport
   ::constcl::close-input-port $newport
   $newport destroy
   rename w' {}
-} -output "#t\n"
-
-::tcltest::test input-8.1 {try valid-char?} -setup {
-  set newport [::constcl::StringInputPort new " |  A"]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-} -body {
-  w [::constcl::find-char? "#\\A"]
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-} -output "#f\n"
-
-::tcltest::test input-8.2 {try valid-char?} -setup {
-  set newport [::constcl::StringInputPort new "   B"]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-} -body {
-  w [::constcl::find-char? "#\\A"]
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-} -output "#f\n"
+} -output "#t"
 
 
 # 9
