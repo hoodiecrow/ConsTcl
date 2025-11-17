@@ -395,20 +395,68 @@ source constcl.tcl
 } -output "#f\n"
 
 
-# 7
+::tcltest::test input-7.0 {try readchar} -setup {
+  set newport [::constcl::StringInputPort new "ABC"]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $newport
+  proc ::w' {cmd} {
+    set c {}
+    set unget {}
+    set val [::constcl::MkChar "#\\[$cmd]"]
+    ::constcl::display $val
+  }
+} -body {
+  w' ::constcl::readchar
+} -cleanup {
+  set ::constcl::Input_port $oldport
+  ::constcl::close-input-port $newport
+  $newport destroy
+  rename w' {}
+} -output "A"
+
 
 ::tcltest::test input-8.0 {try valid-char?} -setup {
   set newport [::constcl::StringInputPort new "   A"]
   set oldport $::constcl::Input_port
   set ::constcl::Input_port $newport
+  proc ::w' {cmd} {
+    set c {}
+    set unget {}
+    set val [eval $cmd]
+    ::constcl::display $val
+  }
+} -body {
+  w' [list ::constcl::find-char? "A"]
+} -cleanup {
+  set ::constcl::Input_port $oldport
+  ::constcl::close-input-port $newport
+  $newport destroy
+  rename w' {}
+} -output "#t\n"
 
+::tcltest::test input-8.1 {try valid-char?} -setup {
+  set newport [::constcl::StringInputPort new " |  A"]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $newport
 } -body {
   w [::constcl::find-char? "#\\A"]
 } -cleanup {
   set ::constcl::Input_port $oldport
   ::constcl::close-input-port $newport
   $newport destroy
-} -output "#t\n"
+} -output "#f\n"
+
+::tcltest::test input-8.2 {try valid-char?} -setup {
+  set newport [::constcl::StringInputPort new "   B"]
+  set oldport $::constcl::Input_port
+  set ::constcl::Input_port $newport
+} -body {
+  w [::constcl::find-char? "#\\A"]
+} -cleanup {
+  set ::constcl::Input_port $oldport
+  ::constcl::close-input-port $newport
+  $newport destroy
+} -output "#f\n"
 
 
 # 9
