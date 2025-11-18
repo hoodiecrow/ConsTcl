@@ -1,4 +1,6 @@
 Errata for the printed book
 
 page	issue
+214   the string handle needs to be added to line 2857: "variable buffer read_eof handle"
+214   before line 2859, insert "set handle {}"
 
