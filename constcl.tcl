@@ -617,13 +617,17 @@ proc ::constcl::readchar {} {
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
   # start with stored c
-  while {[::string is space -strict $c]} {
-    # this order seems strange but works
-    set c [readchar]
+  while {![$::constcl::Input_port eof] && [
+    ::string is space -strict $c]} {
+    set c [::constcl::readchar]
     read-eof $c
-    set unget $c
   }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
+  if {$c eq $char} {
+    return ${::#t}
+  }  else {
+    set unget $c
+    return ${::#f}
+  }
 }
 proc ::constcl::read-end? {} {
   upvar c c unget unget
@@ -2854,8 +2858,9 @@ interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
 oo::class create ::constcl::StringInputPort {
   superclass ::constcl::Port
-  variable buffer read_eof
+  variable buffer read_eof handle
   constructor {str} {
+    set handle {}
     set buffer $str
     set read_eof 0
   }
