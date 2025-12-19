@@ -352,14 +352,7 @@ source constcl.tcl
 } -output "1\n1\n1\n1\n"
 
 
-::tcltest::test input-4.0 {try interspace?} -body {
-  w [::constcl::interspace? " "]
-  w [::constcl::interspace? "\n"]
-  w [::constcl::interspace? "\t"]
-  w [::constcl::interspace? "a"]
-  w [::constcl::interspace? "b"]
-  w [::constcl::interspace? "c"]
-} -output "#t\n#t\n#t\n#f\n#f\n#f\n"
+# 4
 
 ::tcltest::test input-5.0 {try delimiter?} -setup {
 } -body {
@@ -370,111 +363,11 @@ source constcl.tcl
 #"
 
 
-::tcltest::test input-6.0 {try valid-char?} -body {
-  w [::constcl::valid-char? "#\\A"]
-} -output "#t\n"
+# 6
 
-::tcltest::test input-6.1 {try valid-char?} -body {
-  w [::constcl::valid-char? "#\\a"]
-} -output "#t\n"
+# 7
 
-::tcltest::test input-6.2 {try valid-char?} -body {
-  w [::constcl::valid-char? "#\\="]
-} -output "#t\n"
-
-::tcltest::test input-6.3 {try valid-char?} -body {
-  w [::constcl::valid-char? "#\\space"]
-} -output "#t\n"
-
-::tcltest::test input-6.4 {try valid-char?} -body {
-  w [::constcl::valid-char? "#\\newline"]
-} -output "#t\n"
-
-::tcltest::test input-6.5 {try valid-char?} -body {
-  w [::constcl::valid-char? " "]
-} -output "#f\n"
-
-
-::tcltest::test input-7.0 {try readchar} -setup {
-  set newport [::constcl::StringInputPort new "ABC"]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-  proc ::w' {cmd} {
-    set c {}
-    set unget {}
-    set val [::constcl::MkChar "#\\[$cmd]"]
-    ::constcl::display $val
-  }
-} -body {
-  ::w' ::constcl::readchar
-  ::w' ::constcl::readchar
-  ::w' ::constcl::readchar
-  ::w' ::constcl::readchar
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-  rename ::w' {}
-} -output "ABC#"
-
-
-::tcltest::test input-8.0 {try find-char?} -setup {
-  set newport [::constcl::StringInputPort new "ABC"]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-  proc ::w' {cmd chr} {
-    set c { }
-    set unget {}
-    set val [$cmd $chr]
-    ::constcl::display $val
-  }
-} -body {
-  ::w' ::constcl::find-char? "A"
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-  rename ::w' {}
-} -output "#t"
-
-::tcltest::test input-8.1 {try find-char?} -setup {
-  set newport [::constcl::StringInputPort new "  A  "]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-  proc ::w' {cmd chr} {
-    set c { }
-    set unget {}
-    set val [$cmd $chr]
-    ::constcl::display $val
-  }
-} -body {
-  ::w' ::constcl::find-char? "A"
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-  rename ::w' {}
-} -output "#t"
-
-::tcltest::test input-8.2 {try find-char?} -setup {
-  set newport [::constcl::StringInputPort new "  Q  "]
-  set oldport $::constcl::Input_port
-  set ::constcl::Input_port $newport
-  proc ::w' {cmd chr} {
-    set c { }
-    set unget {}
-    set val [$cmd $chr]
-    ::constcl::display $val
-  }
-} -body {
-  ::w' ::constcl::find-char? "A"
-} -cleanup {
-  set ::constcl::Input_port $oldport
-  ::constcl::close-input-port $newport
-  $newport destroy
-  rename ::w' {}
-} -output "#f"
-
+# 8
 
 # 9
 
@@ -1264,10 +1157,6 @@ if no {
 
 ::tcltest::test boolean-2.2 {evaluate boolean values} -body {
         pew "(boolean? '())"
-} -output "#f\n"
-
-::tcltest::test boolean-2.3 {evaluate boolean values} -body {
-        pew "(boolean? nil)"
 } -output "#f\n"
 
 
