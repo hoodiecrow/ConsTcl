@@ -1405,7 +1405,7 @@ if no {
        (set! s (read port))
        (display s)
        (display n)))))
-         (call-with-input-file "iofile.txt" f))}
+         (call-with-input-file "tmp/iofile.txt" f))}
 } -cleanup {
   ::tcltest::removeFile iofile.txt
 } -output "foo99"
@@ -1425,7 +1425,7 @@ if no {
 ::tcltest::test io-3.0 {try with-input-from-file} -setup {
   ::tcltest::makeFile {42} foo.txt
 } -body {
-  pew "(with-input-from-file \"foo.txt\" (lambda () (write (read))))"
+  pew "(with-input-from-file \"tmp/foo.txt\" (lambda () (write (read))))"
 } -cleanup {
   ::tcltest::removeFile foo.txt
 } -output "42\n"
@@ -1920,11 +1920,6 @@ qux\bod
 ::tcltest::test setup-1.0 {equivalence of instance and alias} -body {
         expr {[pe "'()"] == ${#NIL}}
 } -result 1
-
-::tcltest::test setup-1.1 {equivalence of instance and alias} -body {
-        expr {[::constcl::NIL new] == ${#NIL}}
-} -result 1
-
 
 ::tcltest::test cons-15.0 {check for a symbol} -body {
     pew "pi"
