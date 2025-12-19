@@ -208,7 +208,15 @@ proc ::pxw {str {env ::constcl::global_env}} {
 }
 catch { ::constcl::Base destroy }
 
-oo::abstract create ::constcl::Base {
+if {$tcl_version eq "8.6"} {
+    set abstractClass oo::class
+} elseif {$tcl_version eq "9.0"} {
+    set abstractClass oo::abstract
+} else {
+    set abstractClass oo::class
+}
+
+$abstractClass create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my tstr]
@@ -243,12 +251,22 @@ oo::class create ::constcl::Dot {
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-oo::singleton create ::constcl::EndOfFile {
+
+if {$tcl_version eq "8.6"} {
+    set singletonClass oo::class
+} elseif {$tcl_version eq "9.0"} {
+    set singletonClass oo::singleton
+} else {
+    set singletonClass oo::class
+}
+
+$singletonClass create ::constcl::EndOfFile {
   superclass ::constcl::Base
   method tstr {} {
     format "#<end-of-file>"
   }
 }
+
 proc eof? {val} {
   if {$val eq ${::#EOF}} {
     return ${::#t}
@@ -256,7 +274,7 @@ proc eof? {val} {
     return ${::#f}
   }
 }
-oo::singleton create ::constcl::NIL {
+$singletonClass create ::constcl::NIL {
   superclass ::constcl::Base
   method tstr {} {
     return "()"
@@ -271,13 +289,13 @@ proc ::constcl::null? {val} {
     return ${::#f}
   }
 }
-oo::singleton create ::constcl::Undefined {
+$singletonClass create ::constcl::Undefined {
   superclass ::constcl::Base
   method tstr {} {
     format "#<undefined>"
   }
 }
-oo::singleton create ::constcl::Unspecified {
+$singletonClass create ::constcl::Unspecified {
   superclass ::constcl::Base
   method tstr {} {
     format "#<unspecified>"
@@ -2334,13 +2352,13 @@ proc frombase {base number} {
   if $negative {set res -$res}
   set res
 }
-oo::singleton create ::constcl::True {
+$singletonClass create ::constcl::True {
   superclass ::constcl::Base
   method tstr {} {
     return "#t"
   }
 }
-oo::singleton create ::constcl::False {
+$singletonClass create ::constcl::False {
   superclass ::constcl::Base
   method tstr {} {
     return "#f"
@@ -2806,7 +2824,7 @@ proc ::constcl::for-each {proc args} {
   }
   return ${::#NIL}
 }
-oo::abstract create ::constcl::Port {
+$abstractClass create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
   constructor {args} {
@@ -2829,12 +2847,23 @@ oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
   method open {name} {
+    set handle ${::#NIL}
     try {
-      set handle [open [$name value] "r"]
-    } on error {} {
-      set handle ${::#NIL}
+        $name value
+    } on ok {filename} {
+        try {
+            open $filename "r"
+        } on ok f {
+            set handle $f
+            return $handle
+        } on error msg {
+            error $msg
+        } finally {
+        }
+    } on error msg {
+        error $msg
+    } finally {
     }
-    return $handle
   }
   method get {} {
     chan read $handle 1
@@ -3040,11 +3069,18 @@ proc fae {} {return "file already exists"}
 
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
-  $p open $filename
-  if {[$p handle] eq ${::#NIL}} {
-    set fn [$filename value]
-    error "open-input-file: [cnof] $fn"
+  try {
+      $p open $filename
+  } on ok {} {
+      if {[$p handle] eq ${::#NIL}} {
+          set fn [$filename value]
+          error "open-input-file: [cnof] $fn"
+      }
+  } on error {msg} {
+      error $msg
+  } finally {
   }
+
   return $p
 }
 reg open-output-file
@@ -4090,17 +4126,34 @@ set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 interp recursionlimit {} 2000
+
+proc singleton {objclass objname} {
+    # a fake singleton, but it will do
+    set obj [uplevel #0 [list oo::object create $objname]]
+    oo::objdefine $obj class ::constcl::$objclass
+    oo::objdefine $obj {
+        unexport destroy
+    }
+    uplevel #0 [list set $objname $obj]
+    return $obj
+}
+
+singleton NIL #NIL
+singleton True #t
+singleton False #f
+singleton Unspecified #UNS
+singleton Undefined #UND
+singleton EndOfFile #EOF
+
+if 0 {
 set #NIL [::constcl::NIL new]
-
 set #t [::constcl::True new]
-
 set #f [::constcl::False new]
-
 set #UNS [::constcl::Unspecified new]
-
 set #UND [::constcl::Undefined new]
-
 set #EOF [::constcl::EndOfFile new]
+}
+
 regvar pi [N 3.1415926535897931]
 regvar nil ${::#NIL}
 ::constcl::Environment create \
