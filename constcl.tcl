@@ -234,6 +234,7 @@ oo::abstract create ::constcl::Base {
     }
   }
 }
+
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
   method tstr {} {
@@ -243,7 +244,7 @@ oo::class create ::constcl::Dot {
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-oo::singleton create ::constcl::EndOfFile {
+oo::class create ::constcl::EndOfFile {
   superclass ::constcl::Base
   method tstr {} {
     format "#<end-of-file>"
@@ -256,7 +257,7 @@ proc eof? {val} {
     return ${::#f}
   }
 }
-oo::singleton create ::constcl::NIL {
+oo::class create ::constcl::NIL {
   superclass ::constcl::Base
   method tstr {} {
     return "()"
@@ -271,13 +272,13 @@ proc ::constcl::null? {val} {
     return ${::#f}
   }
 }
-oo::singleton create ::constcl::Undefined {
+oo::class create ::constcl::Undefined {
   superclass ::constcl::Base
   method tstr {} {
     format "#<undefined>"
   }
 }
-oo::singleton create ::constcl::Unspecified {
+oo::class create ::constcl::Unspecified {
   superclass ::constcl::Base
   method tstr {} {
     format "#<unspecified>"
@@ -2334,13 +2335,13 @@ proc frombase {base number} {
   if $negative {set res -$res}
   set res
 }
-oo::singleton create ::constcl::True {
+oo::class create ::constcl::True {
   superclass ::constcl::Base
   method tstr {} {
     return "#t"
   }
 }
-oo::singleton create ::constcl::False {
+oo::class create ::constcl::False {
   superclass ::constcl::Base
   method tstr {} {
     return "#f"
@@ -4090,17 +4091,7 @@ set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 interp recursionlimit {} 2000
-set #NIL [::constcl::NIL new]
 
-set #t [::constcl::True new]
-
-set #f [::constcl::False new]
-
-set #UNS [::constcl::Unspecified new]
-
-set #UND [::constcl::Undefined new]
-
-set #EOF [::constcl::EndOfFile new]
 regvar pi [N 3.1415926535897931]
 regvar nil ${::#NIL}
 ::constcl::Environment create \
