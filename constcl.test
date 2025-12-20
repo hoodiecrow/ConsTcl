@@ -24,7 +24,7 @@ source constcl.tcl
 
 ::tcltest::test input-2.0 {try read} -setup {
   ::tcltest::makeFile {99 foo} input.txt
-  set p [pe "(open-input-file \"input.txt\")"]
+  set p [pe "(open-input-file \"tmp/input.txt\")"]
 } -body {
   ::constcl::display [::constcl::read $p]
   ::constcl::display [::constcl::read $p]
@@ -36,7 +36,7 @@ source constcl.tcl
 
 ::tcltest::test read-12.0 {try read-expr on dot expr} -setup {
     ::tcltest::makeFile {  a . b } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -49,7 +49,7 @@ source constcl.tcl
 ::tcltest::test read-12.1 {try read-expr} -setup {
     ::tcltest::makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
       [a b] `foo 93 foo} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
   set x [r $p]
   while {$x ne "#EOF"} {
@@ -77,7 +77,7 @@ source constcl.tcl
 
 ::tcltest::test read-13.4 {try read-expr on characters} -setup {
     ::tcltest::makeFile {  #\A  #\space} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -100,7 +100,7 @@ source constcl.tcl
 
 ::tcltest::test read-14.2 {try read-expr on identifiers} -setup {
     ::tcltest::makeFile {  foo    bar } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -132,7 +132,7 @@ source constcl.tcl
 
 ::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
     ::tcltest::makeFile {  99 } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -172,7 +172,7 @@ source constcl.tcl
 
 ::tcltest::test read-16.7 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -182,7 +182,7 @@ source constcl.tcl
 
 ::tcltest::test read-16.8 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  ([d e] f)} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -192,7 +192,7 @@ source constcl.tcl
 
 ::tcltest::test read-16.9 {try read-expr on pair expr} -setup {
     ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -203,7 +203,7 @@ source constcl.tcl
 
 ::tcltest::test read-17.2 {try read-expr on plus/minus} -setup {
     ::tcltest::makeFile {  +  -  -99} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -216,7 +216,7 @@ source constcl.tcl
 
 ::tcltest::test read-18.0 {try read-expr on booleans} -setup {
     ::tcltest::makeFile {  #t  #f} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -233,7 +233,7 @@ source constcl.tcl
 
 ::tcltest::test read-19.1 {try read-expr on quasiquoted expr} -setup {
     ::tcltest::makeFile {  `(a b) } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -254,7 +254,7 @@ source constcl.tcl
 
 ::tcltest::test read-20.2 {try read-expr on quoted expr} -setup {
     ::tcltest::makeFile {  'foo } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -281,7 +281,7 @@ source constcl.tcl
 
 ::tcltest::test read-21.3 {try read-expr on a string} -setup {
     ::tcltest::makeFile {"foo bar"  } testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -291,7 +291,7 @@ source constcl.tcl
 
 ::tcltest::test read-21.4 {try read-expr on a string/eof} -setup {
     ::tcltest::makeFile {"foo } testrr.lsp ; #"
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
 } -cleanup {
@@ -307,7 +307,7 @@ source constcl.tcl
 
 ::tcltest::test read-22.2 {try read-expr on unquoted expr} -setup {
     ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
@@ -328,7 +328,7 @@ source constcl.tcl
 
 ::tcltest::test read-23.2 {try read-expr on a couple of vectors} -setup {
     ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
-    set p [pe {(open-input-file "testrr.lsp")}]
+    set p [pe {(open-input-file "tmp/testrr.lsp")}]
 } -body {
     rw $p
     rw $p
