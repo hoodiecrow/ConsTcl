@@ -1692,7 +1692,7 @@ oo::class create ::constcl::Environment {
         ::error "[$sym name] is already bound"
       }
     }
-    dict set bindings $sym [::list $type $info]
+    dict set bindings $sym [list $type $info]
     return
   }
   method assign {sym type info} {
@@ -1707,7 +1707,7 @@ oo::class create ::constcl::Environment {
     ::if {$bt ne "VARIABLE"} {
       ::error "[$sym name] is not assignable"
     }
-    dict set bindings $sym [::list $type $info]
+    dict set bindings $sym [list $type $info]
     return
   }
   method parent {} {
@@ -2739,7 +2739,7 @@ oo::class create ::constcl::Procedure {
   }
 }
 oo::define ::constcl::Procedure method call {args} {
-  set vals [lmap a $args {list VARIABLE $a}]
+  set vals [lmap a $args {::list VARIABLE $a}]
   ::constcl::eval $body [
     ::constcl::MkEnv $parms $vals $env]
 }
@@ -4129,12 +4129,12 @@ interp recursionlimit {} 2000
 
 proc singleton {objclass objname} {
     # a fake singleton, but it will do
-    set obj [uplevel #0 [list oo::object create $objname]]
+    set obj [uplevel #0 [::list oo::object create $objname]]
     oo::objdefine $obj class ::constcl::$objclass
     oo::objdefine $obj {
         unexport destroy
     }
-    uplevel #0 [list set $objname $obj]
+    uplevel #0 [::list set $objname $obj]
     return $obj
 }
 
@@ -4144,15 +4144,6 @@ singleton False #f
 singleton Unspecified #UNS
 singleton Undefined #UND
 singleton EndOfFile #EOF
-
-::if 0 {
-set #NIL [::constcl::NIL new]
-set #t [::constcl::True new]
-set #f [::constcl::False new]
-set #UNS [::constcl::Unspecified new]
-set #UND [::constcl::Undefined new]
-set #EOF [::constcl::EndOfFile new]
-}
 
 regvar pi [N 3.1415926535897931]
 regvar nil ${::#NIL}
