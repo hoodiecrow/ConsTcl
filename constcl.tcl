@@ -8,7 +8,7 @@ proc reg {args} {
     lassign $args name
     set btype {}
   } else {
-    error "wrong number of parameters\n([pn])"
+    ::error "wrong number of parameters\n([pn])"
   }
   if {![info exists ::constcl::defreg]} {
     set ::constcl::defreg [dict create]
@@ -58,7 +58,7 @@ proc ::T {val} {
 }
 proc assert {expr} {
   if {![uplevel [list expr $expr]]} {
-    error "Failed assertion [
+    ::error "Failed assertion [
       uplevel [list subst $expr]]"
   }
 }
@@ -536,7 +536,7 @@ proc ::constcl::read-string-expr {} {
     set c [readchar]
   }
   if {$c eq "#EOF"} {
-    error "bad string (no ending double quote)"
+    ::error "bad string (no ending double quote)"
   }
   set c [readchar]
   set expr [MkString $str]
@@ -842,7 +842,7 @@ proc ::constcl::rewrite-define {expr env} {
 }
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
-  # will throw an error if $sym is bound
+  # will throw an error if $sym is already bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -1009,7 +1009,7 @@ proc ::constcl::eval \
   } elseif {[T [pair? $expr]]} {
     eval-form $expr $env
   } else {
-    error "unknown expression type [$expr tstr]"
+    ::error "unknown expression type [$expr tstr]"
   }
 }
 proc ::constcl::eval-form {expr env} {
@@ -1614,14 +1614,14 @@ oo::class create ::constcl::Environment {
     set bindings [dict create]
     if {[T [::constcl::null? $syms]]} {
       if {[llength $vals]} {
-        error "too many arguments"
+        ::error "too many arguments"
       }
     } elseif {[T [::constcl::list? $syms]]} {
       set syms [::constcl::splitlist $syms]
       set symsn [llength $syms]
       set valsn [llength $vals]
       if {$symsn != $valsn} {
-        error [
+        ::error [
           ::append --> "wrong # of arguments, " \
             "$valsn instead of $symsn"]
       }
@@ -1636,7 +1636,7 @@ oo::class create ::constcl::Environment {
     } else {
       while true {
         if {[llength $vals] < 1} {
-          error "too few arguments"
+          ::error "too few arguments"
         }
         my bind [::constcl::car $syms] \
           [lindex $vals 0 0] [lindex $vals 0 1]
@@ -1689,7 +1689,7 @@ oo::class create ::constcl::Environment {
       set bi [my get $sym]
       lassign $bi bt in
       if {$bt in {SPECIAL VARIABLE SYNTAX}} {
-        error "[$sym name] is already bound"
+        ::error "[$sym name] is already bound"
       }
     }
     dict set bindings $sym [::list $type $info]
@@ -1700,12 +1700,12 @@ oo::class create ::constcl::Environment {
       "SYMBOL expected\nEnvironment assign"
     }
     if {![dict exists $bindings $sym]} {
-      error "[$sym name] is not bound"
+      ::error "[$sym name] is not bound"
     }
     set bi [my get $sym]
     lassign $bi bt in
     if {$bt ne "VARIABLE"} {
-      error "[$sym name] is not assignable"
+      ::error "[$sym name] is not assignable"
     }
     dict set bindings $sym [::list $type $info]
     return
@@ -1732,7 +1732,7 @@ proc ::constcl::MkEnv {args} {
   } elseif {[llength $args] == 3} {
     lassign $args parms vals env
   } else {
-    error "wrong number of arguments"
+    ::error "wrong number of arguments"
   }
   Environment new $parms $vals $env
 }
@@ -2857,11 +2857,11 @@ oo::class create ::constcl::InputPort {
             set handle $f
             return $handle
         } on error msg {
-            error $msg
+            ::error $msg
         } finally {
         }
     } on error msg {
-        error $msg
+        ::error $msg
     } finally {
     }
   }
@@ -2957,11 +2957,11 @@ oo::class create ::constcl::StringOutputPort {
   method open {name} {}
   method close {} {}
   method put {str} {
-    append buffer $str
+    ::append buffer $str
     return
   }
   method newline {} {
-    append buffer \n
+    ::append buffer \n
   }
   method flush {} {}
   method tostring {} {
@@ -3074,10 +3074,10 @@ proc ::constcl::open-input-file {filename} {
   } on ok {} {
       if {[$p handle] eq ${::#NIL}} {
           set fn [$filename value]
-          error "open-input-file: [cnof] $fn"
+          ::error "open-input-file: [cnof] $fn"
       }
   } on error {msg} {
-      error $msg
+      ::error $msg
   } finally {
   }
 
@@ -3087,12 +3087,12 @@ reg open-output-file
 
 proc ::constcl::open-output-file {filename} {
   if {[file exists $filename]} {
-    error "open-output-file: [fae] $filename"
+    ::error "open-output-file: [fae] $filename"
   }
   set p [MkOutputPort]
   $p open $filename
   if {[$p handle] eq ${::#NIL}} {
-    error "open-output-file: [cnof] $filename"
+    ::error "open-output-file: [cnof] $filename"
   }
   return $p
 }
@@ -3100,7 +3100,7 @@ reg close-input-port
 
 proc ::constcl::close-input-port {port} {
   if {[$port handle] eq "stdin"} {
-    error "don't close the standard input port"
+    ::error "don't close the standard input port"
   }
   $port close
 }
@@ -3108,7 +3108,7 @@ reg close-output-port
 
 proc ::constcl::close-output-port {port} {
   if {[$port handle] eq "stdout"} {
-    error "don't close the standard output port"
+    ::error "don't close the standard output port"
   }
   $port close
 }
@@ -4115,7 +4115,7 @@ set ::constcl::vectorAssign 0
 proc ::constcl::vsAlloc {num} {
   if {$::constcl::vectorSpaceSize -
     $::constcl::vectorAssign < $num} {
-    error "not enough vector space left"
+    ::error "not enough vector space left"
   }
   set va $::constcl::vectorAssign
   incr ::constcl::vectorAssign $num
