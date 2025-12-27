@@ -1,16 +1,24 @@
 namespace eval ::constcl {}
 unset -nocomplain ::constcl::defreg
 
+proc assert {str expr {body {}}} {
+  ::if {![uplevel [list expr $expr]]} {
+    ::if {$body ne {}} {
+      uplevel $body
+    } else {
+      ::error "Failed assertion: $str: $expr"
+    }
+  }
+}
 proc reg {args} {
+  assert "# of parameters = (1|2)" [expr {[llength $args] in {1 2}}]
   ::if {[llength $args] == 2} {
     lassign $args btype name
   } elseif {[llength $args] == 1} {
     lassign $args name
     set btype {}
-  } else {
-    ::error "wrong number of parameters\n([pn])"
   }
-  ::if {![info exists ::constcl::defreg]} {
+  assert "defreg exists" [expr {[info exists ::constcl::defreg]}] {
     set ::constcl::defreg [dict create]
   }
   switch $btype {
@@ -54,12 +62,6 @@ proc ::T {val} {
     return 0
   } else {
     return 1
-  }
-}
-proc assert {expr} {
-  ::if {![uplevel [list expr $expr]]} {
-      ::error "Failed assertion [
-      uplevel [list subst $expr]]"
   }
 }
 proc ::constcl::pairlis-tcl {a b} {
@@ -251,7 +253,6 @@ oo::class create ::constcl::Dot {
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-
 ::if {$tcl_version eq "8.6"} {
     set singletonClass oo::class
 } elseif {$tcl_version eq "9.0"} {
@@ -261,12 +262,10 @@ proc ::constcl::dot? {val} {
 }
 
 $singletonClass create ::constcl::EndOfFile {
-  superclass ::constcl::Base
-  method tstr {} {
+  method write {val {port {}}} {
     format "#<end-of-file>"
   }
 }
-
 proc eof? {val} {
   ::if {$val eq ${::#EOF}} {
     return ${::#t}
@@ -275,7 +274,6 @@ proc eof? {val} {
   }
 }
 $singletonClass create ::constcl::NIL {
-  superclass ::constcl::Base
   method tstr {} {
     return "()"
   }
@@ -290,14 +288,12 @@ proc ::constcl::null? {val} {
   }
 }
 $singletonClass create ::constcl::Undefined {
-  superclass ::constcl::Base
-  method tstr {} {
+  method write {val {port {}}} {
     format "#<undefined>"
   }
 }
 $singletonClass create ::constcl::Unspecified {
-  superclass ::constcl::Base
-  method tstr {} {
+  method write {val {port {}}} {
     format "#<unspecified>"
   }
 }
@@ -341,7 +337,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return #EOF }
+    {^$}          { return ${::#EOF} }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -380,7 +376,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    ::if {$c eq "#EOF" || [T [delimiter? $c]]} {
+    ::if {$c eq "${::#EOF}" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
@@ -390,7 +386,7 @@ proc ::constcl::read-identifier-expr {args} {
   ::if {[T [delimiter? $c]]} {
     set unget $c
   }
-  # idcheck throws error ::if invalid identifier
+  # idcheck throws error if invalid identifier
   idcheck $name
   return [S $name]
 }
@@ -403,7 +399,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readchar]
   }
   read-eof $c
-  while {![T [interspace? $c]] && $c ne "#EOF" &&
+  while {![T [interspace? $c]] && $c ne "${::#EOF}" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
@@ -526,7 +522,7 @@ proc ::constcl::read-string-expr {} {
   set str {}
   set c [readchar]
   read-eof $c
-  while {$c ne "\"" && $c ne "#EOF"} {
+  while {$c ne "\"" && $c ne "${::#EOF}"} {
     ::if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
@@ -535,7 +531,7 @@ proc ::constcl::read-string-expr {} {
     ::append str $c
     set c [readchar]
   }
-  ::if {$c eq "#EOF"} {
+  ::if {$c eq "${::#EOF}"} {
     ::error "bad string (no ending double quote)"
   }
   set c [readchar]
@@ -563,7 +559,7 @@ proc ::constcl::read-vector-expr {} {
   set res {}
   set last {}
   set c [readchar]
-  while {$c ne "#EOF" && $c ne ")"} {
+  while {$c ne "${::#EOF}" && $c ne ")"} {
     set e [read-expr $c]
     read-eof $e
     set elem [cons $e ${::#NIL}]
@@ -627,7 +623,7 @@ proc ::constcl::readchar {} {
   } else {
     set c [$::constcl::Input_port get]
     ::if {[$::constcl::Input_port eof]} {
-      return #EOF
+      return ${::#EOF}
     }
   }
   return $c
@@ -651,8 +647,8 @@ proc ::constcl::read-end? {} {
   } elseif {[T [delimiter? $c]]} {
     set unget $c
     return ${::#t}
-  } elseif {$c eq "#EOF"} {
-    return #EOF
+  } elseif {$c eq "${::#EOF}"} {
+    return ${::#EOF}
   } else {
     set unget $c
     return ${::#f}
@@ -666,7 +662,7 @@ proc ::constcl::skip-ws {} {
         set c [readchar]
       }
       {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
+        while {$c ne "\n" && $c ne "${::#EOF}"}  {
           set c [readchar]
         }
       }
@@ -680,8 +676,8 @@ proc ::constcl::skip-ws {} {
 proc ::constcl::read-eof {args} {
   set chars $args
   foreach char $chars {
-    ::if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
+    ::if {$char eq "${::#EOF}"} {
+      return -level 1 -code return ${::#EOF}
     }
   }
 }
@@ -842,7 +838,7 @@ proc ::constcl::rewrite-define {expr env} {
 }
 proc ::constcl::/define {sym val env} {
   varcheck [idcheck [$sym name]]
-  # will throw an error ::if $sym is already bound
+  # will throw an error if $sym is already bound
   $env bind $sym VARIABLE $val
   return
 }
@@ -1556,7 +1552,7 @@ proc ::constcl::write-pair {port pair} {
   set a [car $pair]
   set d [cdr $pair]
   # print car
-  $a write $port
+  $a write {} $port
   ::if {[T [pair? $d]]} {
     # cdr is a cons pair
     $port put " "
@@ -1600,7 +1596,7 @@ proc ::constcl::idcheck {sym} {
 proc ::constcl::varcheck {sym} {
   ::if {$sym in {
     else => define unquote unquote-splicing
-    quote lambda ::if set! begin cond and or
+    quote lambda if set! begin cond and or
     case let let* letrec do delay quasiquote
   }} {
     ::error "Variable name is reserved: $sym"
@@ -2355,19 +2351,19 @@ proc frombase {base number} {
 $singletonClass create ::constcl::True {
   superclass ::constcl::Base
   method tstr {} {
-    return "#t"
+    return "${::#t}"
   }
 }
 $singletonClass create ::constcl::False {
   superclass ::constcl::Base
   method tstr {} {
-    return "#f"
+    return "${::#f}"
   }
 }
 proc ::constcl::MkBoolean {bool} {
   switch $bool {
-    "#t" { return ${::#t} }
-    "#f" { return ${::#f} }
+    "#t" - ${::#t} { return ${::#t} }
+    "#f" - ${::#f} { return ${::#f} }
     default { ::error "invalid boolean ($bool)" }
   }
 }
@@ -2834,49 +2830,81 @@ $abstractClass create ::constcl::Port {
       set handle ${::#NIL}
     }
   }
-  method handle {} {
-    set handle
+  method query {keyword} {
+    switch $keyword {
+      handle {return $handle}
+      default {
+        return [next $keyword]
+      }
+    }
   }
-  method close {} {
-    close $handle
-    set handle ${::#NIL}
-    return
+  method config {keyword val} {
+    switch $keyword {
+      default {
+        return [next $keyword $val]
+      }
+    }
   }
 }
+
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
-  method open {name} {
-    set handle ${::#NIL}
-    try {
-        $name value
-    } on ok {filename} {
-        try {
-            open $filename "r"
-        } on ok f {
-            set handle $f
-            return $handle
-        } on error msg {
-            ::error $msg
-        } finally {
-        }
-    } on error msg {
-        ::error $msg
-    } finally {
-    }
+  constructor {h} {
+    set handle $h
   }
-  method get {} {
-    chan read $handle 1
-  }
-  method eof {} {
-    chan eof $handle
-  }
-  method copy {} {
-    ::constcl::InputPort new $handle
-  }
-  method tstr {} {
+  method write {val {port {}}} {
     regexp {(\d+)} [self] -> num
     return "#<input-port-$num>"
+  }
+  method display {val {port {}}} {
+    my write {}
+  }
+  method query {keyword} {
+    switch $keyword {
+      get {
+        assert "$handle stands for an open channel" [expr {$handle in [chan names]}]
+        chan read $handle 1
+      }
+      eof {
+        assert "$handle stands for an open channel" [expr {$handle in [chan names]}]
+        chan eof $handle
+      }
+      method copy {
+        ::constcl::InputPort new $handle
+      }
+      default {
+        return [next $keyword]
+      }
+    }
+  }
+  method config {keyword val} {
+    switch $keyword {
+      handle -
+      open {
+        try {
+          $val query string
+        } on ok filename {
+          try {
+            open $filename r
+          } on ok f {
+            set handle $f
+          } on error msg {
+            set handle ${::#NIL}
+            ::error $msg
+          }
+        } on error msg {
+          ::error $msg
+        }
+      }
+    }
+    close {
+      catch {close $handle}
+      set handle ${::#NIL}
+    }
+    default {
+      return [next $keyword $val]
+    }
   }
 }
 interp alias {} ::constcl::MkInputPort \
@@ -2893,7 +2921,7 @@ oo::class create ::constcl::StringInputPort {
   method get {} {
     ::if {[::string length $buffer] == 0} {
       set read_eof 1
-      return #EOF
+      return ${::#EOF}
     }
     set c [::string index $buffer 0]
     set buffer [::string range $buffer 1 end]
@@ -2915,12 +2943,29 @@ interp alias {} ::constcl::MkStringInputPort \
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
+  constructor {h} {
+    set handle $h
+  }
+  method write {val {port {}}} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
+  }
   method open {name} {
     ::error "remove this line to use"
+    set handle ${::#NIL}
     try {
-      set handle [open [$name value] "w"]
-    } on error {} {
-      set handle ${::#NIL}
+      $name value
+    } on ok filename {
+      try {
+        open $filename "w"
+      } on ok f {
+        set handle $f
+      } on error msg {
+        ::error $msg
+        set handle ${::#NIL}
+      }
+    } on error msg {
+      ::error $msg
     }
     return $handle
   }
@@ -2935,10 +2980,6 @@ oo::class create ::constcl::OutputPort {
   }
   method copy {} {
     ::constcl::OutputPort new $handle
-  }
-  method tstr {} {
-    regexp {(\d+)} [self] -> num
-    return "#<output-port-$num>"
   }
 }
 interp alias {} ::constcl::MkOutputPort \
@@ -3067,21 +3108,21 @@ reg open-input-file
 proc cnof {} {return "could not open file"}
 proc fae {} {return "file already exists"}
 
-proc ::constcl::open-input-file {filename} {
-  set p [MkInputPort]
+proc ::constcl::open-input-file {name} {
+  set port [InputPort new ${::#NIL}]
   try {
-      $p open $filename
-  } on ok {} {
-      ::if {[$p handle] eq ${::#NIL}} {
-          set fn [$filename value]
-          ::error "open-input-file: [cnof] $fn"
-      }
-  } on error {msg} {
+    assert "$name is a String" [string? $name]
+    $name value
+  } on ok filename {
+    try {
+      $port config open $filename
+    } on error msg {
       ::error $msg
-  } finally {
+    }
+  } on error msg {
+    ::error $msg
   }
-
-  return $p
+  return $port
 }
 reg open-output-file
 
@@ -3125,17 +3166,12 @@ proc ::constcl::newline {args} {
 reg load
 
 proc ::constcl::load {filename} {
-  try {
-    open-input-file $filename
-  } on ok port {
-  } on error {} {
-    return
-  }
-  ::if {[$port handle] ne ${::#NIL}} {
-    set expr [read $port]
-    while {$expr ne "#EOF"} {
+  set port [open-input-file [String new $filename]]
+  ::if {[$port query handle] ne ${::#NIL}} {
+    set expr [read [$port query handle]]
+    while {$expr ne "${::#EOF}"} {
       eval $expr
-      set expr [read $port]
+      set expr [read [$port query handle]]
     }
     close-input-port $port
   }
@@ -3456,7 +3492,7 @@ oo::class create ::constcl::String {
   superclass ::constcl::Base
   variable data constant
   constructor {val} {
-    set val [string map {\\\\ \\ \\\" \" \\n \n} $val]
+    set val [::string map {\\\\ \\ \\\" \" \\n \n} $val]
     set len [::string length $val]
     # allocate vector space for the string's
     # characters
@@ -3883,7 +3919,7 @@ oo::class create ::constcl::Symbol {
   method value {} {
     set name
   }
-  method = {symname} {
+  method = {sym} {
     ::if {$name eq [$sym name]} {
       return ${::#t}
     } else {
