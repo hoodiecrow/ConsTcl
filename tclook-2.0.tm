@@ -19,6 +19,7 @@ proc ::tclook::tclook args {
     } else {
         $view insert $key
     }
+    return $key
 }
 
 proc ::tclook::ResolveNamespace {ns args} {
@@ -98,7 +99,7 @@ oo::class create ::tclook::PrintView {
             main {
                 puts $key0
                 dict for {key1 items} $values {
-                    puts "  [string totitle $key1]"
+                    puts "  [string tolower $key1]"
                     foreach item $items {
                         puts "    $item"
                     }
