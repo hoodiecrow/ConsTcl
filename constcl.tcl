@@ -1,15 +1,86 @@
-namespace eval ::constcl {}
-unset -nocomplain ::constcl::defreg
+lappend ::auto_path /mnt/c/Tcl/tcl8.6.17/library
 
-proc assert {str expr {body {}}} {
-  ::if {![uplevel [list expr $expr]]} {
-    ::if {$body ne {}} {
-      uplevel $body
-    } else {
-      ::error "Failed assertion: $str: $expr"
-    }
+package require logger
+
+# due to Nathan Coulter
+proc log_to_file {lvl txt} {
+  set logfile "mylog.log"
+  set msg "\[[clock format [clock seconds]]\] $txt"
+  try {
+    open $logfile {WRONLY CREAT APPEND}
+  } on ok f {
+    fconfigure $f -encoding utf-8
+    set c [::string index $lvl 0]
+    puts $f $msg
+    # .y.txt insert end "$c: $msg\n"
+  } on error m {
+    ::error $m
+  } finally {
+    catch {close $f}
   }
 }
+
+set log [logger::init global]
+foreach lvl [logger::levels] {
+  interp alias {} log_to_file_$lvl {} log_to_file $lvl
+  ${log}::logproc $lvl log_to_file_$lvl
+}
+
+${log}::info "Logging to a file" 
+
+namespace eval ::constcl {}
+
+unset -nocomplain ::constcl::defreg
+
+proc ::T {val} {
+  ::if {$val eq ${::#f}} {
+    return 0
+  } else {
+    return 1
+  }
+}
+
+
+proc ::U {val} {
+  ::if {$val} {
+    return ${::#t}}
+  } else {
+    return ${::#f}}
+  }
+}
+
+proc ::assert {str expr {infoframe {}} {body {}}} {${::#t}}
+  ::if {$infoframe eq {}} {
+    set infoframe [info frame -2]
+  }
+
+  set truth [Boolean new [U [uplevel [::list expr $expr]]]]
+
+  ::if {T{$truth}} {
+    ::if {$body ne {}} {
+      switch [dict get $infoframe type] {
+        source {
+          lappend r "file [file tail [dict get $infoframe file]]"
+          lappend r "line [dict get $infoframe line]"
+        }
+        eval {
+          lappend r "cmd  [dict get $infoframe cmd]"
+          lappend r "proc [dict get $infoframe proc]"
+          lappend r "line [dict get $infoframe line]"
+        }
+      }
+      set resultList [::list "Failed assertion" $str [join $r ", "]]
+      ::error [join $resultList ": "]
+    } else {
+      uplevel $body
+    }
+  }
+  return {}
+}
+
+
+unset -nocomplain ::constcl::defreg
+
 proc reg {args} {
   assert "# of parameters = (1|2)" [expr {[llength $args] in {1 2}}]
   ::if {[llength $args] == 2} {
@@ -3109,10 +3180,14 @@ proc cnof {} {return "could not open file"}
 proc fae {} {return "file already exists"}
 
 proc ::constcl::open-input-file {name} {
+  assert "$name is a String" [string? $name]
   set port [InputPort new ${::#NIL}]
+    \[info object class \$name]=[info object class $name]
+    \[info object methods \$name]=[info object methods $name]
+    set key [tclook::tclook $name]
+    PrintView display $key
   try {
-    assert "$name is a String" [string? $name]
-    $name value
+    $name string
   } on ok filename {
     try {
       $port config open $filename
@@ -3539,9 +3614,9 @@ oo::class create ::constcl::String {
     set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
-  method value {} {
-    # present the store as printable characters
-    join [lmap c [my store] {$c char}] {}
+  method string {} {
+    # present the store as a string of printable characters
+    join [lmap c [my store] {$c display}] {}
   }
   method set! {k c} {
     ::if {[my constant]} {
