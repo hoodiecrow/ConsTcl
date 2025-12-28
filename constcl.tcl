@@ -1,3 +1,12 @@
+namespace eval ::constcl {}
+
+
+${::log}::info "In the beginning" 
+
+
+unset -nocomplain ::constcl::defreg
+
+
 lappend ::auto_path /mnt/c/Tcl/tcl8.6.17/library
 
 package require logger
@@ -28,10 +37,6 @@ foreach lvl [logger::levels] {
 
 ${log}::info "Logging to a file" 
 
-namespace eval ::constcl {}
-
-unset -nocomplain ::constcl::defreg
-
 
 proc ::assert {str expr {body {}}} {
 
@@ -48,8 +53,6 @@ proc ::assert {str expr {body {}}} {
   return {}
 }
 
-
-unset -nocomplain ::constcl::defreg
 
 proc reg {args} {
   assert "# of parameters = (1|2)" [expr {[llength $args] in {1 2}}]
@@ -88,6 +91,104 @@ proc regvar {name value} {
   return
 }
 
+
+::if {$tcl_version eq "8.6"} {
+  set singletonClass oo::class
+} elseif {$tcl_version eq "9.0"} {
+  set singletonClass oo::singleton
+} else {
+  set singletonClass oo::class
+}
+
+proc singleton {objclass objname} {
+  # a fake singleton, but it will do
+  set obj [uplevel #0 [::list oo::object create $objname]]
+  oo::objdefine $obj class ::constcl::$objclass
+  oo::objdefine $obj {
+    unexport destroy
+  }
+  uplevel #0 [::list set $objname $obj]
+  return $obj
+}
+
+
+
+$singletonClass create ::constcl::EndOfFile {
+  method write {{val {}} {port {}}} {
+    format "#<end-of-file>"
+  }
+}
+
+singleton EndOfFile #EOF
+
+
+proc eof? {val} {
+  ::if {$val eq ${::#EOF}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+
+
+#oo::singleton create ::constcl::NIL
+$singletonClass create ::constcl::NIL {
+  method write {{val {}} {port {}}} {
+    return "()"
+  }
+}
+
+singleton NIL #NIL
+
+
+reg null?
+
+proc ::constcl::null? {val} {
+  ::if {$val eq ${::#NIL}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+
+
+#oo::singleton create ::constcl::Undefined
+$singletonClass create ::constcl::Undefined {
+  method write {{val {}} {port {}}} {
+    format "#<undefined>"
+  }
+}
+
+singleton Undefined #UND
+
+
+#oo::singleton create ::constcl::Unspecified
+$singletonClass create ::constcl::Unspecified {
+  method write {{val {}} {port {}}} {
+    format "#<unspecified>"
+  }
+}
+
+singleton Unspecified #UNS
+
+
+$singletonClass create ::constcl::True {
+  method write {val {port {}}} {
+    return ${::#t}
+  }
+}
+
+singleton True #t
+
+
+$singletonClass create ::constcl::False {
+  method write {val {port {}}} {
+    return ${::#f}
+  }
+}
+
+singleton False #f
+
 proc ::T {val} {
   ::if {$val eq ${::#f}} {
     return 0
@@ -97,18 +198,10 @@ proc ::T {val} {
 }
 
 
-proc ::U {val} {
-  ::if {$val} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-
 proc ::V {val} {
-  ::if {[string is true $val]} {
+  ::if {[string is true -strict $val]} {
     return ${::#t}
-  } elseif {[string is false $val]} {
+  } elseif {[string is false -strict $val]} {
     return ${::#f}
   } else {
     ::error "not a Tcl truth value"
@@ -119,20 +212,14 @@ reg atom?
 
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
-      char boolean vector port eof} {
+    char boolean vector port eof} {
       ::if {[$type? $val] eq ${::#t}} {
-      return ${::#t}
+        return ${::#t}
+      }
     }
-  }
-  return ${::#f}
+    return ${::#f}
 }
-proc ::T {val} {
-  ::if {$val eq ${::#f}} {
-    return 0
-  } else {
-    return 1
-  }
-}
+
 proc ::constcl::pairlis-tcl {a b} {
   ::if {[T [null? $a]]} {
     parse {'()}
@@ -289,18 +376,17 @@ catch { ::constcl::Base destroy }
 
 $abstractClass create ::constcl::Base {
   method mkconstant {} {}
-  method write {port} {
-    $port put [my tstr]
-  }
-  method display {port} {
-    my write $port
-  }
-  method show {} {
-    ::constcl::MkString [my tstr]
-  }
-  method tstr {} {
+  method write {{val {}} {port {}}} {
     return "#<base>"
   }
+
+
+  method display {{val {}} {port {}}} {
+    my write
+  }
+
+}
+
   method unknown {name args} {
     switch $name {
       car - cdr - set-car! -
@@ -313,71 +399,41 @@ $abstractClass create ::constcl::Base {
     }
   }
 }
+
+
 oo::class create ::constcl::Dot {
   superclass ::constcl::Base
-  method tstr {} {
+  method write {} {
     format "."
   }
 }
+
+
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-::if {$tcl_version eq "8.6"} {
-  set singletonClass oo::class
-} elseif {$tcl_version eq "9.0"} {
-  set singletonClass oo::singleton
-} else {
-  set singletonClass oo::class
 
-proc singleton {objclass objname} {
-  # a fake singleton, but it will do
-  set obj [uplevel #0 [::list oo::object create $objname]]
-  oo::objdefine $obj class ::constcl::$objclass
-  oo::objdefine $obj {
-    unexport destroy
-  }
-  uplevel #0 [::list set $objname $obj]
-  return $obj
-}
 
-}
 
-$singletonClass create ::constcl::EndOfFile {
-  method write {val {port {}}} {
-    format "#<end-of-file>"
-  }
-}
-proc eof? {val} {
-  ::if {$val eq ${::#EOF}} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
-$singletonClass create ::constcl::NIL {
-  method write {{val {}} {port {}}} {
-    return "()"
-  }
-}
-$singletonClass create ::constcl::Undefined {
-  method write {{val {}} {port {}}} {
-    format "#<undefined>"
-  }
-}
-$singletonClass create ::constcl::Unspecified {
-  method write {{val {}} {port {}}} {
-    format "#<unspecified>"
-  }
-}
 reg read
 
 proc ::constcl::read {args} {
+  upvar #0 c c unget unget
   set c {}
   set unget {}
+  set expr ${::#NIL}
   set oldport $::constcl::Input_port
   ::if {[llength $args]} {
     lassign $args port
     set ::constcl::Input_port $port
+  } else {
+    set port $oldport
+  }
+  if {[$port eof]} {
+    long-eof ${::#EOF}
+  } else {
+    set expr [read-expr]
+    long-eof $expr
   }
   set expr [read-expr]
   set ::constcl::Input_port $oldport
@@ -391,8 +447,7 @@ proc ::constcl::read-expr {args} {
     set c [readchar]
   }
   set unget {}
-  read-eof $c
-  ::if {[::string is space $c] || $c eq ";"} {
+  if {[::string is space $c] || $c eq ";"} {
     skip-ws
     read-eof $c
   }
@@ -430,9 +485,7 @@ proc ::constcl::read-character-expr {} {
       set c [readchar]
     }
   }
-  check {valid-char? $name} {
-      Invalid character constant $name
-  }
+  assert "$name is valid" [valid-char? $name]
   set expr [MkChar $name]
   read-eof $expr
   return $expr
