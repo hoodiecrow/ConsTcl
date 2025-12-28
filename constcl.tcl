@@ -32,44 +32,14 @@ namespace eval ::constcl {}
 
 unset -nocomplain ::constcl::defreg
 
-proc ::T {val} {
-  ::if {$val eq ${::#f}} {
-    return 0
-  } else {
-    return 1
-  }
-}
 
+proc ::assert {str expr {body {}}} {
 
-proc ::U {val} {
-  ::if {$val} {
-    return ${::#t}}
-  } else {
-    return ${::#f}}
-  }
-}
+  set truth [T [V [expr $expr]]]
 
-proc ::assert {str expr {infoframe {}} {body {}}} {${::#t}}
-  ::if {$infoframe eq {}} {
-    set infoframe [info frame -2]
-  }
-
-  set truth [Boolean new [U [uplevel [::list expr $expr]]]]
-
-  ::if {T{$truth}} {
+  ::if {!$truth} {
     ::if {$body ne {}} {
-      switch [dict get $infoframe type] {
-        source {
-          lappend r "file [file tail [dict get $infoframe file]]"
-          lappend r "line [dict get $infoframe line]"
-        }
-        eval {
-          lappend r "cmd  [dict get $infoframe cmd]"
-          lappend r "proc [dict get $infoframe proc]"
-          lappend r "line [dict get $infoframe line]"
-        }
-      }
-      set resultList [::list "Failed assertion" $str [join $r ", "]]
+      set resultList [::list "Failed assertion" $str]
       ::error [join $resultList ": "]
     } else {
       uplevel $body
@@ -109,7 +79,7 @@ proc reg {args} {
 }
 
 proc regvar {name value} {
-  ::if {![info exists ::constcl::defreg]} {
+  assert "defreg exists" [expr {[info exists ::constcl::defreg]}] {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
@@ -117,12 +87,40 @@ proc regvar {name value} {
   dict set ::constcl::defreg $idx [::list $name $val]
   return
 }
+
+proc ::T {val} {
+  ::if {$val eq ${::#f}} {
+    return 0
+  } else {
+    return 1
+  }
+}
+
+
+proc ::U {val} {
+  ::if {$val} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+
+proc ::V {val} {
+  ::if {[string is true $val]} {
+    return ${::#t}
+  } elseif {[string is false $val]} {
+    return ${::#f}
+  } else {
+    ::error "not a Tcl truth value"
+  }
+}
+
 reg atom?
 
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
-    ::if {[$type? $val] eq ${::#t}} {
+      ::if {[$type? $val] eq ${::#t}} {
       return ${::#t}
     }
   }
@@ -325,11 +323,23 @@ proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
 ::if {$tcl_version eq "8.6"} {
-    set singletonClass oo::class
+  set singletonClass oo::class
 } elseif {$tcl_version eq "9.0"} {
-    set singletonClass oo::singleton
+  set singletonClass oo::singleton
 } else {
-    set singletonClass oo::class
+  set singletonClass oo::class
+
+proc singleton {objclass objname} {
+  # a fake singleton, but it will do
+  set obj [uplevel #0 [::list oo::object create $objname]]
+  oo::objdefine $obj class ::constcl::$objclass
+  oo::objdefine $obj {
+    unexport destroy
+  }
+  uplevel #0 [::list set $objname $obj]
+  return $obj
+}
+
 }
 
 $singletonClass create ::constcl::EndOfFile {
@@ -345,26 +355,17 @@ proc eof? {val} {
   }
 }
 $singletonClass create ::constcl::NIL {
-  method tstr {} {
+  method write {{val {}} {port {}}} {
     return "()"
   }
 }
-reg null?
-
-proc ::constcl::null? {val} {
-  ::if {$val eq ${::#NIL}} {
-    return ${::#t}
-  } else {
-    return ${::#f}
-  }
-}
 $singletonClass create ::constcl::Undefined {
-  method write {val {port {}}} {
+  method write {{val {}} {port {}}} {
     format "#<undefined>"
   }
 }
 $singletonClass create ::constcl::Unspecified {
-  method write {val {port {}}} {
+  method write {{val {}} {port {}}} {
     format "#<unspecified>"
   }
 }
@@ -1049,7 +1050,7 @@ proc ::constcl::special-let* {expr env} {
 }
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
-  ::if {$bindings eq ${::#NIL}} {
+  assert "$bindings are non-NIL" [$bindings ne ${::#NIL}] {
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -2891,91 +2892,48 @@ proc ::constcl::for-each {proc args} {
   }
   return ${::#NIL}
 }
-$abstractClass create ::constcl::Port {
+oo::abstract create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
   constructor {args} {
-    ::if {[llength $args]} {
+    if {[llength $args]} {
       lassign $args handle
     } else {
       set handle ${::#NIL}
     }
   }
-  method query {keyword} {
-    switch $keyword {
-      handle {return $handle}
-      default {
-        return [next $keyword]
-      }
-    }
+  method handle {} {
+    set handle
   }
-  method config {keyword val} {
-    switch $keyword {
-      default {
-        return [next $keyword $val]
-      }
-    }
+  method close {} {
+    close $handle
+    set handle ${::#NIL}
+    return
   }
 }
-
 oo::class create ::constcl::InputPort {
   superclass ::constcl::Port
   variable handle
-  constructor {h} {
-    set handle $h
-  }
-  method write {val {port {}}} {
-    regexp {(\d+)} [self] -> num
-    return "#<input-port-$num>"
-  }
-  method display {val {port {}}} {
-    my write {}
-  }
-  method query {keyword} {
-    switch $keyword {
-      get {
-        assert "$handle stands for an open channel" [expr {$handle in [chan names]}]
-        chan read $handle 1
-      }
-      eof {
-        assert "$handle stands for an open channel" [expr {$handle in [chan names]}]
-        chan eof $handle
-      }
-      method copy {
-        ::constcl::InputPort new $handle
-      }
-      default {
-        return [next $keyword]
-      }
-    }
-  }
-  method config {keyword val} {
-    switch $keyword {
-      handle -
-      open {
-        try {
-          $val query string
-        } on ok filename {
-          try {
-            open $filename r
-          } on ok f {
-            set handle $f
-          } on error msg {
-            set handle ${::#NIL}
-            ::error $msg
-          }
-        } on error msg {
-          ::error $msg
-        }
-      }
-    }
-    close {
-      catch {close $handle}
+  method open {name} {
+    try {
+      set handle [open [$name value] "r"]
+    } on error {} {
       set handle ${::#NIL}
     }
-    default {
-      return [next $keyword $val]
-    }
+    return $handle
+  }
+  method get {} {
+    chan read $handle 1
+  }
+  method eof {} {
+    chan eof $handle
+  }
+  method copy {} {
+    ::constcl::InputPort new $handle
+  }
+  method tstr {} {
+    regexp {(\d+)} [self] -> num
+    return "#<input-port-$num>"
   }
 }
 interp alias {} ::constcl::MkInputPort \
@@ -2992,7 +2950,7 @@ oo::class create ::constcl::StringInputPort {
   method get {} {
     ::if {[::string length $buffer] == 0} {
       set read_eof 1
-      return ${::#EOF}
+      return #EOF
     }
     set c [::string index $buffer 0]
     set buffer [::string range $buffer 1 end]
@@ -3014,29 +2972,12 @@ interp alias {} ::constcl::MkStringInputPort \
 oo::class create ::constcl::OutputPort {
   superclass ::constcl::Port
   variable handle
-  constructor {h} {
-    set handle $h
-  }
-  method write {val {port {}}} {
-    regexp {(\d+)} [self] -> num
-    return "#<output-port-$num>"
-  }
   method open {name} {
     ::error "remove this line to use"
-    set handle ${::#NIL}
     try {
-      $name value
-    } on ok filename {
-      try {
-        open $filename "w"
-      } on ok f {
-        set handle $f
-      } on error msg {
-        ::error $msg
-        set handle ${::#NIL}
-      }
-    } on error msg {
-      ::error $msg
+      set handle [open [$name value] "w"]
+    } on error {} {
+      set handle ${::#NIL}
     }
     return $handle
   }
@@ -3052,6 +2993,10 @@ oo::class create ::constcl::OutputPort {
   method copy {} {
     ::constcl::OutputPort new $handle
   }
+  method tstr {} {
+    regexp {(\d+)} [self] -> num
+    return "#<output-port-$num>"
+  }
 }
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
@@ -3059,7 +3004,7 @@ oo::class create ::constcl::StringOutputPort {
   superclass ::constcl::Port
   variable buffer
   constructor {args} {
-    ::if {[llength $args]} {
+    if {[llength $args]} {
       lassign $args str
       set buffer $str
     } else {
@@ -3069,11 +3014,11 @@ oo::class create ::constcl::StringOutputPort {
   method open {name} {}
   method close {} {}
   method put {str} {
-    ::append buffer $str
+    append buffer $str
     return
   }
   method newline {} {
-    ::append buffer \n
+    append buffer \n
   }
   method flush {} {}
   method tostring {} {
@@ -3089,6 +3034,7 @@ oo::class create ::constcl::StringOutputPort {
 }
 interp alias {} ::constcl::MkStringOutputPort \
   {} ::constcl::StringOutputPort new
+
 set ::constcl::Input_port [
   ::constcl::MkInputPort stdin]
 set ::constcl::Output_port [
@@ -3179,25 +3125,14 @@ reg open-input-file
 proc cnof {} {return "could not open file"}
 proc fae {} {return "file already exists"}
 
-proc ::constcl::open-input-file {name} {
-  assert "$name is a String" [string? $name]
-  set port [InputPort new ${::#NIL}]
-    \[info object class \$name]=[info object class $name]
-    \[info object methods \$name]=[info object methods $name]
-    set key [tclook::tclook $name]
-    PrintView display $key
-  try {
-    $name string
-  } on ok filename {
-    try {
-      $port config open $filename
-    } on error msg {
-      ::error $msg
-    }
-  } on error msg {
-    ::error $msg
+proc ::constcl::open-input-file {filename} {
+  set p [MkInputPort]
+  $p open $filename
+  ::if {[$p handle] eq ${::#NIL}} {
+    set fn [$filename value]
+    ::error "open-input-file: [cnof] $fn"
   }
-  return $port
+  return $p
 }
 reg open-output-file
 
@@ -3241,12 +3176,17 @@ proc ::constcl::newline {args} {
 reg load
 
 proc ::constcl::load {filename} {
-  set port [open-input-file [String new $filename]]
-  ::if {[$port query handle] ne ${::#NIL}} {
-    set expr [read [$port query handle]]
-    while {$expr ne "${::#EOF}"} {
+  try {
+    open-input-file $filename
+  } on ok port {
+  } on error {} {
+    return
+  }
+  ::if {[$port handle] ne ${::#NIL}} {
+    set expr [read $port]
+    while {$expr ne "#EOF"} {
       eval $expr
-      set expr [read [$port query handle]]
+      set expr [read $port]
     }
     close-input-port $port
   }
@@ -3614,9 +3554,9 @@ oo::class create ::constcl::String {
     set end [expr {[[my length] numval] + $base - 1}]
     lrange $::constcl::vectorSpace $base $end
   }
-  method string {} {
+  method value {} {
     # present the store as a string of printable characters
-    join [lmap c [my store] {$c display}] {}
+    join [lmap c [my store] {$c char}] {}
   }
   method set! {k c} {
     ::if {[my constant]} {
