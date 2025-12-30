@@ -38,7 +38,10 @@ ${log}::debug "Logging to a file"
 
 
 proc ::assert {str expr {body {}}} {
-  set truth [uplevel [::list expr $expr]]
+  switch $expr {
+    0 - "#f" - "::#f" - ${::#f} {set truth 0}
+    default {set truth 1}
+  }
   ::if {!$truth} {
     ::if {$body eq {}} {
       set res [join [::list "Failed assertion" $str] ": "]
@@ -731,9 +734,8 @@ proc ::constcl::interspace? {c} {
   }
 }
 proc ::constcl::delimiter? {c} {
-  set expr [expr {( ) ; \" ' ` | [ ] \{ \}}]
-  ${::log}::debug "checking if $c is delimiter: $expr" 
-  ::if {$c in {$expr} {
+  ${::log}::debug "checking if $c is delimiter: $c" 
+  ::if {$c in [expr $c in {( ) ; \" ' ` | [ ] \{ \}]}} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -756,6 +758,7 @@ proc ::constcl::readchar {} {
     set expr $c
   } else {
     set c [$::constcl::Input_port get]
+    set expr $c
     ::if {[$::constcl::Input_port eof]} {
       set expr ${::#EOF}
     }
@@ -820,7 +823,7 @@ proc ::constcl::read-eof {args} {
       }
     }
   } finally {
-    ${::log}::debug "handling an end of file: $c" 
+    ${::log}::debug "handling an end of file: $char" 
   }
 }
 
