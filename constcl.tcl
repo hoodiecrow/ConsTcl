@@ -1,6 +1,7 @@
 namespace eval ::constcl {}
 
-
+package require logger
+set ::log [logger::init ConsTcl]
 ${::log}::info "In the beginning" 
 
 
@@ -8,8 +9,6 @@ unset -nocomplain ::constcl::defreg
 
 
 lappend ::auto_path /mnt/c/Tcl/tcl8.6.17/library
-
-package require logger
 
 # due to Nathan Coulter
 proc log_to_file {lvl txt} {
@@ -39,13 +38,12 @@ ${log}::info "Logging to a file"
 
 
 proc ::assert {str expr {body {}}} {
-
-  set truth [T [V [expr $expr]]]
-
+  set truth [uplevel [::list expr $expr]]
   ::if {!$truth} {
-    ::if {$body ne {}} {
-      set resultList [::list "Failed assertion" $str]
-      ::error [join $resultList ": "]
+    ::if {$body eq {}} {
+      set res [join [::list "Failed assertion" $str] ": "]
+      ${::log}::error $res
+      ::error $res
     } else {
       uplevel $body
     }
@@ -62,7 +60,8 @@ proc reg {args} {
     lassign $args name
     set btype {}
   }
-  assert "defreg exists" [expr {[info exists ::constcl::defreg]}] {
+  ${::log}::info "registering $name" 
+  assert "defreg exists" [info exists ::constcl::defreg] {
     set ::constcl::defreg [dict create]
   }
   switch $btype {
@@ -82,7 +81,7 @@ proc reg {args} {
 }
 
 proc regvar {name value} {
-  assert "defreg exists" [expr {[info exists ::constcl::defreg]}] {
+  assert "defreg exists" [info exists ::constcl::defreg] {
     set ::constcl::defreg [dict create]
   }
   set val [::list VARIABLE $value]
@@ -111,8 +110,6 @@ proc singleton {objclass objname} {
   return $obj
 }
 
-
-
 $singletonClass create ::constcl::EndOfFile {
   method write {{val {}} {port {}}} {
     format "#<end-of-file>"
@@ -131,7 +128,6 @@ proc eof? {val} {
 }
 
 
-#oo::singleton create ::constcl::NIL
 $singletonClass create ::constcl::NIL {
   method write {{val {}} {port {}}} {
     return "()"
@@ -189,6 +185,7 @@ $singletonClass create ::constcl::False {
 
 singleton False #f
 
+
 proc ::T {val} {
   ::if {$val eq ${::#f}} {
     return 0
@@ -213,11 +210,11 @@ reg atom?
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
     char boolean vector port eof} {
-      ::if {[$type? $val] eq ${::#t}} {
-        return ${::#t}
-      }
+    ::if {[$type? $val] eq ${::#t}} {
+      return ${::#t}
     }
-    return ${::#f}
+  }
+  return ${::#f}
 }
 
 proc ::constcl::pairlis-tcl {a b} {
@@ -387,15 +384,14 @@ $abstractClass create ::constcl::Base {
 
 }
 
-  method unknown {name args} {
-    switch $name {
-      car - cdr - set-car! -
-      set-cdr {
-        ::error "PAIR expected"
-      }
-      numval {
-        ::error "NUMBER expected"
-      }
+proc unknown {name args} {
+  switch $name {
+    car - cdr - set-car! -
+    set-cdr {
+      ::error "PAIR expected"
+    }
+    numval {
+      ::error "NUMBER expected"
     }
   }
 }
@@ -435,7 +431,7 @@ proc ::constcl::read {args} {
     set expr [read-expr]
     long-eof $expr
   }
-  set expr [read-expr]
+  # (dubious) set expr [read-expr]
   set ::constcl::Input_port $oldport
   return $expr
 }
@@ -799,13 +795,14 @@ proc ::constcl::skip-ws {} {
   }
 }
 proc ::constcl::read-eof {args} {
-  set chars $args
-  foreach char $chars {
+  foreach char $args     {
     ::if {$char eq "${::#EOF}"} {
-      return -level 1 -code return ${::#EOF}
+      return -level 1 ${::#EOF}
     }
   }
 }
+
+
 proc ::constcl::lookup {sym env} {
   lassign [binding-info $sym $env] type value
   ::if {$type eq "VARIABLE"} {
@@ -985,9 +982,8 @@ proc ::constcl::special-lambda {expr env} {
   return [MkProcedure $formals $body $env]
 }
 proc ::constcl::invoke {pr vals} {
-  check {procedure? $pr} {
-    PROCEDURE expected\n([$pr tstr] val ...)
-  }
+  assert "$pr is a procedure: " [procedure? $pr]
+  assert "$vals is a pair: " [pair? $vals]
   ::if {[info object isa object $pr]} {
     $pr call {*}[splitlist $vals]
   } else {
@@ -1780,9 +1776,7 @@ oo::class create ::constcl::Environment {
     set outer_env $outer
   }
   method find {sym} {
-    ::constcl::check {::constcl::symbol? $sym} {
-      "SYMBOL expected\nEnvironment find"
-    }
+    assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {[dict exists $bindings $sym]} {
       self
     } else {
@@ -1790,22 +1784,16 @@ oo::class create ::constcl::Environment {
     }
   }
   method get {sym} {
-    ::constcl::check {::constcl::symbol? $sym} {
-      "SYMBOL expected\nEnvironment get"
-    }
+    assert "$sym is a symbol: " [::constcl::symbol? $sym]
     dict get $bindings $sym
   }
   method unbind {sym} {
-    ::constcl::check {::constcl::symbol? $sym} {
-      "SYMBOL expected\nEnvironment unbind"
-    }
+    assert "$sym is a symbol: " [::constcl::symbol? $sym]
     dict unset bindings $sym
     return
   }
   method bind {sym type info} {
-    ::constcl::check {::constcl::symbol? $sym} {
-      "SYMBOL expected\nEnvironment bind"
-    }
+    assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {[dict exists $bindings $sym]} {
       set bi [my get $sym]
       lassign $bi bt in
@@ -1817,9 +1805,7 @@ oo::class create ::constcl::Environment {
     return
   }
   method assign {sym type info} {
-    ::constcl::check {::constcl::symbol? $sym} {
-      "SYMBOL expected\nEnvironment assign"
-    }
+    assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {![dict exists $bindings $sym]} {
       ::error "[$sym name] is not bound"
     }
@@ -2115,41 +2101,31 @@ proc ::constcl::>= {args} {
 reg zero?
 
 proc ::constcl::zero? {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   return [$num zero?]
 }
 reg positive?
 
 proc ::constcl::positive? {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   return [$num positive?]
 }
 reg negative?
 
 proc ::constcl::negative? {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   return [$num negative?]
 }
 reg even?
 
 proc ::constcl::even? {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   return [$num even?]
 }
 reg odd?
 
 proc ::constcl::odd? {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   return [$num odd?]
 }
 reg max
@@ -2217,9 +2193,7 @@ proc ::constcl::/ {num args} {
 reg abs
 
 proc ::constcl::abs {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   ::if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
   } else {
@@ -2258,160 +2232,113 @@ proc ::constcl::modulo {num1 num2} {
 reg floor
 
 proc ::constcl::floor {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::floor [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::floor [$num numval]]]
 }
 reg ceiling
 
 proc ::constcl::ceiling {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::ceil [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::ceil [$num numval]]]
 }
 reg truncate
 
 proc ::constcl::truncate {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
+  assert "$num is a number" [number? $num]
   ::if {[T [$num negative?]]} {
-    N [::tcl::mathfunc::ceil [$num numval]]
+    return [N [::tcl::mathfunc::ceil [$num numval]]]
   } else {
-    N [::tcl::mathfunc::floor [$num numval]]
+    return [N [::tcl::mathfunc::floor [$num numval]]]
   }
 }
 reg round
 
 proc ::constcl::round {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::round [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::round [$num numval]]]
 }
 reg exp
 
 proc ::constcl::exp {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::exp [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::exp [$num numval]]]
 }
 reg log
 
 proc ::constcl::log {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::log [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::log [$num numval]]]
 }
 reg sin
 
 proc ::constcl::sin {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::sin [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::sin [$num numval]]]
 }
 reg cos
 
 proc ::constcl::cos {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::cos [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::cos [$num numval]]]]
 }
 reg tan
 
 proc ::constcl::tan {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::tan [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::tan [$num numval]]]
 }
 reg asin
 
 proc ::constcl::asin {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::asin [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::asin [$num numval]]]
 }
 reg acos
 
 proc ::constcl::acos {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::acos [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::acos [$num numval]]]
 }
 reg atan
 
 proc ::constcl::atan {args} {
   ::if {[llength $args] == 1} {
     set num [lindex $args 0]
-    check {number? $num} {
-        NUMBER expected\n([pn] [$num tstr])
-    }
-    N [::tcl::mathfunc::atan [$num numval]]
+    assert "$num is a number" [number? $num]
+    return [N [::tcl::mathfunc::atan [$num numval]]]
   } else {
     lassign $args num1 num2
-    check {number? $num1} {
-        NUMBER expected\n([pn] [$num1 tstr])
-    }
-    check {number? $num2} {
-        NUMBER expected\n([pn] [$num2 tstr])
-    }
-    N [::tcl::mathfunc::atan2 \
-      [$num1 numval] [$num2 numval]]
+    assert "$num1 is a number" [number? $num1]
+    assert "$num2 is a number" [number? $num2]
+    return [N [::tcl::mathfunc::atan2 \
+      [$num1 numval] [$num2 numval]]]
   }
 }
 reg sqrt
 
 proc ::constcl::sqrt {num} {
-  check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-  }
-  N [::tcl::mathfunc::sqrt [$num numval]]
+  assert "$num is a number" [number? $num]
+  return [N [::tcl::mathfunc::sqrt [$num numval]]]
 }
 reg expt
 
 proc ::constcl::expt {x y} {
-  check {number? $x} {
-      NUMBER expected\n([pn] [$x tstr] \
-        [$y tstr])
-  }
-  check {number? $y} {
-      NUMBER expected\n([pn] [$x tstr] \
-        [$y tstr])
-  }
-  N [::tcl::mathfunc::pow [$x numval] \
-    [$y numval]]
+  assert "$x is a number" [number? $x]
+  assert "$y is a number" [number? $y]
+  return [N [::tcl::mathfunc::pow [$x numval] \
+    [$y numval]]]
 }
 reg number->string
 
 proc ::constcl::number->string {num args} {
   ::if {[llength $args] == 0} {
-    check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-    }
+    assert "$num is a number" [number? $num]
     return [MkString [$num numval]]
   } else {
     lassign $args radix
-    check {number? $num} {
-      NUMBER expected\n([pn] [$num tstr])
-    }
-    check {number? $radix} {
-      NUMBER expected\n([pn] [$num tstr] \
-        [$radix tstr])
-    }
+    assert "$radix is a number" [number? $radix]
     set radices [list [N 2] [N 8] [N 10] [N 16]]
-    check {memv $radix $radices} {
-      Radix not in 2, 8, 10, 16\n([pn] \
-        [$num tstr] [$radix tstr])
-    }
+    assert "$radix is in 2, 8, 10, 16" [memv $radix $radices]
     ::if {[$radix numval] == 10} {
       return [MkString [$num numval]]
     } else {
@@ -2436,20 +2363,13 @@ reg string->number
 
 proc ::constcl::string->number {str args} {
   ::if {[llength $args] == 0} {
-    check {string? $str} {
-      STRING expected\n([pn] [$str tstr])
-    }
+    assert "$str is a string" [string? $str]
     return [N [$str value]]
   } else {
     lassign $args radix
-    check {string? $str} {
-      STRING expected\n([pn] [$str tstr])
-    }
+    assert "$str is a string" [string? $str]
     set radices [list [N 2] [N 8] [N 10] [N 16]]
-    check {memv $radix $radices} {
-      Radix not in 2, 8, 10, 16\n([pn] [$str tstr] \
-        [$radix tstr])
-    }
+    assert "$radix is in 2, 8, 10, 16" [memv $radix $radices]
     ::if {[$radix numval] == 10} {
       return [N [$str value]]
     } else {
@@ -2471,19 +2391,7 @@ proc frombase {base number} {
     set res [expr {$res * $base + $dv}]
   }
   ::if $negative {set res -$res}
-  set res
-}
-$singletonClass create ::constcl::True {
-  superclass ::constcl::Base
-  method tstr {} {
-    return "${::#t}"
-  }
-}
-$singletonClass create ::constcl::False {
-  superclass ::constcl::Base
-  method tstr {} {
-    return "${::#f}"
-  }
+  return $res
 }
 proc ::constcl::MkBoolean {bool} {
   switch $bool {
@@ -2614,12 +2522,8 @@ proc ::constcl::char? {val} {
 reg char=?
 
 proc ::constcl::char=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] eq [$char2 char]} {
     return ${::#t}
   } else {
@@ -2629,12 +2533,8 @@ proc ::constcl::char=? {char1 char2} {
 reg char<?
 
 proc ::constcl::char<? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] < [$char2 char]} {
     return ${::#t}
   } else {
@@ -2644,12 +2544,8 @@ proc ::constcl::char<? {char1 char2} {
 reg char>?
 
 proc ::constcl::char>? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] > [$char2 char]} {
     return ${::#t}
   } else {
@@ -2659,12 +2555,8 @@ proc ::constcl::char>? {char1 char2} {
 reg char<=?
 
 proc ::constcl::char<=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] <= [$char2 char]} {
     return ${::#t}
   } else {
@@ -2674,12 +2566,8 @@ proc ::constcl::char<=? {char1 char2} {
 reg char>=?
 
 proc ::constcl::char>=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] >= [$char2 char]} {
     return ${::#t}
   } else {
@@ -2689,12 +2577,8 @@ proc ::constcl::char>=? {char1 char2} {
 reg char-ci=?
 
 proc ::constcl::char-ci=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
     return ${::#t}
@@ -2705,12 +2589,8 @@ proc ::constcl::char-ci=? {char1 char2} {
 reg char-ci<?
 
 proc ::constcl::char-ci<? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
     return ${::#t}
@@ -2721,12 +2601,8 @@ proc ::constcl::char-ci<? {char1 char2} {
 reg char-ci>?
 
 proc ::constcl::char-ci>? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
     return ${::#t}
@@ -2737,12 +2613,8 @@ proc ::constcl::char-ci>? {char1 char2} {
 reg char-ci<=?
 
 proc ::constcl::char-ci<=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
     return ${::#t}
@@ -2753,12 +2625,8 @@ proc ::constcl::char-ci<=? {char1 char2} {
 reg char-ci>=?
 
 proc ::constcl::char-ci>=? {char1 char2} {
-  check {char? $char1} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
-  check {char? $char2} {
-    CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
-  }
+  assert "char1 is a character" [char? $char1]
+  assert "char2 is a character" [char? $char2]
   ::if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
     return ${::#t}
@@ -2769,41 +2637,31 @@ proc ::constcl::char-ci>=? {char1 char2} {
 reg char-alphabetic?
 
 proc ::constcl::char-alphabetic? {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   return [$char alphabetic?]
 }
 reg char-numeric?
 
 proc ::constcl::char-numeric? {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   return [$char numeric?]
 }
 reg char-whitespace?
 
 proc ::constcl::char-whitespace? {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   return [$char whitespace?]
 }
 reg char-upper-case?
 
 proc ::constcl::char-upper-case? {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   return [$char upper-case?]
 }
 reg char-lower-case?
 
 proc ::constcl::char-lower-case? {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   return [$char lower-case?]
 }
 reg char->integer
@@ -2825,9 +2683,7 @@ proc ::constcl::integer->char {int} {
 reg char-upcase
 
 proc ::constcl::char-upcase {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   ::if {[$char char] in [::list " " "\n"]} {
     return $char
   } else {
@@ -2838,9 +2694,7 @@ proc ::constcl::char-upcase {char} {
 reg char-downcase
 
 proc ::constcl::char-downcase {char} {
-  check {char? $char} {
-    CHAR expected\n([pn] [$char tstr])
-  }
+  assert "char is a character" [char? $char]
   ::if {[$char char] in [::list " " "\n"]} {
     return $char
   } else {
@@ -2885,17 +2739,22 @@ proc ::constcl::procedure? {val} {
 reg apply
 
 proc ::constcl::apply {pr vals} {
-  check {procedure? $pr} {
-    PROCEDURE expected\n([pn] [$pr tstr] ...)
-  }
+  assert "pr is a procedure" [procedure? $pr]
   invoke $pr $vals
 }
 reg map
 
 proc ::constcl::map {pr args} {
-  check {procedure? $pr} {
-    PROCEDURE expected\n([pn] [$pr tstr] ...)
-  }
+  assert "pr is a procedure" [procedure? $pr]
+
+
+  set arglists $args
+  set arglists [lmap arglist $arglists {
+    splitlist $arglist
+  }]
+
+
+if 0 {
   set arglists $args
   for {set i 0} \
     {$i < [llength $arglists]} \
@@ -2918,12 +2777,13 @@ proc ::constcl::map {pr args} {
   }
   return [list {*}$res]
 }
+}
 reg for-each
 
 proc ::constcl::for-each {proc args} {
-  check {procedure? $proc} {
-    PROCEDURE expected\n([pn] [$proc tstr] ...)
-  }
+  assert "proc is a procedure" [procedure? $proc]
+
+
   set arglists $args
   for {set i 0} \
     {$i < [llength $arglists]} \
@@ -2945,31 +2805,18 @@ proc ::constcl::for-each {proc args} {
   }
   return ${::#NIL}
 }
-oo::abstract create ::constcl::Port {
-  superclass ::constcl::Base
+oo::abstract create ::constcl::Port {}
+
+oo::class create ::constcl::InputPort {
   variable handle
-  constructor {args} {
-    if {[llength $args]} {
-      lassign $args handle
-    } else {
-      set handle ${::#NIL}
-    }
-  }
   method handle {} {
     set handle
   }
-  method close {} {
-    close $handle
-    set handle ${::#NIL}
-    return
-  }
-}
-oo::class create ::constcl::InputPort {
-  superclass ::constcl::Port
-  variable handle
   method open {name} {
     try {
-      set handle [open [$name value] "r"]
+      open [$name value] "r"]
+    } on ok h {
+      set handle $h
     } on error {} {
       set handle ${::#NIL}
     }
@@ -2984,6 +2831,10 @@ oo::class create ::constcl::InputPort {
   method copy {} {
     ::constcl::InputPort new $handle
   }
+  method close {} {
+    catch {close $handle}
+    set handle ${::#NIL}
+  }
   method tstr {} {
     regexp {(\d+)} [self] -> num
     return "#<input-port-$num>"
@@ -2992,7 +2843,6 @@ oo::class create ::constcl::InputPort {
 interp alias {} ::constcl::MkInputPort \
   {} ::constcl::InputPort new
 oo::class create ::constcl::StringInputPort {
-  superclass ::constcl::Port
   variable buffer read_eof
   constructor {str} {
     set buffer $str
@@ -3023,7 +2873,6 @@ oo::class create ::constcl::StringInputPort {
 interp alias {} ::constcl::MkStringInputPort \
   {} ::constcl::StringInputPort new
 oo::class create ::constcl::OutputPort {
-  superclass ::constcl::Port
   variable handle
   method open {name} {
     ::error "remove this line to use"
@@ -3054,7 +2903,6 @@ oo::class create ::constcl::OutputPort {
 interp alias {} ::constcl::MkOutputPort \
   {} ::constcl::OutputPort new
 oo::class create ::constcl::StringOutputPort {
-  superclass ::constcl::Port
   variable buffer
   constructor {args} {
     if {[llength $args]} {
@@ -3095,7 +2943,7 @@ set ::constcl::Output_port [
 reg port?
 
 proc ::constcl::port? {val} {
-  typeof? $val Port
+  return[typeof? $val ::constcl::Port]
 }
 reg call-with-input-file
 
@@ -3230,20 +3078,28 @@ reg load
 
 proc ::constcl::load {filename} {
   try {
-    open-input-file $filename
-  } on ok port {
-  } on error {} {
-    return
-  }
-  ::if {[$port handle] ne ${::#NIL}} {
-    set expr [read $port]
-    while {$expr ne "#EOF"} {
-      eval $expr
-      set expr [read $port]
+    $filename name
+  } on ok name {
+    try {
+      open-input-file $name
+    } on ok port {
+      ::if {[$port handle] ne ${::#NIL}} {
+        set expr [read $port]
+        while {$expr ne "${::#EOF}"} {
+          eval $expr
+          set expr [read $port]
+        }
+      }
+    } on error msg {
+      ::error $msg
+    } finally {
     }
-    close-input-port $port
+  } on error msg {
+    ::error $msg
+  } finally {
+    catch {$port destroy}
   }
-  $port destroy
+  return ${::#NIL}
 }
 oo::class create ::constcl::Pair {
   superclass ::constcl::Base
@@ -3263,16 +3119,12 @@ oo::class create ::constcl::Pair {
     set cdr
   }
   method set-car! {val} {
-    ::constcl::check {my mutable?} {
-      Can't modify a constant pair
-    }
+    assert "list is immutable" [my mutable?]
     set car $val
     self
   }
   method set-cdr! {val} {
-    ::constcl::check {my mutable?} {
-      Can't modify a constant pair
-    }
+    assert "list is immutable" [my mutable?]
     set cdr $val
     self
   }
@@ -3371,17 +3223,17 @@ foreach ads {
     reg c${ads}r
 
     proc ::constcl::c${ads}r {x} "
-        foreach c \[lreverse \[split $ads {}\]\] {
-            ::if {\$c eq \"a\"} {
-                set x \[car \$x\]
-            } else {
-                set x \[cdr \$x\]
-            }
+      foreach c \[lreverse \[split $ads {}\]\] {
+        ::if {\$c eq \"a\"} {
+          set x \[car \$x\]
+        } else {
+          set x \[cdr \$x\]
         }
-        return \$x
+      }
+      return \$x
     "
 
-}
+  }
 reg set-car!
 
 proc ::constcl::set-car! {pair val} {
@@ -3434,9 +3286,7 @@ proc ::constcl::list {args} {
 reg length
 
 proc ::constcl::length {pair} {
-  check {list? $pair} {
-    LIST expected\n([pn] lst)
-  }
+  assert "$pair is a list" [list? $pair]
   MkNumber [length-helper $pair]
 }
 proc ::constcl::length-helper {pair} {
@@ -3452,9 +3302,7 @@ reg append
 proc ::constcl::append {args} {
   set prev [lindex $args end]
   foreach r [lreverse [lrange $args 0 end-1]] {
-    check {list? $r} {
-      LIST expected\n([pn] [$r tstr])
-    }
+    assert "$r is a list" [list? $r]
     set prev [copy-list $r $prev]
   }
   set prev
@@ -3508,9 +3356,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     eqv? { set name "memv" }
     equal? { set name "member" }
   }
-  check {list? $val2} {
-    LIST expected\n($name [$val1 tstr] [$val2 tstr])
-  }
+  assert "$val2 is a list" [list? $val2]
   ::if {[T [null? $val2]]} {
     return ${::#f}
   } elseif {[T [pair? $val2]]} {
@@ -3542,13 +3388,11 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     eqv? { set name "assv" }
     equal? { set name "assoc" }
   }
-  check {list? $val2} {
-    LIST expected\n($name [$val1 tstr] [$val2 tstr])
-  }
+  assert "$val2 is a list" [list? $val2]
   ::if {[T [null? $val2]]} {
     return ${::#f}
   } elseif {[T [pair? $val2]]} {
-    ::if {[T [pair? [car $val2]]] &&
+    ::if {[T [pair? [car $val2]]] && 
       [T [$epred $val1 [caar $val2]]]} {
       return [car $val2]
     } else {
@@ -3698,10 +3542,7 @@ reg string
 proc ::constcl::string {args} {
   set str {}
   foreach char $args {
-    check {::constcl::char? $char} {
-      CHAR expected\n([pn] [lmap c $args \
-        {$c tstr}])
-    }
+    assert "$char is a character" [::constcl::char? $char]
     ::append str [$char char]
   }
   return [MkString $str]
@@ -3709,53 +3550,30 @@ proc ::constcl::string {args} {
 reg string-length
 
 proc ::constcl::string-length {str} {
-  check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
   return [$str length]
 }
 reg string-ref
 
 proc ::constcl::string-ref {str k} {
-  check {::constcl::string? $str} {
-    STRING expected\n([pn] [$str tstr] \
-      [$k tstr])
-  }
-  check {::constcl::number? $k} {
-    INTEGER expected\n([pn] [$str tstr] \
-      [$k tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
+  assert "$k is a number" [::constcl::number? $k]
   return [$str ref $k]
 }
 reg string-set!
 
 proc ::constcl::string-set! {str k char} {
-  check {string? $str} {
-    STRING expected\n([pn] [$str tstr] [$k tstr] \
-      [$char tstr])
-  }
-  check {number? $k} {
-    INTEGER expected\n([pn] [$str tstr] \
-      [$k tstr] [$char tstr])
-  }
-  check {char? $char} {
-    CHAR expected\n([pn] [$str tstr] [$k tstr] \
-      [$char tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
+  assert "$k is a number" [::constcl::number? $k]
+  assert "$char is a character" [::constcl::char? $char]
   $str set! $k $char
   return $str
 }
 reg string=?
 
 proc ::constcl::string=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[$str1 value] eq [$str2 value]} {
     return ${::#t}
   } else {
@@ -3765,15 +3583,9 @@ proc ::constcl::string=? {str1 str2} {
 reg string-ci=?
 
 proc ::constcl::string-ci=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  ::if {[::string tolower [$str1 value]] eq
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
+ ::if {[::string tolower [$str1 value]] eq
       [::string tolower [$str2 value]]} {
     return ${::#t}
   } else {
@@ -3783,14 +3595,8 @@ proc ::constcl::string-ci=? {str1 str2} {
 reg string<?
 
 proc ::constcl::string<? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[$str1 value] < [$str2 value]} {
     return ${::#t}
   } else {
@@ -3800,14 +3606,8 @@ proc ::constcl::string<? {str1 str2} {
 reg string-ci<?
 
 proc ::constcl::string-ci<? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[::string tolower [$str1 value]] <
       [::string tolower [$str2 value]]} {
     return ${::#t}
@@ -3818,14 +3618,8 @@ proc ::constcl::string-ci<? {str1 str2} {
 reg string>?
 
 proc ::constcl::string>? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[$str1 value] > [$str2 value]} {
     return ${::#t}
   } else {
@@ -3835,14 +3629,8 @@ proc ::constcl::string>? {str1 str2} {
 reg string-ci>?
 
 proc ::constcl::string-ci>? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[::string tolower [$str1 value]] >
       [::string tolower [$str2 value]]} {
     return ${::#t}
@@ -3853,14 +3641,8 @@ proc ::constcl::string-ci>? {str1 str2} {
 reg string<=?
 
 proc ::constcl::string<=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[$str1 value] <= [$str2 value]} {
     return ${::#t}
   } else {
@@ -3870,14 +3652,8 @@ proc ::constcl::string<=? {str1 str2} {
 reg string-ci<=?
 
 proc ::constcl::string-ci<=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[::string tolower [$str1 value]] <=
       [::string tolower [$str2 value]]} {
     return ${::#t}
@@ -3888,14 +3664,8 @@ proc ::constcl::string-ci<=? {str1 str2} {
 reg string>=?
 
 proc ::constcl::string>=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[$str1 value] >= [$str2 value]} {
     return ${::#t}
   } else {
@@ -3905,14 +3675,8 @@ proc ::constcl::string>=? {str1 str2} {
 reg string-ci>=?
 
 proc ::constcl::string-ci>=? {str1 str2} {
-  check {string? $str1} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
-  check {string? $str2} {
-    STRING expected\n([pn] [$str1 tstr] \
-      [$str2 tstr])
-  }
+  assert "$str1 is a string" [::constcl::string? $str1]
+  assert "$str2 is a string" [::constcl::string? $str2]
   ::if {[::string tolower [$str1 value]] >=
       [::string tolower [$str2 value]]} {
     return ${::#t}
@@ -3923,18 +3687,9 @@ proc ::constcl::string-ci>=? {str1 str2} {
 reg substring
 
 proc ::constcl::substring {str start end} {
-  check {string? $str} {
-    STRING expected\n([pn] [$str tstr] \
-      [$start tstr] [$end tstr])
-  }
-  check {number? $start} {
-    NUMBER expected\n([pn] [$str tstr] \
-      [$start tstr] [$end tstr])
-  }
-  check {number? $end} {
-    NUMBER expected\n([pn] [$str tstr] \
-      [$start tstr] [$end tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
+  assert "$start is a number" [::constcl::number? $start]
+  assert "$end is a number" [::constcl::number? $end]
   return [MkString [$str substring $start $end]]
 }
 reg string-append
@@ -3958,18 +3713,14 @@ proc ::constcl::list->string {list} {
 reg string-copy
 
 proc ::constcl::string-copy {str} {
-  check {string? $str} {
-    STRING expected\n([pn] [$str tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
   return [MkString [$str value]]
 }
 reg string-fill!
 
 proc ::constcl::string-fill! {str char} {
-  check {string? $str} {
-    STRING expected\n([pn] [$str tstr] \
-      [$char tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
+  assert "$char is a character" [::constcl::char? $str]
   $str fill! $char
   return $str
 }
@@ -4025,9 +3776,7 @@ proc ::constcl::symbol? {val} {
 reg symbol->string
 
 proc ::constcl::symbol->string {sym} {
-  check {symbol? $sym} {
-    SYMBOL expected\n([pn] [$sym tstr])
-  }
+  assert "$sym is a symbol" [::constcl::symbol? $sym]
   ::if {![$sym case-constant]} {
     set str [MkString [
       ::string tolower [$sym name]]]
@@ -4040,9 +3789,7 @@ proc ::constcl::symbol->string {sym} {
 reg string->symbol
 
 proc ::constcl::string->symbol {str} {
-  check {string? $str} {
-    STRING expected\n([pn] [$obj tstr])
-  }
+  assert "$str is a string" [::constcl::string? $str]
   set sym [MkSymbol [$str value]]
   $sym make-case-constant
   return $sym
@@ -4065,7 +3812,7 @@ oo::class create ::constcl::Vector {
         set val [::constcl::cdr $val]
       }
     } else {
-      # ::if val is provided in the form of a Tcl list
+      # if val is provided in the form of a Tcl list
       set len [llength $val]
       # allocate vector space for the elements
       set vsa [::constcl::vsAlloc $len]
@@ -4076,7 +3823,7 @@ oo::class create ::constcl::Vector {
         incr idx
       }
     }
-    # store the basic vector data: address of
+    # store the basic vector data: address of 
     # first element and length
     set data [::constcl::cons [N $vsa] [N $len]]
     set constant 0
@@ -4165,31 +3912,21 @@ proc ::constcl::vector {args} {
 reg vector-length
 
 proc ::constcl::vector-length {vec} {
-  check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec tstr])
-  }
+  assert "$vec is a vector" [::constcl::vector? $vec]
   return [$vec length]
 }
 reg vector-ref
 
 proc ::constcl::vector-ref {vec k} {
-  check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
-  }
-  check {number? $k} {
-    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
-  }
+  assert "$vec is a vector" [::constcl::vector? $vec]
+  assert "$k is a number" [::constcl::number? $k]
   return [$vec ref $k]
 }
 reg vector-set!
 
 proc ::constcl::vector-set! {vec k val} {
-  check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
-  }
-  check {number? $k} {
-    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
-  }
+  assert "$vec is a vector" [::constcl::vector? $vec]
+  assert "$k is a number" [::constcl::number? $k]
   return [$vec set! $k $val]
 }
 reg vector->list
@@ -4205,13 +3942,13 @@ proc ::constcl::list->vector {list} {
 reg vector-fill!
 
 proc ::constcl::vector-fill! {vec fill} {
-  check {vector? $vec} {
-    VECTOR expected\n([pn] [$vec tstr] \
-      [$fill tstr])
-  }
+  assert "$vec is a vector" [::constcl::vector? $vec]
   $vec fill! $fill
 }
-set ::constcl::vectorSpaceSize [expr {1 * 1024}]
+
+
+unset -nocomplain ::constcl::vectorSpace
+set ::constcl::vectorSpaceSize 1024
 set ::constcl::vectorSpace [
   lrepeat $::constcl::vectorSpaceSize [N 0]]
 
@@ -4230,24 +3967,6 @@ set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 interp recursionlimit {} 2000
-
-proc singleton {objclass objname} {
-    # a fake singleton, but it will do
-    set obj [uplevel #0 [::list oo::object create $objname]]
-    oo::objdefine $obj class ::constcl::$objclass
-    oo::objdefine $obj {
-        unexport destroy
-    }
-    uplevel #0 [::list set $objname $obj]
-    return $obj
-}
-
-singleton NIL #NIL
-singleton True #t
-singleton False #f
-singleton Unspecified #UNS
-singleton Undefined #UND
-singleton EndOfFile #EOF
 
 regvar pi [N 3.1415926535897931]
 regvar nil ${::#NIL}
@@ -4276,3 +3995,4 @@ namespace eval ::constcl {
 }
 pe {(load "schemebase.scm")}
 
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
