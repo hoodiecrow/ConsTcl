@@ -865,6 +865,7 @@ proc ::constcl::special-if {expr env} {
       {eval [cadr $args] $env} \
       {eval [caddr $args] $env}
   }
+  ${::log}::debug "an if" 
 }
 reg special case
 
@@ -940,6 +941,7 @@ proc ::constcl::do-cond {tail env} {
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
+    ${::log}::debug "a do-cond" 
     return $expr
   }
 }
@@ -1132,6 +1134,7 @@ proc ::constcl::rewrite-letrec {expr env} {
              ,@body) ,@ovals)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
+  ${::log}::debug "rewriting a letrec" 
   return $expr
 }
 reg special let*
@@ -1156,21 +1159,22 @@ proc ::constcl::rewrite-let* {bindings body env} {
     set expr [expand-quasiquote [parse $qq] $env]
   }
   $env destroy
+  ${::log}::debug "rewriting a let*" 
   return $expr
 }
 reg eval
 
-proc ::constcl::eval \
-  {expr {env ::constcl::global_env}} {
+proc ::constcl::eval {expr {env ::constcl::global_env}} {
   ::if {[T [symbol? $expr]]} {
-    lookup $expr $env
+  set val [lookup $expr $env]
   } elseif {[T [self-evaluating? $expr]]} {
-    set expr
+    set val expr
   } elseif {[T [pair? $expr]]} {
-    eval-form $expr $env
+    set val [eval-form $expr $env]
   } else {
-    ::error "unknown expression type [$expr tstr]"
+    ::error "unknown expression type [$expr write]"
   }
+  ${::log}::debug "evaluation basic forms: $val" 
 }
 proc ::constcl::eval-form {expr env} {
   set op [car $expr]
@@ -1179,24 +1183,25 @@ proc ::constcl::eval-form {expr env} {
     lassign [binding-info $op $env] btype hinfo
     switch $btype {
       UNBOUND {
-        error "unbound symbol" $op
+        ::error "unbound symbol" $op
       }
       SPECIAL {
-        $hinfo $expr $env
+        set expr [$hinfo $expr $env]
       }
       VARIABLE {
-        invoke $hinfo [eval-list $args $env]
+        set expr [invoke $hinfo [eval-list $args $env]]
       }
       SYNTAX {
-        eval [$hinfo $expr $env] $env
+        set expr [eval [$hinfo $expr $env] $env]
       }
       default {
         error "unrecognized binding type" $btype
       }
     }
   } else {
-    invoke [eval $op $env] [eval-list $args $env]
+    set expr [invoke [eval $op $env] [eval-list $args $env]]
   }
+  ${::log}::debug "evaluation basic forms: $expr" 
 }
 proc ::constcl::binding-info {op env} {
   set actual_env [$env find $op]
@@ -1208,6 +1213,7 @@ proc ::constcl::binding-info {op env} {
 }
 proc ::constcl::eval-list {exps env} {
   ::if {[T [pair? $exps]]} {
+    ${::log}::debug "evaluating the items of a list: $exps" 
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } else {
@@ -1225,6 +1231,7 @@ proc ::constcl::expand-and {expr env} {
   } else {
     do-and $tail ${::#t} $env
   }
+  ${::log}::debug "expanding an 'and' form: $exps" 
 }
 proc ::constcl::do-and {tail prev env} {
   ::if {[T [null? $tail]]} {
@@ -1237,6 +1244,7 @@ proc ::constcl::do-and {tail prev env} {
     set qq "`(if ,first ,rest #f)"
     set expr [expand-quasiquote [parse $qq] $env]
     $env destroy
+    ${::log}::debug "working an 'and' form: $expr" 
     return $expr
   }
 }
@@ -1257,6 +1265,7 @@ proc ::constcl::expand-del! {expr env} {
              (delete! ,listname ,key))"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
+  ${::log}::debug "working a form for the del! procedure: $expr" 
   return $expr
 }
 reg macro for
