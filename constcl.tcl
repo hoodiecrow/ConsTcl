@@ -34,7 +34,7 @@ foreach lvl [logger::levels] {
   ${log}::logproc $lvl log_to_file_$lvl
 }
 
-${log}::info "Logging to a file" 
+${log}::debug "Logging to a file" 
 
 
 proc ::assert {str expr {body {}}} {
@@ -60,7 +60,6 @@ proc reg {args} {
     lassign $args name
     set btype {}
   }
-  ${::log}::info "registering $name" 
   assert "defreg exists" [info exists ::constcl::defreg] {
     set ::constcl::defreg [dict create]
   }
@@ -169,7 +168,7 @@ singleton Unspecified #UNS
 
 
 $singletonClass create ::constcl::True {
-  method write {val {port {}}} {
+  method write {{val {}} {port {}}} {
     return ${::#t}
   }
 }
@@ -178,7 +177,7 @@ singleton True #t
 
 
 $singletonClass create ::constcl::False {
-  method write {val {port {}}} {
+  method write {{val {}} {port {}}} {
     return ${::#f}
   }
 }
@@ -425,6 +424,7 @@ proc ::constcl::read {args} {
   } else {
     set port $oldport
   }
+  ${::log}::debug "reading a from port $port" 
   if {[$port eof]} {
     long-eof ${::#EOF}
   } else {
@@ -483,6 +483,7 @@ proc ::constcl::read-character-expr {} {
   }
   assert "$name is valid" [valid-char? $name]
   set expr [MkChar $name]
+  ${::log}::debug "reading a character: $expr" 
   read-eof $expr
   return $expr
 }
@@ -509,6 +510,8 @@ proc ::constcl::read-identifier-expr {args} {
   }
   # idcheck throws error if invalid identifier
   idcheck $name
+  set expr [S $name]
+  ${::log}::debug "reading an identifier: $expr" 
   return [S $name]
 }
 proc ::constcl::read-number-expr {args} {
@@ -528,10 +531,9 @@ proc ::constcl::read-number-expr {args} {
   ::if {[T [delimiter? $c]]} {
     set unget $c
   }
-  check {::string is double -strict $num} {
-      Invalid numeric constant $num
-  }
+  assert "number is valid" [::string is double -strict $num]
   set expr [N $num]
+  ${::log}::debug "reading a number: $expr" 
   return $expr
 }
 proc ::constcl::read-pair-expr {char} {
@@ -551,6 +553,7 @@ proc ::constcl::read-pair-expr {char} {
     set unget {}
     set c [readchar]
   }
+  ${::log}::debug "reading a pair|list: $expr" 
   return $expr
 }
 proc ::constcl::read-pair {char} {
@@ -602,6 +605,7 @@ proc ::constcl::read-plus-minus {char} {
     }
   } else {
     set expr [read-identifier-expr $char $c]
+    ${::log}::debug "reading a +|-: $expr" 
     read-eof $expr
     return $expr
   }
@@ -628,6 +632,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
+  ${::log}::debug "reading a quasiquote: $expr" 
   return [list [S quasiquote] $expr]
 }
 proc ::constcl::read-quoted-expr {} {
@@ -636,6 +641,7 @@ proc ::constcl::read-quoted-expr {} {
   set expr [read-expr]
   read-eof $expr
   make-constant $expr
+  ${::log}::debug "reading a quote: $expr" 
   return [list [S quote] $expr]
 }
 proc ::constcl::read-string-expr {} {
@@ -652,12 +658,11 @@ proc ::constcl::read-string-expr {} {
     ::append str $c
     set c [readchar]
   }
-  ::if {$c eq "${::#EOF}"} {
-    ::error "bad string (no ending double quote)"
-  }
+  assert "string has ending double quote" [expr {$c ne "${::#EOF}"}]
   set c [readchar]
   set expr [MkString $str]
   make-constant $expr
+  ${::log}::debug "reading a string: $expr" 
   return $expr
 }
 proc ::constcl::read-unquoted-expr {} {
@@ -673,6 +678,7 @@ proc ::constcl::read-unquoted-expr {} {
     set expr [read-expr $c]
   }
   read-eof $expr
+  ${::log}::debug "reading an unquote: $expr" 
   return [list [S $symbol] $expr]
 }
 proc ::constcl::read-vector-expr {} {
@@ -700,6 +706,7 @@ proc ::constcl::read-vector-expr {} {
   set c [readchar]
   set expr [MkVector $res]
   $expr mkconstant
+  ${::log}::debug "reading a vector: $expr" 
   return $expr
 }
 proc ::constcl::make-constant {val} {
@@ -715,22 +722,27 @@ proc ::constcl::make-constant {val} {
   }
 }
 proc ::constcl::interspace? {c} {
-  ::if {[::string is space $c]} {
+  set expr [::string is space $c]
+  ${::log}::debug "checking if $c is space: $expr" 
+  ::if {$expr} {
     return ${::#t}
   } else {
     return ${::#f}
   }
 }
 proc ::constcl::delimiter? {c} {
-  ::if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+  set expr [expr {( ) ; \" ' ` | [ ] \{ \}}]
+  ${::log}::debug "checking if $c is delimiter: $expr" 
+  ::if {$c in {$expr} {
     return ${::#t}
   } else {
     return ${::#f}
   }
 }
 proc ::constcl::valid-char? {name} {
-  ::if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
-      $name]} {
+  set expr {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} $name]}
+  ${::log}::debug "checking if $c is valid char: $expr" 
+  ::if {$expr} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -741,12 +753,14 @@ proc ::constcl::readchar {} {
   ::if {$unget ne {}} {
     set c $unget
     set unget {}
+    set expr $c
   } else {
     set c [$::constcl::Input_port get]
     ::if {[$::constcl::Input_port eof]} {
-      return ${::#EOF}
+      set expr ${::#EOF}
     }
   }
+  ${::log}::debug "reading a single char: $expr" 
   return $c
 }
 proc ::constcl::find-char? {char} {
@@ -758,22 +772,25 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
+  set expr [expr {($c eq $char) ? ${::#t} : ${::#f}}]
+  ${::log}::debug "checking if we can get an ending char: $expr" 
 }
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
   ::if {[T [interspace? $c]]} {
-    return ${::#t}
+    set expr ${::#t}
   } elseif {[T [delimiter? $c]]} {
     set unget $c
-    return ${::#t}
+    set expr ${::#t}
   } elseif {$c eq "${::#EOF}"} {
-    return ${::#EOF}
+    set expr ${::#EOF}
   } else {
     set unget $c
-    return ${::#f}
+    set expr ${::#f}
   }
+  ${::log}::debug "checking if we can get an ending char: $expr" 
+  return $expr
 }
 proc ::constcl::skip-ws {} {
   upvar c c unget unget
@@ -789,16 +806,21 @@ proc ::constcl::skip-ws {} {
       }
       default {
         set unget $c
-        return
+        ${::log}::debug "skipping whitespace: $c" 
       }
     }
   }
+  return $c
 }
 proc ::constcl::read-eof {args} {
-  foreach char $args     {
-    ::if {$char eq "${::#EOF}"} {
-      return -level 1 ${::#EOF}
+  try {
+    foreach char $args {
+      ::if {$char eq "${::#EOF}"} {
+        return -level 1 ${::#EOF}
+      }
     }
+  } finally {
+    ${::log}::debug "handling an end of file: $c" 
   }
 }
 
@@ -806,16 +828,19 @@ proc ::constcl::read-eof {args} {
 proc ::constcl::lookup {sym env} {
   lassign [binding-info $sym $env] type value
   ::if {$type eq "VARIABLE"} {
-    return $value
+    set expr [expr $value]
   } else {
-    error "not a variable name" $sym
+    ::error "not a variable name" $sym
   }
+  ${::log}::debug "checking on a variable: $c" 
 }
+
 proc ::constcl::self-evaluating? {val} {
   ::if {[T [number? $val]] ||
     [T [string? $val]] ||
     [T [char? $val]] ||
     [T [boolean? $val]]} {
+    ${::log}::debug "a self-evaluating form? $val" 
     return ${::#t}
   } else {
     return ${::#f}
@@ -824,7 +849,9 @@ proc ::constcl::self-evaluating? {val} {
 reg special quote
 
 proc ::constcl::special-quote {expr env} {
-  cadr $expr
+  set expr [cadr $expr]
+  ${::log}::debug "a quote: $expr" 
+  return $expr
 }
 reg special if
 
@@ -844,6 +871,7 @@ reg special case
 proc ::constcl::special-case {expr env} {
   set tail [cdr $expr]
   set expr [do-case [car $tail] [cdr $tail] $env]
+  ${::log}::debug "a case? $expr" 
   eval $expr $env
 }
 proc ::constcl::do-case {keyexpr clauses env} {
@@ -868,6 +896,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
                (begin ,@body)
                ,rest)"
     set expr [expand-quasiquote [parse $qq] $env]
+    ${::log}::debug "a do-case? $expr" 
     $env destroy
     return $expr
   }
@@ -876,6 +905,7 @@ reg special cond
 
 proc ::constcl::special-cond {expr env} {
   set expr [do-cond [cdr $expr] $env]
+  ${::log}::debug "a cond? $expr" 
   eval $expr $env
 }
 proc ::constcl::do-cond {tail env} {
@@ -925,18 +955,20 @@ proc ::constcl::special-begin {expr env} {
   } else {
     /begin [cdr $expr] $env
   }
+  ${::log}::debug "a begin? $expr" 
 }
 proc ::constcl::/begin {exps env} {
   ::if {[T [pair? $exps]]} {
     ::if {[T [pair? [cdr $exps]]]} {
       eval [car $exps] $env
-      return [/begin [cdr $exps] $env]
+      set expr [/begin [cdr $exps] $env]
     } else {
-      return [eval [car $exps] $env]
+      set expr [eval [car $exps] $env]
     }
   } else {
-    return [parse "'()"]
+    set expr [parse "'()"]
   }
+  ${::log}::debug "a /begin? $expr" 
 }
 reg special define
 
@@ -944,6 +976,7 @@ proc ::constcl::special-define {expr env} {
   set expr [rewrite-define $expr $env]
   set sym [cadr $expr]
   set val [eval [caddr $expr] $env]
+  ${::log}::debug "a /begin? $expr" 
   /define $sym $val $env
 }
 proc ::constcl::rewrite-define {expr env} {
@@ -954,6 +987,7 @@ proc ::constcl::rewrite-define {expr env} {
     set qq "`(define ,(caar tail)
                (lambda ,(cdar tail) ,@(cdr tail)))"
     set expr [expand-quasiquote [parse $qq] $env]
+    ${::log}::debug "a define? $expr" 
     $env destroy
   }
   return $expr
@@ -971,7 +1005,8 @@ proc ::constcl::special-set! {expr env} {
   set var [car $args]
   set val [eval [cadr $args] $env]
   [$env find $var] assign $var VARIABLE $val
-  set val
+  ${::log}::debug "a modifying set? $val" 
+  return val
 }
 reg special lambda
 
@@ -979,11 +1014,14 @@ proc ::constcl::special-lambda {expr env} {
   set args [cdr $expr]
   set formals [car $args]
   set body [cons [S begin] [cdr $args]]
-  return [MkProcedure $formals $body $env]
+  set expr [MkProcedure $formals $body $env]
+  ${::log}::debug "a lambda? $expr" 
+  return $expr
 }
 proc ::constcl::invoke {pr vals} {
   assert "$pr is a procedure: " [procedure? $pr]
   assert "$vals is a pair: " [pair? $vals]
+  ${::log}::debug "invoking a procedure: $pr" 
   ::if {[info object isa object $pr]} {
     $pr call {*}[splitlist $vals]
   } else {
@@ -997,6 +1035,7 @@ proc ::constcl::special-let {expr env} {
     set expr [rewrite-named-let $expr $env]
   }
   set expr [rewrite-let $expr $env]
+  ${::log}::debug "expanding a let: $expr" 
   eval $expr $env
 }
 proc ::constcl::rewrite-named-let {expr env} {
@@ -1020,6 +1059,7 @@ proc ::constcl::rewrite-named-let {expr env} {
                  (lambda ,varlist ,@body)) ,call)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
+  ${::log}::debug "expanding a named let: $expr" 
   return $expr
 }
 proc ::constcl::rewrite-let {expr env} {
@@ -1037,6 +1077,7 @@ proc ::constcl::rewrite-let {expr env} {
              ,@vallist)"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
+  ${::log}::debug "rewriting a let: $expr" 
   return $expr
 }
 proc ::constcl::parse-bindings {name bindings} {
@@ -1049,12 +1090,14 @@ proc ::constcl::parse-bindings {name bindings} {
     }
     dict set vars $var $val
   }
+  ${::log}::debug "parsing bindings: $expr" 
   return
 }
 reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
+  ${::log}::debug "a letrec: $expr" 
   eval $expr $env
 }
 proc ::constcl::rewrite-letrec {expr env} {
@@ -3985,8 +4028,7 @@ oo::objdefine ::constcl::null_env {
   }
 }
 namespace eval ::constcl {
-  Environment create global_env ${::#NIL} {} \
-    ::constcl::null_env
+  Environment create global_env ${::#NIL} {} ::constcl::null_env
   foreach v [dict values $defreg] {
     lassign $v key val
     lassign $val bt in
