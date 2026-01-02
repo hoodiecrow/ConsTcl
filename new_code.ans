@@ -262,4 +262,44 @@ proc ::assert {str expr {infoframe {}} {body {}}} {${::#t}}
   return {}
 }
 
+    if 0 {
+	    set new [auto_execok $name]
+    
+	    if {$new ne ""} {
+		set redir ""
+		if {[namespace which -command console] eq ""} {
+		    set redir ">&@stdout <@stdin"
+		}
+		uplevel #0 [list ::catch \
+			[concat exec $redir $new [lrange $args 1 end]] \
+			::tcl::UnknownResult ::tcl::UnknownOptions]
+    }
+    
+    try {
+        exec $outfile
+    } on ok f {
+        try {
+            puts $f $text
+        } on error msg {
+            error $msg
+        }
+    } on error msg {
+        error $msg
+    } finally {
+        catch {close $f}
+    }
+    return $text
+}
+if 0 {
+
+set ex [info nameofex]
+if {[string match -nocase {*wish*} [file tail $ex]] &&\
+        $tcl_platform(platform) == {windows} &&\
+        ! [string match -nocase [file extension $argv0] {.exe}] &&\
+        [set target [auto_execok tclsh]] != {}} {
+  exec $target $trueFr {*}$argv &
+  exit 0
+}
+}
+
 
