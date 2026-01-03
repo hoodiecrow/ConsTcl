@@ -546,11 +546,9 @@ proc ::constcl::read-pair-expr {char} {
   read-eof $expr
   ::if {$c ne $char} {
     ::if {$char eq ")"} {
-      ::error \
-        "Missing right paren. ($c)."
+      ::error "Missing right paren. ($c)."
     } else {
-      ::error \
-        "Missing right bracket ($c)."
+      ::error "Missing right bracket ($c)."
     }
   } else {
     set unget {}
