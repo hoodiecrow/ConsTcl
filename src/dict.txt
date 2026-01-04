@@ -1,0 +1,152 @@
+env           -> an environment
+envproc       -> an environment or procedure object
+specmacro     -> either 'special' or 'macro'
+dc            -> -don't care-
+msg           -> a message string
+invoke        -> what pr returns
+formals       -> a Scheme formals list
+bindfo        -> binding info
+tbindfos      -> a Tcl list of binding info tuples
+btype         -> binding type
+hinfo         -> handling info
+lisp          -> Lisp source text
+inpbuf        -> an input buffer
+extrep        -> an external representation of a Lisp object
+tstrinpbuf    -> a Tcl string or an input buffer
+tstrstrinpbuf -> a Tcl string, a Lisp string, or a string input port
+none          -> nothing
+noneeof       -> nothing, or end of file
+filename      -> a filename string
+varsvals      -> a flag, VARS or VALS
+pterm         -> the terminating paren or bracket
+pstr          -> a structure of pair expressions
+pstreof       -> a structure of pair expressions or end of file
+pound         -> a vector, boolean, or character value
+poundeof      -> a vector, boolean, or character value or end of file
+quote         -> an expression wrapped in the quote symbol
+quoteeof      -> an expression wrapped in the quote symbol or end of file
+unquote       -> an expression wrapped in the unquote/-splicing symbol
+unquoteeof    -> an expr. wr. in the unquote/-splicing symbol or end of file
+qquote        -> an expression wrapped in the quasiquote symbol
+qquoteeof     -> an expr. wr. in the quasiquote symbol or end of file
+pm            -> either the symbols + or - or a number
+pmeof         -> either the symbols + or - or a number or end of file
+obj           -> a ConsTcl object
+objeof        -> a ConsTcl object or end of file
+lvfalse       -> a Lisp list of values OR #f
+apfalse       -> an association pair or #f
+alist         -> an association list
+plist         -> a property list
+handle        -> a channel handle
+handlenil     -> a channel handle or NIL
+name          -> a call-by-name name
+pred          -> a predicate
+epred         -> an equivalence predicate
+val           -> a value
+vals          -> some values
+lvals         -> a Lisp list of values
+tvals         -> a Tcl list of values
+xvals         -> a Lisp or Tcl list of values
+tlvals        -> a Tcl list of Lisp lists of values
+valorf        -> a value OR #f
+ass           -> an association pair
+lasss         -> a Lisp list of association pairs
+nil           -> the empty list
+nils          -> some nil values
+lnils         -> a Lisp list of nil values
+tnils         -> a Tcl list of nil values
+num           -> a number
+numeof        -> a number or end of file
+nums          -> some numbers
+lnums         -> a Lisp list of numbers
+tnum          -> a Tcl number
+tnums         -> a Tcl list of numbers
+enum          -> an external representation of a number
+bool          -> a boolean
+bools         -> some booleans
+booleof       -> a boolean or end of file
+lbools        -> a Lisp list of booleans
+tbool         -> a Tcl truth value (1 or 0)
+tbooltrue     -> a Tcl truth value (1)
+tbooleof      -> a Tcl truth value (1 or 0) or end of file
+tbools        -> a Tcl list of booleans
+cmp           -> a comparison value: -1, 0, or 1
+ebool         -> an external representation of a bool
+etrue         -> the external representation of true
+efalse        -> the external representation of false
+char          -> a character
+chareof       -> a character or end of file
+chars         -> some characters
+lchars        -> a Lisp list of characters
+echar         -> an external representation of a char
+tchr          -> a Tcl character
+tchrs         -> some Tcl characters
+tchreof       -> a Tcl character or end of file
+tchars        -> a Tcl list of characters
+proc          -> a procedure
+procs         -> some procedures
+lprocs        -> a Lisp list of procedures
+tprocs        -> a Tcl list of procedures
+pair          -> a pair
+pairs         -> some pairs
+lpairs        -> a Lisp list of pairs
+tpairs        -> a Tcl list of pairs
+epair         -> an external representation of a pair
+list          -> a list
+lists         -> some lists
+llists        -> a Lisp list of lists
+tlists        -> a Tcl list of lists
+str           -> a string
+streof        -> a string or end of file
+strs          -> some strings
+estr          -> an external repr. of a string
+estrnodblq    -> an external repr. of a string, w/o double quotes
+lstrs         -> a Lisp list of strings
+tstrs         -> a Tcl list of strings
+tstr          -> a Tcl string
+sym           -> a symbol
+symeof        -> a symbol or end of file
+syms          -> some symbols
+lsyms         -> a Lisp list of symbols
+tsyms         -> a Tcl list of symbols
+vec           -> a vector
+veceof        -> a vector or end of file
+vecs          -> some vectors
+lvecs         -> a Lisp list of vectors
+tvecs         -> a Tcl list of vectors
+expr          -> an expression
+expreof       -> an expression or end of file
+exprtail      -> an expression tail
+exprs         -> some expressions
+lexprs        -> a Lisp list of expressions
+texp          -> a Tcl expression
+texprs        -> a Tcl list of expressions
+arg           -> an argument
+args          -> some arguments
+largs         -> a Lisp list of arguments
+targs         -> a Tcl list of arguments
+int           -> an integer
+ints          -> some integers
+lints         -> a Lisp list of integers
+tints         -> a Tcl list of integers
+bsym          -> a bound symbol
+bsyms         -> some bound symbols
+lbsyms        -> a Lisp list of bound symbols
+tbsyms        -> a Tcl list of bound symbols
+port          -> a port
+ports         -> some ports
+lports        -> a Lisp list of ports
+tports        -> a Tcl list of ports
+iport         -> an input port
+iports        -> some input ports
+liports       -> a Lisp list of input ports
+tiports       -> a Tcl list of input ports
+fiport        -> a file input port
+siport        -> a string input port
+oport         -> an output port
+oports        -> some output ports
+loports       -> a Lisp list of output ports
+toports       -> a Tcl list of output ports
+foport        -> a file output port
+soport        -> a string output port
+

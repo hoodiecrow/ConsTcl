@@ -1,0 +1,71 @@
+
+H2 Identifier validation
+
+B{idcheckinit} procedure
+
+NI B{idchecksubs} procedure
+
+NI B{idcheck} procedure
+
+NI B{varcheck} procedure
+
+Some routines for checking if a string is a valid identifier. K{idcheckinit}
+checks the first character, K{idchecksubs} checks the rest. K{idcheck} calls the
+others and raises an error if they fail. A valid symbol is still an invalid
+identifier if has the name of some keyword, which K{varcheck} checks, for a set
+of keywords given in the standard.
+
+
+IX idcheckinit procedure
+CB(
+proc ::constcl::idcheckinit {init} {
+  if {[::string is alpha -strict $init] ||
+    $init in {! $ % & * / : < = > ? ^ _ ~}} {
+    return true
+  } else {
+    return false
+  }
+}
+CB)
+
+IX idchecksubs procedure
+CB(
+proc ::constcl::idchecksubs {subs} {
+  foreach c [split $subs {}] {
+    if {!([::string is alnum -strict $c] ||
+      $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
+      return false
+    }
+  }
+  return true
+}
+CB)
+
+IX idcheck procedure
+CB(
+proc ::constcl::idcheck {sym} {
+  if {$sym eq {}} {return $sym}
+  if {(![idcheckinit [::string index $sym 0]] ||
+    ![idchecksubs [::string range $sym 1 end]]) &&
+    $sym ni {+ - ...}} {
+    ::error "Identifier expected ($sym)"
+  }
+  set sym
+}
+CB)
+
+IX varcheck procedure
+CB(
+proc ::constcl::varcheck {sym} {
+  if {$sym in {
+    else => define unquote unquote-splicing
+    quote lambda if set! begin cond and or
+    case let let* letrec do delay quasiquote
+  }} {
+    ::error "Variable name is reserved: $sym"
+  }
+  return $sym
+}
+CB)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

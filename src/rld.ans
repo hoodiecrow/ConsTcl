@@ -1,0 +1,283 @@
+
+H3 Resolving local defines
+
+This section is ported from 'Scheme 9 from Empty Space'I{S9fES}. It rewrites
+local defines as a K{letrec} form. K{resolve-local-defines} takes a list of
+expressions and extracts variables and values from the defines in the beginning
+of the list. It builds a double lambda expression with the variables and values,
+and the rest of the expressions from the original list as body.
+
+H4 resolve-local-defines procedure
+
+PR(
+resolve-local-defines;expr expr -> expr
+PR)
+
+CB(
+proc ::constcl::resolve-local-defines {expr} {
+  set exps [cdr $expr]
+  set rest [lassign [
+    extract-from-defines $exps VALS] a error]
+  if {[T $error]} {
+    return ${::#NIL}
+  }
+  set rest [lassign [
+    extract-from-defines $exps VARS] v error]
+  if {[T $error]} {
+    return ${::#NIL}
+  }
+  if {$rest eq ${::#NIL}} {
+    set rest [cons #UNS ${::#NIL}]
+  }
+  return [make-lambdas $v $a $rest]
+}
+CB)
+
+H4 extract-from-defines procedure
+
+K{extract-from-defines} visits every define in the given list of expressions and
+extracts either a variable name or a value, depending on the state of the
+E{part} flag, from each one of them. A Tcl list of 1) the resulting list of
+names or values, 2) error state, and 3) the rest of the expressions in the
+original list is returned.
+
+PR(
+extract-from-defines (internal);exps lexprs part varsvals -> tvals
+PR)
+
+CB(
+proc ::constcl::extract-from-defines {exps part} {
+  set a ${::#NIL}
+  while {$exps ne ${::#NIL}} {
+    if {[T [atom? $exps]] ||
+        [T [atom? [car $exps]]] ||
+        ![T [eq? [caar $exps] [S define]]]} {
+      break
+    }
+    set n [car $exps]
+    set k [length $n]
+    if {![T [list? $n]] ||
+        [$k numval] < 3 ||
+        ![T [argument-list? [cadr $n]]] ||
+        ([T [symbol? [cadr $n]]] &&
+        [$k numval] > 3)} {
+        return [::list ${::#NIL} ${::#t} ${::#NIL}]
+      }
+      if {[T [pair? [cadr $n]]]} {
+        if {$part eq "VARS"} {
+          set a [cons [caadr $n] $a]
+        } else {
+          set a [cons ${::#NIL} $a]
+          set new [cons [cdadr $n] [cddr $n]]
+          set new [cons [S lambda] $new]
+          set-car! $a $new
+        }
+      } else {
+        if {$part eq "VARS"} {
+          set a [cons [cadr $n] $a]
+        } else {
+          set a [cons [caddr $n] $a]
+        }
+      }
+      set exps [cdr $exps]
+    }
+    return [::list $a ${::#f} $exps]
+}
+CB)
+
+H4 argument-list? procedure
+
+K{argument-list?} accepts a Scheme formals list and rejects other values.
+
+PR(
+argument-list? (internal);val val -> bool
+PR)
+
+CB(
+proc ::constcl::argument-list? {val} {
+  if {$val eq ${::#NIL}} {
+    return ${::#t}
+  } elseif {[T [symbol? $val]]} {
+    return ${::#t}
+  } elseif {[T [atom? $val]]} {
+    return ${::#f}
+  }
+  while {[T [pair? $val]]} {
+    if {[symbol? [car $val]] eq ${::#f}} {
+      return ${::#f}
+    }
+    set val [cdr $val]
+  }
+  if {$val eq ${::#NIL}} {
+    return ${::#t}
+  } elseif {[T [symbol? $val]]} {
+    return ${::#t}
+  }
+}
+CB)
+
+H4 make-lambdas procedure
+
+K{make-lambdas} builds the K{letrec} structure.
+
+PR(
+make-lambdas (internal);vars lsyms args lexprs body lexprs -> expr
+PR)
+
+CB(
+proc ::constcl::make-lambdas {vars args body} {
+  set tmps [make-temporaries $vars]
+  set body [append-b [
+    make-assignments $vars $tmps] $body]
+  set body [cons $body ${::#NIL}]
+  set n [cons $tmps $body]
+  set n [cons [S lambda] $n]
+  set n [cons $n $args]
+  set n [cons $n ${::#NIL}]
+  set n [cons $vars $n]
+  set n [cons [S lambda] $n]
+  set n [cons $n [make-undefineds $vars]]
+  return $n
+}
+CB)
+
+H4 make-temporaries procedure
+
+K{make-temporaries} creates the symbols that will act as middlemen in
+transferring the values to the variables.
+
+PR(
+make-temporaries (internal);vals lvals -> lvals
+PR)
+
+CB(
+proc ::constcl::make-temporaries {vals} {
+  set res ${::#NIL}
+  while {$vals ne ${::#NIL}} {
+    set res [cons [gensym "g"] $res]
+    set vals [cdr $vals]
+  }
+  return $res
+}
+CB)
+
+H4 gensym procedure
+
+K{gensym} generates a unique symbol. The candidate symbol is compared to all the
+symbols in the symbol table to avoid collisions.
+
+PR(
+gensym (internal);prefix str -> sym
+PR)
+
+CB(
+proc ::constcl::gensym {prefix} {
+  set symbolnames [
+    dict keys $::constcl::symbolTable]
+  set s $prefix<[incr ::constcl::gensymnum]>
+  while {$s in $symbolnames} {
+    set s $prefix<[incr ::constcl::gensymnum]>
+  }
+  return [S $s]
+}
+CB)
+
+H4 append-b procedure
+
+K{append-b} joins two lists together.
+
+PR(
+append-b (internal);a lvals b lvals -> lvals
+PR)
+
+CB(
+proc ::constcl::append-b {a b} {
+  if {$a eq ${::#NIL}} {
+    return $b
+  }
+  set p $a
+  while {$p ne ${::#NIL}} {
+    if {[T [atom? $p]]} {
+      ::error "append: improper list"
+    }
+    set last $p
+    set p [cdr $p]
+  }
+  set-cdr! $last $b
+  return $a
+}
+CB)
+
+H4 make-assignments procedure
+
+K{make-assignments} creates the structure that holds the assignment statements.
+Later on, it will be joined to the body of the finished expression.
+
+PR(
+make-assignments (internal);vars lsyms tmps lsyms -> expr
+PR)
+
+CB(
+proc ::constcl::make-assignments {vars tmps} {
+  set res ${::#NIL}
+  while {$vars ne ${::#NIL}} {
+    set asg [cons [car $tmps] ${::#NIL}]
+    set asg [cons [car $vars] $asg]
+    set asg [cons [S set!] $asg]
+    set res [cons $asg $res]
+    set vars [cdr $vars]
+    set tmps [cdr $tmps]
+  }
+  return [cons [S begin] $res]
+}
+CB)
+
+H4 make-undefineds procedure
+
+K{make-undefineds} creates a list of quoted undefined values.
+
+PR(
+make-undefineds (internal);vals lvals -> lnils
+PR)
+
+CB(
+proc ::constcl::make-undefineds {vals} {
+  set res ${::#NIL}
+  while {$vals ne ${::#NIL}} {
+    set res [cons [list [S quote] ${::#UND}] $res]
+    set vals [cdr $vals]
+  }
+  return $res
+}
+CB)
+
+TT(
+
+::tcltest::test rld-1.0 {expand local defines} -body {
+    set x [parse "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -match glob -output {((lambda (b a n) ((lambda (g<[0-9]*> g<[0-9]*> g<[0-9]*>) (begin (set! n g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>) (set! n (+ a b)) (* n n))) 4 3 0)) (quote #<undefined>) (quote #<undefined>) (quote #<undefined>))?}
+
+::tcltest::test rld-1.1 {run local defines} -body {
+    set x [parse "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    w [e [::constcl::resolve-local-defines $x]]
+} -output "49\n"
+
+::tcltest::test rld-1.2 {expand local defines w/o defines} -body {
+    set x [parse "(begin (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test rld-1.3 {expand local defines with begin} -body {
+    set x [parse "(begin (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
+    set x [parse "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -match glob -output {((lambda (foo) ((lambda (g<[0-9]*>) (begin (set! foo g<[0-9]*>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) (quote #<undefined>))?}
+
+TT)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 

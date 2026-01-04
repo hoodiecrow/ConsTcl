@@ -1,0 +1,1077 @@
+
+H3 Pairs and lists
+
+List processing is another of Lisp's great strengths. In Lisp, lists (which are
+actually tree structures) are composed of E{pairs}, which in the most elementary
+case are constructed using calls to the K{cons} function. Example:
+
+VB(
+(cons 'a
+  (cons 'b (cons (cons 'c '()) '())))  ==> (a b (c))
+VB)
+
+A E{pair} consists of a pair of pointers, named the E{car} and the E{cdr}F{There
+are historical, not very interesting, reasons for this naming.}.
+
+IG /images/pair.png
+
+The example above would look like this (we'll name it L). K{car L} is the symbol
+K{a}, and K{cdr L} is the list K{(b (c))}. K{cadr L} (the K{car} of K{cdr L}) is
+K{b}.
+
+IG /images/tree.png
+
+All program source code has a tree structure, even though this is usually mostly
+hidden by the language. Lisp, on the other hand, makes the tree structure fully
+explicit by using the same notation for source code as for list data (hence all
+the parentheses).
+
+H4 Pair class
+
+The Pair class defines what capabilities a pair has (in addition to those
+from the Base class), and also defines the internal representation of a pair
+value expression. A pair is stored in an instance as a couple of pointers, and
+the K{car} and K{cdr} methods yield each of them as result.
+
+CB(
+oo::class create ::constcl::Pair {
+  superclass ::constcl::Base
+  variable car cdr constant
+CB)
+
+The constructor stores values into the K{car} and K{cdr} variables, and sets
+K{constant} to 0, denoting that the pair is mutable.
+
+PR(
+Pair constructor (internal);a val d val -> none
+PR)
+
+CB(
+  constructor {a d} {
+    set car $a
+    set cdr $d
+    set constant 0
+  }
+CB)
+
+The K{value} method is a synonym for K{tstr}.
+
+PR(
+(Pair instance) value (internal);-> epair
+PR)
+
+CB(
+  method value {} {
+    my tstr
+  }
+CB)
+
+The K{car} method returns the value stored in the K{car} variable.
+
+PR(
+(Pair instance) car (internal);-> val
+PR)
+
+CB(
+  method car {} {
+    set car
+  }
+CB)
+
+The K{cdr} method returns the value stored in the K{cdr} variable.
+
+PR(
+(Pair instance) cdr (internal);-> val
+PR)
+
+CB(
+  method cdr {} {
+    set cdr
+  }
+CB)
+
+The K{set-car!} method modifies the value stored in the K{car} variable.
+
+PR(
+(Pair instance) set-car! (internal);val val -> pair
+PR)
+
+CB(
+  method set-car! {val} {
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
+    set car $val
+    self
+  }
+CB)
+
+The K{set-cdr!} method modifies the value stored in the K{cdr} variable.
+
+PR(
+(Pair instance) set-cdr! (internal);val val -> pair
+PR)
+
+CB(
+  method set-cdr! {val} {
+    ::constcl::check {my mutable?} {
+      Can't modify a constant pair
+    }
+    set cdr $val
+    self
+  }
+CB)
+
+The K{mkconstant} method changes the instance from mutable to immutable.
+
+PR(
+(Pair instance) mkconstant (internal);-> none
+PR)
+
+CB(
+  method mkconstant {} {
+    set constant 1
+    return
+  }
+CB)
+
+The K{constant} method signals whether the pair instance is immutable.
+
+PR(
+(Pair instance) constant (internal);-> tbool
+PR)
+
+CB(
+  method constant {} {
+    return $constant
+  }
+CB)
+
+The K{mutable?} method is a predicate that tells if the pair instance is mutable
+or not.
+
+PR(
+(Pair instance) mutable? (internal);-> bool
+PR)
+
+CB(
+  method mutable? {} {
+    expr {$constant ? ${::#f} : ${::#t}}
+  }
+CB)
+
+The K{write} method prints an external representation of the pair on the given
+port.
+
+PR(
+(Pair instance) write (internal);port oport -> none
+PR)
+
+CB(
+  method write {port} {
+    $port put "("
+    ::constcl::write-pair $port [self]
+    $port put ")"
+  }
+CB)
+
+The K{tstr} method yields the external representation of the pair instance as a
+Tcl string. It is used by error messages.
+
+PR(
+(Pair instance) tstr (internal);-> epair
+PR)
+
+CB(
+  method tstr {} {
+    format "(%s)" [::constcl::tstr-pair [self]]
+  }
+}
+CB)
+
+H4 MkPair generator
+
+K{MkPair} generates a Pair object. Shorter form: K{cons}.
+
+PR(
+MkPair (internal);car val cdr val -> pair
+PR)
+
+CB(
+interp alias {} ::constcl::MkPair \
+  {} ::constcl::Pair new
+CB)
+
+TT(
+
+::tcltest::test pairslists-1.0 {playing with lists} -body {
+    pew {(define x (list 'a 'b 'c))}
+    pew {(define y x)}
+    pew {y}
+    pew {(list? y)}
+} -output "(a b c)\n#t\n"
+
+::tcltest::test pairslists-1.2 {playing with lists} -body {
+    pew {(set-cdr! x 4)}
+    pew {x}
+} -output "(a . 4)\n(a . 4)\n"
+
+::tcltest::test pairslists-1.3 {playing with lists} -body {
+    pew {(eqv? x y)}
+    pew {y}
+} -output "#t\n(a . 4)\n"
+
+::tcltest::test pairslists-1.4 {playing with lists} -body {
+    pew {(eqv? x y)}
+    pew {y}
+    pew {(list? y)}
+} -output "#t\n(a . 4)\n#f\n"
+
+TT)
+
+H4 pair? procedure
+
+PR(
+pair? (public);val val -> bool
+PR)
+
+CB(
+reg pair?
+
+proc ::constcl::pair? {val} {
+  typeof? $val Pair
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-2.0 {try pair?} -body {
+    pew {(pair? '(a . b))}
+    pew {(pair? '(a b c))}
+    pew {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+TT)
+
+H4 tstr-pair procedure
+
+Helper procedure to make a string representation of a list.
+
+PR(
+tstr-pair (internal);pair pair -> tstr
+PR)
+
+CB(
+proc ::constcl::tstr-pair {pair} {
+  # take a pair and make a string of the car
+  # and the cdr of the stored value
+  set str {}
+  set a [car $pair]
+  set d [cdr $pair]
+  ::append str [$a tstr]
+  if {[T [pair? $d]]} {
+    # cdr is a cons pair
+    ::append str " "
+    ::append str [tstr-pair $d]
+  } elseif {[T [null? $d]]} {
+    # cdr is nil
+    return $str
+  } else {
+    # it is an atom
+    ::append str " . "
+    ::append str [$d tstr]
+  }
+  return $str
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-3.0 {try tstr-pair} -body {
+    puts [::constcl::tstr-pair [parse {(a . b)}]]
+    puts [::constcl::tstr-pair [parse {(a b c)}]]
+    puts [::constcl::tstr-pair [parse {(a b . c)}]]
+    puts [::constcl::tstr-pair [parse {(a)}]]
+} -output "a . b\na b c\na b . c\na\n"
+
+TT)
+
+H4 cons procedure
+
+K{cons} joins two values in a pair; useful in many operations such as pushing
+a new value onto a list.
+
+Example:
+
+VB(
+(cons 'a 'b)              ==>  (a . b)
+(cons 'a nil)             ==>  (a)
+(cons 'a (cons 'b nil))   ==>  (a b)
+VB)
+
+IF /images/consing.png Examples of consing
+
+PR(
+cons (public);car val cdr val -> pair
+PR)
+
+CB(
+reg cons
+
+proc ::constcl::cons {car cdr} {
+  MkPair $car $cdr
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-4.0 {try cons} -body {
+    pew {(cons 'a '())}
+    pew {(cons '(a) '(b c d))}
+    pew {(cons "a" '(b c))}
+    pew {(cons 'a 3)}
+    pew {(cons '(a b) 'c)}
+} -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
+
+TT)
+
+H4 car procedure
+
+K{car} gets the contents of the first cell in a pair.
+
+Example:
+
+VB(
+(car '(a b))   ==>  a
+VB)
+
+PR(
+car (public);pair pair -> val
+PR)
+
+CB(
+reg car
+
+proc ::constcl::car {pair} {
+  $pair car
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-5.0 {try car} -body {
+    pew {(car '(a b c))}
+    pew {(car '((a) b c d))}
+    pew {(car '(1 . 2))}
+} -output "a\n(a)\n1\n"
+
+::tcltest::test pairslists-5.1 {try car} -body {
+    pew {(car '())}
+} -returnCodes error -result "PAIR expected"
+
+TT)
+
+H4 cdr procedure
+
+K{cdr} gets the contents of the second cell in a pair.
+
+Example:
+
+VB(
+(cdr '(a b))   ==>  (b)
+VB)
+
+PR(
+cdr (public);pair pair -> val
+PR)
+
+CB(
+reg cdr
+
+proc ::constcl::cdr {pair} {
+  $pair cdr
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-6.0 {try cdr} -body {
+    pew {(cdr '((a) b c d))}
+    pew {(cdr '(1 . 2))}
+} -output "(b c d)\n2\n"
+
+::tcltest::test pairslists-6.1 {try cdr} -body {
+    pew {(cdr '())}
+} -returnCodes error -result "PAIR expected"
+
+TT)
+
+B{caar} to B{cddddr}
+
+K{car} and K{cdr} can be combined to form 28 composite access
+operations.
+
+IX caar procedure
+CB(
+foreach ads {
+  aa
+  ad
+  da
+  dd
+  aaa
+  ada
+  daa
+  dda
+  aad
+  add
+  dad
+  ddd
+  aaaa
+  adaa
+  daaa
+  ddaa
+  aada
+  adda
+  dada
+  ddda
+  aaad
+  adad
+  daad
+  ddad
+  aadd
+  addd
+  dadd
+  dddd
+} {
+    reg c${ads}r
+
+    proc ::constcl::c${ads}r {x} "
+        foreach c \[lreverse \[split $ads {}\]\] {
+            if {\$c eq \"a\"} {
+                set x \[car \$x\]
+            } else {
+                set x \[cdr \$x\]
+            }
+        }
+        return \$x
+    "
+
+}
+CB)
+
+H4 set-car"! procedure
+
+K{set-car!} sets the contents of the first cell in a pair.
+
+Example:
+
+VB(
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-car! pair val))                ==>  (x . b)
+VB)
+
+PR(
+set-car! (public);pair pair val val -> pair
+PR)
+
+CB(
+reg set-car!
+
+proc ::constcl::set-car! {pair val} {
+  $pair set-car! $val
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-7.0 {try set-car!} -body {
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-car! (f) 3)}
+} -output "(3)\n"
+
+::tcltest::test pairslists-7.1 {try set-car!} -body {
+    pew {(set-car! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+TT)
+
+H4 set-cdr"! procedure
+
+K{set-cdr!} sets the contents of the second cell in a pair.
+
+Example:
+
+VB(
+(let ((pair (cons 'a 'b)) (val 'x))
+  (set-cdr! pair val))                ==>  (a . x)
+VB)
+
+PR(
+set-cdr! (public);pair pair val val -> pair
+PR)
+
+CB(
+reg set-cdr!
+
+proc ::constcl::set-cdr! {pair val} {
+  $pair set-cdr! $val
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-8.0 {try set-cdr!} -body {
+  unbind [S f]
+  unbind [S g]
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-cdr! (f) 3)}
+} -output "(not-a-constant-list . 3)\n"
+
+::tcltest::test pairslists-8.1 {try set-cdr!} -body {
+    pew {(set-cdr! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+TT)
+
+H4 list? procedure
+
+The K{list?} predicate tests if a pair is part of a proper list, one that
+ends with NIL. See the figure showing R{proper and improper
+  lists}{fig:a-proper-list-and-two-improper-ones}.
+
+PR(
+list? (public);val val -> bool
+PR)
+
+CB(
+reg list?
+
+proc ::constcl::list? {val} {
+  set visited {}
+  if {[T [null? $val]]} {
+      return ${::#t}
+  } elseif {[T [pair? $val]]} {
+      return [listp $val]
+  } else {
+      return ${::#f}
+  }
+}
+CB)
+
+B{listp} procedure
+
+K{listp} is a helper procedure that recursively traverses a pair trail to find
+out if it is cyclic or ends in an atom, which means that the procedure returns
+false, or if it ends in K{NIL}, which means that it returns true.
+
+PR(
+listp (internal);pair pair -> bool
+PR)
+
+IX listp procedure
+CB(
+proc ::constcl::listp {pair} {
+  upvar visited visited
+  if {$pair in $visited} {
+    return ${::#f}
+  }
+  lappend visited $pair
+  if {[T [null? $pair]]} {
+    return ${::#t}
+  } elseif {[T [pair? $pair]]} {
+    return [listp [cdr $pair]]
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-9.0 {try list?} -body {
+    pew {(list? '(a b c))}
+    pew {(list? '())}
+    pew {(list? '(a . b))}
+    pew {(list? #\A)}
+} -output "#t\n#t\n#f\n#f\n"
+
+::tcltest::test pairslists-9.1 {try list?} -body {
+    # "bug": list is infinite and list? must detect that
+    pew {(let ((x (list 'a)))
+          (set-cdr! x x)
+          (list? x))}
+} -output "#f\n"
+
+TT)
+
+H4 list procedure
+
+K{list} constructs a Lisp list from a number of values.
+
+Example:
+
+VB(
+(list 1 2 3)   ==>  (1 2 3)
+VB)
+
+PR(
+list (public);args vals -> lvals
+PR)
+
+CB(
+reg list
+
+proc ::constcl::list {args} {
+  if {[llength $args] == 0} {
+    return ${::#NIL}
+  } else {
+    set prev ${::#NIL}
+    foreach obj [lreverse $args] {
+      set prev [cons $obj $prev]
+    }
+    return $prev
+  }
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-10.0 {try list} -body {
+    pew {(list 'a (+ 3 4) 'c)}
+    pew {(list)}
+} -output "(a 7 c)\n()\n"
+
+TT)
+
+H4 length procedure
+
+K{length} reports the length of a Lisp list.
+
+Example:
+
+VB(
+(length '(a b c d))   ==>  4
+VB)
+
+PR(
+length (public);pair pair -> num
+PR)
+
+CB(
+reg length
+
+proc ::constcl::length {pair} {
+  check {list? $pair} {
+    LIST expected\n([pn] lst)
+  }
+  MkNumber [length-helper $pair]
+}
+CB)
+
+B{length-helper} procedure
+
+K{length-helper} is a helper procedure which measures a list recursively.
+
+PR(
+length-helper (internal);pair pair -> tnum
+PR)
+
+IX length-helper procedure
+CB(
+proc ::constcl::length-helper {pair} {
+  if {[T [null? $pair]]} {
+    return 0
+  } else {
+    return [expr {1 +
+      [length-helper [cdr $pair]]}]
+  }
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-11.0 {try length} -body {
+    pew {(length '(a b c))}
+    pew {(length '(a (b) (c d e)))}
+    pew {(length '())}
+} -output "3\n3\n0\n"
+
+TT)
+
+H4 append procedure
+
+K{append} joins lists together.
+
+Example:
+
+VB(
+(append '(a b) '(c d))   ==>  (a b c d)
+VB)
+
+PR(
+append (public);args lists -> lvals
+PR)
+
+CB(
+reg append
+
+proc ::constcl::append {args} {
+  set prev [lindex $args end]
+  foreach r [lreverse [lrange $args 0 end-1]] {
+    check {list? $r} {
+      LIST expected\n([pn] [$r tstr])
+    }
+    set prev [copy-list $r $prev]
+  }
+  set prev
+}
+CB)
+
+B{copy-list} procedure
+
+K{copy-list} joins together two lists by recursively consing items from the
+first list towards the second.
+
+PR(
+copy-list (internal);pair pair next lvals -> lvals
+PR)
+
+IX copy-list procedure
+CB(
+proc ::constcl::copy-list {pair next} {
+  if {[T [null? $pair]]} {
+    set next
+  } elseif {[T [null? [cdr $pair]]]} {
+    cons [car $pair] $next
+  } else {
+    cons [car $pair] [copy-list [cdr $pair] $next]
+  }
+}
+CB)
+
+TT(
+::tcltest::test pairslists-12.0 {try append} -body {
+    pew "(append '(a b) '(c) '(d e))"
+    pew {(append '(x) '(y))}
+    pew {(append '(a) '(b c d))}
+    pew {(append '(a (b)) '((c)))}
+    pew {(append '(a b) '(c . d))}
+    pew {(append '() 'a)}
+} -output "(a b c d e)\n(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+::tcltest::test pairslists-12.1 {try append} -body {
+    pew "(append '(a b) 'c '(d e))"
+} -returnCodes error -result "LIST expected\n(append c)"
+
+TT)
+
+H4 reverse procedure
+
+K{reverse} produces a reversed copy of a Lisp list.
+
+Example:
+
+VB(
+(reverse '(a b c))   ==>  (c b a)
+VB)
+
+PR(
+reverse (public);vals lvals -> lvals
+PR)
+
+CB(
+reg reverse
+
+proc ::constcl::reverse {vals} {
+  list {*}[lreverse [splitlist $vals]]
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-13.0 {try reverse} -body {
+    pew {(reverse '(a b c))}
+    pew {(reverse '(a (b c) d (e (f))))}
+} -output "(c b a)\n((e (f)) d (b c) a)\n"
+
+TT)
+
+H4 list-tail procedure
+
+Given a list index, K{list-tail} yields the sublist starting from that index.
+
+Example:
+
+VB(
+(let ((lst '(a b c d e f)) (k 3))
+  (list-tail lst k))                ==>  (d e f)
+VB)
+
+PR(
+list-tail (public);vals lvals k num -> lvals
+PR)
+
+CB(
+reg list-tail
+
+proc ::constcl::list-tail {vals k} {
+  if {[T [zero? $k]]} {
+    return $vals
+  } else {
+    list-tail [cdr $vals] [- $k [N 1]]
+  }
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-14.0 {try list-tail} -body {
+    pew {(list-tail '(a b c d) 2)}
+} -output "(c d)\n"
+
+TT)
+
+H4 list-ref procedure
+
+K{list-ref} yields the list item at a given index (0-based).
+
+Example:
+
+VB(
+(let ((lst '(a b c d e f)) (k 3))
+  (list-ref lst k))                 ==>  d
+VB)
+
+PR(
+list-ref (public);vals lvals k num -> val
+PR)
+
+CB(
+reg list-ref
+
+proc ::constcl::list-ref {vals k} {
+  car [list-tail $vals $k]
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-15.0 {try list-ref} -body {
+    pew {(list-ref '(a b c d) 2)}
+} -output "c\n"
+
+TT)
+
+H4 memq procedure
+
+NI B{memv} procedure
+
+NI B{member} procedure
+
+K{memq}, K{memv}, and K{member} return the sublist starting with a given
+item, or K{#f} if there is none. They use K{eq?}, K{eqv?}, and K{equal?}, 
+respectively, for the comparison.
+
+Example:
+
+VB(
+(let ((lst '(a b c d e f)) (val 'd))
+  (memq val lst))                      ==>  (d e f)
+VB)
+
+PR(
+memq (public);val1 val val2 lvals -> lvfalse
+PR)
+
+CB(
+reg memq
+
+proc ::constcl::memq {val1 val2} {
+  return [member-proc eq? $val1 $val2]
+}
+CB)
+
+TT(
+
+::tcltest::test pairslists-16.0 {try memq, memv} -body {
+    pew {(memq 'a '(a b c))}
+    pew {(memq 'b '(a b c))}
+    pew {(memq 'a '(b c d))}
+    pew {(memq (list 'a) '(b (a) c))}
+    pew {(memq 101 '(100 101 102))}
+    pew {(memv 101 '(100 101 102))}
+} -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
+
+::tcltest::test pairslists-16.1 {try member} -body {
+    pew {(member (list 'a) '(b (a) c))}
+} -output "((a) c)\n"
+
+TT)
+
+PR(
+memv (public);val1 val val2 lvals -> lvfalse
+PR)
+
+IX memv procedure
+CB(
+reg memv
+
+proc ::constcl::memv {val1 val2} {
+  return [member-proc eqv? $val1 $val2]
+}
+CB)
+
+PR(
+member (public);val1 val val2 lvals -> lvfalse
+PR)
+
+IX member procedure
+CB(
+reg member
+
+proc ::constcl::member {val1 val2} {
+  return [member-proc equal? $val1 $val2]
+}
+CB)
+
+B{member-proc} procedure
+
+The K{member-proc} helper procedure does the work for the K{memq}, K{memv}, and
+K{member} procedures. It works by comparing against the K{car} of the list, then
+recursively taking the K{cdr} of the list.
+
+PR(
+member-proc (internal);epred epred val1 val val2 lvals -> lvfalse
+PR)
+
+IX member-proc procedure
+CB(
+proc ::constcl::member-proc {epred val1 val2} {
+  switch $epred {
+    eq? { set name "memq" }
+    eqv? { set name "memv" }
+    equal? { set name "member" }
+  }
+  check {list? $val2} {
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
+  }
+  if {[T [null? $val2]]} {
+    return ${::#f}
+  } elseif {[T [pair? $val2]]} {
+    if {[T [$epred $val1 [car $val2]]]} {
+      return $val2
+    } else {
+      return [member-proc $epred $val1 [cdr $val2]]
+    }
+  }
+}
+CB)
+
+H4 assq procedure
+
+NI B{assv} procedure
+
+NI B{assoc} procedure
+
+K{assq}, K{assv}, and K{assoc} scan an association list and return the
+association pair with a given key, or K{#f} if there is none. They use K{eq?},
+K{eqv?}, and K{equal?}, respectively, for the comparison. They implement lookup
+in the kind of lookup table known as an association list, or E{alist}.
+
+Example:
+
+VB(
+(let ((e '((a . 1) (b . 2) (c . 3)))
+      (key 'a))
+  (assq key e))                        ==> (a . 1)
+VB)
+
+PR(
+assq (public);val1 val val2 alist -> apfalse
+PR)
+
+CB(
+reg assq
+
+proc ::constcl::assq {val1 val2} {
+  return [assoc-proc eq? $val1 $val2]
+}
+CB)
+
+PR(
+assv (public);val1 val val2 alist -> apfalse
+PR)
+
+
+IX assv procedure
+CB(
+reg assv
+
+proc ::constcl::assv {val1 val2} {
+  return [assoc-proc eqv? $val1 $val2]
+}
+CB)
+
+PR(
+assoc (public);val1 val val2 alist -> apfalse
+PR)
+
+
+IX assoc procedure
+CB(
+reg assoc
+
+proc ::constcl::assoc {val1 val2} {
+  return [assoc-proc equal? $val1 $val2]
+}
+CB)
+
+B{assoc-proc} procedure
+
+K{assoc-proc} is a helper procedure which does the work for K{assq}, K{assv},
+  and K{assoc}.
+
+PR(
+assoc-proc (internal);epred epred val1 val val2 alist -> apfalse
+PR)
+
+IX assoc-proc procedure
+CB(
+proc ::constcl::assoc-proc {epred val1 val2} {
+  switch $epred {
+    eq? { set name "assq" }
+    eqv? { set name "assv" }
+    equal? { set name "assoc" }
+  }
+  check {list? $val2} {
+    LIST expected\n($name [$val1 tstr] [$val2 tstr])
+  }
+  if {[T [null? $val2]]} {
+    return ${::#f}
+  } elseif {[T [pair? $val2]]} {
+    if {[T [pair? [car $val2]]] && 
+      [T [$epred $val1 [caar $val2]]]} {
+      return [car $val2]
+    } else {
+      return [assoc-proc $epred $val1 [cdr $val2]]
+    }
+  }
+}
+CB)
+
+TT(
+::tcltest::test pairslists-17.0 {try member} -body {
+    pew {(define e '((a 1) (b 2) (c 3)))}
+    pew {(assq 'a e)}
+    pew {(assq 'b e)}
+    pew {(assq 'd e)}
+    pew {(assq (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assoc (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assq 5 '((2 3) (5 7) (11 13)))}
+    pew {(assv 5 '((2 3) (5 7) (11 13)))}
+} -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
+TT)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
