@@ -542,7 +542,9 @@ proc ::constcl::read-number-expr {args} {
 proc ::constcl::read-pair-expr {char} {
   upvar c c unget unget
   set unget {}
+${::log}::error "calling read-pair: \$c=$c" 
   set expr [read-pair $char]
+${::log}::error "returning from read-pair: \$c=$c" 
   read-eof $expr
   ::if {$c ne $char} {
     ::if {$char eq ")"} {
@@ -558,32 +560,40 @@ proc ::constcl::read-pair-expr {char} {
   return $expr
 }
 proc ::constcl::read-pair {char} {
-  upvar c c unget unget
-  set c [readchar]
-  read-eof $c
-  ::if {[T [find-char? $char]]} {
-    return ${::#NIL}
-  }
-  set a [read-expr $c]
-  set res $a
-  skip-ws
-  set prev ${::#NIL}
-  while {![T [find-char? $char]]} {
-    set x [read-expr $c]
-    skip-ws
+    upvar c c unget unget
+    set c [readchar]
+    ${::log}::error "reading a pair|list: $c" 
     read-eof $c
-    ::if {[T [dot? $x]]} {
-      set prev [read-expr $c]
-      skip-ws
-      read-eof $c
-    } else {
-      lappend res $x
+    ::if {[T [find-char? $char]]} {
+        ${::log}::error "found an empty list: $c" 
+        return ${::#NIL}
     }
-  }
-  foreach r [lreverse $res] {
-    set prev [cons $r $prev]
-  }
-  return $prev
+    set a [read-expr $c]
+    ${::log}::error "read the first item: [$a tstr]" 
+    set res $a
+    skip-ws
+    set prev ${::#NIL}
+    while {![T [find-char? $char]]} {
+${::log}::error "in the reading/pair loop: [$a tstr]" 
+        set x [read-expr $c]
+${::log}::error "reading an x object: [$x tstr]" 
+        skip-ws
+        read-eof $c
+        ::if {[T [dot? $x]]} {
+            set prev [read-expr $c]
+${::log}::error "found an object in the NIL place: [$prev tstr]" 
+            skip-ws
+            read-eof $c
+        } else {
+            lappend res $x
+        }
+    }
+    foreach r [lreverse $res] {
+${::log}::error "looping back to build the cons chain: [$r tstr]" 
+        set prev [cons $r $prev]
+    }
+${::log}::error "exiting read-pair with the head of the list [$prev tstr]"
+    return $prev
 }
 proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
@@ -821,7 +831,7 @@ proc ::constcl::read-eof {args} {
       }
     }
   } finally {
-    ${::log}::debug "handling an end of file: $char" 
+    ${::log}::debug "handling a potential end of file: $char" 
   }
 }
 
@@ -833,7 +843,7 @@ proc ::constcl::lookup {sym env} {
   } else {
     ::error "not a variable name" $sym
   }
-  ${::log}::debug "checking on a variable: $c" 
+  ${::log}::debug "checking on a variable: \$expr=$expr/[$expr tstr]" 
 }
 
 proc ::constcl::self-evaluating? {val} {
@@ -841,7 +851,7 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] ||
     [T [char? $val]] ||
     [T [boolean? $val]]} {
-    ${::log}::debug "a self-evaluating form? $val" 
+${::log}::debug "a self-evaluating form? \$val=$val/[$val tstr" 
     return ${::#t}
   } else {
     return ${::#f}
@@ -852,6 +862,7 @@ reg special quote
 proc ::constcl::special-quote {expr env} {
   set expr [cadr $expr]
   ${::log}::debug "a quote: $expr" 
+${::log}::debug "a quote? \$expr=$expr/[$expr tstr" 
   return $expr
 }
 reg special if
@@ -1266,17 +1277,19 @@ proc ::constcl::expand-del! {expr env} {
              (delete! ,listname ,key))"
   set expr [expand-quasiquote [parse $qq] $env]
   $env destroy
-  ${::log}::debug "working a form for the del! procedure: $expr" 
+${::log}::debug "working a form for the del! procedure: $expr" 
   return $expr
 }
 reg macro for
 
 proc ::constcl::expand-for {expr env} {
+${::log}::debug "expanding a for construct: [$expr tstr]" 
   set res [do-for [cdr $expr] $env]
   lappend res [parse "'()"]
   return [list [S begin] {*}$res]
 }
 proc ::constcl::for-seq {seq env} {
+${::log}::debug "processing a for-seq construct: [$seq tstr]" 
   ::if {[T [number? $seq]]} {
     set seq [in-range $seq]
   } else {
@@ -1302,6 +1315,7 @@ proc ::constcl::for-seq {seq env} {
   return $seq
 }
 proc ::constcl::do-for {tail env} {
+${::log}::debug "processing a for construct: [$seq tstr]" 
   # make clauses a Tcl list
   set clauses [splitlist [car $tail]]
   set body [cdr $tail]
@@ -1335,6 +1349,7 @@ proc ::constcl::do-for {tail env} {
 reg macro for/and
 
 proc ::constcl::expand-for/and {expr env} {
+${::log}::debug "processing a for/and construct: [$expr tstr]" 
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S and] {*}$res]
@@ -1342,6 +1357,7 @@ proc ::constcl::expand-for/and {expr env} {
 reg macro for/list
 
 proc ::constcl::expand-for/list {expr env} {
+${::log}::debug "processing a for construct: [$expr tstr]" 
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S list] {*}$res]
@@ -1349,6 +1365,7 @@ proc ::constcl::expand-for/list {expr env} {
 reg macro for/or
 
 proc ::constcl::expand-for/or {expr env} {
+${::log}::debug "processing a for/or construct: [$expr tstr]" 
   set tail [cdr $expr]
   set res [do-for $tail $env]
   return [list [S or] {*}$res]
@@ -1356,6 +1373,7 @@ proc ::constcl::expand-for/or {expr env} {
 reg macro or
 
 proc ::constcl::expand-or {expr env} {
+${::log}::debug "expanding an or construct: [$expr tstr]" 
   set tail [cdr $expr]
   ::if {[[length $tail] numval] == 0} {
     return [list [S begin] ${::#f}]
@@ -1366,6 +1384,7 @@ proc ::constcl::expand-or {expr env} {
   }
 }
 proc ::constcl::do-or {tail env} {
+${::log}::debug "processing an or construct: [$expr tstr]" 
   ::if {[T [null? $tail]]} {
     return ${::#f}
   } else {
@@ -1381,6 +1400,7 @@ proc ::constcl::do-or {tail env} {
 reg macro pop!
 
 proc ::constcl::expand-pop! {expr env} {
+${::log}::debug "expanding a pop! construct: [$expr tstr]" 
   set tail [cdr $expr]
   set env [MkEnv $env]
   ::if {[T [null? $tail]]} {
@@ -1398,6 +1418,7 @@ proc ::constcl::expand-pop! {expr env} {
 reg macro push!
 
 proc ::constcl::expand-push! {expr env} {
+${::log}::debug "expanding a push! construct: [$expr tstr]" 
   set tail [cdr $expr]
   set env [MkEnv $env]
   ::if {[T [null? $tail]]} {
@@ -1424,6 +1445,7 @@ proc ::constcl::expand-push! {expr env} {
 reg macro put!
 
 proc ::constcl::expand-put! {expr env} {
+${::log}::debug "expanding a put! construct: [$expr tstr]" 
   set tail [cdr $expr]
   set env [::constcl::MkEnv $env]
   ::if {[T [null? $tail]]} {
@@ -1453,6 +1475,7 @@ proc ::constcl::expand-put! {expr env} {
 reg macro quasiquote
 
 proc ::constcl::expand-quasiquote {expr env} {
+${::log}::debug "expanding a quasiquote construct: [$expr tstr]" 
   set tail [cdr $expr]
   set qqlevel 0
   ::if {[T [list? [car $tail]]]} {
@@ -1487,6 +1510,7 @@ proc ::constcl::expand-quasiquote {expr env} {
   }
 }
 proc ::constcl::qq-visit-child {node qqlevel env} {
+${::log}::debug "expanding a quasiquote child construct: [$node tstr]" 
   ::if {$qqlevel < 0} {
     set qqlevel 0
   }
@@ -1527,6 +1551,7 @@ proc ::constcl::qq-visit-child {node qqlevel env} {
 reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
+${::log}::debug "expanding an unless construct: [$node tstr]" 
   set tail [cdr $expr]
   set env [MkEnv $env]
   /define [S tail] $tail $env
@@ -4046,5 +4071,7 @@ namespace eval ::constcl {
   }
 }
 pe {(load "schemebase.scm")}
+
+${log}::delete
 
 # vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
