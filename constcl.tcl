@@ -1551,7 +1551,7 @@ ${::log}::debug "expanding a quasiquote child construct: [$node tstr]"
 reg macro unless
 
 proc ::constcl::expand-unless {expr env} {
-${::log}::debug "expanding an unless construct: [$node tstr]" 
+${::log}::debug "expanding an unless construct: [$expr tstr]" 
   set tail [cdr $expr]
   set env [MkEnv $env]
   /define [S tail] $tail $env
@@ -1565,6 +1565,7 @@ ${::log}::debug "expanding an unless construct: [$node tstr]"
 reg macro when
 
 proc ::constcl::expand-when {expr env} {
+${::log}::debug "expanding an unless construct: [$expr tstr]" 
   set tail [cdr $expr]
   set env [MkEnv $env]
   /define [S tail] $tail $env
@@ -1576,6 +1577,7 @@ proc ::constcl::expand-when {expr env} {
   return $expr
 }
 proc ::constcl::resolve-local-defines {expr} {
+${::log}::debug "resolving local defines: [$expr tstr]" 
   set exps [cdr $expr]
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
@@ -1593,6 +1595,7 @@ proc ::constcl::resolve-local-defines {expr} {
   return [make-lambdas $v $a $rest]
 }
 proc ::constcl::extract-from-defines {exps part} {
+${::log}::debug "extracting from defines: [[car $exps] tstr]" 
   set a ${::#NIL}
   while {$exps ne ${::#NIL}} {
     ::if {[T [atom? $exps]] ||
@@ -1630,6 +1633,7 @@ proc ::constcl::extract-from-defines {exps part} {
     return [::list $a ${::#f} $exps]
 }
 proc ::constcl::argument-list? {val} {
+${::log}::debug "is it an argument list?: [$val tstr]" 
   ::if {$val eq ${::#NIL}} {
     return ${::#t}
   } elseif {[T [symbol? $val]]} {
@@ -1650,6 +1654,7 @@ proc ::constcl::argument-list? {val} {
   }
 }
 proc ::constcl::make-lambdas {vars args body} {
+${::log}::debug "making lambdas: [[car $vars] tstr]" 
   set tmps [make-temporaries $vars]
   set body [append-b [
     make-assignments $vars $tmps] $body]
@@ -1664,6 +1669,7 @@ proc ::constcl::make-lambdas {vars args body} {
   return $n
 }
 proc ::constcl::make-temporaries {vals} {
+${::log}::debug "making temporaries: [[car $vals] tstr]" 
   set res ${::#NIL}
   while {$vals ne ${::#NIL}} {
     set res [cons [gensym "g"] $res]
@@ -1672,6 +1678,7 @@ proc ::constcl::make-temporaries {vals} {
   return $res
 }
 proc ::constcl::gensym {prefix} {
+${::log}::debug "making gensyms: [$prefix tstr]" 
   set symbolnames [
     dict keys $::constcl::symbolTable]
   set s $prefix<[incr ::constcl::gensymnum]>
@@ -1681,6 +1688,7 @@ proc ::constcl::gensym {prefix} {
   return [S $s]
 }
 proc ::constcl::append-b {a b} {
+${::log}::debug "appending two lists: [$a tstr] [$b tstr]" 
   ::if {$a eq ${::#NIL}} {
     return $b
   }
@@ -1696,6 +1704,7 @@ proc ::constcl::append-b {a b} {
   return $a
 }
 proc ::constcl::make-assignments {vars tmps} {
+${::log}::debug "making assignments: [[car $vars] tstr]" 
   set res ${::#NIL}
   while {$vars ne ${::#NIL}} {
     set asg [cons [car $tmps] ${::#NIL}]
@@ -1708,6 +1717,7 @@ proc ::constcl::make-assignments {vars tmps} {
   return [cons [S begin] $res]
 }
 proc ::constcl::make-undefineds {vals} {
+${::log}::debug "making undefineds: [[car $vals] tstr]" 
   set res ${::#NIL}
   while {$vals ne ${::#NIL}} {
     set res [cons [list [S quote] ${::#UND}] $res]
@@ -1718,6 +1728,7 @@ proc ::constcl::make-undefineds {vals} {
 reg write
 
 proc ::constcl::write {val args} {
+${::log}::debug "printing a value in external rep.: [$val tstr]" 
   ::if {$val ne ""} {
     set oldport $::constcl::Output_port
     ::if {[llength $args]} {
@@ -1733,6 +1744,7 @@ proc ::constcl::write {val args} {
 reg display
 
 proc ::constcl::display {val args} {
+${::log}::debug "printing a value for humans: [$val tstr]" 
   ::if {$val ne ""} {
     set oldport $::constcl::Output_port
     ::if {[llength $args]} {
@@ -1746,6 +1758,7 @@ proc ::constcl::display {val args} {
   return
 }
 proc ::constcl::write-pair {port pair} {
+${::log}::debug "printing a cons list: [$pair tstr]" 
   # take an object and print the car
   # and the cdr of the stored value
   set a [car $pair]
@@ -1767,6 +1780,7 @@ proc ::constcl::write-pair {port pair} {
   return
 }
 proc ::constcl::idcheckinit {init} {
+${::log}::debug "checking an identifier name's first character: [$init tstr]" 
   ::if {[::string is alpha -strict $init] ||
     $init in {! $ % & * / : < = > ? ^ _ ~}} {
     return true
@@ -1775,6 +1789,7 @@ proc ::constcl::idcheckinit {init} {
   }
 }
 proc ::constcl::idchecksubs {subs} {
+${::log}::debug "checking for an identifier name's following characters: {*}[lmap sub [split $subs {}] {$sub tstr}]" 
   foreach c [split $subs {}] {
     ::if {!([::string is alnum -strict $c] ||
       $c in {! $ % & * / : < = > ? ^ _ ~ + - . @})} {
@@ -1784,6 +1799,7 @@ proc ::constcl::idchecksubs {subs} {
   return true
 }
 proc ::constcl::idcheck {sym} {
+${::log}::debug "checking an identifier: [$sym tstr]" 
   ::if {$sym eq {}} {return $sym}
   ::if {(![idcheckinit [::string index $sym 0]] ||
     ![idchecksubs [::string range $sym 1 end]]) &&
@@ -1793,6 +1809,7 @@ proc ::constcl::idcheck {sym} {
   set sym
 }
 proc ::constcl::varcheck {sym} {
+${::log}::debug "checking an identifier against a list of reserved symbols: [$sym tstr]" 
   ::if {$sym in {
     else => define unquote unquote-splicing
     quote lambda if set! begin cond and or
@@ -1806,6 +1823,7 @@ oo::class create ::constcl::Environment {
   superclass ::constcl::Base
   variable bindings outer_env
   constructor {syms vals {outer {}}} {
+${::log}::debug "creating an Environment: [[string index $syms 0] tstr]" 
     set bindings [dict create]
     ::if {[T [::constcl::null? $syms]]} {
       ::if {[llength $vals]} {
@@ -1854,6 +1872,7 @@ oo::class create ::constcl::Environment {
     set outer_env $outer
   }
   method find {sym} {
+${::log}::debug "does a symbol exist in the environment?: [$sym tstr]" 
     assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {[dict exists $bindings $sym]} {
       self
@@ -1862,15 +1881,18 @@ oo::class create ::constcl::Environment {
     }
   }
   method get {sym} {
+${::log}::debug "does a symbol exist in the bindings: [$sym tstr]" 
     assert "$sym is a symbol: " [::constcl::symbol? $sym]
     dict get $bindings $sym
   }
   method unbind {sym} {
+${::log}::debug "remove a symbol from the bindings: [$sym tstr]" 
     assert "$sym is a symbol: " [::constcl::symbol? $sym]
     dict unset bindings $sym
     return
   }
   method bind {sym type info} {
+${::log}::debug "create a symbol-value (without a value yet) item in the bindings: [$sym tstr]" 
     assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {[dict exists $bindings $sym]} {
       set bi [my get $sym]
@@ -1883,6 +1905,7 @@ oo::class create ::constcl::Environment {
     return
   }
   method assign {sym type info} {
+${::log}::debug "assign a new value to a symbol-value binding: [$sym tstr]" 
     assert "$sym is a symbol: " [::constcl::symbol? $sym]
     ::if {![dict exists $bindings $sym]} {
       ::error "[$sym name] is not bound"
@@ -1896,20 +1919,25 @@ oo::class create ::constcl::Environment {
     return
   }
   method parent {} {
+${::log}::debug "presenting the parent of the environment: {}" 
     set outer_env
   }
   method names {} {
+${::log}::debug "presenting the names of all bound variables in the environment: {}" 
     dict keys $bindings
   }
   method values {} {
+${::log}::debug "presenting the values of all bound variables in the environment: {}" 
     dict values $bindings
   }
   method tstr {} {
+${::log}::debug "presenting the external representation of an environment: {}" 
     regexp {(\d+)} [self] -> num
     return "#<env-$num>"
   }
 }
 proc ::constcl::MkEnv {args} {
+${::log}::debug "making an environment, one or three arguments: {*}[lmap arg $args {$arg tstr}]" 
   ::if {[llength $args] == 1} {
     set parms ${::#NIL}
     set vals {}
@@ -1924,9 +1952,11 @@ proc ::constcl::MkEnv {args} {
 reg environment?
 
 proc ::constcl::environment? {val} {
+${::log}::debug "recognizing an environment: [$val tstr]" 
   typeof? $val Environment
 }
 proc ::constcl::input {prompt} {
+${::log}::debug "reading the repl input, one expression at a time: [$prompt tstr]" 
   puts -nonewline $prompt
   flush stdout
   set buf [gets stdin]
@@ -1945,6 +1975,7 @@ proc ::constcl::input {prompt} {
   return $buf
 }
 proc ::repl {{prompt "ConsTcl> "}} {
+${::log}::debug "doing the repl evaluating|printing|looping: [$prompt tstr]" 
   set cur_env [::constcl::MkEnv ::constcl::global_env]
   set str [::constcl::input $prompt]
   while {$str ne ""} {
@@ -1958,6 +1989,7 @@ proc ::repl {{prompt "ConsTcl> "}} {
 reg eq?
 
 proc ::constcl::eq? {expr1 expr2} {
+${::log}::debug "are two values the same by _eq?_: [$expr1 tstr] [$expr2 tstr]" 
   ::if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
     return ${::#t}
@@ -1989,15 +2021,18 @@ proc ::constcl::eq? {expr1 expr2} {
   }
 }
 proc ::constcl::teq {typep expr1 expr2} {
+${::log}::debug "are two values the same by _teq_: [$expr1 tstr] [$expr2 tstr]" 
     return [expr {[T [$typep $expr1]] &&
       [T [$typep $expr2]]}]
 }
 proc ::constcl::veq {expr1 expr2} {
+${::log}::debug "are two values the same by _veq_: [$expr1 tstr] [$expr2 tstr]" 
     return [expr {[$expr1 value] eq [$expr2 value]}]
 }
 reg eqv?
 
 proc ::constcl::eqv? {expr1 expr2} {
+${::log}::debug "are two values the same by _eqv?_: [$expr1 tstr] [$expr2 tstr]" 
   ::if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
     return ${::#t}
@@ -2033,6 +2068,7 @@ proc ::constcl::eqv? {expr1 expr2} {
 reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
+${::log}::debug "are two values the same by _equal?_: [$expr1 tstr] [$expr2 tstr]" 
   ::if {[$expr1 tstr] eq [$expr2 tstr]} {
     return ${::#t}
   } else {
@@ -2103,11 +2139,13 @@ interp alias {} N {} ::constcl::Number new
 reg number?
 
 proc ::constcl::number? {val} {
+${::log}::debug "is a value numeric?: [$val tstr]" 
   return [typeof? $val Number]
 }
 reg =
 
 proc ::constcl::= {args} {
+${::log}::debug "are a number of values the same by =: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2123,6 +2161,7 @@ proc ::constcl::= {args} {
 reg <
 
 proc ::constcl::< {args} {
+${::log}::debug "are a number of values in strictly increasing order?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2137,6 +2176,7 @@ proc ::constcl::< {args} {
 reg >
 
 proc ::constcl::> {args} {
+${::log}::debug "are a number of values in strictly decreasing order?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2151,6 +2191,7 @@ proc ::constcl::> {args} {
 reg <=
 
 proc ::constcl::<= {args} {
+${::log}::debug "are a number of values in increasing order?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2165,6 +2206,7 @@ proc ::constcl::<= {args} {
 reg >=
 
 proc ::constcl::>= {args} {
+${::log}::debug "are a number of values in decreasing order?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2179,36 +2221,42 @@ proc ::constcl::>= {args} {
 reg zero?
 
 proc ::constcl::zero? {num} {
+${::log}::debug "is a number equal to zero?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [$num zero?]
 }
 reg positive?
 
 proc ::constcl::positive? {num} {
+${::log}::debug "is a number greater than zero?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [$num positive?]
 }
 reg negative?
 
 proc ::constcl::negative? {num} {
+${::log}::debug "is a number less than zero?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [$num negative?]
 }
 reg even?
 
 proc ::constcl::even? {num} {
+${::log}::debug "is a number even?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [$num even?]
 }
 reg odd?
 
 proc ::constcl::odd? {num} {
+${::log}::debug "is a number odd?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [$num odd?]
 }
 reg max
 
 proc ::constcl::max {num args} {
+${::log}::debug "which number is the greatest?: [$num numval] {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   lappend args $num
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2220,6 +2268,7 @@ proc ::constcl::max {num args} {
 reg min
 
 proc ::constcl::min {num args} {
+${::log}::debug "which number is the smallest?: [$num numval] {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   lappend args $num
   try {
     set nums [lmap arg $args {$arg numval}]
@@ -2231,6 +2280,7 @@ proc ::constcl::min {num args} {
 reg +
 
 proc ::constcl::+ {args} {
+${::log}::debug "what is the sum of the numbers?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2241,6 +2291,7 @@ proc ::constcl::+ {args} {
 reg *
 
 proc ::constcl::* {args} {
+${::log}::debug "what is the product of the numbers?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2251,6 +2302,7 @@ proc ::constcl::* {args} {
 reg -
 
 proc ::constcl::- {num args} {
+${::log}::debug "what is the result of subtracting the rest of the numbers from the first?: [$num numval] {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2261,6 +2313,7 @@ proc ::constcl::- {num args} {
 reg /
 
 proc ::constcl::/ {num args} {
+${::log}::debug "what is the result of dividing the first number by the product of the rest of the numbers?: [$num numval] {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
@@ -2271,6 +2324,7 @@ proc ::constcl::/ {num args} {
 reg abs
 
 proc ::constcl::abs {num} {
+${::log}::debug "what is the absolute value of a number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   ::if {[T [$num negative?]]} {
     return [N [expr {[$num numval] * -1}]]
@@ -2281,6 +2335,7 @@ proc ::constcl::abs {num} {
 reg quotient
 
 proc ::constcl::quotient {num1 num2} {
+${::log}::debug "what is the quotient of two numbers?: [$num1 numval] [$num2 numval]" 
   set q [::tcl::mathop::/ [$num1 numval] \
     [$num2 numval]]
   ::if {$q > 0} {
@@ -2294,6 +2349,7 @@ proc ::constcl::quotient {num1 num2} {
 reg remainder
 
 proc ::constcl::remainder {num1 num2} {
+${::log}::debug "what is the quotient of dividing two numbers?: [$num1 numval] [$num2 numval]" 
   set n [::tcl::mathop::% [[abs $num1] numval] \
     [[abs $num2] numval]]
   ::if {[T [$num1 negative?]]} {
@@ -2304,24 +2360,28 @@ proc ::constcl::remainder {num1 num2} {
 reg modulo
 
 proc ::constcl::modulo {num1 num2} {
+${::log}::debug "what is the modulo of dividing two numbers?: [$num1 numval] [$num2 numval]" 
   return [N [::tcl::mathop::% [$num1 numval] \
     [$num2 numval]]]
 }
 reg floor
 
 proc ::constcl::floor {num} {
+${::log}::debug "what is the floor value of a real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::floor [$num numval]]]
 }
 reg ceiling
 
 proc ::constcl::ceiling {num} {
+${::log}::debug "what is the ceiling value of a real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::ceil [$num numval]]]
 }
 reg truncate
 
 proc ::constcl::truncate {num} {
+${::log}::debug "what is the truncated value of a real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   ::if {[T [$num negative?]]} {
     return [N [::tcl::mathfunc::ceil [$num numval]]]
@@ -2332,54 +2392,63 @@ proc ::constcl::truncate {num} {
 reg round
 
 proc ::constcl::round {num} {
+${::log}::debug "what is the rounded value of a real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::round [$num numval]]]
 }
 reg exp
 
 proc ::constcl::exp {num} {
+${::log}::debug "what is the value of E{e} to the power E{n} (P{e}{n}) for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::exp [$num numval]]]
 }
 reg log
 
 proc ::constcl::log {num} {
+${::log}::debug "what is the value of E{log} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::log [$num numval]]]
 }
 reg sin
 
 proc ::constcl::sin {num} {
+${::log}::debug "what is the value of E{sin} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::sin [$num numval]]]
 }
 reg cos
 
 proc ::constcl::cos {num} {
+${::log}::debug "what is the value of E{cos} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::cos [$num numval]]]]
 }
 reg tan
 
 proc ::constcl::tan {num} {
+${::log}::debug "what is the value of E{tan} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::tan [$num numval]]]
 }
 reg asin
 
 proc ::constcl::asin {num} {
+${::log}::debug "what is the value of E{arcsin} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::asin [$num numval]]]
 }
 reg acos
 
 proc ::constcl::acos {num} {
+${::log}::debug "what is the value of E{arccos} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::acos [$num numval]]]
 }
 reg atan
 
 proc ::constcl::atan {args} {
+${::log}::debug "what is the value of E{tan} E{n} E{?m?} for one or two real numbers?: {*}[lmap arg $args {[numeric? $arg] ? [$arg numval] : ${::#f}}]" 
   ::if {[llength $args] == 1} {
     set num [lindex $args 0]
     assert "$num is a number" [number? $num]
@@ -2395,12 +2464,14 @@ proc ::constcl::atan {args} {
 reg sqrt
 
 proc ::constcl::sqrt {num} {
+${::log}::debug "what is the value of the E{square root} E{n} for some real number?: [$num numval]" 
   assert "$num is a number" [number? $num]
   return [N [::tcl::mathfunc::sqrt [$num numval]]]
 }
 reg expt
 
 proc ::constcl::expt {x y} {
+${::log}::debug "what is the value of E{x} to the power E{y} (P{x}{y}) for two real numbers?: [$x numval] [$y numval]" 
   assert "$x is a number" [number? $x]
   assert "$y is a number" [number? $y]
   return [N [::tcl::mathfunc::pow [$x numval] \
