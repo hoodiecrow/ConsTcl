@@ -2600,7 +2600,7 @@ ${::log}::debug "the value of a character instance"
     set value
   }
   method alphabetic? {} {
-${::log}::debug "the value of a character instance is alphabetic" 
+${::log}::debug "is the value of a character instance alphabetic?" 
     ::if {[::string is alpha $value]} {
       return ${::#t}
     } else {
@@ -2608,7 +2608,7 @@ ${::log}::debug "the value of a character instance is alphabetic"
     }
   }
   method numeric? {} {
-${::log}::debug "the value of a character instance is numeric" 
+${::log}::debug "is the value of a character instance numeric?" 
     ::if {[::string is digit $value]} {
       return ${::#t}
     } else {
@@ -2616,7 +2616,7 @@ ${::log}::debug "the value of a character instance is numeric"
     }
   }
   method whitespace? {} {
-${::log}::debug "the value of a character instance is whitespace" 
+${::log}::debug "is the value of a character instance whitespace?" 
     ::if {[::string is space $value]} {
       return ${::#t}
     } else {
@@ -2624,7 +2624,7 @@ ${::log}::debug "the value of a character instance is whitespace"
     }
   }
   method upper-case? {} {
-${::log}::debug "the value of a character instance is upper-case" 
+${::log}::debug "is the value of a character instance upper-case?" 
     ::if {[::string is upper $value]} {
       return ${::#t}
     } else {
@@ -2632,7 +2632,7 @@ ${::log}::debug "the value of a character instance is upper-case"
     }
   }
   method lower-case? {} {
-${::log}::debug "the value of a character instance is lower-case" 
+${::log}::debug "is the value of a character instance lower-case?" 
     ::if {[::string is lower $value]} {
       return ${::#t}
     } else {
@@ -2644,9 +2644,11 @@ ${::log}::debug "is the value of a character instance constant?"
     return 1
   }
   method value {} {
+${::log}::debug "what is the value of a character instance?" 
     return $value
   }
   method external {} {
+${::log}::debug "what is the external representation of a character instance?" 
     switch $value {
       " " {
         return "#\\space"
@@ -2660,13 +2662,16 @@ ${::log}::debug "is the value of a character instance constant?"
     }
   }
   method display {port} {
+${::log}::debug "what is the human-readable form of a character instance?" 
     $port put [my char]
   }
   method tstr {} {
+${::log}::debug "what is the Tcl string form (external representation) of a character instance?" 
     return [my external]
   }
 }
 proc ::constcl::MkChar {char} {
+${::log}::debug "making a character instance from \$char=$char" 
   ::if {[regexp -nocase {space|newline} $char]} {
       set char [::string tolower $char]
   }
@@ -2681,11 +2686,13 @@ proc ::constcl::MkChar {char} {
 reg char?
 
 proc ::constcl::char? {val} {
+${::log}::debug "is \$val=$val a character instance?" 
   return [typeof? $val Char]
 }
 reg char=?
 
 proc ::constcl::char=? {char1 char2} {
+${::log}::debug "are two character instances equal (by =)?" 
   assert "char1 is a character" [char? $char1]
   assert "char2 is a character" [char? $char2]
   ::if {[$char1 char] eq [$char2 char]} {
