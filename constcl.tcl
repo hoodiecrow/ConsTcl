@@ -2479,7 +2479,8 @@ ${::log}::debug "what is the value of E{x} to the power E{y} (P{x}{y}) for two r
 }
 reg number->string
 
-proc ::constcl::number->string {num args} {
+proc ::constcl::number->string {num args} { ;# TODO
+${::log}::debug "making a string out of a number, with optional radix (2, 8, 10, 16): [$num numval] [set res [catch {[[lindex $args 0] value]} caught][expr $res ? "" : "?$caught?"] 
   ::if {[llength $args] == 0} {
     assert "$num is a number" [number? $num]
     return [MkString [$num numval]]
@@ -2497,6 +2498,7 @@ proc ::constcl::number->string {num args} {
   }
 }
 proc base {base number} {
+${::log}::debug "base: support function for number->string: [$base numval] [$number numval]" 
   set negative [regexp ^-(.+) $number -> number]
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set res {}
@@ -2511,6 +2513,7 @@ proc base {base number} {
 reg string->number
 
 proc ::constcl::string->number {str args} {
+${::log}::debug "making a number out of a string, with optional radix (2, 8, 10, 16): [$str value] [set res [catch {[[lindex $args 0] value]} caught][expr $res ? "" : "?$caught?"] 
   ::if {[llength $args] == 0} {
     assert "$str is a string" [string? $str]
     return [N [$str value]]
@@ -2527,7 +2530,8 @@ proc ::constcl::string->number {str args} {
     }
   }
 }
-proc frombase {base number} {
+proc frombase {base string} {
+${::log}::debug "frombase: support function for string->number: [$base numval] [$string numval]" 
   set digits {0 1 2 3 4 5 6 7 8 9 A B C D E F}
   set negative [regexp ^-(.+) $number -> number]
   set res 0
@@ -2543,6 +2547,7 @@ proc frombase {base number} {
   return $res
 }
 proc ::constcl::MkBoolean {bool} {
+${::log}::debug "sharing a Boolean instance: [$bool value]" 
   switch $bool {
     "#t" - ${::#t} { return ${::#t} }
     "#f" - ${::#f} { return ${::#f} }
@@ -2552,7 +2557,8 @@ proc ::constcl::MkBoolean {bool} {
 reg boolean?
 
 proc ::constcl::boolean? {val} {
-  ::if {$val eq ${::#t} || $val eq ${::#f}} {
+${::log}::debug "recognizing a Boolean instance: [$val value]" 
+  ::if {$val in [list ${::#t} ${::#f}]} {
     return ${::#t}
   } else {
     return ${::#f}
@@ -2561,6 +2567,7 @@ proc ::constcl::boolean? {val} {
 reg not
 
 proc ::constcl::not {val} {
+${::log}::debug "the inverse of a Boolean value: [$val value]" 
   ::if {$val eq ${::#f}} {
     return ${::#t}
   } else {
@@ -2571,6 +2578,7 @@ oo::class create ::constcl::Char {
   superclass ::constcl::Base
   variable value
   constructor {val} {
+${::log}::debug "constructing character instance: [$val value]" 
     switch -regexp $val {
       {(?i)#\\space} {
         set val " "
@@ -2588,9 +2596,11 @@ oo::class create ::constcl::Char {
     set value $val
   }
   method char {} {
+${::log}::debug "the value of a character instance" 
     set value
   }
   method alphabetic? {} {
+${::log}::debug "the value of a character instance is alphabetic" 
     ::if {[::string is alpha $value]} {
       return ${::#t}
     } else {
@@ -2598,6 +2608,7 @@ oo::class create ::constcl::Char {
     }
   }
   method numeric? {} {
+${::log}::debug "the value of a character instance is numeric" 
     ::if {[::string is digit $value]} {
       return ${::#t}
     } else {
@@ -2605,6 +2616,7 @@ oo::class create ::constcl::Char {
     }
   }
   method whitespace? {} {
+${::log}::debug "the value of a character instance is whitespace" 
     ::if {[::string is space $value]} {
       return ${::#t}
     } else {
@@ -2612,6 +2624,7 @@ oo::class create ::constcl::Char {
     }
   }
   method upper-case? {} {
+${::log}::debug "the value of a character instance is upper-case" 
     ::if {[::string is upper $value]} {
       return ${::#t}
     } else {
@@ -2619,6 +2632,7 @@ oo::class create ::constcl::Char {
     }
   }
   method lower-case? {} {
+${::log}::debug "the value of a character instance is lower-case" 
     ::if {[::string is lower $value]} {
       return ${::#t}
     } else {
@@ -2626,6 +2640,7 @@ oo::class create ::constcl::Char {
     }
   }
   method constant {} {
+${::log}::debug "is the value of a character instance constant?" 
     return 1
   }
   method value {} {
