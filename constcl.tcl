@@ -2306,9 +2306,17 @@ ${::log}::debug "what is the result of subtracting the rest of the numbers from 
   try {
     set nums [lmap arg $args {$arg numval}]
   } on error {} {
-    ::error "NUMBER expected\n(- num ...)"
+    ::error "NUMBER expected\n(- num...)"
   }
-  N [::tcl::mathop::- [$num numval] {*}$nums]
+  ::if {[$num numval] ne {}} {
+    ::if {[llength $nums]} {
+      N [::tcl::mathop::- [$num numval] {*}$nums]
+    } else {
+      N [::tcl::mathop::- 0 [$num numval]]
+    }
+  } else {
+    ::error "bad number object"
+  }
 }
 reg /
 
