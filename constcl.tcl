@@ -2314,8 +2314,6 @@ ${::log}::debug "what is the result of subtracting the rest of the numbers from 
     } else {
       N [::tcl::mathop::- 0 [$num numval]]
     }
-  } else {
-    ::error "bad number object"
   }
 }
 reg /
