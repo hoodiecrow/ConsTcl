@@ -10,10 +10,11 @@ unset -nocomplain ::constcl::defreg
 
 lappend ::auto_path /mnt/c/Tcl/tcl8.6.17/library
 
+try {open mylog.log w} on ok f {puts $f {}} on error s {::error $s} finally {catch {close $f}}
 # due to Nathan Coulter
 proc log_to_file {lvl txt} {
   set logfile "mylog.log"
-  set msg "\[[clock format [clock seconds]]\] $txt"
+  set msg "\[[clock format [clock seconds] -format "%Y-%m-%d  %H:%M"]\] $txt"
   try {
     open $logfile {WRONLY CREAT APPEND}
   } on ok f {
@@ -44,7 +45,10 @@ proc ::assert {str expr {body {}}} {
   }
   ::if {!$truth} {
     ::if {$body eq {}} {
-      set res [join [::list "Failed assertion" $str] ": "]
+      set info [info frame -2]
+      set type [dict get $info type]
+      set line [dict get $info line]
+      set res [join [::list "Failed assertion" $str "line $line"] ": "]
       ${::log}::error $res
       ::error $res
     } else {
@@ -63,7 +67,7 @@ proc reg {args} {
     lassign $args name
     set btype {}
   }
-  assert "defreg exists" [info exists ::constcl::defreg] {
+  assert "defreg exists" ![info exists ::constcl::defreg] {
     set ::constcl::defreg [dict create]
   }
   switch $btype {
@@ -427,16 +431,23 @@ proc ::constcl::read {args} {
   } else {
     set port $oldport
   }
-  ${::log}::debug "reading a from port $port" 
-  if {[$port eof]} {
-    long-eof ${::#EOF}
-  } else {
-    set expr [read-expr]
-    long-eof $expr
+  ${::log}::debug "reading an expression from port $port" 
+  set expr [read-expr]
+  #long-eof $expr
+  ::if 0 {;# TODO
+      ::if {[$port eof]} {
+        long-eof ${::#EOF}
+      } else {
+      }
   }
-  # (dubious) set expr [read-expr]
+  set expr [read-expr]
   set ::constcl::Input_port $oldport
+  if 0 {
+  if {[$port eof]} {
+      long-eof ${::#EOF}
+  }
   return $expr
+}
 }
 proc ::constcl::read-expr {args} {
   upvar c c unget unget
@@ -448,7 +459,7 @@ proc ::constcl::read-expr {args} {
   set unget {}
   if {[::string is space $c] || $c eq ";"} {
     skip-ws
-    read-eof $c
+    #read-eof $c
   }
   switch -regexp $c {
     {\"}          { read-string-expr }
@@ -466,7 +477,7 @@ proc ::constcl::read-expr {args} {
     {^$}          { return ${::#EOF} }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
-      read-eof $c
+      #read-eof $c
       ::error "unexpected character ($c)"
     }
   }
@@ -475,7 +486,7 @@ proc ::constcl::read-character-expr {} {
   upvar c c unget unget
   set name "#\\"
   set c [readchar]
-  read-eof $c
+  #read-eof $c
   ::if {[::string is graph $c]} {
     ::append name $c
     set c [readchar]
@@ -484,10 +495,10 @@ proc ::constcl::read-character-expr {} {
       set c [readchar]
     }
   }
-  assert "$name is valid" [valid-char? $name]
+  assert "$name is valid" ![valid-char? $name]
   set expr [MkChar $name]
   ${::log}::debug "reading a character: $expr" 
-  read-eof $expr
+  #read-eof $expr
   return $expr
 }
 proc ::constcl::read-identifier-expr {args} {
@@ -498,7 +509,7 @@ proc ::constcl::read-identifier-expr {args} {
   } else {
     set c [readchar]
   }
-  read-eof $c
+  #read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
     ::if {$c eq "${::#EOF}" || [T [delimiter? $c]]} {
@@ -513,8 +524,7 @@ proc ::constcl::read-identifier-expr {args} {
   }
   # idcheck throws error if invalid identifier
   idcheck $name
-  set expr [S $name]
-  ${::log}::debug "reading an identifier: $expr" 
+  ${::log}::debug "reading an identifier: $name" 
   return [S $name]
 }
 proc ::constcl::read-number-expr {args} {
@@ -525,7 +535,7 @@ proc ::constcl::read-number-expr {args} {
   } else {
     set c [readchar]
   }
-  read-eof $c
+  #read-eof $c
   while {![T [interspace? $c]] && $c ne "${::#EOF}" &&
       ![T [delimiter? $c]]} {
     ::append num $c
@@ -545,7 +555,7 @@ proc ::constcl::read-pair-expr {char} {
 ${::log}::error "calling read-pair: \$c=$c" 
   set expr [read-pair $char]
 ${::log}::error "returning from read-pair: \$c=$c" 
-  read-eof $expr
+  #read-eof $expr
   ::if {$c ne $char} {
     ::if {$char eq ")"} {
       ::error "Missing right paren. ($c)."
@@ -563,7 +573,7 @@ proc ::constcl::read-pair {char} {
     upvar c c unget unget
     set c [readchar]
     ${::log}::error "reading a pair|list: $c" 
-    read-eof $c
+    #read-eof $c
     ::if {[T [find-char? $char]]} {
         ${::log}::error "found an empty list: $c" 
         return ${::#NIL}
@@ -578,12 +588,12 @@ ${::log}::error "in the reading/pair loop: [$a tstr]"
         set x [read-expr $c]
 ${::log}::error "reading an x object: [$x tstr]" 
         skip-ws
-        read-eof $c
+        #read-eof $c
         ::if {[T [dot? $x]]} {
             set prev [read-expr $c]
 ${::log}::error "found an object in the NIL place: [$prev tstr]" 
             skip-ws
-            read-eof $c
+            #read-eof $c
         } else {
             lappend res $x
         }
@@ -599,10 +609,10 @@ proc ::constcl::read-plus-minus {char} {
   upvar c c unget unget
   set unget {}
   set c [readchar]
-  read-eof $c
+  #read-eof $c
   ::if {[::string is digit -strict $c]} {
     set expr [read-number-expr $c]
-    read-eof $expr
+    #read-eof $expr
     ::if {$char eq "-"} {
       set expr [- $expr]
     }
@@ -617,7 +627,7 @@ proc ::constcl::read-plus-minus {char} {
   } else {
     set expr [read-identifier-expr $char $c]
     ${::log}::debug "reading a +|-: $expr" 
-    read-eof $expr
+    #read-eof $expr
     return $expr
   }
 }
@@ -625,7 +635,7 @@ proc ::constcl::read-pound {} {
   upvar c c unget unget
   set unget {}
   set c [readchar]
-  read-eof $c
+  #read-eof $c
   switch $c {
     (    { set expr [read-vector-expr] }
     t    { ::if {[T [read-end?]]} {set expr ${::#t}} }
@@ -641,7 +651,7 @@ proc ::constcl::read-quasiquoted-expr {} {
   upvar c c unget unget
   set unget {}
   set expr [read-expr]
-  read-eof $expr
+  #read-eof $expr
   make-constant $expr
   ${::log}::debug "reading a quasiquote: $expr" 
   return [list [S quasiquote] $expr]
@@ -650,7 +660,7 @@ proc ::constcl::read-quoted-expr {} {
   upvar c c unget unget
   set unget {}
   set expr [read-expr]
-  read-eof $expr
+  #read-eof $expr
   make-constant $expr
   ${::log}::debug "reading a quote: $expr" 
   return [list [S quote] $expr]
@@ -659,12 +669,12 @@ proc ::constcl::read-string-expr {} {
   upvar c c unget unget
   set str {}
   set c [readchar]
-  read-eof $c
+  #read-eof $c
   while {$c ne "\"" && $c ne "${::#EOF}"} {
     ::if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
-      read-eof $c
+      #read-eof $c
     }
     ::append str $c
     set c [readchar]
@@ -680,7 +690,7 @@ proc ::constcl::read-unquoted-expr {} {
   upvar c c unget unget
   set unget {}
   set c [readchar]
-  read-eof $c
+  #read-eof $c
   ::if {$c eq "@"} {
     set symbol "unquote-splicing"
     set expr [read-expr]
@@ -688,7 +698,7 @@ proc ::constcl::read-unquoted-expr {} {
     set symbol "unquote"
     set expr [read-expr $c]
   }
-  read-eof $expr
+  #read-eof $expr
   ${::log}::debug "reading an unquote: $expr" 
   return [list [S $symbol] $expr]
 }
@@ -699,7 +709,7 @@ proc ::constcl::read-vector-expr {} {
   set c [readchar]
   while {$c ne "${::#EOF}" && $c ne ")"} {
     set e [read-expr $c]
-    read-eof $e
+    #read-eof $e
     set elem [cons $e ${::#NIL}]
     ::if {$res eq {}} {
       set res $elem
@@ -708,7 +718,7 @@ proc ::constcl::read-vector-expr {} {
     }
     set last $elem
     skip-ws
-    read-eof $c
+    #read-eof $c
   }
   ::if {$c ne ")"} {
     ::error "Missing right paren. ($c)."
@@ -759,20 +769,27 @@ proc ::constcl::valid-char? {name} {
   }
 }
 proc ::constcl::readchar {} {
-  upvar unget unget
-  ::if {$unget ne {}} {
-    set c $unget
-    set unget {}
-    set expr $c
-  } else {
-    set c [$::constcl::Input_port get]
-    set expr $c
-    ::if {[$::constcl::Input_port eof]} {
-      set expr ${::#EOF}
+    upvar unget unget
+    ${::log}::debug "reading a single char" 
+    ::if {$unget ne {}} {
+        set c $unget
+        set unget {}
+        return $c
+    } else {
+        set c [$::constcl::Input_port get]
+        set e [$::constcl::Input_port eof]
+        switch -- $e {
+            {} {
+                # too early to tell TODO
+            }
+            1 {
+                return ${::#EOF}
+            }
+            0 {
+                return $c
+            }
+        }
     }
-  }
-  ${::log}::debug "reading a single char: $expr" 
-  return $c
 }
 proc ::constcl::find-char? {char} {
   upvar c c unget unget
@@ -780,7 +797,7 @@ proc ::constcl::find-char? {char} {
   while {[::string is space -strict $c]} {
     # this order seems strange but works
     set c [readchar]
-    read-eof $c
+    #read-eof $c
     set unget $c
   }
   set expr [expr {($c eq $char) ? ${::#t} : ${::#f}}]
@@ -818,6 +835,7 @@ proc ::constcl::skip-ws {} {
       default {
         set unget $c
         ${::log}::debug "skipping whitespace: $c" 
+        break
       }
     }
   }
@@ -851,7 +869,7 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] ||
     [T [char? $val]] ||
     [T [boolean? $val]]} {
-${::log}::debug "a self-evaluating form? \$val=$val/[$val tstr" 
+${::log}::debug "a self-evaluating form? \$val=$val/[$val tstr]" 
     return ${::#t}
   } else {
     return ${::#f}
@@ -862,7 +880,7 @@ reg special quote
 proc ::constcl::special-quote {expr env} {
   set expr [cadr $expr]
   ${::log}::debug "a quote: $expr" 
-${::log}::debug "a quote? \$expr=$expr/[$expr tstr" 
+${::log}::debug "a quote? \$expr=$expr/[$expr tstr]" 
   return $expr
 }
 reg special if
@@ -1111,7 +1129,7 @@ reg special letrec
 
 proc ::constcl::special-letrec {expr env} {
   set expr [rewrite-letrec $expr $env]
-  ${::log}::debug "a letrec: $expr" 
+  ${::log}::error "a letrec: $expr" 
   eval $expr $env
 }
 proc ::constcl::rewrite-letrec {expr env} {
@@ -1177,6 +1195,7 @@ proc ::constcl::rewrite-let* {bindings body env} {
 reg eval
 
 proc ::constcl::eval {expr {env ::constcl::global_env}} {
+  ${::log}::error "expression is: ($expr)" 
   ::if {[T [symbol? $expr]]} {
   set val [lookup $expr $env]
   } elseif {[T [self-evaluating? $expr]]} {
@@ -1184,7 +1203,8 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
   } elseif {[T [pair? $expr]]} {
     set val [eval-form $expr $env]
   } else {
-    ::error "unknown expression type [$expr write]"
+    :${::log}::error "unknown expression type ($expr)"
+    ::error "unknown expression type ([$expr write])"
   }
   ${::log}::debug "evaluation basic forms: $val" 
 }
@@ -2997,12 +3017,19 @@ oo::class create ::constcl::InputPort {
     } on error {} {
       set handle ${::#NIL}
     }
+    chan configure -eofchar {\x1A {}}
     return $handle
   }
   method get {} {
     chan read $handle 1
   }
   method eof {} {
+      #TODO
+      set x [chan eof $handle]
+      ::if {$x ni {0 1}} {
+        ::error "not a valid boolean ($x)"
+    }
+    return $x
     chan eof $handle
   }
   method copy {} {
