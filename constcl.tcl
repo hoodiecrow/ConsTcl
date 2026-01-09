@@ -4200,4 +4200,4 @@ pe {(load "schemebase.scm")}
 
 ${log}::delete
 
-# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
+# vim: ft=tcl tw=60 ts=4 sw=4 sts=4 et 
