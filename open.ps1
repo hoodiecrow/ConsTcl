@@ -2,10 +2,10 @@
 # Posted by Vomit IT - Chunky Mess Style, modified by community. See post 'Timeline' for change history
 # Retrieved 2026-01-03, License - CC BY-SA 4.0
 
-$folders = "C:\Users\plewe\Documents\Github",
-	"C:\Users\plewe\Documents\GitHub\ConsTcl",
-	"C:\Users\plewe\Documents\GitHub\ConsTcl\tests",
-	"C:\Users\plewe\Documents\GitHub\ConsTcl\tmp";
+$folders = "C:\Github",
+	   "C:\GitHub\ConsTcl",
+	   "C:\GitHub\ConsTcl\tests",
+	   "C:\GitHub\ConsTcl\tmp";
 
 $wshell = New-Object -ComObject WScript.Shell;
 
