@@ -1,0 +1,44 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test read-21.0 {try reading a string} {
+    set expr [p {"foo bar"}]
+    $expr value
+} "foo bar"
+
+test read-21.1 {try reading a string} {
+    set expr [p {"\"foo\" \\ bar"}]
+    $expr value
+} {"foo" \ bar}
+
+test read-21.2 {try reading a string} {
+    set expr [p {"\"foo\" \\ bar"}]
+    $expr external
+} {"\"foo\" \\ bar"}
+
+test read-21.3 {try read-expr on a string} -setup {
+    makeFile {"foo bar"  } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "\"foo bar\"\n"
+
+test read-21.4 {try read-expr on a string/eof} -setup {
+    makeFile {"foo } testrr.lsp ; #"
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -returnCodes error -result {bad string (no ending double quote)}
+
+
+
+cleanupTests
+return

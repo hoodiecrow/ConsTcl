@@ -1,0 +1,37 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test macros-6.0 {try expand del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pxw {(del! plist 'a)}
+} -output "(set! plist (delete! plist (quote a)))\n"
+
+test macros-6.1 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'a)}
+} -output "(b 2 c 3)\n"
+
+test macros-6.2 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'b)}
+} -output "(a 1 c 3)\n"
+
+test macros-6.3 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'c)}
+} -output "(a 1 b 2)\n"
+
+test macros-6.4 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'd)}
+} -output "(a 1 b 2 c 3)\n"
+
+
+cleanupTests
+return

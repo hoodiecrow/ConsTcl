@@ -1,0 +1,20 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+test cons-3.0 {count} -body {
+    pew "(define (truthtoint val) (if val 1 0))"
+    pew "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
+} -output ""
+
+test cons-3.0 {count} -body {
+    pew "(count 0 (list 0 1 2 3 0 0))"
+} -output 3\n
+
+test cons-3.1 {count} -body {
+    pew "(count 'the '(the more the merrier the bigger the better))"
+} -output 4\n
+
+
+cleanupTests
+return

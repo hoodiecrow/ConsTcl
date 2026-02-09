@@ -1,0 +1,37 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test pairslists-17.0 {try member} -body {
+    pew {(define e '((a 1) (b 2) (c 3)))}
+    pew {(assq 'a e)}
+    pew {(assq 'b e)}
+    pew {(assq 'd e)}
+    pew {(assq (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assoc (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assq 5 '((2 3) (5 7) (11 13)))}
+    pew {(assv 5 '((2 3) (5 7) (11 13)))}
+} -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
+
+test strings-1.0 {try reading a string} -body {
+    set o [p {"foo bar baz"}]
+    puts [$o value]
+} -output {foo bar baz
+}
+
+test strings-1.1 {try reading a string} -body {
+    set o [p {"foo \"bar\" baz\nqux\\bod"}]
+    puts [$o value]
+} -output {foo "bar" baz
+qux\bod
+}
+
+test strings-1.2 {try printing a read string} -body {
+    pw {"foo \"bar\" baz\nqux\\bod"}
+} -output {"foo \"bar\" baz\nqux\\bod"
+}
+
+
+cleanupTests
+return

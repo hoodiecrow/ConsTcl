@@ -1,0 +1,14 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test eval-10.0 {try eval-ing an assignment} -body {
+  unbind [S r]
+  pew "(define r 10)"
+  pew "(set! r 20)"
+  pew "r"
+} -output "20\n20\n"
+
+cleanupTests
+return

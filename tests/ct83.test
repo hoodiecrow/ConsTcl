@@ -1,0 +1,19 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+test io-2.0 {try call-with-output-file} -setup {
+} -body {
+  pe {(let ((f (lambda (port)
+       (display 'foo port)
+       (display 99 port))))
+         (call-with-output-file "iofile.txt" f))}
+    puts [viewFile iofile.txt]
+} -cleanup {
+  removeFile iofile.txt
+} -returnCodes error -result "remove this line to use"
+#-output "foo99\n"
+
+
+cleanupTests
+return

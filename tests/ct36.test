@@ -1,0 +1,17 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test macros-18.2 {conditional: expand when macro} -body {
+    pxw "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
+
+test macros-18.3 {conditional: run when macro} -body {
+    pew "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "0\n"
+
+
+
+cleanupTests
+return

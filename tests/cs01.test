@@ -1,0 +1,19 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test read-1.0 {try parse in ConsTcl} -body {
+  pew {(parse 42)}
+} -output "42\n"
+
+test read-1.1 {try parse with StringInputPort buffer} -body {
+  pw [::constcl::StringInputPort new "42"]
+} -output "42\n"
+
+test read-1.2 {try parse with string} -body {
+  pw "42"
+} -output "42\n"
+
+cleanupTests
+return

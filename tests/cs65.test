@@ -1,0 +1,21 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-19.0 {try quotient, remainder, modulo} -body {
+    pew "(quotient 13 4)"
+    pew "(modulo 13 4)"
+    pew "(remainder 13 4)"
+    pew "(modulo -13 4)"
+    pew "(remainder -13 4)"
+    pew "(modulo 13 -4)"
+    pew "(remainder 13 -4)"
+    pew "(modulo -13 -4)"
+    pew "(remainder -13 -4)"
+} -output "3.0\n1\n1\n3\n-1\n-3\n1\n-1\n-1\n"
+
+
+
+cleanupTests
+return

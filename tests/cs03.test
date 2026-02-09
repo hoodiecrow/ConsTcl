@@ -1,0 +1,23 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test input-3.0 {try make-constant} -setup {
+} -body {
+  set a [p {'(a b c)}]
+  set b [p {`(a b c)}]
+  set c [p {'#(a b c)}]
+  set d [p {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [[::constcl::cadr $c] constant]
+    puts [$d constant]
+} -cleanup {
+} -output "1\n1\n1\n1\n"
+
+
+# 4
+
+cleanupTests
+return

@@ -1,0 +1,20 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test macros-13.0 {try pop!} -body {
+  pew "(let ((x '(a b c))) (pop! x))"
+} -output "(b c)\n"
+
+test macros-13.1 {try pop!, badly} -body {
+  pew "(let ((x '(a b c))) (pop!))"
+} -returnCodes error -result "too few arguments:\n(pop! listname)"
+
+test macros-13.2 {try pop!, badly} -body {
+  pew "(let ((x '(a b c))) (pop! '(a b c)))"
+} -returnCodes error -result "SYMBOL expected:\n(pop! listname)"
+
+
+cleanupTests
+return

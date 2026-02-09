@@ -1,0 +1,20 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+test eval-15.0 {expand let*} -body {
+  set x [p "(let* ((a 2) (b (+ a 1))) (* a b))"]
+  set bind [::constcl::cadr $x]
+  set body [::constcl::cddr $x]
+  set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
+  w $x
+} -output "((lambda (a) ((lambda (b) (begin (* a b))) (+ a 1))) 2)\n"
+
+test eval-15.1 {run let*} -body {
+  pew "(let* ((a 2) (b (+ a 1))) (* a b))"
+} -output "6\n"
+
+
+
+cleanupTests
+return

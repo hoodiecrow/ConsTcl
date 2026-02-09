@@ -1,0 +1,15 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test pairslists-2.0 {try pair?} -body {
+    pew {(pair? '(a . b))}
+    pew {(pair? '(a b c))}
+    pew {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+
+
+cleanupTests
+return

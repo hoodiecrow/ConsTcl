@@ -1,0 +1,12 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test cons-3.0 {count} -body {
+    pew "(define (truthtoint val) (if val 1 0))"
+    pew "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
+} -output ""
+
+cleanupTests
+return

@@ -1,0 +1,17 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-7.0 {try zero?} -body {
+        pew "(zero? 77)"
+} -output "#f\n"
+
+test numbers-7.1 {check zero?} -body {
+        pew "(zero? \"foo\")"
+} -returnCodes error -result "NUMBER expected\n(zero? \"foo\")"
+
+
+
+cleanupTests
+return

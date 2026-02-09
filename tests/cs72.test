@@ -1,0 +1,18 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-26.0 {try trig} -body {
+    pew "(sin (/ pi 3))"
+    pew "(cos (/ pi 3))"
+    pew "(tan (/ pi 3))"
+} -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
+
+test numbers-26.1 {try triggering tan} -body {
+    pew "(tan #\\A)"
+} -returnCodes error -result "NUMBER expected\n(tan #\\A)"
+
+
+cleanupTests
+return

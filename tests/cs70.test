@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-24.0 {try exp} -body {
+    pew "(exp 3)"
+} -output "20.085536923187668\n"
+
+
+
+cleanupTests
+return

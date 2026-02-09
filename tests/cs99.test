@@ -1,0 +1,23 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test pairslists-9.0 {try list?} -body {
+    pew {(list? '(a b c))}
+    pew {(list? '())}
+    pew {(list? '(a . b))}
+    pew {(list? #\A)}
+} -output "#t\n#t\n#f\n#f\n"
+
+test pairslists-9.1 {try list?} -body {
+    # "bug": list is infinite and list? must detect that
+    pew {(let ((x (list 'a)))
+          (set-cdr! x x)
+          (list? x))}
+} -output "#f\n"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,14 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+test cons-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (every? fn list)
+  (or (null? list)
+      (and (fn (car list)) (every? fn (cdr list)))))"
+    pew "(every? number? '(1 2 3 4))"
+} -output "#t\n"
+
+
+cleanupTests
+return

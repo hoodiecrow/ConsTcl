@@ -1,0 +1,20 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test eval-16.0 {lambda parameter lists} -body {
+    pew {((lambda (x y z) (list x y z)) 3 4 5)}
+    pew {((lambda x                  x) 3 4 5 6)}
+    pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
+    pew {((lambda (x y . z) z) 3 4 5 6)}
+} -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
+
+
+test eval-16.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+    pew "(if (zero? 0) (* 4 4) (- 5 5))"
+} -output "16\n"
+
+
+cleanupTests
+return

@@ -1,0 +1,16 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test pairslists-3.0 {try show-pair} -body {
+    puts [::constcl::show-pair [p {(a . b)}]]
+    puts [::constcl::show-pair [p {(a b c)}]]
+    puts [::constcl::show-pair [p {(a b . c)}]]
+    puts [::constcl::show-pair [p {(a)}]]
+} -output "a . b\na b c\na b . c\na\n"
+
+
+
+cleanupTests
+return

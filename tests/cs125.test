@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test strings-18.0 {try substring} -body {
+    pew {(substring "foo bar" 0 2)}
+} -output "\"foo\"\n"
+
+
+
+cleanupTests
+return

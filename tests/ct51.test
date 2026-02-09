@@ -1,0 +1,13 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test numbers-12.0 {try max} -body {
+    pew "(max 7 1 10 3)"
+} -output "10\n"
+
+
+
+cleanupTests
+return

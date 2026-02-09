@@ -1,0 +1,21 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test io-1.0 {try call-with-input-file} -setup {
+  makeFile {99 foo "bar"} iofile.txt
+} -body {
+  pe {(let ((f (lambda (port)  (let ((n 0) (s 0))
+       (set! n (read port))
+       (set! s (read port))
+       (display s)
+       (display n)))))
+         (call-with-input-file "iofile.txt" f))}
+} -cleanup {
+  removeFile iofile.txt
+} -output "foo99"
+
+
+cleanupTests
+return

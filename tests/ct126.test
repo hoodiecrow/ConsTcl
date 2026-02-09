@@ -1,0 +1,19 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test symbols-1.0 {try symbol?} -body {
+    pew {(symbol? 'foo)}
+    pew {(symbol? (car '(a b)))}
+    pew {(symbol? "bar")}
+    pew {(symbol? 'nil)}
+    pew {(symbol? '())}
+    pew {(symbol? #f)}
+    puts [::constcl::symbol? [S quote]]
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n#t\n"
+
+
+
+cleanupTests
+return

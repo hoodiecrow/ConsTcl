@@ -1,0 +1,13 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test numbers-20.0 {try floor} -body {
+    pew "(floor 99.9)"
+} -output "99.0\n"
+
+
+
+cleanupTests
+return

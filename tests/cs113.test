@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test strings-6.0 {try string-ref} -body {
+    pew {(string-ref "foo bar" 4)}
+} -output "#\\b\n"
+
+
+
+cleanupTests
+return

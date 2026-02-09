@@ -1,0 +1,15 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test io-3.0 {try with-input-from-file} -setup {
+  makeFile {42} foo.txt
+} -body {
+  pew "(with-input-from-file \"foo.txt\" (lambda () (write (read))))"
+} -cleanup {
+  removeFile foo.txt
+} -output "42\n"
+
+cleanupTests
+return

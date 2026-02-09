@@ -1,0 +1,17 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test pairslists-4.0 {try cons} -body {
+    pew {(cons 'a '())}
+    pew {(cons '(a) '(b c d))}
+    pew {(cons "a" '(b c))}
+    pew {(cons 'a 3)}
+    pew {(cons '(a b) 'c)}
+} -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
+
+
+
+cleanupTests
+return

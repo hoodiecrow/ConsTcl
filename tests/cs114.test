@@ -1,0 +1,25 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test strings-7.0 {try string-set!} -body {
+    pew {(string-set! (string #\f #\o #\o) 0 #\x)}
+} -output "\"xoo\"\n"
+
+test strings-7.1 {try string-set!} -body {
+  unbind [S f]
+  unbind [S g]
+    pew {(define f (lambda () (make-string 3 #\*)))}
+    pew {(define g (lambda () "***"))}
+    pew {(string-set! (f) 0 #\?)}
+} -output "\"?**\"\n"
+
+test strings-7.2 {try string-set!} -body {
+    pew {(string-set! (g) 0 #\?)}
+} -returnCodes error -result "string is constant"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,12 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test macros-8.0 {expand for macro} -body {
+    pxw "(for/and ((i '(1 2 3))) (< 3 i))"
+} -output "(and (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
+
+
+cleanupTests
+return

@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test strings-21.0 {try list->string} -body {
+    pew {(list->string '(#\f #\o #\o))}
+} -output "\"foo\"\n"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,13 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test numbers-29.0 {try expt} -body {
+    pew "(expt 4 2)"
+} -output "16.0\n"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,15 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test macros-12.2 {expand or macro} -body {
+    pxw "(or)"
+    pxw "(or #f)"
+    pxw "(or (> 3 2))"
+    pxw "(or (> 3 2) (= 7 8))"
+} -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
+
+
+cleanupTests
+return

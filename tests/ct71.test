@@ -1,0 +1,20 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test numbers-30.0 {try number->string} -body {
+    pew "(number->string 23)"
+    pew "(number->string 23 2)"
+    pew "(number->string 23 8)"
+    pew "(number->string 23 16)"
+} -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
+
+test numbers-30.1 {try number->string} -body {
+    pew "(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string  23 13)"
+
+
+
+cleanupTests
+return

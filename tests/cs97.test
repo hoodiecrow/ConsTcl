@@ -1,0 +1,19 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test pairslists-7.0 {try set-car!} -body {
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-car! (f) 3)}
+} -output "(3)\n"
+
+test pairslists-7.1 {try set-car!} -body {
+    pew {(set-car! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+cleanupTests
+return

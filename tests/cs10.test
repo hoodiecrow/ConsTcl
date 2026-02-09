@@ -1,0 +1,30 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test read-17.0 {try reading a number} {
+    set obj [::constcl::parse "     - "]
+    $obj name
+} "-"
+
+test read-17.1 {try reading a number} {
+    set obj [::constcl::parse "     + "]
+    $obj name
+} "+"
+
+test read-17.2 {try read-expr on plus/minus} -setup {
+    makeFile {  +  -  -99} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+
+
+cleanupTests
+return

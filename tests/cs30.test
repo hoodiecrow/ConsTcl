@@ -1,0 +1,31 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test eval-14.0 {expand letrec} -body {
+  set x [p "(letrec ((a 0) (b 1)) (- a b))"]
+  set x [::constcl::rewrite-letrec $x ::constcl::global_env]
+  w $x
+} -match glob -output {((lambda (a b) ((lambda (g<[0-9]*> g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>)) 0 1) (- a b)) (quote #<undefined>) (quote #<undefined>))*}
+
+test eval-14.1 {run letrec} -body {
+  pew "(letrec ((a 0) (b 1)) (- a b))"
+} -output "-1\n"
+
+test eval-14.2 {run letrec} -body {
+  pew {(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+  (even? 88))}
+} -output "#t\n"
+
+cleanupTests
+return

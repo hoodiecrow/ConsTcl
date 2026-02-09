@@ -1,0 +1,19 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test pairslists-5.0 {try car} -body {
+    pew {(car '(a b c))}
+    pew {(car '((a) b c d))}
+    pew {(car '(1 . 2))}
+} -output "a\n(a)\n1\n"
+
+test pairslists-5.1 {try car} -body {
+    pew {(car '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+cleanupTests
+return

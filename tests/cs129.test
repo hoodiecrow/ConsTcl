@@ -1,0 +1,21 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test strings-22.0 {try string-copy} -body {
+  unbind [S x]
+  unbind [S y]
+  unbind [S z]
+    pew {(define x (string-copy "foo"))}
+    pew {(string-set! x 0 #\x)}
+    pew {(define y "foobar")}
+    pew {(define z (string-copy y))}
+    pew {(eq? y z)}
+    pew {(equal? y z)}
+} -output "\"xoo\"\n#f\n#t\n"
+
+
+
+cleanupTests
+return

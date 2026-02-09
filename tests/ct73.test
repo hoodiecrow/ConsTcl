@@ -1,0 +1,21 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test boolean-1.0 {evaluate boolean values} -body {
+        pew "#t"
+} -output "#t\n"
+
+test boolean-1.1 {evaluate boolean values} -body {
+        pew "#f"
+} -output "#f\n"
+
+test boolean-1.2 {evaluate boolean values} -body {
+        pew "'#f"
+} -output "#f\n"
+
+
+
+cleanupTests
+return

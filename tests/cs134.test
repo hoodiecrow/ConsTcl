@@ -1,0 +1,12 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test cons-1.0 {calculate circle area} -body {
+    pew "(define (circle-area r) (* pi (* r r)))"
+    pew "(circle-area 3)"
+} -output 28.274333882308138\n
+
+cleanupTests
+return

@@ -1,0 +1,64 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
+    pew {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pew {(vector? (make-vector 3 #\X))}
+    pew {(vector? (vector 'a 'b 'c))}
+    pew {(vector? '#(a b c))}
+} -output "#t\n#t\n#t\n#t\n"
+
+
+
+test vectors-1.1 {try vector} -body {
+    pew {(vector 'a 'b 'c)}
+    pew {(vector 0 '(2 2 2 2) "Anna")}
+} -output "#(a b c)\n#(0 (2 2 2 2) \"Anna\")\n"
+
+
+
+test vectors-1.2 {try vector-length} -body {
+    pew {(vector-length (vector 'a 'b 'c))}
+} -output "3\n"
+
+
+
+test vectors-1.3 {try vector-ref} -body {
+    pew {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+test vectors-1.4 {try vector-ref} -body {
+    pew {(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))}
+} -output "b\n"
+
+
+
+test vectors-1.5 {try vector-set!} -body {
+  unbind [S x]
+    pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pew {(vector-set! (x) 1 '(foo bar))}
+} -output "#(0 (foo bar) \"Anna\")\n"
+
+
+
+test vectors-1.6 {try vector->list} -body {
+    pew {(vector->list (vector 'a 'b 'c))}
+} -output "(a b c)\n"
+
+
+
+test vectors-1.7 {try list->vector} -body {
+    pew {(list->vector '(a b c))}
+} -output "#(a b c)\n"
+
+
+
+test vectors-1.8 {try vector-fill!} -body {
+    pew {(vector-fill! (vector 'a 'b 'c) 'x)}
+} -output "#(x x x)\n"
+
+
+cleanupTests
+return

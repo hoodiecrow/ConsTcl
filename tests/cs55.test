@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-9.0 {try negative?} -body {
+        pew "(negative? 77)"
+} -output "#f\n"
+
+
+
+cleanupTests
+return

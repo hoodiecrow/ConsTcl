@@ -1,0 +1,19 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test read-18.0 {try read-expr on booleans} -setup {
+    makeFile {  #t  #f} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "#t\n#f\n"
+
+
+cleanupTests
+return

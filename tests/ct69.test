@@ -1,0 +1,14 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+
+test numbers-28.0 {try sqrt} -body {
+    pew "(sqrt 16)"
+} -output "4.0\n"
+
+
+
+cleanupTests
+return

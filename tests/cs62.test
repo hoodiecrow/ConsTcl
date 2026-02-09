@@ -1,0 +1,18 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-16.0 {try -} -body {
+    pew "(-)"
+} -returnCodes error -result {wrong # args: should be "::constcl::- num ?arg ...?"}
+
+test numbers-16.1 {try -} -body {
+    pew "(- 5)"
+    pew "(- 7 1 10 3)"
+} -output "-5\n-7\n"
+
+
+
+cleanupTests
+return

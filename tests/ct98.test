@@ -1,0 +1,22 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+
+test pairslists-12.0 {try append} -body {
+    pew "(append '(a b) '(c) '(d e))"
+    pew {(append '(x) '(y))}
+    pew {(append '(a) '(b c d))}
+    pew {(append '(a (b)) '((c)))}
+    pew {(append '(a b) '(c . d))}
+    pew {(append '() 'a)}
+} -output "(a b c d e)\n(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+test pairslists-12.1 {try append} -body {
+    pew "(append '(a b) 'c '(d e))"
+} -returnCodes error -result "LIST expected\n(append c)"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test numbers-4.0 {try >} -body {
+        pew "(> 7 4 2 1)"
+} -output "#t\n"
+
+
+
+cleanupTests
+return

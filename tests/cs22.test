@@ -1,0 +1,27 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source constcl.tcl
+
+test eval-5.0 {expand case macro} -body {
+    set x [p "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
+    set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
+
+test eval-5.1 {run case macro} -body {
+    pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
+} -output "composite\n"
+
+test eval-5.2 {expand case macro} -body {
+    set x [p "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
+    set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
+
+test eval-5.3 {run case macro} -body {
+    pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
+} -output "consonant\n"
+
+cleanupTests
+return

@@ -1,0 +1,29 @@
+package require tcltest
+source constcl.tcl
+namespace import -force tcltest::*
+
+test cons-4.0 {twice} -body {
+    pew "(define (twice x) (* 2 x))"
+    pew "(twice 5)"
+} -output 10\n
+
+test cons-4.1 {twice} -body {
+    pew "(define (repeat f) (lambda (x) (f (f x))))"
+    pew "((repeat twice) 10)"
+} -output 40\n
+
+test cons-4.2 {twice} -body {
+    pew "((repeat (repeat twice)) 10)"
+} -output 160\n
+
+test cons-4.3 {twice} -body {
+    pew "((repeat (repeat (repeat twice))) 10)"
+} -output 2560\n
+
+test cons-4.4 {twice} -body {
+    pew "((repeat (repeat (repeat (repeat twice)))) 10)"
+} -output 655360\n
+
+
+cleanupTests
+return
