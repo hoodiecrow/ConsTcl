@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="drawing.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="2"
+     inkscape:cx="331.75"
+     inkscape:cy="81.75"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <marker
+       style="overflow:visible;"
+       id="Arrow2Lend"
+       refX="0.0"
+       refY="0.0"
+       orient="auto"
+       inkscape:stockid="Arrow2Lend"
+       inkscape:isstock="true">
+      <path
+         transform="scale(1.1) rotate(180) translate(1,0)"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         style="fill-rule:evenodd;fill:context-stroke;stroke-width:0.62500000;stroke-linejoin:round;"
+         id="path60404" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="DotL"
+       refX="0.0"
+       refY="0.0"
+       orient="auto"
+       inkscape:stockid="DotL"
+       inkscape:isstock="true">
+      <path
+         transform="scale(0.8) translate(7.4, 1)"
+         style="fill-rule:evenodd;fill:context-stroke;stroke:context-stroke;stroke-width:1.0pt"
+         d="M -2.5,-1.0 C -2.5,1.7600000 -4.7400000,4.0 -7.5,4.0 C -10.260000,4.0 -12.5,1.7600000 -12.5,-1.0 C -12.5,-3.7600000 -10.260000,-6.0 -7.5,-6.0 C -4.7400000,-6.0 -2.5,-3.7600000 -2.5,-1.0 z "
+         id="path60444" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g952"
+       inkscape:export-filename="C:\Users\plewe\code\constcl\images\env1.png"
+       inkscape:export-xdpi="1199.926"
+       inkscape:export-ydpi="1199.926">
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect846"
+         width="64.499908"
+         height="49.340687"
+         x="11.056482"
+         y="20.206676" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="16.066444"
+         y="38.020485"
+         id="text5360"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan5358"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="16.066444"
+           y="38.020485">pi: 3.14159...</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="16.096746"
+         y="45.54715"
+         id="text28046"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan28044"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="16.096746"
+           y="45.54715">*: ::constcl::*</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="16.066444"
+         y="53.073814"
+         id="text37268"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan37266"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="16.066444"
+           y="53.073814">r: 12</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="15.981249"
+         y="57.405052"
+         id="text54378"
+         transform="scale(1.0006031,0.99939725)"><tspan
+           sodipodi:role="line"
+           id="tspan54376"
+           style="stroke-width:0.264583"
+           x="15.981249"
+           y="57.405052"> </tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="14.775888"
+         y="64.931717"
+         id="text58980"
+         transform="scale(1.0006031,0.99939725)"><tspan
+           sodipodi:role="line"
+           id="tspan58978"
+           style="stroke-width:0.264583"
+           x="14.775888"
+           y="64.931717">⋮</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="12.838049"
+         y="25.229786"
+         id="text5121"><tspan
+           sodipodi:role="line"
+           id="tspan5119"
+           style="stroke-width:0.264583"
+           x="12.838049"
+           y="25.229786">Global environment</tspan></text>
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect5216"
+         width="64.499908"
+         height="5.5"
+         x="11.056481"
+         y="8.8295918" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#DotL);marker-end:url(#Arrow2Lend)"
+         d="M 70.590433,24.547675 70.404023,10.426749"
+         id="path5275" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="13.471118"
+         y="13.191244"
+         id="text5279"><tspan
+           sodipodi:role="line"
+           id="tspan5277"
+           style="stroke-width:0.264583"
+           x="13.471118"
+           y="13.191244">Null environment</tspan></text>
+    </g>
+    <g
+       id="g1330"
+       inkscape:export-filename="C:\Users\plewe\code\constcl\images\env2.png"
+       inkscape:export-xdpi="1199.926"
+       inkscape:export-ydpi="1199.926">
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect60199"
+         width="64.499908"
+         height="49.340687"
+         x="90.73941"
+         y="20.206676" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="96.186874"
+         y="38.020485"
+         id="text6610"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan6608"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="96.186874"
+           y="38.020485">pi: 3.14159...</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="96.217178"
+         y="45.54715"
+         id="text6614"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan6612"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="96.217178"
+           y="45.54715">*: ::constcl::*</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="96.186874"
+         y="51.485355"
+         id="text6618"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan6616"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="96.186874"
+           y="51.485355">r: 12</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="96.101677"
+         y="55.816593"
+         id="text6622"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan6620"
+           style="stroke-width:0.264583"
+           x="96.101677"
+           y="55.816593"> </tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="94.896317"
+         y="64.931717"
+         id="text6626"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan6624"
+           style="stroke-width:0.264583"
+           x="94.896317"
+           y="64.931717">⋮</tspan></text>
+      <rect
+         style="fill:#000000;fill-opacity:0.99596769;stroke:none;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect906"
+         width="54.806282"
+         height="12.396502"
+         x="97.594635"
+         y="49.698208"
+         inkscape:export-filename="C:\Users\plewe\code\constcl\images\env2.png"
+         inkscape:export-xdpi="600.34656"
+         inkscape:export-ydpi="600.34656" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.500001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect59737"
+         width="54.806282"
+         height="12.396502"
+         x="95.874847"
+         y="47.581539" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#DotL);marker-end:url(#Arrow2Lend)"
+         d="M 147.98106,50.304542 147.79465,35.885815"
+         id="path60282" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="101.28441"
+         y="58.628571"
+         id="text59749"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan59747"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="101.28441"
+           y="58.628571">r: 10</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.44773px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="128.02193"
+         y="57.912857"
+         id="text60042"
+         transform="scale(1.0006031,0.99939726)"><tspan
+           sodipodi:role="line"
+           id="tspan60040"
+           style="font-size:3.44773px;text-align:start;text-anchor:start;stroke-width:0.264583"
+           x="128.02193"
+           y="57.912857">(* pi (* r r))</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="92.742218"
+         y="24.965202"
+         id="text6630"><tspan
+           sodipodi:role="line"
+           id="tspan6628"
+           style="stroke-width:0.264583"
+           x="92.742218"
+           y="24.965202">Global environment</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="98.166176"
+         y="52.614159"
+         id="text6639"><tspan
+           sodipodi:role="line"
+           id="tspan6637"
+           style="stroke-width:0.264583"
+           x="98.166176"
+           y="52.614159">Local environment</tspan></text>
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
+         id="rect6903"
+         width="64.499908"
+         height="5.5"
+         x="90.563774"
+         y="8.8295918" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#DotL);marker-end:url(#Arrow2Lend)"
+         d="M 150.09772,24.547675 149.91131,10.426749"
+         id="path6905" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.87146px;line-height:0.95;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.264583"
+         x="92.978409"
+         y="13.191244"
+         id="text6909"><tspan
+           sodipodi:role="line"
+           id="tspan6907"
+           style="stroke-width:0.264583"
+           x="92.978409"
+           y="13.191244">Null environment</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,1423 @@
+
+H2 Input
+
+The first thing an interpreter must be able to do is to take in the user's code and
+data (E{input}I{input}) and make it fit to be evaluated. This is handled by the K{read} procedure.
+
+h3 Input and ports
+
+The main challenge in taking in code and data is to determine
+from which device the input will come. Possible alternatives are the
+keyboard, an input file, a string buffer, etc. To make input
+streamlined, the various kinds of devices are abstracted into E{ports}.
+
+The procedure K{read} represents the interpreter's main input facility. 
+
+H4 read procedure
+
+One can pass a port to K{read} in which case
+K{read} sets the current input port temporarily to the provided port. If no
+port is passed,
+K{read} uses the default standard input port (usually the keyboardF{which
+  doesn't work in a Windows windowing environment, e.g. wish or tkcon. repl does
+  work in those, though.  Input works in tclsh on Windows.}).
+
+PR(
+read (public);?port? iport -> expr
+PR)
+
+CB(
+reg read
+
+proc ::constcl::read {args} {
+  set c {}
+  set unget {}
+  set oldport $::constcl::Input_port
+  if {[llength $args]} {
+    lassign $args port
+    set ::constcl::Input_port $port
+  }
+  set expr [read-expr]
+  set ::constcl::Input_port $oldport
+  return $expr
+}
+CB)
+
+TT(
+::tcltest::test input-2.0 {try read} -setup {
+  ::tcltest::makeFile {99 foo} input.txt
+  set p [pe "(open-input-file \"input.txt\")"]
+} -body {
+  ::constcl::display [::constcl::read $p]
+  ::constcl::display [::constcl::read $p]
+} -cleanup {
+  ::constcl::close-input-port $p
+  ::tcltest::removeFile input.txt
+} -output "99foo"
+
+TT)
+
+PT(
+H5 Ports
+
+Ports are an abstraction of the input or output mechanism. An input port can be
+connected to standard input (the keyboard) or a file opened for input or a
+string input buffer where the complete available input is laid out before
+reading starts. Regardless of what kind of input port it is, one can read
+characters from it until it runs out and signals end-of-file.  Likewise, an
+output port, regardless of whether it's the standard output--the screen--or a
+file opened for output, will receive characters sent to it.
+
+PT)
+
+h3 Parsing
+
+Making input fit to be evaluated is a more complex procedure, and most of the
+procedures in this section deal with this conversion, which is also known as
+E{parsing}. To make parsing possible, the input must be encoded in a way that
+makes the type of input obvious and consistent.
+
+W{Parsing}{Parsing}I{parsing}, or syntactic analysis, is analyzing a sequence of
+letters, digits, and other characters, a piece of text conforming to the rules
+of E{external representation}I{external representation}. The result of parsing
+is an E{expression}I{expression} in E{internal representation}.
+
+As a simple example of external representation, K{99} denotes a number,
+while K{"99"} denotes a string.
+The K{read} procedure takes in input character by
+character, matching each character against a fitting external representation.
+When done, it creates a ConsTcl object, which is the internal representation of
+an expression.  The object can then be passed to the evaluator.
+
+K{99} is parsed into a Number object, while K{"99"} is parsed into a String
+object. K{'(99 "99")} is parsed into a quoted Pair structure with two elements,
+a Number object and a String object.
+
+PT(
+h5 External representation
+
+The external representation is a 'recipe' for an expression that expresses it in
+a unique and consistent way. 
+
+For example, the external representation for a vector is a pound sign (K{#}), a
+left parenthesis (K{(}), the external representation for some values, and a right
+parenthesis (K{)}). When the reader/parser is working its way through input, a K{#(}
+symbol signals that a vector structure is being read. A number of subexpressions
+for the elements of the vector follow, and then a closing parenthesis K{)}
+signals that the vector is done. The elements are saved in vector memory and the
+vector gets the address to the first element and the number of elements.
+
+NI Some types of data and external representation:
+
+NI String: K{"abc"}
+
+NI Character: K{#\c}
+
+NI Vector: K{#(99 "abc")}
+
+NI List (stored as a Pair structure): K{(1 2)} or K{[3 4]}
+
+NI Number: K{99}
+
+NI Identifier: K{abc}
+PT)
+
+IF /images/vector-representation.png Vector representation
+
+Once input has been parsed into an expression, the expression can be
+evaluated using the K{eval} R{procedure}{eval-procedure} or printed using the
+K{write} R{procedure}{write-procedure}.
+
+A non-quoted list is parsed into a structure of Pair objects and
+evaluates to the result of the execution of the components of the list
+(the operator and the operands).
+
+Example (running in K{tclsh}):
+
+VB(
+% ::constcl::read
+(+ 2 3)
+::oo::Obj491
+VB)
+
+Here, K{read} read and parsed the external representation of a list with three
+elements, +, 2, and 3. It produced the expression that has an internal
+representation labeled K{::oo::Obj491} (the number has no significance other
+than to identifiy the object: it will be different each time the code is run).
+
+Printing the object returns it to external representation:
+
+VB(
+% ::constcl::write ::oo::Obj491
+(+ 2 3)
+VB)
+
+Evaluating the object creates a new expression (the result of applying
+the operator to the operands):
+
+VB(
+% ::constcl::eval ::oo::Obj491
+::oo::Obj494
+VB)
+
+Printing it shows the result:
+
+VB(
+% ::constcl::write ::oo::Obj494
+5
+VB)
+
+Fortunately, we don't E{have} to work at such a low level. We can use the
+K{repl}I{repl} instead:
+
+VB(
+ConsTcl> (+ 2 3)
+5
+VB)
+
+Then, parsing, evaluation, and writing goes on in the background and the
+internal representations of expressions and values are hidden.
+
+Anyway, the figure shows what it really looks like. K{::oo::Obj491} was just
+the head of the list.
+
+IF /images/intreplist.png The internal structure of the expression
+
+(The parts of the list can be inspected using the K{car} and K{cdr}
+R{procedures}{car-procedure}.)
+
+For the rest of subsection, procedures that implement parsing.
+
+The K{read-} procedures parse their input and produce ConsTcl objects.
+
+Reader procedures specialize in reading a certain kind of input, except for
+K{read-expr} which reads them all (with a little help).
+
+h4 read-expr procedure
+
+The K{read-expr} procedure reads the first available character from the input
+port. Based on that character it delegates to one of the more detailed readers,
+producing an expression of the corresponding kind.  A Tcl character value can be
+passed to it: that character will be used first before reading from the input.
+If end of file is encountered before an expression can be read in full, the
+procedure returns end of file (K{#EOF})I{end of file}.  Shares the variables
+K{c} and K{unget} with its caller.
+
+PR(
+read-expr (internal);?char? tchr -> expreof
+PR)
+
+CB(
+proc ::constcl::read-expr {args} {
+  upvar c c unget unget
+  if {[llength $args]} {
+    lassign $args c
+  } else {
+    set c [readchar]
+  }
+  set unget {}
+  read-eof $c
+  if {[::string is space $c] || $c eq ";"} {
+    skip-ws
+    read-eof $c
+  }
+  switch -regexp $c {
+    {\"}          { read-string-expr }
+    {\#}          { read-pound }
+    {\'}          { read-quoted-expr }
+    {\(}          { read-pair-expr ")" }
+    {\+} - {\-}   { read-plus-minus $c }
+    {\,}          { read-unquoted-expr }
+    {\.} {
+        set x [Dot new]; set c [readchar]; set x
+    }
+    {\[}          { read-pair-expr "\]" }
+    {\`}          { read-quasiquoted-expr }
+    {\d}          { read-number-expr $c }
+    {^$}          { return #EOF }
+    {[[:graph:]]} { read-identifier-expr $c }
+    default {
+      read-eof $c
+      ::error "unexpected character ($c)"
+    }
+  }
+}
+CB)
+
+TT(
+::tcltest::test read-12.0 {try read-expr on dot expr} -setup {
+    ::tcltest::makeFile {  a . b } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "a\n.\nb\n"
+
+::tcltest::test read-12.1 {try read-expr} -setup {
+    ::tcltest::makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
+      [a b] `foo 93 foo} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+  set x [r $p]
+  while {$x ne "#EOF"} {
+    w $x
+    set x [r $p]
+  }
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo\"\n#(a b)\n#t\n#f\n#\\A\n(quote foo)\n(a b)\n-99\n+\n-\n(unquote foo)\n(a b)\n(quasiquote foo)\n93\nfoo\n"
+
+TT)
+
+H4 read-character-expr procedure
+
+K{read-character-expr} is activated by K{read-pound} when that procedure finds a
+backslash in the input stream (pound-backslash is the external representation
+prefix for characters). It reads one or more characters to produce a character
+expression and return a R{Char object}{characters}.  Shares the variables K{c}
+and K{unget} with its caller.
+
+PR(
+read-character-expr (internal);-> chareof
+PR)
+
+CB(
+proc ::constcl::read-character-expr {} {
+  upvar c c unget unget
+  set name "#\\"
+CB)
+
+A character name can be one or more characters long. Accept the first character
+if it is a graphic character.
+
+CB(
+  set c [readchar]
+  read-eof $c
+  if {[::string is graph $c]} {
+    ::append name $c
+CB)
+
+Keep adding to the name as long as the input is an alphabetic character.
+
+CB(
+    set c [readchar]
+    while {[::string is alpha $c]} {
+      ::append name $c
+      set c [readchar]
+    }
+  }
+CB)
+
+Check if we have a valid character name.
+
+CB(
+  check {valid-char? $name} {
+      Invalid character constant $name
+  }
+CB)
+
+Make and return a character object.
+
+CB(
+  set expr [MkChar $name]
+  read-eof $expr
+  return $expr
+}
+CB)
+
+TT(
+
+::tcltest::test read-13.0 {try reading a character} -body {
+    ::constcl::display [parse {#\A}]
+    ::constcl::display [parse {#\(}]
+    ::constcl::display [parse "#\\space"]
+    ::constcl::display [parse "#\\newline"]
+} -output "A( \n"
+
+::tcltest::test read-13.3 {try reading a character} -body {
+    set expr [parse "#\\foobar"]
+    $expr char
+} -returnCodes error -result "Invalid character constant #\\foobar"
+
+::tcltest::test read-13.4 {try read-expr on characters} -setup {
+    ::tcltest::makeFile {  #\A  #\space} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#\\A\n#\\space\n"
+
+TT)
+
+H4 read-identifier-expr procedure
+
+K{read-identifier-expr} is activated for 'anything else', and takes in
+characters until it finds whitespace or a delimiter character. If it
+is passed one or more characters it will use them before consuming any from
+input. It checks the input against the rules for identifiers, accepting or
+rejecting it with an error message. It returns a R{Symbol object}{symbols}.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-identifier-expr (internal);?chars? tchrs -> sym
+PR)
+
+CB(
+proc ::constcl::read-identifier-expr {args} {
+  upvar c c unget unget
+  set unget {}
+CB)
+
+If one or more characters have been passed to the procedure, join them together
+and store them in K{c}. Otherwise, read a character from input.
+
+CB(
+  if {[llength $args]} {
+    set c [join $args {}]
+  } else {
+    set c [readchar]
+  }
+  read-eof $c
+  set name {}
+CB)
+
+Add the contents of K{c} to K{name} as long as the character is graphic and not
+a delimiter or K{#EOF}.
+
+CB(
+  while {[::string is graph -strict $c]} {
+    if {$c eq "#EOF" || [T [delimiter? $c]]} {
+      break
+    }
+    ::append name $c
+    set c [readchar]
+    # do not check for EOF here
+  }
+CB)
+
+If the last character read is a delimiter, unget it.
+
+CB(
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
+CB)
+
+Check if the name is a valid identifier, and create and return a symbol object.
+
+CB(
+  # idcheck throws error if invalid identifier
+  idcheck $name
+  return [S $name]
+}
+CB)
+
+TT(
+
+::tcltest::test read-14.0 {try reading an identifier} {
+    set expr [parse "foo"]
+    $expr name
+} "foo"
+
+::tcltest::test read-14.1 {try reading an identifier} -body {
+    set expr [parse "let"]
+    ::constcl::varcheck [$expr name]
+} -returnCodes error -result "Variable name is reserved: let"
+
+::tcltest::test read-14.2 {try read-expr on identifiers} -setup {
+    ::tcltest::makeFile {  foo    bar } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "foo\nbar\n"
+
+TT)
+
+H4 read-number-expr procedure
+
+K{read-number-expr} reads numerical input, both integers and floating point
+numbers. It is activated by K{read-expr} or K{read-plus-minus} if they encounter
+digits, and it actually takes in anything that at least starts out like a number.
+It stops at whitespace or a delimiter character, and then it accepts or rejects the
+input by comparing it to a Tcl double. It returns a R{Number object}{numbers}.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-number-expr (internal);?char? tchr -> numeof
+PR)
+
+CB(
+proc ::constcl::read-number-expr {args} {
+  upvar c c unget unget
+  set unget {}
+CB)
+
+If a character has been passed to the procedure, store it in K{c}. Otherwise,
+read a character from input.
+
+CB(
+  if {[llength $args]} {
+    lassign $args c
+  } else {
+    set c [readchar]
+  }
+  read-eof $c
+CB)
+
+Add the contents of K{c} to K{num} as long as the character isn't space,
+K{#EOF}, or a delimiter.
+
+CB(
+  while {![T [interspace? $c]] && $c ne "#EOF" &&
+      ![T [delimiter? $c]]} {
+    ::append num $c
+    set c [readchar]
+  }
+CB)
+
+If the last character read is a delimiter, unget it.
+
+CB(
+  if {[T [delimiter? $c]]} {
+    set unget $c
+  }
+CB)
+
+Check if the contents of K{num} is a valid number, and create and return a
+number object.
+
+CB(
+  check {::string is double -strict $num} {
+      Invalid numeric constant $num
+  }
+  set expr [N $num]
+  return $expr
+}
+CB)
+
+TT(
+::tcltest::test read-15.0 {try reading a number} {
+    [parse "99.99"] numval
+} "99.99"
+
+::tcltest::test read-15.1 {try reading a number} {
+    [parse "     99.99"] numval
+} "99.99"
+
+::tcltest::test read-15.2 {try reading a number} {
+    [parse "     9"] numval
+} "9"
+
+::tcltest::test read-15.3 {try reading a number} {
+    [parse "     +9"] numval
+} "9"
+
+::tcltest::test read-15.4 {try reading a number} {
+    [parse "     -9"] numval
+} "-9"
+
+::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
+    ::tcltest::makeFile {  99 } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "99\n"
+
+TT)
+
+H4 read-pair-expr procedure
+
+The K{read-pair-expr} procedure reads everything between two matching
+parentheses, or, as the case might be, brackets. It produces either an empty
+list, or a possibly recursive structure of R{Pair objects}{pairs-and-lists},
+either a proper list (one that ends in K{NIL}), or an improper one (one that
+has an atom as its last member). Note that K{read-pair-expr} can't read a cyclic
+improper list.
+Shares the variables K{c} and K{unget} with its caller.
+
+IF /images/prop-improp.png A proper list and two improper ones.
+
+PR(
+read-pair-expr (internal);char pterm -> pstreof
+PR)
+
+CB(
+proc ::constcl::read-pair-expr {char} {
+  upvar c c unget unget
+  set unget {}
+  set expr [read-pair $char]
+  read-eof $expr
+  if {$c ne $char} {
+    if {$char eq ")"} {
+      ::error \
+        "Missing right paren. ($c)."
+    } else {
+      ::error \
+        "Missing right bracket ($c)."
+    }
+  } else {
+    set unget {}
+    set c [readchar]
+  }
+  return $expr
+}
+CB)
+
+B{read-pair} procedure
+
+K{read-pair} is a helper procedure that does the heavy lifting in reading a pair
+structure. First it checks if the list is empty, returning K{NIL} in that case.
+Otherwise it reads the first element in the list and then repeatedly the rest of
+them. If it reads a Dot object, the following element to be read is the tail
+end of an improper list. When K{read-pair} has reached the ending parenthesis or
+bracket, it ``conses up'' the elements starting from the last, and returns the head
+of the list.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-pair (internal);char pterm -> pstreof
+PR)
+
+IX read-pair
+CB(
+proc ::constcl::read-pair {char} {
+  upvar c c unget unget
+CB)
+
+If the first non-space character is the ending parenthesis or bracket, return an
+empty list.
+
+CB(
+  set c [readchar]
+  read-eof $c
+  if {[T [find-char? $char]]} {
+    return ${::#NIL}
+  }
+CB)
+
+Read an expression and put it in the result list. Tentatively set the end of
+the list to K{#NIL}.
+
+CB(
+  set a [read-expr $c]
+  set res $a
+  skip-ws
+  set prev ${::#NIL}
+CB)
+
+As long as the ending parenthesis or bracket isn't found, read an expression
+into K{x}. If it is a dot, read another expression and set the end of the list
+to it.  Otherwise, append the expression in K{x} to the result list.
+
+PR(
+PR)
+
+CB(
+  while {![T [find-char? $char]]} {
+    set x [read-expr $c]
+    skip-ws
+    read-eof $c
+    if {[T [dot? $x]]} {
+      set prev [read-expr $c]
+      skip-ws
+      read-eof $c
+    } else {
+      lappend res $x
+    }
+  }
+CB)
+
+Reverse the result list and construct pairs from each item and the current end
+of the list. Return the final end of the list.
+
+CB(
+  foreach r [lreverse $res] {
+    set prev [cons $r $prev]
+  }
+  return $prev
+}
+CB)
+
+TT(
+::tcltest::test read-16.0 {try reading an improper list} -body {
+    pw "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-16.1 {try reading an improper list} -body {
+    pw "(a b . c)"
+} -output "(a b . c)\n"
+
+::tcltest::test read-16.2 {try reading a list} -body {
+    set expr [parse "(a (b))"]
+    [::constcl::caadr $expr] name
+} -result "b"
+
+::tcltest::test read-16.3 {try reading a list} -body {
+    pw "(a)"
+} -output "(a)\n"
+
+::tcltest::test read-16.4 {try reading a list} -body {
+    pw "(a b)"
+} -output "(a b)\n"
+
+::tcltest::test read-16.5 {try reading a list} -body {
+    pw "(a (b) )"
+} -output "(a (b))\n"
+
+::tcltest::test read-16.6 {try reading a list} -body {
+    pw "(a (b))"
+} -output "(a (b))\n"
+
+::tcltest::test read-16.7 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(a b c)\n"
+
+::tcltest::test read-16.8 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  ([d e] f)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "((d e) f)\n"
+
+::tcltest::test read-16.9 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(def ghi (jkl mno))\n"
+
+TT)
+
+H4 read-plus-minus procedure
+
+K{read-plus-minus} is called when a plus or minus is found in the input stream.
+The plus or minus character is passed to it.  If the next character is a digit,
+it delegates to the number reader. If it is a space character or a delimiter, it
+returns a K{+} or K{-} symbol. Otherwise, it delegates to the identifier reader.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-plus-minus (internal);char tchr -> pmeof
+PR)
+
+CB(
+proc ::constcl::read-plus-minus {char} {
+  upvar c c unget unget
+  set unget {}
+  set c [readchar]
+  read-eof $c
+CB)
+
+If the first character read is a digit, read a number. If the character passed
+to the procedure was a minus sign, make the number negative.
+
+CB(
+  if {[::string is digit -strict $c]} {
+    set expr [read-number-expr $c]
+    read-eof $expr
+    if {$char eq "-"} {
+      set expr [- $expr]
+    }
+    return $expr
+CB)
+
+If the first character read is a space or delimiter character, return a K{+} or
+K{-} symbol, depending on the character passed to the procedure.
+
+CB(
+  } elseif {[T [interspace? $c]] ||
+      [T [delimiter? $c]]} {
+    if {$char eq "+"} {
+      return [S "+"]
+    } else {
+      return [S "-"]
+    }
+CB)
+
+Otherwise, read an identifier.
+
+CB(
+  } else {
+    set expr [read-identifier-expr $char $c]
+    read-eof $expr
+    return $expr
+  }
+}
+CB)
+
+TT(
+::tcltest::test read-17.2 {try read-expr on plus/minus} -setup {
+    ::tcltest::makeFile {  +  -  -99} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+TT)
+
+H4 read-pound procedure
+
+K{read-pound} is activated by K{read-expr} when it reads a pound sign (K{#}). It
+in turn either delegates to the vector or character reader, or returns boolean
+literals.  Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-pound (internal);-> poundeof
+PR)
+
+CB(
+proc ::constcl::read-pound {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readchar]
+  read-eof $c
+  switch $c {
+    (    { set expr [read-vector-expr] }
+    t    { if {[T [read-end?]]} {set expr ${::#t}} }
+    f    { if {[T [read-end?]]} {set expr ${::#f}} }
+    "\\" { set expr [read-character-expr] }
+    default {
+      ::error "Illegal #-literal: #$c"
+    }
+  }
+  return $expr
+}
+CB)
+
+TT(
+
+::tcltest::test read-18.0 {try read-expr on booleans} -setup {
+    ::tcltest::makeFile {  #t  #f} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#t\n#f\n"
+
+TT)
+
+H4 read-quasiquoted-expr procedure
+
+K{read-quasiquoted-expr} is activated when there is a backquote (K{`}) in the
+input stream. It reads an entire expression and returns it wrapped in
+K{quasiquote}.  Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-quasiquoted-expr (internal);-> qquoteeof
+PR)
+
+CB(
+proc ::constcl::read-quasiquoted-expr {} {
+  upvar c c unget unget
+  set unget {}
+  set expr [read-expr]
+  read-eof $expr
+  make-constant $expr
+  return [list [S quasiquote] $expr]
+}
+CB)
+
+TT(
+
+::tcltest::test read-19.0 {try reading quasiquoted expression} -body {
+    pw "`(list 1 2 ,@foo)"
+} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
+
+::tcltest::test read-19.1 {try read-expr on quasiquoted expr} -setup {
+    ::tcltest::makeFile {  `(a b) } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quasiquote (a b))\n"
+
+TT)
+
+H4 read-quoted-expr procedure
+
+K{read-quoted-expr} is activated by K{read-expr} when reading a single quote (').
+It then reads an entire expression beyond that, returning it wrapped in a list
+with K{quote}. The quoted expression is made constant.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-quoted-expr (internal);-> quoteeof
+PR)
+
+CB(
+proc ::constcl::read-quoted-expr {} {
+  upvar c c unget unget
+  set unget {}
+  set expr [read-expr]
+  read-eof $expr
+  make-constant $expr
+  return [list [S quote] $expr]
+}
+CB)
+
+TT(
+
+::tcltest::test read-20.0 {try reading quoted symbol} -body {
+    pw "'foo"
+} -output "(quote foo)\n"
+
+::tcltest::test read-20.1 {try modifying quoted list} -body {
+    pew "(define a '(a b c))"
+    pew "(list-set! a 1 'x)"
+} -returnCodes error -result "Can't modify a constant pair"
+
+::tcltest::test read-20.2 {try read-expr on quoted expr} -setup {
+    ::tcltest::makeFile {  'foo } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quote foo)\n"
+
+TT)
+
+H4 read-string-expr procedure
+
+K{read-string-expr} is activated by K{read-expr} when it reads a double quote.
+It collects characters until it reaches another (unescaped) double quote. To
+have double quotes in the string, escape them with backslash (which also means
+that backslashes have to be escaped with backslash). A backslash+n pair of
+characters denotes a newline (this is an extension). It then returns a
+string expression--an immutable R{String object}{strings}.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-string-expr (internal);-> str
+PR)
+
+CB(
+proc ::constcl::read-string-expr {} {
+  upvar c c unget unget
+  set str {}
+  set c [readchar]
+  read-eof $c
+CB)
+
+As long as the input isn't a double quote or end-of-file, add it to K{str}.
+
+CB(
+  while {$c ne "\"" && $c ne "#EOF"} {
+CB)
+
+If the input is a backslash, add it to K{str} and read another character. In
+this way escaped double quotes are bypassed.
+
+CB(
+    if {$c eq "\\"} {
+      ::append str $c
+      set c [readchar]
+      read-eof $c
+    }
+    ::append str $c
+    set c [readchar]
+  }
+CB)
+
+If the last read character is end-of-file, the ending double quote was missing.
+
+CB(
+  if {$c eq "#EOF"} {
+    error "bad string (no ending double quote)"
+  }
+  set c [readchar]
+CB)
+
+Create and return an immutable string object.
+
+CB(
+  set expr [MkString $str]
+  make-constant $expr
+  return $expr
+}
+CB)
+
+TT(
+
+::tcltest::test read-21.0 {try reading a string} {
+    set expr [parse {"foo bar"}]
+    $expr value
+} "foo bar"
+
+::tcltest::test read-21.1 {try reading a string} {
+    set expr [parse {"\"foo\" \\ bar"}]
+    $expr value
+} {"foo" \ bar}
+
+::tcltest::test read-21.2 {try reading a string} {
+    set expr [parse {"\"foo\" \\ bar"}]
+    $expr external
+} {"\"foo\" \\ bar"}
+
+::tcltest::test read-21.3 {try read-expr on a string} -setup {
+    ::tcltest::makeFile {"foo bar"  } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo bar\"\n"
+
+::tcltest::test read-21.4 {try read-expr on a string/eof} -setup {
+    ::tcltest::makeFile {"foo } testrr.lsp ; #"
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -returnCodes error -result {bad string (no ending double quote)}
+
+TT)
+
+H4 read-unquoted-expr procedure
+
+When a comma is found in the input stream, K{read-unquoted-expr} is activated.
+If it reads an at-sign (K{@}) it selects the symbol K{unquote-splicing}, otherwise
+it selects the symbol K{unquote}. Then it reads an entire expression and returns
+it wrapped in the selected symbol. Both of these expressions are only supposed
+to occur inside a quasiquoted expression.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-unquoted-expr (internal);-> unquoteeof
+PR)
+
+CB(
+proc ::constcl::read-unquoted-expr {} {
+  upvar c c unget unget
+  set unget {}
+  set c [readchar]
+  read-eof $c
+  if {$c eq "@"} {
+    set symbol "unquote-splicing"
+    set expr [read-expr]
+  } else {
+    set symbol "unquote"
+    set expr [read-expr $c]
+  }
+  read-eof $expr
+  return [list [S $symbol] $expr]
+}
+CB)
+
+TT(
+
+::tcltest::test read-22.0 {try reading unquoted symbol} -body {
+    pw ",foo"
+} -output "(unquote foo)\n"
+
+::tcltest::test read-22.2 {try read-expr on unquoted expr} -setup {
+    ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(unquote foo)\n(unquote-splicing bar)\n"
+
+TT)
+
+H4 read-vector-expr procedure
+
+K{read-vector-expr} is activated by K{read-pound}. It reads a number of
+expressions until it finds an ending parenthesis.  It produces a vector
+expression and returns a R{Vector object}{vectors}.
+Shares the variables K{c} and K{unget} with its caller.
+
+PR(
+read-vector-expr (internal);-> veceof
+PR)
+
+CB(
+proc ::constcl::read-vector-expr {} {
+  upvar c c unget unget
+  set res {}
+  set last {}
+  set c [readchar]
+  while {$c ne "#EOF" && $c ne ")"} {
+CB)
+
+Read an expression, put it in an element constructed as a pair with the
+expression and K{#NIL}, and affix the element to the result list.
+
+CB(
+    set e [read-expr $c]
+    read-eof $e
+    set elem [cons $e ${::#NIL}]
+    if {$res eq {}} {
+      set res $elem
+    } else {
+      set-cdr! $last $elem
+    }
+    set last $elem
+    skip-ws
+    read-eof $c
+  }
+CB)
+
+Report missing ending parenthesis.
+
+CB(
+  if {$c ne ")"} {
+    ::error "Missing right paren. ($c)."
+  }
+  set unget {}
+  set c [readchar]
+CB)
+
+Create and return an immutable vector object.
+
+CB(
+  set expr [MkVector $res]
+  $expr mkconstant
+  return $expr
+}
+CB)
+
+TT(
+
+::tcltest::test read-23.0 {try reading a vector} -body {
+    pew "'#(1 2 3)"
+} -output "#(1 2 3)\n"
+
+::tcltest::test read-23.1 {try reading a vector, with non-normal expression} -body {
+    pew "'#(1 2 (+ 1 2))"
+} -output "#(1 2 (+ 1 2))\n"
+
+::tcltest::test read-23.2 {try read-expr on a couple of vectors} -setup {
+    ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#(1 2 3)\n#(11 22 33)\n"
+
+TT)
+
+h3 Input helper procedures
+
+In this subsection, some procedures which are used by the reading/parsing
+procedures.
+
+H4 make-constant procedure
+
+The K{make-constant} helper procedure is called to set expressions to constants
+when read as a literal.
+
+PR(
+make-constant (internal);val val -> none
+PR)
+
+CB(
+proc ::constcl::make-constant {val} {
+  if {[T [pair? $val]]} {
+    $val mkconstant
+    make-constant [car $val]
+    make-constant [cdr $val]
+  } elseif {[T [null? $val]]} {
+    return
+  } else {
+    $val mkconstant
+    return
+  }
+}
+CB)
+
+TT(
+::tcltest::test input-3.0 {try make-constant} -setup {
+} -body {
+  set a [parse {'(a b c)}]
+  set b [parse {`(a b c)}]
+  set c [parse {'#(a b c)}]
+  set d [parse {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [[::constcl::cadr $c] constant]
+    puts [$d constant]
+} -cleanup {
+} -output "1\n1\n1\n1\n"
+
+TT)
+
+H4 interspace? procedure
+
+The K{interspace?} helper procedure recognizes whitespace between value
+representations.
+
+PR(
+interspace? (internal);c tchr -> bool
+PR)
+
+CB(
+proc ::constcl::interspace? {c} {
+  if {[::string is space $c]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 4
+TT)
+
+H4 delimiter? procedure
+
+The K{delimiter?} helper procedure recognizes delimiter characters between value
+representations.
+
+PR(
+delimiter? (internal);c tchr -> bool
+PR)
+
+CB(
+proc ::constcl::delimiter? {c} {
+  if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+::tcltest::test input-5.0 {try delimiter?} -setup {
+} -body {
+  pew {(let ((name "Max")) (list"Hi"name(+ 1 2)))}
+} -cleanup {
+} -output "(\"Hi\" \"Max\" 3)\n"
+
+#"
+
+TT)
+
+H4 valid-char? procedure
+
+The K{valid-char?} helper procedure compares a potential
+character constant to the valid kinds.
+
+PR(
+valid-char? (internal);name tstr -> bool
+PR)
+
+CB(
+proc ::constcl::valid-char? {name} {
+  if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
+      $name]} {
+    return ${::#t}
+  } else {
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 6
+TT)
+
+H4 readchar procedure
+
+K{readchar} reads one character from the K{unget} store if it isn't empty or else
+from the input port. If the input is at end-of-file, an K{#EOF} object is
+returned.  Shares the variable K{unget} with its caller.
+
+PR(
+readchar (internal);-> tchreof
+PR)
+
+CB(
+proc ::constcl::readchar {} {
+  upvar unget unget
+  if {$unget ne {}} {
+    set c $unget
+    set unget {}
+  } else {
+    set c [$::constcl::Input_port get]
+    if {[$::constcl::Input_port eof]} {
+      return #EOF
+    }
+  }
+  return $c
+}
+CB)
+
+TT(
+# 7
+TT)
+
+H4 find-char? procedure
+
+K{find-char?} reads ahead through whitespace to find a given character. It
+returns K{#t} if it has found the character, and K{#f} if it has stopped at some
+other character. Sets K{unget} to the character it stopped at. Returns end of
+file if eof is encountered.  Shares the variables K{c} and  K{unget} with its
+caller.
+
+PR(
+find-char? (internal);char tchr -> booleof
+PR)
+
+CB(
+proc ::constcl::find-char? {char} {
+  upvar c c unget unget
+  # start with stored c
+  while {[::string is space -strict $c]} {
+    # this order seems strange but works
+    set c [readchar]
+    read-eof $c
+    set unget $c
+  }
+  expr {($c eq $char) ? ${::#t} : ${::#f}}
+}
+CB)
+
+TT(
+# 8
+TT)
+
+H4 read-end? procedure
+
+K{read-end?} reads one character and returns K{#t} if it is an interspace
+character or a delimiter character, or K{#EOF} if at end of file. Otherwise it
+returns K{#f}.  It ungets the character before returning, unless the character
+was interspace or end-of-file.  Shares the variables K{c} and K{unget} with its
+caller.
+
+PR(
+read-end? (internal);-> booleof
+PR)
+
+CB(
+proc ::constcl::read-end? {} {
+  upvar c c unget unget
+  set c [readchar]
+  if {[T [interspace? $c]]} {
+    return ${::#t}
+  } elseif {[T [delimiter? $c]]} {
+    set unget $c
+    return ${::#t}
+  } elseif {$c eq "#EOF"} {
+    return #EOF
+  } else {
+    set unget $c
+    return ${::#f}
+  }
+}
+CB)
+
+TT(
+# 9
+TT)
+
+H4 skip-ws procedure
+
+K{skip-ws} skips whitespace and comments (the K{;} to end of line kind). It
+leaves the first character not to be skipped in K{c} and also ungets it.  Shares
+the variables K{c} and K{unget} with its caller.
+
+PR(
+skip-ws (internal);-> none
+PR)
+
+CB(
+proc ::constcl::skip-ws {} {
+  upvar c c unget unget
+  while true {
+    switch -regexp $c {
+      {[[:space:]]} {
+        set c [readchar]
+      }
+      {;} {
+        while {$c ne "\n" && $c ne "#EOF"}  {
+          set c [readchar]
+        }
+      }
+      default {
+        set unget $c
+        return
+      }
+    }
+  }
+}
+CB)
+
+TT(
+# 10
+TT)
+
+H4 read-eof procedure
+
+K{read-eof} checks a number of presumed characters for possible end-of-file
+objects. If it finds one, it returns E{from its caller} with the EOF value.
+
+PR(
+read-eof (internal);chars chars -> none
+PR)
+
+CB(
+proc ::constcl::read-eof {args} {
+  set chars $args
+  foreach char $chars {
+    if {$char eq "#EOF"} {
+      return -level 1 -code return #EOF
+    }
+  }
+}
+CB)
+
+TT(
+# 11
+TT)
+
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
