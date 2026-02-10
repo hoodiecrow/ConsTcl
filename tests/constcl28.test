@@ -1,0 +1,15 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test strings-12.0 {try string>?} -body {
+    pew {(string>? "bar" "car")}
+    pew {(string>? "bar" "bar")}
+    pew {(string>? "bar" "aar")}
+} -output "#f\n#f\n#t\n"
+
+
+
+cleanupTests
+return

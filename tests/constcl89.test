@@ -1,0 +1,16 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test equipred-1.0 {try comparing a boolean and a symbol} -body {
+    pew "(eq? #t 'a)"
+} -output "#f\n"
+
+test equipred-1.1 {try comparing two booleans} -body {
+    pew "(eq? #t #t)"
+} -output "#t\n"
+
+
+cleanupTests
+return

@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test numbers-21.0 {try ceiling} -body {
+    pew "(ceiling 99.9)"
+} -output "100.0\n"
+
+
+
+cleanupTests
+return

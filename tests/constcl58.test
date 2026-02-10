@@ -1,0 +1,11 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test cons-13.0 {expandquotes} -body {
+    pew "''foo"
+} -output "(quote foo)\n"
+
+cleanupTests
+return

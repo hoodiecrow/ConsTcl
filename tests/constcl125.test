@@ -1,0 +1,15 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test control-1.0 {try procedure?)} -body {
+    pew {(procedure? car)}
+    pew {(procedure? 'car)}
+    pew {(procedure? (lambda (x) (* x x)))}
+} -output "#t\n#f\n#t\n"
+
+
+
+cleanupTests
+return

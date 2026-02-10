@@ -1,0 +1,21 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test numbers-23.0 {try round} -body {
+    pew "(round 99.9)"
+    pew "(round 99.3)"
+} -output "100\n99\n"
+
+test numbers-23.1 {try various} -body {
+    pew "(floor 3.5)"
+    pew "(ceiling 3.5)"
+    pew "(truncate 3.5)"
+    pew "(round 3.5)"
+} -output "3.0\n4.0\n3.0\n4\n"
+
+
+
+cleanupTests
+return

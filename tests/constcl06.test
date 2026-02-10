@@ -1,0 +1,80 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test read-16.0 {try reading an improper list} -body {
+    pw "(a . b)"
+} -output "(a . b)\n"
+
+test read-16.1 {try reading an improper list} -body {
+    pw "(a b . c)"
+} -output "(a b . c)\n"
+
+test read-16.2 {try reading a list} -body {
+    set expr [parse "(a (b))"]
+    [::constcl::caadr $expr] name
+} -result "b"
+
+test read-16.3 {try reading a list} -body {
+    pw "(a)"
+} -output "(a)\n"
+
+test read-16.4 {try reading a list} -body {
+    pw "(a b)"
+} -output "(a b)\n"
+
+test read-16.5 {try reading a list} -body {
+    pw "(a (b) )"
+} -output "(a (b))\n"
+
+test read-16.6 {try reading a list} -body {
+    pw "(a (b))"
+} -output "(a (b))\n"
+
+test read-16.7 {try read-expr on pair expr} -setup {
+    makeFile {  (a b c)  ((a b) c)} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "(a b c)\n"
+
+test read-16.8 {try read-expr on pair expr} -setup {
+    makeFile {  ([d e] f)} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "((d e) f)\n"
+
+test read-16.9 {try read-expr on pair expr} -setup {
+    makeFile {  (def ghi (jkl mno))} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "(def ghi (jkl mno))\n"
+
+
+test read-17.2 {try read-expr on plus/minus} -setup {
+    makeFile {  +  -  -99} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+
+
+cleanupTests
+return

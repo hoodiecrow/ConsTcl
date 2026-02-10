@@ -1,0 +1,14 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test pairslists-11.0 {try length} -body {
+    pew {(length '(a b c))}
+    pew {(length '(a (b) (c d e)))}
+    pew {(length '())}
+} -output "3\n3\n0\n"
+
+
+cleanupTests
+return

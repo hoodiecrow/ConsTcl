@@ -1,0 +1,17 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test numbers-2.0 {try =} -body {
+        pew "(= 9 9 9 9)"
+} -output "#t\n"
+
+test numbers-2.1 {try =} -body {
+        pew "(= 9 9 9 9.0)"
+} -output "#t\n"
+
+
+
+cleanupTests
+return
