@@ -67,7 +67,7 @@ proc reg {args} {
     lassign $args name
     set btype {}
   }
-  assert "defreg exists" ![info exists ::constcl::defreg] {
+  assert "defreg exists" [info exists ::constcl::defreg] {
     set ::constcl::defreg [dict create]
   }
   switch $btype {
@@ -302,7 +302,11 @@ proc ::constcl::error {msg args} {
   set exprs $args
   ::if {[llength $exprs]} {
     set res [lmap expr $exprs {
-      $expr tstr
+      ::if {[catch {$expr tstr} caught]} {
+          ::error "\$expr tstr -> \$caught=$caught"
+      } else {
+          set caught
+      }
     }]
     ::append msg " (" [join $res] ")"
   }
@@ -1203,7 +1207,7 @@ proc ::constcl::eval {expr {env ::constcl::global_env}} {
   } elseif {[T [pair? $expr]]} {
     set val [eval-form $expr $env]
   } else {
-    :${::log}::error "unknown expression type ($expr)"
+    ${::log}::error "unknown expression type ($expr)"
     ::error "unknown expression type ([$expr write])"
   }
   ${::log}::debug "evaluation basic forms: $val" 
