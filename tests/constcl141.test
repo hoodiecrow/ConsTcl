@@ -1,0 +1,21 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test pairslists-8.0 {try set-cdr!} -body {
+  unbind [S f]
+  unbind [S g]
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-cdr! (f) 3)}
+} -output "(not-a-constant-list . 3)\n"
+
+test pairslists-8.1 {try set-cdr!} -body {
+    pew {(set-cdr! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,18 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test pairslists-6.0 {try cdr} -body {
+    pew {(cdr '((a) b c d))}
+    pew {(cdr '(1 . 2))}
+} -output "(b c d)\n2\n"
+
+test pairslists-6.1 {try cdr} -body {
+    pew {(cdr '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+cleanupTests
+return

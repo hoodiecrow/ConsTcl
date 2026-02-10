@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test strings-19.0 {try string-append} -body {
+    pew {(string-append "foo" " bar")}
+} -output "\"foo bar\"\n"
+
+
+
+cleanupTests
+return

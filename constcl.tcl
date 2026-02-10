@@ -43,14 +43,14 @@ reg atom?
 proc ::constcl::atom? {val} {
   foreach type {symbol number string
       char boolean vector port eof} {
-    if {[$type? $val] eq ${::#t}} {
-      return ${::#t}
+    if {[$type? $val] eq [::True new]} {
+      return [::True new]
     }
   }
-  return ${::#f}
+  return [::False new]
 }
 proc ::T {val} {
-  if {$val eq ${::#f}} {
+  if {$val eq [::False new]} {
     return 0
   } else {
     return 1
@@ -91,9 +91,9 @@ proc ::unbind {args} {
 }
 proc ::constcl::typeof? {val type} {
   if {[info object isa typeof $val $type]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::splitlist {vals} {
@@ -148,7 +148,7 @@ proc ::constcl::error {msg args} {
   ::error $msg
 }
 proc ::constcl::check {cond msg} {
-  if {[uplevel $cond] eq ${::#f}} {
+  if {[uplevel $cond] eq [::False new]} {
     ::error [
       uplevel [
         ::list subst [
@@ -208,7 +208,10 @@ proc ::pxw {str {env ::constcl::global_env}} {
 }
 catch { ::constcl::Base destroy }
 
-oo::abstract create ::constcl::Base {
+# there is an oo::abstract in Tcl 9. In Tcl 8.6 we have to
+# make do with oo::class. Just don't make any instances
+# from it.
+oo::class create ::constcl::Base {
   method mkconstant {} {}
   method write {port} {
     $port put [my tstr]
@@ -243,46 +246,43 @@ oo::class create ::constcl::Dot {
 proc ::constcl::dot? {val} {
   typeof? $val "Dot"
 }
-oo::singleton create ::constcl::EndOfFile {
-  superclass ::constcl::Base
-  method tstr {} {
-    format "#<end-of-file>"
-  }
+# there is an oo::singleton in Tcl 9. In Tcl 8.6 we have to
+# make do with creating a fake singleton.
+proc makesingleton {NAME TEXT} {
+    oo::object create ::$NAME
+    oo::objdefine ::$NAME {
+        class ::constcl::Base  
+        method new {} {return [self]}
+        unexport create destroy
+    }
+    oo::objdefine ::$NAME method tstr {} [list return $TEXT]
 }
+makesingleton EndOfFile "#<end-of-file>"
 proc eof? {val} {
-  if {$val eq ${::#EOF}} {
-    return ${::#t}
+  if {$val eq [::EndOfFile new]} {
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
-oo::singleton create ::constcl::NIL {
-  superclass ::constcl::Base
-  method tstr {} {
-    return "()"
-  }
-}
+# there isn't much to do for NIL in modern lisps. I
+# include it out of nostalgia.
+makesingleton NIL "nil"
+# one of the uses of NIL used to be to stand for the empty
+# list. Nowadays we lean towards a specific value for an
+# empty list: EmptyList.
+makesingleton EmptyList "()"
 reg null?
 
 proc ::constcl::null? {val} {
-  if {$val eq ${::#NIL}} {
-    return ${::#t}
+  if {$val eq [::EmptyList new]} {
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
-oo::singleton create ::constcl::Undefined {
-  superclass ::constcl::Base
-  method tstr {} {
-    format "#<undefined>"
-  }
-}
-oo::singleton create ::constcl::Unspecified {
-  superclass ::constcl::Base
-  method tstr {} {
-    format "#<unspecified>"
-  }
-}
+makesingleton ::Undefined "#<undefined>"
+makesingleton ::Unspecified "#<unspecified>"
 reg read
 
 proc ::constcl::read {args} {
@@ -323,7 +323,7 @@ proc ::constcl::read-expr {args} {
     {\[}          { read-pair-expr "\]" }
     {\`}          { read-quasiquoted-expr }
     {\d}          { read-number-expr $c }
-    {^$}          { return #EOF }
+    {^$}          { return [::EndOfFile new] }
     {[[:graph:]]} { read-identifier-expr $c }
     default {
       read-eof $c
@@ -362,7 +362,7 @@ proc ::constcl::read-identifier-expr {args} {
   read-eof $c
   set name {}
   while {[::string is graph -strict $c]} {
-    if {$c eq "#EOF" || [T [delimiter? $c]]} {
+    if {$c eq "[::EndOfFile new]" || [T [delimiter? $c]]} {
       break
     }
     ::append name $c
@@ -385,7 +385,7 @@ proc ::constcl::read-number-expr {args} {
     set c [readchar]
   }
   read-eof $c
-  while {![T [interspace? $c]] && $c ne "#EOF" &&
+  while {![T [interspace? $c]] && $c ne "[::EndOfFile new]" &&
       ![T [delimiter? $c]]} {
     ::append num $c
     set c [readchar]
@@ -423,12 +423,12 @@ proc ::constcl::read-pair {char} {
   set c [readchar]
   read-eof $c
   if {[T [find-char? $char]]} {
-    return ${::#NIL}
+    return [::EmptyList new]
   }
   set a [read-expr $c]
   set res $a
   skip-ws
-  set prev ${::#NIL}
+  set prev [::EmptyList new]
   while {![T [find-char? $char]]} {
     set x [read-expr $c]
     skip-ws
@@ -478,8 +478,8 @@ proc ::constcl::read-pound {} {
   read-eof $c
   switch $c {
     (    { set expr [read-vector-expr] }
-    t    { if {[T [read-end?]]} {set expr ${::#t}} }
-    f    { if {[T [read-end?]]} {set expr ${::#f}} }
+    t    { if {[T [read-end?]]} {set expr [::True new]} }
+    f    { if {[T [read-end?]]} {set expr [::False new]} }
     "\\" { set expr [read-character-expr] }
     default {
       ::error "Illegal #-literal: #$c"
@@ -508,7 +508,7 @@ proc ::constcl::read-string-expr {} {
   set str {}
   set c [readchar]
   read-eof $c
-  while {$c ne "\"" && $c ne "#EOF"} {
+  while {$c ne "\"" && $c ne "[::EndOfFile new]"} {
     if {$c eq "\\"} {
       ::append str $c
       set c [readchar]
@@ -517,7 +517,7 @@ proc ::constcl::read-string-expr {} {
     ::append str $c
     set c [readchar]
   }
-  if {$c eq "#EOF"} {
+  if {$c eq "[::EndOfFile new]"} {
     error "bad string (no ending double quote)"
   }
   set c [readchar]
@@ -545,10 +545,10 @@ proc ::constcl::read-vector-expr {} {
   set res {}
   set last {}
   set c [readchar]
-  while {$c ne "#EOF" && $c ne ")"} {
+  while {$c ne "[::EndOfFile new]" && $c ne ")"} {
     set e [read-expr $c]
     read-eof $e
-    set elem [cons $e ${::#NIL}]
+    set elem [cons $e [::EmptyList new]]
     if {$res eq {}} {
       set res $elem
     } else {
@@ -581,24 +581,24 @@ proc ::constcl::make-constant {val} {
 }
 proc ::constcl::interspace? {c} {
   if {[::string is space $c]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::delimiter? {c} {
   if {$c in {( ) ; \" ' ` | [ ] \{ \}}} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::valid-char? {name} {
   if {[regexp {(?i)^#\\([[:graph:]]|space|newline)$} \
       $name]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::readchar {} {
@@ -609,7 +609,7 @@ proc ::constcl::readchar {} {
   } else {
     set c [$::constcl::Input_port get]
     if {[$::constcl::Input_port eof]} {
-      return #EOF
+      return [::EndOfFile new]
     }
   }
   return $c
@@ -623,21 +623,21 @@ proc ::constcl::find-char? {char} {
     read-eof $c
     set unget $c
   }
-  expr {($c eq $char) ? ${::#t} : ${::#f}}
+  expr {($c eq $char) ? [::True new] : [::False new]}
 }
 proc ::constcl::read-end? {} {
   upvar c c unget unget
   set c [readchar]
   if {[T [interspace? $c]]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T [delimiter? $c]]} {
     set unget $c
-    return ${::#t}
-  } elseif {$c eq "#EOF"} {
-    return #EOF
+    return [::True new]
+  } elseif {$c eq "[::EndOfFile new]"} {
+    return [::EndOfFile new]
   } else {
     set unget $c
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::skip-ws {} {
@@ -648,7 +648,7 @@ proc ::constcl::skip-ws {} {
         set c [readchar]
       }
       {;} {
-        while {$c ne "\n" && $c ne "#EOF"}  {
+        while {$c ne "\n" && $c ne "[::EndOfFile new]"}  {
           set c [readchar]
         }
       }
@@ -662,8 +662,8 @@ proc ::constcl::skip-ws {} {
 proc ::constcl::read-eof {args} {
   set chars $args
   foreach char $chars {
-    if {$char eq "#EOF"} {
-      return -level 1 -code return #EOF
+    if {$char eq "[::EndOfFile new]"} {
+      return -level 1 -code return [::EndOfFile new]
     }
   }
 }
@@ -680,9 +680,9 @@ proc ::constcl::self-evaluating? {val} {
     [T [string? $val]] ||
     [T [char? $val]] ||
     [T [boolean? $val]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg special quote
@@ -720,7 +720,7 @@ proc ::constcl::do-case {keyexpr clauses env} {
         [list [S quote] $datumlist]]
     if {[T [eq? [length $clauses] [N 1]]]} {
       if {[T [eq? [caar $clauses] [S else]]]} {
-        set predicate ${::#t}
+        set predicate [::True new]
       }
     }
     set env [MkEnv $env]
@@ -751,7 +751,7 @@ proc ::constcl::do-cond {tail env} {
     set body [cdar $clauses]
     if {[T [eq? [length $clauses] [N 1]]]} {
       if {[T [eq? $predicate [S else]]]} {
-        set predicate ${::#t}
+        set predicate [::True new]
       }
     }
     if {[T [symbol? [car $body]]] &&
@@ -868,7 +868,7 @@ proc ::constcl::rewrite-named-let {expr env} {
   set variable [cadr $expr]
   set bindings [caddr $expr]
   set body [cdddr $expr]
-  set vars [dict create $variable ${::#f}]
+  set vars [dict create $variable [::False new]]
   parse-bindings vars $bindings
   set env [MkEnv $env]
   /define [S decl] [list {*}[dict values [
@@ -928,7 +928,7 @@ proc ::constcl::rewrite-letrec {expr env} {
   set vars [dict create]
   parse-bindings vars $bindings
   foreach {key val} $vars {
-    dict set outer $key [list [S quote] ${::#UND}]
+    dict set outer $key [list [S quote] [::Undefined new]]
     dict set inner [set g [gensym "g"]] $val
     dict set assigns $key $g
   }
@@ -964,7 +964,7 @@ proc ::constcl::special-let* {expr env} {
 }
 proc ::constcl::rewrite-let* {bindings body env} {
   set env [MkEnv $env]
-  if {$bindings eq ${::#NIL}} {
+  if {$bindings eq [::EmptyList new]} {
     /define [S body] $body $env
     set qq "`(begin ,@body)"
     set expr [expand-quasiquote [parse $qq] $env]
@@ -1033,7 +1033,7 @@ proc ::constcl::eval-list {exps env} {
     return [cons [eval [car $exps] $env] \
       [eval-list [cdr $exps] $env]]
   } else {
-    return ${::#NIL}
+    return [::EmptyList new]
   }
 }
 reg macro and
@@ -1041,11 +1041,11 @@ reg macro and
 proc ::constcl::expand-and {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
-    list [S begin] ${::#t}
+    list [S begin] [::True new]
   } elseif {[[length $tail] numval] == 1} {
     cons [S begin] $tail
   } else {
-    do-and $tail ${::#t} $env
+    do-and $tail [::True new] $env
   }
 }
 proc ::constcl::do-and {tail prev env} {
@@ -1170,7 +1170,7 @@ reg macro or
 proc ::constcl::expand-or {expr env} {
   set tail [cdr $expr]
   if {[[length $tail] numval] == 0} {
-    return [list [S begin] ${::#f}]
+    return [list [S begin] [::False new]]
   } elseif {[[length $tail] numval] == 1} {
     return [cons [S begin] $tail]
   } else {
@@ -1179,7 +1179,7 @@ proc ::constcl::expand-or {expr env} {
 }
 proc ::constcl::do-or {tail env} {
   if {[T [null? $tail]]} {
-    return ${::#f}
+    return [::False new]
   } else {
     set env [MkEnv $env]
     /define [S first] [car $tail] $env
@@ -1198,7 +1198,7 @@ proc ::constcl::expand-pop! {expr env} {
   if {[T [null? $tail]]} {
       ::error "too few arguments:\n(pop! listname)"
   }
-  if {[symbol? [car $tail]] eq ${::#f}} {
+  if {[symbol? [car $tail]] eq [::False new]} {
       ::error "SYMBOL expected:\n(pop! listname)"
   }
   /define [S listname] [car $tail] $env
@@ -1221,7 +1221,7 @@ proc ::constcl::expand-push! {expr env} {
     ::error \
       "too few arguments:\n(push! obj listname)"
   }
-  if {[symbol? [cadr $tail]] eq ${::#f}} {
+  if {[symbol? [cadr $tail]] eq [::False new]} {
     ::error \
       "SYMBOL expected:\n(push! obj listname)"
   }
@@ -1367,21 +1367,21 @@ proc ::constcl::resolve-local-defines {expr} {
   set rest [lassign [
     extract-from-defines $exps VALS] a error]
   if {[T $error]} {
-    return ${::#NIL}
+    return [::EmptyList new]
   }
   set rest [lassign [
     extract-from-defines $exps VARS] v error]
   if {[T $error]} {
-    return ${::#NIL}
+    return [::EmptyList new]
   }
-  if {$rest eq ${::#NIL}} {
-    set rest [cons #UNS ${::#NIL}]
+  if {$rest eq [::EmptyList new]} {
+    set rest [cons [::Unspecified new] [::EmptyList new]]
   }
   return [make-lambdas $v $a $rest]
 }
 proc ::constcl::extract-from-defines {exps part} {
-  set a ${::#NIL}
-  while {$exps ne ${::#NIL}} {
+  set a [::EmptyList new]
+  while {$exps ne [::EmptyList new]} {
     if {[T [atom? $exps]] ||
         [T [atom? [car $exps]]] ||
         ![T [eq? [caar $exps] [S define]]]} {
@@ -1394,13 +1394,13 @@ proc ::constcl::extract-from-defines {exps part} {
         ![T [argument-list? [cadr $n]]] ||
         ([T [symbol? [cadr $n]]] &&
         [$k numval] > 3)} {
-        return [::list ${::#NIL} ${::#t} ${::#NIL}]
+        return [::list [::EmptyList new] [::True new] [::EmptyList new]]
       }
       if {[T [pair? [cadr $n]]]} {
         if {$part eq "VARS"} {
           set a [cons [caadr $n] $a]
         } else {
-          set a [cons ${::#NIL} $a]
+          set a [cons [::EmptyList new] $a]
           set new [cons [cdadr $n] [cddr $n]]
           set new [cons [S lambda] $new]
           set-car! $a $new
@@ -1414,45 +1414,45 @@ proc ::constcl::extract-from-defines {exps part} {
       }
       set exps [cdr $exps]
     }
-    return [::list $a ${::#f} $exps]
+    return [::list $a [::False new] $exps]
 }
 proc ::constcl::argument-list? {val} {
-  if {$val eq ${::#NIL}} {
-    return ${::#t}
+  if {$val eq [::EmptyList new]} {
+    return [::True new]
   } elseif {[T [symbol? $val]]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T [atom? $val]]} {
-    return ${::#f}
+    return [::False new]
   }
   while {[T [pair? $val]]} {
-    if {[symbol? [car $val]] eq ${::#f}} {
-      return ${::#f}
+    if {[symbol? [car $val]] eq [::False new]} {
+      return [::False new]
     }
     set val [cdr $val]
   }
-  if {$val eq ${::#NIL}} {
-    return ${::#t}
+  if {$val eq [::EmptyList new]} {
+    return [::True new]
   } elseif {[T [symbol? $val]]} {
-    return ${::#t}
+    return [::True new]
   }
 }
 proc ::constcl::make-lambdas {vars args body} {
   set tmps [make-temporaries $vars]
   set body [append-b [
     make-assignments $vars $tmps] $body]
-  set body [cons $body ${::#NIL}]
+  set body [cons $body [::EmptyList new]]
   set n [cons $tmps $body]
   set n [cons [S lambda] $n]
   set n [cons $n $args]
-  set n [cons $n ${::#NIL}]
+  set n [cons $n [::EmptyList new]]
   set n [cons $vars $n]
   set n [cons [S lambda] $n]
   set n [cons $n [make-undefineds $vars]]
   return $n
 }
 proc ::constcl::make-temporaries {vals} {
-  set res ${::#NIL}
-  while {$vals ne ${::#NIL}} {
+  set res [::EmptyList new]
+  while {$vals ne [::EmptyList new]} {
     set res [cons [gensym "g"] $res]
     set vals [cdr $vals]
   }
@@ -1468,11 +1468,11 @@ proc ::constcl::gensym {prefix} {
   return [S $s]
 }
 proc ::constcl::append-b {a b} {
-  if {$a eq ${::#NIL}} {
+  if {$a eq [::EmptyList new]} {
     return $b
   }
   set p $a
-  while {$p ne ${::#NIL}} {
+  while {$p ne [::EmptyList new]} {
     if {[T [atom? $p]]} {
       ::error "append: improper list"
     }
@@ -1483,9 +1483,9 @@ proc ::constcl::append-b {a b} {
   return $a
 }
 proc ::constcl::make-assignments {vars tmps} {
-  set res ${::#NIL}
-  while {$vars ne ${::#NIL}} {
-    set asg [cons [car $tmps] ${::#NIL}]
+  set res [::EmptyList new]
+  while {$vars ne [::EmptyList new]} {
+    set asg [cons [car $tmps] [::EmptyList new]]
     set asg [cons [car $vars] $asg]
     set asg [cons [S set!] $asg]
     set res [cons $asg $res]
@@ -1495,9 +1495,9 @@ proc ::constcl::make-assignments {vars tmps} {
   return [cons [S begin] $res]
 }
 proc ::constcl::make-undefineds {vals} {
-  set res ${::#NIL}
-  while {$vals ne ${::#NIL}} {
-    set res [cons [list [S quote] ${::#UND}] $res]
+  set res [::EmptyList new]
+  while {$vals ne [::EmptyList new]} {
+    set res [cons [list [S quote] [::Undefined new]] $res]
     set vals [cdr $vals]
   }
   return $res
@@ -1708,7 +1708,7 @@ oo::class create ::constcl::Environment {
 }
 proc ::constcl::MkEnv {args} {
   if {[llength $args] == 1} {
-    set parms ${::#NIL}
+    set parms [::EmptyList new]
     set vals {}
     lassign $args env
   } elseif {[llength $args] == 3} {
@@ -1757,32 +1757,32 @@ reg eq?
 proc ::constcl::eq? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq symbol? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq char? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq null? $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq pair? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq string? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq vector? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 proc ::constcl::teq {typep expr1 expr2} {
@@ -1797,43 +1797,43 @@ reg eqv?
 proc ::constcl::eqv? {expr1 expr2} {
   if {[teq boolean? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq symbol? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq number? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq char? $expr1 $expr2] &&
       [veq $expr1 eq $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq null? $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T [pair? $expr1]] &&
       [T [pair? $expr2]] &&
       [$expr1 car] eq [$expr2 car] &&
       [$expr1 cdr] eq [$expr2 cdr]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq string? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq vector? $expr1 $expr2] &&
       [veq $expr1 $expr2]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[teq procedure? $expr1 $expr2] &&
       $expr1 eq $expr2} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg equal?
 
 proc ::constcl::equal? {expr1 expr2} {
   if {[$expr1 tstr] eq [$expr2 tstr]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 oo::class create ::constcl::Number {
@@ -1848,37 +1848,37 @@ oo::class create ::constcl::Number {
   }
   method zero? {} {
     if {$value == 0} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method positive? {} {
     if {$value > 0} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method negative? {} {
     if {$value < 0} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method even? {} {
     if {$value % 2 == 0} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method odd? {} {
     if {$value % 2 == 1} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method value {} {
@@ -1912,9 +1912,9 @@ proc ::constcl::= {args} {
       [lindex $args 0] tstr] ...)"
   }
   if {[::tcl::mathop::== {*}$nums]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg <
@@ -1926,9 +1926,9 @@ proc ::constcl::< {args} {
     ::error "NUMBER expected\n(< num ...)"
   }
   if {[::tcl::mathop::< {*}$nums]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg >
@@ -1940,9 +1940,9 @@ proc ::constcl::> {args} {
     ::error "NUMBER expected\n(> num ...)"
   }
   if {[::tcl::mathop::> {*}$nums]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg <=
@@ -1954,9 +1954,9 @@ proc ::constcl::<= {args} {
     ::error "NUMBER expected\n(<= num ...)"
   }
   if {[::tcl::mathop::<= {*}$nums]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg >=
@@ -1968,9 +1968,9 @@ proc ::constcl::>= {args} {
     ::error "NUMBER expected\n(>= num ...)"
   }
   if {[::tcl::mathop::>= {*}$nums]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg zero?
@@ -2019,8 +2019,9 @@ proc ::constcl::max {num args} {
   lappend args $num
   try {
     set nums [lmap arg $args {$arg numval}]
-  } on error {} {
-    ::error "NUMBER expected\n(max num...)"
+  } on error msg {
+      ::error $msg
+    #::error "NUMBER expected\n(max num...)"
   }
   N [::tcl::mathfunc::max {*}$nums]
 }
@@ -2334,41 +2335,31 @@ proc frombase {base number} {
   if $negative {set res -$res}
   set res
 }
-oo::singleton create ::constcl::True {
-  superclass ::constcl::Base
-  method tstr {} {
-    return "#t"
-  }
-}
-oo::singleton create ::constcl::False {
-  superclass ::constcl::Base
-  method tstr {} {
-    return "#f"
-  }
-}
+makesingleton ::True "#t"
+makesingleton ::False "#f"
 proc ::constcl::MkBoolean {bool} {
   switch $bool {
-    "#t" { return ${::#t} }
-    "#f" { return ${::#f} }
+    "#t" { return [::True new] }
+    "#f" { return [::False new] }
     default { ::error "invalid boolean ($bool)" }
   }
 }
 reg boolean?
 
 proc ::constcl::boolean? {val} {
-  if {$val eq ${::#t} || $val eq ${::#f}} {
-    return ${::#t}
+  if {$val eq [::True new] || $val eq [::False new]} {
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg not
 
 proc ::constcl::not {val} {
-  if {$val eq ${::#f}} {
-    return ${::#t}
+  if {$val eq [::False new]} {
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 oo::class create ::constcl::Char {
@@ -2396,37 +2387,37 @@ oo::class create ::constcl::Char {
   }
   method alphabetic? {} {
     if {[::string is alpha $value]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method numeric? {} {
     if {[::string is digit $value]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method whitespace? {} {
     if {[::string is space $value]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method upper-case? {} {
     if {[::string is upper $value]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method lower-case? {} {
     if {[::string is lower $value]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method constant {} {
@@ -2482,9 +2473,9 @@ proc ::constcl::char=? {char1 char2} {
     CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] eq [$char2 char]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char<?
@@ -2497,9 +2488,9 @@ proc ::constcl::char<? {char1 char2} {
     CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] < [$char2 char]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char>?
@@ -2512,9 +2503,9 @@ proc ::constcl::char>? {char1 char2} {
     CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] > [$char2 char]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char<=?
@@ -2527,9 +2518,9 @@ proc ::constcl::char<=? {char1 char2} {
     CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] <= [$char2 char]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char>=?
@@ -2542,9 +2533,9 @@ proc ::constcl::char>=? {char1 char2} {
     CHAR expected\n([pn] [$char1 tstr] [$char2 tstr])
   }
   if {[$char1 char] >= [$char2 char]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-ci=?
@@ -2558,9 +2549,9 @@ proc ::constcl::char-ci=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] eq
       [::string tolower [$char2 char]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-ci<?
@@ -2574,9 +2565,9 @@ proc ::constcl::char-ci<? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <
       [::string tolower [$char2 char]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-ci>?
@@ -2590,9 +2581,9 @@ proc ::constcl::char-ci>? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >
       [::string tolower [$char2 char]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-ci<=?
@@ -2606,9 +2597,9 @@ proc ::constcl::char-ci<=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] <=
       [::string tolower [$char2 char]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-ci>=?
@@ -2622,9 +2613,9 @@ proc ::constcl::char-ci>=? {char1 char2} {
   }
   if {[::string tolower [$char1 char]] >=
       [::string tolower [$char2 char]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg char-alphabetic?
@@ -2735,12 +2726,12 @@ interp alias {} ::constcl::MkProcedure \
 reg procedure?
 
 proc ::constcl::procedure? {val} {
-  if {[typeof? $val Procedure] eq ${::#t}} {
-    return ${::#t}
+  if {[typeof? $val Procedure] eq [::True new]} {
+    return [::True new]
   } elseif {[::string match "::constcl::*" $val]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg apply
@@ -2804,16 +2795,19 @@ proc ::constcl::for-each {proc args} {
     }
     invoke $proc [list {*}$actuals]
   }
-  return ${::#NIL}
+  return [::EmptyList new]
 }
-oo::abstract create ::constcl::Port {
+# there is an oo::abstract in Tcl 9. In Tcl 8.6 we have to
+# make do with oo::class. Just don't make any instances
+# from it.
+oo::class create ::constcl::Port {
   superclass ::constcl::Base
   variable handle
   constructor {args} {
     if {[llength $args]} {
       lassign $args handle
     } else {
-      set handle ${::#NIL}
+      set handle [::EmptyList new]
     }
   }
   method handle {} {
@@ -2821,7 +2815,7 @@ oo::abstract create ::constcl::Port {
   }
   method close {} {
     close $handle
-    set handle ${::#NIL}
+    set handle [::EmptyList new]
     return
   }
 }
@@ -2830,9 +2824,11 @@ oo::class create ::constcl::InputPort {
   variable handle
   method open {name} {
     try {
-      set handle [open [$name value] "r"]
+        open [$name value] "r"
+    } on ok f {
+        set handle $f
     } on error {} {
-      set handle ${::#NIL}
+        set handle [::EmptyList new]
     }
     return $handle
   }
@@ -2864,7 +2860,7 @@ oo::class create ::constcl::StringInputPort {
   method get {} {
     if {[::string length $buffer] == 0} {
       set read_eof 1
-      return #EOF
+      return [::EndOfFile new]
     }
     set c [::string index $buffer 0]
     set buffer [::string range $buffer 1 end]
@@ -2891,7 +2887,7 @@ oo::class create ::constcl::OutputPort {
     try {
       set handle [open [$name value] "w"]
     } on error {} {
-      set handle ${::#NIL}
+      set handle [::EmptyList new]
     }
     return $handle
   }
@@ -2979,22 +2975,22 @@ reg input-port?
 
 proc ::constcl::input-port? {val} {
   if {[T typeof? $val InputPort]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T typeof? $val StringInputPort]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg output-port?
 
 proc ::constcl::output-port? {val} {
   if {[T typeof? $val OutputPort]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T typeof? $val StringOutputPort]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg current-input-port
@@ -3011,7 +3007,7 @@ reg with-input-from-file
 
 proc ::constcl::with-input-from-file {filename thunk} {
   set newport [open-input-file $filename]
-  if {[$newport handle] ne ${::#NIL}} {
+  if {[$newport handle] ne [::EmptyList new]} {
     set oldport $::constcl::Input_port
     set ::constcl::Input_port $newport
     $thunk call
@@ -3024,7 +3020,7 @@ reg with-output-to-file
 
 proc ::constcl::with-output-to-file {filename thunk} {
   set newport [open-output-file $filename]
-  if {[$newport handle] ne ${::#NIL}} {
+  if {[$newport handle] ne [::EmptyList new]} {
     set oldport $::constcl::Output_port
     set ::constcl::Output_port $newport
     $thunk call
@@ -3041,7 +3037,7 @@ proc fae {} {return "file already exists"}
 proc ::constcl::open-input-file {filename} {
   set p [MkInputPort]
   $p open $filename
-  if {[$p handle] eq ${::#NIL}} {
+  if {[$p handle] eq [::EmptyList new]} {
     set fn [$filename value]
     error "open-input-file: [cnof] $fn"
   }
@@ -3055,7 +3051,7 @@ proc ::constcl::open-output-file {filename} {
   }
   set p [MkOutputPort]
   $p open $filename
-  if {[$p handle] eq ${::#NIL}} {
+  if {[$p handle] eq [::EmptyList new]} {
     error "open-output-file: [cnof] $filename"
   }
   return $p
@@ -3095,9 +3091,9 @@ proc ::constcl::load {filename} {
   } on error {} {
     return
   }
-  if {[$port handle] ne ${::#NIL}} {
+  if {[$port handle] ne [::EmptyList new]} {
     set expr [read $port]
-    while {$expr ne "#EOF"} {
+    while {$expr ne "[::EndOfFile new]"} {
       eval $expr
       set expr [read $port]
     }
@@ -3144,7 +3140,7 @@ oo::class create ::constcl::Pair {
     return $constant
   }
   method mutable? {} {
-    expr {$constant ? ${::#f} : ${::#t}}
+    expr {$constant ? [::False new] : [::True new]}
   }
   method write {port} {
     $port put "("
@@ -3257,34 +3253,34 @@ reg list?
 proc ::constcl::list? {val} {
   set visited {}
   if {[T [null? $val]]} {
-      return ${::#t}
+      return [::True new]
   } elseif {[T [pair? $val]]} {
       return [listp $val]
   } else {
-      return ${::#f}
+      return [::False new]
   }
 }
 proc ::constcl::listp {pair} {
   upvar visited visited
   if {$pair in $visited} {
-    return ${::#f}
+    return [::False new]
   }
   lappend visited $pair
   if {[T [null? $pair]]} {
-    return ${::#t}
+    return [::True new]
   } elseif {[T [pair? $pair]]} {
     return [listp [cdr $pair]]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg list
 
 proc ::constcl::list {args} {
   if {[llength $args] == 0} {
-    return ${::#NIL}
+    return [::EmptyList new]
   } else {
-    set prev ${::#NIL}
+    set prev [::EmptyList new]
     foreach obj [lreverse $args] {
       set prev [cons $obj $prev]
     }
@@ -3372,7 +3368,7 @@ proc ::constcl::member-proc {epred val1 val2} {
     LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
-    return ${::#f}
+    return [::False new]
   } elseif {[T [pair? $val2]]} {
     if {[T [$epred $val1 [car $val2]]]} {
       return $val2
@@ -3406,7 +3402,7 @@ proc ::constcl::assoc-proc {epred val1 val2} {
     LIST expected\n($name [$val1 tstr] [$val2 tstr])
   }
   if {[T [null? $val2]]} {
-    return ${::#f}
+    return [::False new]
   } elseif {[T [pair? $val2]]} {
     if {[T [pair? [car $val2]]] &&
       [T [$epred $val1 [caar $val2]]]} {
@@ -3617,9 +3613,9 @@ proc ::constcl::string=? {str1 str2} {
       [$str2 tstr])
   }
   if {[$str1 value] eq [$str2 value]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string-ci=?
@@ -3635,9 +3631,9 @@ proc ::constcl::string-ci=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] eq
       [::string tolower [$str2 value]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string<?
@@ -3652,9 +3648,9 @@ proc ::constcl::string<? {str1 str2} {
       [$str2 tstr])
   }
   if {[$str1 value] < [$str2 value]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string-ci<?
@@ -3670,9 +3666,9 @@ proc ::constcl::string-ci<? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] <
       [::string tolower [$str2 value]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string>?
@@ -3687,9 +3683,9 @@ proc ::constcl::string>? {str1 str2} {
       [$str2 tstr])
   }
   if {[$str1 value] > [$str2 value]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string-ci>?
@@ -3705,9 +3701,9 @@ proc ::constcl::string-ci>? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] >
       [::string tolower [$str2 value]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string<=?
@@ -3722,9 +3718,9 @@ proc ::constcl::string<=? {str1 str2} {
       [$str2 tstr])
   }
   if {[$str1 value] <= [$str2 value]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string-ci<=?
@@ -3740,9 +3736,9 @@ proc ::constcl::string-ci<=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] <=
       [::string tolower [$str2 value]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string>=?
@@ -3757,9 +3753,9 @@ proc ::constcl::string>=? {str1 str2} {
       [$str2 tstr])
   }
   if {[$str1 value] >= [$str2 value]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg string-ci>=?
@@ -3775,9 +3771,9 @@ proc ::constcl::string-ci>=? {str1 str2} {
   }
   if {[::string tolower [$str1 value]] >=
       [::string tolower [$str2 value]]} {
-    return ${::#t}
+    return [::True new]
   } else {
-    return ${::#f}
+    return [::False new]
   }
 }
 reg substring
@@ -3849,9 +3845,9 @@ oo::class create ::constcl::Symbol {
   }
   method = {symname} {
     if {$name eq [$sym name]} {
-      return ${::#t}
+      return [::True new]
     } else {
-      return ${::#f}
+      return [::False new]
     }
   }
   method constant {} {
@@ -4011,7 +4007,7 @@ reg make-vector
 
 proc ::constcl::make-vector {k args} {
   if {[llength $args] == 0} {
-    set val ${::#NIL}
+    set val [::EmptyList new]
   } else {
     lassign $args val
   }
@@ -4090,21 +4086,21 @@ set ::constcl::symbolTable [dict create]
 
 set ::constcl::gensymnum 0
 interp recursionlimit {} 2000
-set #NIL [::constcl::NIL new]
+set #NIL [::NIL new]
 
-set #t [::constcl::True new]
+set #t [::True new]
 
-set #f [::constcl::False new]
+set #f [::False new]
 
-set #UNS [::constcl::Unspecified new]
+set #UNS [::Unspecified new]
 
-set #UND [::constcl::Undefined new]
+set #UND [::Undefined new]
 
-set #EOF [::constcl::EndOfFile new]
+set #EOF [::EndOfFile new]
 regvar pi [N 3.1415926535897931]
-regvar nil ${::#NIL}
+regvar nil [::EmptyList new]
 ::constcl::Environment create \
-  ::constcl::null_env ${::#NIL} {}
+  ::constcl::null_env [::EmptyList new] {}
 
 oo::objdefine ::constcl::null_env {
   method find {sym} {
@@ -4118,7 +4114,7 @@ oo::objdefine ::constcl::null_env {
   }
 }
 namespace eval ::constcl {
-  Environment create global_env ${::#NIL} {} \
+  Environment create global_env [::EmptyList new] {} \
     ::constcl::null_env
   foreach v [dict values $defreg] {
     lassign $v key val

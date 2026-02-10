@@ -1,0 +1,38 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test read-15.0 {try reading a number} {
+    [parse "99.99"] numval
+} "99.99"
+
+test read-15.1 {try reading a number} {
+    [parse "     99.99"] numval
+} "99.99"
+
+test read-15.2 {try reading a number} {
+    [parse "     9"] numval
+} "9"
+
+test read-15.3 {try reading a number} {
+    [parse "     +9"] numval
+} "9"
+
+test read-15.4 {try reading a number} {
+    [parse "     -9"] numval
+} "-9"
+
+test read-15.5 {try read-expr on numeric expr} -setup {
+    makeFile {  99 } testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "99\n"
+
+
+cleanupTests
+return

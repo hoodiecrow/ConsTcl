@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test cons-10.0 {shadowing} -body {
+  unbind [S r]
+  unbind [S f]
+    pew "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
+} -output "10\n"
+
+cleanupTests
+return

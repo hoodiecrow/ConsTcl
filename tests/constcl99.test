@@ -1,0 +1,13 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test numbers-10.0 {try even?} -body {
+        pew "(even? 77)"
+} -output "#f\n"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,15 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test cons-3.0 {count} -body {
+    pew "(count 0 (list 0 1 2 3 0 0))"
+} -output 3\n
+
+test cons-3.1 {count} -body {
+    pew "(count 'the '(the more the merrier the bigger the better))"
+} -output 4\n
+
+cleanupTests
+return

@@ -1,0 +1,32 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test read-13.0 {try reading a character} -body {
+    ::constcl::display [parse {#\A}]
+    ::constcl::display [parse {#\(}]
+    ::constcl::display [parse "#\\space"]
+    ::constcl::display [parse "#\\newline"]
+} -output "A( \n"
+
+test read-13.3 {try reading a character} -body {
+    set expr [parse "#\\foobar"]
+    $expr char
+} -returnCodes error -result "Invalid character constant #\\foobar"
+
+test read-13.4 {try read-expr on characters} -setup {
+    makeFile {  #\A  #\space} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "#\\A\n#\\space\n"
+
+
+
+cleanupTests
+return

@@ -1,0 +1,15 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test strings-9.0 {try string-ci=?} -body {
+    pew {(string-ci=? "foo bar" "faa bor")}
+    pew {(string-ci=? "foo bar" "foo bar")}
+    pew {(string-ci=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+cleanupTests
+return

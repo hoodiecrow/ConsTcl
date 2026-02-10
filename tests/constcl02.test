@@ -1,0 +1,36 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test read-12.0 {try read-expr on dot expr} -setup {
+    makeFile {  a . b } testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "a\n.\nb\n"
+
+test read-12.1 {try read-expr} -setup {
+    makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
+      [a b] `foo 93 foo} testrr.lsp
+    set p [pe {(open-input-file "tests/tmp/testrr.lsp")}]
+} -body {
+  set x [r $p]
+  while {$x ne "#EOF"} {
+    w $x
+    set x [r $p]
+  }
+} -cleanup {
+    ::constcl::close-input-port $p
+    removeFile testrr.lsp
+} -output "\"foo\"\n#(a b)\n#t\n#f\n#\\A\n(quote foo)\n(a b)\n-99\n+\n-\n(unquote foo)\n(a b)\n(quasiquote foo)\n93\nfoo\n"
+
+
+
+cleanupTests
+return

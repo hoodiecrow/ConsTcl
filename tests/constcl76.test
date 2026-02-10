@@ -1,0 +1,22 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test macros-2.0 {expand and macro} -body {
+    pxw "(and)"
+    pxw "(and #t)"
+    pxw "(and (> 3 2))"
+    pxw "(and (> 3 2) (= 7 8))"
+} -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
+
+test macros-2.1 {run and macro} -body {
+    pew "(and)"
+    pew "(and #t)"
+    pew "(and (> 3 2))"
+    pew "(and (> 3 2) (= 7 8))"
+} -output "#t\n#t\n#t\n#f\n"
+
+
+cleanupTests
+return

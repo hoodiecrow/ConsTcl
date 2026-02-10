@@ -1,0 +1,25 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test cons-8.0 {procedure definition} -body {
+    pew "(lambda (r) (* r r))"
+} -match regexp -output "#<proc-\\d+>\n"
+
+test cons-8.1 {procedure with two expressions} -body {
+  unbind [S f]
+  unbind [S r]
+    pew "(define (f) (define r 20) (* r r))"
+    pew "(f)"
+} -output "400\n"
+
+test cons-8.2 {resolve procedure with two expressions} -body {
+  unbind [S f]
+    set x [parse "(define (f) (define r 20) (* r r))"]
+    set x [::constcl::rewrite-define $x ::constcl::global_env]
+    w $x
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+cleanupTests
+return

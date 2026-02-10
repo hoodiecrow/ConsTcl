@@ -1,0 +1,11 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test eval-2.0 {try eval-ing a constant} -body {
+  pew "99"
+} -output "99\n"
+
+cleanupTests
+return

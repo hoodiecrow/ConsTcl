@@ -1,0 +1,17 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test strings-4.0 {try string} -body {
+    pew {(string #\f #\o #\o)}
+} -output "\"foo\"\n"
+
+test strings-4.1 {try string} -body {
+    pew {(string #\f #\o 'a #\o)}
+} -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
+
+
+
+cleanupTests
+return

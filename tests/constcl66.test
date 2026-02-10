@@ -1,0 +1,45 @@
+
+package require tcltest
+namespace import -force tcltest::*
+source ../constcl.tcl
+
+test eval-6.0 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+
+test eval-6.1 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+} -output "3\n"
+
+test eval-6.2 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+test eval-6.3 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+} -output "()\n"
+
+test eval-6.4 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+test eval-6.5 {expand cond macro} -body {
+  parse {(define alist '((a . 1) (b . 2)))}
+    set x [parse "(cond ((assv 'b alist) => cdr) (else #f))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t (begin #f) (quote ())))\n"
+
+test eval-6.6 {run cond macro} -body {
+    pew "(cond ((assv 'b '((a . 1) (b . 2))) => cdr) (else #f))"
+} -output "2\n"
+
+
+cleanupTests
+return
