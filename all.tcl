@@ -6,7 +6,7 @@ set dir [file dirname [file normalize [info script]]]
 
 configure -testdir [file join $dir tests]
 configure -tmpdir [file join $dir tests tmp]
-#matchFiles ../constcl.test
+matchFiles ../constcl.test
 set OUTFILE [file join $dir tests tmp outfile.txt]
 set ERRFILE [file join $dir tests tmp errfile.txt]
 exec echo -n "" > $OUTFILE
