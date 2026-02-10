@@ -1,7 +1,0 @@
-package require tcltest
-source constcl.tcl
-namespace import -force tcltest::*
-
-
-cleanupTests
-return

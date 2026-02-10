@@ -1,0 +1,538 @@
+
+H3 Vectors
+
+Vectors are heterogenous structures of fixed length whose elements are indexed
+by integers.
+The number of elements that a vector contains (the E{length}) is set when the
+vector is created.  Elements can be indexed by integers from zero to length
+minus one.
+
+H4 Vector class
+
+The Vector class defines what capabilities a vector has (in addition to those
+from the Base class), and also defines the internal representation of a vector
+value expression. A vector is stored in an instance as a tuple of vector memory
+address and vector length. The K{value} method yields the contents of the vector
+as result.
+
+CB(
+oo::class create ::constcl::Vector {
+  superclass ::constcl::Base
+  variable data constant
+CB)
+
+The Vector constructor is divided in two main parts, one for the case where the
+value is a Lisp list, and one for the case where the value is a Tcl list. Their
+structure is similar: set the length (number of items), allocate vector space,
+and store the elements.
+
+PR(
+Vector constructor (internal);val val -> none
+PR)
+
+CB(
+  constructor {val} {
+    if {[T [::constcl::list? $val]]} {
+      # if val is provided in the form of a Lisp list
+      set len [[::constcl::length $val] numval]
+      # allocate vector space for the elements
+      set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
+      set idx $vsa
+      while {![T [::constcl::null? $val]]} {
+        set elt [::constcl::car $val]
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+        set val [::constcl::cdr $val]
+      }
+    } else {
+      # if val is provided in the form of a Tcl list
+      set len [llength $val]
+      # allocate vector space for the elements
+      set vsa [::constcl::vsAlloc $len]
+      # store the elements in vector space
+      set idx $vsa
+      foreach elt $val {
+        lset ::constcl::vectorSpace $idx $elt
+        incr idx
+      }
+    }
+    # store the basic vector data: address of 
+    # first element and length
+    set data [::constcl::cons [N $vsa] [N $len]]
+    set constant 0
+  }
+CB)
+
+The K{baseadr} method returns the address of the first element as a number
+object.
+
+PR(
+(Vector instance) baseadr (internal);-> num
+PR)
+
+CB(
+  method baseadr {} {
+    ::constcl::car $data
+  }
+CB)
+
+The K{length} method returns the length (number of elements) as a number object.
+
+PR(
+(Vector instance) length (internal);-> num
+PR)
+
+CB(
+  method length {} {
+    ::constcl::cdr $data
+  }
+CB)
+
+The K{ref} method returns one element given the (0-based) index for it.
+
+PR(
+(Vector instance) ref (internal);k num -> val
+PR)
+
+CB(
+  method ref {k} {
+    set k [$k numval]
+    if {$k < 0 || $k >= [[my length] numval]} {
+      ::error "index out of range\n$k"
+    }
+    lindex [my store] $k
+  }
+CB)
+
+The K{store} method returns the range of vector memory cells that store the
+vector's elements.
+
+PR(
+(Vector instance) store (internal);-> tvals
+PR)
+
+CB(
+  method store {} {
+    set base [[my baseadr] numval]
+    set end [expr {[[my length] numval] + $base - 1}]
+    lrange $::constcl::vectorSpace $base $end
+  }
+CB)
+
+The K{value} method is a synonym for K{store}.
+
+PR(
+(Vector instance) value (internal);-> tvals
+PR)
+
+CB(
+  method value {} {
+    my store
+  }
+CB)
+
+The K{set!} method changes one element in a mutable vector given a (0-based)
+index value and a value.
+
+PR(
+(Vector instance) set! (internal);k num val val -> vec
+PR)
+
+CB(
+  method set! {k val} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set k [$k numval]
+      if {$k < 0 || $k >= [[my length] numval]} {
+        ::error "index out of range\n$k"
+      }
+      set base [[my baseadr] numval]
+      lset ::constcl::vectorSpace $k+$base $val
+    }
+    return [self]
+  }
+CB)
+
+The K{fill!} method changes every element in a mutable vector to a given value.
+
+PR(
+(Vector instance) fill! (internal);val val -> vec
+PR)
+
+CB(
+  method fill! {val} {
+    if {[my constant]} {
+      ::error "vector is constant"
+    } else {
+      set base [[my baseadr] numval]
+      set len [[my length] numval]
+      for {set idx $base} \
+        {$idx < $len+$base} \
+        {incr idx} {
+        lset ::constcl::vectorSpace $idx $val
+      }
+    }
+    return [self]
+  }
+CB)
+
+The K{mkconstant} method makes a vector immutable.
+
+PR(
+(Vector instance) mkconstant (internal);-> tbooltrue
+PR)
+
+CB(
+  method mkconstant {} {
+    set constant 1
+  }
+CB)
+
+The K{constant} method signals whether the vector instance is immutable.
+
+PR(
+(Vector instance) constant (internal);-> tbool
+PR)
+
+CB(
+  method constant {} {
+    set constant
+  }
+CB)
+
+The K{tstr} method yields the external representation of the symbol instance (the name) as a
+Tcl string. It is used by error messages and for the K{write} method.
+
+PR(
+(Vector instance) tstr (internal);-> tstr
+PR)
+
+CB(
+  method tstr {} {
+    return [format "#(%s)" [
+      join [lmap val [my value] {$val tstr}]]]
+  }
+}
+CB)
+
+H4 MkVector generator
+
+K{MkVector} generates a Vector object.
+
+PR(
+MkVector (internal);vals xvals -> vec
+PR)
+
+CB(
+interp alias {} ::constcl::MkVector \
+  {} ::constcl::Vector new
+CB)
+
+H4 vector? procedure
+
+K{vector?} recognizes vectors by type.
+
+PR(
+vector? (public);val val -> bool
+PR)
+
+CB(
+reg vector?
+
+proc ::constcl::vector? {val} {
+  typeof? $val Vector
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
+    pew {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pew {(vector? (make-vector 3 #\X))}
+    pew {(vector? (vector 'a 'b 'c))}
+    pew {(vector? '#(a b c))}
+} -output "#t\n#t\n#t\n#t\n"
+
+TT)
+
+H4 make-vector procedure
+
+K{make-vector} creates a vector with a given length and optionally a fill value.
+If a fill value isn't given, the empty list will be used.
+
+Example:
+
+VB(
+(let ((k 3))
+  (make-vector k))        ==>  #(() () ())
+(let ((k 3) (val #\A))
+  (make-vector k val))    ==>  #(#\A #\A #\A)
+VB)
+
+PR(
+make-vector? (public);k num ?val? val -> vec
+PR)
+
+CB(
+reg make-vector
+
+proc ::constcl::make-vector {k args} {
+  if {[llength $args] == 0} {
+    set val ${::#NIL}
+  } else {
+    lassign $args val
+  }
+  MkVector [lrepeat [$k numval] $val]
+}
+CB)
+
+H4 vector procedure
+
+Given a number of Lisp values, K{vector} creates a vector containing them.
+
+Example:
+
+VB(
+(vector 'a "foo" 99)   ==>  #(a "foo" 99)
+VB)
+
+PR(
+vector (public);args vals -> vec
+PR)
+
+CB(
+reg vector
+
+proc ::constcl::vector {args} {
+  MkVector $args
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.1 {try vector} -body {
+    pew {(vector 'a 'b 'c)}
+    pew {(vector 0 '(2 2 2 2) "Anna")}
+} -output "#(a b c)\n#(0 (2 2 2 2) \"Anna\")\n"
+
+TT)
+
+H4 vector-length procedure
+
+K{vector-length} returns the length of a vector.
+
+Example:
+
+VB(
+(vector-length '#(a "foo" 99))   ==>  3
+VB)
+
+PR(
+vector-length (public);vec vec -> num
+PR)
+
+CB(
+reg vector-length
+
+proc ::constcl::vector-length {vec} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec tstr])
+  }
+  return [$vec length]
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.2 {try vector-length} -body {
+    pew {(vector-length (vector 'a 'b 'c))}
+} -output "3\n"
+
+TT)
+
+H4 vector-ref procedure
+
+K{vector-ref} returns the element of E{vec} at index E{k} (0-based).
+
+Example:
+
+VB(
+(let ((vec '#(a "foo" 99)) (k 1))
+  (vector-ref vec k))              ==>  "foo"
+VB)
+
+PR(
+vector-ref (public);vec vec k num -> val
+PR)
+
+CB(
+reg vector-ref
+
+proc ::constcl::vector-ref {vec k} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
+  }
+  return [$vec ref $k]
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.3 {try vector-ref} -body {
+    pew {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+::tcltest::test vectors-1.4 {try vector-ref} -body {
+    pew {(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))}
+} -output "b\n"
+
+TT)
+
+H4 vector-set"! procedure
+
+K{vector-set!} sets the element at index E{k} to E{val} on a vector that isn't
+constant.
+
+Example:
+
+VB(
+(let ((vec '#(a b c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      ==>  *error*
+(let ((vec (vector 'a 'b 'c))
+      (k 1)
+      (val 'x))
+  (vector-set! vec k val))      ==>  #(a x c)
+VB)
+
+PR(
+vector-set! (public);vec vec k num val val -> vec
+PR)
+
+CB(
+reg vector-set!
+
+proc ::constcl::vector-set! {vec k val} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec tstr] [$k tstr])
+  }
+  check {number? $k} {
+    NUMBER expected\n([pn] [$vec tstr] [$k tstr])
+  }
+  return [$vec set! $k $val]
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.5 {try vector-set!} -body {
+  unbind [S x]
+    pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pew {(vector-set! (x) 1 '(foo bar))}
+} -output "#(0 (foo bar) \"Anna\")\n"
+
+TT)
+
+H4 vector->list procedure
+
+K{vector->list} converts a vector value to a Lisp list.
+
+Example:
+
+VB(
+(vector->list '#(a b c))   ==>  (a b c)
+VB)
+
+PR(
+vector->list (public);vec vec -> lvals
+PR)
+
+CB(
+reg vector->list
+
+proc ::constcl::vector->list {vec} {
+  list {*}[$vec value]
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.6 {try vector->list} -body {
+    pew {(vector->list (vector 'a 'b 'c))}
+} -output "(a b c)\n"
+
+TT)
+
+H4 list->vector procedure
+
+K{list->vector} converts a Lisp list value to a vector.
+
+Example:
+
+VB(
+(list->vector '(1 2 3))   ==>  #(1 2 3)
+VB)
+
+PR(
+list->vector (public);list lvals -> vec
+PR)
+
+CB(
+reg list->vector
+
+proc ::constcl::list->vector {list} {
+  vector {*}[splitlist $list]
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.7 {try list->vector} -body {
+    pew {(list->vector '(a b c))}
+} -output "#(a b c)\n"
+
+TT)
+
+H4 vector-fill"! procedure
+
+K{vector-fill!} fills a non-constant vector with a given value.
+
+Example:
+
+VB(
+(define vec (vector 'a 'b 'c))
+(vector-fill! vec 'x)             ==>  #(x x x)
+vec                               ==>  #(x x x)
+VB)
+
+PR(
+vector-fill! (public);vec vec fill val -> vec
+PR)
+
+CB(
+reg vector-fill!
+
+proc ::constcl::vector-fill! {vec fill} {
+  check {vector? $vec} {
+    VECTOR expected\n([pn] [$vec tstr] \
+      [$fill tstr])
+  }
+  $vec fill! $fill
+}
+CB)
+
+TT(
+
+::tcltest::test vectors-1.8 {try vector-fill!} -body {
+    pew {(vector-fill! (vector 'a 'b 'c) 'x)}
+} -output "#(x x x)\n"
+
+TT)
+
+# vim: ft=tcl tw=80 ts=2 sw=2 sts=2 et 
