@@ -1,0 +1,2155 @@
+package require tcltest
+source constcl.tcl
+
+
+::tcltest::test initial-1.0 {try reg} -setup {
+  set dr $::constcl::defreg
+} -body {
+  reg foo
+  reg special bar
+  reg macro baz
+  puts [lrange $::constcl::defreg end-5 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE ::constcl::foo}} 198 {bar {SPECIAL ::constcl::special-bar}} 199 {baz {SYNTAX ::constcl::expand-baz}}\n"
+
+::tcltest::test initial-1.1 {try regvar} -setup {
+  set dr $::constcl::defreg
+} -body {
+  regvar foo bar
+  puts [lrange $::constcl::defreg end-1 end]
+} -cleanup {
+  set ::constcl::defreg $dr
+} -output "197 {foo {VARIABLE bar}}\n"
+
+::tcltest::test input-2.0 {try read} -setup {
+  ::tcltest::makeFile {99 foo} input.txt
+  set p [pe "(open-input-file \"input.txt\")"]
+} -body {
+  ::constcl::display [::constcl::read $p]
+  ::constcl::display [::constcl::read $p]
+} -cleanup {
+  ::constcl::close-input-port $p
+  ::tcltest::removeFile input.txt
+} -output "99foo"
+
+
+::tcltest::test read-12.0 {try read-expr on dot expr} -setup {
+    ::tcltest::makeFile {  a . b } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "a\n.\nb\n"
+
+::tcltest::test read-12.1 {try read-expr} -setup {
+    ::tcltest::makeFile {"foo" #(a b) #t #f #\A 'foo (a b) -99 + - ,foo
+      [a b] `foo 93 foo} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+  set x [r $p]
+  while {$x ne "#EOF"} {
+    w $x
+    set x [r $p]
+  }
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo\"\n#(a b)\n#t\n#f\n#\\A\n(quote foo)\n(a b)\n-99\n+\n-\n(unquote foo)\n(a b)\n(quasiquote foo)\n93\nfoo\n"
+
+
+
+::tcltest::test read-13.0 {try reading a character} -body {
+    ::constcl::display [parse {#\A}]
+    ::constcl::display [parse {#\(}]
+    ::constcl::display [parse "#\\space"]
+    ::constcl::display [parse "#\\newline"]
+} -output "A( \n"
+
+::tcltest::test read-13.3 {try reading a character} -body {
+    set expr [parse "#\\foobar"]
+    $expr char
+} -returnCodes error -result "Invalid character constant #\\foobar"
+
+::tcltest::test read-13.4 {try read-expr on characters} -setup {
+    ::tcltest::makeFile {  #\A  #\space} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#\\A\n#\\space\n"
+
+
+
+::tcltest::test read-14.0 {try reading an identifier} {
+    set expr [parse "foo"]
+    $expr name
+} "foo"
+
+::tcltest::test read-14.1 {try reading an identifier} -body {
+    set expr [parse "let"]
+    ::constcl::varcheck [$expr name]
+} -returnCodes error -result "Variable name is reserved: let"
+
+::tcltest::test read-14.2 {try read-expr on identifiers} -setup {
+    ::tcltest::makeFile {  foo    bar } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "foo\nbar\n"
+
+
+::tcltest::test read-15.0 {try reading a number} {
+    [parse "99.99"] numval
+} "99.99"
+
+::tcltest::test read-15.1 {try reading a number} {
+    [parse "     99.99"] numval
+} "99.99"
+
+::tcltest::test read-15.2 {try reading a number} {
+    [parse "     9"] numval
+} "9"
+
+::tcltest::test read-15.3 {try reading a number} {
+    [parse "     +9"] numval
+} "9"
+
+::tcltest::test read-15.4 {try reading a number} {
+    [parse "     -9"] numval
+} "-9"
+
+::tcltest::test read-15.5 {try read-expr on numeric expr} -setup {
+    ::tcltest::makeFile {  99 } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "99\n"
+
+
+::tcltest::test read-16.0 {try reading an improper list} -body {
+    pw "(a . b)"
+} -output "(a . b)\n"
+
+::tcltest::test read-16.1 {try reading an improper list} -body {
+    pw "(a b . c)"
+} -output "(a b . c)\n"
+
+::tcltest::test read-16.2 {try reading a list} -body {
+    set expr [parse "(a (b))"]
+    [::constcl::caadr $expr] name
+} -result "b"
+
+::tcltest::test read-16.3 {try reading a list} -body {
+    pw "(a)"
+} -output "(a)\n"
+
+::tcltest::test read-16.4 {try reading a list} -body {
+    pw "(a b)"
+} -output "(a b)\n"
+
+::tcltest::test read-16.5 {try reading a list} -body {
+    pw "(a (b) )"
+} -output "(a (b))\n"
+
+::tcltest::test read-16.6 {try reading a list} -body {
+    pw "(a (b))"
+} -output "(a (b))\n"
+
+::tcltest::test read-16.7 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  (a b c)  ((a b) c)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(a b c)\n"
+
+::tcltest::test read-16.8 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  ([d e] f)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "((d e) f)\n"
+
+::tcltest::test read-16.9 {try read-expr on pair expr} -setup {
+    ::tcltest::makeFile {  (def ghi (jkl mno))} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(def ghi (jkl mno))\n"
+
+
+::tcltest::test read-17.2 {try read-expr on plus/minus} -setup {
+    ::tcltest::makeFile {  +  -  -99} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "+\n-\n-99\n"
+
+
+::tcltest::test read-18.0 {try read-expr on booleans} -setup {
+    ::tcltest::makeFile {  #t  #f} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#t\n#f\n"
+
+
+
+::tcltest::test read-19.0 {try reading quasiquoted expression} -body {
+    pw "`(list 1 2 ,@foo)"
+} -output "(quasiquote (list 1 2 (unquote-splicing foo)))\n"
+
+::tcltest::test read-19.1 {try read-expr on quasiquoted expr} -setup {
+    ::tcltest::makeFile {  `(a b) } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quasiquote (a b))\n"
+
+
+
+::tcltest::test read-20.0 {try reading quoted symbol} -body {
+    pw "'foo"
+} -output "(quote foo)\n"
+
+::tcltest::test read-20.1 {try modifying quoted list} -body {
+    pew "(define a '(a b c))"
+    pew "(list-set! a 1 'x)"
+} -returnCodes error -result "Can't modify a constant pair"
+
+::tcltest::test read-20.2 {try read-expr on quoted expr} -setup {
+    ::tcltest::makeFile {  'foo } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(quote foo)\n"
+
+
+
+::tcltest::test read-21.0 {try reading a string} {
+    set expr [parse {"foo bar"}]
+    $expr value
+} "foo bar"
+
+::tcltest::test read-21.1 {try reading a string} {
+    set expr [parse {"\"foo\" \\ bar"}]
+    $expr value
+} {"foo" \ bar}
+
+::tcltest::test read-21.2 {try reading a string} {
+    set expr [parse {"\"foo\" \\ bar"}]
+    $expr external
+} {"\"foo\" \\ bar"}
+
+::tcltest::test read-21.3 {try read-expr on a string} -setup {
+    ::tcltest::makeFile {"foo bar"  } testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "\"foo bar\"\n"
+
+::tcltest::test read-21.4 {try read-expr on a string/eof} -setup {
+    ::tcltest::makeFile {"foo } testrr.lsp ; #"
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -returnCodes error -result {bad string (no ending double quote)}
+
+
+
+::tcltest::test read-22.0 {try reading unquoted symbol} -body {
+    pw ",foo"
+} -output "(unquote foo)\n"
+
+::tcltest::test read-22.2 {try read-expr on unquoted expr} -setup {
+    ::tcltest::makeFile {  ,foo ,@bar} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "(unquote foo)\n(unquote-splicing bar)\n"
+
+
+
+::tcltest::test read-23.0 {try reading a vector} -body {
+    pew "'#(1 2 3)"
+} -output "#(1 2 3)\n"
+
+::tcltest::test read-23.1 {try reading a vector, with non-normal expression} -body {
+    pew "'#(1 2 (+ 1 2))"
+} -output "#(1 2 (+ 1 2))\n"
+
+::tcltest::test read-23.2 {try read-expr on a couple of vectors} -setup {
+    ::tcltest::makeFile {  #(1 2 3)  #(11 22 33)} testrr.lsp
+    set p [pe {(open-input-file "testrr.lsp")}]
+} -body {
+    rw $p
+    rw $p
+} -cleanup {
+    ::constcl::close-input-port $p
+    ::tcltest::removeFile testrr.lsp
+} -output "#(1 2 3)\n#(11 22 33)\n"
+
+
+::tcltest::test input-3.0 {try make-constant} -setup {
+} -body {
+  set a [parse {'(a b c)}]
+  set b [parse {`(a b c)}]
+  set c [parse {'#(a b c)}]
+  set d [parse {"a b c"}]
+    puts [[::constcl::cadr $a] constant]
+    puts [[::constcl::cadr $b] constant]
+    puts [[::constcl::cadr $c] constant]
+    puts [$d constant]
+} -cleanup {
+} -output "1\n1\n1\n1\n"
+
+
+# 4
+
+::tcltest::test input-5.0 {try delimiter?} -setup {
+} -body {
+  pew {(let ((name "Max")) (list"Hi"name(+ 1 2)))}
+} -cleanup {
+} -output "(\"Hi\" \"Max\" 3)\n"
+
+#"
+
+
+# 6
+
+# 7
+
+# 8
+
+# 9
+
+# 10
+
+# 11
+
+::tcltest::test eval-1.0 {try eval-ing a symbol} -body {
+  pew "(let ((r 10)) r)"
+} -output "10\n"
+
+::tcltest::test eval-1.2 {try eval-ing an unbound symbol} -body {
+  pew "k"
+} -returnCodes error -result "not a variable name (k)"
+
+::tcltest::test eval-2.0 {try eval-ing a constant} -body {
+  pew "99"
+} -output "99\n"
+
+::tcltest::test eval-3.0 {try eval-ing a quotation} -body {
+  pew "'m"
+} -output "m\n"
+
+
+::tcltest::test eval-4.0 {try eval-ing a conditional} -body {
+  pew "(if (= 2 2) (display 'a) (display 'b))"
+} -output "a"
+
+::tcltest::test eval-4.1 {try eval-ing a short conditional} -body {
+  pew "(if (= 2 3) (display 'a))"
+} -output ""
+
+::tcltest::test eval-5.0 {expand case macro} -body {
+    set x [parse "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"]
+    set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (* 2 3) (quote (2 3 5 7))) (begin (quote prime)) (if (memv (* 2 3) (quote (1 4 6 8 9))) (begin (quote composite)) (quote ())))\n"
+
+::tcltest::test eval-5.1 {run case macro} -body {
+    pew "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
+} -output "composite\n"
+
+::tcltest::test eval-5.2 {expand case macro} -body {
+    set x [parse "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"]
+    set x [::constcl::do-case [::constcl::cadr $x] [::constcl::cddr $x] ::constcl::global_env]
+    w $x
+} -output "(if (memv (car (quote (c d))) (quote (a e i o u))) (begin (quote vowel)) (if (memv (car (quote (c d))) (quote (w y))) (begin (quote semivowel)) (if #t (begin (quote consonant)) (quote ()))))\n"
+
+::tcltest::test eval-5.3 {run case macro} -body {
+    pew "(case (car (quote (c d))) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))"
+} -output "consonant\n"
+
+::tcltest::test eval-6.0 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (if #t (begin (- 8 5)) (quote ()))))\n"
+
+::tcltest::test eval-6.1 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)) (else (- 8 5)))"
+} -output "3\n"
+
+::tcltest::test eval-6.2 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test eval-6.3 {run cond macro} -body {
+    pew "(cond ((> 3 4) (+ 4 2)) ((> 1 2) (+ 5 5)))"
+} -output "()\n"
+
+::tcltest::test eval-6.4 {expand cond macro} -body {
+    set x [parse "(cond ((> 3 4) (+ 4 2) (+ 3 5)) ((> 1 2) (+ 5 5)))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (> 3 4) (begin (+ 4 2) (+ 3 5)) (if (> 1 2) (begin (+ 5 5)) (quote ())))\n"
+
+::tcltest::test eval-6.5 {expand cond macro} -body {
+  parse {(define alist '((a . 1) (b . 2)))}
+    set x [parse "(cond ((assv 'b alist) => cdr) (else #f))"]
+    set x [::constcl::do-cond [::constcl::cdr $x] ::constcl::global_env]
+    w $x
+} -output "(if (assv (quote b) alist) (cdr (assv (quote b) alist)) (if #t (begin #f) (quote ())))\n"
+
+::tcltest::test eval-6.6 {run cond macro} -body {
+    pew "(cond ((assv 'b '((a . 1) (b . 2))) => cdr) (else #f))"
+} -output "2\n"
+
+
+::tcltest::test eval-7.0 {try eval-ing a sequence} -body {
+  pew "(begin (display 'a) (display 'b))"
+} -output "ab"
+
+::tcltest::test eval-7.1 {try eval-ing a sequence} -body {
+  set x [parse "(begin (define a 3) (define b 4) (display a) (display b))"]
+  set v [::constcl::eval $x [::constcl::MkEnv ::constcl::global_env]]
+} -output "34"
+
+::tcltest::test eval-8.0 {define} -body {
+    w [::constcl::rewrite-define [parse {(define (foo a b) (+ a b) (* a b))}] ::constcl::global_env]
+} -output "(define foo (lambda (a b) (+ a b) (* a b)))\n"
+
+::tcltest::test eval-8.1 {define} -body {
+    w [::constcl::rewrite-define [parse "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"] ::constcl::global_env]
+} -output "(define fib (lambda (n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))))\n"
+
+::tcltest::test eval-8.2 {define} -body {
+    w [::constcl::rewrite-define [parse "(define (f) (define r 20) (* r r))"] ::constcl::global_env]
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+::tcltest::test eval-8.3 {define} -body {
+    w [::constcl::rewrite-define [parse "(define (list-find-key lst key)\n(lfk lst key 0))"] ::constcl::global_env]
+} -output "(define list-find-key (lambda (lst key) (lfk lst key 0)))\n"
+
+::tcltest::test eval-8.4 {define} -body {
+    w [::constcl::rewrite-define [parse "(define (f . r) (* r r))"] ::constcl::global_env]
+} -output "(define f (lambda r (* r r)))\n"
+
+
+::tcltest::test eval-9.0 {try eval-ing a define} -body {
+  pew "(define r 10)"
+  pew "r"
+} -output "10\n"
+
+::tcltest::test eval-9.1 {try eval-ing a define, with an inappropriate symbol} -body {
+  pew "(define let 10)"
+} -returnCodes error -result "Variable name is reserved: let"
+
+::tcltest::test eval-9.2 {try eval-ing a define, with an inappropriate symbol} -body {
+  pew "(define +foo 10)"
+} -returnCodes error -result "Identifier expected (+foo)"
+
+::tcltest::test eval-10.0 {try eval-ing an assignment} -body {
+  unbind [S r]
+  pew "(define r 10)"
+  pew "(set! r 20)"
+  pew "r"
+} -output "20\n20\n"
+
+::tcltest::test eval-11.0 {try eval-ing a procedure definition} -body {
+  pew "(define (square x) (* x x))"
+  pew "(square 20)"
+} -output "400\n"
+
+::tcltest::test eval-12.0 {try eval-ing a procedure call} -body {
+  pew "(* 5 20)"
+} -output "100\n"
+
+::tcltest::test eval-12.1 {try triggering a check} -body {
+    ::constcl::invoke ${::#NIL} [list ${::#NIL} ${::#NIL}]
+} -returnCodes error -result "PROCEDURE expected\n(() val ...)"
+
+::tcltest::test eval-13.3 {expand let macro} -body {
+    set x [parse "(let ((x 10)) (* x x))"]
+    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    w $x
+    set x [parse "(let ((x 10) (y 5)) (* x y))"]
+    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    w $x
+    set x [parse "(let ((x 10) (y 5)) (define z 7) (* x y z))"]
+    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    w $x
+} -output "((lambda (x) (* x x)) 10)\n((lambda (x y) (* x y)) 10 5)\n((lambda (x y) (define z 7) (* x y z)) 10 5)\n"
+
+::tcltest::test eval-13.4 {run let macro} -body {
+    pew "(let ((x 10)) (* x x))"
+    pew "(let ((x 10) (y 5)) (* x y))"
+    pew "(let ((x 10) (y 5) (z 7)) (+ 2 3) (* x y z))"
+} -output "100\n50\n350\n"
+
+::tcltest::test eval-13.5 {expand named let macro} -body {
+    set x [parse {(let loop ((lst lst) (result '()))
+    (if (null? lst)
+        (reverse result)
+        (let ((item (car lst)))
+          (loop (cdr lst)
+                (if (fn item) result (cons item result))))))}]
+    set x [::constcl::rewrite-named-let $x ::constcl::global_env]
+    w $x
+} -output "(let ((loop #f) (lst lst) (result (quote ()))) (set! loop (lambda (lst result) (if (null? lst) (reverse result) (let ((item (car lst))) (loop (cdr lst) (if (fn item) result (cons item result))))))) (loop lst result))\n"
+
+::tcltest::test eval-13.7 {expand let macro} -body {
+    set x [parse "(let ((vec #(a b c)) (k 1)) (list vec k))"]
+    set x [::constcl::rewrite-let $x ::constcl::global_env]
+    w $x
+} -output "((lambda (vec k) (list vec k)) #(a b c) 1)\n"
+
+::tcltest::test eval-13.8 {run let macro} -body {
+    pew "(let ((vec '#(a b c)) (k 1)) (list vec k))"
+} -output "(#(a b c) 1)\n"
+
+::tcltest::test eval-13.9 {trigger error in let macro} -body {
+    pew "(let ((a 0) (a 1)) (* a a))"
+} -returnCodes error -result "'a' occurs more than once"
+
+
+::tcltest::test eval-14.0 {expand letrec} -body {
+  set x [parse "(letrec ((a 0) (b 1)) (- a b))"]
+  set x [::constcl::rewrite-letrec $x ::constcl::global_env]
+  w $x
+} -match glob -output {((lambda (a b) ((lambda (g<[0-9]*> g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>)) 0 1) (- a b)) (quote #<undefined>) (quote #<undefined>))*}
+
+::tcltest::test eval-14.1 {run letrec} -body {
+  pew "(letrec ((a 0) (b 1)) (- a b))"
+} -output "-1\n"
+
+::tcltest::test eval-14.2 {run letrec} -body {
+  pew {(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+  (even? 88))}
+} -output "#t\n"
+
+::tcltest::test eval-15.0 {expand let*} -body {
+  set x [parse "(let* ((a 2) (b (+ a 1))) (* a b))"]
+  set bind [::constcl::cadr $x]
+  set body [::constcl::cddr $x]
+  set x [::constcl::rewrite-let* $bind $body ::constcl::global_env]
+  w $x
+} -output "((lambda (a) ((lambda (b) (begin (* a b))) (+ a 1))) 2)\n"
+
+::tcltest::test eval-15.1 {run let*} -body {
+  pew "(let* ((a 2) (b (+ a 1))) (* a b))"
+} -output "6\n"
+
+
+
+::tcltest::test eval-16.0 {lambda parameter lists} -body {
+    pew {((lambda (x y z) (list x y z)) 3 4 5)}
+    pew {((lambda x                  x) 3 4 5 6)}
+    pew {((lambda (x y . z) (list x y)) 3 4 5 6)}
+    pew {((lambda (x y . z) z) 3 4 5 6)}
+} -output "(3 4 5)\n(3 4 5 6)\n(3 4)\n(5 6)\n"
+
+
+::tcltest::test eval-16.1 {conditional: does internal if accept a #t? Yes, b/c of the ne in condition handling} -body {
+    pew "(if (zero? 0) (* 4 4) (- 5 5))"
+} -output "16\n"
+
+
+::tcltest::test macros-2.0 {expand and macro} -body {
+    pxw "(and)"
+    pxw "(and #t)"
+    pxw "(and (> 3 2))"
+    pxw "(and (> 3 2) (= 7 8))"
+} -output "(begin #t)\n(begin #t)\n(begin (> 3 2))\n(if (> 3 2) (if (= 7 8) (= 7 8) #f) #f)\n"
+
+::tcltest::test macros-2.1 {run and macro} -body {
+    pew "(and)"
+    pew "(and #t)"
+    pew "(and (> 3 2))"
+    pew "(and (> 3 2) (= 7 8))"
+} -output "#t\n#t\n#t\n#f\n"
+
+
+::tcltest::test macros-6.0 {try expand del!} -body {
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pxw {(del! plist 'a)}
+} -output "(set! plist (delete! plist (quote a)))\n"
+
+::tcltest::test macros-6.1 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'a)}
+} -output "(b 2 c 3)\n"
+
+::tcltest::test macros-6.2 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'b)}
+} -output "(a 1 c 3)\n"
+
+::tcltest::test macros-6.3 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'c)}
+} -output "(a 1 b 2)\n"
+
+::tcltest::test macros-6.4 {try run del!} -body {
+  unbind [S plist]
+  pew {(define plist (list 'a 1 'b 2 'c 3))}
+  pew {(del! plist 'd)}
+} -output "(a 1 b 2 c 3)\n"
+
+
+::tcltest::test macros-7.0 {expand for macro} -body {
+    pxw "(for ((i '(1 2 3))) (display i))"
+} -output "(begin (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
+
+::tcltest::test macros-7.1 {run for macro} -body {
+    pew "(for ((i (quote (1 2 3)))) (display i))"
+} -result "" -output 123()\n
+
+::tcltest::test macros-7.2 {expand for macro} -body {
+    pxw "(for ((i 4)) (display i))"
+} -output "(begin (let ((i 0)) (display i)) (let ((i 1)) (display i)) (let ((i 2)) (display i)) (let ((i 3)) (display i)) (quote ()))\n"
+
+::tcltest::test macros-7.3 {run for macro} -body {
+    pew "(for ((i 4)) (display i))"
+} -result "" -output "0123()\n"
+
+
+::tcltest::test macros-8.0 {expand for macro} -body {
+    pxw "(for/and ((i '(1 2 3))) (< 3 i))"
+} -output "(and (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
+
+
+::tcltest::test macros-9.0 {expand for/list macro} -body {
+    pxw {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
+
+::tcltest::test macros-9.1 {run for/list macro} -body {
+    pew {(for/list ([i (quote (1 2 3))]) (* i i))}
+} -output "(1 4 9)\n"
+
+::tcltest::test macros-9.2 {expand for/list macro} -body {
+    pxw {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(list (let ((c #\\a)) (char-upcase c)) (let ((c #\\b)) (char-upcase c)) (let ((c #\\c)) (char-upcase c)))\n"
+
+::tcltest::test macros-9.3 {run for/list macro} -body {
+    pew {(for/list ([c "abc"]) (char-upcase c))}
+} -output "(#\\A #\\B #\\C)\n"
+
+::tcltest::test macros-9.4 {expand for/list macro} -body {
+    pxw {(for/list ([i (in-range 1 4)]) (* i i))}
+} -output "(list (let ((i 1)) (* i i)) (let ((i 2)) (* i i)) (let ((i 3)) (* i i)))\n"
+
+::tcltest::test macros-9.5 {run for/list macro} -body {
+    pew {(for/list ([i (in-range 1 4)]) (* i i))}
+} -output "(1 4 9)\n"
+
+::tcltest::test macros-9.6 {expand for/list macro} -body {
+    pxw {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "(list (let ((i 1) (j #\\a)) (list i j)) (let ((i 2) (j #\\b)) (list i j)) (let ((i 3) (j #\\c)) (list i j)))\n"
+
+::tcltest::test macros-9.7 {run for/list macro} -body {
+    pew {(for/list ([i (in-range 1 4)] [j "abc"]) (list i j))}
+} -output "((1 #\\a) (2 #\\b) (3 #\\c))\n"
+
+
+::tcltest::test macros-10.0 {expand for macro} -body {
+    pxw "(for/or ((i '(1 2 3))) (< 3 i))"
+} -output "(or (let ((i 1)) (< 3 i)) (let ((i 2)) (< 3 i)) (let ((i 3)) (< 3 i)))\n"
+
+
+::tcltest::test macros-12.2 {expand or macro} -body {
+    pxw "(or)"
+    pxw "(or #f)"
+    pxw "(or (> 3 2))"
+    pxw "(or (> 3 2) (= 7 8))"
+} -output "(begin #f)\n(begin #f)\n(begin (> 3 2))\n(let ((x (> 3 2))) (if x x (let ((x (= 7 8))) (if x x #f))))\n"
+
+
+::tcltest::test macros-13.0 {try pop!} -body {
+  pew "(let ((x '(a b c))) (pop! x))"
+} -output "(b c)\n"
+
+::tcltest::test macros-13.1 {try pop!, badly} -body {
+  pew "(let ((x '(a b c))) (pop!))"
+} -returnCodes error -result "too few arguments:\n(pop! listname)"
+
+::tcltest::test macros-13.2 {try pop!, badly} -body {
+  pew "(let ((x '(a b c))) (pop! '(a b c)))"
+} -returnCodes error -result "SYMBOL expected:\n(pop! listname)"
+
+
+::tcltest::test macros-14.0 {try push!} -body {
+  pew "(let ((x '(a b c))) (push! 'd x))"
+} -output "(d a b c)\n"
+
+::tcltest::test macros-15.0 {expand put!} -body {
+    pxw "(put! plist 'c 7)"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
+
+::tcltest::test macros-15.1 {run put!} -body {
+    pew "(define plst (list 'a 1 'b 2 'c 3 'd 4 'e 5))"
+    pew "(put! plst 'c 7)"
+    pew "(put! plst 'f 6)"
+    pew "plst"
+} -output "(a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n(f 6 a 1 b 2 c 7 d 4 e 5)\n"
+
+::tcltest::test macros-15.2 {expand put!} -body {
+    pew "(define listname 'plist)"
+    pew "(define key ''c)"
+    pew "(define val 7)"
+    pxw "`(let ((idx (list-find-key ,listname ,key))) (if (< idx 0) (set! ,listname (append (list ,key ,val) ,listname)) (begin (list-set! plist (+ idx 1) ,val) ,listname)))"
+} -output "(let ((idx (list-find-key plist (quote c)))) (if (< idx 0) (set! plist (append (list (quote c) 7) plist)) (begin (list-set! plist (+ idx 1) 7) plist)))\n"
+
+
+::tcltest::test macros-16.0 {quasiquotation} -body {
+    pw {`(list ,(+ 1 2) 4)}
+} -output "(quasiquote (list (unquote (+ 1 2)) 4))\n"
+
+::tcltest::test macros-16.1 {quasiquotation} -body {
+    w [::constcl::expand-quasiquote [parse {`(list ,(+ 1 2) 4)}] ::constcl::global_env]
+    pew {(define name 'a)}
+    w [::constcl::expand-quasiquote [parse {`(list ,name ',name)}] ::constcl::global_env]
+    w [::constcl::expand-quasiquote [parse {`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)}] ::constcl::global_env]
+    w [::constcl::expand-quasiquote [parse {`(( foo ,(- 10 3)) ,@(cdr '(c)) ,(car '(cons)))}] ::constcl::global_env]
+    w [::constcl::expand-quasiquote [parse {`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)}] ::constcl::global_env]
+} -output "(list 3 4)\n(list a (quote a))\n(a 3 4 5 6 b)\n((foo 7) cons)\n(vector 10 5 2.0 4.0 3.0 8)\n"
+
+::tcltest::test macros-16.2 {quasiquotation} -body {
+    w [::constcl::expand-quasiquote [parse {`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)}] ::constcl::global_env]
+if no {
+    pew {(let ((name1 'x)
+      (name2 'y))
+  `(a `(b ,,name1 ,',name2 d) e))}
+    pew {'(quasiquote (list (unquote (+ 1 2)) 4))}
+}
+} -output "(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f)\n"
+
+#(a `(b (unquote x) (unquote (quote y)) d) e)\n(quasiquote (list (unquote (+ 1 2)) 4))\n"
+
+
+::tcltest::test macros-17.0 {conditional: expand unless macro} -body {
+    pxw "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (quote ()) (begin (* 4 4) (- 5 5)))\n"
+
+::tcltest::test macros-17.1 {conditional: run unless macro} -body {
+    pew "(unless (zero? 0) (* 4 4) (- 5 5))"
+} -output "()\n"
+
+
+
+::tcltest::test macros-18.2 {conditional: expand when macro} -body {
+    pxw "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "(if (zero? 0) (begin (* 4 4) (- 5 5)) (quote ()))\n"
+
+::tcltest::test macros-18.3 {conditional: run when macro} -body {
+    pew "(when (zero? 0) (* 4 4) (- 5 5))"
+} -output "0\n"
+
+
+
+::tcltest::test rld-1.0 {expand local defines} -body {
+    set x [parse "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -match glob -output {((lambda (b a n) ((lambda (g<[0-9]*> g<[0-9]*> g<[0-9]*>) (begin (set! n g<[0-9]*>) (set! a g<[0-9]*>) (set! b g<[0-9]*>) (set! n (+ a b)) (* n n))) 4 3 0)) (quote #<undefined>) (quote #<undefined>) (quote #<undefined>))?}
+
+::tcltest::test rld-1.1 {run local defines} -body {
+    set x [parse "(begin (define n 0) (define a 3) (define b 4) (set! n (+ a b)) (* n n))"]
+    w [e [::constcl::resolve-local-defines $x]]
+} -output "49\n"
+
+::tcltest::test rld-1.2 {expand local defines w/o defines} -body {
+    set x [parse "(begin (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test rld-1.3 {expand local defines with begin} -body {
+    set x [parse "(begin (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -output "((lambda () ((lambda () (begin (set! n (+ a b)) (* n n))))))\n"
+
+::tcltest::test rld-1.4 {expand local defines with proc definition} -body {
+    set x [parse "(begin (define (foo x) (* x x)) (set! n (+ a b)) (* n n))"]
+    w [::constcl::resolve-local-defines $x]
+} -match glob -output {((lambda (foo) ((lambda (g<[0-9]*>) (begin (set! foo g<[0-9]*>) (set! n (+ a b)) (* n n))) (lambda (x) (* x x)))) (quote #<undefined>))?}
+
+
+
+::tcltest::test write-1.0 {read, eval, and write a number} -body {
+    pew "99.99"
+} -output "99.99\n"
+
+::tcltest::test write-1.1 {read, eval, and write a boolean} -body {
+    pew "#t"
+} -output "#t\n"
+
+::tcltest::test write-1.2 {read, eval, and write a list} -body {
+    pew "'(a b c)"
+} -output "(a b c)\n"
+
+::tcltest::test write-1.3 {read, eval, and write a list} -body {
+    pew "'(a b (c))"
+} -output "(a b (c))\n"
+
+
+::tcltest::test equipred-1.0 {try comparing a boolean and a symbol} -body {
+    pew "(eq? #t 'a)"
+} -output "#f\n"
+
+::tcltest::test equipred-1.1 {try comparing two booleans} -body {
+    pew "(eq? #t #t)"
+} -output "#t\n"
+
+
+::tcltest::test numbers-1.0 {try number?} -body {
+    pew "(number? 99.99)"
+} -output "#t\n"
+
+::tcltest::test numbers-1.1 {try number?} -body {
+    N foo
+} -returnCodes error -result "NUMBER expected\nfoo"
+
+::tcltest::test numbers-1.2 {try number?} -body {
+    N 4294967295
+} -match glob -result "::oo::Obj*"
+
+
+
+::tcltest::test numbers-2.0 {try =} -body {
+        pew "(= 9 9 9 9)"
+} -output "#t\n"
+
+::tcltest::test numbers-2.1 {try =} -body {
+        pew "(= 9 9 9 9.0)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-3.0 {try <} -body {
+        pew "(< 1 2 4 7)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-4.0 {try >} -body {
+        pew "(> 7 4 2 1)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-5.0 {try <=} -body {
+        pew "(<= 1 4 4 7)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-6.0 {try >=} -body {
+        pew "(>= 7 4 4 1)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-7.0 {try zero?} -body {
+        pew "(zero? 77)"
+} -output "#f\n"
+
+::tcltest::test numbers-7.1 {check zero?} -body {
+        pew "(zero? \"foo\")"
+} -returnCodes error -result "NUMBER expected\n(zero? \"foo\")"
+
+
+
+::tcltest::test numbers-8.0 {try positive?} -body {
+        pew "(positive? 77)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-9.0 {try negative?} -body {
+        pew "(negative? 77)"
+} -output "#f\n"
+
+
+
+::tcltest::test numbers-10.0 {try even?} -body {
+        pew "(even? 77)"
+} -output "#f\n"
+
+
+
+::tcltest::test numbers-11.0 {try odd?} -body {
+        pew "(odd? 77)"
+} -output "#t\n"
+
+
+
+::tcltest::test numbers-12.0 {try max} -body {
+    pew "(max 7 1 10 3)"
+} -output "10\n"
+
+
+
+::tcltest::test numbers-13.0 {try min} -body {
+        pew "(min 7 1 10 3)"
+} -output "1\n"
+
+
+
+::tcltest::test numbers-14.0 {try +} -body {
+    pew "(+)"
+    pew "(+ 5)"
+    pew "(+ 7 1 10 3)"
+} -output "0\n5\n21\n"
+
+
+
+::tcltest::test numbers-15.0 {try *} -body {
+    pew "(*)"
+    pew "(* 5)"
+    pew "(* 7 1 10 3)"
+} -output "1\n5\n210\n"
+
+
+
+::tcltest::test numbers-16.0 {try -} -body {
+    pew "(-)"
+} -returnCodes error -result {wrong # args: should be "::constcl::- num ?arg ...?"}
+
+::tcltest::test numbers-16.1 {try -} -body {
+    pew "(- 5)"
+    pew "(- 7 1 10 3)"
+} -output "-5\n-7\n"
+
+
+
+::tcltest::test numbers-17.0 {try /} -body {
+    pew "(/)"
+} -returnCodes error -result {wrong # args: should be "::constcl::/ num ?arg ...?"}
+
+::tcltest::test numbers-17.1 {try /} -body {
+    pew "(/ 5)"
+    pew "(/ 21 7 3)"
+} -output "0.2\n1\n"
+
+
+
+::tcltest::test numbers-18.0 {try abs} -body {
+    pew "(abs -99)"
+} -output "99\n"
+
+::tcltest::test numbers-18.1 {try check} -body {
+    pew "(abs \"foo\")"
+} -returnCodes error -result "NUMBER expected\n(abs \"foo\")"
+
+
+::tcltest::test numbers-19.0 {try quotient, remainder, modulo} -body {
+    pew "(quotient 13 4)"
+    pew "(modulo 13 4)"
+    pew "(remainder 13 4)"
+    pew "(modulo -13 4)"
+    pew "(remainder -13 4)"
+    pew "(modulo 13 -4)"
+    pew "(remainder 13 -4)"
+    pew "(modulo -13 -4)"
+    pew "(remainder -13 -4)"
+} -output "3.0\n1\n1\n3\n-1\n-3\n1\n-1\n-1\n"
+
+
+
+::tcltest::test numbers-20.0 {try floor} -body {
+    pew "(floor 99.9)"
+} -output "99.0\n"
+
+
+
+::tcltest::test numbers-21.0 {try ceiling} -body {
+    pew "(ceiling 99.9)"
+} -output "100.0\n"
+
+
+
+::tcltest::test numbers-22.0 {try truncate} -body {
+    pew "(truncate 99.9)"
+    pew "(truncate -99.9)"
+} -output "99.0\n-99.0\n"
+
+
+
+::tcltest::test numbers-23.0 {try round} -body {
+    pew "(round 99.9)"
+    pew "(round 99.3)"
+} -output "100\n99\n"
+
+::tcltest::test numbers-23.1 {try various} -body {
+    pew "(floor 3.5)"
+    pew "(ceiling 3.5)"
+    pew "(truncate 3.5)"
+    pew "(round 3.5)"
+} -output "3.0\n4.0\n3.0\n4\n"
+
+
+
+::tcltest::test numbers-24.0 {try exp} -body {
+    pew "(exp 3)"
+} -output "20.085536923187668\n"
+
+
+
+::tcltest::test numbers-25.0 {try log} -body {
+    pew "(log 3)"
+} -output "1.0986122886681098\n"
+
+
+
+::tcltest::test numbers-26.0 {try trig} -body {
+    pew "(sin (/ pi 3))"
+    pew "(cos (/ pi 3))"
+    pew "(tan (/ pi 3))"
+} -output "0.8660254037844386\n0.5000000000000001\n1.7320508075688767\n"
+
+::tcltest::test numbers-26.1 {try triggering tan} -body {
+    pew "(tan #\\A)"
+} -returnCodes error -result "NUMBER expected\n(tan #\\A)"
+
+
+::tcltest::test numbers-27.0 {try trig} -body {
+    pew "(asin 0.3)"
+    pew "(acos 0.3)"
+    pew "(atan 0.3)"
+} -output "0.3046926540153975\n1.2661036727794992\n0.2914567944778671\n"
+
+
+
+::tcltest::test numbers-28.0 {try sqrt} -body {
+    pew "(sqrt 16)"
+} -output "4.0\n"
+
+
+
+::tcltest::test numbers-29.0 {try expt} -body {
+    pew "(expt 4 2)"
+} -output "16.0\n"
+
+
+
+::tcltest::test numbers-30.0 {try number->string} -body {
+    pew "(number->string 23)"
+    pew "(number->string 23 2)"
+    pew "(number->string 23 8)"
+    pew "(number->string 23 16)"
+} -output "\"23\"\n\"10111\"\n\"27\"\n\"17\"\n"
+
+::tcltest::test numbers-30.1 {try number->string} -body {
+    pew "(number->string 23 13)"
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(number->string  23 13)"
+
+
+
+::tcltest::test numbers-31.0 {try string->number} -body {
+    pew {(string->number "23")}
+    pew {(string->number "10111" 2)}
+    pew {(string->number "27" 8)}
+    pew {(string->number "17" 16)}
+} -output "23\n23\n23\n23\n"
+
+::tcltest::test numbers-31.1 {try string->number} -body {
+    pew {(string->number "23" 13)}
+} -returnCodes error -result "Radix not in 2, 8, 10, 16\n(string->number \"23\"  13)"
+
+
+
+::tcltest::test boolean-1.0 {evaluate boolean values} -body {
+        pew "#t"
+} -output "#t\n"
+
+::tcltest::test boolean-1.1 {evaluate boolean values} -body {
+        pew "#f"
+} -output "#f\n"
+
+::tcltest::test boolean-1.2 {evaluate boolean values} -body {
+        pew "'#f"
+} -output "#f\n"
+
+::tcltest::test boolean-1.3 {equivalence of instance and constant} -body {
+        expr {[::constcl::MkBoolean "#t"] == ${#t}}
+} -result 1
+
+::tcltest::test boolean-1.5 {equivalence of instance and constant} -body {
+        expr {[pe "(> 3 2)"] == ${#t}}
+} -result 1
+
+::tcltest::test boolean-1.6 {equivalence of instance and constant} -body {
+        expr {[pe "#t"] == ${#t}}
+} -result 1
+
+
+
+::tcltest::test boolean-2.0 {evaluate boolean values} -body {
+        pew "(boolean? #f)"
+} -output "#t\n"
+
+::tcltest::test boolean-2.1 {evaluate boolean values} -body {
+        pew "(boolean? 0)"
+} -output "#f\n"
+
+::tcltest::test boolean-2.2 {evaluate boolean values} -body {
+        pew "(boolean? '())"
+} -output "#f\n"
+
+
+
+::tcltest::test boolean-3.0 {not procedure} -body {
+        pew "(not #t)"
+} -output "#f\n"
+
+::tcltest::test boolean-3.1 {not procedure} -body {
+        pew "(not #f)"
+} -output "#t\n"
+
+::tcltest::test boolean-3.2 {not procedure} -body {
+        pew "(not nil)"
+} -output "#f\n"
+
+::tcltest::test boolean-3.3 {not procedure} -body {
+        pew "(not (list 3))"
+} -output "#f\n"
+
+
+
+::tcltest::test characters-1.0 {try char?} -body {
+    pew {(char? #\A)}
+} -output "#t\n"
+
+
+
+::tcltest::test characters-1.1 {try char=?} -body {
+    pew {(char=? #\A #\A)}
+    pew {(char=? #\A #\a)}
+    pew {(char=? #\Space #\space)}
+} -output "#t\n#f\n#t\n"
+
+::tcltest::test characters-check-1.0 {try triggering a check} -body {
+    pew {(char=? 99 #\A)}
+} -returnCodes error -result "CHAR expected\n(char=? 99 #\\A)"
+
+
+
+::tcltest::test characters-1.2 {try char<?} -body {
+    pew {(char<? #\A #\A)}
+    pew {(char<? #\A #\B)}
+    pew {(char<? #\B #\A)}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.3 {try char>?} -body {
+    pew {(char>? #\A #\A)}
+    pew {(char>? #\A #\B)}
+    pew {(char>? #\B #\A)}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.4 {try char<=?} -body {
+    pew {(char<=? #\A #\A)}
+    pew {(char<=? #\A #\B)}
+    pew {(char<=? #\B #\A)}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.5 {try char>=?} -body {
+    pew {(char>=? #\A #\A)}
+    pew {(char>=? #\A #\B)}
+    pew {(char>=? #\B #\A)}
+} -output "#t\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.6 {try char-ci=?} -body {
+    pew {(char-ci=? #\A #\a)}
+    pew {(char-ci=? #\A #\b)}
+    pew {(char-ci=? #\B #\a)}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.7 {try char-ci<?} -body {
+    pew {(char-ci<? #\A #\a)}
+    pew {(char-ci<? #\A #\b)}
+    pew {(char-ci<? #\B #\a)}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.8 {try char-ci>?} -body {
+    pew {(char-ci>? #\A #\a)}
+    pew {(char-ci>? #\A #\b)}
+    pew {(char-ci>? #\B #\a)}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test characters-1.9 {try char-ci<=?} -body {
+    pew {(char-ci<=? #\A #\a)}
+    pew {(char-ci<=? #\A #\b)}
+    pew {(char-ci<=? #\B #\a)}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.10 {try char-ci>=?} -body {
+    pew {(char-ci>=? #\A #\a)}
+    pew {(char-ci>=? #\A #\b)}
+    pew {(char-ci>=? #\B #\a)}
+    pew {(char-ci>=? #\A #\Space)}
+} -output "#t\n#f\n#t\n#t\n"
+
+
+
+::tcltest::test characters-1.11 {try char-alphabetic?} -body {
+    pew {(char-alphabetic? #\A)}
+    pew {(char-alphabetic? #\9)}
+    pew {(char-alphabetic? #\space)}
+    pew {(char-alphabetic? #\A)}
+    pew {(char-alphabetic? #\a)}
+    pew {(char-alphabetic? #\%)}
+} -output "#t\n#f\n#f\n#t\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.12 {try char-numeric?} -body {
+    pew {(char-numeric? #\A)}
+    pew {(char-numeric? #\9)}
+    pew {(char-numeric? #\space)}
+    pew {(char-numeric? #\A)}
+    pew {(char-numeric? #\a)}
+    pew {(char-numeric? #\%)}
+} -output "#f\n#t\n#f\n#f\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.13 {try char-whitespace?} -body {
+    pew {(char-whitespace? #\A)}
+    pew {(char-whitespace? #\9)}
+    pew {(char-whitespace? #\space)}
+    pew {(char-whitespace? #\A)}
+    pew {(char-whitespace? #\a)}
+    pew {(char-whitespace? #\%)}
+} -output "#f\n#f\n#t\n#f\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.14 {try char-upper-case?} -body {
+    pew {(char-upper-case? #\A)}
+    pew {(char-upper-case? #\9)}
+    pew {(char-upper-case? #\space)}
+    pew {(char-upper-case? #\A)}
+    pew {(char-upper-case? #\a)}
+    pew {(char-upper-case? #\%)}
+} -output "#t\n#f\n#f\n#t\n#f\n#f\n"
+
+
+
+::tcltest::test characters-1.15 {try char-lower-case?} -body {
+    pew {(char-lower-case? #\A)}
+    pew {(char-lower-case? #\9)}
+    pew {(char-lower-case? #\space)}
+    pew {(char-lower-case? #\A)}
+    pew {(char-lower-case? #\a)}
+    pew {(char-lower-case? #\%)}
+} -output "#f\n#f\n#f\n#f\n#t\n#f\n"
+
+
+
+::tcltest::test characters-1.16 {try char-upcase?} -body {
+    pew {(char->integer #\A)}
+    pew {(integer->char 97)}
+} -output "65\n#\\a\n"
+
+
+
+::tcltest::test characters-1.17 {try char-upcase} -body {
+    pew {(char-upcase #\A)}
+    pew {(char-upcase #\a)}
+    pew {(char-upcase #\space)}
+} -output "#\\A\n#\\A\n#\\space\n"
+
+
+
+::tcltest::test characters-1.18 {try char-downcase?} -body {
+    pew {(char-downcase #\A)}
+    pew {(char-downcase #\a)}
+    pew {(char-downcase #\space)}
+} -output "#\\a\n#\\a\n#\\space\n"
+
+
+
+::tcltest::test control-1.0 {try procedure?)} -body {
+    pew {(procedure? car)}
+    pew {(procedure? 'car)}
+    pew {(procedure? (lambda (x) (* x x)))}
+} -output "#t\n#f\n#t\n"
+
+
+
+::tcltest::test control-2.0 {try apply)} -body {
+    pew {(apply + (list 3 4))}
+    pew {(define compose
+  (lambda (f g)
+    (lambda args
+      (f (apply g args)))))}
+    pew {((compose sqrt *) 12 75)}
+} -output "7\n30.0\n"
+
+::tcltest::test control-2.1 {try triggering a check} -body {
+    pew {(apply #\+ (list 3 4))}
+} -returnCodes error -result "PROCEDURE expected\n(apply #\\+ ...)"
+
+
+
+::tcltest::test control-3.0 {try map)} -body {
+    pew {(map cadr '((a b) (d e) (g h)))}
+    pew {(map (lambda (n) (expt n n)) '(1 2 3 4 5))}
+    pew {(map + '(1 2 3) '(4 5 6))}
+    pew {(let ((count 0))
+  (map (lambda (ignored)
+         (set! count (+ count 1))
+         count)
+       '(a b)))}
+} -output "(b e h)\n(1.0 4.0 27.0 256.0 3125.0)\n(5 7 9)\n(1 2)\n"
+
+
+
+::tcltest::test control-4.0 {try for-each)} -body {
+    pew {(for-each display '(1 2 3))}
+} -output "123()\n"
+
+::tcltest::test control-4.1 {try for-each)} -body {
+    pew {(let ((v (make-vector 5)))
+  (for-each (lambda (i)
+              (vector-set! v i (* i i)))
+            '(0 1 2 3 4))
+  v)}
+} -output "#(0 1 4 9 16)\n"
+
+
+::tcltest::test io-1.0 {try call-with-input-file} -setup {
+  ::tcltest::makeFile {99 foo "bar"} iofile.txt
+} -body {
+  pe {(let ((f (lambda (port)  (let ((n 0) (s 0))
+       (set! n (read port))
+       (set! s (read port))
+       (display s)
+       (display n)))))
+         (call-with-input-file "iofile.txt" f))}
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -output "foo99"
+
+::tcltest::test io-2.0 {try call-with-output-file} -setup {
+} -body {
+  pe {(let ((f (lambda (port)
+       (display 'foo port)
+       (display 99 port))))
+         (call-with-output-file "iofile.txt" f))}
+    puts [::tcltest::viewFile iofile.txt]
+} -cleanup {
+  ::tcltest::removeFile iofile.txt
+} -returnCodes error -result "remove this line to use"
+#-output "foo99\n"
+
+::tcltest::test io-3.0 {try with-input-from-file} -setup {
+  ::tcltest::makeFile {42} foo.txt
+} -body {
+  pew "(with-input-from-file \"foo.txt\" (lambda () (write (read))))"
+} -cleanup {
+  ::tcltest::removeFile foo.txt
+} -output "42\n"
+
+::tcltest::test io-4.0 {try with-output-to-file} -setup {
+} -body {
+  pew "(with-output-to-file \"foo.txt\" (lambda () (write 42)))"
+  puts [::tcltest::viewFile foo.txt]
+} -cleanup {
+  ::tcltest::removeFile foo.txt
+} -returnCodes error -result "remove this line to use"
+#-output "42\n"
+
+::tcltest::test io-5.0 {try newline} -body {
+  pe "(display \"foo\")"
+  pe "(newline)"
+  pe "(display \"bar\")"
+} -output "foo\nbar"
+
+
+::tcltest::test pairslists-1.0 {playing with lists} -body {
+    pew {(define x (list 'a 'b 'c))}
+    pew {(define y x)}
+    pew {y}
+    pew {(list? y)}
+} -output "(a b c)\n#t\n"
+
+::tcltest::test pairslists-1.2 {playing with lists} -body {
+    pew {(set-cdr! x 4)}
+    pew {x}
+} -output "(a . 4)\n(a . 4)\n"
+
+::tcltest::test pairslists-1.3 {playing with lists} -body {
+    pew {(eqv? x y)}
+    pew {y}
+} -output "#t\n(a . 4)\n"
+
+::tcltest::test pairslists-1.4 {playing with lists} -body {
+    pew {(eqv? x y)}
+    pew {y}
+    pew {(list? y)}
+} -output "#t\n(a . 4)\n#f\n"
+
+
+
+::tcltest::test pairslists-2.0 {try pair?} -body {
+    pew {(pair? '(a . b))}
+    pew {(pair? '(a b c))}
+    pew {(pair? '())}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test pairslists-3.0 {try tstr-pair} -body {
+    puts [::constcl::tstr-pair [parse {(a . b)}]]
+    puts [::constcl::tstr-pair [parse {(a b c)}]]
+    puts [::constcl::tstr-pair [parse {(a b . c)}]]
+    puts [::constcl::tstr-pair [parse {(a)}]]
+} -output "a . b\na b c\na b . c\na\n"
+
+
+
+::tcltest::test pairslists-4.0 {try cons} -body {
+    pew {(cons 'a '())}
+    pew {(cons '(a) '(b c d))}
+    pew {(cons "a" '(b c))}
+    pew {(cons 'a 3)}
+    pew {(cons '(a b) 'c)}
+} -output "(a)\n((a) b c d)\n(\"a\" b c)\n(a . 3)\n((a b) . c)\n"
+
+
+
+::tcltest::test pairslists-5.0 {try car} -body {
+    pew {(car '(a b c))}
+    pew {(car '((a) b c d))}
+    pew {(car '(1 . 2))}
+} -output "a\n(a)\n1\n"
+
+::tcltest::test pairslists-5.1 {try car} -body {
+    pew {(car '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+::tcltest::test pairslists-6.0 {try cdr} -body {
+    pew {(cdr '((a) b c d))}
+    pew {(cdr '(1 . 2))}
+} -output "(b c d)\n2\n"
+
+::tcltest::test pairslists-6.1 {try cdr} -body {
+    pew {(cdr '())}
+} -returnCodes error -result "PAIR expected"
+
+
+
+::tcltest::test pairslists-7.0 {try set-car!} -body {
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-car! (f) 3)}
+} -output "(3)\n"
+
+::tcltest::test pairslists-7.1 {try set-car!} -body {
+    pew {(set-car! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+::tcltest::test pairslists-8.0 {try set-cdr!} -body {
+  unbind [S f]
+  unbind [S g]
+    pew {(define (f) (list 'not-a-constant-list)))}
+    pew {(define (g) '(constant-list)))}
+    pew {(set-cdr! (f) 3)}
+} -output "(not-a-constant-list . 3)\n"
+
+::tcltest::test pairslists-8.1 {try set-cdr!} -body {
+    pew {(set-cdr! (g) 3)}
+} -returnCodes error -result "Can't modify a constant pair"
+
+
+
+::tcltest::test pairslists-9.0 {try list?} -body {
+    pew {(list? '(a b c))}
+    pew {(list? '())}
+    pew {(list? '(a . b))}
+    pew {(list? #\A)}
+} -output "#t\n#t\n#f\n#f\n"
+
+::tcltest::test pairslists-9.1 {try list?} -body {
+    # "bug": list is infinite and list? must detect that
+    pew {(let ((x (list 'a)))
+          (set-cdr! x x)
+          (list? x))}
+} -output "#f\n"
+
+
+
+::tcltest::test pairslists-10.0 {try list} -body {
+    pew {(list 'a (+ 3 4) 'c)}
+    pew {(list)}
+} -output "(a 7 c)\n()\n"
+
+
+
+::tcltest::test pairslists-11.0 {try length} -body {
+    pew {(length '(a b c))}
+    pew {(length '(a (b) (c d e)))}
+    pew {(length '())}
+} -output "3\n3\n0\n"
+
+
+::tcltest::test pairslists-12.0 {try append} -body {
+    pew "(append '(a b) '(c) '(d e))"
+    pew {(append '(x) '(y))}
+    pew {(append '(a) '(b c d))}
+    pew {(append '(a (b)) '((c)))}
+    pew {(append '(a b) '(c . d))}
+    pew {(append '() 'a)}
+} -output "(a b c d e)\n(x y)\n(a b c d)\n(a (b) (c))\n(a b c . d)\na\n"
+
+::tcltest::test pairslists-12.1 {try append} -body {
+    pew "(append '(a b) 'c '(d e))"
+} -returnCodes error -result "LIST expected\n(append c)"
+
+
+
+::tcltest::test pairslists-13.0 {try reverse} -body {
+    pew {(reverse '(a b c))}
+    pew {(reverse '(a (b c) d (e (f))))}
+} -output "(c b a)\n((e (f)) d (b c) a)\n"
+
+
+
+::tcltest::test pairslists-14.0 {try list-tail} -body {
+    pew {(list-tail '(a b c d) 2)}
+} -output "(c d)\n"
+
+
+
+::tcltest::test pairslists-15.0 {try list-ref} -body {
+    pew {(list-ref '(a b c d) 2)}
+} -output "c\n"
+
+
+
+::tcltest::test pairslists-16.0 {try memq, memv} -body {
+    pew {(memq 'a '(a b c))}
+    pew {(memq 'b '(a b c))}
+    pew {(memq 'a '(b c d))}
+    pew {(memq (list 'a) '(b (a) c))}
+    pew {(memq 101 '(100 101 102))}
+    pew {(memv 101 '(100 101 102))}
+} -output "(a b c)\n(b c)\n#f\n#f\n(101 102)\n(101 102)\n"
+
+::tcltest::test pairslists-16.1 {try member} -body {
+    pew {(member (list 'a) '(b (a) c))}
+} -output "((a) c)\n"
+
+
+::tcltest::test pairslists-17.0 {try member} -body {
+    pew {(define e '((a 1) (b 2) (c 3)))}
+    pew {(assq 'a e)}
+    pew {(assq 'b e)}
+    pew {(assq 'd e)}
+    pew {(assq (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assoc (list 'a) '(((a)) ((b)) ((c))))}
+    pew {(assq 5 '((2 3) (5 7) (11 13)))}
+    pew {(assv 5 '((2 3) (5 7) (11 13)))}
+} -output "(a 1)\n(b 2)\n#f\n#f\n((a))\n(5 7)\n(5 7)\n"
+
+::tcltest::test strings-1.0 {try reading a string} -body {
+    set o [parse {"foo bar baz"}]
+    puts [$o value]
+} -output {foo bar baz
+}
+
+::tcltest::test strings-1.1 {try reading a string} -body {
+    set o [parse {"foo \"bar\" baz\nqux\\bod"}]
+    puts [$o value]
+} -output {foo "bar" baz
+qux\bod
+}
+
+::tcltest::test strings-1.2 {try printing a read string} -body {
+    pw {"foo \"bar\" baz\nqux\\bod"}
+} -output {"foo \"bar\" baz\nqux\\bod"
+}
+
+
+::tcltest::test strings-2.0 {try string?} -body {
+    pew {(string? "foo bar")}
+    pew {(string? 'foo-bar)}
+} -output "#t\n#f\n"
+
+
+
+::tcltest::test strings-3.0 {try make-string} -body {
+    pew {(make-string 5 #\x)}
+} -output "\"xxxxx\"\n"
+
+
+
+::tcltest::test strings-4.0 {try string} -body {
+    pew {(string #\f #\o #\o)}
+} -output "\"foo\"\n"
+
+::tcltest::test strings-4.1 {try string} -body {
+    pew {(string #\f #\o 'a #\o)}
+} -returnCodes error -result "CHAR expected\n(string {#\\f} {#\\o} a {#\\o})"
+
+
+
+::tcltest::test strings-5.0 {try string-length} -body {
+    pew {(string-length "foo bar")}
+} -output "7\n"
+
+
+
+::tcltest::test strings-6.0 {try string-ref} -body {
+    pew {(string-ref "foo bar" 4)}
+} -output "#\\b\n"
+
+
+
+::tcltest::test strings-7.0 {try string-set!} -body {
+    pew {(string-set! (string #\f #\o #\o) 0 #\x)}
+} -output "\"xoo\"\n"
+
+::tcltest::test strings-7.1 {try string-set!} -body {
+  unbind [S f]
+  unbind [S g]
+    pew {(define f (lambda () (make-string 3 #\*)))}
+    pew {(define g (lambda () "***"))}
+    pew {(string-set! (f) 0 #\?)}
+} -output "\"?**\"\n"
+
+::tcltest::test strings-7.2 {try string-set!} -body {
+    pew {(string-set! (g) 0 #\?)}
+} -returnCodes error -result "string is constant"
+
+
+
+::tcltest::test strings-8.0 {try string=?} -body {
+    pew {(string=? "foo bar" "faa bor")}
+    pew {(string=? "foo bar" "foo bar")}
+    pew {(string=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#f\n"
+
+
+
+::tcltest::test strings-9.0 {try string-ci=?} -body {
+    pew {(string-ci=? "foo bar" "faa bor")}
+    pew {(string-ci=? "foo bar" "foo bar")}
+    pew {(string-ci=? "foo bar" "Foo bar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-10.0 {try string<?} -body {
+    pew {(string<? "bar" "car")}
+    pew {(string<? "bar" "bar")}
+    pew {(string<? "bar" "aar")}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test strings-11.0 {try string-ci<?} -body {
+    pew {(string-ci<? "bar" "Car")}
+    pew {(string-ci<? "bar" "Bar")}
+    pew {(string-ci<? "bar" "Aar")}
+} -output "#t\n#f\n#f\n"
+
+
+
+::tcltest::test strings-12.0 {try string>?} -body {
+    pew {(string>? "bar" "car")}
+    pew {(string>? "bar" "bar")}
+    pew {(string>? "bar" "aar")}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test strings-13.0 {try string-ci>?} -body {
+    pew {(string-ci>? "bar" "Car")}
+    pew {(string-ci>? "bar" "Bar")}
+    pew {(string-ci>? "bar" "Aar")}
+} -output "#f\n#f\n#t\n"
+
+
+
+::tcltest::test strings-14.0 {try string<=?} -body {
+    pew {(string<=? "bar" "car")}
+    pew {(string<=? "bar" "bar")}
+    pew {(string<=? "bar" "aar")}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test strings-15.0 {try string-ci<=?} -body {
+    pew {(string-ci<=? "bar" "Car")}
+    pew {(string-ci<=? "bar" "Bar")}
+    pew {(string-ci<=? "bar" "Aar")}
+} -output "#t\n#t\n#f\n"
+
+
+
+::tcltest::test strings-16.0 {try string>=?} -body {
+    pew {(string>=? "bar" "car")}
+    pew {(string>=? "bar" "bar")}
+    pew {(string>=? "bar" "aar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-17.0 {try string-ci>=?} -body {
+    pew {(string-ci>=? "bar" "Car")}
+    pew {(string-ci>=? "bar" "Bar")}
+    pew {(string-ci>=? "bar" "Aar")}
+} -output "#f\n#t\n#t\n"
+
+
+
+::tcltest::test strings-18.0 {try substring} -body {
+    pew {(substring "foo bar" 0 3)}
+} -output "\"foo\"\n"
+
+
+
+::tcltest::test strings-19.0 {try string-append} -body {
+    pew {(string-append "foo" " bar")}
+} -output "\"foo bar\"\n"
+
+
+
+::tcltest::test strings-20.0 {try string->list} -body {
+    pew {(string->list "foo")}
+} -output "(#\\f #\\o #\\o)\n"
+
+
+
+::tcltest::test strings-21.0 {try list->string} -body {
+    pew {(list->string '(#\f #\o #\o))}
+} -output "\"foo\"\n"
+
+
+
+::tcltest::test strings-22.0 {try string-copy} -body {
+  unbind [S x]
+  unbind [S y]
+  unbind [S z]
+    pew {(define x (string-copy "foo"))}
+    pew {(string-set! x 0 #\x)}
+    pew {(define y "foobar")}
+    pew {(define z (string-copy y))}
+    pew {(eq? y z)}
+    pew {(equal? y z)}
+} -output "\"xoo\"\n#f\n#t\n"
+
+
+
+::tcltest::test strings-23.0 {try string-fill!} -body {
+  unbind [S x]
+    pew {(define x (string-copy "foo"))}
+    pew {(string-fill! x #\x)}
+} -output "\"xxx\"\n"
+
+
+
+::tcltest::test symbols-1.0 {try symbol?} -body {
+    pew {(symbol? 'foo)}
+    pew {(symbol? (car '(a b)))}
+    pew {(symbol? "bar")}
+    pew {(symbol? 'nil)}
+    pew {(symbol? '())}
+    pew {(symbol? #f)}
+} -output "#t\n#t\n#f\n#t\n#f\n#f\n"
+
+
+
+::tcltest::test symbols-1.1 {try symbol->string (and string->symbol)} -body {
+    pew {(symbol->string 'flying-fish)}
+    pew {(symbol->string 'Martin)}
+    pew {(symbol->string (string->symbol "Malvina"))}
+} -output {"flying-fish"
+"martin"
+"Malvina"
+}
+
+::tcltest::test symbols-1.2 {try symbol->string} -body {
+    pew {(string-set! (symbol->string 'flying-fish) 3 #\A)}
+} -returnCodes error -result "string is constant"
+
+
+
+::tcltest::test vectors-1.0 {try vector? (and make-vector, vector, vector literal)} -body {
+    pew {(vector? '#(0 (2 2 2 2) "Anna"))}
+    pew {(vector? (make-vector 3 #\X))}
+    pew {(vector? (vector 'a 'b 'c))}
+    pew {(vector? '#(a b c))}
+} -output "#t\n#t\n#t\n#t\n"
+
+
+
+::tcltest::test vectors-1.1 {try vector} -body {
+    pew {(vector 'a 'b 'c)}
+    pew {(vector 0 '(2 2 2 2) "Anna")}
+} -output "#(a b c)\n#(0 (2 2 2 2) \"Anna\")\n"
+
+
+
+::tcltest::test vectors-1.2 {try vector-length} -body {
+    pew {(vector-length (vector 'a 'b 'c))}
+} -output "3\n"
+
+
+
+::tcltest::test vectors-1.3 {try vector-ref} -body {
+    pew {(vector-ref (vector 'a 'b 'c) 1)}
+} -output "b\n"
+
+::tcltest::test vectors-1.4 {try vector-ref} -body {
+    pew {(let ((vec '#(a b c)) (k 1)) (vector-ref vec k))}
+} -output "b\n"
+
+
+
+::tcltest::test vectors-1.5 {try vector-set!} -body {
+  unbind [S x]
+    pew {(define x (lambda () (vector 0 '(2 2 2 2) "Anna")))}
+    pew {(vector-set! (x) 1 '(foo bar))}
+} -output "#(0 (foo bar) \"Anna\")\n"
+
+
+
+::tcltest::test vectors-1.6 {try vector->list} -body {
+    pew {(vector->list (vector 'a 'b 'c))}
+} -output "(a b c)\n"
+
+
+
+::tcltest::test vectors-1.7 {try list->vector} -body {
+    pew {(list->vector '(a b c))}
+} -output "#(a b c)\n"
+
+
+
+::tcltest::test vectors-1.8 {try vector-fill!} -body {
+    pew {(vector-fill! (vector 'a 'b 'c) 'x)}
+} -output "#(x x x)\n"
+
+
+::tcltest::test setup-1.0 {equivalence of instance and alias} -body {
+        expr {[pe "'()"] == ${#NIL}}
+} -result 1
+
+::tcltest::test setup-1.1 {equivalence of instance and alias} -body {
+        expr {[::constcl::NIL new] == ${#NIL}}
+} -result 1
+
+
+::tcltest::test cons-15.0 {check for a symbol} -body {
+    pew "pi"
+} -output 3.1415926535897931\n
+
+::tcltest::test cons-15.1 {dereference an unbound symbol} -body {
+    pew "foo"
+} -returnCodes error -result "not a variable name (foo)"
+
+::tcltest::test cons-15.2 {dereference an unbound symbol: procedure} -body {
+    pew "(foo)"
+} -returnCodes error -result "unbound symbol (foo)"
+
+::tcltest::test cons-1.0 {calculate circle area} -body {
+    pew "(define (circle-area r) (* pi (* r r)))"
+    pew "(circle-area 3)"
+} -output 28.274333882308138\n
+
+::tcltest::test cons-2.0 {calculate factorial} -body {
+    unbind [S fact]
+    pew "(define (fact n) (if (<= n 1) 1 (* n (fact (- n 1)))))"
+    pew "(fact 10)"
+} -output 3628800\n
+
+::tcltest::test cons-2.1 {calculate factorial 100} -body {
+  # the bug is that it's too long and eats up the limit stack when there's a
+  # problem
+    pew "(fact 100)"
+} -output 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000\n
+
+::tcltest::test cons-2.2 {calculate circle-area factorial 10} -body {
+    pew "(circle-area (fact 10))"
+} -output 41369087205782.695\n
+
+::tcltest::test cons-3.0 {count} -body {
+    pew "(define (truthtoint val) (if val 1 0))"
+    pew "(define (count item L) (if (not (null? L)) (+ (truthtoint (equal? item (car L))) (count item (cdr L))) 0))"
+} -output ""
+
+::tcltest::test cons-3.0 {count} -body {
+    pew "(count 0 (list 0 1 2 3 0 0))"
+} -output 3\n
+
+::tcltest::test cons-3.1 {count} -body {
+    pew "(count 'the '(the more the merrier the bigger the better))"
+} -output 4\n
+
+::tcltest::test cons-4.0 {twice} -body {
+    pew "(define (twice x) (* 2 x))"
+    pew "(twice 5)"
+} -output 10\n
+
+::tcltest::test cons-4.1 {twice} -body {
+    pew "(define (repeat f) (lambda (x) (f (f x))))"
+    pew "((repeat twice) 10)"
+} -output 40\n
+
+::tcltest::test cons-4.2 {twice} -body {
+    pew "((repeat (repeat twice)) 10)"
+} -output 160\n
+
+::tcltest::test cons-4.3 {twice} -body {
+    pew "((repeat (repeat (repeat twice))) 10)"
+} -output 2560\n
+
+::tcltest::test cons-4.4 {twice} -body {
+    pew "((repeat (repeat (repeat (repeat twice)))) 10)"
+} -output 655360\n
+
+::tcltest::test cons-5.0 {fib-range} -body {
+    pew "(define (fib n) (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))"
+    pew "(define (range a b) (if (= a b) '() (cons a (range (+ a 1) b))))"
+    pew "(range 0 10)"
+} -output "(0 1 2 3 4 5 6 7 8 9)\n"
+
+::tcltest::test cons-5.1 {fib-range} -body {
+    pew "(map fib (range 0 10))"
+} -output "(1 1 2 3 5 8 13 21 34 55)\n"
+
+::tcltest::test cons-5.2 {fib-range} -body {
+    pew "(map fib (range 0 20))"
+} -output "(1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765)\n"
+
+::tcltest::test cons-6.0 {procedure call with a list operator} -body {
+    pew "((if #t + *) 2 3)"
+} -output "5\n"
+
+::tcltest::test cons-7.0 {assignment} -body {
+  unbind [S r]
+    pew "(begin (define r 10) (set! r 20) r)"
+} -output "20\n"
+
+::tcltest::test cons-7.1 {assignment returns a value} -body {
+  unbind [S r]
+    pew "(begin (define r 10) (set! r 20))"
+} -output "20\n"
+
+::tcltest::test cons-7.2 {assignment to an unbound symbol} -body {
+    pew "(begin (set! XX 20))"
+} -returnCodes error -result "XX is not bound"
+
+::tcltest::test cons-8.0 {procedure definition} -body {
+    pew "(lambda (r) (* r r))"
+} -match regexp -output "#<proc-\\d+>\n"
+
+::tcltest::test cons-8.1 {procedure with two expressions} -body {
+  unbind [S f]
+  unbind [S r]
+    pew "(define (f) (define r 20) (* r r))"
+    pew "(f)"
+} -output "400\n"
+
+::tcltest::test cons-8.2 {resolve procedure with two expressions} -body {
+  unbind [S f]
+    set x [parse "(define (f) (define r 20) (* r r))"]
+    set x [::constcl::rewrite-define $x ::constcl::global_env]
+    w $x
+} -output "(define f (lambda () (define r 20) (* r r)))\n"
+
+::tcltest::test cons-9.0 {symbol?} -body {
+    pew "(symbol? (quote foo99))"
+} -output "#t\n"
+
+::tcltest::test cons-10.0 {shadowing} -body {
+  unbind [S r]
+  unbind [S f]
+    pew "(begin (define r 10) (define (f r) (set! r 20)) (f 30) r)"
+} -output "10\n"
+
+::tcltest::test cons-13.0 {expandquotes} -body {
+    pew "''foo"
+} -output "(quote foo)\n"
+
+::tcltest::test cons-14.0 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (every? fn list)
+  (or (null? list)
+      (and (fn (car list)) (every? fn (cdr list)))))"
+    pew "(every? number? '(1 2 3 4))"
+} -output "#t\n"
+
+::tcltest::test cons-14.1 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (adjoin x a)
+  (if (member x a)
+      a
+      (cons x a)))"
+    pew "(adjoin 'x '(a b c))"
+} -output "(x a b c)\n"
+
+::tcltest::test cons-14.2 {Scheme cookbook, due to Nils M Holm} -body {
+    pew "(adjoin 'c '(a b c))"
+} -output "(a b c)\n"
+
+::tcltest::test cons-14.3 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (list-index fn list)
+  (let iter ((list list) (index 0))
+    (if (null? list)
+        -1
+        (let ((item (car list)))
+          (if (fn item)
+              index
+              (iter (cdr list) (+ index 1)))))))"
+    pew "(define (>10 x) (> x 10))"
+    pew "(list-index >10 '(1 2 3 4 10 11 12 13 14))"
+} -output "5\n"
+
+::tcltest::test cons-14.4 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (take lst n)
+  (let loop ((result '()) (i n) (lst lst))
+    (if (or (null? lst) (<= i 0))
+        (reverse result)
+        (loop (cons (car lst) result) (- i 1) (cdr lst)))))"
+    pew "(define (sublist-map n fn lst)
+  (let loop ((lst lst) (result '()))
+    (if (< (length lst) n)
+        (reverse result)
+        (let ((next-list (take lst n)))
+          (loop (cdr lst) (cons (apply fn next-list) result))))))"
+    pew "(sublist-map 2 < '(1 2 3 4))"
+} -output "(#t #t #t)\n"
+
+::tcltest::test cons-14.5 {Scheme cookbook, due to Jakub T. Jankiewicz} -body {
+    pew "(define (remove fn lst)
+  (let loop ((lst lst) (result '()))
+    (if (null? lst)
+        (reverse result)
+        (let ((item (car lst)))
+          (loop (cdr lst)
+                (if (fn item) result (cons item result)))))))"
+    pew "(remove >10 '(1 2 3 4 10 11 12 13 14))"
+} -output "(1 2 3 4 10)\n"
+
+::tcltest::test cons-14.6 {Scheme cookbook, due to Lassi Kortela} -body {
+    pew {(define (group n lst)
+  (if (< n 1)
+      (error "group: n must be positive")
+      (let loop ((lst lst) (m n) (g '()) (gs '()))
+        (cond ((and (null? lst) (null? g))
+               (reverse gs))
+              ((or (null? lst) (zero? m))
+               (loop lst n '() (cons (reverse g) gs)))
+              (else
+               (loop (cdr lst) (- m 1) (cons (car lst) g) gs))))))}
+    pew "(group 3 (in-range 10))"
+} -output "((0 1 2) (3 4 5) (6 7 8) (9))\n"
+
+::tcltest::test cons-14.7 {Scheme cookbook, due to Lassi Kortela} -body {
+    pew {(define (group-by f lst)
+  (if (null? lst) '()
+      (let ((first (car lst)))
+        (let loop ((lst (cdr lst))
+                   (key (f first))
+                   (group (list first))
+                   (groups '()))
+          (if (null? lst)
+              (reverse (cons (reverse group) groups))
+              (let ((newkey (f (car lst))))
+                (if (equal? key newkey)
+                    (loop (cdr lst) key
+                          (cons (car lst) group)
+                          groups)
+                    (loop (cdr lst) newkey
+                          (list (car lst))
+                          (cons (reverse group) groups)))))))))}
+    pew "(group-by odd? '(1 3 5 2 1 6 4 1 7))"
+} -output "((1 3 5) (2) (1) (6 4) (1 7))\n"
+
+
+::tcltest::cleanupTests
